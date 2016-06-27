@@ -48,6 +48,7 @@ var HybridObjectsUtilities = require(__dirname+'/HybridObjectsUtilities');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
+var pathUtilities = require('path');
 
 
 
@@ -674,6 +675,7 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
         return results
     };
 
+    // List of file paths in DFS order
     var listeliste = walk(objectPath2);
 
     //  var folderContent = walkSync(objectPath,fileList);
@@ -713,105 +715,96 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
         '        <thead>\n' +
         '        <tr>\n' +
         '            <th class="info">Object Folder</th>\n' +
-        '            <th class="info"></th>\n' +
         '        </tr>\n' +
         '        </thead>\n' +
         '        <tbody>\n';
 
 
     for (var i = 0; i < listeliste.length; i++) {
+        var path = listeliste[i].replace(objectPath2 + '/', '');
+        var folder = pathUtilities.dirname(path);
+        var file = pathUtilities.basename(path);
 
-        var content = listeliste[i].replace(objectPath2 + '/', '').split("/");
-
-        if (content[1] !== undefined) {
-            if (content[0] !== folderOld) {
-
-                // console.log("---" + content[0]);
-
-                text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
-
-                var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
-
-                text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
-
-            }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
-
-            if (content[1][0] !== "." && content[1][0] !== "_") {
-                if (debug)console.log(content[1]);
-                var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
-
-                text += '<tr ';
-                if (content[1] === "target.dat" || content[1] === "target.xml" || content[1] === "target.jpg") {
-                    text += 'class="success"';
-                }
-
-
-                text += '><td><font size="2">';
-                text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-                text += '<span class="';
-
-                if (fileTypeF === "jpg" || fileTypeF === "png" || fileTypeF === "gif" || fileTypeF === "jpeg") {
-                    text += 'glyphicon glyphicon-picture';
-                } else {
-                    text += 'glyphicon glyphicon-file';
-                }
-
-
-                text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
-
-                var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
-                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
-                if (debug) console.log(dateiTobeRemoved);
-                text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
-            }
-
-
-            folderOld = content[0];
-        } else {
-            if (content[0][0] !== "." && content[0][0] !== "_") {
-                var fileTypeF2 = changeCase.lowerCase(content[0].split(".")[1]);//.toLowerCase();
-                text += '<tr ';
-                if (fileTypeF2 === "html" || fileTypeF2 === "htm") {
-                    text += 'class="success"';
-                } else if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
-                    text += 'class="active"';
-                }
-
-
-                text += '><td><font size="2">';
-                text += '<span class="';
-                if (fileTypeF2 === "jpg" || fileTypeF2 === "png" || fileTypeF2 === "gif" || fileTypeF2 === "jpeg") {
-                    text += 'glyphicon glyphicon-picture';
-                } else {
-                    text += 'glyphicon glyphicon-file';
-                }
-
-
-                text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
-
-                var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
-
-
-                if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
-                    text += '<span class="badge">delete</span></form></td></tr>';
-
-                } else {
-                    text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
-                }
-            }
-         
+        // Ignore hidden files or files starting with an _
+        if (file[0] === '.' || file[0] === '_') {
+            continue;
         }
 
+        // Create folder elements for new folders
+        if (folder !== folderOld && folder !== '.') {
+            // console.log("---" + content[0]);
+
+            text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + folder + '</font>';
+
+            text += '<div style="float: right;">';
+
+            var dateiTobeRemoved = parm + '/' + folder;
+            text += "<form id='2delete" + i + folder + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0; padding: 0; display: inline-block'>" +
+                "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
+                "<input type='hidden' name='action' value='delete'>";
+
+            text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></div></td></tr>';
+            folderOld = folder;
+        }
+
+        if (debug) {
+            console.log(file);
+        }
+
+        var fileType = pathUtilities.extname(file).substring(1); // Drop leading .
+
+        text += '<tr ';
+        if (file === "target.dat" || file === "target.xml" ||
+            file === "target.jpg" || fileType === "html" || fileType === "htm") {
+            text += 'class="success"';
+        } else if (file === "object.json" || file === "object.css" || file === "object.js") {
+            text += 'class="active"';
+        }
+
+
+        text += '><td style="width: 100%"><font size="2">';
+
+        // Indent the file name with a ton of nbsps if it is not top-level
+        if (folder !== '.') {
+            text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        } else {
+            text += "&nbsp;&nbsp;";
+        }
+
+        // Create the file's icon
+        text += '<span class="';
+
+        if (fileType === "jpg" || fileType === "png" || fileType === "gif" || fileType === "jpeg") {
+            text += 'glyphicon glyphicon-picture';
+        } else {
+            text += 'glyphicon glyphicon-file';
+        }
+
+        text += ' aria-hidden="true"></span>&nbsp;&nbsp;';
+
+        // Create the file's name and link to the file
+        text += '<a href = "/obj/' + parm + '/' + path + '">' + file + '</a></font>';
+
+        // Create the button container
+        text += '<div style="float: right;">';
+
+        // Create the edit button
+        if (fileType === "htm" || fileType === "html") {
+            text += '<a href="edit/obj/' + parm + '/' + path + '"><span class="badge" style="background-color: #e16b32;">edit</span></a>&nbsp;';
+        }
+
+        // Create the delete button
+        var dateiTobeRemoved = parm + '/' + path;
+        text += "<form id='1delete" + i + path + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0; padding: 0; display: inline-block;'>" +
+            "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
+            "<input type='hidden' name='action' value='delete'>";
+        if (debug) console.log(dateiTobeRemoved);
+
+        if (file === "object.json" || file === "object.css" || file === "object.js") {
+            text += '<span class="badge">delete</span></form></td></tr>';
+        } else {
+            text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></div></td></tr>';
+        }
     }
 
     text +=
