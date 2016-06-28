@@ -625,18 +625,11 @@ exports.uploadTargetText = function (parm, objectLookup, objectExp) {
 
 exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
     if(debug) console.log("interface content");
-    var text =
-
-        '';
+    var text = '';
 
     var objectPath = dirname0 + "/objects/";
 
     var objectPath2 = dirname0 + "/objects/" + parm;
-
-   var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
-        return fs.statSync(objectPath + '/' + file).isDirectory();
-    });
-
 
     var fileList;
     // List all files in a directory in Node.js recursively in a synchronous fashion
@@ -790,7 +783,7 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
 
         // Create the edit button
         if (fileType === "htm" || fileType === "html") {
-            text += '<a href="edit/obj/' + parm + '/' + path + '"><span class="badge" style="background-color: #e16b32;">edit</span></a>&nbsp;';
+            text += '<a href="/edit/' + parm + '/' + path + '"><span class="badge" style="background-color: #e16b32;">edit</span></a>&nbsp;';
         }
 
         // Create the delete button
@@ -905,4 +898,13 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
 
     return text;
 
-}
+};
+
+exports.editContent = function(req, res) {
+    console.log(req.params);
+    var path = req.params[0];
+    // TODO sanitize path for security
+    var file = pathUtilities.basename(path);
+    var context = {id: req.params.id, file: file, backUrl: '/content/' + req.params.id, path: path};
+    res.render('edit', context);
+};
