@@ -111,9 +111,20 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
+var exphbs = require('express-handlebars'); // View Template library
+
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
+webServer.set('views', 'libraries/webInterface/views');
+
+webServer.engine('handlebars', exphbs({
+    defaultLayout: 'main',
+    layoutsDir: 'libraries/webInterface/views/layouts',
+    partialsDir: 'libraries/webInterface/views/partials'
+}));
+webServer.set('view engine', 'handlebars');
+
 var http = require('http').createServer(webServer).listen(serverPort, function () {
     cout('webserver + socket.io is listening on port: ' + serverPort);
 });
@@ -803,6 +814,7 @@ function objectWebServer() {
 
     if (globalVariables.developer === true) {
         webServer.use("/libraries", express.static(__dirname + '/libraries/webInterface/'));
+        webServer.use("/libraries/monaco-editor/", express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
     // use the cors cross origin REST model
@@ -975,6 +987,22 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'content/:id', function (req, res) {
             // cout("get 13");
             res.send(HybridObjectsWebFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
+        });
+
+        webServer.get(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+            HybridObjectsWebFrontend.editContent(req, res);
+        });
+
+        webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+            // TODO insecure, requires sanitization of path
+            console.log('PUT', req.path, req.body.content);
+            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function(err) {
+                if (err) {
+                    throw err;
+                }
+                // Success!
+                res.end('');
+            });
         });
 
         // sends the target page for the object :id
