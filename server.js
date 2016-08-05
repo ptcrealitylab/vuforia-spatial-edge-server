@@ -678,7 +678,7 @@ function actionSender(action) {
     var HOST = '255.255.255.255';
     var message;
 
-    message = new Buffer(JSON.stringify({action: action}));
+    message = new Buffer(JSON.stringify(action));
 
     // creating the datagram
     var client = dgram.createSocket('udp4');
@@ -841,7 +841,7 @@ function objectWebServer() {
         delete objectExp[req.params[0]].objectLinks[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objectExp[req.params[0]].objectLinks);
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
+        actionSender({action: 'reloadLink', id: req.params[0], ip: objectExp[req.params[0]].ip});
         HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
 
@@ -885,7 +885,7 @@ function objectWebServer() {
 
             if (!thisObject.endlessLoop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
+                actionSender({action: 'reloadLink', id: req.params[0], ip: objectExp[req.params[0]].ip});
                 updateStatus = "added";
                 cout("added link: " + req.params[1]);
                 // check if there are new connections associated with the new link.
@@ -943,7 +943,7 @@ function objectWebServer() {
             if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
                 HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
 
-                actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objectExp[thisObject].ip}}));
+                actionSender({action: 'reloadObject', id: thisObject, ip: objectExp[thisObject].ip});
                 updateStatus = "added object";
             }
 
