@@ -1085,7 +1085,7 @@ function objectWebServer() {
 
             var Archiver = require('archiver');
 
-            var zip = Archiver('zip', false);
+            var zip = Archiver.create('zip', false);
             zip.pipe(res);
             zip.directory(__dirname + "/objects/" + req.params[0], req.params[0] + "/");
             zip.finalize();
@@ -1223,10 +1223,7 @@ function objectWebServer() {
                     file.path = form.uploadDir + "/" + file.name;
                 });
 
-                form.parse(req, function (err, fields, files) {
-                    var old_path = files.file.path,
-                        file_size = files.file.size;
-                });
+                form.parse(req);
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
@@ -1352,11 +1349,7 @@ function objectWebServer() {
                     }
                 });
 
-                form.parse(req, function (err, fields, files) {
-                    var old_path = files.file.path,
-                        file_size = files.file.size;
-                    // new_path = path.join(__dirname, '/uploads/', files.file.name);
-                });
+                form.parse(req);
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
