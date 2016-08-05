@@ -902,6 +902,56 @@ function objectWebServer() {
         }
     });
 
+
+    // Handler of new memory uploads
+    webServer.post('/object/:id/memory', function (req, res) {
+        var objId = req.params.id;
+        if (!objectExp.hasOwnProperty(objId)) {
+            res.status(404);
+            res.send('Object ' + objId + ' not found');
+            return;
+        }
+
+        var obj = objectExp[objId];
+
+        var memoryDir = __dirname + '/objects/' + obj.folder + '/memory/';
+        if (!fs.existsSync(memoryDir)) {
+            fs.mkdirSync(memoryDir);
+        }
+
+        var form = new formidable.IncomingForm({
+            uploadDir: memoryDir,
+            keepExtensions: true,
+            accept: 'image/jpeg'
+        });
+
+        form.on('error', function(err) {
+            res.status(500);
+            res.send(err);
+            throw err;
+        });
+
+        form.on('fileBegin', function(name, file) {
+            if (name === 'memoryThumbnailImage') {
+                file.path = form.uploadDir + '/memoryThumbnail.jpg';
+            } else {
+                file.path = form.uploadDir + '/memory.jpg';
+            }
+        });
+
+        form.parse(req, function(err, fields) {
+            if (obj) {
+                obj.memory = JSON.parse(fields.memoryInfo);
+                HybridObjectsUtilities.writeObjectToFile(objectExp, objId, __dirname);
+                actionSender({action: 'loadMemory', id: objId, ip: obj.ip});
+            }
+
+            res.status(200);
+            res.send('received');
+        });
+    });
+
+
     // changing the size and possition of an item. *1 is the object *2 is the datapoint id
     // ****************************************************************************************************************
 
