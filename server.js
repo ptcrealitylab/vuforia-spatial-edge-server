@@ -89,7 +89,7 @@ const socketPort = serverPort;     // server and socket port are always identica
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const version = "1.6.1";           // the version of this server
+const version = "1.7.0";           // the version of this server
 
 
 // All objects are stored in this folder:
@@ -195,6 +195,8 @@ function ObjectLink() {
     this.ObjectA = null;
     // The origin IOPoint from where the link is taking its data from
     this.locationInA = 0;
+    // if origin location is a Logic Block then set to logic block location otherwise null
+    this.logicBlockA = null;
     // Defines the type of the link origin. Currently this function is not in use.
     this.ObjectNameA = "";
     // The destination object to where the origin object is sending data to.
@@ -203,6 +205,8 @@ function ObjectLink() {
     // The destination IOPoint to where the link is sending data from the origin object.
     // ObjectB and locationInB will be send with each data package.
     this.locationInB = 0;
+    // if destination location is a Logic Block then set to logic block location otherwise null
+    this.logicBlockB = null;
     // Defines the type of the link destination. Currently this function is not in use.
     this.ObjectNameB = "";
     // check that there is no endless loop in the system
@@ -220,14 +224,19 @@ function ObjectLink() {
 function ObjectValue() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
+    // defines if IO-Point is a logic block
+    this.isLogicBlock = false;
     // this is storing the actual value representing the actual state of a IO Point
     this.value = null;
+    // if isLogicBlock is true, then this.value = new LogicBlock();
+
     // Defines the kind of data send. At this point we have 3 active data modes and one future possibility.
     // (f) defines floating point values between 0 and 1. This is the default value.
     // (d) defines a digital value exactly 0 or 1.
     // (+) defines a positive step with a floating point value for compatibility.
     // (-) defines a negative step with a floating point value for compatibility.
     // (m) defines a future possible data value for mime type media
+    // todo combine value and type in one object. which allows for future more stable type processing.
     this.mode = "f";
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
@@ -237,6 +246,7 @@ function ObjectValue() {
     this.scale = 1;
     // defines the dataPointInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the dataPointInterface folder.
+    // todo plugin should be removed eventually
     this.plugin = "default";
     // this is an optional parameter object for the plugin. As this parameter is stored with the object on disk. It can be used
     // as non fluctuating storage.
@@ -244,6 +254,82 @@ function ObjectValue() {
     // defines the origin Hardware interface of the IO Point. For example if this is arduinoYun the Server associates
     // this IO Point with the Arduino Yun hardware interface.
     this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
+}
+
+/**
+ * @desc Constructor used to define every LogicBlock generated in Objects.
+ * It does not need to contain its own ID since the ObjectValue contains the ID for the logicBlock.
+ **/
+
+function LogicBlock() {
+    // if true the last node setting will be shown instead of the crafting board.
+    this.showLastSettingFirst = false;
+    // if showLastSettingFirst is true then lastSetting is the name of the last node that was moved or set.
+    this.lastSetting = null;
+    // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
+    this.iconImage = null;
+    // nameInput are the names given for each IO
+    this.nameInput =  ["","","",""];
+    // nameOutput are the names given for each IO
+    this.nameOutput = ["","","",""];
+
+    // the array of possible connections within the logicBlock.
+    // if a block is set, a new Node instance is coppied in to the spot.
+    this.nodes = {
+        "0_0": null,"0_1": null,"0_2": null,"0_3": null,
+        "1_0": null,"1_1": null,"1_2": null,"1_3": null,
+        "2_0": null,"2_1": null,"2_2": null,"2_3": null,
+        "3_0": null,"3_1": null,"3_2": null,"3_3": null,
+    };
+}
+
+/**
+ * @desc Constructor used to define every Node possitioned in the logicBlock.
+ **/
+
+function Node() {
+    // setup
+    // The package ID is a specific UUID for all nodes of the same kind.
+    // nodes are saved as ZIP files for sharing. The ZIP file has the same ID.
+    this.packageID = null;
+    // the checksum should be identical with the checksum for the persistent package files.
+    this.checksum = null; // checksum of the files for the program
+    // name of the node
+    this.name = null;
+    // amount of elements the IO point is created of. Single IO nodes have the size 1.
+    this.size = 1;
+    // The position on the crafting board.
+    this.x = 0;
+    this.y = 0;
+    // A specific icon for the node, png or jpg.
+    this.iconImage = null;
+    // Name for the node, if no icon is available.
+    this.nodeText = "node";
+
+    /// Data
+    // this array saves the actual state value. Array size depends on size of node.
+    this.value = [null];
+    // data type is saved in this array.
+    // todo combine value and type in one object. which allows for future type processing.
+    this.mode = ["f"];
+
+    // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
+    // this would allow the the packages to be persistant. // todo discuss usability with Ben.
+    this.privateData = {};
+    this.publicData = {};
+
+    // IO
+    // define how many inputs are active.
+    this.activeInput = [true];
+    // define how many outputs are active.
+    this.activeOutput = [true];
+    // define the names of each active IO
+    this.nameInput = [""];
+    this.nameOutput = [""];
+
+    // State
+    // indicates how much calls per second is happening on this node
+    this.health = 0;
 }
 
 /**
@@ -939,7 +1025,7 @@ function objectWebServer() {
         res.sendFile(__dirname + "/dataPointInterfaces/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
-    // this is the newer form. 
+    // this is the newer form.
     // in future the data programming interface should be accessable directly like so. because the obj is reserved for the object content only
     webServer.get('/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
         res.sendFile(__dirname + "/dataPointInterfaces/" + req.params[0] + '/gui/' + req.params[1]);
