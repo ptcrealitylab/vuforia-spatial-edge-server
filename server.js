@@ -149,7 +149,7 @@ HybridObjectsWebFrontend.debug = globalVariables.debug;
  * It contains information about how to render the UI and how to process the internal data.
  **/
 
-function ObjectExp() {
+function Objects() {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
@@ -221,13 +221,27 @@ function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
     // defines if IO-Point is a logic block
-    this.isLogic = false;
+    this.isLogicNode = false;
     // this is storing the actual value representing the actual state of a IO Point
-    this.data = new Data();
-    // if isLogicBlock is true, then this.value = new LogicNode();
+    // todo check how a block is processed when its spanns more then one blocks.
+    this.blocks = {
+        "R0C0": new Block(),"R0C1": null,"R0C2": null,"R0C3": null,
+        "R1C0": null,"R1C1": null,"R1C2": null,"R1C3": null,
+        "R2C0": null,"R2C1": null,"R2C2": null,"R2C3": null,
+        "R3C0": null,"R3C1": null,"R3C2": null,"R3C3": null,
+    };
+    // nameInput are the names given for each IO
+    this.nameInput =  [false,false,false,false];
+    // nameOutput are the names given for each IO
+    this.nameOutput = [false,false,false,false];
 
     // Position X, Y, Scale and Matrix
     this.position = new Position();
+
+    // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
+    this.iconImage = null;
+    // if logicNode and lastSetting is not false then the last node setting will be shown instead of the crafting board.
+    this.lastSetting = false;
     // defines the dataPointInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the dataPointInterface folder.
     // todo plugin should be removed eventually
@@ -241,37 +255,23 @@ function Node() {
 }
 
 /**
- * @desc Constructor used to define every LogicBlock generated in Objects.
- * It does not need to contain its own ID since the ObjectValue contains the ID for the logicBlock.
- **/
-
-function LogicNode() {
-    // if true the last node setting will be shown instead of the crafting board.
-    this.showLastSettingFirst = false;
-    // if showLastSettingFirst is true then lastSetting is the name of the last node that was moved or set.
-    this.lastSetting = null;
-    // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
-    this.iconImage = null;
-    // nameInput are the names given for each IO
-    this.nameInput =  ["","","",""];
-    // nameOutput are the names given for each IO
-    this.nameOutput = ["","","",""];
-
-    // the array of possible connections within the logicBlock.
-    // if a block is set, a new Node instance is coppied in to the spot.
-    this.blocks = {
-        "0_0": null,"0_1": null,"0_2": null,"0_3": null,
-        "1_0": null,"1_1": null,"1_2": null,"1_3": null,
-        "2_0": null,"2_1": null,"2_2": null,"2_3": null,
-        "3_0": null,"3_1": null,"3_2": null,"3_3": null,
-    };
-}
-// todo check how a block is processed when its spanns more then one blocks.
-/**
  * @desc Constructor used to define every Node possitioned in the logicBlock.
  **/
 
 function Block() {
+    /// Data
+    // this array saves the actual state value. Array size depends on size of node.
+    this.data = [new Data()];
+
+    // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
+    // this would allow the the packages to be persistant. // todo discuss usability with Ben.
+    this.privateData = {};
+    this.publicData = {};
+
+    // State
+    // indicates how much calls per second is happening on this node
+    this.health = 0;
+
     // setup
     // The package ID is a specific UUID for all nodes of the same kind.
     // nodes are saved as ZIP files for sharing. The ZIP file has the same ID.
@@ -290,15 +290,6 @@ function Block() {
     // Name for the node, if no icon is available.
     this.nodeText = "node";
 
-    /// Data
-    // this array saves the actual state value. Array size depends on size of node.
-    this.data = [new Data()];
-
-    // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
-    // this would allow the the packages to be persistant. // todo discuss usability with Ben.
-    this.privateData = {};
-    this.publicData = {};
-
     // IO
     // define how many inputs are active.
     this.activeInput = [true];
@@ -308,9 +299,6 @@ function Block() {
     this.nameInput = [""];
     this.nameOutput = [""];
 
-    // State
-    // indicates how much calls per second is happening on this node
-    this.health = 0;
 }
 
 /**
@@ -319,7 +307,7 @@ function Block() {
 
 function Data() {
     // this is storing the actual value representing the actual state of a IO Point
-    this.data = null;
+    this.number = null;
     // if isLogicBlock is true, then this.value = new Logic();
 
     // Defines the kind of data send. At this point we have 3 active data modes and one future possibility.
@@ -392,7 +380,7 @@ function EditorSocket(socketID, object) {
  **********************************************************************************************************************/
 
 // This variable will hold the entire tree of all objects and their sub objects.
-var objectExp = {};
+var objects = {};
 
 
 var dataPointModules = {};   // Will hold all available data point interfaces
@@ -448,13 +436,13 @@ for (var i = 0; i < DataPointFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-HybridObjectsHardwareInterfaces.setup(objectExp, objectLookup, globalVariables, __dirname, dataPointModules, function (objectKey, nodeKey, blockKey, data, objectExp, dataPointModules) {
+HybridObjectsHardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, dataPointModules, function (objectKey, nodeKey, blockKey, number, mode, unit, unitMin, unitMax, objects, dataPointModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
 
-    sendMessagetoEditors({object: objectKey, node: nodeKey, block: blockKey, data: data});
-    objectEngine(objectKey, nodeKey, blockKey, objectExp, dataPointModules);
+    sendMessagetoEditors({object: objectKey, node: nodeKey, block: blockKey, data: {number:number, mode: mode, unit: unit, unitMin:unitMin, unitMax:unitMax}});
+    objectEngine(objectKey, nodeKey, blockKey, objects, dataPointModules);
 
 }, Node);
 cout("Done");
@@ -536,21 +524,21 @@ function loadHybridObjects() {
         cout("TempFolderName: " + tempFolderName);
 
         if (tempFolderName !== null) {
-            // fill objectExp with objects named by the folders in objects
-            objectExp[tempFolderName] = new ObjectExp();
-            objectExp[tempFolderName].folder = HybridObjectFolderList[i];
+            // fill objects with objects named by the folders in objects
+            objects[tempFolderName] = new Objects();
+            objects[tempFolderName].folder = HybridObjectFolderList[i];
 
             // add object to object lookup table
             HybridObjectsUtilities.writeObject(objectLookup, HybridObjectFolderList[i], tempFolderName);
 
             // try to read a saved previous state of the object
             try {
-                objectExp[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + HybridObjectFolderList[i] + "/object.json", "utf8"));
-                objectExp[tempFolderName].ip = ip.address();
+                objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + HybridObjectFolderList[i] + "/object.json", "utf8"));
+                objects[tempFolderName].ip = ip.address();
 
                 // adding the values to the arduino lookup table so that the serial connection can take place.
                 // todo this is maybe obsolete.
-                for (var nodeKey in objectExp[tempFolderName].nodes) {
+                for (var nodeKey in objects[tempFolderName].nodes) {
                     ArduinoLookupTable.push({object: HybridObjectFolderList[i], node: nodeKey});
                 }
                 // todo the sizes do not really save...
@@ -569,8 +557,8 @@ function loadHybridObjects() {
                 cout("---");
 
             } catch (e) {
-                objectExp[tempFolderName].ip = ip.address();
-                objectExp[tempFolderName].objectId = tempFolderName;
+                objects[tempFolderName].ip = ip.address();
+                objects[tempFolderName].objectId = tempFolderName;
                 cout("No saved data for: " + tempFolderName);
             }
 
@@ -595,8 +583,8 @@ function loadHybridObjects() {
 function startSystem() {
 
     // generating a udp heartbeat signal for every object that is hosted in this device
-    for (var key in objectExp) {
-        objectBeatSender(beatPort, key, objectExp[key].ip);
+    for (var key in objects) {
+        objectBeatSender(beatPort, key, objects[key].ip);
     }
 
     // receiving heartbeat messages and adding new objects to the knownObjects Array
@@ -662,14 +650,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     var HOST = '255.255.255.255';
 
     cout("creating beat for object: " + thisId);
-    objectExp[thisId].version = version;
-    var thisVersionNumber = parseInt(objectExp[thisId].version.replace(/\./g, ""));
+    objects[thisId].version = version;
+    var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ""));
 
-    if (typeof objectExp[thisId].tcs === "undefined") {
-        objectExp[thisId].tcs = 0;
+    if (typeof objects[thisId].tcs === "undefined") {
+        objects[thisId].tcs = 0;
     }
 
-    // ObjectExp
+    // Objects
     cout("with version number: " + thisVersionNumber);
 
     // json string to be send
@@ -677,7 +665,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         id: thisId,
         ip: thisIp,
         vn: thisVersionNumber,
-        tcs: objectExp[thisId].tcs
+        tcs: objects[thisId].tcs
     }));
 
     if (globalVariables.debug) console.log("UDP broadcasting on port: " + PORT);
@@ -685,14 +673,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             id: thisId,
             ip: thisIp,
             vn: thisVersionNumber,
-            tcs: objectExp[thisId].tcs
+            tcs: objects[thisId].tcs
         }));
     cout("UDP broadcasting on port: " + PORT);
     cout("Sending beats... Content: " + JSON.stringify({
             id: thisId,
             ip: thisIp,
             vn: thisVersionNumber,
-            tcs: objectExp[thisId].tcs
+            tcs: objects[thisId].tcs
         }));
 
     // creating the datagram
@@ -706,21 +694,21 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (!oneTimeOnly) {
         setInterval(function () {
             // send the beat#
-            if (thisId in objectExp) {
-                // cout("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objectExp[thisId].tcs}));
+            if (thisId in objects) {
+                // cout("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
-                    tcs: objectExp[thisId].tcs
+                    tcs: objects[thisId].tcs
                 }));
 
 // this is an uglly trick to sync each object with being a developer object
                 if (globalVariables.developer) {
-                    objectExp[thisId].developer = true;
+                    objects[thisId].developer = true;
                 } else {
-                    objectExp[thisId].developer = false;
+                    objects[thisId].developer = false;
                 }
                 //console.log(globalVariables.developer);
 
@@ -739,13 +727,13 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         // delay the signal with timeout so that not all objects send the beat in the same time.
         setTimeout(function () {
             // send the beat
-            if (thisId in objectExp) {
+            if (thisId in objects) {
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
-                    tcs: objectExp[thisId].tcs
+                    tcs: objects[thisId].tcs
                 }));
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
@@ -811,7 +799,7 @@ function objectBeatServer() {
         var msgContent;
         // check if object ping
         msgContent = JSON.parse(msg);
-        if (msgContent.hasOwnProperty("id") && msgContent.hasOwnProperty("ip") && !(msgContent.id in objectExp) && !(msgContent.id in knownObjects)) {
+        if (msgContent.hasOwnProperty("id") && msgContent.hasOwnProperty("ip") && !(msgContent.id in objects) && !(msgContent.id in knownObjects)) {
             knownObjects[msgContent.id] = msgContent.ip;
             cout("I found new Objects: " + JSON.stringify({
                     id: msgContent.id,
@@ -821,8 +809,8 @@ function objectBeatServer() {
         // check if action 'ping'
         if (msgContent.action === "ping") {
             cout(msgContent.action);
-            for (var key in objectExp) {
-                objectBeatSender(beatPort, key, objectExp[key].ip, true);
+            for (var key in objects) {
+                objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
     });
@@ -910,7 +898,7 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.get('/object/*/', function (req, res) {
         //  cout("get 7");
-        res.json(objectExp[req.params[0]]);
+        res.json(objects[req.params[0]]);
     });
 
     // delete a link. *1 is the object *2 is the link id
@@ -918,21 +906,21 @@ function objectWebServer() {
     webServer.delete('/object/*/link/*/', function (req, res) {
 
         var thisLinkId = req.params[1];
-        var fullEntry = objectExp[req.params[0]].links[thisLinkId];
+        var fullEntry = objects[req.params[0]].links[thisLinkId];
         var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objectExp[req.params[0]].links[thisLinkId];
+        delete objects[req.params[0]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
-        // cout(objectExp[req.params[0]].links);
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
-        HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
+        // cout(objects[req.params[0]].links);
+        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
 
         var checkIfIpIsUsed = false;
         var checkerKey, subCheckerKey;
-        for (checkerKey in objectExp) {
-            for (subCheckerKey in objectExp[checkerKey].links) {
-                if (objectExp[checkerKey].links[subCheckerKey].objectB === fullEntry.objectB) {
+        for (checkerKey in objects) {
+            for (subCheckerKey in objects[checkerKey].links) {
+                if (objects[checkerKey].links[subCheckerKey].objectB === fullEntry.objectB) {
                     checkIfIpIsUsed = true;
                 }
             }
@@ -950,32 +938,32 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        if (objectExp.hasOwnProperty(req.params[0])) {
+        if (objects.hasOwnProperty(req.params[0])) {
 
 
-            objectExp[req.params[0]].links[req.params[1]] = req.body;
+            objects[req.params[0]].links[req.params[1]] = req.body;
 
-            var thisObject = objectExp[req.params[0]].links[req.params[1]];
+            var thisObject = objects[req.params[0]].links[req.params[1]];
 
             thisObject.loop = false;
 
 
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisObject.nodeA === thisObject.nodeB && thisObject.objectA === thisObject.objectB) {
+            if (thisObject.objectA === thisObject.objectB && thisObject.nodeA === thisObject.nodeB && thisObject.blockA === thisObject.blockB) {
                 thisObject.loop = true;
             }
 
             if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
+                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
                 updateStatus = "added";
                 cout("added link: " + req.params[1]);
                 // check if there are new connections associated with the new link.
                 socketUpdater();
 
                 // write the object state to the permanent storage.
-                HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
+                HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
             } else {
                 updateStatus = "found endless Loop";
             }
@@ -1000,9 +988,9 @@ function objectWebServer() {
 
             var tempObject = {};
             if (thisObject === thisValue) {
-                tempObject = objectExp[thisObject];
+                tempObject = objects[thisObject];
             } else {
-                tempObject = objectExp[thisObject].nodes[thisValue];
+                tempObject = objects[thisObject].nodes[thisValue];
             }
 
             // check that the numbers are valid numbers..
@@ -1016,9 +1004,9 @@ function objectWebServer() {
             }
 
             if ((typeof req.body.position.x === "number" && typeof req.body.position.y === "number" && typeof req.body.position.scale === "number") || (typeof req.body.position.matrix === "object" )) {
-                HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
+                HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-                actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objectExp[thisObject].ip}}));
+                actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
                 updateStatus = "added object";
             }
 
@@ -1049,12 +1037,12 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
             // cout("get 12");
-            res.send(HybridObjectsWebFrontend.uploadInfoText(req.params.id, objectLookup, objectExp, knownObjects, sockets));
+            res.send(HybridObjectsWebFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
             // cout("get 12");
-            res.send(HybridObjectsWebFrontend.uploadInfoContent(req.params.id, objectLookup, objectExp, knownObjects, sockets));
+            res.send(HybridObjectsWebFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         // sends the content page for the object :id
@@ -1068,7 +1056,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
             //   cout("get 14");
-            res.send(HybridObjectsWebFrontend.uploadTargetText(req.params.id, objectLookup, objectExp, globalVariables.debug));
+            res.send(HybridObjectsWebFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
         });
 
@@ -1080,7 +1068,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(HybridObjectsWebFrontend.printFolder(objectExp, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+            res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
         });
 
         // request a zip-file with the object stored inside. *1 is the object
@@ -1089,7 +1077,7 @@ function objectWebServer() {
             //  cout("get 3");
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=HybridobjectBackup.zip'
+                'Content-disposition': 'attachment; filename=HybridObjectBackup.zip'
             });
 
             var Archiver = require('archiver');
@@ -1145,7 +1133,7 @@ function objectWebServer() {
                     HybridObjectsUtilities.createFolder(req.body.folder, __dirname, globalVariables.debug);
 
                 }
-                res.send(HybridObjectsWebFrontend.printFolder(objectExp, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
             if (req.body.action === "delete") {
                 var folderDel = __dirname + '/objects/' + req.body.folder;
@@ -1169,7 +1157,7 @@ function objectWebServer() {
                 var tempFolderName2 = HybridObjectsUtilities.readObject(objectLookup, req.body.folder);// req.body.folder + thisMacAddress;
 
                 if (tempFolderName2 !== null) {
-                    if (tempFolderName2 in objectExp) {
+                    if (tempFolderName2 in objects) {
                         cout("ist noch da");
                     } else {
                         cout("ist weg");
@@ -1181,11 +1169,11 @@ function objectWebServer() {
                     }
 
                     // remove object from tree
-                    delete objectExp[tempFolderName2];
+                    delete objects[tempFolderName2];
                     delete knownObjects[tempFolderName2];
                     delete objectLookup[req.body.folder];
 
-                    if (tempFolderName2 in objectExp) {
+                    if (tempFolderName2 in objects) {
                         cout("ist noch da");
                     } else {
                         cout("ist weg");
@@ -1199,7 +1187,7 @@ function objectWebServer() {
 
                 cout("i deleted: " + tempFolderName2);
 
-                res.send(HybridObjectsWebFrontend.printFolder(objectExp, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
 
         });
@@ -1257,7 +1245,7 @@ function objectWebServer() {
                                 cout('Finished extracting');
                                 cout("have created a new object");
                                 //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
-                                createObjectFromTarget(ObjectExp, objectExp, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                createObjectFromTarget(Objects, objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                 //todo add object to the beatsender.
 
@@ -1330,7 +1318,7 @@ function objectWebServer() {
                     var tempFolderName2 = HybridObjectsUtilities.readObject(objectLookup, req.body.folder);//req.body.folder + thisMacAddress;
                     // remove object from tree
                     if (tempFolderName2 !== null) {
-                        delete objectExp[tempFolderName2];
+                        delete objects[tempFolderName2];
                         delete knownObjects[tempFolderName2];
                     }
 
@@ -1413,15 +1401,15 @@ function objectWebServer() {
 
                             var thisObjectId = HybridObjectsUtilities.readObject(objectLookup, req.params.id);
 
-                            if (typeof  objectExp[thisObjectId] !== "undefined") {
-                                var thisObject = objectExp[thisObjectId];
+                            if (typeof  objects[thisObjectId] !== "undefined") {
+                                var thisObject = objects[thisObjectId];
 
 
-                                thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objectExp, fileList);
+                                thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objects, fileList);
 
-                                HybridObjectsUtilities.writeObjectToFile(objectExp, thisObjectId, __dirname);
+                                HybridObjectsUtilities.writeObjectToFile(objects, thisObjectId, __dirname);
 
-                                objectBeatSender(beatPort, thisObjectId, objectExp[thisObjectId].ip, true);
+                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
 
                             }
@@ -1464,7 +1452,7 @@ function objectWebServer() {
 
                                         cout("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
-                                        createObjectFromTarget(ObjectExp, objectExp, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                        createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
                                         cout("have created a new object");
@@ -1478,15 +1466,15 @@ function objectWebServer() {
 
                                         var thisObjectId = HybridObjectsUtilities.readObject(objectLookup, req.params.id);
 
-                                        if (typeof  objectExp[thisObjectId] !== "undefined") {
-                                            var thisObject = objectExp[thisObjectId];
+                                        if (typeof  objects[thisObjectId] !== "undefined") {
+                                            var thisObject = objects[thisObjectId];
 
 
-                                            thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objectExp, fileList);
+                                            thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objects, fileList);
 
-                                            HybridObjectsUtilities.writeObjectToFile(objectExp, thisObjectId, __dirname);
+                                            HybridObjectsUtilities.writeObjectToFile(objects, thisObjectId, __dirname);
 
-                                            objectBeatSender(beatPort, thisObjectId, objectExp[thisObjectId].ip, true);
+                                            objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                         }
 
@@ -1532,9 +1520,9 @@ function objectWebServer() {
 }
 
 // TODO this should move to the utilities section
-//createObjectFromTarget(ObjectExp, objectExp, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+//createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
-function createObjectFromTarget(ObjectExp, objectExp, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
+function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
     cout("I can start");
 
     var folder = __dirname + '/objects/' + folderVar + '/';
@@ -1547,24 +1535,24 @@ function createObjectFromTarget(ObjectExp, objectExp, folderVar, __dirname, obje
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
-                objectExp[objectIDXML] = new ObjectExp();
-                objectExp[objectIDXML].folder = folderVar;
-                objectExp[objectIDXML].objectId = objectIDXML;
+                objects[objectIDXML] = new Objects();
+                objects[objectIDXML].folder = folderVar;
+                objects[objectIDXML].objectId = objectIDXML;
 
                 cout("this should be the IP" + objectIDXML);
 
                 try {
-                    objectExp[objectIDXML] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + folderVar + "/object.json", "utf8"));
-                    objectExp[objectIDXML].ip = ip.address();
-                    cout("testing: " + objectExp[objectIDXML].ip);
+                    objects[objectIDXML] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + folderVar + "/object.json", "utf8"));
+                    objects[objectIDXML].ip = ip.address();
+                    cout("testing: " + objects[objectIDXML].ip);
                 } catch (e) {
-                    objectExp[objectIDXML].ip = ip.address();
-                    cout("testing: " + objectExp[objectIDXML].ip);
+                    objects[objectIDXML].ip = ip.address();
+                    cout("testing: " + objects[objectIDXML].ip);
                     cout("No saved data for: " + objectIDXML);
                 }
 
                 if (HybridObjectsUtilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                    delete objectExp[HybridObjectsUtilities.readObject(objectLookup, folderVar)];
+                    delete objects[HybridObjectsUtilities.readObject(objectLookup, folderVar)];
                 }
                 HybridObjectsUtilities.writeObject(objectLookup, folderVar, objectIDXML);
                 // entering the obejct in to the lookup table
@@ -1577,16 +1565,16 @@ function createObjectFromTarget(ObjectExp, objectExp, folderVar, __dirname, obje
                 }
 
                 cout("weiter im text " + objectIDXML);
-                HybridObjectsUtilities.writeObjectToFile(objectExp, objectIDXML, __dirname);
+                HybridObjectsUtilities.writeObjectToFile(objects, objectIDXML, __dirname);
 
-                objectBeatSender(beatPort, objectIDXML, objectExp[objectIDXML].ip);
+                objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
             }
         }
     }
 }
 
 /**
- * @desc Check for incoming MSG from other objects or the User. Make changes to the nodes if changes occur.
+ * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
 
 function socketServer(params) {
@@ -1595,7 +1583,7 @@ function socketServer(params) {
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
-            if (objectExp.hasOwnProperty(JSON.parse(msg).object)) {
+            if (objects.hasOwnProperty(JSON.parse(msg).object)) {
                 cout("reality editor subscription for object: " + JSON.parse(msg).object);
                 cout("the letated socket has the ID: " + socket.id);
 
@@ -1607,21 +1595,32 @@ function socketServer(params) {
         socket.on('object', function (msg) {
 
             var msgContent = JSON.parse(msg);
+            
+            if ((msgContent.object in objects) && typeof msgContent.data !== "undefined") {
+                if (msgContent.node in objects[msgContent.obj].nodes) {
+                    if (msgContent.block in objects[msgContent.obj].nodes[msgContent.node].blocks) {
 
-            if ((msgContent.object in objectExp) && typeof msgContent.data !== "undefined") {
-                if (msgContent.node in objectExp[msgContent.obj].nodes) {
+                        var objSend = objects[msgContent.object].nodes[msgContent.node].blocks[msgContent.block];
+                        
+                        var key;
+                        for(key in msgContent.data)
+                        {
+                            objSend.data[key] = msgContent.data[key];
+                        }
 
-                    var objSend = objectExp[msgContent.object].nodes[msgContent.node];
-                    objSend.data = msgContent.data;
+                        if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
+                            hardwareInterfaceModules[objSend.type].send(msgContent.object, msgContent.node, msgContent.block, objSend.data, objSend.type);
+                        }
 
-                    objectExp[msgContent.object].nodes[msgContent.node].data = msgContent.data;
-
-                    if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-                        hardwareInterfaceModules[objSend.type].send(msgContent.object, msgContent.node, objSend.data.data, objSend.data.mode, objSend.type);
+                        sendMessagetoEditors({
+                            object: msgContent.object,
+                            node: msgContent.node,
+                            block: msgContent.block,
+                            data: objSend.data
+                        });
+                        objectEngine(msgContent.object, msgContent.node, msgContent.block, objects, dataPointModules);
                     }
 
-                    sendMessagetoEditors({object: msgContent.object, node: msgContent.node, data: msgContent.data});
-                    objectEngine(msgContent.object, msgContent.node, objectExp, dataPointModules);
                 }
             }
         });
@@ -1652,14 +1651,18 @@ function sendMessagetoEditors(msgContent) {
 
 function messagetoSend(msgContent, socketID) {
 
-    if (objectExp.hasOwnProperty(msgContent.object)) {
-        if (objectExp[msgContent.object].nodes.hasOwnProperty(msgContent.node)) {
+    if (objects.hasOwnProperty(msgContent.object)) {
+        if (objects[msgContent.object].nodes.hasOwnProperty(msgContent.node)) {
+            if (objects[msgContent.object].nodes[msgContent.node].blocks.hasOwnProperty(msgContent.block)) {
 
-            io.sockets.connected[socketID].emit('object', JSON.stringify({
-                object: msgContent.object,
-                object: msgContent.node,
-                data: objectExp[msgContent.object].nodes[msgContent.node].data
-            }));//       socket.emit('object', msgToSend);
+                io.sockets.connected[socketID].emit('object', JSON.stringify({
+                    object: msgContent.object,
+                    node: msgContent.node,
+                    block: msgContent.block,
+                    data: objects[msgContent.object].nodes[msgContent.node].blocks[msgContent.block].data
+                }));//       socket.emit('object', msgToSend);
+
+            }
         }
     }
 }
@@ -1675,18 +1678,20 @@ function messagetoSend(msgContent, socketID) {
 
 // dependencies afterPluginProcessing
 
-function objectEngine(object, node, objectExp, dataPointModules) {
+function objectEngine(object, node, block, objects, dataPointModules) {
     // cout("engine started");
-    var key;
-    for (key in objectExp[object].links) {
-        if (objectExp[object].links[key].nodeA === node) {
+    var linkKey;
+    for (linkKey in objects[object].links) {
+        if (objects[object].links[linkKey].nodeA === node) {
+            if(objects[object].links[linkKey].blockA === block) {
 
-            var thisData = objectExp[object].nodes[node];
+                var dataBlock = objects[object].nodes[node].blocks[block];
 
-            if ((thisData.plugin in dataPointModules)) {
-                dataPointModules[thisData.plugin](object, key, thisData.data, function (object, node, data) {
-                    afterPluginProcessing(object, node, data);
-                });
+                if ((dataBlock.plugin in dataPointModules)) {
+                    dataPointModules[dataBlock.plugin](object, linkKey, dataBlock.data, function (object, linkId, processedData) {
+                        enginePostProcessing(object, linkId, processedData);
+                    });
+                }
             }
         }
     }
@@ -1698,25 +1703,31 @@ function objectEngine(object, node, objectExp, dataPointModules) {
  * @param {String} IDinLinkArray Id to search for in the Link Array.
  **/
 
-function afterPluginProcessing(object, node, data) {
-    var link = objectExp[object].links[node];
+function enginePostProcessing(object, linkId, processedData) {
+    var link = objects[object].links[linkId];
 
-    if (!(link.objectB in objectExp)) {
+    if (!(link.objectB in objects)) {
 
-        socketSender(object, node, data);
+        socketSender(object, linkId, processedData);
     }
     else {
 
-        var objSend = objectExp[link.objectB].nodes[link.nodeB];
-        objSend.data = data;
+        var objSend = objects[link.objectB].nodes[link.nodeB];
+        var objDataSend = objSend.blocks[link.blockB];
+
+        var key;
+        for(key in processedData)
+        {
+            objDataSend.data[key] = processedData[key];
+        }
 
         if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-            hardwareInterfaceModules[objSend.type].send(link.objectB, link.nodeB, objSend.data, objSend.type);
+            hardwareInterfaceModules[objSend.type].send(link.objectB, link.nodeB, link.blockB, objDataSend.data, objSend.type);
         }
         // send data to listening editor
 
-        sendMessagetoEditors({object: link.objectB, node: link.nodeB, data: objSend.value});
-        objectEngine(link.objectB, link.nodeB, objectExp, dataPointModules);
+        sendMessagetoEditors({object: link.objectB, node: link.nodeB, block: link.blockB, data: objDataSend.data});
+        objectEngine(link.objectB, link.nodeB, link.blockB, objects, dataPointModules);
     }
 }
 
@@ -1724,12 +1735,12 @@ function afterPluginProcessing(object, node, data) {
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray
  **/
 
-function socketSender(object, node, data) {
-    var link = objectExp[object].links[node];
-    var msg = JSON.stringify({object: link.objectB, node: link.nodeB, data: data});
+function socketSender(object, linkId, data) {
+    var link = objects[object].links[linkId];
+    var msg = JSON.stringify({object: link.objectB, node: link.nodeB, block: link.blockB, data: data});
 
     //todo this should be rewritten with handling an array of connected objects similar the connected Reality Editors
-    if (!(link.objectB in objectExp)) {
+    if (!(link.objectB in objects)) {
         try {
             var objIp = knownObjects[link.objectB];
             var presentObjectConnection = socketArray[objIp].io;
@@ -1738,7 +1749,7 @@ function socketSender(object, node, data) {
             }
         }
         catch (e) {
-            cout("can not emit from link ID:" + node + "and object: " + object);
+            cout("can not emit from link ID:" + linkId + "and object: " + object);
         }
     }
 }
@@ -1763,9 +1774,9 @@ function socketUpdater() {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
-        for (objectKey in objectExp) {
-            for (nodeKey in objectExp[objectKey].links) {
-                var thisIp = knownObjects[objectExp[objectKey].links[nodeKey].objectB];
+        for (objectKey in objects) {
+            for (nodeKey in objects[objectKey].links) {
+                var thisIp = knownObjects[objects[objectKey].links[nodeKey].objectB];
 
                 if (thisIp === sockKey) {
                     socketIsUsed = true;
@@ -1776,11 +1787,11 @@ function socketUpdater() {
             // delete socketArray[sockKey];
         }
     }
-    for (objectKey in objectExp) {
-        for (nodeKey in objectExp[objectKey].links) {
-            var link = objectExp[objectKey].links[nodeKey];
+    for (objectKey in objects) {
+        for (nodeKey in objects[objectKey].links) {
+            var link = objects[objectKey].links[nodeKey];
 
-            if (!(link.objectB in objectExp) && (link.objectB in knownObjects)) {
+            if (!(link.objectB in objects) && (link.objectB in knownObjects)) {
 
 
                 var ip = knownObjects[link.objectB];

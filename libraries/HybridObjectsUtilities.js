@@ -143,13 +143,13 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
 /**
  * Saves the HybridObject as "object.json"
  *
- * @param {Object[]} objectExp - The array of objects
- * @param {string}   object    - The key used to look up the object in the objectExp array
+ * @param {Object[]} objects - The array of objects
+ * @param {string}   object    - The key used to look up the object in the objects array
  * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides. 
  **/
-exports.writeObjectToFile = function (objectExp, object, dirnameO) {
-    var outputFilename = dirnameO + '/objects/' + objectExp[object].folder + '/object.json';
-    fs.writeFile(outputFilename, JSON.stringify(objectExp[object], null, '\t'), function (err) {
+exports.writeObjectToFile = function (objects, object, dirnameO) {
+    var outputFilename = dirnameO + '/objects/' + objects[object].folder + '/object.json';
+    fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
         if (err) {
             console.log(err);
         } else {
@@ -264,12 +264,12 @@ function itob62(i) {
 
 /**
  * @desc Generates a checksum of all files hand over with fileArray
- * @param objectExp hand over the overall object list
+ * @param objects hand over the overall object list
  * @param fileArray The array that represents all files that should be checksumed
  * @return
  **/
 
-exports.genereateChecksums = function (objectExp,fileArray) {
+exports.genereateChecksums = function (objects,fileArray) {
         crc16reset();
         var checksumText;
         for(i = 0; i< fileArray.length; i++)
