@@ -95,7 +95,7 @@ const version = "1.7.0";           // the version of this server
 // All objects are stored in this folder:
 const objectPath = __dirname + "/objects";
 // All visual UI representations for IO Points are stored in this folder:
-const modulePath = __dirname + "/dataPointInterfaces";
+const modulePath = __dirname + "/nodes";
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const internalPath = __dirname + "/hardwareInterfaces";
 // The web service level on wich objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
@@ -126,19 +126,19 @@ var cheerio = require('cheerio');
 // additional files containing project code
 
 // This file hosts all kinds of utilities programmed for the server
-var HybridObjectsUtilities = require(__dirname + '/libraries/HybridObjectsUtilities');
+var utilities = require(__dirname + '/libraries/utilities');
 // The web frontend a developer is able to see when creating new user interfaces.
-var HybridObjectsWebFrontend = require(__dirname + '/libraries/HybridObjectsWebFrontend');
+var webFrontend = require(__dirname + '/libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareInterfaces folder.
-var HybridObjectsHardwareInterfaces = require(__dirname + '/libraries/HybridObjectsHardwareInterfaces');
+var hardwareInterfaces = require(__dirname + '/libraries/hardwareInterfaces');
 
 var util = require("util"); // node.js utility functionality
 var events = require("events"); // node.js events used for the socket events.
 
 
 // Set web frontend debug to inherit from global debug
-HybridObjectsWebFrontend.debug = globalVariables.debug;
+webFrontend.debug = globalVariables.debug;
 
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
@@ -242,8 +242,8 @@ function Node() {
     this.iconImage = null;
     // if logicNode and lastSetting is not false then the last node setting will be shown instead of the crafting board.
     this.lastSetting = false;
-    // defines the dataPointInterface that is used to process data of this type. It also defines the visual representation
-    // in the Reality Editor. Such data points interfaces can be found in the dataPointInterface folder.
+    // defines the nodeInterface that is used to process data of this type. It also defines the visual representation
+    // in the Reality Editor. Such data points interfaces can be found in the nodeInterface folder.
     // todo plugin should be removed eventually
     this.plugin = "default";
     // this is an optional parameter object for the plugin. As this parameter is stored with the object on disk. It can be used
@@ -383,7 +383,7 @@ function EditorSocket(socketID, object) {
 var objects = {};
 
 
-var dataPointModules = {};   // Will hold all available data point interfaces
+var nodeModules = {};   // Will hold all available data point interfaces
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
@@ -417,32 +417,32 @@ var sockets = {
 
 cout("Starting the Server");
 
-// get a list with the names for all IO-Points, based on the folder names in the dataPointInterfaces folder folder.
+// get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
 // Each folder represents on IO-Point.
-var DataPointFolderList = fs.readdirSync(modulePath).filter(function (file) {
+var nodeFolderList = fs.readdirSync(modulePath).filter(function (file) {
     return fs.statSync(modulePath + '/' + file).isDirectory();
 });
 
 // Remove eventually hidden files from the Hybrid Object list.
-while (DataPointFolderList[0][0] === ".") {
-    DataPointFolderList.splice(0, 1);
+while (nodeFolderList[0][0] === ".") {
+    nodeFolderList.splice(0, 1);
 }
 
 // Create a objects list with all IO-Points code.
-for (var i = 0; i < DataPointFolderList.length; i++) {
-    dataPointModules[DataPointFolderList[i]] = require(modulePath + '/' + DataPointFolderList[i] + "/index.js").render;
+for (var i = 0; i < nodeFolderList.length; i++) {
+    nodeModules[nodeFolderList[i]] = require(modulePath + '/' + nodeFolderList[i] + "/index.js").render;
 }
 
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-HybridObjectsHardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, dataPointModules, function (objectKey, nodeKey, blockKey, number, mode, unit, unitMin, unitMax, objects, dataPointModules) {
+hardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, nodeModules, function (objectKey, nodeKey, blockKey, number, mode, unit, unitMin, unitMax, objects, nodeModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
 
     sendMessagetoEditors({object: objectKey, node: nodeKey, block: blockKey, data: {number:number, mode: mode, unit: unit, unitMin:unitMin, unitMax:unitMax}});
-    objectEngine(objectKey, nodeKey, blockKey, objects, dataPointModules);
+    objectEngine(objectKey, nodeKey, blockKey, objects, nodeModules);
 
 }, Node);
 cout("Done");
@@ -465,7 +465,7 @@ while (hardwareInterfacesFolderList[0][0] === ".") {
     hardwareInterfacesFolderList.splice(0, 1);
 }
 
-// add all plugins to the dataPointModules object. Iterate backwards because splice works inplace
+// add all plugins to the nodeModules object. Iterate backwards because splice works inplace
 for (var i = hardwareInterfacesFolderList.length - 1; i >= 0; i--) {
     //check if hardwareInterface is enabled, if it is, add it to the hardwareInterfaceModules
     if (require(internalPath + "/" + hardwareInterfacesFolderList[i] + "/index.js").enabled) {
@@ -520,7 +520,7 @@ function loadHybridObjects() {
     }
 
     for (var i = 0; i < HybridObjectFolderList.length; i++) {
-        var tempFolderName = HybridObjectsUtilities.getObjectIdFromTarget(HybridObjectFolderList[i], __dirname);
+        var tempFolderName = utilities.getObjectIdFromTarget(HybridObjectFolderList[i], __dirname);
         cout("TempFolderName: " + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -529,7 +529,7 @@ function loadHybridObjects() {
             objects[tempFolderName].folder = HybridObjectFolderList[i];
 
             // add object to object lookup table
-            HybridObjectsUtilities.writeObject(objectLookup, HybridObjectFolderList[i], tempFolderName);
+            utilities.writeObject(objectLookup, HybridObjectFolderList[i], tempFolderName);
 
             // try to read a saved previous state of the object
             try {
@@ -546,7 +546,7 @@ function loadHybridObjects() {
 
                 // todo new Data points are never writen in to the file. So this full code produces no value
                 // todo Instead keep the board clear=false forces to read the data points from the arduino every time.
-                // todo this is not true the datapoints are writen in to the object. the sizes are wrong
+                // todo this is not true the nodes are writen in to the object. the sizes are wrong
                 // if not uncommented the code does not connect to the arduino side.
                 // data comes always from the arduino....
                 // clear = true;
@@ -856,7 +856,7 @@ function objectWebServer() {
         var urlArray = req.originalUrl.split("/");
 
         console.log(urlArray);
-        if ((req.method === "GET" && urlArray[2] !== "dataPointInterfaces") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.html?$/))) {
+        if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.html?$/))) {
 
             var fileName = __dirname + "/objects" + req.url;
 
@@ -913,7 +913,7 @@ function objectWebServer() {
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
         actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
-        HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
+        utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
 
         var checkIfIpIsUsed = false;
@@ -963,7 +963,7 @@ function objectWebServer() {
                 socketUpdater();
 
                 // write the object state to the permanent storage.
-                HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
             } else {
                 updateStatus = "found endless Loop";
             }
@@ -973,7 +973,7 @@ function objectWebServer() {
         }
     });
 
-    // changing the size and possition of an item. *1 is the object *2 is the datapoint id
+    // changing the size and possition of an item. *1 is the object *2 is the node id
     // ****************************************************************************************************************
 
     if (globalVariables.developer === true) {
@@ -995,7 +995,7 @@ function objectWebServer() {
 
             // check that the numbers are valid numbers..
             if (typeof req.body.position.x === "number" && typeof req.body.position.y === "number" && typeof req.body.position.scale === "number") {
-                // if the object is equal the datapoint id, the item is actually the object it self.
+                // if the object is equal the node id, the item is actually the object it self.
                 tempObject.position = req.body.position;
 
                 if (typeof req.body.matrix !== "object") {
@@ -1004,7 +1004,7 @@ function objectWebServer() {
             }
 
             if ((typeof req.body.position.x === "number" && typeof req.body.position.y === "number" && typeof req.body.position.scale === "number") || (typeof req.body.position.matrix === "object" )) {
-                HybridObjectsUtilities.writeObjectToFile(objects, req.params[0], __dirname);
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
                 actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
                 updateStatus = "added object";
@@ -1014,16 +1014,10 @@ function objectWebServer() {
         });
     }
 
-    // Send the programming interface static web content [This is the older form. Consider it deprecated.
-    // ****************************************************************************************************************
-    webServer.get('/obj/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(__dirname + "/dataPointInterfaces/" + req.params[0] + '/gui/' + req.params[1]);
-    });
-
     // this is the newer form.
     // in future the data programming interface should be accessable directly like so. because the obj is reserved for the object content only
-    webServer.get('/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(__dirname + "/dataPointInterfaces/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
     // ****************************************************************************************************************
@@ -1037,26 +1031,26 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
             // cout("get 12");
-            res.send(HybridObjectsWebFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
+            res.send(webFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
             // cout("get 12");
-            res.send(HybridObjectsWebFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
+            res.send(webFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         // sends the content page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'content/:id', function (req, res) {
             // cout("get 13");
-            res.send(HybridObjectsWebFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
+            res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
         });
 
         // sends the target page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
             //   cout("get 14");
-            res.send(HybridObjectsWebFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
+            res.send(webFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
         });
 
@@ -1068,7 +1062,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+            res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
         });
 
         // request a zip-file with the object stored inside. *1 is the object
@@ -1118,7 +1112,7 @@ function objectWebServer() {
                     fs.unlinkSync(folderDel);
                 }
 
-                res.send(HybridObjectsWebFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
+                res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
             }
 
         });
@@ -1130,10 +1124,10 @@ function objectWebServer() {
                 // cout(req.body);
                 if (req.body.folder !== "") {
 
-                    HybridObjectsUtilities.createFolder(req.body.folder, __dirname, globalVariables.debug);
+                    utilities.createFolder(req.body.folder, __dirname, globalVariables.debug);
 
                 }
-                res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
             if (req.body.action === "delete") {
                 var folderDel = __dirname + '/objects/' + req.body.folder;
@@ -1154,7 +1148,7 @@ function objectWebServer() {
 
                 deleteFolderRecursive(folderDel);
 
-                var tempFolderName2 = HybridObjectsUtilities.readObject(objectLookup, req.body.folder);// req.body.folder + thisMacAddress;
+                var tempFolderName2 = utilities.readObject(objectLookup, req.body.folder);// req.body.folder + thisMacAddress;
 
                 if (tempFolderName2 !== null) {
                     if (tempFolderName2 in objects) {
@@ -1187,7 +1181,7 @@ function objectWebServer() {
 
                 cout("i deleted: " + tempFolderName2);
 
-                res.send(HybridObjectsWebFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
 
         });
@@ -1315,7 +1309,7 @@ function objectWebServer() {
                         }
                     }
 
-                    var tempFolderName2 = HybridObjectsUtilities.readObject(objectLookup, req.body.folder);//req.body.folder + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.folder);//req.body.folder + thisMacAddress;
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         delete objects[tempFolderName2];
@@ -1324,7 +1318,7 @@ function objectWebServer() {
 
                     cout("i deleted: " + tempFolderName2);
 
-                    res.send(HybridObjectsWebFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
+                    res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
                 }
 
 
@@ -1376,7 +1370,7 @@ function objectWebServer() {
                             fs.renameSync(folderD + "/" + filename, folderD + "/target/target.jpg");
 
 
-                            var objectName = req.params.id + HybridObjectsUtilities.uuidTime();
+                            var objectName = req.params.id + utilities.uuidTime();
 
                             var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                                 '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
@@ -1399,15 +1393,15 @@ function objectWebServer() {
 
                             var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
 
-                            var thisObjectId = HybridObjectsUtilities.readObject(objectLookup, req.params.id);
+                            var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                             if (typeof  objects[thisObjectId] !== "undefined") {
                                 var thisObject = objects[thisObjectId];
 
 
-                                thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objects, fileList);
+                                thisObject.tcs = utilities.genereateChecksums(objects, fileList);
 
-                                HybridObjectsUtilities.writeObjectToFile(objects, thisObjectId, __dirname);
+                                utilities.writeObjectToFile(objects, thisObjectId, __dirname);
 
                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -1464,15 +1458,15 @@ function objectWebServer() {
 
                                         var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
 
-                                        var thisObjectId = HybridObjectsUtilities.readObject(objectLookup, req.params.id);
+                                        var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                         if (typeof  objects[thisObjectId] !== "undefined") {
                                             var thisObject = objects[thisObjectId];
 
 
-                                            thisObject.tcs = HybridObjectsUtilities.genereateChecksums(objects, fileList);
+                                            thisObject.tcs = utilities.genereateChecksums(objects, fileList);
 
-                                            HybridObjectsUtilities.writeObjectToFile(objects, thisObjectId, __dirname);
+                                            utilities.writeObjectToFile(objects, thisObjectId, __dirname);
 
                                             objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -1530,7 +1524,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 
     if (fs.existsSync(folder)) {
         cout("folder exists");
-        var objectIDXML = HybridObjectsUtilities.getObjectIdFromTarget(folderVar, __dirname);
+        var objectIDXML = utilities.getObjectIdFromTarget(folderVar, __dirname);
         cout("got ID: objectIDXML");
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
@@ -1551,10 +1545,10 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                     cout("No saved data for: " + objectIDXML);
                 }
 
-                if (HybridObjectsUtilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                    delete objects[HybridObjectsUtilities.readObject(objectLookup, folderVar)];
+                if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+                    delete objects[utilities.readObject(objectLookup, folderVar)];
                 }
-                HybridObjectsUtilities.writeObject(objectLookup, folderVar, objectIDXML);
+                utilities.writeObject(objectLookup, folderVar, objectIDXML);
                 // entering the obejct in to the lookup table
 
                 // ask the object to reinitialize
@@ -1565,7 +1559,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 }
 
                 cout("weiter im text " + objectIDXML);
-                HybridObjectsUtilities.writeObjectToFile(objects, objectIDXML, __dirname);
+                utilities.writeObjectToFile(objects, objectIDXML, __dirname);
 
                 objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
             }
@@ -1618,7 +1612,7 @@ function socketServer(params) {
                             block: msgContent.block,
                             data: objSend.data
                         });
-                        objectEngine(msgContent.object, msgContent.node, msgContent.block, objects, dataPointModules);
+                        objectEngine(msgContent.object, msgContent.node, msgContent.block, objects, nodeModules);
                     }
 
                 }
@@ -1678,7 +1672,7 @@ function messagetoSend(msgContent, socketID) {
 
 // dependencies afterPluginProcessing
 
-function objectEngine(object, node, block, objects, dataPointModules) {
+function objectEngine(object, node, block, objects, nodeModules) {
     // cout("engine started");
     var linkKey;
     for (linkKey in objects[object].links) {
@@ -1687,8 +1681,8 @@ function objectEngine(object, node, block, objects, dataPointModules) {
 
                 var dataBlock = objects[object].nodes[node].blocks[block];
 
-                if ((dataBlock.plugin in dataPointModules)) {
-                    dataPointModules[dataBlock.plugin](object, linkKey, dataBlock.data, function (object, linkId, processedData) {
+                if ((dataBlock.plugin in nodeModules)) {
+                    nodeModules[dataBlock.plugin](object, linkKey, dataBlock.data, function (object, linkId, processedData) {
                         enginePostProcessing(object, linkId, processedData);
                     });
                 }
@@ -1727,7 +1721,7 @@ function enginePostProcessing(object, linkId, processedData) {
         // send data to listening editor
 
         sendMessagetoEditors({object: link.objectB, node: link.nodeB, block: link.blockB, data: objDataSend.data});
-        objectEngine(link.objectB, link.nodeB, link.blockB, objects, dataPointModules);
+        objectEngine(link.objectB, link.nodeB, link.blockB, objects, nodeModules);
     }
 }
 

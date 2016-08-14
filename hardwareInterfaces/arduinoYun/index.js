@@ -48,7 +48,7 @@ if (exports.enabled) {
     var fs = require('fs');
     var _ = require('lodash');
     var serialport = require("serialport");
-    var server = require(__dirname + '/../../libraries/HybridObjectsHardwareInterfaces');
+    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
 
     const serialBaudRate = 115200; // baud rate for connection to arudino

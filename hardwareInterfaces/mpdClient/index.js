@@ -36,7 +36,7 @@ if (exports.enabled) {
     var fs = require('fs');
     var mpd = require('mpd');
     var _ = require('lodash');
-    var server = require(__dirname + '/../../libraries/HybridObjectsHardwareInterfaces');
+    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
     var mpdServers = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf8"));
     var cmd = mpd.cmd;

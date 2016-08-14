@@ -44,7 +44,7 @@
  */
 
 
-var HybridObjectsUtilities = require(__dirname+'/HybridObjectsUtilities');
+var utilities = require(__dirname+'/utilities');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
@@ -117,7 +117,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder,
                 "</div>" +
                 "<div class='col-xs-8 text-right' style='' >";
 
-            if (objects.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
+            if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
                 resText +=
                     "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
             } else {
@@ -269,7 +269,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder,
 }
 
 exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
-    var objectName = HybridObjectsUtilities.readObject(objectLookup, parm); //parm + thisMacAddress;
+    var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
     var ArduinoINstance = 0;
 
@@ -334,7 +334,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
 
 
 exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
-    var objectName = HybridObjectsUtilities.readObject(objectLookup, parm); //parm + thisMacAddress;
+    var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
 
     var uploadInfoTexttempArray = objects[objectName].links;
@@ -497,11 +497,11 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 exports.uploadTargetText = function (parm, objectLookup, objects) {
     if(debug) console.log("target content");
     var objectName = "";
-    if (objects.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, parm))) {
+    if (objects.hasOwnProperty(utilities.readObject(objectLookup, parm))) {
 
-        objectName = HybridObjectsUtilities.readObject(objectLookup, parm);
+        objectName = utilities.readObject(objectLookup, parm);
     } else {
-        objectName = parm + HybridObjectsUtilities.uuidTime();
+        objectName = parm + utilities.uuidTime();
     }
 
     var text = '<!DOCTYPE html>\n' +
