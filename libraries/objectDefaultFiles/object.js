@@ -71,7 +71,7 @@ var objectExpWidth = "100%";
 window.addEventListener("message", function (MSG) {
     var msg = JSON.parse(MSG.data);
 
-    if (typeof msg.pos !== "undefined") {
+    if (typeof msg.node !== "undefined") {
 
         if(objectExpSendFullScreen === false){
             objectExpHeight = document.body.scrollHeight;
@@ -80,8 +80,8 @@ window.addEventListener("message", function (MSG) {
 
         parent.postMessage(JSON.stringify(
             {
-                "pos": msg.pos,
-                "obj": msg.obj,
+                "node": msg.node,
+                "object": msg.object,
                 "height": objectExpHeight,
                 "width":objectExpWidth,
                 "sendMatrix" : objectExpSendMatrix,
@@ -91,8 +91,8 @@ window.addEventListener("message", function (MSG) {
             // this needs to contain the final interface source
             , "*");
 
-        objectExp.pos = msg.pos;
-        objectExp.obj = msg.obj;
+        objectExp.node = msg.node;
+        objectExp.object = msg.object;
     }
 
     if (typeof msg.modelViewMatrix !== "undefined") {
@@ -120,11 +120,11 @@ function HybridObject() {
 
 
     this.sendGlobalMessage = function(ohMSG) {
-        if (typeof objectExp.pos !== "undefined") {
+        if (typeof objectExp.node !== "undefined") {
             var msgg = JSON.stringify(
                 {
-                    "pos": objectExp.pos,
-                    "obj": objectExp.obj,
+                    "node": objectExp.node,
+                    "object": objectExp.object,
                     "ohGlobalMessage" : ohMSG
                 });
             window.parent.postMessage(msgg
@@ -156,7 +156,7 @@ function HybridObject() {
     // subscriptions
     this.subscribeToMatrix = function() {
         objectExpSendMatrix = true;
-        if (typeof objectExp.pos !== "undefined") {
+        if (typeof objectExp.node !== "undefined") {
 
             if(objectExpSendFullScreen === false){
                 objectExpHeight = document.body.scrollHeight;
@@ -165,8 +165,8 @@ function HybridObject() {
 
             parent.postMessage(JSON.stringify(
                 {
-                    "pos": objectExp.pos,
-                    "obj": objectExp.obj,
+                    "node": objectExp.node,
+                    "object": objectExp.object,
                     "height": objectExpHeight,
                     "width": objectExpWidth,
                     "sendMatrix": objectExpSendMatrix,
@@ -178,15 +178,15 @@ function HybridObject() {
     this.setFullScreenOn = function() {
         objectExpSendFullScreen = true;
         console.log("fullscreen is loaded");
-        if (typeof objectExp.pos !== "undefined") {
+        if (typeof objectExp.node !== "undefined") {
 
             objectExpHeight = "100%";
             objectExpWidth = "100%";
 
             parent.postMessage(JSON.stringify(
                 {
-                    "pos": objectExp.pos,
-                    "obj": objectExp.obj,
+                    "node": objectExp.node,
+                    "object": objectExp.object,
                     "height": objectExpHeight,
                     "width": objectExpWidth,
                     "sendMatrix": objectExpSendMatrix,
@@ -197,15 +197,15 @@ function HybridObject() {
 
     this.setFullScreenOff = function() {
         objectExpSendFullScreen = false;
-        if (typeof objectExp.pos !== "undefined") {
+        if (typeof objectExp.node !== "undefined") {
 
              objectExpHeight = document.body.scrollHeight;
              objectExpWidth = document.body.scrollWidth;
 
             parent.postMessage(JSON.stringify(
                 {
-                    "pos": objectExp.pos,
-                    "obj": objectExp.obj,
+                    "node": objectExp.node,
+                    "object": objectExp.object,
                     "height": objectExpHeight,
                     "width": objectExpWidth,
                     "sendMatrix": objectExpSendMatrix,
@@ -264,32 +264,32 @@ function HybridObject() {
         this.oldValueList = {};
 
             this.sendServerSubscribe = setInterval(function() {
-                if(objectExp.obj) {
-                    thisOHObjectIdentifier.object.emit('/subscribe/realityEditor', JSON.stringify({obj: objectExp.obj}));
+                if(objectExp.object) {
+                    thisOHObjectIdentifier.object.emit('/subscribe/realityEditor', JSON.stringify({object: objectExp.object}));
                     clearInterval(thisOHObjectIdentifier.sendServerSubscribe);
                 }
             }, 10);
 
-        this.write = function (IO, value, mode) {
+        this.write = function (IO, data, mode) {
             if(!IO in thisOHObjectIdentifier.oldValueList){
                 thisOHObjectIdentifier.oldValueList[IO]= null;
             }
 
             if (!mode) mode = 'f';
 
-            if(thisOHObjectIdentifier.oldValueList[IO] !== value) {
-                this.object.emit('object', JSON.stringify({pos: IO, obj: objectExp.obj, value: value, mode: mode}));
+            if(thisOHObjectIdentifier.oldValueList[IO] !== data) {
+                this.object.emit('object', JSON.stringify({node: IO, object: objectExp.object, data: {data: data.data, mode:mode}}));
             }
-            thisOHObjectIdentifier.oldValueList[IO] = value;
+            thisOHObjectIdentifier.oldValueList[IO] = data;
         };
 
         this.readRequest = function (IO) {
-            this.object.emit('/object/value', JSON.stringify({pos: IO, obj: objectExp.obj}));
+            this.object.emit('/object/value', JSON.stringify({node: IO, object: objectExp.object}));
         };
 
         this.read = function (IO, data) {
-            if (data.pos === IO) {
-                return data.value;
+            if (data.node === IO) {
+                return data.data.data;
             } else {
                 return undefined;
             }
@@ -299,10 +299,10 @@ function HybridObject() {
             thisOHObjectIdentifier.object.on("object", function (msg) {
                 var data = JSON.parse(msg);
 
-                if (typeof data.pos !== "undefined") {
-                    if (data.pos === IO) {
-                        if (typeof data.value !== "undefined")
-                            callback(data.value);
+                if (typeof data.node !== "undefined") {
+                    if (data.node === IO) {
+                        if (typeof data.data.data !== "undefined")
+                            callback(data.data.data);
                     }
                 }
             });
