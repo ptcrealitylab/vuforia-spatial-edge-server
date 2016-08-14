@@ -337,8 +337,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObject
     var objectName = HybridObjectsUtilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
 
-    var uploadInfoTexttempArray = objectExp[objectName].objectLinks;
-    var uploadInfoTexttempArrayValue = objectExp[objectName].objectValues;
+    var uploadInfoTexttempArray = objectExp[objectName].links;
+    var uploadInfoTexttempArrayValue = objectExp[objectName].nodes;
 
     var ArduinoINstance = 0;
 
@@ -365,7 +365,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObject
 
     infoCount = 0;
     for (subKey in uploadInfoTexttempArrayValue) {
-        text += "<tr> <td>" + infoCount + "</td><td>" + subKey + "</td><td>" + uploadInfoTexttempArrayValue[subKey].value + "</td></tr>";
+        text += "<tr> <td>" + infoCount + "</td><td>" + subKey + "</td><td>" + uploadInfoTexttempArrayValue[subKey].data.data + "</td></tr>";
         infoCount++;
     }
 
@@ -462,9 +462,9 @@ exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObject
     infoCount = 0;
     for (subKey in uploadInfoTexttempArray) {
         if(uploadInfoTexttempArray[subKey].hasOwnProperty("ObjectNameA"))
-        text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].ObjectNameA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].locationInA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].ObjectNameB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].locationInB + '</font></td></tr>\n';
+        text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
         else
-            text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].ObjectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].locationInA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].ObjectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].locationInB + '</font></td></tr>\n';
+            text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
 
 
         infoCount++;

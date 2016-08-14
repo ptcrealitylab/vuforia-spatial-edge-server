@@ -56,8 +56,8 @@ if (exports.enabled) {
     const GREEN_LED = "/sys/devices/platform/leds-gpio/leds/ds:green:usb/brightness";
 
     function ArduinoIndex() {
-        this.objName = null;
-        this.ioName = null;
+        this.objectName = null;
+        this.nodeName = null;
         this.index = null;
     }
 
@@ -89,9 +89,8 @@ if (exports.enabled) {
             if (server.getDebug()) console.log('Serial port opened');
             serialPortOpen = true;
             var dataSwitch = 0;
-            var pos = null;
+            var node = null;
             var objID = null;
-            var obj = null;
             var object = null;
             var arrayID = null;
             var valueMode = "";
@@ -116,7 +115,7 @@ if (exports.enabled) {
                             dataSwitch = 1;
                             //}
                         }
-                        else if (data === "p") { // positive step value
+                        else if (data === "p") { // nodeitive step value
                             //if (server.getClear()) {
                             valueMode = "p";
                             dataSwitch = 1;
@@ -156,13 +155,13 @@ if (exports.enabled) {
                         value = parseFloat(data);
 
                         if (ArduinoLookupByIndex.hasOwnProperty(arrayID))
-                            server.writeIOToServer(ArduinoLookupByIndex[arrayID].objName, ArduinoLookupByIndex[arrayID].ioName, value, valueMode);
+                            server.writeIOToServer(ArduinoLookupByIndex[arrayID].objectName, ArduinoLookupByIndex[arrayID].nodeName, value, valueMode);
 
 
                         dataSwitch = 0;
                         break;
                     case 20:
-                        object = data.split("\t");
+                        data.split("\t");
                         dataSwitch = 21;
                         break;
                     case 21:
@@ -171,19 +170,19 @@ if (exports.enabled) {
                         break;
                     case 23:
                         thisPlugin = data;
-                        obj = object[1];
-                        pos = object[0];
+                        object = object[1];
+                        node = object[0];
 
                         if (server.getDebug()) console.log("Add Arduino Yun");
 
-                        ArduinoLookup[obj + pos] = new ArduinoIndex();
-                        ArduinoLookup[obj + pos].objName = obj;
-                        ArduinoLookup[obj + pos].ioName = pos;
-                        ArduinoLookup[obj + pos].index = arrayID;
+                        ArduinoLookup[object + node] = new ArduinoIndex();
+                        ArduinoLookup[object + node].objectName = object;
+                        ArduinoLookup[object + node].nodeName = node;
+                        ArduinoLookup[object + node].index = arrayID;
 
                         ArduinoLookupByIndex[arrayID] = new ArduinoIndex();
-                        ArduinoLookupByIndex[arrayID].objName = obj;
-                        ArduinoLookupByIndex[arrayID].ioName = pos;
+                        ArduinoLookupByIndex[arrayID].objectName = object;
+                        ArduinoLookupByIndex[arrayID].nodeName = node;
                         ArduinoLookupByIndex[arrayID].index = arrayID;
 
                         var thisObjectID = server.getObjectIdFromObjectName(obj);
@@ -191,9 +190,9 @@ if (exports.enabled) {
                         if (!FullLookup.hasOwnProperty(thisObjectID)) {
                             FullLookup[thisObjectID] = {};
                         }
-                        FullLookup[thisObjectID][pos] = arrayID;
+                        FullLookup[thisObjectID][node] = arrayID;
 
-                        server.addIO(obj, pos, thisPlugin, "arduinoYun");
+                        server.addIO(object, node, thisPlugin, "arduinoYun");
 
                         dataSwitch = 0;
                         break;
@@ -221,11 +220,11 @@ if (exports.enabled) {
     }
 
 
-    function serialSender(serialPort, objName, ioName, value, mode, type) {
+    function serialSender(serialPort, objectName, nodeName, value, mode, type) {
 
-        if (type === "arduinoYun" && FullLookup.hasOwnProperty(objName)) {
-            if (FullLookup[objName].hasOwnProperty(ioName)) {
-                var index = FullLookup[objName][ioName];
+        if (type === "arduinoYun" && FullLookup.hasOwnProperty(objectName)) {
+            if (FullLookup[objectName].hasOwnProperty(nodeName)) {
+                var index = FullLookup[objectName][nodeName];
                 var yunModes = ["f", "d", "p", "n"];
                 if (_.includes(yunModes, mode)) {
                     serialPort.write(mode + "\n");
@@ -243,9 +242,9 @@ if (exports.enabled) {
         serialServer(serialPort);
     };
 
-    exports.send = function (objName, ioName, value, mode, type) {
+    exports.send = function (objectName, nodeName, value, mode, type) {
 
-        serialSender(serialPort, objName, ioName, value, mode, type);
+        serialSender(serialPort, objectName, nodeName, value, mode, type);
     };
 
     exports.init = function () {

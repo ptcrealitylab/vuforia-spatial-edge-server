@@ -267,17 +267,17 @@ if (exports.enabled) {
         philipsHueServer();
     };
 
-    exports.send = function (objName, ioName, value, mode, type) {
+    exports.send = function (objectName, nodeName, value, mode, type) {
         //Write incoming data to the specified light
-        if (lights.hasOwnProperty(objName)) {
-            if (ioName == "switch") {
-                writeSwitchState(lights[objName], value);
-            } else if (ioName == "brightness") {
-                writeBrightness(lights[objName], value);
-            } else if (ioName == "saturation") {
-                writeSaturation(lights[objName], value);
-            } else if (ioName == "hue") {
-                writeHue(lights[objName], value);
+        if (lights.hasOwnProperty(objectName)) {
+            if (nodeName == "switch") {
+                writeSwitchState(lights[objectName], value);
+            } else if (nodeName == "brightness") {
+                writeBrightness(lights[objectName], value);
+            } else if (nodeName == "saturation") {
+                writeSaturation(lights[objectName], value);
+            } else if (nodeName == "hue") {
+                writeHue(lights[objectName], value);
             }
         }
     };

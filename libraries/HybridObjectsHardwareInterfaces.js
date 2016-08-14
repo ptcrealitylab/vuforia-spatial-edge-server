@@ -35,13 +35,13 @@ function HardwareInterface() {
     this.hybridObjects = {};
 }
 
-function HybridObject(objName) {
-    this.name = objName;
-    this.ioPoints = {};
+function HybridObject(objectName) {
+    this.name = objectName;
+    this.nodes = {};
 }
 
-function IOPoint(ioName) {
-    this.name = ioName;
+function Node(nodeName) {
+    this.name = nodeName;
 }
 
 var hardwareInterfaces = {};
@@ -54,28 +54,28 @@ var hardwareInterfaces = {};
 
 /**
  * @desc This function writes the values passed from the hardware interface to the HybridObjects server.
- * @param {string} objName The name of the HybridObject
- * @param {string} ioName The name of the IO point
+ * @param {string} objectName The name of the HybridObject
+ * @param {string} nodeName The name of the IO point
  * @param {} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
 **/
-exports.writeIOToServer = function (objName, ioName, value, mode) {
+exports.writeIOToServer = function (objectName, nodeName, value, mode) {
 
-    var objKey2 = HybridObjectsUtilities.readObject(objectLookup, objName); //get globally unique object id
-  //  var valueKey = ioName + objKey2;
+    var objKey2 = HybridObjectsUtilities.readObject(objectLookup, objectName); //get globally unique object id
+  //  var valueKey = nodeName + objKey2;
 
 
 
     //console.log(objectLookup);
 
-//    console.log("writeIOToServer obj: "+objName + "  name: "+ioName+ "  value: "+value+ "  mode: "+mode);
+//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
 
     if (objectExp.hasOwnProperty(objKey2)) {
-        if (objectExp[objKey2].objectValues.hasOwnProperty(ioName)) {
-            objectExp[objKey2].objectValues[ioName].value = value;
-            objectExp[objKey2].objectValues[ioName].mode = mode;
+        if (objectExp[objKey2].objectValues.hasOwnProperty(nodeName)) {
+            objectExp[objKey2].objectValues[nodeName].data.data = value;
+            objectExp[objKey2].objectValues[nodeName].data.mode = mode;
             //callback is objectEngine in server.js. Notify data has changed.
-            callback(objKey2, ioName, value, mode, objectExp, pluginModules);
+            callback(objKey2, nodeName, {data: value, mode: mode}, objectExp, pluginModules);
         }
     }
 };
@@ -86,14 +86,14 @@ exports.writeIOToServer = function (objName, ioName, value, mode) {
 **/
 exports.clearIO = function (type) {
     if(hardwareInterfaces.hasOwnProperty(type)) { //check if IO points of the specified type have been added
-        for (var objName in hardwareInterfaces[type].hybridObjects) {
-            objectID = HybridObjectsUtilities.getObjectIdFromTarget(objName, dirnameO);
+        for (var objectName in hardwareInterfaces[type].hybridObjects) {
+           var objectID = HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
 
             if (!_.isUndefined(objectID) && !_.isNull(objectID) && objectID.length > 13) {
-                for (var key in objectExp[objectID].objectValues) {
-                    if (!hardwareInterfaces[type].hybridObjects[objName].ioPoints.hasOwnProperty(objectExp[objectID].objectValues[key].name)) {
+                for (var key in objectExp[objectID].nodes) {
+                    if (!hardwareInterfaces[type].hybridObjects[objectName].nodes.hasOwnProperty(objectExp[objectID].objectValues[key].name)) {
                         if (globalVariables.debug) console.log("Deleting: " + objectID + "   " + key);
-                        delete objectExp[objectID].objectValues[key];
+                        delete objectExp[objectID].nodes[key];
                     }
                 }
 
@@ -108,31 +108,31 @@ exports.clearIO = function (type) {
 
 /**
  * @desc addIO() a new IO point to the specified HybridObject
- * @param {string} objName The name of the HybridObject
- * @param {string} ioName The name of the ioName
+ * @param {string} objectName The name of the HybridObject
+ * @param {string} nodeName The name of the nodeName
  * @param {string} plugin The name of the data conversion plugin. If you don't have your own put in "default".
  * @param {string} type The name of your hardware interface
 **/
-exports.addIO = function (objName, ioName, plugin, type) {
-    HybridObjectsUtilities.createFolder(objName, dirnameO, globalVariables.debug);
+exports.addIO = function (objectName, nodeName, plugin, type) {
+    HybridObjectsUtilities.createFolder(objectName, dirnameO, globalVariables.debug);
 
-    var objectID = HybridObjectsUtilities.getObjectIdFromTarget(objName, dirnameO);
+    var objectID = HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
     if (globalVariables.debug) console.log("AddIO objectID: " + objectID + "   " + type);
 
-    //objID = ioName + objectID;
+    //objID = nodeName + objectID;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objectID.length > 13) {
 
-            if (globalVariables.debug) console.log("I will save: " + objName + " and: " + ioName);
+            if (globalVariables.debug) console.log("I will save: " + objectName + " and: " + nodeName);
 
             if (objectExp.hasOwnProperty(objectID)) {
                 objectExp[objectID].developer = globalVariables.developer;
-                objectExp[objectID].name = objName;
+                objectExp[objectID].name = objectName;
 
-                if (!objectExp[objectID].objectValues.hasOwnProperty(ioName)) {
-                    var thisObject = objectExp[objectID].objectValues[ioName] = new ObjectValue();
+                if (!objectExp[objectID].nodes.hasOwnProperty(nodeName)) {
+                    var thisObject = objectExp[objectID].nodes[nodeName] = new ObjectValue();
                     thisObject.x = HybridObjectsUtilities.randomIntInc(0, 200) - 100;
                     thisObject.y = HybridObjectsUtilities.randomIntInc(0, 200) - 100;
                     thisObject.frameSizeX = 47;
@@ -140,9 +140,9 @@ exports.addIO = function (objName, ioName, plugin, type) {
                 }
 
 
-                
-                var thisObj = objectExp[objectID].objectValues[ioName];
-                thisObj.name = ioName;
+
+                var thisObj = objectExp[objectID].nodes[nodeName];
+                thisObj.name = nodeName;
                 thisObj.plugin = plugin;
                 thisObj.type = type;
 
@@ -151,12 +151,12 @@ exports.addIO = function (objName, ioName, plugin, type) {
                     hardwareInterfaces[type] = new HardwareInterface();
                 }
                 
-                if(!hardwareInterfaces[type].hybridObjects.hasOwnProperty(objName)){
-                    hardwareInterfaces[type].hybridObjects[objName] = new HybridObject(objName);
+                if(!hardwareInterfaces[type].hybridObjects.hasOwnProperty(objectName)){
+                    hardwareInterfaces[type].hybridObjects[objectName] = new HybridObject(objectName);
                 }
                
-                if(!hardwareInterfaces[type].hybridObjects[objName].ioPoints.hasOwnProperty(ioName)){
-                    hardwareInterfaces[type].hybridObjects[objName].ioPoints[ioName] = new IOPoint(ioName);
+                if(!hardwareInterfaces[type].hybridObjects[objectName].nodes.hasOwnProperty(nodeName)){
+                    hardwareInterfaces[type].hybridObjects[objectName].nodes[nodeName] = new Node(nodeName);
                 }
             }
         }
@@ -164,8 +164,8 @@ exports.addIO = function (objName, ioName, plugin, type) {
     objectID = undefined;
 };
 
-exports.getObjectIdFromObjectName = function (objName) {
-   return HybridObjectsUtilities.getObjectIdFromTarget(objName, dirnameO);
+exports.getObjectIdFromObjectName = function (objectName) {
+   return HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
 };
 
 /**

@@ -105,29 +105,29 @@ if (exports.enabled) {
         setup();
     };
 
-    exports.send = function (objName, ioName, value, mode, type) {
-        if (server.getDebug()) console.log("Incoming: " + objName + "   " + ioName + "   " + value);
-        if (mpdServers.hasOwnProperty(objName)) {
-            if (ioName == "volume") {
-                mpdServers[objName].client.sendCommand("setvol " + _.floor(value * 100), function (err, msg) {
+    exports.send = function (objectName, nodeName, value, mode, type) {
+        if (server.getDebug()) console.log("Incoming: " + objectName + "   " + nodeName + "   " + value);
+        if (mpdServers.hasOwnProperty(objectName)) {
+            if (nodeName == "volume") {
+                mpdServers[objectName].client.sendCommand("setvol " + _.floor(value * 100), function (err, msg) {
                     if (err) console.log("Error executing mpd command: " + err);
                 });
-            } else if (ioName == "status") {
+            } else if (nodeName == "status") {
                 if (value < 0.33) {
-                    if (mpdServers[objName].ready) {
-                        mpdServers[objName].client.sendCommand(cmd("stop", []), function (err, msg) {
+                    if (mpdServers[objectName].ready) {
+                        mpdServers[objectName].client.sendCommand(cmd("stop", []), function (err, msg) {
                             if (err) console.log("Error executing mpd command: " + err);
                         });
                     }
                 } else if (value < 0.66) {
-                    if (mpdServers[objName].ready) {
-                        mpdServers[objName].client.sendCommand(cmd("pause", []), function (err, msg) {
+                    if (mpdServers[objectName].ready) {
+                        mpdServers[objectName].client.sendCommand(cmd("pause", []), function (err, msg) {
                             if (err) console.log("Error executing mpd command: " + err);
                         });
                     }
                 } else {
-                    if (mpdServers[objName].ready) {
-                        mpdServers[objName].client.sendCommand(cmd("play", []), function (err, msg) {
+                    if (mpdServers[objectName].ready) {
+                        mpdServers[objectName].client.sendCommand(cmd("play", []), function (err, msg) {
                             if (err) console.log("Error executing mpd command: " + err);
                         });
                     }

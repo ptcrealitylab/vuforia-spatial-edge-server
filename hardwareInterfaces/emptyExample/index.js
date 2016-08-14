@@ -68,7 +68,7 @@ if (exports.enabled) {
      * @param {string} mode Specifies the datatype of value
      * @param {type} type The type
      **/
-    exports.send = function (objName, ioName, value, mode, type) {
+    exports.send = function (objectName, nodeName, value, mode, type) {
 
       //  console.log(objName+" : "+ ioName +" : "+ value +" : "+ mode +" : "+ type);
 

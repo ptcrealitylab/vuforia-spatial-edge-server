@@ -84,20 +84,20 @@ if (exports.enabled) {
 
     };
 
-    exports.send = function (objName, ioName, value, mode, type) {
-        if (kodiServers.hasOwnProperty(objName) && !_.isNull(kodiServers[objName].connection)) {
-            if (ioName == "volume") {
-                kodiServers[objName].connection.Application.SetVolume(_.floor(value * 100));
-            } else if (ioName == "status") {
+    exports.send = function (objectName, nodeName, value, mode, type) {
+        if (kodiServers.hasOwnProperty(objectName) && !_.isNull(kodiServers[objectName].connection)) {
+            if (nodeName == "volume") {
+                kodiServers[objectName].connection.Application.SetVolume(_.floor(value * 100));
+            } else if (nodeName == "status") {
                 //play, pause, stop all of the currently active players
-                kodiServers[objName].connection.Player.GetActivePlayers().then(function (data) {
+                kodiServers[objectName].connection.Player.GetActivePlayers().then(function (data) {
                     for (var i = 0; i < data.length; i++) {
                         if (value < 0.33) {
-                            kodiServers[objName].connection.Player.Stop({ playerid: data[i].playerid });
+                            kodiServers[objectName].connection.Player.Stop({ playerid: data[i].playerid });
                         } else if (value < 0.66) {
-                            kodiServers[objName].connection.Player.PlayPause({ playerid: data[i].playerid, play:false });
+                            kodiServers[objectName].connection.Player.PlayPause({ playerid: data[i].playerid, play:false });
                         } else {
-                            kodiServers[objName].connection.Player.PlayPause({ playerid: data[i].playerid, play:true });
+                            kodiServers[objectName].connection.Player.PlayPause({ playerid: data[i].playerid, play:true });
                         }
                     }
 

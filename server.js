@@ -57,7 +57,7 @@
  * TODO - Check if Targets are double somehwere. And iff Target has more than one target in the file...
  *
  * TODO - Check the socket connections
- * TODO - check if objectlinks are pointing to values that actually exist. - (happens in browser at the moment)
+ * TODO - check if links are pointing to values that actually exist. - (happens in browser at the moment)
  * TODO - Test self linking from internal to internal value (endless loop) - (happens in browser at the moment)
  *
  **
@@ -161,12 +161,8 @@ function ObjectExp() {
     this.version = version;
     // The (t)arget (C)eck(S)um is a sum of the checksum values for the target files.
     this.tcs = null;
-    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
-    this.x = 0;
-    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
-    this.y = 0;
-    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-    this.scale = 1;
+    // Position X, Y, Scale and Matrix
+    this.position = new Position();
     // Used internally from the reality editor to indicate if an object should be rendered or not.
     this.visible = false;
     // Used internally from the reality editor to trigger the visibility of naming UI elements.
@@ -177,73 +173,61 @@ function ObjectExp() {
     this.developer = true;
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
     // This data can be used for interacting with objects for when they are not visible.
-    this.matrix3dMemory = null; // TODO use this to store UI interface for image later.
+    this.matrixMemory = false; // TODO use this to store UI interface for image later.
     // Stores all the links that emerge from within the object. If a IOPoint has new data,
     // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
-    this.objectLinks = {};
+    this.links = {};
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
-    this.objectValues = {};
+    this.nodes = {};
 }
 
 /**
- * @desc The Link constructor is used every time a new link is stored in the objectLinks object.
+ * @desc The Link constructor is used every time a new link is stored in the links object.
  * The link does not need to keep its own ID since it is created with the link ID as Obejct name.
  **/
 
-function ObjectLink() {
+function Link() {
     // The origin object from where the link is sending data from
-    this.ObjectA = null;
+    this.objectA = null;
     // The origin IOPoint from where the link is taking its data from
-    this.locationInA = 0;
+    this.nodeA = null;
     // if origin location is a Logic Block then set to logic block location otherwise null
-    this.logicBlockA = null;
+    this.blockA = false;
     // Defines the type of the link origin. Currently this function is not in use.
-    this.ObjectNameA = "";
+    this.nameA = "";
     // The destination object to where the origin object is sending data to.
     // At this point the destination object accepts all incoming data and routs the data according to the link data sent.
-    this.ObjectB = null;
+    this.objectB = null;
     // The destination IOPoint to where the link is sending data from the origin object.
-    // ObjectB and locationInB will be send with each data package.
-    this.locationInB = 0;
+    // objectB and nodeB will be send with each data package.
+    this.nodeB = null;
     // if destination location is a Logic Block then set to logic block location otherwise null
-    this.logicBlockB = null;
+    this.blockB = false;
     // Defines the type of the link destination. Currently this function is not in use.
-    this.ObjectNameB = "";
+    this.nameB = "";
     // check that there is no endless loop in the system
-    this.endlessLoop = false;
+    this.loop = false;
     // Will be used to test if a link is still able to find its destination.
     // It needs to be discussed what to do if a link is not able to find the destination and for what time span.
-    this.countLinkExistance = 0; // todo use this to test if link is still valid. If not able to send for some while, kill link.
+    this.count = 0; // todo use this to test if link is still valid. If not able to send for some while, kill link.
 }
 
 /**
  * @desc Constructor used to define every IO Point generated in the Object. It does not need to contain its own ID
- * since the object is created within the objectValues with the ID as object name.
+ * since the object is created within the nodes with the ID as object name.
  **/
 
-function ObjectValue() {
+function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
     // defines if IO-Point is a logic block
-    this.isLogicBlock = false;
+    this.isLogic = false;
     // this is storing the actual value representing the actual state of a IO Point
-    this.value = null;
-    // if isLogicBlock is true, then this.value = new LogicBlock();
+    this.data = new Data();
+    // if isLogicBlock is true, then this.value = new LogicNode();
 
-    // Defines the kind of data send. At this point we have 3 active data modes and one future possibility.
-    // (f) defines floating point values between 0 and 1. This is the default value.
-    // (d) defines a digital value exactly 0 or 1.
-    // (+) defines a positive step with a floating point value for compatibility.
-    // (-) defines a negative step with a floating point value for compatibility.
-    // (m) defines a future possible data value for mime type media
-    // todo combine value and type in one object. which allows for future more stable type processing.
-    this.mode = "f";
-    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
-    this.x = 0;
-    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
-    this.y = 0;
-    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-    this.scale = 1;
+    // Position X, Y, Scale and Matrix
+    this.position = new Position();
     // defines the dataPointInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the dataPointInterface folder.
     // todo plugin should be removed eventually
@@ -261,7 +245,7 @@ function ObjectValue() {
  * It does not need to contain its own ID since the ObjectValue contains the ID for the logicBlock.
  **/
 
-function LogicBlock() {
+function LogicNode() {
     // if true the last node setting will be shown instead of the crafting board.
     this.showLastSettingFirst = false;
     // if showLastSettingFirst is true then lastSetting is the name of the last node that was moved or set.
@@ -275,23 +259,23 @@ function LogicBlock() {
 
     // the array of possible connections within the logicBlock.
     // if a block is set, a new Node instance is coppied in to the spot.
-    this.nodes = {
+    this.blocks = {
         "0_0": null,"0_1": null,"0_2": null,"0_3": null,
         "1_0": null,"1_1": null,"1_2": null,"1_3": null,
         "2_0": null,"2_1": null,"2_2": null,"2_3": null,
         "3_0": null,"3_1": null,"3_2": null,"3_3": null,
     };
 }
-
+// todo check how a block is processed when its spanns more then one blocks.
 /**
  * @desc Constructor used to define every Node possitioned in the logicBlock.
  **/
 
-function Node() {
+function Block() {
     // setup
     // The package ID is a specific UUID for all nodes of the same kind.
     // nodes are saved as ZIP files for sharing. The ZIP file has the same ID.
-    this.packageID = null;
+    this.id = null;
     // the checksum should be identical with the checksum for the persistent package files.
     this.checksum = null; // checksum of the files for the program
     // name of the node
@@ -308,10 +292,7 @@ function Node() {
 
     /// Data
     // this array saves the actual state value. Array size depends on size of node.
-    this.value = [null];
-    // data type is saved in this array.
-    // todo combine value and type in one object. which allows for future type processing.
-    this.mode = ["f"];
+    this.data = [new Data()];
 
     // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
     // this would allow the the packages to be persistant. // todo discuss usability with Ben.
@@ -330,6 +311,41 @@ function Node() {
     // State
     // indicates how much calls per second is happening on this node
     this.health = 0;
+}
+
+/**
+ * @desc Definition for Values that are sent around.
+ **/
+
+function Data() {
+    // this is storing the actual value representing the actual state of a IO Point
+    this.data = null;
+    // if isLogicBlock is true, then this.value = new Logic();
+
+    // Defines the kind of data send. At this point we have 3 active data modes and one future possibility.
+    // (f) defines floating point values between 0 and 1. This is the default value.
+    // (d) defines a digital value exactly 0 or 1.
+    // (+) defines a positive step with a floating point value for compatibility.
+    // (-) defines a negative step with a floating point value for compatibility.
+    // (m) defines a future possible data value for mime type media
+    // todo combine value and type in one object. which allows for future more stable type processing.
+    this.mode = "f";
+    // string of the name for the unit used (for Example "C", "F", "cm"). Default is set to no unit.
+    this.unit = false;
+    // scale of the unit that is used. Usually the scale is between 0 and 1.
+    this.unitMin = 0;
+    this.unitMax = 1;
+}
+
+function Position() {
+    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
+    this.x = 0;
+    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
+    this.y = 0;
+    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
+    this.scale = 1;
+    // Unconstrained positioning in 3D space
+    this.matrix = false;
 }
 
 /**
@@ -374,7 +390,6 @@ function EditorSocket(socketID, object) {
 /**********************************************************************************************************************
  ******************************************** Variables and Objects ***************************************************
  **********************************************************************************************************************/
-
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objectExp = {};
@@ -433,15 +448,15 @@ for (var i = 0; i < DataPointFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-HybridObjectsHardwareInterfaces.setup(objectExp, objectLookup, globalVariables, __dirname, dataPointModules, function (objKey2, valueKey, value, mode, objectExp, dataPointModules) {
+HybridObjectsHardwareInterfaces.setup(objectExp, objectLookup, globalVariables, __dirname, dataPointModules, function (objectKey, nodeKey, blockKey, data, objectExp, dataPointModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
 
-    sendMessagetoEditors({obj: objKey2, pos: valueKey, value: value, mode: mode});
-    objectEngine(objKey2, valueKey, objectExp, dataPointModules);
+    sendMessagetoEditors({object: objectKey, node: nodeKey, block: blockKey, data: data});
+    objectEngine(objectKey, nodeKey, blockKey, objectExp, dataPointModules);
 
-}, ObjectValue);
+}, Node);
 cout("Done");
 
 cout("Loading Hybrid Objects");
@@ -535,8 +550,8 @@ function loadHybridObjects() {
 
                 // adding the values to the arduino lookup table so that the serial connection can take place.
                 // todo this is maybe obsolete.
-                for (var tempkey in objectExp[tempFolderName].objectValues) {
-                    ArduinoLookupTable.push({obj: HybridObjectFolderList[i], pos: tempkey});
+                for (var nodeKey in objectExp[tempFolderName].nodes) {
+                    ArduinoLookupTable.push({object: HybridObjectFolderList[i], node: nodeKey});
                 }
                 // todo the sizes do not really save...
 
@@ -903,12 +918,12 @@ function objectWebServer() {
     webServer.delete('/object/*/link/*/', function (req, res) {
 
         var thisLinkId = req.params[1];
-        var fullEntry = objectExp[req.params[0]].objectLinks[thisLinkId];
-        var destinationIp = knownObjects[fullEntry.ObjectB];
+        var fullEntry = objectExp[req.params[0]].links[thisLinkId];
+        var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objectExp[req.params[0]].objectLinks[thisLinkId];
+        delete objectExp[req.params[0]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
-        // cout(objectExp[req.params[0]].objectLinks);
+        // cout(objectExp[req.params[0]].links);
         actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
         HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
@@ -916,14 +931,14 @@ function objectWebServer() {
         var checkIfIpIsUsed = false;
         var checkerKey, subCheckerKey;
         for (checkerKey in objectExp) {
-            for (subCheckerKey in objectExp[checkerKey].objectLinks) {
-                if (objectExp[checkerKey].objectLinks[subCheckerKey].ObjectB === fullEntry.ObjectB) {
+            for (subCheckerKey in objectExp[checkerKey].links) {
+                if (objectExp[checkerKey].links[subCheckerKey].objectB === fullEntry.objectB) {
                     checkIfIpIsUsed = true;
                 }
             }
         }
 
-        if (fullEntry.ObjectB !== fullEntry.ObjectA && !checkIfIpIsUsed) {
+        if (fullEntry.objectB !== fullEntry.objectA && !checkIfIpIsUsed) {
             // socketArray.splice(destinationIp, 1);
             delete socketArray[destinationIp];
         }
@@ -938,20 +953,20 @@ function objectWebServer() {
         if (objectExp.hasOwnProperty(req.params[0])) {
 
 
-            objectExp[req.params[0]].objectLinks[req.params[1]] = req.body;
+            objectExp[req.params[0]].links[req.params[1]] = req.body;
 
-            var thisObject = objectExp[req.params[0]].objectLinks[req.params[1]];
+            var thisObject = objectExp[req.params[0]].links[req.params[1]];
 
-            thisObject.endlessLoop = false;
+            thisObject.loop = false;
 
 
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisObject.locationInA === thisObject.locationInB && thisObject.ObjectA === thisObject.ObjectB) {
-                thisObject.endlessLoop = true;
+            if (thisObject.nodeA === thisObject.nodeB && thisObject.objectA === thisObject.objectB) {
+                thisObject.loop = true;
             }
 
-            if (!thisObject.endlessLoop) {
+            if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
                 actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objectExp[req.params[0]].ip}}));
                 updateStatus = "added";
@@ -987,28 +1002,20 @@ function objectWebServer() {
             if (thisObject === thisValue) {
                 tempObject = objectExp[thisObject];
             } else {
-                tempObject = objectExp[thisObject].objectValues[thisValue];
+                tempObject = objectExp[thisObject].nodes[thisValue];
             }
 
             // check that the numbers are valid numbers..
-            if (typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") {
-
+            if (typeof req.body.position.x === "number" && typeof req.body.position.y === "number" && typeof req.body.position.scale === "number") {
                 // if the object is equal the datapoint id, the item is actually the object it self.
+                tempObject.position = req.body.position;
 
-                tempObject.x = req.body.x;
-                tempObject.y = req.body.y;
-                tempObject.scale = req.body.scale;
-                // console.log(req.body);
-                // ask the devices to reload the objects
+                if (typeof req.body.matrix !== "object") {
+                    tempObject.position.matrix = false;
+                }
             }
 
-
-            if (typeof req.body.matrix === "object") {
-
-                tempObject.matrix = req.body.matrix;
-            }
-
-            if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
+            if ((typeof req.body.position.x === "number" && typeof req.body.position.y === "number" && typeof req.body.position.scale === "number") || (typeof req.body.position.matrix === "object" )) {
                 HybridObjectsUtilities.writeObjectToFile(objectExp, req.params[0], __dirname);
 
                 actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objectExp[thisObject].ip}}));
@@ -1082,7 +1089,7 @@ function objectWebServer() {
             //  cout("get 3");
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=HybridObjectBackup.zip'
+                'Content-disposition': 'attachment; filename=HybridobjectBackup.zip'
             });
 
             var Archiver = require('archiver');
@@ -1579,7 +1586,7 @@ function createObjectFromTarget(ObjectExp, objectExp, folderVar, __dirname, obje
 }
 
 /**
- * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
+ * @desc Check for incoming MSG from other objects or the User. Make changes to the nodes if changes occur.
  **/
 
 function socketServer(params) {
@@ -1588,11 +1595,11 @@ function socketServer(params) {
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
-            if (objectExp.hasOwnProperty(JSON.parse(msg).obj)) {
-                cout("reality editor subscription for object: " + JSON.parse(msg).obj);
+            if (objectExp.hasOwnProperty(JSON.parse(msg).object)) {
+                cout("reality editor subscription for object: " + JSON.parse(msg).object);
                 cout("the letated socket has the ID: " + socket.id);
 
-                realityEditorSocketArray[socket.id] = JSON.parse(msg).obj;
+                realityEditorSocketArray[socket.id] = JSON.parse(msg).object;
                 cout(realityEditorSocketArray);
             }
         });
@@ -1601,21 +1608,20 @@ function socketServer(params) {
 
             var msgContent = JSON.parse(msg);
 
-            if ((msgContent.obj in objectExp) && typeof msgContent.value !== "undefined") {
-                if (msgContent.pos in objectExp[msgContent.obj].objectValues) {
+            if ((msgContent.object in objectExp) && typeof msgContent.data !== "undefined") {
+                if (msgContent.node in objectExp[msgContent.obj].nodes) {
 
-                    var objSend = objectExp[msgContent.obj].objectValues[msgContent.pos];
-                    objSend.value = msgContent.value;
-                    objSend.mode = msgContent.mode;
+                    var objSend = objectExp[msgContent.object].nodes[msgContent.node];
+                    objSend.data = msgContent.data;
 
-                    objectExp[msgContent.obj].objectValues[msgContent.pos].value = msgContent.value;
+                    objectExp[msgContent.object].nodes[msgContent.node].data = msgContent.data;
 
                     if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-                        hardwareInterfaceModules[objSend.type].send(msgContent.obj, msgContent.pos, objSend.value, objSend.mode, objSend.type);
+                        hardwareInterfaceModules[objSend.type].send(msgContent.object, msgContent.node, objSend.data.data, objSend.data.mode, objSend.type);
                     }
 
-                    sendMessagetoEditors({obj: msgContent.obj, pos: msgContent.pos, value: msgContent.value, mode: msgContent.mode});
-                    objectEngine(msgContent.obj, msgContent.pos, objectExp, dataPointModules);
+                    sendMessagetoEditors({object: msgContent.object, node: msgContent.node, data: msgContent.data});
+                    objectEngine(msgContent.object, msgContent.node, objectExp, dataPointModules);
                 }
             }
         });
@@ -1638,7 +1644,7 @@ function socketServer(params) {
 function sendMessagetoEditors(msgContent) {
 
     for (var thisEditor in realityEditorSocketArray) {
-        if (msgContent.obj === realityEditorSocketArray[thisEditor]) {
+        if (msgContent.object === realityEditorSocketArray[thisEditor]) {
             messagetoSend(msgContent, thisEditor);
         }
     }
@@ -1646,13 +1652,13 @@ function sendMessagetoEditors(msgContent) {
 
 function messagetoSend(msgContent, socketID) {
 
-    if (objectExp.hasOwnProperty(msgContent.obj)) {
-        if (objectExp[msgContent.obj].objectValues.hasOwnProperty(msgContent.pos)) {
+    if (objectExp.hasOwnProperty(msgContent.object)) {
+        if (objectExp[msgContent.object].nodes.hasOwnProperty(msgContent.node)) {
 
             io.sockets.connected[socketID].emit('object', JSON.stringify({
-                obj: msgContent.obj,
-                pos: msgContent.pos,
-                value: objectExp[msgContent.obj].objectValues[msgContent.pos].value
+                object: msgContent.object,
+                object: msgContent.node,
+                data: objectExp[msgContent.object].nodes[msgContent.node].data
             }));//       socket.emit('object', msgToSend);
         }
     }
@@ -1669,17 +1675,17 @@ function messagetoSend(msgContent, socketID) {
 
 // dependencies afterPluginProcessing
 
-function objectEngine(obj, pos, objectExp, dataPointModules) {
+function objectEngine(object, node, objectExp, dataPointModules) {
     // cout("engine started");
     var key;
-    for (key in objectExp[obj].objectLinks) {
-        if (objectExp[obj].objectLinks[key].locationInA === pos) {
+    for (key in objectExp[object].links) {
+        if (objectExp[object].links[key].nodeA === node) {
 
-            var thisData = objectExp[obj].objectValues[pos];
+            var thisData = objectExp[object].nodes[node];
 
             if ((thisData.plugin in dataPointModules)) {
-                dataPointModules[thisData.plugin](obj, key, thisData.value, thisData.mode, function (obj, linkPos, processedValue, mode) {
-                    afterPluginProcessing(obj, linkPos, processedValue, mode);
+                dataPointModules[thisData.plugin](object, key, thisData.data, function (object, node, data) {
+                    afterPluginProcessing(object, node, data);
                 });
             }
         }
@@ -1692,25 +1698,25 @@ function objectEngine(obj, pos, objectExp, dataPointModules) {
  * @param {String} IDinLinkArray Id to search for in the Link Array.
  **/
 
-function afterPluginProcessing(obj, linkPos, processedValue, mode) {
-    var link = objectExp[obj].objectLinks[linkPos];
+function afterPluginProcessing(object, node, data) {
+    var link = objectExp[object].links[node];
 
-    if (!(link.ObjectB in objectExp)) {
+    if (!(link.objectB in objectExp)) {
 
-        socketSender(obj, linkPos, processedValue, mode);
+        socketSender(object, node, data);
     }
     else {
 
-        var objSend = objectExp[link.ObjectB].objectValues[link.locationInB];
-        objSend.value = processedValue;
+        var objSend = objectExp[link.objectB].nodes[link.nodeB];
+        objSend.data = data;
 
         if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-            hardwareInterfaceModules[objSend.type].send(link.ObjectB, link.locationInB, objSend.value, objSend.mode, objSend.type);
+            hardwareInterfaceModules[objSend.type].send(link.objectB, link.nodeB, objSend.data, objSend.type);
         }
         // send data to listening editor
 
-        sendMessagetoEditors({obj: link.ObjectB, pos: link.locationInB, value: objSend.value, mode: objSend.mode});
-        objectEngine(link.ObjectB, link.locationInB, objectExp, dataPointModules);
+        sendMessagetoEditors({object: link.objectB, node: link.nodeB, data: objSend.value});
+        objectEngine(link.objectB, link.nodeB, objectExp, dataPointModules);
     }
 }
 
@@ -1718,21 +1724,21 @@ function afterPluginProcessing(obj, linkPos, processedValue, mode) {
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray
  **/
 
-function socketSender(obj, linkPos, processedValue, mode) {
-    var link = objectExp[obj].objectLinks[linkPos];
-    var msg = JSON.stringify({obj: link.ObjectB, pos: link.locationInB, value: processedValue, mode: mode});
+function socketSender(object, node, data) {
+    var link = objectExp[object].links[node];
+    var msg = JSON.stringify({object: link.objectB, node: link.nodeB, data: data});
 
     //todo this should be rewritten with handling an array of connected objects similar the connected Reality Editors
-    if (!(link.ObjectB in objectExp)) {
+    if (!(link.objectB in objectExp)) {
         try {
-            var objIp = knownObjects[link.ObjectB];
+            var objIp = knownObjects[link.objectB];
             var presentObjectConnection = socketArray[objIp].io;
             if (presentObjectConnection.connected) {
                 presentObjectConnection.emit("object", msg);
             }
         }
         catch (e) {
-            cout("can not emit from link ID:" + linkPos + "and object: " + obj);
+            cout("can not emit from link ID:" + node + "and object: " + object);
         }
     }
 }
@@ -1751,15 +1757,15 @@ function socketSender(obj, linkPos, processedValue, mode) {
 function socketUpdater() {
     // cout(knownObjects);
     // delete unconnected connections
-    var sockKey, objKey, posKey;
+    var sockKey, objectKey, nodeKey;
 
     for (sockKey in socketArray) {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
-        for (objKey in objectExp) {
-            for (posKey in objectExp[objKey].objectLinks) {
-                var thisIp = knownObjects[objectExp[objKey].objectLinks[posKey].ObjectB];
+        for (objectKey in objectExp) {
+            for (nodeKey in objectExp[objectKey].links) {
+                var thisIp = knownObjects[objectExp[objectKey].links[nodeKey].objectB];
 
                 if (thisIp === sockKey) {
                     socketIsUsed = true;
@@ -1770,14 +1776,14 @@ function socketUpdater() {
             // delete socketArray[sockKey];
         }
     }
-    for (objKey in objectExp) {
-        for (posKey in objectExp[objKey].objectLinks) {
-            var link = objectExp[objKey].objectLinks[posKey];
+    for (objectKey in objectExp) {
+        for (nodeKey in objectExp[objectKey].links) {
+            var link = objectExp[objectKey].links[nodeKey];
 
-            if (!(link.ObjectB in objectExp) && (link.ObjectB in knownObjects)) {
+            if (!(link.objectB in objectExp) && (link.objectB in knownObjects)) {
 
 
-                var ip = knownObjects[link.ObjectB];
+                var ip = knownObjects[link.objectB];
                 //cout("this ip: "+ip);
                 if (!(ip in socketArray)) {
                     // cout("shoudl not show up -----------");
@@ -1789,13 +1795,13 @@ function socketUpdater() {
 
     socketIndicator();
 
-    var sockKey3, objKey2;
+    var sockKey3, objectKey2;
     if (sockets.socketsOld !== sockets.sockets || sockets.notConnectedOld !== sockets.notConnected || sockets.connectedOld !== sockets.connected) {
         for (sockKey3 in socketArray) {
             if (!socketArray[sockKey3].io.connected) {
-                for (objKey2 in knownObjects) {
-                    if (knownObjects[objKey2] === sockKey3) {
-                        cout("Looking for: " + objKey2 + " with the ip: " + sockKey3);
+                for (objectKey2 in knownObjects) {
+                    if (knownObjects[objectKey2] === sockKey3) {
+                        cout("Looking for: " + objectKey2 + " with the ip: " + sockKey3);
                     }
                 }
             }

@@ -23,7 +23,7 @@ if (exports.enabled) {
         Example item object in JSON format
         {
                 "id": "button",
-                "ioName": "digital",
+                "nodeName": "digital",
                 "pin": 17,
                 "direction": "in",
                 "edge": "both"
@@ -50,7 +50,7 @@ if (exports.enabled) {
             if (items.hasOwnProperty(key)) {
                 var item = items[key];
                 if ("GPIO" in item) {
-                    if (server.getDebug()) console.log("raspberryPi: removing item with the id = '" + item.id + "' and ioName = '" + item.ioName + "'");
+                    if (server.getDebug()) console.log("raspberryPi: removing item with the id = '" + item.id + "' and nodeName = '" + item.nodeName + "'");
                     item.GPIO.unexport();
                 }
             }
@@ -60,14 +60,14 @@ if (exports.enabled) {
 
     function writeGpioToServer(err, value, item, callback) {
         if (err) {
-            console.log("raspberryPi: ERROR receiving GPIO data from id = '" + item.id + "' and ioName = '" + item.ioName + "'");
+            console.log("raspberryPi: ERROR receiving GPIO data from id = '" + item.id + "' and nodeName = '" + item.nodeName + "'");
             console.log(err)
         }
 
             // only send if we don't have an error and the value has changed
         else if (!("lastValue" in item) || item.lastValue !== value) {
             item.lastValue = value;
-            callback(item.id, item.ioName, value, "d"); // mode: d for digital
+            callback(item.id, item.nodeName, value, "d"); // mode: d for digital
         }
     }
 
@@ -84,18 +84,18 @@ if (exports.enabled) {
     /**
      * @desc This function is called by the server whenever data for one of your HybridObject's IO points arrives. Parse the input and write the
      *       value to your hardware.
-     * @param {string} objName Name of the HybridObject
-     * @param {string} ioName Name of the IO point
+     * @param {string} objectName Name of the HybridObject
+     * @param {string} nodeName Name of the IO point
      * @param {value} value The value
      * @param {string} mode Specifies the datatype of value
      * @param {type} type The type
      **/
-    exports.send = function (objName, ioName, value, mode, type) {
-        var key = objName + ioName;
+    exports.send = function (objectName, nodeName, value, mode, type) {
+        var key = objectName + nodeName;
 
         try {
             if (items[key] === undefined) {
-                if (server.getDebug()) console.log("raspberryPi: send() item not found: id = '" + objName + "' and ioName = '" + ioName + "'");
+                if (server.getDebug()) console.log("raspberryPi: send() item not found: id = '" + objectName + "' and nodeName = '" + nodeName + "'");
                 return;
             }
             items[key].GPIO.write(value);
@@ -115,10 +115,10 @@ if (exports.enabled) {
         teardown();
         
         rawItems.forEach(function (item) {
-            var key = item.id + item.ioName; // unique item identifier
+            var key = item.id + item.nodeName; // unique item identifier
 
             if (items[key] !== undefined) {
-                throw ("config.json contains two or more items with the id = '" + item.id + "' and ioName = '" + item.ioName + "'");
+                throw ("config.json contains two or more items with the id = '" + item.id + "' and nodeName = '" + item.nodeName + "'");
             }
 
             // if edge is not specified, fallback to the default (none)
@@ -136,8 +136,8 @@ if (exports.enabled) {
                 });
             }
 
-            if (server.getDebug()) console.log("raspberryPi: adding item with the id = '" + item.id + "' and ioName = '" + item.ioName + "'");
-            server.addIO(item.id, item.ioName, "default", "raspberryPi");
+            if (server.getDebug()) console.log("raspberryPi: adding item with the id = '" + item.id + "' and nodeName = '" + item.nodeName + "'");
+            server.addIO(item.id, item.nodeName, "default", "raspberryPi");
 
             items[key] = item;
         });
