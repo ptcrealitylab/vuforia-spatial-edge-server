@@ -24,7 +24,7 @@ if (exports.enabled) {
     var kodi = require('kodi-ws');
     var request = require('request');
     var _ = require('lodash');
-    var server = require(__dirname + '/../../libraries/HybridObjectsHardwareInterfaces');
+    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
     var kodiServers = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf8"));
 

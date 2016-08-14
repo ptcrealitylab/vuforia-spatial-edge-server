@@ -37,7 +37,7 @@ if (exports.enabled) {
     var fs = require('fs');
     var http = require('http');
     var _ = require('lodash');
-    var server = require(__dirname + '/../../libraries/HybridObjectsHardwareInterfaces');
+    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
 
     var lights = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf8"));

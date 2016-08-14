@@ -18,7 +18,7 @@
 
 
 var http = require('http');
-var HybridObjectsUtilities = require(__dirname + '/HybridObjectsUtilities');
+var utilities = require(__dirname + '/utilities');
 var _ = require('lodash');
 
 //global variables, passed through from server.js
@@ -66,7 +66,7 @@ exports.writeIOToServer = function (objectName, nodeName, number, mode, unit, un
     if(typeof unitMin !== 'undefined')  unitMin = 0;
     if(typeof unitMax !== 'undefined')  unitMax = 1;
 
-    var objKey2 = HybridObjectsUtilities.readObject(objectLookup, objectName); //get globally unique object id
+    var objKey2 = utilities.readObject(objectLookup, objectName); //get globally unique object id
   //  var valueKey = nodeName + objKey2;
 
     //console.log(objectLookup);
@@ -93,7 +93,7 @@ exports.writeIOToServer = function (objectName, nodeName, number, mode, unit, un
 exports.clearIO = function (type) {
     if(hardwareInterfaces.hasOwnProperty(type)) { //check if IO points of the specified type have been added
         for (var objectName in hardwareInterfaces[type].hybridObjects) {
-           var objectID = HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
+           var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
 
             if (!_.isUndefined(objectID) && !_.isNull(objectID) && objectID.length > 13) {
                 for (var key in objects[objectID].nodes) {
@@ -120,9 +120,9 @@ exports.clearIO = function (type) {
  * @param {string} type The name of your hardware interface
 **/
 exports.addIO = function (objectName, nodeName, plugin, type) {
-    HybridObjectsUtilities.createFolder(objectName, dirnameO, globalVariables.debug);
+    utilities.createFolder(objectName, dirnameO, globalVariables.debug);
 
-    var objectID = HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     if (globalVariables.debug) console.log("AddIO objectID: " + objectID + "   " + type);
 
     //objID = nodeName + objectID;
@@ -139,8 +139,8 @@ exports.addIO = function (objectName, nodeName, plugin, type) {
 
                 if (!objects[objectID].nodes.hasOwnProperty(nodeName)) {
                     var thisObject = objects[objectID].nodes[nodeName] = new ObjectValue();
-                    thisObject.x = HybridObjectsUtilities.randomIntInc(0, 200) - 100;
-                    thisObject.y = HybridObjectsUtilities.randomIntInc(0, 200) - 100;
+                    thisObject.x = utilities.randomIntInc(0, 200) - 100;
+                    thisObject.y = utilities.randomIntInc(0, 200) - 100;
                     thisObject.frameSizeX = 47;
                     thisObject.frameSizeY = 47;
                 }
@@ -171,7 +171,7 @@ exports.addIO = function (objectName, nodeName, plugin, type) {
 };
 
 exports.getObjectIdFromObjectName = function (objectName) {
-   return HybridObjectsUtilities.getObjectIdFromTarget(objectName, dirnameO);
+   return utilities.getObjectIdFromTarget(objectName, dirnameO);
 };
 
 /**

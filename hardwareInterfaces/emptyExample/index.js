@@ -51,7 +51,7 @@ exports.enabled = true;
 
 
 if (exports.enabled) {
-    var server = require(__dirname + '/../../libraries/HybridObjectsHardwareInterfaces');
+    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     /**
      * @desc This function is called once by the server. Start the event loop of your hardware interface in here.
      **/
