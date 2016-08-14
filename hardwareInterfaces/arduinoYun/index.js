@@ -115,7 +115,7 @@ if (exports.enabled) {
                             dataSwitch = 1;
                             //}
                         }
-                        else if (data === "p") { // nodeitive step value
+                        else if (data === "p") { // positive step value
                             //if (server.getClear()) {
                             valueMode = "p";
                             dataSwitch = 1;

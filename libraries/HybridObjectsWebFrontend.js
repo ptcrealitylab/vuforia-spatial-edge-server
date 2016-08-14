@@ -51,7 +51,7 @@ var debug = false;
 
 
 
-exports.printFolder = function (objectExp, dirnameO, debug, objectInterfaceFolder, objectLookup, version) {
+exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder, objectLookup, version) {
     var resText = "<!DOCTYPE html>" +
         "<html>" +
         "<head>" +
@@ -87,12 +87,12 @@ exports.printFolder = function (objectExp, dirnameO, debug, objectInterfaceFolde
 
     if (debug) {
         console.log("----------------------- objects");
-        for (var keykey in objectExp) {
+        for (var keykey in objects) {
             console.log(keykey);
         }
 
         console.log("----------------------- objects");
-        for (var keykey in objectExp) {
+        for (var keykey in objects) {
             console.log(keykey);
         }
 
@@ -117,7 +117,7 @@ exports.printFolder = function (objectExp, dirnameO, debug, objectInterfaceFolde
                 "</div>" +
                 "<div class='col-xs-8 text-right' style='' >";
 
-            if (objectExp.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
+            if (objects.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
                 resText +=
                     "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
             } else {
@@ -268,12 +268,12 @@ exports.printFolder = function (objectExp, dirnameO, debug, objectInterfaceFolde
 
 }
 
-exports.uploadInfoText = function (parm, objectLookup, objectExp, knownObjects, socketsInfo) {
+exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
     var objectName = HybridObjectsUtilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
     var ArduinoINstance = 0;
 
-    for (subKey in objectExp) {
+    for (subKey in objects) {
         if (subKey === objectName) {
             break;
         }
@@ -327,24 +327,24 @@ exports.uploadInfoText = function (parm, objectLookup, objectExp, knownObjects, 
 
     // var tempFolderName = tempFiles[i] + macAddress.replace(/:/gi, '');
 
-    // fill objectExp with objects named by the folders in objects
-    // objectExp[tempFolderName] = new ObjectExp();
-    // objectExp[tempFolderName].folder = tempFiles[i];
+    // fill objects with objects named by the folders in objects
+    // objects[tempFolderName] = new ObjectExp();
+    // objects[tempFolderName].folder = tempFiles[i];
 }
 
 
-exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObjects, socketsInfo) {
+exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
     var objectName = HybridObjectsUtilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
 
-    var uploadInfoTexttempArray = objectExp[objectName].links;
-    var uploadInfoTexttempArrayValue = objectExp[objectName].nodes;
+    var uploadInfoTexttempArray = objects[objectName].links;
+    var uploadInfoTexttempArrayValue = objects[objectName].nodes;
 
     var ArduinoINstance = 0;
 
-    // objectExp[objectName]
+    // objects[objectName]
 
-    for (subKey in objectExp) {
+    for (subKey in objects) {
         if (subKey === objectName) {
             break;
         }
@@ -392,11 +392,11 @@ exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObject
          '        </tr>\n'+*/
         '        <tr>\n' +
         '            <th scope="row">ip</th>\n' +
-        '            <td>' + objectExp[objectName].ip + '</td>\n' +
+        '            <td>' + objects[objectName].ip + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
         '            <th scope="row">version</th>\n' +
-        '            <td>' + objectExp[objectName].version + '</td>\n' +
+        '            <td>' + objects[objectName].version + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
         '            <th scope="row">sockets</th>\n' +
@@ -487,17 +487,17 @@ exports.uploadInfoContent = function (parm, objectLookup, objectExp, knownObject
 
     // var tempFolderName = tempFiles[i] + macAddress.replace(/:/gi, '');
 
-    // fill objectExp with objects named by the folders in objects
-    // objectExp[tempFolderName] = new ObjectExp();
-    // objectExp[tempFolderName].folder = tempFiles[i];
+    // fill objects with objects named by the folders in objects
+    // objects[tempFolderName] = new ObjectExp();
+    // objects[tempFolderName].folder = tempFiles[i];
 };
 
 
 
-exports.uploadTargetText = function (parm, objectLookup, objectExp) {
+exports.uploadTargetText = function (parm, objectLookup, objects) {
     if(debug) console.log("target content");
     var objectName = "";
-    if (objectExp.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, parm))) {
+    if (objects.hasOwnProperty(HybridObjectsUtilities.readObject(objectLookup, parm))) {
 
         objectName = HybridObjectsUtilities.readObject(objectLookup, parm);
     } else {

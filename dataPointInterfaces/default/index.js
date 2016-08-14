@@ -47,27 +47,33 @@
  * @desc prototype for a plugin. This prototype is called when a value should be changed.
  * It defines how this value should be transformed before sending it to the destination.
  * @param {object} objectID Origin object in which the related link is saved.
- * @param {string} linkPositionID the id of the link that is related to the call
+ * @param {string} linkID the id of the link that is related to the call
  * @param {number} inputData the data that needs to be processed
- * @param {number} inputMode the data that needs to be processed
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-exports.render = function (objectID, linkPositionID, inputData, inputMode, callback) {
-    var outputData = inputData;
-    var outputMode = inputMode;
+exports.render = function (objectID, linkID, inputData, callback) {
+    var outputData = {};
+    var key;
+    for(key in inputData)
+    {
+        outputData[key] = inputData[key];
+    }
 
-    callback(objectID, linkPositionID, outputData, outputMode);
+    callback(objectID, linkID, outputData);
 };
 
 /* // example for delay
-exports.render = function (objectID, linkPositionID, inputData, inputMode, callback) {
-    var outputData = inputData;
-    var outputMode = inputMode;
+ exports.render = function (objectID, linkID, inputData, callback) {
+ var outputData = {};
+ for(key in inputData)
+ {
+ outputData[key] = inputData[key];
+ }
 
-    setTimeout(function() {
-        callback(objectID, linkPositionID, outputData, outputMode);
-    }, 1000);
-};
+ setTimeout(function() {
+ callback(objectID, linkPositionID, outputData);
+ }, 1000);
+ };
  */
