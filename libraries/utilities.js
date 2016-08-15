@@ -46,7 +46,7 @@
 
 
 /**
- * @desc prototype for a plugin. This prototype is called when a value should be changed.
+ * @desc prototype for a source. This prototype is called when a value should be changed.
  * It defines how this value should be transformed before sending it to the destination.
  * @param {object} objectID Origin object in which the related link is saved.
  * @param {string} linkPositionID the id of the link that is related to the call

@@ -96,7 +96,7 @@ if (exports.enabled) {
             var valueMode = "";
             var value = null;
             var thisName = "";
-            var thisPlugin = "default";
+            var thisSource = "default";
             var amount = 0;
             //var okCounter = 0;
 
@@ -169,7 +169,7 @@ if (exports.enabled) {
                         dataSwitch = 23;
                         break;
                     case 23:
-                        thisPlugin = data;
+                        thisSource = data;
                         object = object[1];
                         node = object[0];
 
@@ -192,7 +192,7 @@ if (exports.enabled) {
                         }
                         FullLookup[thisObjectID][node] = arrayID;
 
-                        server.addIO(object, node, thisPlugin, "arduinoYun");
+                        server.addIO(object, node, thisSource, "arduinoYun");
 
                         dataSwitch = 0;
                         break;

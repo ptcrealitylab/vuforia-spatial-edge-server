@@ -26,7 +26,7 @@ var objects;
 var objectLookup;
 var globalVariables;
 var dirnameO;
-var pluginModules;
+var nodeAppearanceModules;
 var callback;
 var ObjectValue;
 var defaultBlock = "R0C0";
@@ -80,7 +80,7 @@ exports.writeIOToServer = function (objectName, nodeName, number, mode, unit, un
                 var dataObject = objects[objKey2].nodes[nodeName].blocks[defaultBlock];
                 dataObject.data = {number:number, mode:mode, unit:unit, unitMin:unitMin, unitMax:unitMax};
                 //callback is objectEngine in server.js. Notify data has changed.
-                callback(objKey2, nodeName, defaultBlock, dataObject.data, objects, pluginModules);
+                callback(objKey2, nodeName, defaultBlock, dataObject.data, objects, nodeAppearanceModules);
             }
         }
     }
@@ -116,10 +116,10 @@ exports.clearIO = function (type) {
  * @desc addIO() a new IO point to the specified HybridObject
  * @param {string} objectName The name of the HybridObject
  * @param {string} nodeName The name of the nodeName
- * @param {string} plugin The name of the data conversion plugin. If you don't have your own put in "default".
+ * @param {string} appearance The name of the data conversion appearance. If you don't have your own put in "default".
  * @param {string} type The name of your hardware interface
 **/
-exports.addIO = function (objectName, nodeName, plugin, type) {
+exports.addIO = function (objectName, nodeName, appearance, type) {
     utilities.createFolder(objectName, dirnameO, globalVariables.debug);
 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
@@ -149,7 +149,7 @@ exports.addIO = function (objectName, nodeName, plugin, type) {
 
                 var thisObj = objects[objectID].nodes[nodeName];
                 thisObj.name = nodeName;
-                thisObj.plugin = plugin;
+                thisObj.appearance = appearance;
                 thisObj.type = type;
 
                 //Add entries to the management data structures
@@ -202,12 +202,12 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
 **/
-exports.setup = function (objExp, objLookup, glblVars, dir, plugins, cb, objValue) {
+exports.setup = function (objExp, objLookup, glblVars, dir, appearances, cb, objValue) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
     dirnameO = dir;
-    pluginModules = plugins;
+    nodeAppearanceModules = appearances;
     callback = cb;
     ObjectValue = objValue;
 };
