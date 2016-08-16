@@ -271,30 +271,30 @@ function HybridObject() {
             }, 10);
 
         this.write = function (node, number, mode, unit, unitMin, unitMax) {
-                if(typeof mode !== 'undefined')  mode = "f";
-                if(typeof unit !== 'undefined')  unit = false;
-                if(typeof unitMin !== 'undefined')  unitMin = 0;
-                if(typeof unitMax !== 'undefined')  unitMax = 1;
+                if(!mode)  mode = "f";
+                if(!unit)  unit = false;
+                if(!unitMin)  unitMin = 0;
+                if(!unitMax)  unitMax = 1;
 
-            var nodeData = {number:number, mode:mode, unit:unit, unitMin:unitMin, unitMax:unitMax};
+            var thisItem = {number:number, mode:mode, unit:unit, unitMin:unitMin, unitMax:unitMax};
 
             if(!node in thisOHObjectIdentifier.oldValueList){
                 thisOHObjectIdentifier.oldValueList[node]= null;
             }
 
             if(thisOHObjectIdentifier.oldValueList[node] !== number) {
-                this.object.emit('object', JSON.stringify({object: objects.object, node: node, block: "R0C0", data: nodeData}));
+                this.object.emit('object', JSON.stringify({object: objects.object, node: node, item: thisItem}));
             }
             thisOHObjectIdentifier.oldValueList[node] = number;
         };
 
         this.readRequest = function (node) {
-            this.object.emit('/object/value', JSON.stringify({object: objects.object, node: node, block:"R0C0"}));
+            this.object.emit('/object/value', JSON.stringify({object: objects.object, node: node}));
         };
 
-        this.read = function (node, data) {
-            if (data.node === node) {
-                return data.data.number;
+        this.read = function (node, msg) {
+            if (msg.node === node) {
+                return msg.item.number;
             } else {
                 return undefined;
             }
@@ -302,12 +302,12 @@ function HybridObject() {
 
         this.addReadListener = function (node, callback) {
             thisOHObjectIdentifier.object.on("object", function (msg) {
-                var data = JSON.parse(msg);
+                var thisMsg = JSON.parse(msg);
 
-                if (typeof data.node !== "undefined") {
-                    if (data.node === node) {
-                        if (typeof data.data.number !== "undefined")
-                            callback(data.data.number);
+                if (typeof thisMsg.node !== "undefined") {
+                    if (thisMsg.node === node) {
+                        if (typeof thisMsg.item.number !== "undefined")
+                            callback(thisMsg.item.number);
                     }
                 }
             });
