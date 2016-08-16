@@ -49,67 +49,35 @@
  **/
 exports.enabled = true;
 
-
 if (exports.enabled) {
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
-    /**
-     * @desc This function is called once by the server. Start the event loop of your hardware interface in here.
-     **/
-    exports.setup = function () {
+    server.enableDeveloperUI(true);
 
-        server.addNode("obj47", "hans", "default");
-        server.addNode("obj47", "peter", "default");
+    server.addNode("obj47", "hans", "default");
+    server.addNode("obj47", "peter", "default");
 
-        server.addNode("obj45", "one", "default");
-        server.addNode("obj45", "two", "default");
-        server.addNode("obj45", "four", "default");
+    server.addNode("obj45", "one", "default");
+    server.addNode("obj45", "two", "default");
+    server.addNode("obj45", "four", "default");
+    server.addNode("obj45", "hans", "default");
 
+    server.addReadListener("obj45", "four", function (item) {
+        console.log(item.number);
+    });
 
-        server.addReadListener("obj45", "four", function (item){
-            console.log(item.number);
-        });
+    server.addEventListener("reset", function () {
 
+    });
 
-        setInterval(function(){
+    server.addEventListener("shutdown", function () {
 
-            server.write("obj45", "one", Math.random(), "f");
+    });
 
-        }, 100);
+    setInterval(function () {
 
-        setInterval(function(){
-            server.write("obj47", "hans", Math.random(), "f");
-        }, 100);
+        server.write("obj45", "one", Math.random(), "f");
 
-
-    };
-
-    /**
-     * @desc prototype for an interface init. The init reinitialize the communication with the external source.
-     *       Place calls to addIO() and clearIO() in here. Call clearIO() after you have added all the IO points with addIO() calls.
-     * @note program the init so that it can be called anytime there is a change to the amount of objects.
-     **/
-    //todo check out how the object is reset
-    exports.reset = function () {
-
-        server.addNode("obj47", "hans", "default");
-        server.addNode("obj47", "peter", "default");
-
-        server.addNode("obj45", "one", "default");
-        server.addNode("obj45", "two", "default");
-        server.addNode("obj45", "four", "default");
-
-        server.clearObject("obj45");
-        server.clearObject("obj47");
-
-    };
-
-    /**
-     * @desc This function is called once by the server when the process is being torn down. 
-     *       Clean up open file handles or resources and return quickly.
-     **/
-    exports.shutdown = function () {
-
-    };
+    }, 100);
 
 }
