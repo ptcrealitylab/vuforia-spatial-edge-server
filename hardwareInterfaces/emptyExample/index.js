@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 
 if (exports.enabled) {
@@ -55,7 +55,7 @@ if (exports.enabled) {
     /**
      * @desc This function is called once by the server. Start the event loop of your hardware interface in here.
      **/
-    exports.receive = function () {
+    exports.setup = function () {
 
     };
 
@@ -68,7 +68,7 @@ if (exports.enabled) {
      * @param {string} mode Specifies the datatype of value
      * @param {type} type The type
      **/
-    exports.send = function (objectName, nodeName, value, mode, type) {
+    exports.read = function (objectName, nodeName, value, mode, type) {
 
       //  console.log(objName+" : "+ ioName +" : "+ value +" : "+ mode +" : "+ type);
 
@@ -79,26 +79,24 @@ if (exports.enabled) {
      *       Place calls to addIO() and clearIO() in here. Call clearIO() after you have added all the IO points with addIO() calls.
      * @note program the init so that it can be called anytime there is a change to the amount of objects.
      **/
-    exports.init = function () {
+    exports.reset = function () {
 
 
 
-            server.addIO("obj45", "one", "default", "emptyExample");
-            server.addIO("obj45", "two", "default", "emptyExample");
-            server.addIO("obj45", "three", "default", "emptyExample");
-            server.addIO("obj45", "four", "default", "emptyExample");
+            server.addNode("obj45", "one", "default", "emptyExample");
+            server.addNode("obj45", "two", "default", "emptyExample");
+            server.addNode("obj45", "four", "default", "emptyExample");
 
-        server.addIO("obj46", "one1", "default", "emptyExample");
-        server.addIO("obj46", "two2", "default", "emptyExample");
+        server.addNode("obj46", "one1", "default", "emptyExample");
+        server.addNode("obj46", "two2", "default", "emptyExample");
 
-        server.clearIO("obj45");
-        server.clearIO("obj46");
-
+        server.clearObject("obj45");
+        server.clearObject("obj46");
 
 console.log("printthatshit");
         setInterval(function(){
          
-            server.writeIOToServer("obj45", "one", Math.random(), "f");
+            server.write("obj45", "one", Math.random(), "f");
 
         }, 100);
 

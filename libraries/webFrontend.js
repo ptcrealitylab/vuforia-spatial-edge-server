@@ -329,7 +329,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
 
     // fill objects with objects named by the folders in objects
     // objects[tempFolderName] = new ObjectExp();
-    // objects[tempFolderName].folder = tempFiles[i];
+    // objects[tempFolderName].name = tempFiles[i];
 }
 
 
@@ -451,9 +451,9 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '        <tr>\n' +
         '            <th class="info"><small>Active Link ID</small></th>\n' +
         '            <th class="info"><small>Origin Object</small></th>\n' +
-        '            <th class="info"><small>Origin Possition</small></th>\n' +
+        '            <th class="info"><small>Origin Node</small></th>\n' +
         '            <th class="info"><small>Destination Object</small></td>\n' +
-        '            <th class="info"><small>Destination Possition</small></th>\n' +
+        '            <th class="info"><small>Destination Node</small></th>\n' +
         '        </tr>\n' +
         '        </thead>\n' +
         '        <tbody>\n';
@@ -489,7 +489,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     // fill objects with objects named by the folders in objects
     // objects[tempFolderName] = new ObjectExp();
-    // objects[tempFolderName].folder = tempFiles[i];
+    // objects[tempFolderName].name = tempFiles[i];
 };
 
 

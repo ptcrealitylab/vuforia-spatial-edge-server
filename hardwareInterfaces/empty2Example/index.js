@@ -52,23 +52,35 @@ exports.enabled = true;
 
 if (exports.enabled) {
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
     /**
      * @desc This function is called once by the server. Start the event loop of your hardware interface in here.
      **/
-    exports.receive = function () {
+    exports.setup = function () {
 
-    };
+        server.addNode("obj47", "hans", "default");
+        server.addNode("obj47", "peter", "default");
 
-    /**
-     * @desc This function is called by the server whenever data for one of your HybridObject's IO points arrives. Parse the input and write the
-     *       value to your hardware.
-     * @param {string} objName Name of the HybridObject
-     * @param {string} ioName Name of the IO point
-     * @param {value} value The value
-     * @param {string} mode Specifies the datatype of value
-     * @param {type} type The type
-     **/
-    exports.send = function (objectName, nodeName, value, mode, type) {
+        server.addNode("obj45", "one", "default");
+        server.addNode("obj45", "two", "default");
+        server.addNode("obj45", "four", "default");
+
+
+        server.addReadListener("obj45", "four", function (item){
+            console.log(item.number);
+        });
+
+
+        setInterval(function(){
+
+            server.write("obj45", "one", Math.random(), "f");
+
+        }, 100);
+
+        setInterval(function(){
+            server.write("obj47", "hans", Math.random(), "f");
+        }, 100);
+
 
     };
 
@@ -77,22 +89,18 @@ if (exports.enabled) {
      *       Place calls to addIO() and clearIO() in here. Call clearIO() after you have added all the IO points with addIO() calls.
      * @note program the init so that it can be called anytime there is a change to the amount of objects.
      **/
-    exports.init = function () {
+    //todo check out how the object is reset
+    exports.reset = function () {
 
+        server.addNode("obj47", "hans", "default");
+        server.addNode("obj47", "peter", "default");
 
+        server.addNode("obj45", "one", "default");
+        server.addNode("obj45", "two", "default");
+        server.addNode("obj45", "four", "default");
 
-            server.addIO("obj47", "hans", "default", "empty2Example");
-            server.addIO("obj47", "peter", "default", "empty2Example");
-
-
-        server.clearIO("obj47");
-        
-console.log("printthatshit");
-        setInterval(function(){
-         
-            server.writeIOToServer("obj47", "hans", Math.random(), "f");
-
-        }, 100);
+        server.clearObject("obj45");
+        server.clearObject("obj47");
 
     };
 

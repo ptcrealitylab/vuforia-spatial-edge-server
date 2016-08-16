@@ -180,13 +180,13 @@ function Objects() {
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
     // This data can be used for interacting with objects for when they are not visible.
     this.matrixMemory = null; // TODO use this to store UI interface for image later.
+    // Stores all the links that emerge from within the object. If a IOPoint has new data,
+    // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
+    this.links = {};
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
     // The arrangement of nodes for crafting.
     this.logic = {};
-    // Stores all the links that emerge from within the object. If a IOPoint has new data,
-    // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
-    this.links = {};
 }
 
 /**
@@ -244,7 +244,7 @@ function Node() {
     this.appearance = "default";
     // defines the origin Hardware interface of the IO Point. For example if this is arduinoYun the Server associates
     // this IO Point with the Arduino Yun hardware interface.
-    this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
+    //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
     // indicates how much calls per second is happening on this node
     this.stress = 0;
 }
@@ -281,8 +281,9 @@ function Logic() {
         [[null, 0], [null, 0], [null, 0], [null, 0]]
     ];
 
-    this.blocks = {};
     this.links = {};
+    this.blocks = {};
+    
 }
 
 /**
@@ -461,7 +462,7 @@ for (var i = 0; i < nodeFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, function (objectKey, nodeKey, number, mode, unit, unitMin, unitMax, objects, nodeAppearanceModules) {
+hardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
@@ -469,16 +470,16 @@ hardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, node
     sendMessagetoEditors({
         object: objectKey,
         node: nodeKey,
-        item: {number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax}
+        item: item
     });
     objectEngine(objectKey, nodeKey, objects, nodeAppearanceModules);
 
 }, Node);
 cout("Done");
 
-cout("Loading Hybrid Objects");
-// This function will load all the Hybrid Objects
-loadHybridObjects();
+cout("Loading Objects");
+// This function will load all the Objects
+loadObjects();
 cout("Done");
 
 startSystem();
@@ -507,8 +508,8 @@ cout("ready to start internal servers");
 
 // starting the internal servers (receive)
 for (var i = 0; i < hardwareInterfacesFolderList.length; i++) {
-    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].init();
-    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].receive();
+    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].reset();
+    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].setup();
 }
 
 cout("found " + hardwareInterfacesFolderList.length + " internal server");
@@ -530,44 +531,44 @@ function getFileExtension(fileName) {
 /**
  * @desc Add objects from the objects folder to the system
  **/
-function loadHybridObjects() {
-    cout("Enter loadHybridObjects");
+function loadObjects() {
+    cout("Enter loadObjects");
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
-    var HybridObjectFolderList = fs.readdirSync(objectPath).filter(function (file) {
+    var objectFolderList = fs.readdirSync(objectPath).filter(function (file) {
         return fs.statSync(objectPath + '/' + file).isDirectory();
     });
 
     // remove hidden directories
     try {
-        while (HybridObjectFolderList[0][0] === ".") {
-            HybridObjectFolderList.splice(0, 1);
+        while (objectFolderList[0][0] === ".") {
+            objectFolderList.splice(0, 1);
         }
     } catch (e) {
         cout("no hidden files");
     }
 
-    for (var i = 0; i < HybridObjectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTarget(HybridObjectFolderList[i], __dirname);
+    for (var i = 0; i < objectFolderList.length; i++) {
+        var tempFolderName = utilities.getObjectIdFromTarget(objectFolderList[i], __dirname);
         cout("TempFolderName: " + tempFolderName);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
             objects[tempFolderName] = new Objects();
-            objects[tempFolderName].folder = HybridObjectFolderList[i];
+            objects[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
-            utilities.writeObject(objectLookup, HybridObjectFolderList[i], tempFolderName);
+            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName);
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + HybridObjectFolderList[i] + "/object.json", "utf8"));
+                objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + objectFolderList[i] + "/object.json", "utf8"));
                 objects[tempFolderName].ip = ip.address();
 
                 // adding the values to the arduino lookup table so that the serial connection can take place.
                 // todo this is maybe obsolete.
                 for (var nodeKey in objects[tempFolderName].nodes) {
-                    ArduinoLookupTable.push({object: HybridObjectFolderList[i], node: nodeKey});
+                    ArduinoLookupTable.push({object: objectFolderList[i], node: nodeKey});
                 }
                 // todo the sizes do not really save...
 
@@ -590,12 +591,12 @@ function loadHybridObjects() {
             }
 
         } else {
-            cout(" object " + HybridObjectFolderList[i] + " has no marker yet");
+            cout(" object " + objectFolderList[i] + " has no marker yet");
         }
     }
 
     for (var keyint in hardwareInterfaceModules) {
-        hardwareInterfaceModules[keyint].init();
+        hardwareInterfaceModules[keyint].reset();
     }
 }
 
@@ -1116,7 +1117,7 @@ function objectWebServer() {
 
         webServer.post(objectInterfaceFolder + "contentDelete/:id", function (req, res) {
             if (req.body.action === "delete") {
-                var folderDel = __dirname + '/objects/' + req.body.folder;
+                var folderDel = __dirname + '/objects/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
@@ -1149,15 +1150,15 @@ function objectWebServer() {
             // cout("post 22");
             if (req.body.action === "new") {
                 // cout(req.body);
-                if (req.body.folder !== "") {
+                if (req.body.name !== "") {
 
-                    utilities.createFolder(req.body.folder, __dirname, globalVariables.debug);
+                    utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
 
                 }
                 res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
             if (req.body.action === "delete") {
-                var folderDel = __dirname + '/objects/' + req.body.folder;
+                var folderDel = __dirname + '/objects/' + req.body.name;
 
                 var deleteFolderRecursive = function (folderDel) {
                     if (fs.existsSync(folderDel)) {
@@ -1175,7 +1176,7 @@ function objectWebServer() {
 
                 deleteFolderRecursive(folderDel);
 
-                var tempFolderName2 = utilities.readObject(objectLookup, req.body.folder);// req.body.folder + thisMacAddress;
+                var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
 
                 if (tempFolderName2 !== null) {
                     if (tempFolderName2 in objects) {
@@ -1192,7 +1193,7 @@ function objectWebServer() {
                     // remove object from tree
                     delete objects[tempFolderName2];
                     delete knownObjects[tempFolderName2];
-                    delete objectLookup[req.body.folder];
+                    delete objectLookup[req.body.name];
 
                     if (tempFolderName2 in objects) {
                         cout("ist noch da");
@@ -1308,7 +1309,7 @@ function objectWebServer() {
                 tmpFolderFile = req.params.id;
 
                 if (req.body.action === "delete") {
-                    var folderDel = __dirname + '/objects/' + req.body.folder;
+                    var folderDel = __dirname + '/objects/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
                         if (fs.lstatSync(folderDel).isDirectory()) {
@@ -1333,7 +1334,7 @@ function objectWebServer() {
                         }
                     }
 
-                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.folder);//req.body.folder + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);//req.body.name + thisMacAddress;
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         delete objects[tempFolderName2];
@@ -1468,7 +1469,7 @@ function objectWebServer() {
                                         cout("have created a new object");
 
                                         for (var keyint in hardwareInterfaceModules) {
-                                            hardwareInterfaceModules[keyint].init();
+                                            hardwareInterfaceModules[keyint].reset();
                                         }
                                         cout("have initialized the modules");
 
@@ -1521,7 +1522,7 @@ function objectWebServer() {
     } else {
         webServer.get(objectInterfaceFolder, function (req, res) {
             //   cout("GET 21");
-            res.send("Hybrid Objects<br>Developer functions are off");
+            res.send("Objects<br>Developer functions are off");
         });
     }
 }
@@ -1543,7 +1544,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
             if (objectIDXML.length > 13) {
 
                 objects[objectIDXML] = new Objects();
-                objects[objectIDXML].folder = folderVar;
+                objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
 
                 cout("this should be the IP" + objectIDXML);
@@ -1568,7 +1569,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 //serialPort.write("ok\n");
                 // todo send init to internal
                 for (var keyint in hardwareInterfaceModules) {
-                    hardwareInterfaceModules[keyint].init();
+                    hardwareInterfaceModules[keyint].reset();
                 }
 
                 cout("weiter im text " + objectIDXML);
@@ -1612,9 +1613,11 @@ function socketServer(params) {
                         objSend.item[key] = msgContent.item[key];
                     }
 
-                    if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-                        hardwareInterfaceModules[objSend.type].send(msgContent.object, msgContent.node, objSend.item, objSend.type);
-                    }
+                    hardwareInterfaces.readCall(msgContent.object, msgContent.node,objSend.item);
+
+                   /* if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
+                        hardwareInterfaceModules[objSend.type].read(msgContent.object, msgContent.node, objSend.item, objSend.type);
+                    }*/
 
                     sendMessagetoEditors({
                         object: msgContent.object,
@@ -1712,9 +1715,12 @@ function enginePostProcessing(object, link, processedData) {
             objSend.item[key] = processedData[key];
         }
 
+        hardwareInterfaces.readCall(thisLink.objectB, thisLink.nodeB,objSend.item);
+        /*
         if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-            hardwareInterfaceModules[objSend.type].send(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
+            hardwareInterfaceModules[objSend.type].read(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
         }
+        */
         // send data to listening editor
 
         sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, item: objSend.item});
