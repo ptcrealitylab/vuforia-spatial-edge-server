@@ -43,12 +43,12 @@
 
         var msg = JSON.parse(e.data);
 
-        if (typeof msg.pos !== "undefined" && typeof msg.obj !== "undefined") {
+        if (typeof msg.node !== "undefined" && typeof msg.object !== "undefined") {
 
-            parent.postMessage(JSON.stringify(
+            parent.nodetMessage(JSON.stringify(
                     {
-                        "pos": msg.pos,
-                        "obj": msg.obj,
+                        "node": msg.node,
+                        "object": msg.object,
                         "height": document.body.scrollHeight,
                         "width": document.body.scrollWidth,
                         "sendMatrix": false,
@@ -58,8 +58,8 @@
                     // this needs to contain the final interface source
                     , "*");
 
-            objectExp.pos = msg.pos;
-            objectExp.obj = msg.obj;
+            objectExp.node = msg.node;
+            objectExp.object = msg.object;
         }
 
         if (typeof msg.uiActionFeedback !== "undefined") {

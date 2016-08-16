@@ -1043,7 +1043,6 @@ function objectWebServer() {
             res.send(updateStatus);
         });
     }
-
     // this is the newer form.
     // in future the data programming interface should be accessable directly like so. because the obj is reserved for the object content only
     webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
