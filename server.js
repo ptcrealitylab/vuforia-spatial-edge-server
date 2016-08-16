@@ -506,11 +506,7 @@ for (var i = hardwareInterfacesFolderList.length - 1; i >= 0; i--) {
 
 cout("ready to start internal servers");
 
-// starting the internal servers (receive)
-for (var i = 0; i < hardwareInterfacesFolderList.length; i++) {
-    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].reset();
-    hardwareInterfaceModules[hardwareInterfacesFolderList[i]].setup();
-}
+hardwareInterfaces.reset();
 
 cout("found " + hardwareInterfacesFolderList.length + " internal server");
 cout("starting internal Server.");
@@ -595,9 +591,7 @@ function loadObjects() {
         }
     }
 
-    for (var keyint in hardwareInterfaceModules) {
-        hardwareInterfaceModules[keyint].reset();
-    }
+    hardwareInterfaces.reset();
 }
 
 /**********************************************************************************************************************
@@ -642,13 +636,7 @@ function startSystem() {
 function exit() {
     var mod;
 
-    // shut down the internal servers (teardown)
-    for (var i = 0; i < hardwareInterfacesFolderList.length; i++) {
-        mod = hardwareInterfaceModules[hardwareInterfacesFolderList[i]];
-        if ("shutdown" in mod) {
-            mod.shutdown();
-        }
-    }
+    hardwareInterfaces.shutdown();
 
     process.exit();
 }
@@ -1468,9 +1456,7 @@ function objectWebServer() {
                                         //todo send init to internal modules
                                         cout("have created a new object");
 
-                                        for (var keyint in hardwareInterfaceModules) {
-                                            hardwareInterfaceModules[keyint].reset();
-                                        }
+                                        hardwareInterfaces.reset();
                                         cout("have initialized the modules");
 
                                         var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
@@ -1568,9 +1554,8 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 // ask the object to reinitialize
                 //serialPort.write("ok\n");
                 // todo send init to internal
-                for (var keyint in hardwareInterfaceModules) {
-                    hardwareInterfaceModules[keyint].reset();
-                }
+
+                hardwareInterfaces.reset();
 
                 cout("weiter im text " + objectIDXML);
                 utilities.writeObjectToFile(objects, objectIDXML, __dirname);
