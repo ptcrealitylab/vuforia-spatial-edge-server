@@ -365,7 +365,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (subKey in uploadInfoTexttempArrayValue) {
-        text += "<tr> <td>" + infoCount + "</td><td>" + subKey + "</td><td>" + uploadInfoTexttempArrayValue[subKey].data.data + "</td></tr>";
+        text += "<tr> <td>" + infoCount + "</td><td>" + subKey + "</td><td>" + uploadInfoTexttempArrayValue[subKey].item.number + "</td></tr>";
         infoCount++;
     }
 
