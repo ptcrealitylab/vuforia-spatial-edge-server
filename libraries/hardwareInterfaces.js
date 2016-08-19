@@ -70,20 +70,19 @@ exports.write = function (objectName, nodeName, number, mode, unit, unitMin, uni
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     //  var valueKey = nodeName + objKey2;
 
+    var nodeUuid = objectKey+nodeName;
     //console.log(objectLookup);
-
 //    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
-
     if (objects.hasOwnProperty(objectKey)) {
-        if (objects[objectKey].nodes.hasOwnProperty(nodeName)) {
-            var thisItem = objects[objectKey].nodes[nodeName].item;
+        if (objects[objectKey].nodes.hasOwnProperty(nodeUuid)) {
+            var thisItem = objects[objectKey].nodes[nodeUuid].item;
             thisItem.number = number;
             thisItem.mode = mode;
             thisItem.unit = unit;
             thisItem.unitMin = unitMin;
             thisItem.unitMax = unitMax;
             //callback is objectEngine in server.js. Notify data has changed.
-            callback(objectKey, nodeName, thisItem, objects, nodeAppearanceModules);
+            callback(objectKey, nodeUuid, thisItem, objects, nodeAppearanceModules);
         }
     }
 };
@@ -92,19 +91,19 @@ exports.write = function (objectName, nodeName, number, mode, unit, unitMin, uni
  * @desc clearIO() removes IO points which are no longer needed. It should be called in your hardware interface after all addIO() calls have finished.
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
-exports.clearObject = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+exports.clearObject = function (objectId) {
+    var objectID = utilities.getObjectIdFromTarget(objectId, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].nodes) {
-            if (!hardwareObjects[objectName].nodes.hasOwnProperty(objects[objectID].nodes[key].name)) {
-                if (globalVariables.debug) console.log("Deleting: " + objectID + "   " + key);
+            if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
+                cout("Deleting: " + objectID + "   " + key);
                 delete objects[objectID].nodes[key];
             }
         }
 
     }
     //TODO: clear links too
-    if (globalVariables.debug) console.log("object is all cleared");
+    cout("object is all cleared");
 };
 
 /**
@@ -114,30 +113,35 @@ exports.clearObject = function (objectName) {
  * @param {string} appearance The name of the data conversion appearance. If you don't have your own put in "default".
  **/
 exports.addNode = function (objectName, nodeName, appearance) {
+
+
+
     utilities.createFolder(objectName, dirnameO, globalVariables.debug);
 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
-    if (globalVariables.debug) console.log("AddIO objectID: " + objectID);
+    cout("AddIO objectID: " + objectID);
+
+    var nodeUuid = objectID+nodeName;
 
     //objID = nodeName + objectID;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
-        if (globalVariables.debug) console.log("I will save: " + objectName + " and: " + nodeName);
+        cout("I will save: " + objectName + " and: " + nodeName);
 
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = objectName;
 
-            if (!objects[objectID].nodes.hasOwnProperty(nodeName)) {
-                var thisObject = objects[objectID].nodes[nodeName] = new Node();
+            if (!objects[objectID].nodes.hasOwnProperty(nodeUuid)) {
+                var thisObject = objects[objectID].nodes[nodeUuid] = new Node();
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
-                thisObject.frameSizeX = 47;
-                thisObject.frameSizeY = 47;
+                thisObject.frameSizeX = 100;
+                thisObject.frameSizeY = 100;
             }
 
-            var thisObj = objects[objectID].nodes[nodeName];
+            var thisObj = objects[objectID].nodes[nodeUuid];
             thisObj.name = nodeName;
             thisObj.appearance = appearance;
 
@@ -145,9 +149,9 @@ exports.addNode = function (objectName, nodeName, appearance) {
                 hardwareObjects[objectName] = new Object(objectName);
             }
 
-            if (!hardwareObjects[objectName].nodes.hasOwnProperty(nodeName)) {
-                hardwareObjects[objectName].nodes[nodeName] = new EmptyNode(nodeName);
-                hardwareObjects[objectName].nodes[nodeName].appearance = appearance;
+            if (!hardwareObjects[objectName].nodes.hasOwnProperty(nodeUuid)) {
+                hardwareObjects[objectName].nodes[nodeUuid] = new EmptyNode(nodeName);
+                hardwareObjects[objectName].nodes[nodeUuid].appearance = appearance;
             }
         }
     }
@@ -196,13 +200,13 @@ exports.setup = function (objExp, objLookup, glblVars, dir, appearances, cb, obj
 exports.reset = function (){
     for (var objectKey in objects) {
         for (var nodeKey in objects[objectKey].nodes) {
-            _this.addNode(objectKey, nodeKey, objects[objectKey].nodes[nodeKey].appearance);
+            _this.addNode(objects[objectKey].name,  objects[objectKey].nodes[nodeKey].name, objects[objectKey].nodes[nodeKey].appearance);
 
         }
         _this.clearObject(objectKey);
     }
 
-    if (globalVariables.debug) console.log("sendReset");
+    cout("sendReset");
     for (var i = 0; i < callBacks.resetCallBacks.length; i++) {
         callBacks.resetCallBacks[i]();
     }
@@ -218,7 +222,9 @@ exports.readCall = function (objectName, nodeName, item) {
 
 exports.addReadListener = function (objectName, nodeName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
-    if (globalVariables.debug) console.log("Add read listener for objectID: " + objectID);
+    var nodeID = objectID+nodeName;
+
+    cout("Add read listener for objectID: " + objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -227,11 +233,11 @@ exports.addReadListener = function (objectName, nodeName, callBack) {
                 callBacks[objectID] = new Object(objectID);
             }
 
-            if (!callBacks[objectID].nodes.hasOwnProperty(nodeName)) {
-                callBacks[objectID].nodes[nodeName] = new EmptyNode(nodeName);
-                callBacks[objectID].nodes[nodeName].callBack = callBack;
+            if (!callBacks[objectID].nodes.hasOwnProperty(nodeID)) {
+                callBacks[objectID].nodes[nodeID] = new EmptyNode(nodeName);
+                callBacks[objectID].nodes[nodeID].callBack = callBack;
             } else {
-                callBacks[objectID].nodes[nodeName].callBack = callBack;
+                callBacks[objectID].nodes[nodeID].callBack = callBack;
             }
         }
     }
@@ -239,11 +245,11 @@ exports.addReadListener = function (objectName, nodeName, callBack) {
 
 exports.addEventListener = function (option, callBack){
     if(option === "reset") {
-        if (globalVariables.debug) console.log("Add reset listener");
+        cout("Add reset listener");
         callBacks.resetCallBacks.push(callBack);
     }
     if(option === "shutdown") {
-        if (globalVariables.debug) console.log("Add reset listener");
+        cout("Add reset listener");
         callBacks.shutdownCallBacks.push(callBack);
     }
 
@@ -251,8 +257,12 @@ exports.addEventListener = function (option, callBack){
 
 exports.shutdown = function (){
 
-    if (globalVariables.debug) console.log("call shutdowns");
+    cout("call shutdowns");
     for (var i = 0; i < callBacks.shutdownCallBacks.length; i++) {
         callBacks.shutdownCallBacks[i]();
     }
 };
+
+function cout(msg) {
+    if (globalVariables.debug) console.log(msg);
+}

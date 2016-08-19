@@ -51,7 +51,7 @@ var debug = false;
 
 
 
-exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder, objectLookup, version) {
+exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version) {
     var resText = "<!DOCTYPE html>" +
         "<html>" +
         "<head>" +
@@ -159,8 +159,8 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder,
 
                 'Download' +
                 '</button> ' +
-                " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceFolder + "' method='post' style='margin: 0px; padding: 0px'>" +
-                "<input type='hidden' name='folder' value='" + tempFiles[i] + "'>" +
+                " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
+                "<input type='hidden' name='name' value='" + tempFiles[i] + "'>" +
                 "<input type='hidden' name='action' value='delete'>" +
                 " <input type='submit'  class='btn btn-danger' value='Delete' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\"> " +
                 "</form>" +
@@ -175,9 +175,9 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceFolder,
 
     resText +=
         "</ul><div class='row'>" +
-        "<form id='newFolderForm' action='" + objectInterfaceFolder + "' method='post' style='display:inline'>" +
+        "<form id='newNameForm' action='" + objectInterfaceName + "' method='post' style='display:inline'>" +
         "<div class='col-xs-5'>" +
-        "<input type='text' class='form-control' name='folder' id='folder' placeholder='New Object Name'/>" +
+        "<input type='text' class='form-control' name='name' id='name' placeholder='New Object Name'/>" +
         "<input type='hidden' name='action' value='new'>" +
         "</div>" +
         "<div class='col-xs-4' style='display: inline'>" +
@@ -363,9 +363,15 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '        </thead>\n' +
         '        <tbody>\n';
 
+    var protocolText = "";
+    if(objects[objectName].protocol === "R0") protocolText = "R0 over WebSocket";
+    if(objects[objectName].protocol === "R1") protocolText = "R1 over WebSocket";
+
     infoCount = 0;
     for (subKey in uploadInfoTexttempArrayValue) {
-        text += "<tr> <td>" + infoCount + "</td><td>" + subKey + "</td><td>" + uploadInfoTexttempArrayValue[subKey].item.number + "</td></tr>";
+        var thisHtmlNode = uploadInfoTexttempArrayValue[subKey];
+
+        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.item.number + "</td></tr>";
         infoCount++;
     }
 
@@ -381,7 +387,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '    <table class="table table-striped">\n' +
         '        <thead>\n' +
         '        <tr>\n' +
-        '            <th class="info">General Info</th>\n' +
+        '            <th class="info">Object Information</th>\n' +
         '            <th class="info"></th>\n' +
         '        </tr>\n' +
         '        </thead>\n' +
@@ -391,23 +397,27 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
          '            <td>'+ArduinoINstance+'</td>\n'+
          '        </tr>\n'+*/
         '        <tr>\n' +
-        '            <th scope="row">ip</th>\n' +
+        '            <th scope="row">Ip</th>\n' +
         '            <td>' + objects[objectName].ip + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
-        '            <th scope="row">version</th>\n' +
+        '            <th scope="row">Version</th>\n' +
         '            <td>' + objects[objectName].version + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
-        '            <th scope="row">sockets</th>\n' +
+        '            <th scope="row">Protocol</th>\n' +
+        '            <td>' + protocolText+ '</td>\n' +
+        '        </tr>\n' +
+        '        <tr>\n' +
+        '            <th scope="row">Amount of Sockets</th>\n' +
         '            <td>' + socketsInfo.sockets + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
-        '            <th scope="row">connected</th>\n' +
+        '            <th scope="row">Connected</th>\n' +
         '            <td>' + socketsInfo.connected + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
-        '            <th scope="row">notConnected</th>\n' +
+        '            <th scope="row">Disconnected</th>\n' +
         '            <td>' + socketsInfo.notConnected + '</td>\n' +
         '        </tr>\n' +
         '        </tbody>\n' +
@@ -415,8 +425,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '    <table class="table table-striped">\n' +
         '        <thead>\n' +
         '        <tr>\n' +
-        '            <th class="info">Known Objects</th>\n' +
-        '            <th class="info"> </th>\n' +
+        '            <th class="info"><small>Known Objects</small></th>\n' +
+        '            <th class="info"><small><small><small>Version &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IP &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Protocol</small></small></small></th>\n' +
         '        </tr>\n' +
         '        </thead>\n' +
         '        <tbody>\n';
@@ -424,12 +434,13 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (subKey in knownObjects) {
-        text += '<tr><td>' + subKey + '</td><td>' + knownObjects[subKey] + '</td></tr>';
+        text += '<tr><td><small><small><small>' + subKey + '</small></small></small></td>' +
+            '<td><small><small><small>' + knownObjects[subKey].version+ ' &nbsp; &nbsp; ' +knownObjects[subKey].ip+  ' &nbsp; &nbsp; ' +knownObjects[subKey].protocol+  '</small></small></small></td></tr>';
         infoCount++;
     }
 
     if (infoCount === 0) {
-        text += "<tr> <td>no Object found</td><td> </td></tr>";
+        text += "<tr> <td><small>no Object found</small></td><td> </td></tr>";
     }
 
     text +=
@@ -461,11 +472,10 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (subKey in uploadInfoTexttempArray) {
-        if(uploadInfoTexttempArray[subKey].hasOwnProperty("ObjectNameA"))
+        if(uploadInfoTexttempArray[subKey].hasOwnProperty("nameA"))
         text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
         else
             text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
-
 
         infoCount++;
     }
@@ -622,7 +632,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 
 
-exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
+exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
     if(debug) console.log("interface content");
     var text =
 
@@ -677,14 +687,14 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
     var listeliste = walk(objectPath2);
 
     //  var folderContent = walkSync(objectPath,fileList);
-    var folderSpace = "";
+    var nameSpace = "";
 
 
-    var folderOrigin = "/obj/";
+    var nameOrigin = "/obj/";
 
     var llist;
 
-    folderOld = "";
+   nameOld = "";
 
     text +=
         '<html>\n' +
@@ -724,15 +734,15 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
         var content = listeliste[i].replace(objectPath2 + '/', '').split("/");
 
         if (content[1] !== undefined) {
-            if (content[0] !== folderOld) {
+            if (content[0] !== nameOld) {
 
                 // console.log("---" + content[0]);
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
+                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
@@ -765,15 +775,15 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
                 text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
-                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
+                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
                 if (debug) console.log(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
 
 
-            folderOld = content[0];
+            nameOld = content[0];
         } else {
             if (content[0][0] !== "." && content[0][0] !== "_") {
                 var fileTypeF2 = changeCase.lowerCase(content[0].split(".")[1]);//.toLowerCase();
@@ -797,8 +807,8 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceFolder) {
                 text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceFolder + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='folder' value='" + dateiTobeRemoved + "'>" +
+                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
 
 

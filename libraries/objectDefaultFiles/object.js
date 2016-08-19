@@ -42,291 +42,407 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+var realityObject = {
+    node: "",
+    object: "",
+    modelViewMatrix: [],
+    projectionMatrix: [],
+    visibility: "visible",
+    sendMatrix: false,
+    sendFullScreen: false,
+    height: "100%",
+    width: "100%",
+    socketIoScript: {},
+    socketIoRequest: {},
+    style: document.createElement('style'),
+    messageCallBacks: {},
+    version: 170
+};
+
+// adding css styles nessasary for acurate 3D transformations.
+realityObject.style.type = 'text/css';
+realityObject.style.innerHTML = 'body, html{ height: 100%; margin:0; padding:0;}';
+document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
 // Load socket.io.js synchronous so that it is available by the time the rest of the code is executed.
-var xhr = new XMLHttpRequest();
-xhr.open('GET', "/socket.io/socket.io.js", false);
-xhr.send();
+realityObject.socketIoRequest = new XMLHttpRequest();
+realityObject.socketIoRequest.open('GET', "/socket.io/socket.io.js", false);
+realityObject.socketIoRequest.send();
 
 //Only add script if fetch was successful
-if (xhr.status == 200) {
-    var objectNodeScript = document.createElement('script');
-    objectNodeScript.type = "text/javascript";
-    objectNodeScript.text = xhr.responseText;
-    document.getElementsByTagName('head')[0].appendChild(objectNodeScript);
+if (realityObject.socketIoRequest.status == 200) {
+    realityObject.socketIoScript = document.createElement('script');
+    realityObject.socketIoScript.type = "text/javascript";
+    realityObject.socketIoScript.text = realityObject.socketIoRequest.responseText;
+    document.getElementsByTagName('head')[0].appendChild(realityObject.socketIoScript);
 } else {
-    console.log("Error XMLHttpRequest HTTP status: " + xhr.status);
+    console.log("Error XMLHttpRequest HTTP status: " + realityObject.socketIoRequest.status);
 }
-var objectVersion = "1.0";
-var objects = {};
-objects.modelViewMatrix = [];
-objects.projectionMatrix = [];
-objects.visibility = "visible";
-var objectsSendMatrix = false;
-var objectsSendFullScreen = false;
-var objectsHeight ="100%";
-var objectsWidth = "100%";
+
+/**
+ ************************************************************
+ */
 
 // function for resizing the windows.
+
 window.addEventListener("message", function (MSG) {
-    var msg = JSON.parse(MSG.data);
+    console.log("test");
 
-    if (typeof msg.node !== "undefined") {
+    var msgContent = JSON.parse(MSG.data);
+    for (var key in realityObject.messageCallBacks) {
+        realityObject.messageCallBacks[key](msgContent);
+    }
+}, false);
 
-        if(objectsSendFullScreen === false){
-            objectsHeight = document.body.scrollHeight;
-            objectsWidth = document.body.scrollWidth;
+realityObject.messageCallBacks.mainCall = function (msgContent) {
+
+    if (typeof msgContent.node !== "undefined") {
+
+        if (realityObject.sendFullScreen === false) {
+            realityObject.height = document.body.scrollHeight;
+            realityObject.width = document.body.scrollWidth;
         }
 
         parent.postMessage(JSON.stringify(
             {
-                "node": msg.node,
-                "object": msg.object,
-                "height": objectsHeight,
-                "width":objectsWidth,
-                "sendMatrix" : objectsSendMatrix,
-                "fullScreen" : objectsSendFullScreen
+                version: realityObject.version,
+                node: msgContent.node,
+                object: msgContent.object,
+                height: realityObject.height,
+                width: realityObject.width,
+                sendMatrix: realityObject.sendMatrix,
+                fullScreen: realityObject.sendFullScreen
             }
             )
             // this needs to contain the final interface source
             , "*");
 
-        objects.node = msg.node;
-        objects.object = msg.object;
+        realityObject.node = msgContent.node;
+        realityObject.object = msgContent.object;
     }
 
-    if (typeof msg.modelViewMatrix !== "undefined") {
-        objects.modelViewMatrix = msg.modelViewMatrix;
+    if (typeof msgContent.modelViewMatrix !== "undefined") {
+        realityObject.modelViewMatrix = msgContent.modelViewMatrix;
     }
 
-    if (typeof msg.projectionMatrix !== "undefined") {
-        objects.projectionMatrix = msg.projectionMatrix;
+    if (typeof msgContent.projectionMatrix !== "undefined") {
+        realityObject.projectionMatrix = msgContent.projectionMatrix;
     }
 
-    if (typeof msg.visibility !== "undefined") {
-        objects.visibility = msg.visibility;
+    if (typeof msgContent.visibility !== "undefined") {
+        realityObject.visibility = msgContent.visibility;
     }
 
-}, false);
+};
 
-// adding css styles nessasary for acurate 3D transformations.
-var style = document.createElement('style');
-style.type = 'text/css';
-style.innerHTML = 'body, html{ height: 100%; margin:0; padding:0;}';
-document.getElementsByTagName('head')[0].appendChild(style);
-
+/**
+ ************************************************************
+ */
 
 function HybridObject() {
 
+    /**
+     ************************************************************
+     */
 
-    this.sendGlobalMessage = function(ohMSG) {
-        if (typeof objects.node !== "undefined") {
+    this.sendGlobalMessage = function (ohMSG) {
+        if (typeof realityObject.node !== "undefined") {
             var msgg = JSON.stringify(
                 {
-                    "node": objects.node,
-                    "object": objects.object,
-                    "ohGlobalMessage" : ohMSG
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    globalMessage: ohMSG
                 });
             window.parent.postMessage(msgg
                 , "*");
-         }
+        }
     };
+
+    /**
+     ************************************************************
+     */
 
     this.addGlobalMessageListener = function (callback) {
 
-        window.addEventListener("message", function (MSG) {
-            var msg = JSON.parse(MSG.data);
-            if (typeof msg.ohGlobalMessage !== "undefined") {
-                callback(msg.ohGlobalMessage);
+        realityObject.messageCallBacks.gloablMessageCall = function (msgContent) {
+            if (typeof msgContent.globalMessage !== "undefined") {
+                callback(msgContent.globalMessage);
             }
-        }, false);
-
+        };
     };
+
+    /**
+     ************************************************************
+     */
 
     this.addMatrixListener = function (callback) {
-        window.addEventListener("message", function (MSG) {
-            var msg = JSON.parse(MSG.data);
-            if (typeof msg.modelViewMatrix !== "undefined") {
-                callback(msg.modelViewMatrix, objects.projectionMatrix);
+        realityObject.messageCallBacks.matrixCall = function (msgContent) {
+            if (typeof msgContent.modelViewMatrix !== "undefined") {
+                callback(msgContent.modelViewMatrix, realityObject.projectionMatrix);
             }
-        }, false);
-
+        }
     };
 
+    /**
+     ************************************************************
+     */
     // subscriptions
-    this.subscribeToMatrix = function() {
-        objectsSendMatrix = true;
-        if (typeof objects.node !== "undefined") {
+    this.subscribeToMatrix = function () {
+        realityObject.sendMatrix = true;
+        if (typeof realityObject.node !== "undefined") {
 
-            if(objectsSendFullScreen === false){
-                objectsHeight = document.body.scrollHeight;
-                objectsWidth = document.body.scrollWidth;
+            if (realityObject.sendFullScreen === false) {
+                realityObject.height = document.body.scrollHeight;
+                realityObject.width = document.body.scrollWidth;
             }
 
             parent.postMessage(JSON.stringify(
                 {
-                    "node": objects.node,
-                    "object": objects.object,
-                    "height": objectsHeight,
-                    "width": objectsWidth,
-                    "sendMatrix": objectsSendMatrix,
-                    "fullScreen": objectsSendFullScreen
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    fullScreen: realityObject.sendFullScreen
                 }), "*");
         }
     };
 
-    this.setFullScreenOn = function() {
-        objectsSendFullScreen = true;
+    /**
+     ************************************************************
+     */
+
+    this.setFullScreenOn = function () {
+        realityObject.sendFullScreen = true;
         console.log("fullscreen is loaded");
-        if (typeof objects.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined") {
 
-            objectsHeight = "100%";
-            objectsWidth = "100%";
+            realityObject.height = "100%";
+            realityObject.width = "100%";
 
             parent.postMessage(JSON.stringify(
                 {
-                    "node": objects.node,
-                    "object": objects.object,
-                    "height": objectsHeight,
-                    "width": objectsWidth,
-                    "sendMatrix": objectsSendMatrix,
-                    "fullScreen": objectsSendFullScreen
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    fullScreen: realityObject.sendFullScreen
                 }), "*");
         }
     };
 
-    this.setFullScreenOff = function() {
-        objectsSendFullScreen = false;
-        if (typeof objects.node !== "undefined") {
+    /**
+     ************************************************************
+     */
 
-             objectsHeight = document.body.scrollHeight;
-             objectsWidth = document.body.scrollWidth;
+    this.setFullScreenOff = function () {
+        realityObject.sendFullScreen = false;
+        if (typeof realityObject.node !== "undefined") {
+
+            realityObject.height = document.body.scrollHeight;
+            realityObject.width = document.body.scrollWidth;
 
             parent.postMessage(JSON.stringify(
                 {
-                    "node": objects.node,
-                    "object": objects.object,
-                    "height": objectsHeight,
-                    "width": objectsWidth,
-                    "sendMatrix": objectsSendMatrix,
-                    "fullScreen": objectsSendFullScreen
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    fullScreen: realityObject.sendFullScreen
                 }), "*");
         }
     };
 
-    this.getVisibility = function() {
-        return objects.visibility;
+    /**
+     ************************************************************
+     */
+
+    this.getVisibility = function () {
+        return realityObject.visibility;
     };
+
+    /**
+     ************************************************************
+     */
 
     this.addVisibilityListener = function (callback) {
-        window.addEventListener("message", function (MSG) {
-            var msg = JSON.parse(MSG.data);
-            if (typeof msg.visibility !== "undefined") {
-                callback(msg.visibility);
+        realityObject.messageCallBacks.visibilityCall = function (msgContent) {
+            if (typeof msgContent.visibility !== "undefined") {
+                callback(msgContent.visibility);
             }
-        }, false);
+        };
     };
-    
-    this.getPossitionX = function() {
-        if (typeof objects.modelViewMatrix[12] !== "undefined") {
-            return objects.modelViewMatrix[12];
+
+    /**
+     ************************************************************
+     */
+
+    this.getPossitionX = function () {
+        if (typeof realityObject.modelViewMatrix[12] !== "undefined") {
+            return realityObject.modelViewMatrix[12];
         } else return undefined;
     };
 
-    this.getPossitionY = function() {
-        if (typeof objects.modelViewMatrix[13] !== "undefined") {
-            return objects.modelViewMatrix[13];
+    /**
+     ************************************************************
+     */
+
+    this.getPossitionY = function () {
+        if (typeof realityObject.modelViewMatrix[13] !== "undefined") {
+            return realityObject.modelViewMatrix[13];
         } else return undefined;
     };
 
-    this.getPossitionZ = function() {
-        if (typeof objects.modelViewMatrix[14] !== "undefined") {
-            return objects.modelViewMatrix[14];
+    /**
+     ************************************************************
+     */
+
+    this.getPossitionZ = function () {
+        if (typeof realityObject.modelViewMatrix[14] !== "undefined") {
+            return realityObject.modelViewMatrix[14];
         } else return undefined;
     };
 
-    this.getProjectionMatrix = function() {
-        if (typeof objects.projectionMatrix !== "undefined") {
-            return objects.projectionMatrix;
+    /**
+     ************************************************************
+     */
+
+    this.getProjectionMatrix = function () {
+        if (typeof realityObject.projectionMatrix !== "undefined") {
+            return realityObject.projectionMatrix;
         } else return undefined;
     };
 
-    this.getModelViewMatrix = function() {
-        if (typeof objects.modelViewMatrix !== "undefined") {
-            return objects.modelViewMatrix;
+    /**
+     ************************************************************
+     */
+
+    this.getModelViewMatrix = function () {
+        if (typeof realityObject.modelViewMatrix !== "undefined") {
+            return realityObject.modelViewMatrix;
         } else return undefined;
     };
-    
+
     if (typeof io !== "undefined") {
-        var thisOHObjectIdentifier = this;
+        var _this = this;
 
-        this.object = io.connect();
-        this.oldValueList = {};
+        this.ioObject = io.connect();
+        this.oldNumberList = {};
 
-            this.sendServerSubscribe = setInterval(function() {
-                if(objects.object) {
-                    thisOHObjectIdentifier.object.emit('/subscribe/realityEditor', JSON.stringify({object: objects.object}));
-                    clearInterval(thisOHObjectIdentifier.sendServerSubscribe);
-                }
-            }, 10);
+        this.sendEealityEditorSubscribe = setInterval(function () {
+            if (realityObject.object) {
+                _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object}));
+                clearInterval(_this.sendEealityEditorSubscribe);
+            }
+        }, 10);
+
+        /**
+         ************************************************************
+         */
+
 
         this.write = function (node, number, mode, unit, unitMin, unitMax) {
-                if(!mode)  mode = "f";
-                if(!unit)  unit = false;
-                if(!unitMin)  unitMin = 0;
-                if(!unitMax)  unitMax = 1;
+            if (!mode)  mode = "f";
+            if (!unit)  unit = false;
+            if (!unitMin)  unitMin = 0;
+            if (!unitMax)  unitMax = 1;
 
-            var thisItem = {number:number, mode:mode, unit:unit, unitMin:unitMin, unitMax:unitMax};
+            var thisItem = {number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax};
 
-            if(!node in thisOHObjectIdentifier.oldValueList){
-                thisOHObjectIdentifier.oldValueList[node]= null;
+            if (!node in _this.oldNumberList) {
+                _this.oldNumberList[node] = null;
             }
 
-            if(thisOHObjectIdentifier.oldValueList[node] !== number) {
-                this.object.emit('object', JSON.stringify({object: objects.object, node: node, item: thisItem}));
+            if (_this.oldNumberList[node] !== number) {
+                this.ioObject.emit('object', JSON.stringify({
+                    object: realityObject.object,
+                    node: node,
+                    item: thisItem
+                }));
             }
-            thisOHObjectIdentifier.oldValueList[node] = number;
+            _this.oldNumberList[node] = number;
         };
+
+        /**
+         ************************************************************
+         */
 
         this.readRequest = function (node) {
-            this.object.emit('/object/value', JSON.stringify({object: objects.object, node: node}));
+            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, node: node}));
         };
+
+        /**
+         ************************************************************
+         */
 
         this.read = function (node, msg) {
             if (msg.node === node) {
-                return msg.item.number;
+                return msg.item;
             } else {
                 return undefined;
             }
         };
 
-        this.addReadListener = function (node, callback) {
-            thisOHObjectIdentifier.object.on("object", function (msg) {
-                var thisMsg = JSON.parse(msg);
+        /**
+         ************************************************************
+         */
 
+        this.addReadListener = function (node, callback) {
+            _this.ioObject.on("object", function (msg) {
+                var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== "undefined") {
                     if (thisMsg.node === node) {
-                        if (typeof thisMsg.item.number !== "undefined")
-                            callback(thisMsg.item.number);
+                        if (typeof thisMsg.item !== "undefined")
+                            callback(thisMsg.item);
                     }
                 }
             });
         };
-        
+
         console.log("socket.io is loaded");
     }
     else {
-        this.object = {
+
+        /**
+         ************************************************************
+         */
+        this.ioObject = {
             on: function (x, cb) {
             }
         };
+
+        /**
+         ************************************************************
+         */
         this.write = function (node, number, mode) {
         };
+
+        /**
+         ************************************************************
+         */
         this.read = function (node, data) {
             return undefined;
         };
+
+        /**
+         ************************************************************
+         */
         this.readRequest = function (node) {
         };
+
+        /**
+         ************************************************************
+         */
+        this.addReadListener = function (node, callback) {
+
+        };
+
         console.log("socket.io is not working. This is normal when you work offline.");
     }
 }

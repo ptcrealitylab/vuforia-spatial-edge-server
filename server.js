@@ -90,6 +90,9 @@ const beatPort = 52316;            // this is the port for UDP broadcasting so t
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 const version = "1.7.0";           // the version of this server
+const protocol = "R1";           // the version of this server
+
+console.log(parseInt(version.replace(/\./g, "")));
 
 // All objects are stored in this folder:
 const objectPath = __dirname + "/objects";
@@ -159,6 +162,8 @@ function Objects() {
     this.ip = ip.address();
     // The version number of the Object.
     this.version = version;
+
+    this.protocol = protocol;
     // The (t)arget (C)eck(S)um is a sum of the checksum values for the target files.
     this.tcs = null;
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
@@ -168,7 +173,7 @@ function Objects() {
     // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
     this.scale = 1;
     // Unconstrained positioning in 3D space
-    this.matrix = null;
+    this.matrix = [];
     // Used internally from the reality editor to indicate if an object should be rendered or not.
     this.visible = false;
     // Used internally from the reality editor to trigger the visibility of naming UI elements.
@@ -179,7 +184,7 @@ function Objects() {
     this.developer = true;
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
     // This data can be used for interacting with objects for when they are not visible.
-    this.matrixMemory = null; // TODO use this to store UI interface for image later.
+    this.memory = {}; // TODO use this to store UI interface for image later.
     // Stores all the links that emerge from within the object. If a IOPoint has new data,
     // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
     this.links = {};
@@ -229,7 +234,7 @@ function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
     // the actual data of the node
-    this.item = new Data();
+    this.item = new Data(); // todo maybe value
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
     // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
@@ -237,7 +242,7 @@ function Node() {
     // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
     this.scale = 1;
     // Unconstrained positioning in 3D space
-    this.matrix = null;
+    this.matrix = [];
     // defines the nodeInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the nodeInterface folder.
     // todo appearance should be removed eventually as there is only one kind of appearance
@@ -266,6 +271,8 @@ function Logic() {
     this.matrix = null;
     // if showLastSettingFirst is true then lastSetting is the name of the last block that was moved or set.
     this.lastSetting = false;
+
+    this.lastSettingBlock = "";
     // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
     this.iconImage = null;
     // nameInput are the names given for each IO.
@@ -274,16 +281,16 @@ function Logic() {
     this.nameOutput = ["", "", "", ""];
     // the array of possible connections within the logicBlock.
     // if a block is set, a new Node instance is coppied in to the spot.
-    this.block = [
+  /*  this.block = [
         [[null, 0], [null, 0], [null, 0], [null, 0]],
         [[null, 0], [null, 0], [null, 0], [null, 0]],
         [[null, 0], [null, 0], [null, 0], [null, 0]],
         [[null, 0], [null, 0], [null, 0], [null, 0]]
-    ];
+    ];*/
 
     this.links = {};
     this.blocks = {};
-    
+
 }
 
 /**
@@ -316,6 +323,11 @@ function BlockLink() {
 function Block() {
     // name of the block
     this.name = "";
+
+    this.x = null;
+    this.y = null;
+    // amount of elements the IO point is created of. Single IO nodes have the size 1.
+    this.blockSize = 1;
     // the global / world wide id of the actual reference block design.
     this.globalId = null;
     // the checksum should be identical with the checksum for the persistent package files of the reference block design.
@@ -326,8 +338,7 @@ function Block() {
     // this would allow the the packages to be persistent. // todo discuss usability with Ben.
     this.privateData = {};
     this.publicData = {};
-    // amount of elements the IO point is created of. Single IO nodes have the size 1.
-    this.blockSize = 1;
+
     // IO for logic
     // define how many inputs are active.
     this.activeInputs = [true, false, false, false];
@@ -403,6 +414,64 @@ function EditorSocket(socketID, object) {
     this.obj = object;
 
 }
+
+function Protocols() {
+
+    this.R1 = {
+        send: function (object, node, item) {
+            return JSON.stringify({object: object, node: node, item: item})
+        },
+        receive: function (objects, message) {
+            if (!message) return null;
+            var msgContent = JSON.parse(message);
+            if (!msgContent.object) return null;
+            if (!msgContent.node) return null;
+            if (!msgContent.item) return null;
+
+            if (msgContent.object in objects) {
+                if (msgContent.node in objects[msgContent.object].nodes) {
+
+                    var objectItem = objects[msgContent.object].nodes[msgContent.node].item;
+                    for (var key in msgContent.item) {
+                        objectItem[key] = msgContent.item[key];
+                    }
+
+                    return {object:msgContent.object, node:msgContent.node, item: objectItem};
+                }
+
+            }
+
+return null
+        }
+    };
+    this.R0 = {
+        send: function (object, node, item) {
+            return JSON.stringify({obj: object, pos: node, value: item.number, mode: item.mode})},
+        receive: function (message) {
+            if (!message) return null;
+            var msgContent = JSON.parse(message);
+            if (!msgContent.obj) return null;
+            if (!msgContent.pos) return null;
+            if (!msgContent.value) msgContent.value = 0;
+            if (!msgContent.mode) return null;
+
+            if (msgContent.obj in objects) {
+                if (msgContent.pos in objects[msgContent.obj].nodes) {
+
+                    var objectItem = objects[msgContent.obj].nodes[msgContent.pos].item;
+
+                    objectItem.number = msgContent.value;
+                    objectItem.mode = msgContent.mode;
+
+                    return {object:msgContent.obj, node:msgContent.pos, item: objectItem};
+                }
+
+            }
+            return null
+        }
+    };
+}
+
 /**********************************************************************************************************************
  ******************************************** Variables and Objects ***************************************************
  **********************************************************************************************************************/
@@ -415,6 +484,7 @@ var hardwareInterfaceModules = {}; // Will hold all available hardware interface
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
 // This list is also used to keep track of the actual IP of an object. If the IP of an object in a network changes,
 // It has no influance on the connectivity, as it is referenced by the object UUID through the entire time.
+var protocols = new Protocols()
 var knownObjects = {};
 // A lookup table used to process faster through the objects.
 var objectLookup = {};
@@ -434,7 +504,6 @@ var sockets = {
     connectedOld: 0, // used internally to react only on updates
     notConnectedOld: 0 // used internally to react only on updates
 };
-
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -510,7 +579,6 @@ hardwareInterfaces.reset();
 
 cout("found " + hardwareInterfacesFolderList.length + " internal server");
 cout("starting internal Server.");
-
 
 /**
  * Returns the file extension (portion after the last dot) of the given filename.
@@ -628,7 +696,6 @@ function startSystem() {
 
 }
 
-
 /**********************************************************************************************************************
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
@@ -642,7 +709,6 @@ function exit() {
 }
 
 process.on('SIGINT', exit);
-
 
 /**********************************************************************************************************************
  ******************************************** Emitter/Client/Sender ***************************************************
@@ -667,6 +733,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     cout("creating beat for object: " + thisId);
     objects[thisId].version = version;
+    objects[thisId].protocol = protocol;
+
     var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ""));
 
     if (typeof objects[thisId].tcs === "undefined") {
@@ -681,6 +749,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         id: thisId,
         ip: thisIp,
         vn: thisVersionNumber,
+        pr: protocol,
         tcs: objects[thisId].tcs
     }));
 
@@ -689,6 +758,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             id: thisId,
             ip: thisIp,
             vn: thisVersionNumber,
+            pr: protocol,
             tcs: objects[thisId].tcs
         }));
     cout("UDP broadcasting on port: " + PORT);
@@ -696,6 +766,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             id: thisId,
             ip: thisIp,
             vn: thisVersionNumber,
+            pr: protocol,
             tcs: objects[thisId].tcs
         }));
 
@@ -717,6 +788,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
+                    pr: protocol,
                     tcs: objects[thisId].tcs
                 }));
 
@@ -730,7 +802,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
-                        cout("error ");
+                        cout("error in beatSender");
                         throw err;
                     }
                     // client is not being closed, as the beat is send ongoing
@@ -749,6 +821,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
+                    pr: protocol,
                     tcs: objects[thisId].tcs
                 }));
 
@@ -790,11 +863,9 @@ function actionSender(action) {
     });
 }
 
-
 /**********************************************************************************************************************
  ******************************************** Server Objects **********************************************************
  **********************************************************************************************************************/
-
 
 /**
  * @desc Receives a Heartbeat broadcast via UDP in the local network and updates the knownObjects Array in case of a
@@ -812,15 +883,31 @@ function objectBeatServer() {
     });
 
     udpServer.on("message", function (msg) {
+
         var msgContent;
         // check if object ping
         msgContent = JSON.parse(msg);
-        if (msgContent.hasOwnProperty("id") && msgContent.hasOwnProperty("ip") && !(msgContent.id in objects) && !(msgContent.id in knownObjects)) {
-            knownObjects[msgContent.id] = msgContent.ip;
-            cout("I found new Objects: " + JSON.stringify({
-                    id: msgContent.id,
-                    ip: msgContent.ip
-                }));
+
+        if (msgContent.id && msgContent.ip && !(msgContent.id in objects) && !(msgContent.id in knownObjects)) {
+
+            if(!knownObjects[msgContent.id]){
+           knownObjects[msgContent.id] = {};
+            }
+
+            if(msgContent.vn)
+            knownObjects[msgContent.id].version = msgContent.vn;
+
+            if(msgContent.pr)
+                knownObjects[msgContent.id].protocol = msgContent.pr;
+            else
+            {
+                knownObjects[msgContent.id].protocol = "R0";
+            }
+
+            if(msgContent.ip)
+                knownObjects[msgContent.id].ip = msgContent.ip;
+
+            cout("I found new Objects: " + JSON.stringify(knownObjects[msgContent.id]));
         }
         // check if action 'ping'
         if (msgContent.action === "ping") {
@@ -870,7 +957,7 @@ function objectWebServer() {
 
         var urlArray = req.originalUrl.split("/");
 
-        console.log(urlArray);
+       // console.log(urlArray);
         if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.html?$/))) {
 
             var fileName = __dirname + "/objects" + req.url;
@@ -907,13 +994,7 @@ function objectWebServer() {
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
 
-    // sends json object for a specific hybrid object. * is the object name
-    // ths is the most relevant for
-    // ****************************************************************************************************************
-    webServer.get('/object/*/', function (req, res) {
-        //  cout("get 7");
-        res.json(objects[req.params[0]]);
-    });
+
 
     // delete a link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
@@ -1016,7 +1097,6 @@ function objectWebServer() {
                 // ask the devices to reload the objects
             }
 
-
             if (typeof req.body.matrix === "object") {
 
                 tempObject.matrix = req.body.matrix;
@@ -1032,8 +1112,22 @@ function objectWebServer() {
             res.send(updateStatus);
         });
     }
-    // this is the newer form.
-    // in future the data programming interface should be accessable directly like so. because the obj is reserved for the object content only
+
+    /**
+     * Send the programming interface static web content [This is the older form. Consider it deprecated.
+    */
+
+    // Version 1
+    webServer.get('/obj/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
+    });
+
+    // Version 2
+    webServer.get('/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
+    });
+
+    // Version 3 #### Active Version
     webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
         res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
     });
@@ -1085,10 +1179,11 @@ function objectWebServer() {
         // request a zip-file with the object stored inside. *1 is the object
         // ****************************************************************************************************************
         webServer.get('/object/*/zipBackup/', function (req, res) {
+            console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
             //  cout("get 3");
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=HybridObjectBackup.zip'
+                'Content-disposition': 'attachment; filename='+req.params[0]+'.zip'
             });
 
             var Archiver = require('archiver');
@@ -1097,6 +1192,14 @@ function objectWebServer() {
             zip.pipe(res);
             zip.directory(__dirname + "/objects/" + req.params[0], req.params[0] + "/");
             zip.finalize();
+        });
+
+        // sends json object for a specific hybrid object. * is the object name
+        // ths is the most relevant for
+        // ****************************************************************************************************************
+        webServer.get('/object/*/', function (req, res) {
+            //  cout("get 7");
+            res.json(objects[req.params[0]]);
         });
 
         // ****************************************************************************************************************
@@ -1570,52 +1673,52 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
 
-function socketServer(params) {
+function socketServer() {
 
     io.on('connection', function (socket) {
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
-            if (objects.hasOwnProperty(JSON.parse(msg).object)) {
-                cout("reality editor subscription for object: " + JSON.parse(msg).object);
-                cout("the letated socket has the ID: " + socket.id);
+            var msgContent = JSON.parse(msg);
+            var thisProtocol = "R1";
 
-                realityEditorSocketArray[socket.id] = JSON.parse(msg).object;
+            if(!msgContent.object){
+                msgContent.object = msgContent.obj;
+                thisProtocol = "R0";
+            }
+
+            if (objects.hasOwnProperty(msgContent.object)) {
+                cout("reality editor subscription for object: " + msgContent.object);
+                cout("the latest socket has the ID: " + socket.id);
+
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
         });
 
         socket.on('object', function (msg) {
 
-            var msgContent = JSON.parse(msg);
+            var msgContent = protocols[protocol].receive(msg);
+            if(msgContent === null){
+                msgContent = protocols["R0"].receive(msg);
+            }
 
-            if ((msgContent.object in objects) && typeof msgContent.item !== "undefined") {
-                if (msgContent.node in objects[msgContent.obj].nodes) {
-
-                    var objSend = objects[msgContent.object].nodes[msgContent.node];
-
-                    for (var key in msgContent.item) {
-                        objSend.item[key] = msgContent.item[key];
-                    }
-
-                    hardwareInterfaces.readCall(msgContent.object, msgContent.node,objSend.item);
-
-                   /* if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-                        hardwareInterfaceModules[objSend.type].read(msgContent.object, msgContent.node, objSend.item, objSend.type);
-                    }*/
+                    if(msgContent !== null){
+                    hardwareInterfaces.readCall(msgContent.object, msgContent.node, msgContent.item);
 
                     sendMessagetoEditors({
                         object: msgContent.object,
                         node: msgContent.node,
-                        item: objSend.item
+                        item: msgContent.item
                     });
                     objectEngine(msgContent.object, msgContent.node, objects, nodeAppearanceModules);
                 }
-            }
+
         });
+// todo do this stuff tomorrrow
 
         // this is only for down compatibility for when the UI would request a readRequest
-        socket.on('/object/value', function (msg) {
+        socket.on('/object/readRequest', function (msg) {
             var msgContent = JSON.parse(msg);
             messagetoSend(msgContent, socket.id);
         });
@@ -1632,7 +1735,7 @@ function socketServer(params) {
 function sendMessagetoEditors(msgContent) {
 
     for (var thisEditor in realityEditorSocketArray) {
-        if (msgContent.object === realityEditorSocketArray[thisEditor]) {
+        if (msgContent.object === realityEditorSocketArray[thisEditor].object) {
             messagetoSend(msgContent, thisEditor);
         }
     }
@@ -1700,12 +1803,12 @@ function enginePostProcessing(object, link, processedData) {
             objSend.item[key] = processedData[key];
         }
 
-        hardwareInterfaces.readCall(thisLink.objectB, thisLink.nodeB,objSend.item);
+        hardwareInterfaces.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
         /*
-        if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-            hardwareInterfaceModules[objSend.type].read(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
-        }
-        */
+         if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
+         hardwareInterfaceModules[objSend.type].read(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
+         }
+         */
         // send data to listening editor
 
         sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, item: objSend.item});
@@ -1719,10 +1822,22 @@ function enginePostProcessing(object, link, processedData) {
 
 function socketSender(object, link, item) {
     var thisLink = objects[object].links[link];
-    var msg = JSON.stringify({object: thisLink.objectB, node: thisLink.nodeB, item: item});
 
-    //todo this should be rewritten with handling an array of connected objects similar the connected Reality Editors
-    if (!(thisLink.objectB in objects)) {
+    var msg = "";
+
+    if(thisLink.objectB in knownObjects){
+        if (knownObjects[thisLink.objectB].protocol){
+            var thisProtocol = knownObjects[thisLink.objectB].protocol;
+            if(thisProtocol in protocols){
+                 msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.nodeB, item);
+            }
+            else {
+                msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, item);
+            }
+        } else {
+            msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, item);
+        }
+
         try {
             var thisIp = knownObjects[thisLink.objectB];
             var presentObjectConnection = socketArray[thisIp].io;
@@ -1733,6 +1848,7 @@ function socketSender(object, link, item) {
         catch (e) {
             cout("can not emit from link ID:" + link + "and object: " + object);
         }
+
     }
 }
 

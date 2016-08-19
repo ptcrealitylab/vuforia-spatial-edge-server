@@ -24,7 +24,7 @@
 </div>
 <script>
     var ctx = document.getElementById("canvasX").getContext("2d");
-    var objectExp = {};
+    var objects = {};
 
     drawCircle(ctx, [100, 100], 92, '#00ffff');
 
@@ -45,21 +45,22 @@
 
         if (typeof msg.node !== "undefined" && typeof msg.object !== "undefined") {
 
-            parent.nodetMessage(JSON.stringify(
+            parent.postMessage(JSON.stringify(
                     {
-                        "node": msg.node,
-                        "object": msg.object,
-                        "height": document.body.scrollHeight,
-                        "width": document.body.scrollWidth,
-                        "sendMatrix": false,
-                        "fullScreen": false
+                        version: 170,
+                        node: msg.node,
+                        object: msg.object,
+                        height: document.body.scrollHeight,
+                        width: document.body.scrollWidth,
+                        sendMatrix: false,
+                        fullScreen: false
                     }
                     )
                     // this needs to contain the final interface source
                     , "*");
 
-            objectExp.node = msg.node;
-            objectExp.object = msg.object;
+            objects.node = msg.node;
+            objects.object = msg.object;
         }
 
         if (typeof msg.uiActionFeedback !== "undefined") {

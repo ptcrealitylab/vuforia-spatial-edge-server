@@ -63,7 +63,8 @@ if (exports.enabled) {
     server.addNode("obj45", "hans", "default");
 
     server.addReadListener("obj45", "four", function (item) {
-        console.log(item.number);
+        //console.log(item.number);
+
     });
 
     server.addEventListener("reset", function () {
