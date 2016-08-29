@@ -775,7 +775,7 @@ function objectWebServer() {
 
                 if (fs.existsSync(fileName + "index.html")) {
                     fileName = fileName + "index.html";
-                } else {
+                } else if (fs.existsSync(fileName + "index.htm")) {
                     fileName = fileName + "index.htm";
                 }
             }
