@@ -779,6 +779,12 @@ function objectWebServer() {
                     fileName = fileName + "index.htm";
                 }
             }
+
+            if (!fs.existsSync(fileName)) {
+                next();
+                return;
+            }
+
             var html = fs.readFileSync(fileName, 'utf8');
 
             html = html.replace('<script src="object.js"></script>', '');
