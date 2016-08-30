@@ -86,7 +86,6 @@ if (realityObject.socketIoRequest.status == 200) {
 // function for resizing the windows.
 
 window.addEventListener("message", function (MSG) {
-    console.log("test");
 
     var msgContent = JSON.parse(MSG.data);
     for (var key in realityObject.messageCallBacks) {
@@ -353,7 +352,7 @@ function HybridObject() {
             if (!unitMin)  unitMin = 0;
             if (!unitMax)  unitMax = 1;
 
-            var thisItem = {number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax};
+            var thisItem = [{number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax},{},{},{}];
 
             if (!node in _this.oldNumberList) {
                 _this.oldNumberList[node] = null;
@@ -383,7 +382,7 @@ function HybridObject() {
 
         this.read = function (node, msg) {
             if (msg.node === node) {
-                return msg.item;
+                return msg.item[0].number;
             } else {
                 return undefined;
             }
@@ -399,7 +398,7 @@ function HybridObject() {
                 if (typeof thisMsg.node !== "undefined") {
                     if (thisMsg.node === node) {
                         if (typeof thisMsg.item !== "undefined")
-                            callback(thisMsg.item);
+                            callback(thisMsg.item[0].number);
                     }
                 }
             });

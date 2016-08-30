@@ -75,7 +75,7 @@ exports.write = function (objectName, nodeName, number, mode, unit, unitMin, uni
 //    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].nodes.hasOwnProperty(nodeUuid)) {
-            var thisItem = objects[objectKey].nodes[nodeUuid].item;
+            var thisItem = objects[objectKey].nodes[nodeUuid].item[0];
             thisItem.number = number;
             thisItem.mode = mode;
             thisItem.unit = unit;
@@ -215,7 +215,7 @@ exports.reset = function (){
 exports.readCall = function (objectName, nodeName, item) {
     if (callBacks.hasOwnProperty(objectName)) {
         if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
-            callBacks[objectName].nodes[nodeName].callBack(item);
+            callBacks[objectName].nodes[nodeName].callBack(item[0]);
         }
     }
 };

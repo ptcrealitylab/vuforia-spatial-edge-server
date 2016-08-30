@@ -371,7 +371,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     for (subKey in uploadInfoTexttempArrayValue) {
         var thisHtmlNode = uploadInfoTexttempArrayValue[subKey];
 
-        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.item.number + "</td></tr>";
+        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.item[0].number + "</td></tr>";
         infoCount++;
     }
 
@@ -472,8 +472,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (subKey in uploadInfoTexttempArray) {
-        if(uploadInfoTexttempArray[subKey].hasOwnProperty("nameA"))
-        text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nameB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
+        if(uploadInfoTexttempArray[subKey].hasOwnProperty("namesA"))
+        text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesB[1] + '</font></td></tr>\n';
         else
             text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
 

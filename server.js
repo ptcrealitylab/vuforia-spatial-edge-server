@@ -97,7 +97,7 @@ console.log(parseInt(version.replace(/\./g, "")));
 // All objects are stored in this folder:
 const objectPath = __dirname + "/objects";
 // All visual UI representations for IO Points are stored in this folder:
-const nodePath = __dirname + "/nodes";
+const nodePath = __dirname + "/libraries/nodes";
 // All visual UI representations for IO Points are stored in this folder:
 const blockPath = __dirname + "/blocks";
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
@@ -134,8 +134,8 @@ var utilities = require(__dirname + '/libraries/utilities');
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend = require(__dirname + '/libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
-// This is used for the interfaces defined in the hardwareInterfaces folder.
-var hardwareInterfaces = require(__dirname + '/libraries/hardwareInterfaces');
+// This is used for the interfaces defined in the hardwareAPI folder.
+var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
 
 var util = require("util"); // node.js utility functionality
 var events = require("events"); // node.js events used for the socket events.
@@ -207,7 +207,7 @@ function Link() {
     // if origin location is a Logic Node then set to Logic Node output location (which is a number between 0 and 3) otherwise null
     this.logicA = null;
     // Defines the type of the link origin. Currently this function is not in use.
-    this.nameA = "";
+    this.namesA = ["",""];
     // The destination object to where the origin object is sending data to.
     // At this point the destination object accepts all incoming data and routs the data according to the link data sent.
     this.objectB = null;
@@ -217,7 +217,7 @@ function Link() {
     // if destination location is a Logic Node then set to logic block input location (which is a number between 0 and 3) otherwise null
     this.logicB = null;
     // Defines the type of the link destination. Currently this function is not in use.
-    this.nameB = "";
+    this.namesB = ["",""];
     // check that there is no endless loop in the system
     this.loop = false;
     // Will be used to test if a link is still able to find its destination.
@@ -234,7 +234,7 @@ function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
     // the actual data of the node
-    this.item = new Data(); // todo maybe value
+    this.item = [new Data(), {}, {}, {}]; // todo maybe value
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
     // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
@@ -261,6 +261,8 @@ function Node() {
 
 function Logic() {
     this.name = "";
+    // data for logic blocks. depending on the blockSize which one is used.
+    this.item = [new Data(), new Data(), new Data(), new Data()];
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
     // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
@@ -268,7 +270,7 @@ function Logic() {
     // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
     this.scale = 1;
     // Unconstrained positioning in 3D space
-    this.matrix = null;
+    this.matrix = [];
     // if showLastSettingFirst is true then lastSetting is the name of the last block that was moved or set.
     this.lastSetting = false;
 
@@ -287,6 +289,8 @@ function Logic() {
         [[null, 0], [null, 0], [null, 0], [null, 0]],
         [[null, 0], [null, 0], [null, 0], [null, 0]]
     ];*/
+
+    this.appearance = "logicNode";
 
     this.links = {};
     this.blocks = {};
@@ -432,8 +436,12 @@ function Protocols() {
                 if (msgContent.node in objects[msgContent.object].nodes) {
 
                     var objectItem = objects[msgContent.object].nodes[msgContent.node].item;
-                    for (var key in msgContent.item) {
-                        objectItem[key] = msgContent.item[key];
+
+                    for (var i = 0; i < msgContent.item.length; i++) {
+                        if(objectItem.length === i) objectItem[i] = {};
+                        for (var key in msgContent.item[i]) {
+                            objectItem[i][key] = msgContent.item[i][key];
+                        }
                     }
 
                     return {object:msgContent.object, node:msgContent.node, item: objectItem};
@@ -446,7 +454,7 @@ return null
     };
     this.R0 = {
         send: function (object, node, item) {
-            return JSON.stringify({obj: object, pos: node, value: item.number, mode: item.mode})},
+            return JSON.stringify({obj: object, pos: node, value: item[0].number, mode: item[0].mode})},
         receive: function (message) {
             if (!message) return null;
             var msgContent = JSON.parse(message);
@@ -460,8 +468,8 @@ return null
 
                     var objectItem = objects[msgContent.obj].nodes[msgContent.pos].item;
 
-                    objectItem.number = msgContent.value;
-                    objectItem.mode = msgContent.mode;
+                    objectItem[0].number = msgContent.value;
+                    objectItem[0].mode = msgContent.mode;
 
                     return {object:msgContent.obj, node:msgContent.pos, item: objectItem};
                 }
@@ -531,7 +539,7 @@ for (var i = 0; i < nodeFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareInterfaces.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
+hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
@@ -555,29 +563,29 @@ startSystem();
 cout("started");
 
 // get the directory names of all available souappearancerces for the 3D-UI
-var hardwareInterfacesFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
+var hardwareAPIFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
     return fs.statSync(hardwarePath + '/' + file).isDirectory();
 });
 // remove hidden directories
-while (hardwareInterfacesFolderList[0][0] === ".") {
-    hardwareInterfacesFolderList.splice(0, 1);
+while (hardwareAPIFolderList[0][0] === ".") {
+    hardwareAPIFolderList.splice(0, 1);
 }
 
 // add all appearances to the nodeAppearanceModules object. Iterate backwards because splice works inplace
-for (var i = hardwareInterfacesFolderList.length - 1; i >= 0; i--) {
+for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
     //check if hardwareInterface is enabled, if it is, add it to the hardwareInterfaceModules
-    if (require(hardwarePath + "/" + hardwareInterfacesFolderList[i] + "/index.js").enabled) {
-        hardwareInterfaceModules[hardwareInterfacesFolderList[i]] = require(hardwarePath + "/" + hardwareInterfacesFolderList[i] + "/index.js");
+    if (require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js").enabled) {
+        hardwareInterfaceModules[hardwareAPIFolderList[i]] = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
     } else {
-        hardwareInterfacesFolderList.splice(i, 1);
+        hardwareAPIFolderList.splice(i, 1);
     }
 }
 
 cout("ready to start internal servers");
 
-hardwareInterfaces.reset();
+hardwareAPI.reset();
 
-cout("found " + hardwareInterfacesFolderList.length + " internal server");
+cout("found " + hardwareAPIFolderList.length + " internal server");
 cout("starting internal Server.");
 
 /**
@@ -629,24 +637,30 @@ function loadObjects() {
                 objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + objectFolderList[i] + "/object.json", "utf8"));
                 objects[tempFolderName].ip = ip.address();
 
-                // adding the values to the arduino lookup table so that the serial connection can take place.
-                // todo this is maybe obsolete.
-                for (var nodeKey in objects[tempFolderName].nodes) {
-                    ArduinoLookupTable.push({object: objectFolderList[i], node: nodeKey});
+                if(objects[tempFolderName].objectValues)
+                {
+                    objects[tempFolderName].nodes =  objects[tempFolderName].objectValues;
+                    delete  objects[tempFolderName].objectValues;
                 }
-                // todo the sizes do not really save...
+                if(objects[tempFolderName].objectLinks)
+                {
+                    objects[tempFolderName].links =  objects[tempFolderName].objectLinks;
+                    delete  objects[tempFolderName].objectLinks;
+                }
 
-                // todo new Data points are never writen in to the file. So this full code produces no value
-                // todo Instead keep the board clear=false forces to read the data points from the arduino every time.
-                // todo this is not true the nodes are writen in to the object. the sizes are wrong
-                // if not uncommented the code does not connect to the arduino side.
-                // data comes always from the arduino....
-                // clear = true;
+
+
+                    for (var nodeKey in objects[tempFolderName].nodes) {
+
+                        if(!objects[tempFolderName].nodes[nodeKey].item[3]){
+                            var tempItem = objects[tempFolderName].nodes[nodeKey].item;
+                             objects[tempFolderName].nodes[nodeKey].item = [];
+                            objects[tempFolderName].nodes[nodeKey].item = [tempItem, {}, {}, {}];
+                        }
+                    }
 
                 cout("I found objects that I want to add");
-                cout("---");
-                cout(ArduinoLookupTable);
-                cout("---");
+
 
             } catch (e) {
                 objects[tempFolderName].ip = ip.address();
@@ -659,7 +673,7 @@ function loadObjects() {
         }
     }
 
-    hardwareInterfaces.reset();
+    hardwareAPI.reset();
 }
 
 /**********************************************************************************************************************
@@ -703,7 +717,7 @@ function startSystem() {
 function exit() {
     var mod;
 
-    hardwareInterfaces.shutdown();
+    hardwareAPI.shutdown();
 
     process.exit();
 }
@@ -1119,17 +1133,17 @@ function objectWebServer() {
 
     // Version 1
     webServer.get('/obj/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
+        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
     // Version 2
     webServer.get('/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
+        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
     // Version 3 #### Active Version
     webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(__dirname + "/nodes/" + req.params[0] + '/gui/' + req.params[1]);
+        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
     // ****************************************************************************************************************
@@ -1559,7 +1573,7 @@ function objectWebServer() {
                                         //todo send init to internal modules
                                         cout("have created a new object");
 
-                                        hardwareInterfaces.reset();
+                                        hardwareAPI.reset();
                                         cout("have initialized the modules");
 
                                         var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
@@ -1658,7 +1672,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 //serialPort.write("ok\n");
                 // todo send init to internal
 
-                hardwareInterfaces.reset();
+                hardwareAPI.reset();
 
                 cout("weiter im text " + objectIDXML);
                 utilities.writeObjectToFile(objects, objectIDXML, __dirname);
@@ -1704,7 +1718,7 @@ function socketServer() {
             }
 
                     if(msgContent !== null){
-                    hardwareInterfaces.readCall(msgContent.object, msgContent.node, msgContent.item);
+                    hardwareAPI.readCall(msgContent.object, msgContent.node, msgContent.item);
 
                     sendMessagetoEditors({
                         object: msgContent.object,
@@ -1749,7 +1763,7 @@ function messagetoSend(msgContent, socketID) {
             io.sockets.connected[socketID].emit('object', JSON.stringify({
                 object: msgContent.object,
                 node: msgContent.node,
-                item: objects[msgContent.object].nodes[msgContent.node].blocks[msgContent.block].item
+                item: objects[msgContent.object].nodes[msgContent.node].item
             }));//       socket.emit('object', msgToSend);
         }
     }
@@ -1768,6 +1782,19 @@ function messagetoSend(msgContent, socketID) {
 
 function objectEngine(object, node, objects, nodeAppearanceModules) {
     // cout("engine started");
+
+   /** If(Logic Node){
+        nodeAppearanceModules["logic"](object, linkKey, thisNode.item, function (object, link, processedData) {
+            enginePostProcessing(object, link, processedData);
+
+            in call back check for all links assosiated with the main link source.
+
+        }, objects);
+    }
+
+    */
+
+
     for (var linkKey in objects[object].links) {
         if (objects[object].links[linkKey].nodeA === node) {
 
@@ -1799,11 +1826,14 @@ function enginePostProcessing(object, link, processedData) {
 
         var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB];
 
-        for (var key in processedData) {
-            objSend.item[key] = processedData[key];
+        for (var i = 0; i < processedData.length; i++) {
+            if(objSend.item.length === i) objSend.item[i] = {};
+            for (var key in processedData[i]) {
+                objSend.item[i][key] = processedData[i][key];
+            }
         }
 
-        hardwareInterfaces.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
+        hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
         /*
          if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
          hardwareInterfaceModules[objSend.type].read(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
