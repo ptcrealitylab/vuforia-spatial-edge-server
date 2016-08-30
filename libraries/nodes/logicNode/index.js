@@ -53,12 +53,36 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-exports.render = function (objectID, linkID, inputData, callback) {
-    var outputData = {};
+/**
+
+ [callbacks]
+
+ */
+var outputData = [];
+exports.render = function (objectID, linkID, inputData, callback, logicAddress /* between 0-3 */, objects) {
+    if(!logicAddress) logicAddress = 0;  if(!objects) objects = {};
+/**
+    if link has INPUT then process from main object.
+
+
+
+
+
+
+        if link has OUTPUT then check main links for links and process callbacks
+
+
+        output array
+
+ */
+
+var outputData = outputData;
     var key;
-    for(key in inputData)
-    {
-        outputData[key] = inputData[key];
+    for (var i = 0; i < inputData.length; i++) {
+        if(!outputData[i]) outputData[i] = {};
+        for (key in inputData[0]) {
+            outputData[i][key] = inputData[i][key];
+        }
     }
 
     callback(objectID, linkID, outputData);
