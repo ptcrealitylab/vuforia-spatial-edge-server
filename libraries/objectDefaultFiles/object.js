@@ -352,8 +352,7 @@ function HybridObject() {
             if (!unitMin)  unitMin = 0;
             if (!unitMax)  unitMax = 1;
 
-            var thisItem = [{number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax},{},{},{}];
-
+            var thisItem = [{number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax}];
             if (!node in _this.oldNumberList) {
                 _this.oldNumberList[node] = null;
             }
@@ -361,7 +360,7 @@ function HybridObject() {
             if (_this.oldNumberList[node] !== number) {
                 this.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
-                    node: node,
+                    node: realityObject.object+node,
                     item: thisItem
                 }));
             }
@@ -373,7 +372,7 @@ function HybridObject() {
          */
 
         this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, node: node}));
+            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, node: realityObject.object+node}));
         };
 
         /**
@@ -381,7 +380,7 @@ function HybridObject() {
          */
 
         this.read = function (node, msg) {
-            if (msg.node === node) {
+            if (msg.node === realityObject.object+node) {
                 return msg.item[0].number;
             } else {
                 return undefined;
@@ -396,7 +395,7 @@ function HybridObject() {
             _this.ioObject.on("object", function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== "undefined") {
-                    if (thisMsg.node === node) {
+                    if (thisMsg.node === realityObject.object+node) {
                         if (typeof thisMsg.item !== "undefined")
                             callback(thisMsg.item[0].number);
                     }

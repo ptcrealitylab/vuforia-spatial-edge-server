@@ -60,6 +60,9 @@
  * TODO - check if links are pointing to values that actually exist. - (happens in browser at the moment)
  * TODO - Test self linking from internal to internal value (endless loop) - (happens in browser at the moment)
  *
+ *
+ *
+ * TODO - Checksum for marker needs to be verified on the server side as well.
  **
 
  **********************************************************************************************************************
@@ -425,7 +428,7 @@ function Protocols() {
         send: function (object, node, item) {
             return JSON.stringify({object: object, node: node, item: item})
         },
-        receive: function (objects, message) {
+        receive: function (message) {
             if (!message) return null;
             var msgContent = JSON.parse(message);
             if (!msgContent.object) return null;
@@ -980,10 +983,16 @@ function objectWebServer() {
 
                 if (fs.existsSync(fileName + "index.html")) {
                     fileName = fileName + "index.html";
-                } else {
+                } else if (fs.existsSync(fileName + "index.htm")) {
                     fileName = fileName + "index.htm";
                 }
             }
+
+            if (!fs.existsSync(fileName)) {
+                next();
+                return;
+            }
+
             var html = fs.readFileSync(fileName, 'utf8');
 
             html = html.replace('<script src="object.js"></script>', '');
