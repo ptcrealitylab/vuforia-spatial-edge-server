@@ -1,0 +1,67 @@
+{
+	"objectId": "obj47n32vbg5gk3he",
+	"name": "obj47",
+	"ip": "10.0.1.3",
+	"version": "1.7.0",
+	"protocol": "R1",
+	"tcs": "4o9q5c",
+	"x": 37.558251699426734,
+	"y": -11.874119446479426,
+	"scale": 1,
+	"matrix": [],
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"developer": true,
+	"memory": {},
+	"links": {},
+	"nodes": {
+		"obj47n32vbg5gk3hehans": {
+			"name": "hans",
+			"item": [
+				{
+					"number": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": -16.694259005844287,
+			"y": 156.85004682175247,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3hepeter": {
+			"name": "peter",
+			"item": [
+				{
+					"number": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": -23.743537815460286,
+			"y": -103.19668796408882,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		}
+	},
+	"logic": {}
+}
