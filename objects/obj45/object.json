@@ -1,0 +1,148 @@
+{
+	"objectId": "obj45y4gk159d097q",
+	"name": "obj45",
+	"ip": "10.0.1.3",
+	"version": "1.7.0",
+	"protocol": "R1",
+	"tcs": "bsyBi",
+	"x": 6.540397205447789,
+	"y": 14.340756814513725,
+	"scale": 1,
+	"matrix": [],
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"developer": true,
+	"memory": {},
+	"links": {
+		"Lx61hs1n": {
+			"objectA": "obj45y4gk159d097q",
+			"objectB": "obj45y4gk159d097q",
+			"nodeA": "obj45y4gk159d097qtwo",
+			"nodeB": "obj45y4gk159d097qhans",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj45",
+				"two"
+			],
+			"namesB": [
+				"obj45",
+				"hans"
+			],
+			"loop": false
+		},
+		"ubwV6esr": {
+			"objectA": "obj45y4gk159d097q",
+			"objectB": "obj45y4gk159d097q",
+			"nodeA": "obj45y4gk159d097qhans",
+			"nodeB": "obj45y4gk159d097qfour",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj45",
+				"hans"
+			],
+			"namesB": [
+				"obj45",
+				"four"
+			],
+			"loop": false
+		}
+	},
+	"nodes": {
+		"obj45y4gk159d097qone": {
+			"name": "one",
+			"item": [
+				{
+					"number": 0.7625527987256646,
+					"mode": "f",
+					"unit": false,
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": 181.90691087361097,
+			"y": -174.9234043863276,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj45y4gk159d097qtwo": {
+			"name": "two",
+			"item": [
+				{
+					"number": 0.34509803921568627,
+					"mode": "f",
+					"unit": false,
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": -85.39778523068719,
+			"y": -154.2941278777979,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj45y4gk159d097qfour": {
+			"name": "four",
+			"item": [
+				{
+					"number": 0.4060750659555197,
+					"mode": "f",
+					"unit": false,
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": 160.27729563974503,
+			"y": 114.26779778126337,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj45y4gk159d097qhans": {
+			"name": "hans",
+			"item": [
+				{
+					"number": 0.5999659078661352,
+					"mode": "f",
+					"unit": false,
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{},
+				{},
+				{}
+			],
+			"x": -127.14244987853397,
+			"y": 112.38326602382978,
+			"scale": 1,
+			"matrix": [],
+			"appearance": "default",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		}
+	},
+	"logic": {}
+}

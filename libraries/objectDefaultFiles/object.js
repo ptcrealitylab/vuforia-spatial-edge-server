@@ -49,6 +49,7 @@ var realityObject = {
     projectionMatrix: [],
     visibility: "visible",
     sendMatrix: false,
+    sendAcceleration: false,
     sendFullScreen: false,
     height: "100%",
     width: "100%",
@@ -110,6 +111,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 height: realityObject.height,
                 width: realityObject.width,
                 sendMatrix: realityObject.sendMatrix,
+                sendAcceleration: realityObject.sendAcceleration,
                 fullScreen: realityObject.sendFullScreen
             }
             )
@@ -183,6 +185,16 @@ function HybridObject() {
         }
     };
 
+    this.addAccelerationListener = function (callback) {
+        console.log("got this");
+        realityObject.messageCallBacks.AccelerationCall = function (msgContent) {
+            if (typeof msgContent.acceleration !== "undefined") {
+                callback(msgContent.acceleration);
+            }
+        }
+    };
+
+
     /**
      ************************************************************
      */
@@ -204,10 +216,31 @@ function HybridObject() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen
                 }), "*");
         }
     };
+
+    // subscriptions
+    this.subscribeToAcceleration = function () {
+        realityObject.sendAcceleration = true;
+        if (typeof realityObject.node !== "undefined") {
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen
+                }), "*");
+        }
+    };
+
+
 
     /**
      ************************************************************
@@ -229,6 +262,7 @@ function HybridObject() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen
                 }), "*");
         }
@@ -253,6 +287,7 @@ function HybridObject() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen
                 }), "*");
         }

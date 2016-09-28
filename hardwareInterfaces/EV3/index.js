@@ -255,11 +255,11 @@ if (exports.enabled) {
                 if (!grip_calibrated)
                     grip_calibrated = resetGrip(forearm_touch_sensor);
                 else{
-                    console.log("The motor speed is: " + motor_output_top['b']);
+                  //  console.log("The motor speed is: " + motor_output_top['b']);
                 }
                 if (!shoulder_calibrated)
                     shoulder_calibrated = resetShoulder(shoulder_color);
-                console.log("Im writing a command with values" + motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
+               // console.log("Im writing a command with values" + motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
                 var top_output = top_target.getOutputSequence(motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
                 top_target.sp.write(top_output, function () {});
                 var bot_output = bot_target.getOutputSequence(motor_output_bot["a"], motor_output_bot["b"], motor_output_bot["c"], motor_output_bot["d"]);
@@ -364,14 +364,14 @@ if (exports.enabled) {
             motor_output_top['c'] = -30;
             motor_output_bot.d=-10;
             //motor_output_top['b'] = -30;
-            console.log("he's going up sir");
+           // console.log("he's going up sir");
             setTimeout(function(){
                 motor_output_top['c'] = 0;
                 motor_output_top['b'] = 0;
                 motor_output_bot.d=0;
                 gripper_open=true;
                 grip_ready=true;
-                console.log("command has been sent");
+               // console.log("command has been sent");
             },2800);
             return true; // grip has hit the touch sensor and is fully calibrated
         }
