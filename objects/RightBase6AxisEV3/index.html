@@ -105,8 +105,8 @@
 			var scaledData = scaleData(data);
 			//console.log(scaledData.pitch);
 			if(is_touched){
-				writeSpeed("yaw_br",slowDown(scaledData.yaw),1,0,.7,"exponential",true);
-				writeSpeed("pitch_br",slowDown(scaledData.pitch),1,0,1,"linear",false);
+				writeSpeed("yaw_br",scaledData.yaw,1,0,.7,"exponential",true);
+				writeSpeed("pitch_br",scaledData.pitch,1,0,1,"linear",false);
 			}
 		});
 

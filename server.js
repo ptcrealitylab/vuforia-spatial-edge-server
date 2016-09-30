@@ -1791,7 +1791,7 @@ function messagetoSend(msgContent, socketID) {
 
 function objectEngine(object, node, objects, nodeAppearanceModules) {
     // cout("engine started");
-
+   // process.stdout.write(".");
    /** If(Logic Node){
         nodeAppearanceModules["logic"](object, linkKey, thisNode.item, function (object, link, processedData) {
             enginePostProcessing(object, link, processedData);

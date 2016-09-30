@@ -125,11 +125,14 @@
 		hybridObj = new HybridObject(); // set up hybrid obj
 		hybridObj.addVisibilityListener(function(result){
 			if(is_visible =="visible" && result == "hidden"){
-		    	hybridObj.write("Height Tracking",.5);
-		    	hybridObj.write("pitch",.5);
-				hybridObj.write("Vertical Touch",.5);
-				hybridObj.write("Horizontal Touch",.5);
-		    	hybridObj.write("roll",.5);
+				setTimeout(function(){
+					console.log("hidden");
+					hybridObj.write("roll",.5);
+					hybridObj.write("pitch",.5);
+					hybridObj.write("Vertical Touch",.5);
+					hybridObj.write("Horizontal Touch",.5);
+					hybridObj.write("Height Tracking",.5);
+				}, 100);
 			}
 	        is_visible = result;
 	    });	
@@ -142,15 +145,20 @@
 
 
 		var motion = 0;
-		var accelerationRate = 1;
+		var accelerationRate = 0;
 		hybridObj.subscribeToAcceleration();
 		hybridObj.addAccelerationListener(function(acceleration){
 			motion = acceleration.motion;
-			if(motion < 20){
-				accelerationRate = 0.3;
+			accelerationRate = motion*0.05;
+if(accelerationRate>=1) accelerationRate = 1;
+
+			if(accelerationRate<=0) accelerationRate = 0.0001;
+			/*
+			if(motion < 15){
+
 			} else {
 				accelerationRate = 1;
-			}
+			}*/
 		});
 
 		function slowDown(value){
@@ -205,12 +213,14 @@
 			data.touchX.value = touchX;
 			data.touchY.value = touchY;
 			if(is_touched){
+				console.log(accelerationRate);
+
 				var scaledData= scaleData(data);
-				writeSpeed("pitch",slowDown(scaledData.pitch),.5,0.001,.25,"exponential",false);
-				writeSpeed("Horizontal Touch",slowDown(scaledData.touchX),.45,0.001,.3,"exponential",false);
-				writeSpeed("Vertical Touch",slowDown(scaledData.touchY),.4,0.001,.4,"exponential",false);
-				writeSpeed("Height Tracking",slowDown(scaledData.height),.4,0.001,.6,"exponential",true);
-				writeSpeed("roll",slowDown(scaledData.roll),.4,0.001,.3,"exponential",false);
+				writeSpeed("pitch",slowDown(scaledData.pitch),.3,0.01,.5,"exponential",false);
+				writeSpeed("Horizontal Touch",slowDown(scaledData.touchX),.2,0.01,.5,"exponential",false);
+				writeSpeed("Vertical Touch",slowDown(scaledData.touchY),1,0.01,.3,"exponential",false);
+				writeSpeed("Height Tracking",slowDown(scaledData.height),.5,0.01,.8,"exponential",true);
+				writeSpeed("roll",slowDown(scaledData.roll),.3,0.01,.5,"exponential",false);
 			}
 		});
 	function map(x, in_min, in_max, out_min,out_max) {
