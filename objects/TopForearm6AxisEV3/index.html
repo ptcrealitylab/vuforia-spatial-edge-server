@@ -153,10 +153,10 @@
 			data.height.value = height;
 			var scaledData = scaleData(data);
 			if(is_touched){
-				writeSpeed("Horizontal Touch_ft",scaledData.touchX,.3,.125,.6,"logistic",true);
-				writeSpeed("Vertical Touch_ft",scaledData.touchY,.35,.075,.5,"logistic",true);
-				writeSpeed("Height Tracking_ft",scaledData.height,.375,.06,.55,"exponential",true);
-				writeSpeed("pitch_ft",scaledData.pitch,.5,.05,.3,"linear",true);
+				writeSpeed("Horizontal Touch_ft",1-scaledData.touchX,.3,.125,.6,"logistic",true);
+				writeSpeed("Vertical Touch_ft",1-scaledData.touchY,.35,.075,.5,"logistic",true);
+				writeSpeed("Height Tracking_ft",1-scaledData.height,.375,.06,.55,"exponential",true);
+				writeSpeed("pitch_ft",1-scaledData.pitch,.5,.05,.3,"linear",true);
 				// hybridObj.write("pitch",pitch);
 				// hybridObj.write("height", height);
 				// hybridObj.write("displacement_x",(touchX - touchstartX_point));
