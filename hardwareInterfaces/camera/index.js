@@ -1,8 +1,41 @@
 exports.enabled = true;
 
 if (exports.enabled) {
-    var server = require('../../libraries/HybridObjectsHardwareInterfaces.js');
     var http = require('http');
+    var server = require('../../libraries/HybridObjectsHardwareInterfaces.js');
+    var SMTPServer = require('smtp-server').SMTPServer;
+    var smtpServer = new SMTPServer({
+        onAuth: onSMTPAuth,
+        onData: onSMTPData,
+        disabledCommands: ['STARTTLS'],
+        logger: true,
+        allowInsecureAuth: true
+    });
+    smtpServer.listen(27183);
+
+    var objectName = 'camera';
+
+    var motionDetectionDuration = 5000;
+    var lastSMTPData = 0;
+
+
+    function onSMTPAuth(auth, session, callback) {
+        console.log('auth', auth);
+        console.log('auth 2', JSON.stringify(auth));
+        if (auth.username !== 'camera' || auth.password !== 'fluidnsa') {
+            return callback(new Error('Invalid username or password'));
+        }
+        callback(null, {user: 'camera'});
+    }
+
+    function onSMTPData(stream, session, callback) {
+        lastSMTPData = Date.now();
+        console.log(session.envelope);
+        stream.pipe(process.stdout);
+        stream.on('end', function() {
+            callback(null, 'OK');
+        });
+    }
 
     exports.receive = function() {
     };
@@ -12,6 +45,7 @@ if (exports.enabled) {
     var tilt = 0;
     var requestInFlight = false;
     var updateTimeout = null;
+    var motion = 0;
 
     var options = {
         hostname: '192.168.1.29',
@@ -23,7 +57,19 @@ if (exports.enabled) {
         auth: 'admin:fluidnsa'
     };
 
+    function writeMotion(newMotion) {
+        motion = newMotion;
+        server.writeIOToServer(objectName, 'motion', motion, 'f');
+    }
+
     function update() {
+        if (lastSMTPData + motionDetectionDuration > Date.now()) {
+            if (motion < 0.5) {
+                writeMotion(1);
+            }
+        } else if (motion > 0.5) {
+            writeMotion(0);
+        }
         // Map pan and tilt to index
         // 0 is NW, 1 is N, etc.
         var index = -1;
@@ -108,9 +154,10 @@ if (exports.enabled) {
     };
 
     exports.init = function() {
-        server.addIO('camera', 'pan', 'default', 'camera');
-        server.addIO('camera', 'tilt', 'default', 'camera');
-        server.clearIO('camera');
+        server.addIO(objectName, 'pan', 'default', 'camera');
+        server.addIO(objectName, 'tilt', 'default', 'camera');
+        server.addIO(objectName, 'motion', 'default', 'camera');
+        server.clearIO(objectName);
 
         update();
     };
