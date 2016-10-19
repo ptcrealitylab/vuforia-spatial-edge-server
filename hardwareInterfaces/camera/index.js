@@ -27,6 +27,7 @@ if (exports.enabled) {
 
     function onSMTPData(stream, session, callback) {
         lastSMTPData = Date.now();
+        stream.resume();
         stream.on('end', function() {
             callback(null, 'OK');
         });
