@@ -8,7 +8,6 @@ if (exports.enabled) {
         onAuth: onSMTPAuth,
         onData: onSMTPData,
         disabledCommands: ['STARTTLS'],
-        logger: true,
         allowInsecureAuth: true
     });
     smtpServer.listen(27183);
@@ -20,8 +19,6 @@ if (exports.enabled) {
 
 
     function onSMTPAuth(auth, session, callback) {
-        console.log('auth', auth);
-        console.log('auth 2', JSON.stringify(auth));
         if (auth.username !== 'camera' || auth.password !== 'fluidnsa') {
             return callback(new Error('Invalid username or password'));
         }
@@ -30,8 +27,6 @@ if (exports.enabled) {
 
     function onSMTPData(stream, session, callback) {
         lastSMTPData = Date.now();
-        console.log(session.envelope);
-        stream.pipe(process.stdout);
         stream.on('end', function() {
             callback(null, 'OK');
         });
@@ -48,7 +43,7 @@ if (exports.enabled) {
     var motion = 0;
 
     var options = {
-        hostname: '192.168.1.139',
+        hostname: '192.168.1.138',
         path: '/pantiltcontrol.cgi',
         method: 'POST',
         headers: {
@@ -132,11 +127,6 @@ if (exports.enabled) {
     }
 
     exports.send = function(objName, ioName, value, mode, type) {
-        // console.log('objName', objName);
-        // console.log('ioName', ioName);
-        // console.log('value', value, typeof(value));
-        // console.log('mode', mode);
-        // console.log('type', type);
         if (type !== 'camera') {
             return;
         }
