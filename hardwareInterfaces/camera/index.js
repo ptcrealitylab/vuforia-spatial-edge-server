@@ -48,7 +48,7 @@ if (exports.enabled) {
     var motion = 0;
 
     var options = {
-        hostname: '192.168.1.29',
+        hostname: '192.168.1.139',
         path: '/pantiltcontrol.cgi',
         method: 'POST',
         headers: {
