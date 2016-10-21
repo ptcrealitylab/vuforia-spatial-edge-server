@@ -215,6 +215,8 @@ function Objects() {
     this.links = {};
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
+    // Store the frames. These embed content positioned relative to the object
+    this.frames = {};
 }
 
 /**
@@ -413,6 +415,24 @@ function Data() {
     // scale of the unit that is used. Usually the scale is between 0 and 1.
     this.unitMin = 0;
     this.unitMax = 1;
+}
+
+/**
+ * Embedded content positioned relative to an object
+ * @constructor
+ * @param {String} src - path to content
+ */
+function ObjectFrame(src) {
+    this.src = src;
+    this.x = 0;
+    this.y = 0;
+    this.scale = 1;
+    this.matrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ];
 }
 
 /**
@@ -1612,6 +1632,65 @@ function objectWebServer() {
         });
     });
 
+    // Create a frame for an object
+    webServer.post('/object/*/frames/', function (req, res) {
+        var objectId = req.params[0];
+
+        if (!objectExp.hasOwnProperty(objectId)) {
+            res.status(404).end('object ' + objectId + ' not found');
+            return;
+        }
+
+        var object = objectExp[objectId];
+        var frameId = 'frame' + HybridObjectsUtilities.uuidTime();
+        var frame = req.body;
+
+        if (!frame.src) {
+            res.status(500).end('frame must have src');
+            return;
+        }
+
+        if (!object.frames[frameId]) {
+            object.frames[frameId] = new ObjectFrame(src);
+        }
+
+        // Copy over all properties of frame
+        Object.assign(object.frames[frameId], frame);
+
+        HybridObjectsUtilities.writeObjectToFile(objectExp, objectId, __dirname);
+
+        res.json({success: true, frameId: frameId}).end();
+    });
+
+    // Update an object's frame
+    webServer.post('/object/*/frames/*/', function (req, res) {
+        var objectId = req.params[0];
+        var frameId = req.params[1];
+
+        if (!objectExp.hasOwnProperty(objectId)) {
+            res.status(404).end('object ' + objectId + ' not found');
+            return;
+        }
+
+        var object = objectExp[objectId];
+        var frame = req.body;
+
+        if (!frame.src) {
+            res.status(500).end('frame must have src');
+            return;
+        }
+
+        if (!object.frames[frameId]) {
+            object.frames[frameId] = new ObjectFrame(src);
+        }
+
+        // Copy over all properties of frame
+        Object.assign(object.frames[frameId], frame);
+
+        HybridObjectsUtilities.writeObjectToFile(objectExp, objectId, __dirname);
+
+        res.json({success: true}).end();
+    });
 
     // changing the size and possition of an item. *1 is the object *2 is the datapoint id
    
