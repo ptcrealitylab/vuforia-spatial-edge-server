@@ -45,6 +45,9 @@
 var realityObject = {
     node: "",
     object: "",
+    logic: "",
+    block: "",
+    publicData: {},
     modelViewMatrix: [],
     projectionMatrix: [],
     visibility: "visible",
@@ -57,7 +60,7 @@ var realityObject = {
     socketIoRequest: {},
     style: document.createElement('style'),
     messageCallBacks: {},
-    version: 170
+    version: 200
 };
 
 // adding css styles nessasary for acurate 3D transformations.
@@ -120,6 +123,25 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
 
         realityObject.node = msgContent.node;
         realityObject.object = msgContent.object;
+    }
+    else if (typeof msgContent.logic !== "undefined") {
+
+        parent.postMessage(JSON.stringify(
+            {
+                version: realityObject.version,
+                block: msgContent.block,
+                logic: msgContent.logic,
+                object: msgContent.object,
+                publicData: msgContent.publicData
+            }
+            )
+            // this needs to contain the final interface source
+            , "*");
+
+        realityObject.block = msgContent.block;
+        realityObject.logic = msgContent.logic;
+        realityObject.object = msgContent.object;
+        realityObject.publicData = msgContent.publicData;
     }
 
     if (typeof msgContent.modelViewMatrix !== "undefined") {
@@ -478,4 +500,95 @@ function HybridObject() {
 
         console.log("socket.io is not working. This is normal when you work offline.");
     }
+}
+
+// these are functions used for the setup of logic blocks
+
+function HybridLogic() {
+    this.publicData = realityObject.publicData;
+
+    this.readPublicData = function (valueName, value) {
+        if (!value)  value = 0;
+
+        if (typeof realityObject.publicData[valueName] === "undefined") {
+            realityObject.publicData[valueName] = value;
+            return value;
+        } else {
+            return realityObject.publicData[valueName];
+        }
+    }
+
+    if (typeof io !== "undefined") {
+        var _this = this;
+
+        this.ioObject = io.connect();
+        this.oldNumberList = {};
+
+        /**
+         ************************************************************
+         */
+
+        this.writePublicData = function (valueName, value) {
+
+            realityObject.publicData[valueName] = value;
+
+            this.ioObject.emit('block/publicData', JSON.stringify({
+                object: realityObject.object,
+                logic: realityObject.logic,
+                block: realityObject.block,
+                publicData: realityObject.publicData
+            }));
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    block: realityObject.block,
+                    logic: realityObject.logic,
+                    object: realityObject.object,
+                    publicData: realityObject.publicData
+                }
+            ));
+
+        };
+
+        this.writePrivateData = function (valueName, value) {
+
+            var thisItem = {};
+            thisItem[valueName] = value;
+
+            this.ioObject.emit('block/privateData', JSON.stringify({
+                object: realityObject.object,
+                logic: realityObject.logic,
+                block: realityObject.block,
+                privateData: thisItem
+            }));
+        };
+
+        console.log("socket.io is loaded");
+    }
+    else {
+
+        /**
+         ************************************************************
+         */
+        this.ioObject = {
+            on: function (x, cb) {
+            }
+        };
+
+        /**
+         ************************************************************
+         */
+        this.writePrivateData = function (valueName, value) {
+        };
+
+        /**
+         ************************************************************
+         */
+        this.writePublicData = function (valueName, value) {
+        };
+
+        console.log("socket.io is not working. This is normal when you work offline.");
+    }
+
 }

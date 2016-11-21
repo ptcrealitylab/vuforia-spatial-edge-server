@@ -1,0 +1,1104 @@
+{
+  "name": "",
+  "item": [
+    {
+      "number": 0,
+      "mode": "f",
+      "unit": "",
+      "unitMin": 0,
+      "unitMax": 1
+    },
+    {
+      "number": 0,
+      "mode": "f",
+      "unit": "",
+      "unitMin": 0,
+      "unitMax": 1
+    },
+    {
+      "number": 0,
+      "mode": "f",
+      "unit": "",
+      "unitMin": 0,
+      "unitMax": 1
+    },
+    {
+      "number": 0,
+      "mode": "f",
+      "unit": "",
+      "unitMin": 0,
+      "unitMax": 1
+    }
+  ],
+  "x": -109.89313594858743,
+  "y": 22.476751897348265,
+  "scale": 0.5,
+  "matrix": [],
+  "lastSetting": false,
+  "lastSettingBlock": "",
+  "iconImage": null,
+  "nameInput": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "nameOutput": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "appearance": "logicNode",
+  "links": {
+    "blockLink779d9rrf9ci7": {
+      "blockA": {
+        "name": "threshold",
+        "x": 0,
+        "y": 0,
+        "blockSize": 1,
+        "globalId": "blockmSfdhxw5ixg9",
+        "checksum": null,
+        "item": [
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          }
+        ],
+        "privateData": {},
+        "publicData": {
+          "minValueToSend": 0.5
+        },
+        "activeInputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "activeOutputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "nameInput": [
+          "x",
+          "",
+          "",
+          ""
+        ],
+        "nameOutput": [
+          "x if x>min",
+          "",
+          "",
+          ""
+        ],
+        "iconImage": null,
+        "text": "threshold",
+        "stress": 0,
+        "isTempBlock": false,
+        "isPortBlock": false
+      },
+      "itemA": 0,
+      "blockB": {
+        "name": "delay",
+        "x": 0,
+        "y": 1,
+        "blockSize": 1,
+        "globalId": "blockysfrodn0r5b7",
+        "checksum": null,
+        "item": [
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          }
+        ],
+        "privateData": {},
+        "publicData": {
+          "delayTime": 1000
+        },
+        "activeInputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "activeOutputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "nameInput": [
+          "x",
+          "",
+          "",
+          ""
+        ],
+        "nameOutput": [
+          "delayed x",
+          "",
+          "",
+          ""
+        ],
+        "iconImage": null,
+        "text": "delay",
+        "stress": 0,
+        "isTempBlock": false,
+        "isPortBlock": false
+      },
+      "itemB": 0,
+      "loop": false,
+      "health": 0,
+      "ballAnimationCount": 0.12578125000000007
+    },
+    "blockLinkYwj0nhjoergo": {
+      "itemA": 0,
+      "blockB": {
+        "name": "switch",
+        "x": 1,
+        "y": 1,
+        "blockSize": 1,
+        "globalId": "blocksNeoooc4vcoi",
+        "checksum": null,
+        "item": [
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          }
+        ],
+        "privateData": {},
+        "publicData": {},
+        "activeInputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "activeOutputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "nameInput": [
+          "x",
+          "",
+          "",
+          ""
+        ],
+        "nameOutput": [
+          "x",
+          "",
+          "",
+          ""
+        ],
+        "iconImage": null,
+        "text": "switch",
+        "stress": 0,
+        "isTempBlock": false,
+        "isPortBlock": false
+      },
+      "itemB": 0,
+      "loop": false,
+      "health": 0,
+      "ballAnimationCount": 0.052072352659319636
+    },
+    "blockLinkMc8vjq2u8077": {
+      "itemA": 0,
+      "itemB": 0,
+      "loop": false,
+      "health": 0,
+      "ballAnimationCount": 0.010907859078590784
+    },
+    "blockLinkNk9uztg0arus": {
+      "itemA": 0,
+      "blockB": {
+        "name": "edge",
+        "x": 1,
+        "y": 3,
+        "blockSize": 1,
+        "globalId": "edgeBlock6tb52qmbsj56",
+        "checksum": null,
+        "item": [
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          },
+          {
+            "number": 0,
+            "mode": "f",
+            "unit": "",
+            "unitMin": 0,
+            "unitMax": 1
+          }
+        ],
+        "privateData": {},
+        "publicData": {},
+        "activeInputs": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "activeOutputs": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "nameInput": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "nameOutput": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "iconImage": null,
+        "text": "edge",
+        "stress": 0,
+        "isTempBlock": false,
+        "isPortBlock": true
+      },
+      "itemB": 0,
+      "loop": false,
+      "health": 0,
+      "ballAnimationCount": 0.046119791666666694
+    }
+  },
+  "blocks": {
+    "edgeBlockxw3r81dk7vfu": {
+      "name": "edge",
+      "x": 1,
+      "y": 0,
+      "blockSize": 1,
+      "globalId": "edgeBlockxw3r81dk7vfu",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlockHH92mxy9ty3u": {
+      "name": "edge",
+      "x": 2,
+      "y": 0,
+      "blockSize": 1,
+      "globalId": "edgeBlockHH92mxy9ty3u",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlockZt5q483wddre": {
+      "name": "edge",
+      "x": 3,
+      "y": 0,
+      "blockSize": 1,
+      "globalId": "edgeBlockZt5q483wddre",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlockyt58e6fbc06i": {
+      "name": "edge",
+      "x": 0,
+      "y": 3,
+      "blockSize": 1,
+      "globalId": "edgeBlockyt58e6fbc06i",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlock6tb52qmbsj56": {
+      "name": "edge",
+      "x": 1,
+      "y": 3,
+      "blockSize": 1,
+      "globalId": "edgeBlock6tb52qmbsj56",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlockibg2b7g66ay3": {
+      "name": "edge",
+      "x": 2,
+      "y": 3,
+      "blockSize": 1,
+      "globalId": "edgeBlockibg2b7g66ay3",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "edgeBlockw41hp0u2n4yz": {
+      "name": "edge",
+      "x": 3,
+      "y": 3,
+      "blockSize": 1,
+      "globalId": "edgeBlockw41hp0u2n4yz",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "edge",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": true
+    },
+    "blockysfrodn0r5b7": {
+      "name": "delay",
+      "x": 0,
+      "y": 1,
+      "blockSize": 1,
+      "globalId": "blockysfrodn0r5b7",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {
+        "delayTime": 1000
+      },
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "x",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "delayed x",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "delay",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": false
+    },
+    "blocksNeoooc4vcoi": {
+      "name": "switch",
+      "x": 1,
+      "y": 1,
+      "blockSize": 1,
+      "globalId": "blocksNeoooc4vcoi",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {},
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "x",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "x",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "switch",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": false
+    },
+    "blockmSfdhxw5ixg9": {
+      "name": "threshold",
+      "x": 0,
+      "y": 0,
+      "blockSize": 1,
+      "globalId": "blockmSfdhxw5ixg9",
+      "checksum": null,
+      "item": [
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        },
+        {
+          "number": 0,
+          "mode": "f",
+          "unit": "",
+          "unitMin": 0,
+          "unitMax": 1
+        }
+      ],
+      "privateData": {},
+      "publicData": {
+        "minValueToSend": 0.5
+      },
+      "activeInputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "activeOutputs": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "nameInput": [
+        "x",
+        "",
+        "",
+        ""
+      ],
+      "nameOutput": [
+        "x if x>min",
+        "",
+        "",
+        ""
+      ],
+      "iconImage": null,
+      "text": "threshold",
+      "stress": 0,
+      "isTempBlock": false,
+      "isPortBlock": false
+    }
+  },
+  "loaded": true,
+  "animationScale": 1,
+  "visibleEditing": false,
+  "begin": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "temp": [
+    1.573928,
+    949.7624036435201,
+    -0.382277851016,
+    -0.374708,
+    -966.0074831999999,
+    7.05896286272,
+    0.059967473560000005,
+    0.05878,
+    -29.2161592,
+    -182.22726674368,
+    -2.003376788612,
+    -1.963706,
+    -27684.815125600002,
+    -5469.183404929279,
+    1155.4569272000722,
+    1330.596436
+  ],
+  "visible": false,
+  "screenX": 248.06571751582783,
+  "screenY": 81.39207113784167,
+  "screenZ": 1215.6096949700964,
+  "screenLinearZ": 9.853133011050886,
+  "fullScreen": false
+}
