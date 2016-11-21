@@ -27,6 +27,7 @@ var objectLookup;
 var globalVariables;
 var dirnameO;
 var nodeAppearanceModules;
+var blockModules;
 var callback;
 var Node;
 var hardwareObjects = {};
@@ -187,12 +188,13 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, appearances, cb, objValue) {
+exports.setup = function (objExp, objLookup, glblVars, dir, appearances, blocks, cb, objValue) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
     dirnameO = dir;
     nodeAppearanceModules = appearances;
+    blockModules = blocks;
     callback = cb;
     Node = objValue;
 };

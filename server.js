@@ -102,7 +102,7 @@ const objectPath = __dirname + "/objects";
 // All visual UI representations for IO Points are stored in this folder:
 const nodePath = __dirname + "/libraries/nodes";
 // All visual UI representations for IO Points are stored in this folder:
-const blockPath = __dirname + "/blocks";
+const blockPath = __dirname + "/libraries/logicBlocks";
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwarePath = __dirname + "/hardwareInterfaces";
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
@@ -293,11 +293,10 @@ function Logic() {
         [[null, 0], [null, 0], [null, 0], [null, 0]]
     ];*/
 
-    this.appearance = "logicNode";
+    this.appearance = "logic";
 
     this.links = {};
     this.blocks = {};
-
 }
 
 /**
@@ -360,6 +359,8 @@ function Block() {
     this.text = "";
     // indicates how much calls per second is happening on this block
     this.stress = 0;
+
+    this.appearance = "default";
 }
 
 /**
@@ -490,6 +491,7 @@ return null
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
 var nodeAppearanceModules = {};   // Will hold all available data point interfaces
+var blockModules = {};   // Will hold all available data point interfaces
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
@@ -539,10 +541,32 @@ for (var i = 0; i < nodeFolderList.length; i++) {
     nodeAppearanceModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js").render;
 }
 
+
+// get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
+// Each folder represents on IO-Point.
+var blockFolderList = fs.readdirSync(blockPath).filter(function (file) {
+    return fs.statSync(blockPath + '/' + file).isDirectory();
+});
+
+// Remove eventually hidden files from the Hybrid Object list.
+while (blockFolderList[0][0] === ".") {
+    blockFolderList.splice(0, 1);
+}
+
+
+
+
+
+// Create a objects list with all IO-Points code.
+for (var i = 0; i < blockFolderList.length; i++) {
+    blockModules[blockFolderList[i]] = require(blockPath + '/' + blockFolderList[i] + "/index.js");
+}
+
+
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
+hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, blockModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
@@ -552,7 +576,7 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppeara
         node: nodeKey,
         item: item
     });
-    objectEngine(objectKey, nodeKey, objects, nodeAppearanceModules);
+    objectEngine(objectKey, nodeKey, null, objects, nodeAppearanceModules);
 
 }, Node);
 cout("Done");
@@ -639,6 +663,8 @@ function loadObjects() {
             try {
                 objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + objectFolderList[i] + "/object.json", "utf8"));
                 objects[tempFolderName].ip = ip.address();
+
+               // this is for transforming old lists to new lists
 
                 if(objects[tempFolderName].objectValues)
                 {
@@ -1018,6 +1044,118 @@ function objectWebServer() {
     webServer.options('*', cors());
 
 
+    /// logic node handling
+
+
+    /**
+     * Logic Links
+     **/
+
+    // delete a logic link. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.delete('/logic/*/*/link/*/', function (req, res) {
+
+        var thisLinkId = req.params[2];
+        var fullEntry = objects[req.params[0]].logic[req.params[1]].links[thisLinkId];
+        var destinationIp = knownObjects[fullEntry.objectB];
+
+        delete objects[req.params[0]].logic[req.params[1]].links[thisLinkId];
+        cout("deleted link: " + thisLinkId);
+        // cout(objects[req.params[0]].links);
+        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        utilities.writeObjectToFile(objects, req.params[0], __dirname);
+        res.send("deleted: " + thisLinkId + " in logic "+ req.params[1] +" for object: " + req.params[0]);
+
+    });
+
+    // adding a new logic link to an object. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/logic/*/*/link/*/', function (req, res) {
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            objects[req.params[0]].logic[req.params[1]].links[req.params[2]] = req.body;
+
+            var thisObject = objects[req.params[0]].logic[req.params[1]].links[req.params[2]];
+
+            thisObject.loop = false;
+
+            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
+            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
+            if (thisObject.blockA === thisObject.blockB && thisObject.itemA === thisObject.itemB) {
+                thisObject.loop = true;
+            }
+
+            if (!thisObject.loop) {
+                // call an action that asks all devices to reload their links, once the links are changed.
+                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+                updateStatus = "added";
+                cout("added link: " + req.params[2]);
+                // check if there are new connections associated with the new link.
+                // write the object state to the permanent storage.
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            } else {
+                updateStatus = "found endless Loop";
+            }
+
+            res.send(updateStatus);
+        }
+    });
+
+    /**
+     * Logic Blocks
+     **/
+
+    // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/logic/*/*/block/*/', function (req, res) {
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]] = req.body;
+
+            var thisObject = objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]];
+
+            // call an action that asks all devices to reload their links, once the links are changed.
+            actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+            updateStatus = "added";
+            cout("added block: " + req.params[2]);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.send(updateStatus);
+        }
+    });
+
+    // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.delete('/logic/*/*/block/*/', function (req, res) {
+
+        var thisLinkId = req.params[2];
+        var fullEntry = objects[req.params[0]].logic[req.params[1]].blocks[thisLinkId];
+        var destinationIp = knownObjects[fullEntry.objectB];
+
+        delete objects[req.params[0]].logic[req.params[1]].blocks[thisLinkId];
+        cout("deleted block: " + thisLinkId);
+
+        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        utilities.writeObjectToFile(objects, req.params[0], __dirname);
+        res.send("deleted: " + thisLinkId + " in blocks for object: " + req.params[0]);
+
+
+        // Make sure that no links are connected to deleted objects
+        for (subCheckerKey in  objects[req.params[0]].logic[req.params[1]].links) {
+            if (subCheckerKey.blockA === thisLinkId || subCheckerKey.blockB === thisLinkId) {
+                delete objects[req.params[0]].logic[req.params[1]].links[subCheckerKey];
+            }
+        }
+    });
+
+    /**
+     * Normal Links
+     **/
 
     // delete a link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
@@ -1050,6 +1188,7 @@ function objectWebServer() {
         }
     });
 
+    // todo links for programms as well
     // adding a new link to an object. *1 is the object *2 is the link id
     // ****************************************************************************************************************
     webServer.post('/object/*/link/*/', function (req, res) {
@@ -1153,6 +1292,11 @@ function objectWebServer() {
     // Version 3 #### Active Version
     webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
         res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    });
+
+    // Version 3 #### Active Version
+    webServer.get('/logicBlock/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        res.sendFile(blockPath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
     // ****************************************************************************************************************
@@ -1734,11 +1878,30 @@ function socketServer() {
                         node: msgContent.node,
                         item: msgContent.item
                     });
-                    objectEngine(msgContent.object, msgContent.node, objects, nodeAppearanceModules);
+                    objectEngine(msgContent.object, msgContent.node, null, objects, nodeAppearanceModules);
                 }
 
         });
 // todo do this stuff tomorrrow
+
+        socket.on('block/publicData', function (msg) {
+
+            if (msg.object !== null && msg.logic !== null && msg.block !== null) {
+                if (msg.object in objects) {
+                    if (msg.logic in objects[msg.object].logic) {
+                        if (msg.block in objects[msg.object].logic[msg.logic].blocks) {
+                           var thisPublicData = objects[msg.object].logic[msg.logic].blocks[msg.block].publicData;
+
+                            // write data in to the block data of the object
+                            for (var key in msg.publicData) {
+                                thisPublicData[key] = msg.publicData[key];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
 
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
@@ -1789,30 +1952,30 @@ function messagetoSend(msgContent, socketID) {
 
 // dependencies afterAppearanceProcessing
 
-function objectEngine(object, node, objects, nodeAppearanceModules) {
-    // cout("engine started");
-   // process.stdout.write(".");
-   /** If(Logic Node){
-        nodeAppearanceModules["logic"](object, linkKey, thisNode.item, function (object, link, processedData) {
-            enginePostProcessing(object, link, processedData);
+function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
 
-            in call back check for all links assosiated with the main link source.
-
-        }, objects);
-    }
-
-    */
 
 
     for (var linkKey in objects[object].links) {
         if (objects[object].links[linkKey].nodeA === node) {
 
-            var thisNode = objects[object].nodes[node];
+
 
             if ((thisNode.appearance in nodeAppearanceModules)) {
-                nodeAppearanceModules[thisNode.appearance](object, linkKey, thisNode.item, function (object, link, processedData) {
-                    enginePostProcessing(object, link, processedData);
-                });
+
+                if(logic === null) {
+                    var thisNode = objects[object].nodes[node];
+                    nodeAppearanceModules[thisNode.appearance](object, linkKey, thisNode.item, function (object, link, processedData) {
+                        enginePostProcessing(object, link, processedData);
+                    });
+                } else {
+                    var thisNode = objects[object].logic[node];
+                    nodeAppearanceModules[thisNode.appearance](object, linkKey, thisNode.blocks[logic].item, function (object, link, processedData) {
+                        enginePostProcessing(object, link, processedData);
+                    });
+                }
+
+
             }
         }
     }
@@ -1835,24 +1998,98 @@ function enginePostProcessing(object, link, processedData) {
 
         var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB];
 
-        for (var i = 0; i < processedData.length; i++) {
-            if(objSend.item.length === i) objSend.item[i] = {};
-            for (var key in processedData[i]) {
-                objSend.item[i][key] = processedData[i][key];
+        if(thisLink.logicB === null) {
+            for (var i = 0; i < processedData.length; i++) {
+                if (objSend.item.length === i) objSend.item[i] = {};
+                for (var key in processedData[i]) {
+                    objSend.item[i][key] = processedData[i][key];
+                }
+            }
+
+            hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
+
+            sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, item: objSend.item});
+            objectEngine(thisLink.objectB, thisLink.nodeB, null, objects, nodeAppearanceModules);
+        }
+         else
+        {
+            // todo this is the code to process a normal link in to the programming
+            var thisString = 0;
+            if(thisLink.logicB === 0)  thisString= "in0";
+            else if(thisLink.logicB === 1)  thisString= "in1";
+            else if(thisLink.logicB === 2)  thisString= "in2";
+            else if(thisLink.logicB === 3)  thisString= "in3";
+
+            var objSend = objects[thisLink.objectB].logic[thisLink.nodeB].blocks[thisString];
+
+            for (var key in processedData[0]) {
+                objSend.item[0][key] = processedData[0][key];
+            }
+
+            logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
+        }
+    }
+}
+
+
+/**********************************************************************************************************************
+ ******************************************** Logic Engine ************************************************************
+ **********************************************************************************************************************/
+
+
+/**
+ * @desc Take the id of a value in objectValue and look through all links, if this id is used.
+ * All links that use the id will fire up the engine to process the link.
+ **/
+
+// dependencies afterAppearanceProcessing
+function logicEngine(object, logic, block, item, objects, blockModules) {
+
+    if(object in objects)
+        if(logic in objects[object]) {
+          var thisLogic = objects[object].logic[logic];
+
+            for (var linkKey in objects[object].links) {
+
+                if (thisLogic.links[linkKey].blockA === block && thisLogic.links[linkKey].itemA === item) {
+
+                    var thisBlock = thisLogic.blocks[block];
+
+                    if ((thisBlock.appearance in blockModules)) {
+
+                        blockModules[thisBlock.appearance].render(object, logic, linkKey, item, thisBlock.item, function (object, logic, link, processedData) {
+                            logicEnginePostProcessing(object, logic, link, processedData);
+                        });
+                    }
+                }
             }
         }
+}
 
-        hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
-        /*
-         if (hardwareInterfaceModules.hasOwnProperty(objSend.type)) {
-         hardwareInterfaceModules[objSend.type].read(thisLink.objectB, thisLink.nodeB, objSend.item, objSend.type);
-         }
-         */
-        // send data to listening editor
+/**
+ * @desc This has to be the callback for the processed appearances. The appearance should give back a processed object.
+ * @param {Object} processedValue Any kind of object simple or complex
+ * @param {String} IDinLinkArray Id to search for in the Link Array.
+ **/
 
-        sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, item: objSend.item});
-        objectEngine(thisLink.objectB, thisLink.nodeB, objects, nodeAppearanceModules);
+function logicEnginePostProcessing(object, logic, link, processedData) {
+    var thisLink = objects[object].logic[logic].links[link];
+    var thisLogic = objects[object].logic[logic];
+    var objSend = thisLogic.blocks[thisLink.blockB];
+
+    for (var key in processedData[thisLink.itemA]) {
+        objSend.item[thisLink.itemB][key] = processedData[thisLink.itemA][key];
     }
+
+
+
+    logicEngine(object, logic, thisLink.blockB,thisLink.itemB, objects, blockModules);
+
+    if(thisLink.blockB === "out0" || thisLink.blockB === "out1" || thisLink.blockB === "out2" || thisLink.blockB === "out3")
+    {
+        objectEngine(object, logic, null, thisLink.blockB, nodeAppearanceModules)
+    }
+
 }
 
 /**
