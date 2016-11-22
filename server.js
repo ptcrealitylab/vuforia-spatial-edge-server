@@ -329,12 +329,14 @@ function BlockLink() {
 function Block() {
     // name of the block
     this.name = "";
+    // local ID given to a used block.
+    this.id = null;
 
     this.x = null;
     this.y = null;
     // amount of elements the IO point is created of. Single IO nodes have the size 1.
     this.blockSize = 1;
-    // the global / world wide id of the actual reference block design.
+    // the global / world wide id of the actual reference block design. // checksum of the block??
     this.globalId = null;
     // the checksum should be identical with the checksum for the persistent package files of the reference block design.
     this.checksum = null; // checksum of the files for the program
@@ -359,7 +361,7 @@ function Block() {
     this.text = "";
     // indicates how much calls per second is happening on this block
     this.stress = 0;
-
+    // this is just a compatibility with the original engine. Maybe its here to stay
     this.appearance = "default";
 }
 
@@ -538,7 +540,7 @@ while (nodeFolderList[0][0] === ".") {
 
 // Create a objects list with all IO-Points code.
 for (var i = 0; i < nodeFolderList.length; i++) {
-    nodeAppearanceModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js").render;
+    nodeAppearanceModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js");
 }
 
 
@@ -1153,6 +1155,31 @@ function objectWebServer() {
         }
     });
 
+
+    // sends json object for a specific hybrid object. * is the object name
+    // ths is the most relevant for
+    // ****************************************************************************************************************
+    webServer.get('/availableLogicBlocks/', function (req, res) {
+        //  cout("get 7");
+var blockList = {}
+        // Create a objects list with all IO-Points code.
+        for (var i = 0; i < blockFolderList.length; i++) {
+
+            // make sure that each block contains always all keys.
+            blockList[blockFolderList[i]] = new Block();
+
+            var thisBlock = blockModules[blockFolderList[i]].setup;
+
+            for (var key in thisBlock) {
+                blockList[blockFolderList[i]][key] = thisBlock[key];
+            }
+
+        }
+        res.json(blockList);
+    });
+
+
+
     /**
      * Normal Links
      **/
@@ -1294,7 +1321,7 @@ function objectWebServer() {
         res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
 
-    // Version 3 #### Active Version
+    // Version 3 #### Active Version *1 Block *2 file
     webServer.get('/logicBlock/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
         res.sendFile(blockPath + "/" + req.params[0] + '/gui/' + req.params[1]);
     });
@@ -1965,12 +1992,12 @@ function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
 
                 if(logic === null) {
                     var thisNode = objects[object].nodes[node];
-                    nodeAppearanceModules[thisNode.appearance](object, linkKey, thisNode.item, function (object, link, processedData) {
+                    nodeAppearanceModules[thisNode.appearance].render(object, linkKey, thisNode.item, function (object, link, processedData) {
                         enginePostProcessing(object, link, processedData);
                     });
                 } else {
                     var thisNode = objects[object].logic[node];
-                    nodeAppearanceModules[thisNode.appearance](object, linkKey, thisNode.blocks[logic].item, function (object, link, processedData) {
+                    nodeAppearanceModules[thisNode.appearance].render(object, linkKey, thisNode.blocks[logic].item, function (object, link, processedData) {
                         enginePostProcessing(object, link, processedData);
                     });
                 }

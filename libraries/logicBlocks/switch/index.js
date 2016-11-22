@@ -56,7 +56,7 @@ var outputData = [];
 
 var setup = {
     name : "switch",
-    blockSize : 1,
+    blockSize : 2,
     privateData : {},
     publicData : {switchType : "toggle", switch: false, toggle: false},
     activeInputs : [true, true, false, false],
