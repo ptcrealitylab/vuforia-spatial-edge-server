@@ -54,7 +54,7 @@
  **/
 var outputData = [];
 
-var setup = {
+var properties = {
     name : "default",
     blockSize : 1,
     privateData : {},
@@ -67,11 +67,11 @@ var setup = {
     text : "default"
 };
 
-exports.setup = setup;
+exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, inputData, callback) {
+exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback) {
 
     var outputData = [{},{},{},{}];
     var key;

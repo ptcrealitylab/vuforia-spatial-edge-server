@@ -54,7 +54,7 @@
  **/
 var outputData = [];
 
-var setup = {
+var properties = {
     name : "switch",
     blockSize : 2,
     privateData : {},
@@ -67,21 +67,21 @@ var setup = {
     text : "switch"
 };
 
-exports.setup = setup;
+exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 
-exports.render = function (objectID, logicID, linkID, inputData, callback)  {
+exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback)  {
 
     var outputData = [{},{},{},{}];
     var key;
 
-    if(inputData[0].number && setup.publicData.toggle === false)
+    if(inputData[0].number && blockObject.publicData.toggle === false)
     {
-        setup.publicData.toggle = true;
+        blockObject.publicData.toggle = true;
         // toggle the value
-        setup.publicData.switch = !setup.publicData.switch;
+        blockObject.publicData.switch = !blockObject.publicData.switch;
 
         // todo we need to test how it behaves when I have a stream and a single data point that changes when switched
         for (key in inputData[0]) {
@@ -90,12 +90,12 @@ exports.render = function (objectID, logicID, linkID, inputData, callback)  {
         callback(objectID, linkID, outputData);
 
     } else {
-        setup.publicData.toggle = false;
+        blockObject.publicData.toggle = false;
     }
 
     // in case the switch is on, the data will be routed through
     // todo again we have to test how we can handle an on and off switch that only has one data point but then also handle the stream
-    if(setup.publicData.switch){
+    if(blockObject.publicData.switch){
         for (key in inputData[1]) {
             outputData[1][key] = inputData[1][key];
         }

@@ -54,7 +54,7 @@
  **/
 var outputData = [];
 
-var setup = {
+var properties = {
     name : "delay",
     blockSize : 1,
     privateData : {},
@@ -67,11 +67,11 @@ var setup = {
     text : "delay"
 };
 
-exports.setup = setup;
+exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, inputData, callback)  {
+exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback)  {
 
     var outputData = [{},{},{},{}];
     var key;
@@ -82,6 +82,6 @@ exports.render = function (objectID, logicID, linkID, inputData, callback)  {
 
     setTimeout(function() {
         callback(objectID, linkID, outputData);
-    }, setup.publicData.delayTime);
+    }, blockObject.publicData.delayTime);
 
 };

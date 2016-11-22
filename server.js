@@ -1168,7 +1168,7 @@ var blockList = {}
             // make sure that each block contains always all keys.
             blockList[blockFolderList[i]] = new Block();
 
-            var thisBlock = blockModules[blockFolderList[i]].setup;
+            var thisBlock = blockModules[blockFolderList[i]].properties;
 
             for (var key in thisBlock) {
                 blockList[blockFolderList[i]][key] = thisBlock[key];
@@ -2040,12 +2040,8 @@ function enginePostProcessing(object, link, processedData) {
         }
          else
         {
-            // todo this is the code to process a normal link in to the programming
-            var thisString = 0;
-            if(thisLink.logicB === 0)  thisString= "in0";
-            else if(thisLink.logicB === 1)  thisString= "in1";
-            else if(thisLink.logicB === 2)  thisString= "in2";
-            else if(thisLink.logicB === 3)  thisString= "in3";
+
+           var thisString= "in"+thisLink.logicB;
 
             var objSend = objects[thisLink.objectB].logic[thisLink.nodeB].blocks[thisString];
 
@@ -2053,7 +2049,7 @@ function enginePostProcessing(object, link, processedData) {
                 objSend.item[0][key] = processedData[0][key];
             }
 
-            logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
+            logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objSend, blockModules)
         }
     }
 }
@@ -2110,12 +2106,14 @@ function logicEnginePostProcessing(object, logic, link, processedData) {
 
 
 
-    logicEngine(object, logic, thisLink.blockB,thisLink.itemB, objects, blockModules);
+    logicEngine(object, logic, thisLink.blockB,thisLink.itemB, objSend, blockModules);
 
     if(thisLink.blockB === "out0" || thisLink.blockB === "out1" || thisLink.blockB === "out2" || thisLink.blockB === "out3")
     {
         objectEngine(object, logic, null, thisLink.blockB, nodeAppearanceModules)
     }
+
+    // maybe: var re = /^(in|out)\d$/; re.test(blockId)  // or  /^out(0|1|2|3)$/
 
 }
 
