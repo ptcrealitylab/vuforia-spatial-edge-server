@@ -54,7 +54,7 @@
  **/
 var outputData = [];
 
-var setup = {
+var properties = {
     name : "threshold",
     blockSize : 1,
     privateData : {},
@@ -67,23 +67,22 @@ var setup = {
     text : "threshold"
 };
 
-exports.setup = setup;
+exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-
-exports.render = function (objectID, logicID, linkID, inputData, callback)  {
+exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback)  {
 
     // check orientations and calculate if threshold is meet.
     var pass = false;
-    if(setup.publicData.direction = ">")
+    if(blockObject.publicData.direction = ">")
     {
-        if(inputData[0][number] > setup.publicData.threshold){
+        if(inputData[0][number] > blockObject.publicData.threshold){
             pass = true;
         }
-    } else if(setup.publicData.direction = "<")
+    } else if(blockObject.publicData.direction = "<")
     {
-        if(inputData[0][number] < setup.publicData.threshold){
+        if(inputData[0][number] < blockObject.publicData.threshold){
             pass = true;
         }
     }
@@ -97,7 +96,7 @@ exports.render = function (objectID, logicID, linkID, inputData, callback)  {
 
     // calculate final output
     if(pass){
-        if(setup.publicData.digital){
+        if(blockObject.publicData.digital){
             outputData[0][number] = 1;
         }
     } else {
