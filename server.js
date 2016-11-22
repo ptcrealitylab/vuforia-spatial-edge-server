@@ -1142,17 +1142,66 @@ function objectWebServer() {
         delete objects[req.params[0]].logic[req.params[1]].blocks[thisLinkId];
         cout("deleted block: " + thisLinkId);
 
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
-        utilities.writeObjectToFile(objects, req.params[0], __dirname);
-        res.send("deleted: " + thisLinkId + " in blocks for object: " + req.params[0]);
-
-
+        var thisLinks = objects[req.params[0]].logic[req.params[1]].links;
         // Make sure that no links are connected to deleted objects
-        for (subCheckerKey in  objects[req.params[0]].logic[req.params[1]].links) {
-            if (subCheckerKey.blockA === thisLinkId || subCheckerKey.blockB === thisLinkId) {
+        for (var subCheckerKey in thisLinks) {
+            if (thisLinks[subCheckerKey].blockA === thisLinkId || thisLinks[subCheckerKey].blockB === thisLinkId) {
                 delete objects[req.params[0]].logic[req.params[1]].links[subCheckerKey];
             }
         }
+
+        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        utilities.writeObjectToFile(objects, req.params[0], __dirname);
+        res.send("deleted: " + thisLinkId + " in blocks for object: " + req.params[0]);
+    });
+
+
+    /**
+     * Logic Nodes
+     **/
+
+    // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/logic/*/*/node/', function (req, res) {
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            objects[req.params[0]].logic[req.params[1]] = req.body;
+
+            // call an action that asks all devices to reload their links, once the links are changed.
+            actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+            updateStatus = "added";
+            cout("added logic node: " + req.params[2]);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.send(updateStatus);
+        }
+    });
+
+    // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.delete('/logic/*/*/node/', function (req, res) {
+
+        var fullEntry = objects[req.params[0]].logic[req.params[1]];
+
+        delete objects[req.params[0]].logic[req.params[1]];
+        cout("deleted node: " + req.params[1]);
+
+        // Make sure that no links are connected to deleted objects
+        for (var subCheckerKey in  objects[req.params[0]].links) {
+            if (objects[req.params[0]].links[subCheckerKey].nodeA === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectA === req.params[0]) {
+                delete objects[req.params[0]].links[subCheckerKey];
+            }
+            if (objects[req.params[0]].links[subCheckerKey].nodeB === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectB === req.params[0]) {
+                delete objects[req.params[0]].links[subCheckerKey];
+            }
+        }
+
+        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        utilities.writeObjectToFile(objects, req.params[0], __dirname);
+        res.send("deleted: " + req.params[1] + " in object: " + req.params[0]);
+
     });
 
 
