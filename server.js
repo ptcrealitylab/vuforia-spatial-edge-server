@@ -94,6 +94,8 @@ const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 const version = "1.7.0";           // the version of this server
 const protocol = "R1";           // the version of this server
+const globalAccessibility = false; // if false, only local object and editors can access the object.
+                                    // in big networks this might prevent access. In small private networks it adds high security.
 
 console.log(parseInt(version.replace(/\./g, "")));
 
@@ -918,6 +920,7 @@ function actionSender(action) {
  * @note if action "ping" is received, the object calls a heartbeat that is send one time.
  **/
 
+var thisIP = ip.address();
 function objectBeatServer() {
 
     // creating the udp server
@@ -987,8 +990,46 @@ function existsSync(filename) {
     }
 }
 
-function objectWebServer() {
+// REGEX to break an ip address into parts
+var ip_regex = /(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?::(\d+))?/ig;
+var ip_regex2 = /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
 
+// Parse the ip string into an object containing it's parts
+var parseIpSpace = function(ip_string){
+
+    // Use Regex to get the parts of the ip address
+    var ip_parts = ip_regex.exec(ip_string);
+    // Set ip address if the regex executed successfully
+    var thisresult = "";
+
+    if( ip_parts && ip_parts.length > 6 ){
+         thisresult = ip_parts[1]+ip_parts[2]+ip_parts[3];
+    } else  {
+        ip_parts = ip_regex2.exec(ip_string);
+        if( ip_parts && ip_parts.length > 3) {
+            thisresult = ip_parts[1]+ip_parts[2]+ip_parts[3];
+        }
+    }
+    // Return object
+    return thisresult;
+};
+
+function objectWebServer() {
+    thisIP = ip.address();
+    // security implemented
+    webServer.use("*", function (req, res, next) {
+
+        var remoteIP = parseIpSpace(req.ip);
+        var localIP = parseIpSpace(thisIP);
+
+        if(remoteIP === localIP || remoteIP === "12700" || globalAccessibility)
+        {
+            next();
+        } else {
+            res.status(403).send('Error 403: Access denied. This service is only available in a local network.');
+        }
+
+    });
     // define the body parser
     webServer.use(bodyParser.urlencoded({
         extended: true
@@ -1031,6 +1072,24 @@ function objectWebServer() {
             var scriptNode = '<script src="../../objectDefaultFiles/object.js"></script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
+        }
+        else if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.json?$/))) {
+
+            var fileName = __dirname + "/objects" + req.url + "object.json";
+
+            if (!fs.existsSync(fileName)) {
+                next();
+                return;
+            }
+
+            var json =  JSON.parse(fs.readFileSync(fileName, "utf8"));
+
+            for(var thisKey in json.logic) {
+                for (var thisKey2 in json.logic[thisKey].blocks) {
+                    delete json.logic[thisKey].blocks[thisKey2].privateData;
+                }
+            }
+            res.json(json);
         }
         else
             next();
