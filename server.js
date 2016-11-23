@@ -1055,7 +1055,7 @@ function objectWebServer() {
         {
             next();
         } else {
-            res.status(403).send('Error 403: Access denied. This service is only available in a local network.');
+            res.status(403).send('Error 400: Forbidden. The requested page may be only available in a local network.');
         }
     });
     // define the body parser
@@ -1243,6 +1243,35 @@ function objectWebServer() {
     });
 
 
+    webServer.post('/logic/*/*/blockPosition/*/', function (req, res) {
+
+        // cout("post 2");
+        var updateStatus = "nothing happened";
+        var thisObject = req.params[0];
+        var thisNode = req.params[1];
+        var thisBlock = req.params[2];
+
+        cout("changing Possition for :" + thisObject + " : " + thisNode+ " : " + thisBlock);
+
+        var tempObject = objects[thisObject].logic[thisNode].blocks[thisBlock];
+
+
+        // check that the numbers are valid numbers..
+        if (typeof req.body.x === "number" && typeof req.body.y === "number") {
+
+            tempObject.x = req.body.x;
+            tempObject.y = req.body.y;
+
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+            actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
+            updateStatus = "ok";
+            res.send(updateStatus);
+        }
+        res.send(updateStatus);
+    });
+
+
     /**
      * Logic Nodes
      **/
@@ -1290,6 +1319,47 @@ function objectWebServer() {
         res.send("deleted: " + req.params[1] + " in object: " + req.params[0]);
 
     });
+
+
+    webServer.post('/logic/*/*/nodeSize/', function (req, res) {
+
+        // cout("post 2");
+        var updateStatus = "nothing happened";
+        var thisObject = req.params[0];
+        var thisValue = req.params[1];
+
+        cout("changing Size for :" + thisObject + " : " + thisValue);
+
+        var  tempObject = objects[thisObject].logic[thisValue];
+
+
+        // check that the numbers are valid numbers..
+        if (typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") {
+
+            // if the object is equal the datapoint id, the item is actually the object it self.
+
+            tempObject.x = req.body.x;
+            tempObject.y = req.body.y;
+            tempObject.scale = req.body.scale;
+            // console.log(req.body);
+            // ask the devices to reload the objects
+        }
+
+        if (typeof req.body.matrix === "object") {
+
+            tempObject.matrix = req.body.matrix;
+        }
+
+        if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+            actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
+            updateStatus = "ok";
+        }
+
+        res.send(updateStatus);
+    });
+
 
 
     // sends json object for a specific hybrid object. * is the object name
