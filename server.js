@@ -94,8 +94,9 @@ const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 const version = "1.7.0";           // the version of this server
 const protocol = "R1";           // the version of this server
-const globalAccessibility = false; // if false, only local object and editors can access the object.
-                                    // in big networks this might prevent access. In small private networks it adds high security.
+const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
+// for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
+// basically all your local devices can see the object, however the internet is unable to reach the object.
 
 console.log(parseInt(version.replace(/\./g, "")));
 
@@ -1003,11 +1004,11 @@ var parseIpSpace = function(ip_string){
     var thisresult = "";
 
     if( ip_parts && ip_parts.length > 6 ){
-         thisresult = ip_parts[1]+ip_parts[2]+ip_parts[3];
+         thisresult = [parseInt(ip_parts[1]),parseInt(ip_parts[2]),parseInt(ip_parts[3]),parseInt(ip_parts[4])];
     } else  {
         ip_parts = ip_regex2.exec(ip_string);
         if( ip_parts && ip_parts.length > 3) {
-            thisresult = ip_parts[1]+ip_parts[2]+ip_parts[3];
+            thisresult = [parseInt(ip_parts[1]),parseInt(ip_parts[2]),parseInt(ip_parts[3]),parseInt(ip_parts[4])];
         }
     }
     // Return object
@@ -1017,18 +1018,45 @@ var parseIpSpace = function(ip_string){
 function objectWebServer() {
     thisIP = ip.address();
     // security implemented
+
+    // check all sever requests for being inside the netmask parameters.
+    // the netmask is set to local networks only.
+
     webServer.use("*", function (req, res, next) {
 
         var remoteIP = parseIpSpace(req.ip);
         var localIP = parseIpSpace(thisIP);
+        var thisNetmask = parseIpSpace(netmask);
 
-        if(remoteIP === localIP || remoteIP === "12700" || globalAccessibility)
+        var checkThisNetwork = true;
+
+        if (!(remoteIP[0] === localIP[0] || remoteIP[0] <= (255- thisNetmask[0]))){
+            checkThisNetwork = false;
+        }
+
+        if (!(remoteIP[1] === localIP[1] || remoteIP[1] <= (255- thisNetmask[1]))){
+            checkThisNetwork = false;
+        }
+
+        if (!(remoteIP[2] === localIP[2] || remoteIP[2] <= (255- thisNetmask[2]))){
+            checkThisNetwork = false;
+        }
+
+        if (!(remoteIP[3] === localIP[3] || remoteIP[3] <= (255- thisNetmask[3]))){
+            checkThisNetwork = false;
+        }
+
+        if(!checkThisNetwork)
+        if (remoteIP[0] === 127 && remoteIP[1] === 0 && remoteIP[2] === 0 && remoteIP[3] === 1){
+            checkThisNetwork = true;
+        }
+
+        if(checkThisNetwork)
         {
             next();
         } else {
             res.status(403).send('Error 403: Access denied. This service is only available in a local network.');
         }
-
     });
     // define the body parser
     webServer.use(bodyParser.urlencoded({
