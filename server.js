@@ -339,6 +339,8 @@ function Block() {
     this.y = null;
     // amount of elements the IO point is created of. Single IO nodes have the size 1.
     this.blockSize = 1;
+    // the category for the editor
+    this.category = 1;
     // the global / world wide id of the actual reference block design. // checksum of the block??
     this.globalId = null;
     // the checksum should be identical with the checksum for the persistent package files of the reference block design.
@@ -1205,9 +1207,38 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]] = req.body;
-
             var thisObject = objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]];
+
+            // todo activate when system is working to increase security
+           /* var thisMessage = req.body;
+
+            var thisModule = {};
+
+            var breakPoint = false;
+
+            if (thisMessage.appearance in blockFolderList) {
+                thisModule = blockModules[thisMessage.appearance];
+
+                for (var thisKey in thisMessage.publicData) {
+                    if (typeof thisMessage.publicData[thisKey] !== typeof thisModule.publicData[thisKey]) {
+                        breakPoint = true;
+                    }
+                }
+
+                for (var thisKey in thisMessage.privateData) {
+                    if (typeof thisMessage.privateData[thisKey] !== typeof thisModule.privateData[thisKey]) {
+                        breakPoint = true;
+                    }
+                }
+            }
+            else {
+                breakPoint = true;
+            }
+
+            if (!breakPoint)*/
+                objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]] = req.body;
+
+
 
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
@@ -1379,6 +1410,8 @@ var blockList = {}
             for (var key in thisBlock) {
                 blockList[blockFolderList[i]][key] = thisBlock[key];
             }
+            // this makes sure that the appearance of the block is set.
+            blockList[blockFolderList[i]].appearance = blockFolderList[i];
 
         }
         res.json(blockList);
