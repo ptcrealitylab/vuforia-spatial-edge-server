@@ -134,7 +134,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
             }
 
 
-            resText += "' onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Add Target</button> " +
+            resText += "' onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
                 "<button  class='";
 
             if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.html")) {
@@ -149,9 +149,27 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
                 resText += "btn btn-primary";
             }
 
-            resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Add Interface</button> " +
+            resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
 
-                    // "</div>"+
+            var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
+
+            if (objects.hasOwnProperty(thisObject)) {
+                if(objects[thisObject].deactivated !== true) {
+                    resText += " <button class='btn btn-success'";
+                    resText += "' onclick=\"window.location.href='/object/" + thisObject+ "/deactivate/'\">on</button> ";
+                }
+                else{
+                    resText += " <button class='btn btn-warning'";
+                    resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
+                }
+
+            } else {
+                resText += " <button class='btn btn-default' disabled='disabled'>off</button>";
+            }
+
+            resText +=
+
+                // "</div>"+
                     // "<div class='col-xs-3'>"+
 
                     // " <div>" +
@@ -162,8 +180,10 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
                 " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
                 "<input type='hidden' name='name' value='" + tempFiles[i] + "'>" +
                 "<input type='hidden' name='action' value='delete'>" +
-                " <input type='submit'  class='btn btn-danger' value='Delete' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\"> " +
-                "</form>" +
+                " <input type='submit'  class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
+                "</form>";
+
+            resText +=
                     //" </div>"+
                 "</div>" +
                 "</div></li>";

@@ -71,7 +71,7 @@ exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback) {
+exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback) {
 
     var outputData = [{},{},{},{}];
     var key;
@@ -79,7 +79,5 @@ exports.render = function (objectID, logicID, linkID, inputData, blockObject, ca
     for (key in inputData[0]) {
         outputData[0][key] = inputData[0][key];
     }
-
-    callback(objectID, linkID, outputData);
-
+    callback(objectID, logicID, linkID, outputData);
 };

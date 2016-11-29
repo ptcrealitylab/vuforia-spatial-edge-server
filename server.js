@@ -169,6 +169,8 @@ function Objects() {
     // The version number of the Object.
     this.version = version;
 
+    this.deactivated = false;
+
     this.protocol = protocol;
     // The (t)arget (C)eck(S)um is a sum of the checksum values for the target files.
     this.tcs = null;
@@ -724,7 +726,9 @@ function startSystem() {
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (var key in objects) {
-        objectBeatSender(beatPort, key, objects[key].ip);
+        if(!objects[key].deactivated) {
+            objectBeatSender(beatPort, key, objects[key].ip);
+        }
     }
 
     // receiving heartbeat messages and adding new objects to the knownObjects Array
@@ -831,7 +835,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (!oneTimeOnly) {
         setInterval(function () {
             // send the beat#
-            if (thisId in objects) {
+            if (thisId in objects && !objects[thisId].deactivated) {
                 // cout("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
 
                 var message = new Buffer(JSON.stringify({
@@ -865,7 +869,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         // delay the signal with timeout so that not all objects send the beat in the same time.
         setTimeout(function () {
             // send the beat
-            if (thisId in objects) {
+            if (thisId in objects && !objects[thisId].deactivated) {
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
@@ -1002,16 +1006,17 @@ var parseIpSpace = function(ip_string){
 
     // Use Regex to get the parts of the ip address
     var ip_parts = ip_regex.exec(ip_string);
+    var ip_parts2 = ip_regex2.exec(ip_string);
     // Set ip address if the regex executed successfully
     var thisresult = "";
 
     if( ip_parts && ip_parts.length > 6 ){
          thisresult = [parseInt(ip_parts[1]),parseInt(ip_parts[2]),parseInt(ip_parts[3]),parseInt(ip_parts[4])];
-    } else  {
-        ip_parts = ip_regex2.exec(ip_string);
-        if( ip_parts && ip_parts.length > 3) {
-            thisresult = [parseInt(ip_parts[1]),parseInt(ip_parts[2]),parseInt(ip_parts[3]),parseInt(ip_parts[4])];
+    } else if( ip_parts2 && ip_parts2.length > 3){
+            thisresult = [parseInt(ip_parts2[1]),parseInt(ip_parts2[2]),parseInt(ip_parts2[3]),parseInt(ip_parts2[4])];
         }
+    else if(ip_string === "::1"){
+        thisresult = [127,0,0,1];
     }
     // Return object
     return thisresult;
@@ -1025,6 +1030,8 @@ function objectWebServer() {
     // the netmask is set to local networks only.
 
     webServer.use("*", function (req, res, next) {
+
+
 
         var remoteIP = parseIpSpace(req.ip);
         var localIP = parseIpSpace(thisIP);
@@ -1203,11 +1210,17 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.post('/logic/*/*/block/*/', function (req, res) {
 
+        console.log("where is this object");
+
         var updateStatus = "nothing happened";
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var thisObject = objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]];
+            var thisBlocks = objects[req.params[0]].logic[req.params[1]].blocks;
+
+            thisBlocks[req.params[2]] = new Block();
+
+
 
             // todo activate when system is working to increase security
            /* var thisMessage = req.body;
@@ -1236,9 +1249,17 @@ function objectWebServer() {
             }
 
             if (!breakPoint)*/
-                objects[req.params[0]].logic[req.params[1]].blocks[req.params[2]] = req.body;
 
+            thisBlocks[req.params[2]] = req.body;
 
+            // todo this can be removed once the system runs smoothly
+            if(typeof thisBlocks[req.params[2]].appearance === "undefined"){
+                thisBlocks[req.params[2]].appearance = "default";
+            }
+
+for( var k in  objects[req.params[0]].logic[req.params[1]].blocks){
+    console.log(k);
+}
 
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
@@ -1298,7 +1319,7 @@ function objectWebServer() {
             actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
             updateStatus = "ok";
             res.send(updateStatus);
-        }
+        } else
         res.send(updateStatus);
     });
 
@@ -1317,10 +1338,21 @@ function objectWebServer() {
 
             objects[req.params[0]].logic[req.params[1]] = req.body;
 
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn0"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn1"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn2"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn3"] = new Block();
+
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut0"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut1"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut2"] = new Block();
+            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut3"] = new Block();
+console.log("added tons of nodes ----------")
+
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
             updateStatus = "added";
-            cout("added logic node: " + req.params[2]);
+            cout("added logic node: " + req.params[1]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
             res.send(updateStatus);
         }
@@ -1607,6 +1639,25 @@ var blockList = {}
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
             res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+        });
+
+
+
+      //  deactivated
+
+        webServer.get('/object/*/deactivate/', function (req, res) {
+            objects[req.params[0]].deactivated = true;
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+            res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+            res.redirect(req.get('referer'));
+            });
+
+        webServer.get('/object/*/activate/', function (req, res) {
+            objects[req.params[0]].deactivated = false;
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+            res.redirect(req.get('referer'));
         });
 
         // request a zip-file with the object stored inside. *1 is the object
@@ -2207,6 +2258,28 @@ function messagetoSend(msgContent, socketID) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**********************************************************************************************************************
  ******************************************** Engine ******************************************************************
  **********************************************************************************************************************/
@@ -2219,32 +2292,49 @@ function messagetoSend(msgContent, socketID) {
 // dependencies afterAppearanceProcessing
 
 function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
-
-
-
+//console.log(objects[object].links);
     for (var linkKey in objects[object].links) {
+
+
         if (objects[object].links[linkKey].nodeA === node) {
 
+           // console.log(object + " "+ node +" "+ logic);
 
+            var thisNode = {};
+
+            // todo not the best method at the moment
+            if(node in objects[object].nodes) {
+                thisNode = objects[object].nodes[node];
+
+            } else {
+                thisNode = objects[object].logic[node];
+            }
+            var thisLink = objects[object].links[linkKey];
 
             if ((thisNode.appearance in nodeAppearanceModules)) {
 
-                if(logic === null) {
-                    var thisNode = objects[object].nodes[node];
                     nodeAppearanceModules[thisNode.appearance].render(object, linkKey, thisNode.item, function (object, link, processedData) {
                         enginePostProcessing(object, link, processedData);
                     });
-                } else {
-                    var thisNode = objects[object].logic[node];
-                    nodeAppearanceModules[thisNode.appearance].render(object, linkKey, thisNode.blocks[logic].item, function (object, link, processedData) {
-                        enginePostProcessing(object, link, processedData);
-                    });
-                }
+
 
 
             }
         }
     }
+
+   //
+
+   /* for (var linkKey in objects[object].nodes[node].links) {
+        console.log("here");
+    }
+
+    for (var linkKey in objects[object].logic[node].links) {
+        console.log("here");
+    }
+    for (var linkKey in objects[object].nodes[node].links) {
+        console.log("here");
+    }*/
 }
 
 /**
@@ -2257,14 +2347,13 @@ function enginePostProcessing(object, link, processedData) {
     var thisLink = objects[object].links[link];
 
     if (!(thisLink.objectB in objects)) {
-
         socketSender(object, link, processedData);
     }
     else {
 
         var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB];
 
-        if(thisLink.logicB === null) {
+        if(typeof thisLink.logicB !== "number") {
             for (var i = 0; i < processedData.length; i++) {
                 if (objSend.item.length === i) objSend.item[i] = {};
                 for (var key in processedData[i]) {
@@ -2280,7 +2369,9 @@ function enginePostProcessing(object, link, processedData) {
          else
         {
 
-           var thisString= "in"+thisLink.logicB;
+           var thisString= "edgePlaceholderIn"+thisLink.logicB;
+
+
 
             var objSend = objects[thisLink.objectB].logic[thisLink.nodeB].blocks[thisString];
 
@@ -2288,10 +2379,30 @@ function enginePostProcessing(object, link, processedData) {
                 objSend.item[0][key] = processedData[0][key];
             }
 
-            logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objSend, blockModules)
+
+
+            logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
         }
+
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**********************************************************************************************************************
@@ -2307,25 +2418,39 @@ function enginePostProcessing(object, link, processedData) {
 // dependencies afterAppearanceProcessing
 function logicEngine(object, logic, block, item, objects, blockModules) {
 
-    if(object in objects)
-        if(logic in objects[object]) {
-          var thisLogic = objects[object].logic[logic];
+    if(object in objects) {
 
-            for (var linkKey in objects[object].links) {
+        if (logic in objects[object].logic) {
+
+            var thisLogic = objects[object].logic[logic];
+
+           // console.log(logic);
+
+            for (var linkKey in thisLogic.links) {
+
+               // console.log(thisLogic.links[linkKey]);
 
                 if (thisLogic.links[linkKey].blockA === block && thisLogic.links[linkKey].itemA === item) {
 
                     var thisBlock = thisLogic.blocks[block];
 
+                   // console.log(block);
+
+                   // console.log(thisBlock.appearance);
+
+
                     if ((thisBlock.appearance in blockModules)) {
 
+
                         blockModules[thisBlock.appearance].render(object, logic, linkKey, item, thisBlock.item, function (object, logic, link, processedData) {
+
                             logicEnginePostProcessing(object, logic, link, processedData);
                         });
                     }
                 }
             }
         }
+    }
 }
 
 /**
@@ -2335,26 +2460,68 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
  **/
 
 function logicEnginePostProcessing(object, logic, link, processedData) {
+    //console.log(object +" "+ logic +" " + link + " : "+ processedData);
     var thisLink = objects[object].logic[logic].links[link];
     var thisLogic = objects[object].logic[logic];
-    var objSend = thisLogic.blocks[thisLink.blockB];
 
-    for (var key in processedData[thisLink.itemA]) {
-        objSend.item[thisLink.itemB][key] = processedData[thisLink.itemA][key];
+
+
+    for (var key in thisLogic.blocks) {
+   //     console.log(key);
     }
 
+    //logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
 
-
-    logicEngine(object, logic, thisLink.blockB,thisLink.itemB, objSend, blockModules);
-
-    if(thisLink.blockB === "out0" || thisLink.blockB === "out1" || thisLink.blockB === "out2" || thisLink.blockB === "out3")
+    if(thisLink.blockB === "edgePlaceholderOut0" || thisLink.blockB === "edgePlaceholderOut1" || thisLink.blockB === "edgePlaceholderOut2" || thisLink.blockB === "edgePlaceholderOut3")
     {
-        objectEngine(object, logic, null, thisLink.blockB, nodeAppearanceModules)
+
+
+        var objSend = objects[object].logic[logic];
+
+        for (var key in processedData[0]) {
+            objSend.item[0][key] = processedData[0][key];
+        }
+
+
+
+       // console.log(object +" "+ logic);
+
+        objectEngine(object, logic, null, objects, nodeAppearanceModules);
+
+    } else {
+
+            var objSend = thisLogic.blocks[thisLink.blockB];
+            for (var key in processedData[thisLink.itemA]) {
+                objSend.item[thisLink.itemB][key] = processedData[thisLink.itemA][key];
+            }
+
+
+        logicEngine(object, logic, thisLink.blockB , thisLink.itemB, objects, blockModules);
+
     }
+
+
+
 
     // maybe: var re = /^(in|out)\d$/; re.test(blockId)  // or  /^out(0|1|2|3)$/
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray

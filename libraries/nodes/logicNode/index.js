@@ -58,28 +58,16 @@
  [callbacks]
 
  */
+
+
 var outputData = [];
-exports.render = function (objectID, linkID, inputData, callback, logicAddress /* between 0-3 */, objects) {
-    if(!logicAddress) logicAddress = 0;  if(!objects) objects = {};
-/**
-    if link has INPUT then process from main object.
 
+exports.render = function (objectID, linkID, inputData, callback) {
 
-
-
-
-
-        if link has OUTPUT then check main links for links and process callbacks
-
-
-        output array
-
- */
-
-var outputData = outputData;
+    var outputData = [];
     var key;
     for (var i = 0; i < inputData.length; i++) {
-        if(!outputData[i]) outputData[i] = {};
+        if(outputData.length === i) outputData[i] = {};
         for (key in inputData[0]) {
             outputData[i][key] = inputData[i][key];
         }
@@ -87,7 +75,6 @@ var outputData = outputData;
 
     callback(objectID, linkID, outputData);
 };
-
 /* // example for delay
  exports.render = function (objectID, linkID, inputData, callback) {
  var outputData = {};
