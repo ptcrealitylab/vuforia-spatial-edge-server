@@ -71,7 +71,7 @@ exports.properties = properties;
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, inputData, blockObject, callback)  {
+exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback)  {
 
     // check orientations and calculate if threshold is meet.
     var pass = false;
@@ -103,5 +103,5 @@ exports.render = function (objectID, logicID, linkID, inputData, blockObject, ca
         outputData[0][number] = 0;
     }
 
-    callback(objectID, linkID, outputData);
+    callback(objectID, logicID, linkID, outputData);
 };
