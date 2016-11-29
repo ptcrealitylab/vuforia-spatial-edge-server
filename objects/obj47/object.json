@@ -34,7 +34,7 @@
 			"y": 156.85004682175247,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"appearance": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
@@ -57,7 +57,7 @@
 			"y": -103.19668796408882,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"appearance": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
