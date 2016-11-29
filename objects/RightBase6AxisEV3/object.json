@@ -1,7 +1,7 @@
 {
 	"objectId": "RightBase6AxisEV3V78ogdk6csbe",
 	"name": "RightBase6AxisEV3",
-	"ip": "192.168.1.120",
+	"ip": "192.168.1.7",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "37RBTH",
@@ -184,5 +184,6 @@
 			"frameSizeY": 100
 		}
 	},
-	"logic": {}
+	"logic": {},
+	"deactivated": true
 }

@@ -1,7 +1,7 @@
 {
 	"objectId": "lamp2CH73qpztykp3",
 	"name": "lamp2",
-	"ip": "192.168.1.109",
+	"ip": "192.168.1.7",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "3iH5gn",
@@ -81,5 +81,6 @@
 			"frameSizeY": 100
 		}
 	},
-	"logic": {}
+	"logic": {},
+	"deactivated": true
 }

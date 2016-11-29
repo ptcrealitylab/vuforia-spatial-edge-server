@@ -1,7 +1,7 @@
 {
 	"objectId": "RightUpperTilt6AxisEV3SEc0z3n53s8k",
 	"name": "RightUpperTilt6AxisEV3",
-	"ip": "192.168.1.120",
+	"ip": "192.168.1.7",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "fvRhP",
@@ -264,5 +264,6 @@
 			"frameSizeY": 100
 		}
 	},
-	"logic": {}
+	"logic": {},
+	"deactivated": true
 }

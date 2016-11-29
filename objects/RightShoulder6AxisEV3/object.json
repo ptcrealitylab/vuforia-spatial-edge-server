@@ -1,7 +1,7 @@
 {
 	"objectId": "RightShoulder6AxisEV35Z5j0vl9jkf1",
 	"name": "RightShoulder6AxisEV3",
-	"ip": "192.168.1.120",
+	"ip": "192.168.1.7",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "2uTHPQ",
@@ -98,5 +98,6 @@
 			"frameSizeY": 100
 		}
 	},
-	"logic": {}
+	"logic": {},
+	"deactivated": true
 }

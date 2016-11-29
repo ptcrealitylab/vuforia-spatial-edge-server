@@ -254,7 +254,7 @@ function Node() {
     // defines the nodeInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the nodeInterface folder.
     // todo appearance should be removed eventually as there is only one kind of appearance
-    this.appearance = "default";
+    this.appearance = "node";
     // defines the origin Hardware interface of the IO Point. For example if this is arduinoYun the Server associates
     // this IO Point with the Arduino Yun hardware interface.
     //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
@@ -1122,8 +1122,8 @@ function objectWebServer() {
             var json =  JSON.parse(fs.readFileSync(fileName, "utf8"));
 
             for(var thisKey in json.logic) {
-                for (var thisKey2 in json.logic[thisKey].blocks) {
-                    delete json.logic[thisKey].blocks[thisKey2].privateData;
+                for (var thisKey2 in json.nodes[thisKey].blocks) {
+                    delete json.nodes[thisKey].blocks[thisKey2].privateData;
                 }
             }
             res.json(json);
@@ -1154,10 +1154,10 @@ function objectWebServer() {
     webServer.delete('/logic/*/*/link/*/', function (req, res) {
 
         var thisLinkId = req.params[2];
-        var fullEntry = objects[req.params[0]].logic[req.params[1]].links[thisLinkId];
+        var fullEntry = objects[req.params[0]].nodes[req.params[1]].links[thisLinkId];
         var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objects[req.params[0]].logic[req.params[1]].links[thisLinkId];
+        delete objects[req.params[0]].nodes[req.params[1]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
         actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
@@ -1174,9 +1174,9 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            objects[req.params[0]].logic[req.params[1]].links[req.params[2]] = req.body;
+            objects[req.params[0]].nodes[req.params[1]].links[req.params[2]] = req.body;
 
-            var thisObject = objects[req.params[0]].logic[req.params[1]].links[req.params[2]];
+            var thisObject = objects[req.params[0]].nodes[req.params[1]].links[req.params[2]];
 
             thisObject.loop = false;
 
@@ -1216,7 +1216,7 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var thisBlocks = objects[req.params[0]].logic[req.params[1]].blocks;
+            var thisBlocks = objects[req.params[0]].nodes[req.params[1]].blocks;
 
             thisBlocks[req.params[2]] = new Block();
 
@@ -1257,7 +1257,7 @@ function objectWebServer() {
                 thisBlocks[req.params[2]].appearance = "default";
             }
 
-for( var k in  objects[req.params[0]].logic[req.params[1]].blocks){
+for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
     console.log(k);
 }
 
@@ -1275,17 +1275,17 @@ for( var k in  objects[req.params[0]].logic[req.params[1]].blocks){
     webServer.delete('/logic/*/*/block/*/', function (req, res) {
 
         var thisLinkId = req.params[2];
-        var fullEntry = objects[req.params[0]].logic[req.params[1]].blocks[thisLinkId];
+        var fullEntry = objects[req.params[0]].nodes[req.params[1]].blocks[thisLinkId];
         var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objects[req.params[0]].logic[req.params[1]].blocks[thisLinkId];
+        delete objects[req.params[0]].nodes[req.params[1]].blocks[thisLinkId];
         cout("deleted block: " + thisLinkId);
 
-        var thisLinks = objects[req.params[0]].logic[req.params[1]].links;
+        var thisLinks = objects[req.params[0]].nodes[req.params[1]].links;
         // Make sure that no links are connected to deleted objects
         for (var subCheckerKey in thisLinks) {
             if (thisLinks[subCheckerKey].blockA === thisLinkId || thisLinks[subCheckerKey].blockB === thisLinkId) {
-                delete objects[req.params[0]].logic[req.params[1]].links[subCheckerKey];
+                delete objects[req.params[0]].nodes[req.params[1]].links[subCheckerKey];
             }
         }
 
@@ -1305,7 +1305,7 @@ for( var k in  objects[req.params[0]].logic[req.params[1]].blocks){
 
         cout("changing Possition for :" + thisObject + " : " + thisNode+ " : " + thisBlock);
 
-        var tempObject = objects[thisObject].logic[thisNode].blocks[thisBlock];
+        var tempObject = objects[thisObject].nodes[thisNode].blocks[thisBlock];
 
 
         // check that the numbers are valid numbers..
@@ -1336,19 +1336,21 @@ for( var k in  objects[req.params[0]].logic[req.params[1]].blocks){
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            objects[req.params[0]].logic[req.params[1]] = req.body;
+            objects[req.params[0]].nodes[req.params[1]] = req.body;
 
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn0"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn1"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn2"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderIn3"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new Block();
 
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut0"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut1"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut2"] = new Block();
-            objects[req.params[0]].logic[req.params[1]].blocks["edgePlaceholderOut3"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new Block();
 console.log("added tons of nodes ----------")
 
+            objects[req.params[0]].nodes[req.params[1]].appearance = "logic";
+            
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
             updateStatus = "added";
@@ -1362,9 +1364,9 @@ console.log("added tons of nodes ----------")
     // ****************************************************************************************************************
     webServer.delete('/logic/*/*/node/', function (req, res) {
 
-        var fullEntry = objects[req.params[0]].logic[req.params[1]];
+        var fullEntry = objects[req.params[0]].nodes[req.params[1]];
 
-        delete objects[req.params[0]].logic[req.params[1]];
+        delete objects[req.params[0]].nodes[req.params[1]];
         cout("deleted node: " + req.params[1]);
 
         // Make sure that no links are connected to deleted objects
@@ -1393,7 +1395,7 @@ console.log("added tons of nodes ----------")
 
         cout("changing Size for :" + thisObject + " : " + thisValue);
 
-        var  tempObject = objects[thisObject].logic[thisValue];
+        var  tempObject = objects[thisObject].nodes[thisValue];
 
 
         // check that the numbers are valid numbers..
@@ -2206,8 +2208,8 @@ function socketServer() {
             if (msg.object !== null && msg.logic !== null && msg.block !== null) {
                 if (msg.object in objects) {
                     if (msg.logic in objects[msg.object].logic) {
-                        if (msg.block in objects[msg.object].logic[msg.logic].blocks) {
-                           var thisPublicData = objects[msg.object].logic[msg.logic].blocks[msg.block].publicData;
+                        if (msg.block in objects[msg.object].nodes[msg.logic].blocks) {
+                           var thisPublicData = objects[msg.object].nodes[msg.logic].blocks[msg.block].publicData;
 
                             // write data in to the block data of the object
                             for (var key in msg.publicData) {
@@ -2300,15 +2302,8 @@ function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
 
            // console.log(object + " "+ node +" "+ logic);
 
-            var thisNode = {};
+            var thisNode = objects[object].nodes[node];
 
-            // todo not the best method at the moment
-            if(node in objects[object].nodes) {
-                thisNode = objects[object].nodes[node];
-
-            } else {
-                thisNode = objects[object].logic[node];
-            }
             var thisLink = objects[object].links[linkKey];
 
             if ((thisNode.appearance in nodeAppearanceModules)) {
@@ -2329,7 +2324,7 @@ function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
         console.log("here");
     }
 
-    for (var linkKey in objects[object].logic[node].links) {
+    for (var linkKey in objects[object].nodes[node].links) {
         console.log("here");
     }
     for (var linkKey in objects[object].nodes[node].links) {
@@ -2371,15 +2366,11 @@ function enginePostProcessing(object, link, processedData) {
 
            var thisString= "edgePlaceholderIn"+thisLink.logicB;
 
-
-
-            var objSend = objects[thisLink.objectB].logic[thisLink.nodeB].blocks[thisString];
+            var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB].blocks[thisString];
 
             for (var key in processedData[0]) {
                 objSend.item[0][key] = processedData[0][key];
             }
-
-
 
             logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
         }
@@ -2420,9 +2411,9 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 
     if(object in objects) {
 
-        if (logic in objects[object].logic) {
+        if (logic in objects[object].nodes) {
 
-            var thisLogic = objects[object].logic[logic];
+            var thisLogic = objects[object].nodes[logic];
 
            // console.log(logic);
 
@@ -2461,8 +2452,8 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 
 function logicEnginePostProcessing(object, logic, link, processedData) {
     //console.log(object +" "+ logic +" " + link + " : "+ processedData);
-    var thisLink = objects[object].logic[logic].links[link];
-    var thisLogic = objects[object].logic[logic];
+    var thisLink = objects[object].nodes[logic].links[link];
+    var thisLogic = objects[object].nodes[logic];
 
 
 
@@ -2476,7 +2467,7 @@ function logicEnginePostProcessing(object, logic, link, processedData) {
     {
 
 
-        var objSend = objects[object].logic[logic];
+        var objSend = objects[object].nodes[logic];
 
         for (var key in processedData[0]) {
             objSend.item[0][key] = processedData[0][key];
