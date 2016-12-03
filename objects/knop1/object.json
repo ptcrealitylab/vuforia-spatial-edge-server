@@ -36,23 +36,19 @@
 	"nodes": {
 		"knop1xe35ycj6l5xyscale": {
 			"name": "scale",
-			"item": [
+			"data":
 				{
-					"number": 0.7875,
+					"value": 0.7875,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 93,
 			"y": -69,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

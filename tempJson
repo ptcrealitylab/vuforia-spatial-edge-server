@@ -6,30 +6,30 @@
     "blockSize": 1,
     "globalId": null,
     "checksum": null,
-    "item": [
+    "data":  [
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
@@ -74,30 +74,30 @@
     "blockSize": 1,
     "globalId": null,
     "checksum": null,
-    "item": [
+    "data": [
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
@@ -144,30 +144,30 @@
     "blockSize": 1,
     "globalId": null,
     "checksum": null,
-    "item": [
+    "data":  [
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
@@ -216,30 +216,30 @@
     "blockSize": 1,
     "globalId": null,
     "checksum": null,
-    "item": [
+    "data": [
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,
         "unitMax": 1
       },
       {
-        "number": 0,
+        "value": 0,
         "mode": "f",
         "unit": "",
         "unitMin": 0,

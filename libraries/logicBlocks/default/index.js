@@ -52,7 +52,6 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-var outputData = [];
 
 var properties = {
     name : "default",
@@ -72,7 +71,6 @@ exports.properties = properties;
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback) {
-
     var outputData = [{},{},{},{}];
     var key;
 

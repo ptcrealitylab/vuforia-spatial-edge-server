@@ -1,12 +1,12 @@
 function BlockLink() {
     // origin block UUID
-    this.blockA = null;
+    this.nodeA = null;
     // item in that block
-    this.itemA = 0;
+    this.logicA = 0;
     // destination block UUID
-    this.blockB = null;
+    this.nodeB = null;
     // item in that block
-    this.itemB = 0;
+    this.logicB = 0;
     // check if the links are looped.
     this.loop = false;
     // Will be used to test if a link is still able to find its destination.

@@ -70,69 +70,57 @@
 	"nodes": {
 		"TopUpperTilt6AxisEV36pb1j09z64s3yaw_ut": {
 			"name": "yaw_ut",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -121.45466428718055,
 			"y": -108.99713154912843,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopUpperTilt6AxisEV36pb1j09z64s3Vertical Touch_ut": {
 			"name": "Vertical Touch_ut",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -9.831676944647825,
 			"y": 120.20207819455754,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopUpperTilt6AxisEV36pb1j09z64s3roll_ut": {
 			"name": "roll_ut",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 109.603623873566,
 			"y": -112.51306105483991,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

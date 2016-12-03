@@ -36,46 +36,38 @@
 	"nodes": {
 		"lamp2CH73qpztykp3brightness": {
 			"name": "brightness",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -10.354941865472092,
 			"y": 92.41661442215243,
 			"scale": 0.7281970424811749,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"lamp2CH73qpztykp3button": {
 			"name": "button",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 1.1061751000886915,
 			"y": -106.88911817163942,
 			"scale": 0.7511266180581064,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

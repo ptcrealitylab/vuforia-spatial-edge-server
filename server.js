@@ -60,8 +60,6 @@
  * TODO - check if links are pointing to values that actually exist. - (happens in browser at the moment)
  * TODO - Test self linking from internal to internal value (endless loop) - (happens in browser at the moment)
  *
- *
- *
  * TODO - Checksum for marker needs to be verified on the server side as well.
  **
 
@@ -198,8 +196,6 @@ function Objects() {
     this.links = {};
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
-    // The arrangement of nodes for crafting.
-    this.logic = {};
 }
 
 /**
@@ -242,7 +238,7 @@ function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
     // the actual data of the node
-    this.item = [new Data(), {}, {}, {}]; // todo maybe value
+    this.data = new Data();
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
     // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
@@ -253,8 +249,7 @@ function Node() {
     this.matrix = [];
     // defines the nodeInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the nodeInterface folder.
-    // todo appearance should be removed eventually as there is only one kind of appearance
-    this.appearance = "node";
+    this.type = "node";
     // defines the origin Hardware interface of the IO Point. For example if this is arduinoYun the Server associates
     // this IO Point with the Arduino Yun hardware interface.
     //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
@@ -270,7 +265,7 @@ function Node() {
 function Logic() {
     this.name = "";
     // data for logic blocks. depending on the blockSize which one is used.
-    this.item = [new Data(), new Data(), new Data(), new Data()];
+    this.data = new Data();
     // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
     // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
@@ -291,15 +286,7 @@ function Logic() {
     this.nameOutput = ["", "", "", ""];
     // the array of possible connections within the logicBlock.
     // if a block is set, a new Node instance is coppied in to the spot.
-  /*  this.block = [
-        [[null, 0], [null, 0], [null, 0], [null, 0]],
-        [[null, 0], [null, 0], [null, 0], [null, 0]],
-        [[null, 0], [null, 0], [null, 0], [null, 0]],
-        [[null, 0], [null, 0], [null, 0], [null, 0]]
-    ];*/
-
-    this.appearance = "logic";
-
+    this.type = "logic";
     this.links = {};
     this.blocks = {};
 }
@@ -311,13 +298,13 @@ function Logic() {
 
 function BlockLink() {
     // origin block UUID
-    this.blockA = null;
+    this.nodeA = null;
     // item in that block
-    this.itemA = 0;
+    this.logicA = 0;
     // destination block UUID
-    this.blockB = null;
+    this.nodeB = null;
     // item in that block
-    this.itemB = 0;
+    this.logicB = 0;
     // check if the links are looped.
     this.loop = false;
     // Will be used to test if a link is still able to find its destination.
@@ -348,7 +335,7 @@ function Block() {
     // the checksum should be identical with the checksum for the persistent package files of the reference block design.
     this.checksum = null; // checksum of the files for the program
     // data for logic blocks. depending on the blockSize which one is used.
-    this.item = [new Data(), new Data(), new Data(), new Data()];
+    this.data = [new Data(), new Data(), new Data(), new Data()];
     // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
     // this would allow the the packages to be persistent. // todo discuss usability with Ben.
     this.privateData = {};
@@ -369,8 +356,23 @@ function Block() {
     // indicates how much calls per second is happening on this block
     this.stress = 0;
     // this is just a compatibility with the original engine. Maybe its here to stay
-    this.appearance = "default";
+    this.type = "default";
 }
+
+/**
+ * @desc Constructor used to define special blocks that are connecting the logic crafting with the outside system.
+ **/
+
+function BlockDummy() {
+    // name of the block
+    this.name = "";
+    // data for logic blocks. depending on the blockSize which one is used.
+    this.data = [new Data(), new Data(), new Data(), new Data()];
+    // indicates how much calls per second is happening on this block
+    this.stress = 0;
+    this.type = "default";
+}
+
 
 /**
  * @desc Definition for Values that are sent around.
@@ -378,7 +380,7 @@ function Block() {
 
 function Data() {
     // storing the numerical content send between nodes. Range is between 0 and 1.
-    this.number = 0;
+    this.value = 0;
     // Defines the kind of data send. At this point we have 3 active data modes and one future possibility.
     // (f) defines floating point values between 0 and 1. This is the default value.
     // (d) defines a digital value exactly 0 or 1.
@@ -435,29 +437,25 @@ function EditorSocket(socketID, object) {
 function Protocols() {
 
     this.R1 = {
-        send: function (object, node, item) {
-            return JSON.stringify({object: object, node: node, item: item})
+        send: function (object, node, data) {
+            return JSON.stringify({object: object, node: node, data: data})
         },
         receive: function (message) {
             if (!message) return null;
             var msgContent = JSON.parse(message);
             if (!msgContent.object) return null;
             if (!msgContent.node) return null;
-            if (!msgContent.item) return null;
+            if (!msgContent.data) return null;
 
             if (msgContent.object in objects) {
                 if (msgContent.node in objects[msgContent.object].nodes) {
 
-                    var objectItem = objects[msgContent.object].nodes[msgContent.node].item;
+                    var objectData = objects[msgContent.object].nodes[msgContent.node].data;
 
-                    for (var i = 0; i < msgContent.item.length; i++) {
-                        if(objectItem.length === i) objectItem[i] = {};
-                        for (var key in msgContent.item[i]) {
-                            objectItem[i][key] = msgContent.item[i][key];
+                        for (var key in msgContent.data) {
+                            objectData[key] = msgContent.data[key];
                         }
-                    }
-
-                    return {object:msgContent.object, node:msgContent.node, item: objectItem};
+                    return {object:msgContent.object, node:msgContent.node, data: objectData};
                 }
 
             }
@@ -466,8 +464,8 @@ return null
         }
     };
     this.R0 = {
-        send: function (object, node, item) {
-            return JSON.stringify({obj: object, pos: node, value: item[0].number, mode: item[0].mode})},
+        send: function (object, node, data) {
+            return JSON.stringify({obj: object, pos: node, value: data.value, mode: data.mode})},
         receive: function (message) {
             if (!message) return null;
             var msgContent = JSON.parse(message);
@@ -479,12 +477,12 @@ return null
             if (msgContent.obj in objects) {
                 if (msgContent.pos in objects[msgContent.obj].nodes) {
 
-                    var objectItem = objects[msgContent.obj].nodes[msgContent.pos].item;
+                    var objectData = objects[msgContent.obj].nodes[msgContent.pos].data;
 
-                    objectItem[0].number = msgContent.value;
-                    objectItem[0].mode = msgContent.mode;
+                    objectData.value = msgContent.value;
+                    objectData.mode = msgContent.mode;
 
-                    return {object:msgContent.obj, node:msgContent.pos, item: objectItem};
+                    return {object:msgContent.obj, node:msgContent.pos, data: objectData};
                 }
 
             }
@@ -499,14 +497,14 @@ return null
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
-var nodeAppearanceModules = {};   // Will hold all available data point interfaces
+var nodeTypeModules = {};   // Will hold all available data point interfaces
 var blockModules = {};   // Will hold all available data point interfaces
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
 // This list is also used to keep track of the actual IP of an object. If the IP of an object in a network changes,
 // It has no influance on the connectivity, as it is referenced by the object UUID through the entire time.
-var protocols = new Protocols()
+var protocols = new Protocols();
 var knownObjects = {};
 // A lookup table used to process faster through the objects.
 var objectLookup = {};
@@ -547,7 +545,7 @@ while (nodeFolderList[0][0] === ".") {
 
 // Create a objects list with all IO-Points code.
 for (var i = 0; i < nodeFolderList.length; i++) {
-    nodeAppearanceModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js");
+    nodeTypeModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js");
 }
 
 
@@ -575,7 +573,7 @@ for (var i = 0; i < blockFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppearanceModules, blockModules, function (objectKey, nodeKey, item, objects, nodeAppearanceModules) {
+hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeModules, blockModules, function (objectKey, nodeKey, data, objects, nodeTypeModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
@@ -583,9 +581,9 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeAppeara
     sendMessagetoEditors({
         object: objectKey,
         node: nodeKey,
-        item: item
+        data: data
     });
-    objectEngine(objectKey, nodeKey, null, objects, nodeAppearanceModules);
+    objectEngine(objectKey, nodeKey, null, objects, nodeTypeModules);
 
 }, Node);
 cout("Done");
@@ -598,7 +596,7 @@ cout("Done");
 startSystem();
 cout("started");
 
-// get the directory names of all available souappearancerces for the 3D-UI
+// get the directory names of all available soutyperces for the 3D-UI
 var hardwareAPIFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
     return fs.statSync(hardwarePath + '/' + file).isDirectory();
 });
@@ -607,7 +605,7 @@ while (hardwareAPIFolderList[0][0] === ".") {
     hardwareAPIFolderList.splice(0, 1);
 }
 
-// add all appearances to the nodeAppearanceModules object. Iterate backwards because splice works inplace
+// add all types to the nodeTypeModules object. Iterate backwards because splice works inplace
 for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
     //check if hardwareInterface is enabled, if it is, add it to the hardwareInterfaceModules
     if (require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js").enabled) {
@@ -675,12 +673,12 @@ function loadObjects() {
 
                // this is for transforming old lists to new lists
 
-                if(objects[tempFolderName].objectValues)
+                if(typeof objects[tempFolderName].objectValues !== "undefined")
                 {
                     objects[tempFolderName].nodes =  objects[tempFolderName].objectValues;
                     delete  objects[tempFolderName].objectValues;
                 }
-                if(objects[tempFolderName].objectLinks)
+                if(typeof objects[tempFolderName].objectLinks !== "undefined")
                 {
                     objects[tempFolderName].links =  objects[tempFolderName].objectLinks;
                     delete  objects[tempFolderName].objectLinks;
@@ -690,10 +688,9 @@ function loadObjects() {
 
                     for (var nodeKey in objects[tempFolderName].nodes) {
 
-                        if(!objects[tempFolderName].nodes[nodeKey].item[3]){
+                        if(typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined"){
                             var tempItem = objects[tempFolderName].nodes[nodeKey].item;
-                             objects[tempFolderName].nodes[nodeKey].item = [];
-                            objects[tempFolderName].nodes[nodeKey].item = [tempItem, {}, {}, {}];
+                            objects[tempFolderName].nodes[nodeKey].data = tempItem[0];
                         }
                     }
 
@@ -1182,7 +1179,7 @@ function objectWebServer() {
 
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisObject.blockA === thisObject.blockB && thisObject.itemA === thisObject.itemB) {
+            if (thisObject.nodeA === thisObject.nodeB && thisObject.logicA === thisObject.logicB) {
                 thisObject.loop = true;
             }
 
@@ -1229,8 +1226,8 @@ function objectWebServer() {
 
             var breakPoint = false;
 
-            if (thisMessage.appearance in blockFolderList) {
-                thisModule = blockModules[thisMessage.appearance];
+            if (thisMessage.type in blockFolderList) {
+                thisModule = blockModules[thisMessage.type];
 
                 for (var thisKey in thisMessage.publicData) {
                     if (typeof thisMessage.publicData[thisKey] !== typeof thisModule.publicData[thisKey]) {
@@ -1253,8 +1250,8 @@ function objectWebServer() {
             thisBlocks[req.params[2]] = req.body;
 
             // todo this can be removed once the system runs smoothly
-            if(typeof thisBlocks[req.params[2]].appearance === "undefined"){
-                thisBlocks[req.params[2]].appearance = "default";
+            if(typeof thisBlocks[req.params[2]].type === "undefined"){
+                thisBlocks[req.params[2]].type = "default";
             }
 
 for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
@@ -1284,7 +1281,7 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
         var thisLinks = objects[req.params[0]].nodes[req.params[1]].links;
         // Make sure that no links are connected to deleted objects
         for (var subCheckerKey in thisLinks) {
-            if (thisLinks[subCheckerKey].blockA === thisLinkId || thisLinks[subCheckerKey].blockB === thisLinkId) {
+            if (thisLinks[subCheckerKey].nodeA === thisLinkId || thisLinks[subCheckerKey].nodeB === thisLinkId) {
                 delete objects[req.params[0]].nodes[req.params[1]].links[subCheckerKey];
             }
         }
@@ -1338,18 +1335,18 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
 
             objects[req.params[0]].nodes[req.params[1]] = req.body;
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new Block();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new BlockDummy();
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new Block();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new Block();
-console.log("added tons of nodes ----------")
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new BlockDummy();
+console.log("added tons of nodes ----------");
 
-            objects[req.params[0]].nodes[req.params[1]].appearance = "logic";
+            objects[req.params[0]].nodes[req.params[1]].type = "logic";
             
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
@@ -1444,8 +1441,8 @@ var blockList = {}
             for (var key in thisBlock) {
                 blockList[blockFolderList[i]][key] = thisBlock[key];
             }
-            // this makes sure that the appearance of the block is set.
-            blockList[blockFolderList[i]].appearance = blockFolderList[i];
+            // this makes sure that the type of the block is set.
+            blockList[blockFolderList[i]].type = blockFolderList[i];
 
         }
         res.json(blockList);
@@ -2183,6 +2180,7 @@ function socketServer() {
         });
 
         socket.on('object', function (msg) {
+            console.log(msg);
 
             var msgContent = protocols[protocol].receive(msg);
             if(msgContent === null){
@@ -2190,14 +2188,14 @@ function socketServer() {
             }
 
                     if(msgContent !== null){
-                    hardwareAPI.readCall(msgContent.object, msgContent.node, msgContent.item);
+                    hardwareAPI.readCall(msgContent.object, msgContent.node, msgContent.data);
 
                     sendMessagetoEditors({
                         object: msgContent.object,
                         node: msgContent.node,
-                        item: msgContent.item
+                        data: msgContent.data
                     });
-                    objectEngine(msgContent.object, msgContent.node, null, objects, nodeAppearanceModules);
+                    objectEngine(msgContent.object, msgContent.node, null, objects, nodeTypeModules);
                 }
 
         });
@@ -2254,7 +2252,7 @@ function messagetoSend(msgContent, socketID) {
             io.sockets.connected[socketID].emit('object', JSON.stringify({
                 object: msgContent.object,
                 node: msgContent.node,
-                item: objects[msgContent.object].nodes[msgContent.node].item
+                data: objects[msgContent.object].nodes[msgContent.node].data
             }));//       socket.emit('object', msgToSend);
         }
     }
@@ -2291,29 +2289,33 @@ function messagetoSend(msgContent, socketID) {
  * All links that use the id will fire up the engine to process the link.
  **/
 
-// dependencies afterAppearanceProcessing
+// dependencies aftertypeProcessing
 
-function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
+function objectEngine(object, node, routingKey, objects, nodeTypeModules) {
 //console.log(objects[object].links);
+
+    var thisLink;
+
     for (var linkKey in objects[object].links) {
 
+        thisLink = objects[object].links[linkKey];
 
-        if (objects[object].links[linkKey].nodeA === node) {
+        if (thisLink.nodeA === node) {
 
-           // console.log(object + " "+ node +" "+ logic);
+            if(routingKey === null || thisLink.logicA === routingKey) {
 
-            var thisNode = objects[object].nodes[node];
+                // console.log(object + " "+ node +" "+ logic);
+                var thisNode = objects[object].nodes[node];
 
-            var thisLink = objects[object].links[linkKey];
+                // console.log(node + " : "+thisNode.type);
+                if ((thisNode.type in nodeTypeModules)) {
 
-            if ((thisNode.appearance in nodeAppearanceModules)) {
+                    nodeTypeModules[thisNode.type].render(object, linkKey, thisNode.data, function (object, link, processedData) {
 
-                    nodeAppearanceModules[thisNode.appearance].render(object, linkKey, thisNode.item, function (object, link, processedData) {
                         enginePostProcessing(object, link, processedData);
                     });
 
-
-
+                }
             }
         }
     }
@@ -2333,12 +2335,13 @@ function objectEngine(object, node, logic, objects, nodeAppearanceModules) {
 }
 
 /**
- * @desc This has to be the callback for the processed appearances. The appearance should give back a processed object.
+ * @desc This has to be the callback for the processed types. The type should give back a processed object.
  * @param {Object} processedValue Any kind of object simple or complex
  * @param {String} IDinLinkArray Id to search for in the Link Array.
  **/
 
 function enginePostProcessing(object, link, processedData) {
+
     var thisLink = objects[object].links[link];
 
     if (!(thisLink.objectB in objects)) {
@@ -2349,17 +2352,15 @@ function enginePostProcessing(object, link, processedData) {
         var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB];
 
         if(typeof thisLink.logicB !== "number") {
-            for (var i = 0; i < processedData.length; i++) {
-                if (objSend.item.length === i) objSend.item[i] = {};
-                for (var key in processedData[i]) {
-                    objSend.item[i][key] = processedData[i][key];
+      
+                for (var key in processedData) {
+                    objSend.data[key] = processedData[key];
                 }
-            }
 
-            hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, objSend.item);
+            hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, objSend.data);
 
-            sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, item: objSend.item});
-            objectEngine(thisLink.objectB, thisLink.nodeB, null, objects, nodeAppearanceModules);
+            sendMessagetoEditors({object: thisLink.objectB, node: thisLink.nodeB, data: objSend.data});
+            objectEngine(thisLink.objectB, thisLink.nodeB, null, objects, nodeTypeModules);
         }
          else
         {
@@ -2368,8 +2369,8 @@ function enginePostProcessing(object, link, processedData) {
 
             var objSend = objects[thisLink.objectB].nodes[thisLink.nodeB].blocks[thisString];
 
-            for (var key in processedData[0]) {
-                objSend.item[0][key] = processedData[0][key];
+            for (var key in processedData) {
+                objSend.data[0][key] = processedData[key];
             }
 
             logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
@@ -2406,7 +2407,7 @@ function enginePostProcessing(object, link, processedData) {
  * All links that use the id will fire up the engine to process the link.
  **/
 
-// dependencies afterAppearanceProcessing
+// dependencies aftertypeProcessing
 function logicEngine(object, logic, block, item, objects, blockModules) {
 
     if(object in objects) {
@@ -2421,19 +2422,19 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 
                // console.log(thisLogic.links[linkKey]);
 
-                if (thisLogic.links[linkKey].blockA === block && thisLogic.links[linkKey].itemA === item) {
+                if (thisLogic.links[linkKey].nodeA === block && thisLogic.links[linkKey].logicA === item) {
 
                     var thisBlock = thisLogic.blocks[block];
 
                    // console.log(block);
 
-                   // console.log(thisBlock.appearance);
+                   // console.log(thisBlock.type);
 
 
-                    if ((thisBlock.appearance in blockModules)) {
+                    if ((thisBlock.type in blockModules)) {
 
 
-                        blockModules[thisBlock.appearance].render(object, logic, linkKey, item, thisBlock.item, function (object, logic, link, processedData) {
+                        blockModules[thisBlock.type].render(object, logic, linkKey, item, thisBlock.data, function (object, logic, link, processedData) {
 
                             logicEnginePostProcessing(object, logic, link, processedData);
                         });
@@ -2445,7 +2446,7 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 }
 
 /**
- * @desc This has to be the callback for the processed appearances. The appearance should give back a processed object.
+ * @desc This has to be the callback for the processed types. The type should give back a processed object.
  * @param {Object} processedValue Any kind of object simple or complex
  * @param {String} IDinLinkArray Id to search for in the Link Array.
  **/
@@ -2455,47 +2456,38 @@ function logicEnginePostProcessing(object, logic, link, processedData) {
     var thisLink = objects[object].nodes[logic].links[link];
     var thisLogic = objects[object].nodes[logic];
 
-
-
-    for (var key in thisLogic.blocks) {
-   //     console.log(key);
-    }
-
     //logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
 
-    if(thisLink.blockB === "edgePlaceholderOut0" || thisLink.blockB === "edgePlaceholderOut1" || thisLink.blockB === "edgePlaceholderOut2" || thisLink.blockB === "edgePlaceholderOut3")
-    {
+    var routingKey = null;
 
+    if(thisLink.nodeB === "edgePlaceholderOut0") routingKey = 0;
+    else if(thisLink.nodeB === "edgePlaceholderOut1") routingKey = 1;
+    else if(thisLink.nodeB === "edgePlaceholderOut2") routingKey = 2;
+    else if(thisLink.nodeB === "edgePlaceholderOut3") routingKey = 3;
+
+    if(routingKey !== null) {
 
         var objSend = objects[object].nodes[logic];
 
-        for (var key in processedData[0]) {
-            objSend.item[0][key] = processedData[0][key];
+        for (var key in processedData[thisLink.logicA]) {
+            objSend.data[key] = processedData[thisLink.logicA][key];
+            thisLogic.blocks[thisLink.nodeB].data[thisLink.logicB][key] = processedData[thisLink.logicA][key];
         }
 
-
-
-       // console.log(object +" "+ logic);
-
-        objectEngine(object, logic, null, objects, nodeAppearanceModules);
+        objectEngine(object, logic, routingKey, objects, nodeTypeModules);
+        logicEngine(object, logic, thisLink.nodeB , thisLink.logicB, objects, blockModules);
 
     } else {
 
-            var objSend = thisLogic.blocks[thisLink.blockB];
-            for (var key in processedData[thisLink.itemA]) {
-                objSend.item[thisLink.itemB][key] = processedData[thisLink.itemA][key];
+            var objSend = thisLogic.blocks[thisLink.nodeB];
+            for (var key in processedData[thisLink.logicA]) {
+                objSend.data[thisLink.logicB][key] = processedData[thisLink.logicA][key];
             }
 
-
-        logicEngine(object, logic, thisLink.blockB , thisLink.itemB, objects, blockModules);
+        logicEngine(object, logic, thisLink.nodeB , thisLink.logicB, objects, blockModules);
 
     }
-
-
-
-
     // maybe: var re = /^(in|out)\d$/; re.test(blockId)  // or  /^out(0|1|2|3)$/
-
 }
 
 
@@ -2518,7 +2510,7 @@ function logicEnginePostProcessing(object, logic, link, processedData) {
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray
  **/
 
-function socketSender(object, link, item) {
+function socketSender(object, link, data) {
     var thisLink = objects[object].links[link];
 
     var msg = "";
@@ -2527,13 +2519,13 @@ function socketSender(object, link, item) {
         if (knownObjects[thisLink.objectB].protocol){
             var thisProtocol = knownObjects[thisLink.objectB].protocol;
             if(thisProtocol in protocols){
-                 msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.nodeB, item);
+                 msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.nodeB, data);
             }
             else {
-                msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, item);
+                msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
             }
         } else {
-            msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, item);
+            msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
         }
 
         try {

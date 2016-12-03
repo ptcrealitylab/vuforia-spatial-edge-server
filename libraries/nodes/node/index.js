@@ -53,54 +53,26 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var properties = {
-    name : "threshold",
-    blockSize : 1,
-    privateData : {},
-    publicData : {threshold : 0.5, direction:">", digital:true},
-    activeInputs : [true, false, false, false],
-    activeOutputs : [true, false, false, false],
-    iconImage : "icon.png",
-    nameInput : ["stream in", "", "", ""],
-    nameOutput : ["stream out", "", "", ""],
-    text : "threshold"
-};
+exports.render = function (objectID, linkID, inputData, callback) {
 
-exports.properties = properties;
-
-//var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
-
-exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback)  {
-
-    // check orientations and calculate if threshold is meet.
-    var pass = false;
-    if(blockObject.publicData.direction = ">")
-    {
-        if(inputData[0][value] > blockObject.publicData.threshold){
-            pass = true;
-        }
-    } else if(blockObject.publicData.direction = "<")
-    {
-        if(inputData[0][value] < blockObject.publicData.threshold){
-            pass = true;
-        }
-    }
-
-    var outputData = [{},{},{},{}];
+    var outputData =  {};
     var key;
-
-    for (key in inputData[0]) {
-        outputData[0][key] = inputData[0][key];
-    }
-
-    // calculate final output
-    if(pass){
-        if(blockObject.publicData.digital){
-            outputData[0][value] = 1;
+        for (key in inputData) {
+            outputData[key] = inputData[key];
         }
-    } else {
-        outputData[0][value] = 0;
-    }
-
-    callback(objectID, logicID, linkID, outputData);
+    callback(objectID, linkID, outputData);
 };
+
+/* // example for delay
+ exports.render = function (objectID, linkID, inputData, callback) {
+ var outputData = {};
+ for(key in inputData)
+ {
+ outputData[key] = inputData[key];
+ }
+
+ setTimeout(function() {
+ callback(objectID, linkPositionID, outputData);
+ }, 1000);
+ };
+ */

@@ -52,7 +52,6 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-var outputData = [];
 
 var properties = {
     name : "switch",
@@ -77,7 +76,7 @@ exports.render = function (objectID, logicID, linkID, blockObject, inputData, ca
     var outputData = [{},{},{},{}];
     var key;
 
-    if(inputData[0].number && blockObject.publicData.toggle === false)
+    if(inputData[0].value && blockObject.publicData.toggle === false)
     {
         blockObject.publicData.toggle = true;
         // toggle the value
