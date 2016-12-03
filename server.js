@@ -363,7 +363,7 @@ function Block() {
  * @desc Constructor used to define special blocks that are connecting the logic crafting with the outside system.
  **/
 
-function BlockDummy() {
+function EdgeBlock() {
     // name of the block
     this.name = "";
     // data for logic blocks. depending on the blockSize which one is used.
@@ -1335,15 +1335,15 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
 
             objects[req.params[0]].nodes[req.params[1]] = req.body;
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new EdgeBlock();
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new BlockDummy();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new BlockDummy();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new EdgeBlock();
 console.log("added tons of nodes ----------");
 
             objects[req.params[0]].nodes[req.params[1]].type = "logic";
@@ -2180,7 +2180,7 @@ function socketServer() {
         });
 
         socket.on('object', function (msg) {
-            
+
             var msgContent = protocols[protocol].receive(msg);
             if(msgContent === null){
                 msgContent = protocols["R0"].receive(msg);
