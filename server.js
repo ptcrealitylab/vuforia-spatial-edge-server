@@ -2180,8 +2180,7 @@ function socketServer() {
         });
 
         socket.on('object', function (msg) {
-            console.log(msg);
-
+            
             var msgContent = protocols[protocol].receive(msg);
             if(msgContent === null){
                 msgContent = protocols["R0"].receive(msg);
