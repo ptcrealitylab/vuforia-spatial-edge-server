@@ -87,115 +87,95 @@
 	"nodes": {
 		"TopForearm6AxisEV3Zg1zey40sedbVertical Touch_ft": {
 			"name": "Vertical Touch_ft",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 214.08931154948823,
 			"y": -222.48640425469776,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopForearm6AxisEV3Zg1zey40sedbHorizontal Touch_ft": {
 			"name": "Horizontal Touch_ft",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 217.2911131724809,
 			"y": 7.051890307712743,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopForearm6AxisEV3Zg1zey40sedbpitch_ft": {
 			"name": "pitch_ft",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -267.15985765170717,
 			"y": -36.419472009315285,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopForearm6AxisEV3Zg1zey40sedbHeight Tracking_ft": {
 			"name": "Height Tracking_ft",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -267.8587811071443,
 			"y": -258.374723705767,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"TopForearm6AxisEV3Zg1zey40sedbForearm Rotation": {
 			"name": "Forearm Rotation",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -10.489539590570075,
 			"y": -5.555897214325782,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

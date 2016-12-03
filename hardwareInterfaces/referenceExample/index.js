@@ -54,15 +54,13 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    server.addNode("obj47", "hans", "default");
-    server.addNode("obj47", "peter", "default");
+    server.addNode("obj47", "hans", "node");
+    server.addNode("obj47", "peter", "node");
 
-    server.addNode("obj45", "one", "default");
-    server.addNode("obj45", "two", "default");
-    server.addNode("obj45", "four", "default");
-    server.addNode("obj45", "hans", "default");
+    server.addNode("obj45", "one", "node");
+    server.addNode("obj45", "two", "node");
 
-    server.addReadListener("obj45", "four", function (item) {
+    server.addReadListener("obj45", "two", function (item) {
         //console.log(item.number);
 
     });
@@ -79,6 +77,6 @@ if (exports.enabled) {
 
         server.write("obj45", "one", Math.random(), "f");
 
-    }, 100);
+    }, 300);
 
 }

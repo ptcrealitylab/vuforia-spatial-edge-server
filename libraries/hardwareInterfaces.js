@@ -26,7 +26,7 @@ var objects = {};
 var objectLookup;
 var globalVariables;
 var dirnameO;
-var nodeAppearanceModules;
+var nodeTypeModules;
 var blockModules;
 var callback;
 var Node;
@@ -45,9 +45,9 @@ function Object(objectName) {
 
 }
 
-function EmptyNode(nodeName, appearance) {
+function EmptyNode(nodeName, type) {
     this.name = nodeName;
-    this.appearance = appearance;
+    this.type = type;
     this.callBack = {};
 }
 
@@ -59,10 +59,10 @@ function EmptyNode(nodeName, appearance) {
  * @desc This function writes the values passed from the hardware interface to the HybridObjects server.
  * @param {string} objectName The name of the HybridObject
  * @param {string} nodeName The name of the IO point
- * @param {} number The value to be passed on
+ * @param {value} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
-exports.write = function (objectName, nodeName, number, mode, unit, unitMin, unitMax) {
+exports.write = function (objectName, nodeName, value, mode, unit, unitMin, unitMax) {
     if (typeof mode === 'undefined')  mode = "f";
     if (typeof unit === 'undefined')  unit = false;
     if (typeof unitMin === 'undefined')  unitMin = 0;
@@ -76,14 +76,14 @@ exports.write = function (objectName, nodeName, number, mode, unit, unitMin, uni
 //    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].nodes.hasOwnProperty(nodeUuid)) {
-            var thisItem = objects[objectKey].nodes[nodeUuid].item[0];
-            thisItem.number = number;
-            thisItem.mode = mode;
-            thisItem.unit = unit;
-            thisItem.unitMin = unitMin;
-            thisItem.unitMax = unitMax;
+            var thisData = objects[objectKey].nodes[nodeUuid].data;
+            thisData.value = value;
+            thisData.mode = mode;
+            thisData.unit = unit;
+            thisData.unitMin = unitMin;
+            thisData.unitMax = unitMax;
             //callback is objectEngine in server.js. Notify data has changed.
-            callback(objectKey, nodeUuid, thisItem, objects, nodeAppearanceModules);
+            callback(objectKey, nodeUuid, thisData, objects, nodeTypeModules);
         }
     }
 };
@@ -111,9 +111,9 @@ exports.clearObject = function (objectId) {
  * @desc addIO() a new IO point to the specified HybridObject
  * @param {string} objectName The name of the HybridObject
  * @param {string} nodeName The name of the nodeName
- * @param {string} appearance The name of the data conversion appearance. If you don't have your own put in "default".
+ * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  **/
-exports.addNode = function (objectName, nodeName, appearance) {
+exports.addNode = function (objectName, nodeName, type) {
 
 
 
@@ -144,7 +144,7 @@ exports.addNode = function (objectName, nodeName, appearance) {
 
             var thisObj = objects[objectID].nodes[nodeUuid];
             thisObj.name = nodeName;
-            thisObj.appearance = appearance;
+            thisObj.type = type;
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
                 hardwareObjects[objectName] = new Object(objectName);
@@ -152,7 +152,7 @@ exports.addNode = function (objectName, nodeName, appearance) {
 
             if (!hardwareObjects[objectName].nodes.hasOwnProperty(nodeUuid)) {
                 hardwareObjects[objectName].nodes[nodeUuid] = new EmptyNode(nodeName);
-                hardwareObjects[objectName].nodes[nodeUuid].appearance = appearance;
+                hardwareObjects[objectName].nodes[nodeUuid].type = type;
             }
         }
     }
@@ -188,12 +188,12 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, appearances, blocks, cb, objValue) {
+exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
     dirnameO = dir;
-    nodeAppearanceModules = appearances;
+    nodeTypeModules = types;
     blockModules = blocks;
     callback = cb;
     Node = objValue;
@@ -202,8 +202,8 @@ exports.setup = function (objExp, objLookup, glblVars, dir, appearances, blocks,
 exports.reset = function (){
     for (var objectKey in objects) {
         for (var nodeKey in objects[objectKey].nodes) {
-            _this.addNode(objects[objectKey].name,  objects[objectKey].nodes[nodeKey].name, objects[objectKey].nodes[nodeKey].appearance);
-
+            if(objects[objectKey].nodes[nodeKey].type !== "logic")
+            _this.addNode(objects[objectKey].name,  objects[objectKey].nodes[nodeKey].name, objects[objectKey].nodes[nodeKey].type);
         }
         _this.clearObject(objectKey);
     }
@@ -214,10 +214,10 @@ exports.reset = function (){
     }
 };
 
-exports.readCall = function (objectName, nodeName, item) {
+exports.readCall = function (objectName, nodeName, data) {
     if (callBacks.hasOwnProperty(objectName)) {
         if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
-            callBacks[objectName].nodes[nodeName].callBack(item[0]);
+            callBacks[objectName].nodes[nodeName].callBack(data);
         }
     }
 };

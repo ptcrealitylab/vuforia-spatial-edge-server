@@ -1,7 +1,7 @@
 {
 	"objectId": "obj45y4gk159d097q",
 	"name": "obj45",
-	"ip": "192.168.1.7",
+	"ip": "10.0.1.4",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "bsyBi",
@@ -14,199 +14,106 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {
-		"MX12hi86": {
-			"objectA": "obj45y4gk159d097q",
-			"objectB": "obj45y4gk159d097q",
-			"nodeA": "obj45y4gk159d097qone",
-			"nodeB": "aDgnkveasuvw",
-			"logicA": false,
-			"logicB": 0,
-			"namesA": [
-				"obj45",
-				"one"
-			],
-			"namesB": "",
-			"loop": false
-		},
-		"bZ4efldy": {
-			"objectA": "obj45y4gk159d097q",
-			"objectB": "obj45y4gk159d097q",
-			"nodeA": "aDgnkveasuvw",
-			"nodeB": "obj45y4gk159d097qfour",
-			"logicA": 2,
-			"logicB": false,
-			"namesA": "",
-			"namesB": [
-				"obj45",
-				"four"
-			],
-			"loop": false
-		}
-	},
+	"links": {},
 	"nodes": {
 		"obj45y4gk159d097qone": {
 			"name": "one",
-			"item": [
-				{
-					"number": 0.38601303030736744,
-					"mode": "f",
-					"unit": false,
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{},
-				{},
-				{}
-			],
+			"data": {
+				"value": 0.39398801210336387,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
 			"x": 181.90691087361097,
 			"y": -174.9234043863276,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"obj45y4gk159d097qtwo": {
 			"name": "two",
-			"item": [
-				{
-					"number": 0.24284555111080408,
+			"data": {
+				"0": {
+					"value": 0,
 					"mode": "f",
-					"unit": false,
+					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
+				"1": {
+					"value": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				"2": {
+					"value": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				"3": {
+					"value": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				"value": 0.8428350035101175,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
 			"x": -85.39778523068719,
 			"y": -154.2941278777979,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
-		"obj45y4gk159d097qfour": {
-			"name": "four",
-			"item": [
+		"Qo966kd20sef": {
+			"name": "LOGIC0",
+			"data": [
 				{
-					"number": 0.00672043114900589,
-					"mode": "f",
-					"unit": false,
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
 				{
-					"number": 0,
+					"value": 0,
+					"mode": "f",
+					"unit": "",
+					"unitMin": 0,
+					"unitMax": 1
+				},
+				{
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				}
 			],
-			"x": 160.27729563974503,
-			"y": 114.26779778126337,
-			"scale": 1,
-			"matrix": [],
-			"appearance": "default",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100
-		},
-		"obj45y4gk159d097qhans": {
-			"name": "hans",
-			"item": [
-				{
-					"number": 0.4457560491282493,
-					"mode": "f",
-					"unit": false,
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": -127.14244987853397,
-			"y": 112.38326602382978,
-			"scale": 1,
-			"matrix": [],
-			"appearance": "default",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100
-		},
-		"x23gl7w8kdcs": {
-			"name": "LOGIC",
-			"item": [
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": 68.45942151971316,
-			"y": 31.382732832964848,
+			"x": 8.814827430186721,
+			"y": 100.35300355264084,
 			"scale": 0.5,
 			"matrix": [],
 			"visible": false,
@@ -226,1345 +133,23 @@
 				"",
 				""
 			],
-			"appearance": "logic",
-			"links": {},
-			"loaded": false,
-			"animationScale": 0,
-			"begin": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"temp": [
-				980.030511162768,
-				8.13294042528,
-				0.140120663892,
-				0.137346,
-				-25.111678806944,
-				947.75174810976,
-				0.567315968564,
-				0.556082,
-				57.823440719744,
-				273.89806919904,
-				-1.9549335168440003,
-				-1.916222,
-				-34093.2524078356,
-				59942.8460957568,
-				1467.08081521112,
-				1636.04956
-			],
-			"fullScreen": false,
-			"screenX": 325.03803198944166,
-			"screenY": 222.29316827589693,
-			"screenZ": 1433.48542053373,
-			"screenLinearZ": 8.321337010128566,
-			"blocks": {
-				"edgePlaceholderIn0": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn1": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut0": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut1": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				}
-			}
-		},
-		"xoibu8bhj3b6": {
-			"name": "LOGIC",
-			"item": [
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": -160.5873282091319,
-			"y": 24.354839294072917,
-			"scale": 0.5,
-			"matrix": [],
-			"visible": false,
-			"visibleEditing": false,
-			"lastSetting": false,
-			"lastSettingBlock": "",
-			"iconImage": null,
-			"nameInput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"nameOutput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"appearance": "logic",
-			"links": {},
-			"loaded": false,
-			"animationScale": 0,
-			"begin": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"temp": [
-				981.57951169344,
-				25.447160428800004,
-				0.04597030212000001,
-				0.04506,
-				-29.256581835264,
-				942.42676066176,
-				0.603380109264,
-				0.591432,
-				8.948442736719999,
-				290.69555159040004,
-				-1.9486062240400002,
-				-1.91002,
-				1637.261580624192,
-				25808.855605600318,
-				1333.905598797748,
-				1505.511474
-			],
-			"fullScreen": false,
-			"screenX": 214.90285425498215,
-			"screenY": 210.3502891239941,
-			"screenZ": 1338.4171983348713,
-			"screenLinearZ": 8.928394894545328,
-			"blocks": {
-				"edgePlaceholderIn0": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn1": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut0": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut1": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				}
-			}
-		},
-		"aDgnkveasuvw": {
-			"name": "LOGIC",
-			"item": [
-				{
-					"number": 0.38601303030736744,
-					"mode": "f",
-					"unit": false,
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"number": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": 273.0059909740619,
-			"y": -28.456481126283506,
-			"scale": 0.5,
-			"matrix": [],
-			"visible": false,
-			"visibleEditing": false,
-			"lastSetting": false,
-			"lastSettingBlock": "",
-			"iconImage": null,
-			"nameInput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"nameOutput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"appearance": "logic",
+			"type": "logic",
 			"links": {
-				"blockLinkfB2o8cei4e79": {
-					"blockA": "edgePlaceholderIn0",
-					"itemA": 0,
-					"blockB": "blockENeai8x3f8qk",
-					"itemB": 0,
+				"blockLinkVla969nyct20": {
+					"nodeA": "blockxib52r3em54i",
+					"logicA": 0,
+					"nodeB": "edgePlaceholderOut0",
+					"logicB": 0,
 					"loop": false,
 					"health": 0,
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLinkEl5j10kajlq5": {
-					"blockA": "blockENeai8x3f8qk",
-					"itemA": 0,
-					"blockB": "edgePlaceholderOut2",
-					"itemB": 0,
+				"blockLink3Jf2v4k2zosu": {
+					"nodeA": "edgePlaceholderIn1",
+					"logicA": 0,
+					"nodeB": "blockxib52r3em54i",
+					"logicB": 0,
 					"loop": false,
 					"health": 0,
 					"ballAnimationCount": 0,
@@ -1592,620 +177,452 @@
 				1
 			],
 			"temp": [
-				981.442484494432,
-				34.34218219872,
-				0.022907615707999998,
-				0.022454,
-				-34.456340098336,
-				943.0557026246399,
-				0.597887341696,
-				0.586048,
-				-4.179903694064,
-				287.72527334496004,
-				-1.950705799756,
-				-1.912078,
-				-4900.480704698446,
-				25881.98822480832,
-				1346.6081849098482,
-				1517.962524
+				43.204517088976004,
+				984.9438107625599,
+				0.079057493384,
+				0.077492,
+				-980.964818487904,
+				43.97647099296,
+				-0.041295736556,
+				-0.040478,
+				16.625474328255997,
+				35.659310660159996,
+				-2.038453373776,
+				-1.998088,
+				-23221.62991065123,
+				-27781.19580040992,
+				1417.458797971512,
+				1587.410156
 			],
+			"screenX": 206.65543390477137,
+			"screenY": 149.63881415138817,
+			"screenZ": 1420.2647366213776,
+			"screenLinearZ": 8.400892628880932,
 			"fullScreen": false,
-			"screenX": 447.61239795602063,
-			"screenY": 161.07786938496332,
-			"screenZ": 1381.5302490160336,
-			"screenLinearZ": 8.642743487235641,
 			"blocks": {
 				"edgePlaceholderIn0": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0.38601303030736744,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderIn1": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderIn3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut0": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut1": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut2": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"edgePlaceholderOut3": {
-					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
-					"stress": 0,
-					"appearance": "default"
-				},
-				"blockENeai8x3f8qk": {
-					"name": "delay",
-					"x": 2,
-					"y": 1,
-					"blockSize": 1,
-					"globalId": "blockENeai8x3f8qk",
-					"checksum": null,
-					"item": [
-						{
-							"number": 0.38601303030736744,
+							"0": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"1": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"2": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"3": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"value": 0.8428350035101175,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderIn2": {
+					"name": "",
+					"data": [
+						{
+							"0": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"1": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"2": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"3": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"value": 0.796186959836632,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderIn3": {
+					"name": "",
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderOut0": {
+					"name": "",
+					"data": [
+						{
+							"0": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"1": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"2": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"3": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"value": 0.8428350035101175,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderOut1": {
+					"name": "",
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderOut2": {
+					"name": "",
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"edgePlaceholderOut3": {
+					"name": "",
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"stress": 0,
+					"type": "default"
+				},
+				"blockxib52r3em54i": {
+					"name": "delay",
+					"x": 1,
+					"y": 1,
+					"blockSize": 1,
+					"globalId": "blockxib52r3em54i",
+					"checksum": null,
+					"data": [
+						{
+							"0": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"1": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"2": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"3": {
+								"value": 0,
+								"mode": "f",
+								"unit": "",
+								"unitMin": 0,
+								"unitMax": 1
+							},
+							"value": 0.8428350035101175,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
@@ -2245,44 +662,44 @@
 					"stress": 0,
 					"isTempBlock": false,
 					"isPortBlock": false,
-					"appearance": "default"
+					"type": "default"
 				}
 			}
 		},
-		"LH7p0f62evwq": {
-			"name": "LOGIC",
-			"item": [
+		"z52vbkf6cajm": {
+			"name": "LOGIC1",
+			"data": [
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				}
 			],
-			"x": -205.12121855681565,
-			"y": -50.70063229838456,
+			"x": 172.2095748908892,
+			"y": 240.84733298518915,
 			"scale": 0.5,
 			"matrix": [],
 			"visible": false,
@@ -2302,8 +719,19 @@
 				"",
 				""
 			],
-			"appearance": "logic",
-			"links": {},
+			"type": "logic",
+			"links": {
+				"blockLinkAMgghno4bnmx": {
+					"nodeA": "edgePlaceholderIn2",
+					"logicA": 0,
+					"nodeB": "edgePlaceholderOut0",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				}
+			},
 			"loaded": false,
 			"animationScale": 0,
 			"begin": [
@@ -2325,591 +753,310 @@
 				1
 			],
 			"temp": [
-				977.3849016344001,
-				-11.211505852800002,
-				0.20754989488000003,
-				0.20344,
-				-20.224451761536,
-				933.4510586438399,
-				0.6621498656760001,
-				0.649038,
-				93.51269963497599,
-				319.1584385721599,
-				-1.918783679176,
-				-1.880788,
-				-67648.17995330889,
-				20494.53560461824,
-				1369.2483995524362,
-				1540.154418
+				62.263443963792,
+				983.88373962912,
+				0.080885695368,
+				0.079284,
+				-979.7038828408,
+				63.5039901936,
+				-0.061599796760000006,
+				-0.06038,
+				27.161813140592006,
+				35.48318613312,
+				-2.037869818232,
+				-1.997516,
+				-10774.255795222176,
+				-34610.51210359776,
+				1425.9164378242358,
+				1595.700318
 			],
+			"screenX": 131.619022047563,
+			"screenY": 269.49647039429976,
+			"screenZ": 1390.9716824104903,
+			"screenLinearZ": 8.582551488187285,
 			"fullScreen": false,
-			"screenX": 115.1866962326763,
-			"screenY": 156.14567261301985,
-			"screenZ": 1305.1793747838035,
-			"screenLinearZ": 9.161499249635824,
 			"blocks": {
 				"edgePlaceholderIn0": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderIn1": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0.796186959836632,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderIn2": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0.39398801210336387,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderIn3": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderOut0": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0.39398801210336387,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderOut1": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderOut2": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				},
 				"edgePlaceholderOut3": {
 					"name": "",
-					"id": null,
-					"x": null,
-					"y": null,
-					"blockSize": 1,
-					"category": 1,
-					"globalId": null,
-					"checksum": null,
-					"item": [
+					"data": [
 						{
-							"number": 0,
+							"value": 0.796186959836632,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
 						{
-							"number": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"number": 0,
+							"value": 0,
 							"mode": "f",
 							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						}
 					],
-					"privateData": {},
-					"publicData": {},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "",
 					"stress": 0,
-					"appearance": "default"
+					"type": "default"
 				}
 			}
 		}
-	},
-	"logic": {}
+	}
 }

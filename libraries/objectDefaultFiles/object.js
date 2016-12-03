@@ -389,7 +389,7 @@ function HybridObject() {
         var _this = this;
 
         this.ioObject = io.connect();
-        this.oldNumberList = {};
+        this.oldValueList = {};
 
         this.sendEealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
@@ -403,25 +403,25 @@ function HybridObject() {
          */
 
 
-        this.write = function (node, number, mode, unit, unitMin, unitMax) {
+        this.write = function (node, value, mode, unit, unitMin, unitMax) {
             if (!mode)  mode = "f";
             if (!unit)  unit = false;
             if (!unitMin)  unitMin = 0;
             if (!unitMax)  unitMax = 1;
 
-            var thisItem = [{number: number, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax}];
-            if (!node in _this.oldNumberList) {
-                _this.oldNumberList[node] = null;
+            var thisData = {value: value, mode: mode, unit: unit, unitMin: unitMin, unitMax: unitMax};
+            if (!node in _this.oldValueList) {
+                _this.oldValueList[node] = null;
             }
 
-            if (_this.oldNumberList[node] !== number) {
+            if (_this.oldValueList[node] !== value) {
                 this.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
                     node: realityObject.object+node,
-                    item: thisItem
+                    data: thisData
                 }));
             }
-            _this.oldNumberList[node] = number;
+            _this.oldValueList[node] = value;
         };
 
         /**
@@ -438,7 +438,7 @@ function HybridObject() {
 
         this.read = function (node, msg) {
             if (msg.node === realityObject.object+node) {
-                return msg.item[0].number;
+                return msg.data.value;
             } else {
                 return undefined;
             }
@@ -453,8 +453,8 @@ function HybridObject() {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== "undefined") {
                     if (thisMsg.node === realityObject.object+node) {
-                        if (typeof thisMsg.item !== "undefined")
-                            callback(thisMsg.item[0].number);
+                        if (typeof thisMsg.data !== "undefined")
+                            callback(thisMsg.data.value);
                     }
                 }
             });
@@ -475,7 +475,7 @@ function HybridObject() {
         /**
          ************************************************************
          */
-        this.write = function (node, number, mode) {
+        this.write = function (node, value, mode) {
         };
 
         /**
@@ -522,7 +522,7 @@ function HybridLogic() {
         var _this = this;
 
         this.ioObject = io.connect();
-        this.oldNumberList = {};
+        this.oldValueList = {};
 
         /**
          ************************************************************

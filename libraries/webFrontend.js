@@ -389,11 +389,12 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (subKey in uploadInfoTexttempArrayValue) {
+
         var thisHtmlNode = uploadInfoTexttempArrayValue[subKey];
 
         if(thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
 
-        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.item[0].number + "</td></tr>";
+        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
         infoCount++;
     }
 

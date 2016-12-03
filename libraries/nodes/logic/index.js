@@ -59,20 +59,12 @@
 
  */
 
-
-var outputData = [];
-
 exports.render = function (objectID, linkID, inputData, callback) {
-
-    var outputData = [];
+    var outputData = {};
     var key;
-    for (var i = 0; i < inputData.length; i++) {
-        if(outputData.length === i) outputData[i] = {};
-        for (key in inputData[0]) {
-            outputData[i][key] = inputData[i][key];
+        for (key in inputData) {
+            outputData[key] = inputData[key];
         }
-    }
-
     callback(objectID, linkID, outputData);
 };
 /* // example for delay

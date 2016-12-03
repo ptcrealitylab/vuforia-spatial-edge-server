@@ -18,46 +18,38 @@
 	"nodes": {
 		"obj47n32vbg5gk3hehans": {
 			"name": "hans",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -16.694259005844287,
 			"y": 156.85004682175247,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "node",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"obj47n32vbg5gk3hepeter": {
 			"name": "peter",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -23.743537815460286,
 			"y": -103.19668796408882,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "node",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

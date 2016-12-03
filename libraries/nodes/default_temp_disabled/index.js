@@ -52,18 +52,13 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-var outputData = [];
-
+var outputData = {};
 exports.render = function (objectID, linkID, inputData, callback) {
-
-    var outputData = [];
+    var outputData = outputData;
     var key;
-    for (var i = 0; i < inputData.length; i++) {
-        if(outputData.length === i) outputData[i] = {};
-        for (key in inputData[0]) {
-            outputData[i][key] = inputData[i][key];
+        for (var key in inputData) {
+            outputData[key] = inputData[key];
         }
-    }
 
     callback(objectID, linkID, outputData);
 };

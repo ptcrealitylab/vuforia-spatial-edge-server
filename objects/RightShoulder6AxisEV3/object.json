@@ -53,46 +53,38 @@
 	"nodes": {
 		"RightShoulder6AxisEV35Z5j0vl9jkf1Horizontal Touch_sr": {
 			"name": "Horizontal Touch_sr",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 106.7825790514363,
 			"y": -5.291976945324677,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"RightShoulder6AxisEV35Z5j0vl9jkf1pitch_sr": {
 			"name": "pitch_sr",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -117.67724213327551,
 			"y": -3.7922077912494387,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

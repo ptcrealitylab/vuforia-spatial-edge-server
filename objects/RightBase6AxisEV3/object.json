@@ -70,115 +70,95 @@
 	"nodes": {
 		"RightBase6AxisEV3V78ogdk6csbepitch_br": {
 			"name": "pitch_br",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -34.562140854916606,
 			"y": 209.0208681513036,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"RightBase6AxisEV3V78ogdk6csbeyaw_br": {
 			"name": "yaw_br",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -225.25660222641795,
 			"y": -24.14846670326915,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"RightBase6AxisEV3V78ogdk6csbekickback_br": {
 			"name": "kickback_br",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -42.5185107637335,
 			"y": -246.0857776650264,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"RightBase6AxisEV3V78ogdk6csbeBase Rotation": {
 			"name": "Base Rotation",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 210.3759909620992,
 			"y": -27.577658586246343,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"RightBase6AxisEV3V78ogdk6csbeBase Joint": {
 			"name": "Base Joint",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -11.81385061100491,
 			"y": -23.402863490473464,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100

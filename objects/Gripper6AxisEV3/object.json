@@ -121,230 +121,190 @@
 	"nodes": {
 		"Gripper6AxisEV3a1a22x6p9s3mVertical Touch": {
 			"name": "Vertical Touch",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 206.33318058931354,
 			"y": -219.58932768143177,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mHorizontal Touch": {
 			"name": "Horizontal Touch",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 286.34371729911595,
 			"y": 234.17319305738692,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mpitch": {
 			"name": "pitch",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -326.09581366211023,
 			"y": 0.01635377259526649,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mHeight Tracking": {
 			"name": "Height Tracking",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 405.910473623587,
 			"y": 10.225202127854573,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mroll": {
 			"name": "roll",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -269.02284327182906,
 			"y": 230.94073829488525,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mUpper Tilt + Top Joint": {
 			"name": "Upper Tilt + Top Joint",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -30.702437297203232,
 			"y": -224.20098426852292,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mGrip Rotation": {
 			"name": "Grip Rotation",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -103.46392104317124,
 			"y": 3.552950305227114,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mGrip Tilt": {
 			"name": "Grip Tilt",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": 154.76352955665993,
 			"y": -13.788654253356526,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mgrab": {
 			"name": "grab",
-			"item": [
+			"data":
 				{
-					"number": 0,
+					"value": 0,
 					"mode": "f",
 					"unit": "",
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -6.5617496283020955,
 			"y": 233.9308623102952,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
 		"Gripper6AxisEV3a1a22x6p9s3mkickback joint tilt": {
 			"name": "kickback joint tilt",
-			"item": [
+			"data":
 				{
-					"number": 0.5,
+					"value": 0.5,
 					"mode": "f",
 					"unit": false,
 					"unitMin": 0,
 					"unitMax": 1
 				},
-				{},
-				{},
-				{}
-			],
 			"x": -274.72902860564864,
 			"y": -223.52884918892732,
 			"scale": 1,
 			"matrix": [],
-			"appearance": "default",
+			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
