@@ -88,6 +88,7 @@ var globalVariables = {
 const serverPort = 8080;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
+const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 const version = "1.7.0";           // the version of this server
@@ -585,7 +586,9 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeMod
     });
     objectEngine(objectKey, nodeKey, null, objects, nodeTypeModules);
 
-}, Node);
+}, Node, function(thisAction){
+    actionSender(thisAction);
+});
 cout("Done");
 
 cout("Loading Objects");
@@ -825,8 +828,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     var client = dgram.createSocket('udp4');
     client.bind(function () {
         client.setBroadcast(true);
-        client.setTTL(2);
-        client.setMulticastTTL(2);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
     });
 
     if (!oneTimeOnly) {
@@ -902,8 +905,8 @@ function actionSender(action) {
     var client = dgram.createSocket('udp4');
     client.bind(function () {
         client.setBroadcast(true);
-        client.setTTL(64);
-        client.setMulticastTTL(64);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
     });
     // send the datagram
     client.send(message, 0, message.length, beatPort, HOST, function (err) {
@@ -1157,7 +1160,7 @@ function objectWebServer() {
         delete objects[req.params[0]].nodes[req.params[1]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in logic "+ req.params[1] +" for object: " + req.params[0]);
 
@@ -1185,7 +1188,7 @@ function objectWebServer() {
 
             if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+                actionSender({reloadLink: {object: req.params[0]}});
                 updateStatus = "added";
                 cout("added link: " + req.params[2]);
                 // check if there are new connections associated with the new link.
@@ -1259,7 +1262,7 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
 }
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+            actionSender({reloadLink: {object: req.params[0]}});
             updateStatus = "added";
             cout("added block: " + req.params[2]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
@@ -1286,7 +1289,7 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
             }
         }
 
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in blocks for object: " + req.params[0]);
     });
@@ -1313,7 +1316,7 @@ for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
 
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-            actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
+            actionSender({reloadObject: {object: thisObject}});
             updateStatus = "ok";
             res.send(updateStatus);
         } else
@@ -1349,7 +1352,7 @@ console.log("added tons of nodes ----------");
             objects[req.params[0]].nodes[req.params[1]].type = "logic";
             
             // call an action that asks all devices to reload their links, once the links are changed.
-            actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+            actionSender({reloadLink: {object: req.params[0]}});
             updateStatus = "added";
             cout("added logic node: " + req.params[1]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
@@ -1376,7 +1379,7 @@ console.log("added tons of nodes ----------");
             }
         }
 
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + req.params[1] + " in object: " + req.params[0]);
 
@@ -1415,7 +1418,7 @@ console.log("added tons of nodes ----------");
         if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-            actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
+            actionSender({reloadObject: {object: thisObject}});
             updateStatus = "ok";
         }
 
@@ -1465,7 +1468,7 @@ var blockList = {}
         delete objects[req.params[0]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
-        actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
 
@@ -1508,7 +1511,7 @@ var blockList = {}
 
             if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender(JSON.stringify({reloadLink: {id: req.params[0], ip: objects[req.params[0]].ip}}));
+                actionSender({reloadLink: {object: req.params[0]}});
                 updateStatus = "added";
                 cout("added link: " + req.params[1]);
                 // check if there are new connections associated with the new link.
@@ -1564,7 +1567,7 @@ var blockList = {}
             if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-                actionSender(JSON.stringify({reloadObject: {id: thisObject, ip: objects[thisObject].ip}}));
+                actionSender({reloadObject: {object: thisObject}});
                 updateStatus = "added object";
             }
 

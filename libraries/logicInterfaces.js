@@ -1,5 +1,6 @@
 ﻿
 
+// Todo this are just some thoughts about the API
 
 exports.writePublicData = function () { };
 exports.writePrivateData = function () { };
