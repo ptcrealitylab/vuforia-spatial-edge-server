@@ -143,7 +143,7 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
 /**
  * Saves the HybridObject as "object.json"
  *
- * @param {Object[]} objects - The array of objects
+ * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
  * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides. 
  **/

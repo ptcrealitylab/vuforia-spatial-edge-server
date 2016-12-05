@@ -30,6 +30,7 @@ var nodeTypeModules;
 var blockModules;
 var callback;
 var Node;
+var actionCallback;
 var hardwareObjects = {};
 var callBacks = new Objects();
 var _this = this;
@@ -188,7 +189,7 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue) {
+exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue, actionCallBack) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
@@ -197,6 +198,7 @@ exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, o
     blockModules = blocks;
     callback = cb;
     Node = objValue;
+    actionCallback = actionCallBack;
 };
 
 exports.reset = function (){
@@ -255,6 +257,22 @@ exports.addEventListener = function (option, callBack){
         callBacks.shutdownCallBacks.push(callBack);
     }
 
+};
+
+exports.advertiseConnection = function (object, node, logic){
+    if(typeof logic === "undefined") {
+        logic = false;
+    }
+    var objectID = utilities.readObject(objectLookup, object);
+    var nodeID = objectID+node;
+
+    var message = {advertiseConnection:{
+        object: objectID,
+        node: nodeID,
+        logic: logic,
+        names: [object, node],
+    }};
+    actionCallback(message);
 };
 
 exports.shutdown = function (){

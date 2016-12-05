@@ -5,8 +5,8 @@
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "bsyBi",
-	"x": 6.540397205447789,
-	"y": 14.340756814513725,
+	"x": 59.86856807983639,
+	"y": -81.53133283114366,
 	"scale": 1,
 	"matrix": [],
 	"visible": false,
@@ -14,19 +14,54 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {},
+	"links": {
+		"BYPuoxvx": {
+			"objectA": "obj45y4gk159d097q",
+			"objectB": "obj45y4gk159d097q",
+			"nodeA": "obj45y4gk159d097qtwo",
+			"nodeB": "obj45y4gk159d097qone",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj45",
+				"two"
+			],
+			"namesB": [
+				"obj45",
+				"one"
+			],
+			"loop": false
+		},
+		"wE15gvxp": {
+			"objectA": "obj45y4gk159d097q",
+			"objectB": "obj45y4gk159d097q",
+			"nodeA": "obj45y4gk159d097qone",
+			"nodeB": "Qo966kd20sef",
+			"logicA": false,
+			"logicB": 1,
+			"namesA": [
+				"obj45",
+				"one"
+			],
+			"namesB": [
+				"obj45",
+				"LOGIC0:GREEN"
+			],
+			"loop": false
+		}
+	},
 	"nodes": {
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.39398801210336387,
+				"value": 0.2733582246582955,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": 181.90691087361097,
-			"y": -174.9234043863276,
+			"x": 151.6234213156731,
+			"y": -100.2787920711396,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -71,8 +106,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -85.39778523068719,
-			"y": -154.2941278777979,
+			"x": -146.6539902381098,
+			"y": -155.289457667732,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -114,7 +149,7 @@
 			],
 			"x": 8.814827430186721,
 			"y": 100.35300355264084,
-			"scale": 0.5,
+			"scale": 1,
 			"matrix": [],
 			"visible": false,
 			"visibleEditing": false,
@@ -267,7 +302,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.8428350035101175,
+							"value": 0.2733582246582955,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -428,7 +463,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.8428350035101175,
+							"value": 0.2733582246582955,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -601,7 +636,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.8428350035101175,
+							"value": 0.2733582246582955,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -700,7 +735,7 @@
 			],
 			"x": 172.2095748908892,
 			"y": 240.84733298518915,
-			"scale": 0.5,
+			"scale": 1,
 			"matrix": [],
 			"visible": false,
 			"visibleEditing": false,
