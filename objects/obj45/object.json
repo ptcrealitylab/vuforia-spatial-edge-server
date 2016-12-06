@@ -14,47 +14,12 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {
-		"BYPuoxvx": {
-			"objectA": "obj45y4gk159d097q",
-			"objectB": "obj45y4gk159d097q",
-			"nodeA": "obj45y4gk159d097qtwo",
-			"nodeB": "obj45y4gk159d097qone",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"obj45",
-				"two"
-			],
-			"namesB": [
-				"obj45",
-				"one"
-			],
-			"loop": false
-		},
-		"wE15gvxp": {
-			"objectA": "obj45y4gk159d097q",
-			"objectB": "obj45y4gk159d097q",
-			"nodeA": "obj45y4gk159d097qone",
-			"nodeB": "Qo966kd20sef",
-			"logicA": false,
-			"logicB": 1,
-			"namesA": [
-				"obj45",
-				"one"
-			],
-			"namesB": [
-				"obj45",
-				"LOGIC0:GREEN"
-			],
-			"loop": false
-		}
-	},
+	"links": {},
 	"nodes": {
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.2733582246582955,
+				"value": 0.7402313724160194,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -302,7 +267,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.2733582246582955,
+							"value": 0.8209046344272792,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -463,7 +428,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.2733582246582955,
+							"value": 0.8209046344272792,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -636,7 +601,7 @@
 								"unitMin": 0,
 								"unitMax": 1
 							},
-							"value": 0.2733582246582955,
+							"value": 0.8209046344272792,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
