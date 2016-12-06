@@ -79,10 +79,14 @@ if (exports.enabled) {
 
     }, 300);
 
-   /* setInterval(function () {
+   setInterval(function () {
 
         server.advertiseConnection("obj45","one");
 
-    }, 2000); */
+       setTimeout(function() {
+           server.advertiseConnection("obj47", "hans");
+       }, 4000);
+
+    }, 8000);
 
 }
