@@ -353,7 +353,6 @@ function Block() {
     // A specific icon for the node, png or jpg.
     this.iconImage = null;
     // Text within the node, if no icon is available.
-    this.text = "";
     // indicates how much calls per second is happening on this block
     this.stress = 0;
     // this is just a compatibility with the original engine. Maybe its here to stay

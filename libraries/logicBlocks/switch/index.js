@@ -63,7 +63,7 @@ var properties = {
     iconImage : "icon.png",
     nameInput : ["in", "stream in", "", ""],
     nameOutput : ["out", "stream out", "", ""],
-    text : "switch"
+    type : "switch"
 };
 
 exports.properties = properties;

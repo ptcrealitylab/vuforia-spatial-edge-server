@@ -63,7 +63,7 @@ var properties = {
     iconImage : "icon.png",
     nameInput : ["stream in", "", "", ""],
     nameOutput : ["stream out", "", "", ""],
-    text : "threshold"
+    type : "threshold"
 };
 
 exports.properties = properties;

@@ -63,7 +63,7 @@ var properties = {
     iconImage : "icon.png",
     nameInput : ["in", "", "", ""],
     nameOutput : ["out", "", "", ""],
-    text : "delay"
+    type : "delay"
 };
 
 exports.properties = properties;
