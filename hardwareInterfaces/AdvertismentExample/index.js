@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -64,6 +64,93 @@ if (exports.enabled) {
 
     server.addNode("obj45", "one", "node");
     server.addNode("obj45", "two", "node");
+
+    var _serialport = require("serialport");
+
+    const serialBaudRate = 9600; // baud rate for connection to arudino
+    const serialSource = "/dev/cu.usbmodem1411"; // this is pointing to the arduino
+
+    //initialisation of the socket connection
+    var SerialP = _serialport.SerialPort; // localize object constructor
+    var serialPort = new SerialP(serialSource, {
+        parser: _serialport.parsers.readline("\r\n"),
+        baudrate: serialBaudRate
+    }, false);
+
+    serialPort.on('error', function (err) {
+        console.error("Serial port error", err);
+    });
+
+    serialPort.open();
+    serialPort.on("open", function () {
+
+        serialPort.on('data', function (data) {
+
+            if(data === "on"){
+               server.write("obj47", "switch", 1, "f");
+            }
+            else if(data === "off"){
+              server.write("obj47", "switch", 0, "f");
+            }
+            else if(data === "2") {
+                server.advertiseConnection("obj47","light1");
+                console.log("advertise light1");
+            }
+            else if(data === "1") {
+                server.advertiseConnection("obj47","light2");
+                console.log("advertise light2");
+            }
+            else if(data === "0") {
+                server.advertiseConnection("obj47","light3");
+                console.log("advertise light3");
+            }
+            else if(data === "3") {
+                server.advertiseConnection("obj47", "switch");
+                console.log("advertise switch");
+            }
+
+
+            console.log("this: "+data);
+
+        });
+    });
+
+
+/*
+    setInterval(function () {
+
+        serialPort.write("0\n");
+        setTimeout(function() {
+            serialPort.write("1\n");
+        }, 1000);
+
+
+    }, 3000);
+*/
+
+
+
+    server.addReadListener("obj47", "light1", function (data) {
+        if(data.value >0){
+            serialPort.write("1\n");
+        } else {
+            serialPort.write("0\n");
+        }
+    });
+    server.addReadListener("obj47", "light2", function (data) {
+        if(data.value >0){
+            serialPort.write("3\n");
+        } else {
+            serialPort.write("2\n");
+        }
+    });
+    server.addReadListener("obj47", "light3", function (data) {
+        if(data.value >0){
+            serialPort.write("5\n");
+        } else {
+            serialPort.write("4\n");
+        }
+    });
 
 
 

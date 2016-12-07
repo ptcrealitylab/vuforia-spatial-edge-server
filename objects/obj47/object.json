@@ -1,7 +1,7 @@
 {
 	"objectId": "obj47n32vbg5gk3he",
 	"name": "obj47",
-	"ip": "10.0.1.4",
+	"ip": "192.168.1.6",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "4o9q5c",
@@ -14,7 +14,59 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {},
+	"links": {
+		"bfb3wgfh": {
+			"objectA": "obj47n32vbg5gk3he",
+			"objectB": "obj47n32vbg5gk3he",
+			"nodeA": "obj47n32vbg5gk3heswitch",
+			"nodeB": "obj47n32vbg5gk3helight3",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj47",
+				"switch"
+			],
+			"namesB": [
+				"obj47",
+				"light3"
+			],
+			"loop": false
+		},
+		"jG8vl4tx": {
+			"objectA": "obj47n32vbg5gk3he",
+			"objectB": "obj47n32vbg5gk3he",
+			"nodeA": "obj47n32vbg5gk3heswitch",
+			"nodeB": "obj47n32vbg5gk3helight2",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj47",
+				"switch"
+			],
+			"namesB": [
+				"obj47",
+				"light2"
+			],
+			"loop": false
+		},
+		"8I1gd5ud": {
+			"objectA": "obj47n32vbg5gk3he",
+			"objectB": "obj47n32vbg5gk3he",
+			"nodeA": "obj47n32vbg5gk3heswitch",
+			"nodeB": "obj47n32vbg5gk3helight1",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"obj47",
+				"switch"
+			],
+			"namesB": [
+				"obj47",
+				"light1"
+			],
+			"loop": false
+		}
+	},
 	"nodes": {
 		"obj47n32vbg5gk3hehans": {
 			"name": "hans",
@@ -45,6 +97,78 @@
 			},
 			"x": -23.743537815460286,
 			"y": -103.19668796408882,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3helight1": {
+			"name": "light1",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -83,
+			"y": -37,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3helight2": {
+			"name": "light2",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -54,
+			"y": -7,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3helight3": {
+			"name": "light3",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -76,
+			"y": -89,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3heswitch": {
+			"name": "switch",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -24,
+			"y": 48,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
