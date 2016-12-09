@@ -511,27 +511,7 @@ function HybridObject() {
 function HybridLogic() {
     this.publicData = realityObject.publicData;
 
-    this.addReadPublicDataListener = function (valueName, callback) {
 
-        realityObject.messageCallBacks.updateLogicGUI = function (msgContent) {
-            if (typeof msgContent.publicData !== "undefined") {
-                if (typeof msgContent.publicData[valueName] !== "undefined") {
-                    callback(msgContent.publicData[valueName]);
-                }
-            }
-        }
-
-        /*
-        _this.ioObject.on("object", function (msg) {
-            var thisMsg = JSON.parse(msg);
-            if (typeof thisMsg.node !== "undefined") {
-                if (thisMsg.node === realityObject.object+node) {
-                    if (typeof thisMsg.data !== "undefined")
-                        callback(thisMsg.data.value);
-                }
-            }
-        });*/
-    };
 
     this.readPublicData = function (valueName, value) {
         if (!value)  value = 0;
@@ -542,7 +522,7 @@ function HybridLogic() {
         } else {
             return realityObject.publicData[valueName];
         }
-    }
+    };
 
     if (typeof io !== "undefined") {
         var _this = this;
@@ -550,9 +530,28 @@ function HybridLogic() {
         this.ioObject = io.connect();
         this.oldValueList = {};
 
+        this.addReadPublicDataListener = function (valueName, callback) {
+
+            _this.ioObject.on("block", function (msg) {
+                var thisMsg = JSON.parse(msg);
+                if (typeof thisMsg.publicData !== "undefined") {
+                    if (typeof thisMsg.publicData[valueName] !== "undefined") {
+                        callback(thisMsg.publicData[valueName]);
+                    }
+                }
+            });
+        };
+
+
+
         this.sendEealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
-                _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify({object: realityObject.object}));
+                _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify(
+                    {
+                        object: realityObject.object,
+                        logic:realityObject.logic,
+                        block: realityObject.block
+                    }));
                 clearInterval(_this.sendEealityEditorSubscribe);
             }
         }, 10);
@@ -599,6 +598,17 @@ function HybridLogic() {
         console.log("socket.io is loaded");
     }
     else {
+
+        this.addReadPublicDataListener = function (valueName, callback) {
+
+            realityObject.messageCallBacks.updateLogicGUI = function (msgContent) {
+                if (typeof msgContent.publicData !== "undefined") {
+                    if (typeof msgContent.publicData[valueName] !== "undefined") {
+                        callback(msgContent.publicData[valueName]);
+                    }
+                }
+            };
+        };
 
         /**
          ************************************************************

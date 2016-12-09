@@ -2192,6 +2192,13 @@ function socketServer() {
                 realityEditorBlockSocketArray[socket.id] = {object: msgContent.object};
                 cout(realityEditorBlockSocketArray);
             }
+
+            io.sockets.connected[socket.id].emit('block', JSON.stringify({
+                object: msgContent.object,
+                node: msgContent.node,
+                block: msgContent.block,
+                publicData: objects[msgContent.object].nodes[msgContent.logic].blocks[msgContent.block].publicData
+            }));//       socket.emit('object', msgToSend);
         });
 
 
