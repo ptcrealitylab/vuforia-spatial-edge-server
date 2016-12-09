@@ -53,7 +53,7 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var properties = {
+var generalProperties = {
     name : "threshold",
     blockSize : 1,
     privateData : {},
@@ -66,22 +66,28 @@ var properties = {
     type : "threshold"
 };
 
-exports.properties = properties;
+exports.properties = generalProperties;
+
+exports.setup = function (object,logic, block, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback)  {
+exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
 
     // check orientations and calculate if threshold is meet.
     var pass = false;
-    if(blockObject.publicData.direction = ">")
+    if(activeBlockProperties.publicData.direction = ">")
     {
-        if(inputData[0][value] > blockObject.publicData.threshold){
+        if(activeBlockProperties.data[0][value] > activeBlockProperties.publicData.threshold){
             pass = true;
         }
-    } else if(blockObject.publicData.direction = "<")
+    } else if(activeBlockProperties.publicData.direction = "<")
     {
-        if(inputData[0][value] < blockObject.publicData.threshold){
+        if(activeBlockProperties.data[0][value] < activeBlockProperties.publicData.threshold){
             pass = true;
         }
     }
@@ -89,13 +95,13 @@ exports.render = function (objectID, logicID, linkID, blockObject, inputData, ca
     var outputData = [{},{},{},{}];
     var key;
 
-    for (key in inputData[0]) {
-        outputData[0][key] = inputData[0][key];
+    for (key in activeBlockProperties.data[0]) {
+        outputData[0][key] = activeBlockProperties.data[0][key];
     }
 
     // calculate final output
     if(pass){
-        if(blockObject.publicData.digital){
+        if(activeBlockProperties.publicData.digital){
             outputData[0][value] = 1;
         }
     } else {

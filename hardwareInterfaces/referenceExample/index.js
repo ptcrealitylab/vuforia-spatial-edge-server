@@ -75,9 +75,13 @@ if (exports.enabled) {
 
     });
 
+    var counter = 0;
     setInterval(function () {
-
-        server.write("obj45", "one", Math.random(), "f");
+counter++;
+        server.write("obj45", "one", counter/100, "f");
+        if(counter >= 100){
+            counter = 0;
+        }
 
     }, 300);
 

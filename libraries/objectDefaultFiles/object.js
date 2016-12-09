@@ -99,6 +99,9 @@ window.addEventListener("message", function (MSG) {
 
 realityObject.messageCallBacks.mainCall = function (msgContent) {
 
+    console.log("------------------------------");
+    console.log(msgContent);
+
     if (typeof msgContent.node !== "undefined") {
 
         if (realityObject.sendFullScreen === false) {
@@ -125,6 +128,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.object = msgContent.object;
     }
     else if (typeof msgContent.logic !== "undefined") {
+
 
         parent.postMessage(JSON.stringify(
             {
@@ -393,7 +397,7 @@ function HybridObject() {
 
         this.sendEealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
-                _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object}));
+                _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, protocol: realityObject.protocol}));
                 clearInterval(_this.sendEealityEditorSubscribe);
             }
         }, 10);
@@ -507,6 +511,28 @@ function HybridObject() {
 function HybridLogic() {
     this.publicData = realityObject.publicData;
 
+    this.addReadPublicDataListener = function (valueName, callback) {
+
+        realityObject.messageCallBacks.updateLogicGUI = function (msgContent) {
+            if (typeof msgContent.publicData !== "undefined") {
+                if (typeof msgContent.publicData[valueName] !== "undefined") {
+                    callback(msgContent.publicData[valueName]);
+                }
+            }
+        }
+
+        /*
+        _this.ioObject.on("object", function (msg) {
+            var thisMsg = JSON.parse(msg);
+            if (typeof thisMsg.node !== "undefined") {
+                if (thisMsg.node === realityObject.object+node) {
+                    if (typeof thisMsg.data !== "undefined")
+                        callback(thisMsg.data.value);
+                }
+            }
+        });*/
+    };
+
     this.readPublicData = function (valueName, value) {
         if (!value)  value = 0;
 
@@ -523,6 +549,13 @@ function HybridLogic() {
 
         this.ioObject = io.connect();
         this.oldValueList = {};
+
+        this.sendEealityEditorSubscribe = setInterval(function () {
+            if (realityObject.object) {
+                _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify({object: realityObject.object}));
+                clearInterval(_this.sendEealityEditorSubscribe);
+            }
+        }, 10);
 
         /**
          ************************************************************
@@ -547,8 +580,7 @@ function HybridLogic() {
                     object: realityObject.object,
                     publicData: realityObject.publicData
                 }
-            ));
-
+            ), "*");
         };
 
         this.writePrivateData = function (valueName, value) {
