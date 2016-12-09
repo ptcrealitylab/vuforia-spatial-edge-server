@@ -54,7 +54,7 @@
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.04,
+				"value": 0.17,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -1194,7 +1194,7 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0.04,
+							"value": 0.17,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -1509,7 +1509,7 @@
 					],
 					"privateData": {},
 					"publicData": {
-						"delayTime": "1954"
+						"delayTime": "870"
 					},
 					"activeInputs": [
 						true,
