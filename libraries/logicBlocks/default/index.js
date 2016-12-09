@@ -53,7 +53,7 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var properties = {
+var generalProperties = {
     name : "default",
     blockSize : 1,
     privateData : {},
@@ -66,16 +66,22 @@ var properties = {
     type : "default"
 };
 
-exports.properties = properties;
+exports.properties = generalProperties;
+
+exports.setup = function (object,logic, block, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback) {
+exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback) {
     var outputData = [{},{},{},{}];
     var key;
 
-    for (key in inputData[0]) {
-        outputData[0][key] = inputData[0][key];
+    for (key in activeBlockProperties.data[0]) {
+        outputData[0][key] = activeBlockProperties.data[0][key];
     }
     callback(objectID, logicID, linkID, outputData);
 };

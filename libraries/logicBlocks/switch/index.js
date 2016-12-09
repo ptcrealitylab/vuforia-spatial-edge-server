@@ -53,7 +53,7 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var properties = {
+var generalProperties = {
     name : "switch",
     blockSize : 2,
     privateData : {},
@@ -66,37 +66,42 @@ var properties = {
     type : "switch"
 };
 
-exports.properties = properties;
+exports.properties = generalProperties;
+
+exports.setup = function (object,logic, block, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-
-exports.render = function (objectID, logicID, linkID, blockObject, inputData, callback)  {
+exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
 
     var outputData = [{},{},{},{}];
     var key;
 
-    if(inputData[0].value && blockObject.publicData.toggle === false)
+    if(inputData[0].value && activeBlockProperties.publicData.toggle === false)
     {
-        blockObject.publicData.toggle = true;
+        activeBlockProperties.publicData.toggle = true;
         // toggle the value
-        blockObject.publicData.switch = !blockObject.publicData.switch;
+        activeBlockProperties.publicData.switch = !activeBlockProperties.publicData.switch;
 
         // todo we need to test how it behaves when I have a stream and a single data point that changes when switched
-        for (key in inputData[0]) {
-            outputData[0][key] = inputData[0][key];
+        for (key in activeBlockProperties.data[0]) {
+            outputData[0][key] = activeBlockProperties.data[0][key];
         }
         callback(objectID, linkID, outputData);
 
     } else {
-        blockObject.publicData.toggle = false;
+        activeBlockProperties.publicData.toggle = false;
     }
 
     // in case the switch is on, the data will be routed through
     // todo again we have to test how we can handle an on and off switch that only has one data point but then also handle the stream
-    if(blockObject.publicData.switch){
-        for (key in inputData[1]) {
-            outputData[1][key] = inputData[1][key];
+    if(activeBlockProperties.publicData.switch){
+        for (key in activeBlockProperties.data[1]) {
+            outputData[1][key] = activeBlockProperties.data[1][key];
         }
         callback(objectID, logicID, linkID, outputData);
     }

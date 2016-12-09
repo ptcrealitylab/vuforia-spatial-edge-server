@@ -513,6 +513,7 @@ var objectLookup = {};
 var socketArray = {};     // all socket connections that are kept alive
 
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
+var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -1253,7 +1254,7 @@ function objectWebServer() {
 
             // todo this can be removed once the system runs smoothly
             if(typeof thisBlocks[req.params[2]].type === "undefined"){
-                thisBlocks[req.params[2]].type = "default";
+                thisBlocks[req.params[2]].type = thisBlocks[req.params[2]].name;
             }
 
 for( var k in  objects[req.params[0]].nodes[req.params[1]].blocks){
@@ -2167,7 +2168,7 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
             var thisProtocol = "R1";
 
-            if(!msgContent.object){
+            if (!msgContent.object) {
                 msgContent.object = msgContent.obj;
                 thisProtocol = "R0";
             }
@@ -2181,40 +2182,79 @@ function socketServer() {
             }
         });
 
+        socket.on('/subscribe/realityEditorBlock', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            if (objects.hasOwnProperty(msgContent.object)) {
+                cout("reality editor block: " + msgContent.object);
+                cout("the latest socket has the ID: " + socket.id);
+
+                realityEditorBlockSocketArray[socket.id] = {object: msgContent.object};
+                cout(realityEditorBlockSocketArray);
+            }
+        });
+
+
         socket.on('object', function (msg) {
 
             var msgContent = protocols[protocol].receive(msg);
-            if(msgContent === null){
+            if (msgContent === null) {
                 msgContent = protocols["R0"].receive(msg);
             }
 
-                    if(msgContent !== null){
-                    hardwareAPI.readCall(msgContent.object, msgContent.node, msgContent.data);
+            if (msgContent !== null) {
+                hardwareAPI.readCall(msgContent.object, msgContent.node, msgContent.data);
 
-                    sendMessagetoEditors({
-                        object: msgContent.object,
-                        node: msgContent.node,
-                        data: msgContent.data
-                    });
-                    objectEngine(msgContent.object, msgContent.node, null, objects, nodeTypeModules);
-                }
+                sendMessagetoEditors({
+                    object: msgContent.object,
+                    node: msgContent.node,
+                    data: msgContent.data
+                });
+                objectEngine(msgContent.object, msgContent.node, null, objects, nodeTypeModules);
+            }
 
         });
 // todo do this stuff tomorrrow
 
-        socket.on('block/publicData', function (msg) {
+        socket.on('block/setup', function (_msg) {
+            var msg = JSON.parse(_msg);
 
-            if (msg.object !== null && msg.logic !== null && msg.block !== null) {
+            if (typeof msg.object !== "undefined" && typeof  msg.logic !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
-                    if (msg.logic in objects[msg.object].logic) {
+                    if (msg.logic in objects[msg.object].nodes) {
                         if (msg.block in objects[msg.object].nodes[msg.logic].blocks) {
-                           var thisPublicData = objects[msg.object].nodes[msg.logic].blocks[msg.block].publicData;
+                            if (typeof objects[msg.object].nodes[msg.logic].blocks[msg.block].publicData !== "undefined") {
 
-                            // write data in to the block data of the object
-                            for (var key in msg.publicData) {
-                                thisPublicData[key] = msg.publicData[key];
+                                var thisPublicData = objects[msg.object].nodes[msg.logic].blocks[msg.block];
+                                blockModules[thisPublicData.type].setup(msg.object, msg.logic, msg.block, thisPublicData);
+
+                            }
+
+                        }
+                    }
+                }
+
+            }
+        });
+
+
+        socket.on('block/publicData', function (_msg) {
+           var msg = JSON.parse(_msg);
+console.log(msg);
+            if (typeof msg.object !== "undefined" && typeof  msg.logic !== "undefined" && typeof  msg.block !== "undefined") {
+                if (msg.object in objects) {
+                    if (msg.logic in objects[msg.object].nodes) {
+                        if (msg.block in objects[msg.object].nodes[msg.logic].blocks) {
+                            if(typeof objects[msg.object].nodes[msg.logic].blocks[msg.block].publicData !== "undefined"){
+
+                                var thisPublicData = objects[msg.object].nodes[msg.logic].blocks[msg.block].publicData;
+
+                                for (var key in msg.publicData) {
+                                    thisPublicData[key] = msg.publicData[key];
+                                }
                             }
                         }
+
                     }
                 }
             }
@@ -2228,8 +2268,22 @@ function socketServer() {
         });
 
         socket.on('disconnect', function () {
-            console.log(socket.id + " has disconnected");
-            delete realityEditorSocketArray[socket.id];
+
+
+            if(socket.id in realityEditorSocketArray) {
+                delete realityEditorSocketArray[socket.id];
+                console.log("GUI for "+ socket.id + " has disconnected");
+            }
+
+            if(socket.id in realityEditorBlockSocketArray) {
+                utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, __dirname);
+                actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
+                delete realityEditorBlockSocketArray[socket.id];
+                console.log("Settings for "+ socket.id + " has disconnected");
+            }
+
+            //utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
         });
     });
     this.io = io;
@@ -2434,8 +2488,7 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 
                     if ((thisBlock.type in blockModules)) {
 
-
-                        blockModules[thisBlock.type].render(object, logic, linkKey, item, thisBlock.data, function (object, logic, link, processedData) {
+                        blockModules[thisBlock.type].render(object, logic, linkKey, thisBlock, function (object, logic, link, processedData) {
 
                             logicEnginePostProcessing(object, logic, link, processedData);
                         });

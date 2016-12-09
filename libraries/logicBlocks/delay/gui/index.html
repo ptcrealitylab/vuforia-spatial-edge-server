@@ -28,6 +28,12 @@
 
     }, false);
 
+    logic.addReadPublicDataListener("delayTime",function (delayValue){
+        console.log(delayValue);
+        writeNumber(delayValue);
+    slider.value = delayValue;
+    });
+
     function writeNumber(value){
         if(value>=1000){
             number.innerHTML =  (value/1000).toFixed(2)+" sec";
