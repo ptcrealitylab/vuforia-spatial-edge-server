@@ -15,28 +15,11 @@
 	"developer": true,
 	"memory": {},
 	"links": {
-		"mg2w5wi2": {
-			"objectA": "obj45y4gk159d097q",
-			"objectB": "obj45y4gk159d097q",
-			"nodeA": "24fyrm6piim0",
-			"nodeB": "obj45y4gk159d097qtwo",
-			"logicA": 1,
-			"logicB": false,
-			"namesA": [
-				"obj45",
-				"LOGIC2:GREEN"
-			],
-			"namesB": [
-				"obj45",
-				"two"
-			],
-			"loop": false
-		},
-		"Ub1bjj40": {
+		"Mmj5ul59": {
 			"objectA": "obj45y4gk159d097q",
 			"objectB": "obj45y4gk159d097q",
 			"nodeA": "obj45y4gk159d097qone",
-			"nodeB": "24fyrm6piim0",
+			"nodeB": "Kafo4sf8d3ya",
 			"logicA": false,
 			"logicB": 0,
 			"namesA": [
@@ -45,7 +28,7 @@
 			],
 			"namesB": [
 				"obj45",
-				"LOGIC2:BLUE"
+				"LOGIC0:BLUE"
 			],
 			"loop": false
 		}
@@ -54,60 +37,39 @@
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.17,
+				"value": 1,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": 151.6234213156731,
-			"y": -100.2787920711396,
+			"x": 79,
+			"y": -59,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100
+			"frameSizeY": 100,
+			"route": false,
+			"routeBuffer": [
+				0,
+				0,
+				0,
+				0
+			]
 		},
 		"obj45y4gk159d097qtwo": {
 			"name": "two",
 			"data": {
-				"0": {
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				"1": {
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				"2": {
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				"3": {
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				"value": 0.3,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -146.6539902381098,
-			"y": -155.289457667732,
+			"x": -84,
+			"y": 95,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -115,41 +77,18 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100
 		},
-		"Qo966kd20sef": {
+		"Kafo4sf8d3ya": {
 			"name": "LOGIC0",
-			"data": [
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": 8.814827430186721,
-			"y": 100.35300355264084,
-			"scale": 1,
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 57.82275390536262,
+			"y": 145.6080490701985,
+			"scale": 0.5,
 			"matrix": [],
 			"visible": false,
 			"visibleEditing": false,
@@ -170,8 +109,28 @@
 			],
 			"type": "logic",
 			"links": {
-				"blockLink3lee1v77kdkm": {
-					"nodeA": "blockxib52r3em54i",
+				"blockLinkTyi4r0u8y6hm": {
+					"nodeA": "edgePlaceholderIn0",
+					"logicA": 0,
+					"nodeB": "blockd248y3s2olcs",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLinkFyd3yy2orbz0": {
+					"nodeA": "blockd248y3s2olcs",
+					"logicA": 0,
+					"nodeB": "blockBwcbm2kuww70",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLinke9gghnx2d5vv": {
+					"nodeA": "blockd248y3s2olcs",
 					"logicA": 0,
 					"nodeB": "edgePlaceholderOut0",
 					"logicB": 0,
@@ -180,10 +139,40 @@
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLinkMVd0fc369bjq": {
-					"nodeA": "edgePlaceholderIn1",
+				"blockLinkzybmst0xsj4j": {
+					"nodeA": "blockBwcbm2kuww70",
 					"logicA": 0,
-					"nodeB": "blockxib52r3em54i",
+					"nodeB": "edgePlaceholderOut1",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLinkRL3d1mcpy877": {
+					"nodeA": "blockBwcbm2kuww70",
+					"logicA": 1,
+					"nodeB": "edgePlaceholderOut2",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLink4Ghjhd7ykocz": {
+					"nodeA": "block8e2o8cspm5dn",
+					"logicA": 0,
+					"nodeB": "edgePlaceholderOut3",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLinkuq5tnurnm1mo": {
+					"nodeA": "blockBwcbm2kuww70",
+					"logicA": 1,
+					"nodeB": "block8e2o8cspm5dn",
 					"logicB": 0,
 					"loop": false,
 					"health": 0,
@@ -212,36 +201,36 @@
 				1
 			],
 			"temp": [
-				43.204517088976004,
-				984.9438107625599,
-				0.079057493384,
-				0.077492,
-				-980.964818487904,
-				43.97647099296,
-				-0.041295736556,
-				-0.040478,
-				16.625474328255997,
-				35.659310660159996,
-				-2.038453373776,
-				-1.998088,
-				-23221.62991065123,
-				-27781.19580040992,
-				1417.458797971512,
-				1587.410156
+				55.853458471024005,
+				983.91410075904,
+				-0.09046335174400001,
+				-0.088672,
+				-979.064879039952,
+				58.40640234528,
+				0.093599452692,
+				0.091746,
+				-52.413881518528,
+				-42.67734058368,
+				-2.036247697052,
+				-1.995926,
+				20945.270364344495,
+				-11857.163034066241,
+				1305.890145897964,
+				1478.050782
 			],
-			"screenX": 206.65543390477137,
-			"screenY": 149.63881415138817,
-			"screenZ": 1420.2647366213776,
-			"screenLinearZ": 8.400892628880932,
 			"fullScreen": false,
+			"screenX": 204.35655130858777,
+			"screenY": 195.10101108190105,
+			"screenZ": 1314.4056024951542,
+			"screenLinearZ": 9.095611589350284,
 			"blocks": {
 				"edgePlaceholderIn0": {
 					"name": "",
 					"data": [
 						{
-							"value": 0,
+							"value": 1,
 							"mode": "f",
-							"unit": "",
+							"unit": false,
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -268,43 +257,16 @@
 						}
 					],
 					"stress": 0,
-					"type": "default"
+					"type": "default",
+					"route": 0
 				},
 				"edgePlaceholderIn1": {
 					"name": "",
 					"data": [
 						{
-							"0": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"1": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"2": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"3": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"value": 0.06,
+							"value": 0,
 							"mode": "f",
-							"unit": false,
+							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -337,37 +299,9 @@
 					"name": "",
 					"data": [
 						{
-							"0": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"1": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"2": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"3": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"value": 0.796186959836632,
+							"value": 0,
 							"mode": "f",
-							"unit": false,
+							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -435,35 +369,7 @@
 					"name": "",
 					"data": [
 						{
-							"0": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"1": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"2": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"3": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"value": 0.06,
+							"value": 0,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -498,9 +404,9 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0,
+							"value": 1,
 							"mode": "f",
-							"unit": "",
+							"unit": false,
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -533,9 +439,9 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0,
+							"value": 1,
 							"mode": "f",
-							"unit": "",
+							"unit": false,
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -568,9 +474,9 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0,
+							"value": 1,
 							"mode": "f",
-							"unit": "",
+							"unit": false,
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -599,44 +505,164 @@
 					"stress": 0,
 					"type": "default"
 				},
-				"blockxib52r3em54i": {
-					"name": "delay",
-					"x": 1,
+				"blockd248y3s2olcs": {
+					"type": "threshold",
+					"x": 0,
 					"y": 1,
 					"blockSize": 1,
-					"globalId": "blockxib52r3em54i",
+					"globalId": "blockd248y3s2olcs",
 					"checksum": null,
 					"data": [
 						{
-							"0": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"1": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"2": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"3": {
-								"value": 0,
-								"mode": "f",
-								"unit": "",
-								"unitMin": 0,
-								"unitMax": 1
-							},
-							"value": 0.06,
+							"value": 1,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"privateData": {},
+					"publicData": {
+						"threshold": 0.5,
+						"direction": "<",
+						"digital": true
+					},
+					"activeInputs": [
+						true,
+						false,
+						false,
+						false
+					],
+					"activeOutputs": [
+						true,
+						false,
+						false,
+						false
+					],
+					"nameInput": [
+						"stream in",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"stream out",
+						"",
+						"",
+						""
+					],
+					"iconImage": null,
+					"name": "threshold",
+					"stress": 0,
+					"isTempBlock": false,
+					"isPortBlock": false,
+					"route": 0
+				},
+				"blockBwcbm2kuww70": {
+					"type": "switch",
+					"x": 1,
+					"y": 1,
+					"blockSize": 2,
+					"globalId": "blockBwcbm2kuww70",
+					"checksum": null,
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 1,
+							"mode": "f",
+							"unit": false,
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"privateData": {},
+					"publicData": {
+						"switchType": "toggle",
+						"switch": true,
+						"toggle": false
+					},
+					"activeInputs": [
+						true,
+						true,
+						false,
+						false
+					],
+					"activeOutputs": [
+						true,
+						true,
+						false,
+						false
+					],
+					"nameInput": [
+						"in",
+						"stream in",
+						"",
+						""
+					],
+					"nameOutput": [
+						"out",
+						"stream out",
+						"",
+						""
+					],
+					"iconImage": null,
+					"name": "switch",
+					"stress": 0,
+					"isTempBlock": false,
+					"isPortBlock": false,
+					"route": 1
+				},
+				"block8e2o8cspm5dn": {
+					"type": "delay",
+					"x": 3,
+					"y": 1,
+					"blockSize": 1,
+					"globalId": "block8e2o8cspm5dn",
+					"checksum": null,
+					"data": [
+						{
+							"value": 1,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -681,849 +707,6 @@
 						false
 					],
 					"nameInput": [
-						"x",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"delayed x",
-						"",
-						"",
-						""
-					],
-					"iconImage": null,
-					"text": "delay",
-					"stress": 0,
-					"isTempBlock": false,
-					"isPortBlock": false,
-					"type": "default"
-				}
-			}
-		},
-		"z52vbkf6cajm": {
-			"name": "LOGIC1",
-			"data": [
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				},
-				{
-					"value": 0,
-					"mode": "f",
-					"unit": "",
-					"unitMin": 0,
-					"unitMax": 1
-				}
-			],
-			"x": 172.2095748908892,
-			"y": 240.84733298518915,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleEditing": false,
-			"lastSetting": false,
-			"lastSettingBlock": "",
-			"iconImage": null,
-			"nameInput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"nameOutput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"type": "logic",
-			"links": {
-				"blockLinkAMgghno4bnmx": {
-					"nodeA": "edgePlaceholderIn2",
-					"logicA": 0,
-					"nodeB": "edgePlaceholderOut0",
-					"logicB": 0,
-					"loop": false,
-					"health": 0,
-					"ballAnimationCount": 0,
-					"route": null
-				}
-			},
-			"loaded": false,
-			"animationScale": 0,
-			"begin": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"temp": [
-				62.263443963792,
-				983.88373962912,
-				0.080885695368,
-				0.079284,
-				-979.7038828408,
-				63.5039901936,
-				-0.061599796760000006,
-				-0.06038,
-				27.161813140592006,
-				35.48318613312,
-				-2.037869818232,
-				-1.997516,
-				-10774.255795222176,
-				-34610.51210359776,
-				1425.9164378242358,
-				1595.700318
-			],
-			"screenX": 131.619022047563,
-			"screenY": 269.49647039429976,
-			"screenZ": 1390.9716824104903,
-			"screenLinearZ": 8.582551488187285,
-			"fullScreen": false,
-			"blocks": {
-				"edgePlaceholderIn0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.796186959836632,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.39398801210336387,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.39398801210336387,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.796186959836632,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				}
-			}
-		},
-		"24fyrm6piim0": {
-			"name": "LOGIC2",
-			"data": {
-				"value": 0.3,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": -178.32149952271402,
-			"y": 84.9768888693028,
-			"scale": 0.5,
-			"matrix": [],
-			"visible": false,
-			"visibleEditing": false,
-			"lastSetting": false,
-			"lastSettingBlock": "",
-			"iconImage": null,
-			"nameInput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"nameOutput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"type": "logic",
-			"links": {
-				"blockLink8Lflsk39083z": {
-					"nodeA": "edgePlaceholderIn1",
-					"logicA": 0,
-					"nodeB": "blockIu3nog4h1hgw",
-					"logicB": 0,
-					"loop": false,
-					"health": 0,
-					"ballAnimationCount": 0,
-					"route": null
-				},
-				"blockLinkNE5q48sj06fr": {
-					"nodeA": "blockIu3nog4h1hgw",
-					"logicA": 0,
-					"nodeB": "edgePlaceholderOut1",
-					"logicB": 0,
-					"loop": false,
-					"health": 0,
-					"ballAnimationCount": 0,
-					"route": null
-				}
-			},
-			"loaded": false,
-			"animationScale": 0,
-			"begin": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"temp": [
-				763.1560757742241,
-				618.84674516544,
-				0.115188967416,
-				0.112908,
-				-615.184423656016,
-				768.31416297504,
-				-0.071283554144,
-				-0.069872,
-				59.788834804656,
-				6.46191676416,
-				-2.035902868776,
-				-1.995588,
-				-7924.023648881631,
-				-19003.86697420992,
-				1182.5945248445123,
-				1357.196656
-			],
-			"screenX": 136.5400812188854,
-			"screenY": 111.86884148406887,
-			"screenZ": 1155.9964007877145,
-			"screenLinearZ": 10.37285609232218,
-			"fullScreen": false,
-			"blocks": {
-				"edgePlaceholderIn0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.17,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.3,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderIn3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0.3,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"edgePlaceholderOut3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"blockIu3nog4h1hgw": {
-					"name": "delay",
-					"x": 1,
-					"y": 1,
-					"blockSize": 1,
-					"globalId": "blockIu3nog4h1hgw",
-					"checksum": null,
-					"data": [
-						{
-							"value": 0.3,
-							"mode": "f",
-							"unit": false,
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"privateData": {},
-					"publicData": {
-						"delayTime": "870"
-					},
-					"activeInputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"activeOutputs": [
-						true,
-						false,
-						false,
-						false
-					],
-					"nameInput": [
 						"in",
 						"",
 						"",
@@ -1536,13 +719,56 @@
 						""
 					],
 					"iconImage": null,
-					"text": "delay",
+					"name": "delay",
 					"stress": 0,
 					"isTempBlock": false,
 					"isPortBlock": false,
-					"type": "delay"
+					"route": 0
 				}
-			}
+			},
+			"route": 3,
+			"routeBuffer": [
+				0,
+				1,
+				1,
+				1
+			]
+		},
+		"obj45y4gk159d097qthree": {
+			"name": "three",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 116.04665922474283,
+			"y": 324.1540932622386,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj45y4gk159d097qfour": {
+			"name": "four",
+			"data": {
+				"value": 0.99,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 327.74410492732517,
+			"y": 104.92803147663949,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
 		}
 	}
 }

@@ -66,6 +66,8 @@ var generalProperties = {
     type : "switch"
 };
 
+var switchValue = 0;
+
 exports.properties = generalProperties;
 
 exports.setup = function (object,logic, block, activeBlockProperties){
@@ -77,33 +79,47 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
-
     var outputData = [{},{},{},{}];
     var key;
 
-    if(inputData[0].value && activeBlockProperties.publicData.toggle === false)
-    {
-        activeBlockProperties.publicData.toggle = true;
-        // toggle the value
-        activeBlockProperties.publicData.switch = !activeBlockProperties.publicData.switch;
+    if(activeBlockProperties.publicData.switchType ===  "toggle"){
 
-        // todo we need to test how it behaves when I have a stream and a single data point that changes when switched
-        for (key in activeBlockProperties.data[0]) {
-            outputData[0][key] = activeBlockProperties.data[0][key];
+        if(activeBlockProperties.data[0].value > 0.5 ){
+            if(activeBlockProperties.publicData.toggle !== true) {
+                activeBlockProperties.publicData.toggle = true;
+
+                console.log("got here");
+
+                activeBlockProperties.publicData.switch = !activeBlockProperties.publicData.switch;
+
+            }
+        } else {
+            activeBlockProperties.publicData.toggle = false;
         }
-        callback(objectID, linkID, outputData);
 
     } else {
-        activeBlockProperties.publicData.toggle = false;
-    }
-
-    // in case the switch is on, the data will be routed through
-    // todo again we have to test how we can handle an on and off switch that only has one data point but then also handle the stream
-    if(activeBlockProperties.publicData.switch){
-        for (key in activeBlockProperties.data[1]) {
-            outputData[1][key] = activeBlockProperties.data[1][key];
+        if(activeBlockProperties.data[0].value > 0.5){
+            activeBlockProperties.publicData.switch = true;
+        } else {
+            activeBlockProperties.publicData.switch = false;
         }
-        callback(objectID, logicID, linkID, outputData);
     }
 
+    if(activeBlockProperties.publicData.switch) {
+        for (key in activeBlockProperties.data[activeBlockProperties.route]) {
+            outputData[activeBlockProperties.route][key] = activeBlockProperties.data[activeBlockProperties.route][key];
+        }
+
+        if (activeBlockProperties.route === 0)  outputData[0].value = 1;
+        outputData[1].value = 1;
+    }
+    else {
+        outputData[activeBlockProperties.route].value = 0;
+
+        outputData[1].value = 0;
+    }
+
+
+
+    callback(objectID,logicID, linkID, outputData);
 };

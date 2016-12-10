@@ -290,6 +290,9 @@ function Logic() {
     this.type = "logic";
     this.links = {};
     this.blocks = {};
+
+    this.route = 0;
+    this.routeBuffer = [0,0,0,0];
 }
 
 /**
@@ -2368,6 +2371,9 @@ function objectEngine(object, node, routingKey, objects, nodeTypeModules) {
 
                 // console.log(object + " "+ node +" "+ logic);
                 var thisNode = objects[object].nodes[node];
+              /*  thisNode.route = thisLink.logicA;
+                console.log("+++: "+thisLink.logicA);
+                */
 
                 // console.log(node + " : "+thisNode.type);
                 if ((thisNode.type in nodeTypeModules)) {
@@ -2472,6 +2478,7 @@ function enginePostProcessing(object, link, processedData) {
 // dependencies aftertypeProcessing
 function logicEngine(object, logic, block, item, objects, blockModules) {
 
+
     if(object in objects) {
 
         if (logic in objects[object].nodes) {
@@ -2480,6 +2487,15 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
 
            // console.log(logic);
 
+
+            /**
+            * If (anzahl is grösser als 1){
+            * Suche nach den anderen möglichen connections
+            *
+            * }
+
+             */
+
             for (var linkKey in thisLogic.links) {
 
                // console.log(thisLogic.links[linkKey]);
@@ -2487,6 +2503,7 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
                 if (thisLogic.links[linkKey].nodeA === block && thisLogic.links[linkKey].logicA === item) {
 
                     var thisBlock = thisLogic.blocks[block];
+                    thisBlock.route = item;
 
                    // console.log(block);
 
@@ -2513,41 +2530,53 @@ function logicEngine(object, logic, block, item, objects, blockModules) {
  **/
 
 function logicEnginePostProcessing(object, logic, link, processedData) {
+
+
+    //console.log("+++++++"+objects[object].nodes[logic].links[link]);
     //console.log(object +" "+ logic +" " + link + " : "+ processedData);
-    var thisLink = objects[object].nodes[logic].links[link];
-    var thisLogic = objects[object].nodes[logic];
+        var thisLink = objects[object].nodes[logic].links[link];
+        var thisLogic = objects[object].nodes[logic];
 
-    //logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
+    console.log("------------------");
+    console.log(objects[object].nodes[logic].blocks[thisLink.nodeA].data);
+    console.log(processedData);
 
-    var routingKey = null;
+        //logicEngine(thisLink.objectB, thisLink.nodeB, thisString, 0, objects, blockModules)
 
-    if(thisLink.nodeB === "edgePlaceholderOut0") routingKey = 0;
-    else if(thisLink.nodeB === "edgePlaceholderOut1") routingKey = 1;
-    else if(thisLink.nodeB === "edgePlaceholderOut2") routingKey = 2;
-    else if(thisLink.nodeB === "edgePlaceholderOut3") routingKey = 3;
+        var routingKey = null;
 
-    if(routingKey !== null) {
+        if (thisLink.nodeB === "edgePlaceholderOut0") routingKey = 0;
+        else if (thisLink.nodeB === "edgePlaceholderOut1") routingKey = 1;
+        else if (thisLink.nodeB === "edgePlaceholderOut2") routingKey = 2;
+        else if (thisLink.nodeB === "edgePlaceholderOut3") routingKey = 3;
 
-        var objSend = objects[object].nodes[logic];
+        if (routingKey !== null) {
 
-        for (var key in processedData[thisLink.logicA]) {
-            objSend.data[key] = processedData[thisLink.logicA][key];
-            thisLogic.blocks[thisLink.nodeB].data[thisLink.logicB][key] = processedData[thisLink.logicA][key];
-        }
+            var objSend = objects[object].nodes[logic];
 
-        objectEngine(object, logic, routingKey, objects, nodeTypeModules);
-        logicEngine(object, logic, thisLink.nodeB , thisLink.logicB, objects, blockModules);
+            for (var key in processedData[thisLink.logicA]) {
+                objSend.data[key] = processedData[thisLink.logicA][key];
+                thisLogic.blocks[thisLink.nodeB].data[thisLink.logicB][key] = processedData[thisLink.logicA][key];
+            }
 
-    } else {
+            if(typeof objSend.routeBuffer === "undefined")
+                objSend.routeBuffer =[0,0,0,0];
+
+            objSend.routeBuffer[routingKey] =  objSend.data.value;
+
+            objectEngine(object, logic, routingKey, objects, nodeTypeModules);
+            //logicEngine(object, logic, thisLink.nodeB, thisLink.logicB, objects, blockModules);
+
+        } else {
 
             var objSend = thisLogic.blocks[thisLink.nodeB];
             for (var key in processedData[thisLink.logicA]) {
                 objSend.data[thisLink.logicB][key] = processedData[thisLink.logicA][key];
             }
 
-        logicEngine(object, logic, thisLink.nodeB , thisLink.logicB, objects, blockModules);
+            logicEngine(object, logic, thisLink.nodeB, thisLink.logicB, objects, blockModules);
 
-    }
+        }
     // maybe: var re = /^(in|out)\d$/; re.test(blockId)  // or  /^out(0|1|2|3)$/
 }
 

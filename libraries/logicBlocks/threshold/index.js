@@ -77,17 +77,16 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
-
     // check orientations and calculate if threshold is meet.
     var pass = false;
-    if(activeBlockProperties.publicData.direction = ">")
+    if(activeBlockProperties.publicData.direction === ">")
     {
-        if(activeBlockProperties.data[0][value] > activeBlockProperties.publicData.threshold){
+        if(activeBlockProperties.data[0].value > activeBlockProperties.publicData.threshold){
             pass = true;
         }
-    } else if(activeBlockProperties.publicData.direction = "<")
+    } else if(activeBlockProperties.publicData.direction === "<")
     {
-        if(activeBlockProperties.data[0][value] < activeBlockProperties.publicData.threshold){
+        if(activeBlockProperties.data[0].value < activeBlockProperties.publicData.threshold){
             pass = true;
         }
     }
@@ -102,10 +101,10 @@ exports.render = function (objectID, logicID, linkID, activeBlockProperties, cal
     // calculate final output
     if(pass){
         if(activeBlockProperties.publicData.digital){
-            outputData[0][value] = 1;
+            outputData[0].value = 1;
         }
     } else {
-        outputData[0][value] = 0;
+        outputData[0].value = 0;
     }
 
     callback(objectID, logicID, linkID, outputData);
