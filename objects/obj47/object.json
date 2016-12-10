@@ -14,59 +14,7 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {
-		"bfb3wgfh": {
-			"objectA": "obj47n32vbg5gk3he",
-			"objectB": "obj47n32vbg5gk3he",
-			"nodeA": "obj47n32vbg5gk3heswitch",
-			"nodeB": "obj47n32vbg5gk3helight3",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"obj47",
-				"switch"
-			],
-			"namesB": [
-				"obj47",
-				"light3"
-			],
-			"loop": false
-		},
-		"jG8vl4tx": {
-			"objectA": "obj47n32vbg5gk3he",
-			"objectB": "obj47n32vbg5gk3he",
-			"nodeA": "obj47n32vbg5gk3heswitch",
-			"nodeB": "obj47n32vbg5gk3helight2",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"obj47",
-				"switch"
-			],
-			"namesB": [
-				"obj47",
-				"light2"
-			],
-			"loop": false
-		},
-		"8I1gd5ud": {
-			"objectA": "obj47n32vbg5gk3he",
-			"objectB": "obj47n32vbg5gk3he",
-			"nodeA": "obj47n32vbg5gk3heswitch",
-			"nodeB": "obj47n32vbg5gk3helight1",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"obj47",
-				"switch"
-			],
-			"namesB": [
-				"obj47",
-				"light1"
-			],
-			"loop": false
-		}
-	},
+	"links": {},
 	"nodes": {
 		"obj47n32vbg5gk3hehans": {
 			"name": "hans",

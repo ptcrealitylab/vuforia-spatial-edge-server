@@ -64,6 +64,8 @@ if (exports.enabled) {
 
     server.addNode("obj45", "one", "node");
     server.addNode("obj45", "two", "node");
+    server.addNode("obj45", "three", "node");
+    server.addNode("obj45", "four", "node");
 
 
 
@@ -83,7 +85,7 @@ counter++;
             counter = 0;
         }
 
-    }, 300);
+    }, 50);
 
     /*
    setInterval(function () {

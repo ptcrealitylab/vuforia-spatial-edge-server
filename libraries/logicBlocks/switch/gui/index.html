@@ -19,6 +19,21 @@
 <script>
     var logic = new HybridLogic();
 
+    logic.addReadPublicDataListener("switchType",function (switchValue){
+
+
+        if(switchValue === "toggle"){
+            document.getElementById("toggle").checked = true;
+            document.getElementById("push").checked = false;
+
+        } else if(switchValue === "push"){
+            document.getElementById("push").checked = true;
+            document.getElementById("toggle").checked = false;
+        }
+
+    });
+
+
     var switchValue = logic.readPublicData("switchType", "toggle"); // value and default if not existing (optional)
 
     if(switchValue === "toggle"){

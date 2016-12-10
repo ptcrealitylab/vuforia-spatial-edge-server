@@ -394,8 +394,24 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
         if(thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
 
-        text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+        if(typeof thisHtmlNode.route !== "undefined" && thisHtmlNode.route !== null && thisHtmlNode.type === "logic") {
+
+            text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.routeBuffer[0] + "<br>" +
+                "" + thisHtmlNode.routeBuffer[1] + "<br>" +
+                "" + thisHtmlNode.routeBuffer[2] + "<br>" +
+                "" + thisHtmlNode.routeBuffer[3] + "<br></td></tr>";
+        } else {
+            text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+
+        }
+
+
+
         infoCount++;
+
+
+
+
     }
 
     if (infoCount === 0) {
