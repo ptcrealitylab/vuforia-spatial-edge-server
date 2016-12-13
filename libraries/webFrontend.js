@@ -387,14 +387,15 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     if(objects[objectName].protocol === "R0") protocolText = "R0 over WebSocket";
     if(objects[objectName].protocol === "R1") protocolText = "R1 over WebSocket";
 
-    infoCount = 0;
-    for (subKey in uploadInfoTexttempArrayValue) {
+    var infoCount = 0;
+    for (var subKey in uploadInfoTexttempArrayValue) {
 
         var thisHtmlNode = uploadInfoTexttempArrayValue[subKey];
 
+
         if(thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
 
-        if(typeof thisHtmlNode.route !== "undefined" && thisHtmlNode.route !== null && thisHtmlNode.type === "logic") {
+        if(typeof thisHtmlNode.routeBuffer !== "undefined" && thisHtmlNode.routeBuffer !== null && thisHtmlNode.type === "logic") {
 
             text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.routeBuffer[0] + "<br>" +
                 "" + thisHtmlNode.routeBuffer[1] + "<br>" +

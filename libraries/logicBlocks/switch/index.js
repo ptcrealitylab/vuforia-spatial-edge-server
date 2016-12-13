@@ -78,48 +78,41 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
-    var outputData = [{},{},{},{}];
-    var key;
+exports.render = function (object, node, block, index, thisBlock, callback)  {
 
-    if(activeBlockProperties.publicData.switchType ===  "toggle"){
+    if(thisBlock.publicData.switchType ===  "toggle"){
 
-        if(activeBlockProperties.data[0].value > 0.5 ){
-            if(activeBlockProperties.publicData.toggle !== true) {
-                activeBlockProperties.publicData.toggle = true;
+        if(thisBlock.data[0].value > 0.5 ){
+            if(thisBlock.publicData.toggle !== true) {
+                thisBlock.publicData.toggle = true;
 
-                console.log("got here");
-
-                activeBlockProperties.publicData.switch = !activeBlockProperties.publicData.switch;
+                thisBlock.publicData.switch = !thisBlock.publicData.switch;
 
             }
         } else {
-            activeBlockProperties.publicData.toggle = false;
+            thisBlock.publicData.toggle = false;
         }
 
     } else {
-        if(activeBlockProperties.data[0].value > 0.5){
-            activeBlockProperties.publicData.switch = true;
+        if(thisBlock.data[0].value > 0.5){
+            thisBlock.publicData.switch = true;
         } else {
-            activeBlockProperties.publicData.switch = false;
+            thisBlock.publicData.switch = false;
         }
     }
 
-    if(activeBlockProperties.publicData.switch) {
-        for (key in activeBlockProperties.data[activeBlockProperties.route]) {
-            outputData[activeBlockProperties.route][key] = activeBlockProperties.data[activeBlockProperties.route][key];
+    if(thisBlock.publicData.switch) {
+        for (var key in thisBlock.data[index]) {
+            thisBlock.processedData[index][key] = thisBlock.data[index][key];
         }
 
-        if (activeBlockProperties.route === 0)  outputData[0].value = 1;
-        outputData[1].value = 1;
+        if (index === 0)   thisBlock.processedData[0].value = 1;
+       // thisBlock.processedData[1].value = 1;
     }
     else {
-        outputData[activeBlockProperties.route].value = 0;
-
-        outputData[1].value = 0;
+        thisBlock.processedData[index].value = 0;
+        thisBlock.processedData[1].value = 0;
     }
 
-
-
-    callback(objectID,logicID, linkID, outputData);
+    callback(object, node, block, index, thisBlock);
 };

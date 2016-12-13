@@ -73,20 +73,16 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 };
 
-
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
+exports.render = function (object, node, block, index, thisBlock, callback) {
 
-    var outputData = [{},{},{},{}];
-    var key;
-
-    for (key in activeBlockProperties.data[0]) {
-        outputData[0][key] = activeBlockProperties.data[0][key];
+    for (var key in thisBlock.data[0]) {
+        thisBlock.processedData[0][key] = thisBlock.data[0][key];
     }
 
     setTimeout(function() {
-        callback(objectID, logicID, linkID, outputData);
-    }, activeBlockProperties.publicData.delayTime);
+        callback(object, node, block, index, thisBlock);
+    }, thisBlock.publicData.delayTime);
 
 };

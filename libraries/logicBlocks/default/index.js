@@ -72,16 +72,12 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 // add code here that should be executed once.
 
 };
-
-
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback) {
-    var outputData = [{},{},{},{}];
-    var key;
+exports.render = function (object, node, block, index, thisBlock, callback) {
 
-    for (key in activeBlockProperties.data[0]) {
-        outputData[0][key] = activeBlockProperties.data[0][key];
+    for (var key in thisBlock.data[0]) {
+        thisBlock.processedData[0][key] = thisBlock.data[0][key];
     }
-    callback(objectID, logicID, linkID, outputData);
+    callback(object, node, block, index, thisBlock);
 };
