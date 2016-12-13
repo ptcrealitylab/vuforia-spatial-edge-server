@@ -79,13 +79,17 @@ if (exports.enabled) {
 
     var counter = 0;
     setInterval(function () {
-counter++;
-        server.write("obj45", "one", counter/100, "f");
-        if(counter >= 100){
+
+
+        if(counter >= 1){
+            server.write("obj45", "one", 1.0, "f");
             counter = 0;
+        } else {
+            counter++;
+            server.write("obj45", "one", 0.0, "f");
         }
 
-    }, 50);
+    }, 5000);
 
     /*
    setInterval(function () {

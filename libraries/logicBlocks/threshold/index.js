@@ -76,36 +76,39 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (objectID, logicID, linkID, activeBlockProperties, callback)  {
+exports.render = function (object, node, block, index, thisBlock, callback)  {
     // check orientations and calculate if threshold is meet.
     var pass = false;
-    if(activeBlockProperties.publicData.direction === ">")
+    if(thisBlock.publicData.direction === ">")
     {
-        if(activeBlockProperties.data[0].value > activeBlockProperties.publicData.threshold){
+        if(thisBlock.data[0].value > thisBlock.publicData.threshold){
             pass = true;
         }
-    } else if(activeBlockProperties.publicData.direction === "<")
+    } else if(thisBlock.publicData.direction === "<")
     {
-        if(activeBlockProperties.data[0].value < activeBlockProperties.publicData.threshold){
+        if(thisBlock.data[0].value < thisBlock.publicData.threshold){
             pass = true;
         }
     }
 
-    var outputData = [{},{},{},{}];
-    var key;
-
-    for (key in activeBlockProperties.data[0]) {
-        outputData[0][key] = activeBlockProperties.data[0][key];
+    for ( var key in thisBlock.data[0]) {
+        thisBlock.processedData[0][key] = thisBlock.data[0][key];
     }
 
     // calculate final output
     if(pass){
-        if(activeBlockProperties.publicData.digital){
-            outputData[0].value = 1;
+        if(thisBlock.publicData.digital){
+            thisBlock.processedData[0].value = 1;
+            callback(object, node, block, index, thisBlock);
+
         }
     } else {
-        outputData[0].value = 0;
+        thisBlock.processedData[0].value = 0;
+        callback(object, node, block, index, thisBlock);
+
     }
 
-    callback(objectID, logicID, linkID, outputData);
+    if(!thisBlock.publicData.digital){
+        callback(object, node, block, index, thisBlock);
+    }
 };
