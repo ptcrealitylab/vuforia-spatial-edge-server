@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -77,19 +77,19 @@ if (exports.enabled) {
 
     });
 
+    server.addReadListener("obj45", "four", function (e) {
+
+    })
+
     var counter = 0;
     setInterval(function () {
-
-
-        if(counter >= 1){
-            server.write("obj45", "one", 1.0, "f");
+counter++;
+        server.write("obj45", "one", counter/100, "f");
+        if(counter >= 100){
             counter = 0;
-        } else {
-            counter++;
-            server.write("obj45", "one", 0.0, "f");
         }
-
-    }, 5000);
+       // console.log(process.memoryUsage());
+    }, 5);
 
     /*
    setInterval(function () {

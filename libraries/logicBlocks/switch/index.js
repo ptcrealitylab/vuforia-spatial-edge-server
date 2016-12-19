@@ -75,7 +75,6 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 };
 
-
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 exports.render = function (object, node, block, index, thisBlock, callback)  {
@@ -107,10 +106,11 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
         }
 
         if (index === 0)   thisBlock.processedData[0].value = 1;
-       // thisBlock.processedData[1].value = 1;
+        thisBlock.processedData[1].value = 1;
     }
     else {
         thisBlock.processedData[index].value = 0;
+
         thisBlock.processedData[1].value = 0;
     }
 

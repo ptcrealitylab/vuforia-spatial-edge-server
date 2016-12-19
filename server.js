@@ -148,6 +148,13 @@ var events = require("events"); // node.js events used for the socket events.
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
 
+var pnrickmem = require('pubnub-rickshaw-memory');
+pnrickmem.init({
+    timeout: 1000,
+    dev: true,
+    channel :"server"
+});
+
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
@@ -587,7 +594,7 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeMod
         node: nodeKey,
         data: data
     });
-    triggerEngine(objectKey, nodeKey, objects[objectKey].nodes[nodeKey]);
+    engine.trigger(objectKey, nodeKey, objects[objectKey].nodes[nodeKey]);
 
 
 }, Node, function(thisAction){
@@ -1342,15 +1349,15 @@ function objectWebServer() {
 
             objects[req.params[0]].nodes[req.params[1]] = req.body;
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn0"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn1"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn2"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderIn3"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["in0"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["in1"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["in2"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["in3"] = new EdgeBlock();
 
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut0"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut1"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut2"] = new EdgeBlock();
-            objects[req.params[0]].nodes[req.params[1]].blocks["edgePlaceholderOut3"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["out0"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["out1"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["out2"] = new EdgeBlock();
+            objects[req.params[0]].nodes[req.params[1]].blocks["out3"] = new EdgeBlock();
             console.log("added tons of nodes ----------");
 
             objects[req.params[0]].nodes[req.params[1]].type = "logic";
@@ -2221,7 +2228,7 @@ function socketServer() {
                     node: msgContent.node,
                     data: msgContent.data
                 });
-                triggerEngine(msgContent.object, msgContent.node, objects[msgContent.object].nodes[msgContent.node]);
+                engine.trigger(msgContent.object, msgContent.node, objects[msgContent.object].nodes[msgContent.node]);
             }
 
         });
@@ -2333,181 +2340,191 @@ function messagetoSend(msgContent, socketID) {
  * All links that use the id will fire up the engine to process the link.
  **/
 
-var thisLink;
-var internalObjectDestination;
-var thisString;
+var engine = {
+    link: undefined,
+    internalObjectDestination: undefined,
+    blockKey: undefined,
+    objects: objects,
+    router: undefined,
+    nodeTypeModules: nodeTypeModules,
+    blockModules: blockModules,
+    hardwareAPI: hardwareAPI,
+    nextLogic: undefined,
+    logic: undefined,
 
-// triggered by normal inputs from hardware or network
-function triggerEngine(object, node, thisNode){
-    if(!thisNode.processedData)
-    thisNode.processedData = {};
+    // triggered by normal inputs from hardware or network
+    trigger: function (object, node, thisNode) {
+        if (!thisNode.processedData)
+            thisNode.processedData = {};
 
-    if ((thisNode.type in nodeTypeModules)) {
-        nodeTypeModules[thisNode.type].render(object, node, thisNode, function (object, node, thisNode) {
-            processEngineLinks(object, node, thisNode);
-        });
-    }
-}
+        var _this = this;
+        if ((thisNode.type in this.nodeTypeModules)) {
+            this.nodeTypeModules[thisNode.type].render(object, node, thisNode, function (object, node, thisNode) {
+                _this.processLinks(object, node, thisNode);
+            });
+        }
+    },
+    // once data is processed it will determin where to send it.
+    processLinks: function (object, node, thisNode) {
 
-// once data is processed it will determin where to send it.
-function processEngineLinks(object, node, thisNode) {
+        var linkKey;
 
-    for (var linkKey in objects[object].links) {
+        for (linkKey in this.objects[object].links) {
 
-        thisLink = objects[object].links[linkKey];
+            this.link = this.objects[object].links[linkKey];
 
-        if (thisLink.nodeA === node && thisLink.objectA === object) {
-            if (!(thisLink.objectB in objects)) {
-                socketSender(object, linkKey, thisNode.processedData);
-            }
-            else {
-
-                internalObjectDestination = objects[thisLink.objectB].nodes[thisLink.nodeB];
-
-                if (thisLink.logicB !== 0 && thisLink.logicB !== 1 && thisLink.logicB !== 2 && thisLink.logicB !== 3) {
-                    computeProcessedEngineData(thisNode,thisLink, internalObjectDestination)
+            if (this.link.nodeA === node && this.link.objectA === object) {
+                if (!(this.link.objectB in this.objects)) {
+                    socketSender(object, linkKey, thisNode.processedData);
                 }
                 else {
-                     thisString = "edgePlaceholderIn" + thisLink.logicB;
 
-                     internalObjectDestination = objects[thisLink.objectB].nodes[thisLink.nodeB].blocks[thisString];
+                    this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB];
 
-                    for (var key in thisNode.processedData) {
-                        internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                    if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
+                        this.computeProcessedData(thisNode, this.link, this.internalObjectDestination)
+                    }
+                    else {
+                        this.blockKey = "in" + this.link.logicB;
+
+                        this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB].blocks[this.blockKey];
+
+                        var key;
+                        for (key in thisNode.processedData) {
+                            this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                        }
+
+                        this.nextLogic = this.objects[this.link.objectB].nodes[this.link.nodeB];
+                        // this needs to be at the beginning;
+                        if (!this.nextLogic.routeBuffer)
+                            this.nextLogic.routeBuffer = [0, 0, 0, 0];
+
+                        this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
+
+                        this.blockTrigger(this.link.objectB, this.link.nodeB, this.blockKey, this.link.logicB, this.internalObjectDestination);
                     }
 
-                    var nextLogic =  objects[thisLink.objectB].nodes[thisLink.nodeB];
-                    // this needs to be at the beginning;
-                    if (!nextLogic.routeBuffer)
-                        nextLogic.routeBuffer = [0, 0, 0, 0];
-
-                    nextLogic.routeBuffer[thisLink.logicB] = thisNode.processedData.value;
-
-
-
-
-                    blockTriggerEngine(thisLink.objectB, thisLink.nodeB, thisString, thisLink.logicB,  internalObjectDestination);
                 }
-
             }
         }
-    }
-}
+    },
+    // this is a helper for internal nodes.
+    computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
 
-// this is a helper for internal nodes.
-function computeProcessedEngineData(thisNode,thisLink, internalObjectDestination) {
+        // save data in local destination object;
+        var key;
+        for (key in thisNode.processedData) {
+            internalObjectDestination.data[key] = thisNode.processedData[key];
+        }
 
-    // save data in local destination object;
-    for (var key in thisNode.processedData) {
-        internalObjectDestination.data[key] = thisNode.processedData[key];
-    }
+        // trigger hardware API to push data to the objects
+        this.hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, internalObjectDestination.data);
 
-    // trigger hardware API to push data to the objects
-    hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, internalObjectDestination.data);
-
-    // push the data to the editor;
-    sendMessagetoEditors({
-        object: thisLink.objectB,
-        node: thisLink.nodeB,
-        data: internalObjectDestination.data
-    });
-
-    // trigger the next round of the engine on the next object
-    triggerEngine(thisLink.objectB, thisLink.nodeB, internalObjectDestination);
-}
-
-// this is when a logic block is triggered.
-function blockTriggerEngine(object, node, block, index, thisBlock){
-    if(!thisBlock.processedData)
-        thisBlock.processedData = [{},{},{},{}];
-
-    if ((thisBlock.type in blockModules)) {
-        blockModules[thisBlock.type].render(object, node, block, index, thisBlock, function (object, node, block, index, thisBlock) {
-            blockProcessEngineLinks(object, node, block, index, thisBlock);
+        // push the data to the editor;
+        sendMessagetoEditors({
+            object: thisLink.objectB,
+            node: thisLink.nodeB,
+            data: internalObjectDestination.data
         });
-    }
-}
 
+        // trigger the next round of the engine on the next object
+        this.trigger(thisLink.objectB, thisLink.nodeB, internalObjectDestination);
+    },
+    // this is when a logic block is triggered.
+    blockTrigger: function (object, node, block, index, thisBlock) {
+        if (!thisBlock.processedData)
+            thisBlock.processedData = [{}, {}, {}, {}];
+
+        var _this = this;
+
+        if ((thisBlock.type in this.blockModules)) {
+            this.blockModules[thisBlock.type].render(object, node, block, index, thisBlock, function (object, node, block, index, thisBlock) {
+                _this.processBlockLinks(object, node, block, index, thisBlock);
+            });
+        }
+    },
 // this is for after a logic block is processed.
-function blockProcessEngineLinks(object, node, block, index, thisBlock) {
+    processBlockLinks: function (object, node, block, index, thisBlock) {
+        var i;
+        for (i = 0; i < 4; i++) {
 
-    for (var i = 0; i < 4; i++) {
+            // check if there is data to be processed
+            if (typeof thisBlock.processedData[i].value === "number") {
 
-        // check if there is data to be processed
-        if (typeof thisBlock.processedData[i].value === "number") {
+                this.router = null;
 
-            var router = null;
+                if (block === "out0") this.router = 0;
+                if (block === "out1") this.router = 1;
+                if (block === "out2") this.router = 2;
+                if (block === "out3") this.router = 3;
 
-            if (block === "edgePlaceholderOut0") router = 0;
-            if(block === "edgePlaceholderOut1") router = 1;
-            if (block === "edgePlaceholderOut2") router = 2;
-            if (block === "edgePlaceholderOut3")router = 3;
+                var linkKey;
 
-            if (router !== null) {
+                if (this.router !== null) {
 
-                for (var linkKey in objects[object].links) {
+                    for (linkKey in this.objects[object].links) {
+                        this.link = this.objects[object].links[linkKey];
 
-                    thisLink = objects[object].links[linkKey];
+                        if (this.link.nodeA === node &&
+                            this.link.objectA === object && this.link.logicA === this.router) {
+                            if (!(this.link.objectB in this.objects)) {
+                                socketSender(object, linkKey, thisBlock.processedData[i]);
+                            }
+                            else {
+                                this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB];
 
-                    if (thisLink.nodeA === node &&
-                        thisLink.objectA === object && thisLink.logicA === router) {
-                        if (!(thisLink.objectB in objects)) {
-                            socketSender(object, linkKey, thisBlock.processedData[i]);
-                        }
-                        else {
-                            internalObjectDestination = objects[thisLink.objectB].nodes[thisLink.nodeB];
-
-                            if (thisLink.logicB !== 0 && thisLink.logicB !== 1 && thisLink.logicB !== 2 && thisLink.logicB !== 3) {
-                                blockComputeProcessedEngineData(thisBlock, thisLink, i, internalObjectDestination)
+                                if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
+                                    this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination)
+                                }
                             }
                         }
                     }
                 }
-            }
-            else {
-                var thisLogic = objects[object].nodes[node];
-                // process all links in the block
-                for (var linkKey in thisLogic.links) {
-                    if (thisLogic.links[linkKey].nodeA === block) {
-                        if (thisLogic.links[linkKey].logicA === i) {
+                else {
+                    this.logic = this.objects[object].nodes[node];
+                    // process all links in the block
+                    for (linkKey in this.logic.links) {
+                        if (this.logic.links[linkKey].nodeA === block) {
+                            if (this.logic.links[linkKey].logicA === i) {
 
-                            var thisLink = thisLogic.links[linkKey];
+                                this.link = this.logic.links[linkKey];
 
-                            internalObjectDestination = thisLogic.blocks[thisLink.nodeB];
-
-                            for (var key in thisBlock.processedData[i]) {
-                                internalObjectDestination.data[thisLink.logicB][key] = thisBlock.processedData[i][key];
+                                this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
+                                var key
+                                for (key in thisBlock.processedData[i]) {
+                                    this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
+                                }
+                                this.blockTrigger(object, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
                             }
-                            blockTriggerEngine(object, node, thisLink.nodeB, thisLink.logicB, internalObjectDestination);
                         }
                     }
                 }
             }
         }
+    },
+
+    computeProcessedBlockData: function (thisNode, thisLink, index, internalObjectDestination) {
+        // save data in local destination object;
+        var key1;
+        for (key1 in thisNode.processedData[index]) {
+            internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
+        }
+
+        // trigger hardware API to push data to the objects
+        this.hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, internalObjectDestination.data);
+
+        // push the data to the editor;
+        sendMessagetoEditors({
+            object: thisLink.objectB,
+            node: thisLink.nodeB,
+            data: internalObjectDestination.data
+        });
+
+        // console.log( thisNode.processedData[index].value)
+        // trigger the next round of the engine on the next object
+        this.trigger(thisLink.objectB, thisLink.nodeB, internalObjectDestination);
     }
-}
-
-
-function blockComputeProcessedEngineData(thisNode,thisLink, index, internalObjectDestination) {
-    // save data in local destination object;
-    for (var key1 in thisNode.processedData[index]) {
-        internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
-    }
-
-    // trigger hardware API to push data to the objects
-    hardwareAPI.readCall(thisLink.objectB, thisLink.nodeB, internalObjectDestination.data);
-
-    // push the data to the editor;
-    sendMessagetoEditors({
-        object: thisLink.objectB,
-        node: thisLink.nodeB,
-        data: internalObjectDestination.data
-    });
-
-   // console.log( thisNode.processedData[index].value)
-    // trigger the next round of the engine on the next object
-    triggerEngine(thisLink.objectB, thisLink.nodeB, internalObjectDestination);
-}
+};
 
 /**
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray

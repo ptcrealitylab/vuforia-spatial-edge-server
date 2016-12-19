@@ -109,6 +109,7 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
     }
 
     if(!thisBlock.publicData.digital){
+
         callback(object, node, block, index, thisBlock);
     }
 };
