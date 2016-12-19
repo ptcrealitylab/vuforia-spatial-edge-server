@@ -76,8 +76,8 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 exports.render = function (object, node, block, index, thisBlock, callback) {
 
-    for (var key in thisBlock.data[0]) {
-        thisBlock.processedData[0][key] = thisBlock.data[0][key];
+    for (var key in thisBlock.data[index]) {
+        thisBlock.processedData[index][key] = thisBlock.data[index][key];
     }
     callback(object, node, block, index, thisBlock);
 };

@@ -1,7 +1,7 @@
 {
 	"objectId": "knop1xe35ycj6l5xy",
 	"name": "knop1",
-	"ip": "192.168.1.7",
+	"ip": "192.168.1.6",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "Eq9rz",
@@ -36,14 +36,13 @@
 	"nodes": {
 		"knop1xe35ycj6l5xyscale": {
 			"name": "scale",
-			"data":
-				{
-					"value": 0.7875,
-					"mode": "f",
-					"unit": false,
-					"unitMin": 0,
-					"unitMax": 1
-				},
+			"data": {
+				"value": 0.7875,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
 			"x": 93,
 			"y": -69,
 			"scale": 1,

@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <title>Slider</title>
     <style>
+        body {
+//            background-color: rgba(20,20,20,0.5);
+  //         -webkit-backdrop-filter: blur(30px);
+
+        }
         input[type=range] {
-            background-color: transparent;
+            background-color: rgba(0,0,0,0.3);
             -webkit-appearance: none;
 
         }
@@ -14,7 +19,7 @@
             -webkit-appearance: none;
             height: 68px; /* Must add six because this width includes the border */
             background-color: rgba(255, 255, 255, 0);
-            -webkit-backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(10px);
             border: solid 4px #00edff;
             border-radius: 8px;
             padding: 5px;
@@ -52,6 +57,8 @@
     var obj = new HybridObject();
     var slider = document.getElementById('slider');
     var touchState = false;
+
+obj.setFullScreenOn();
 
     document.addEventListener("touchstart", function (e) {
         touchState = true;
