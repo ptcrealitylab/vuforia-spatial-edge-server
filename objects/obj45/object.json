@@ -54,7 +54,7 @@
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.9428590857423842,
+				"value": 0.2547127737198025,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -69,7 +69,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 0.9428590857423842,
+				"value": 0.2547127737198025,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -79,7 +79,7 @@
 		"obj45y4gk159d097qtwo": {
 			"name": "two",
 			"data": {
-				"value": 0.9428590857423842,
+				"value": 0.2547127737198025,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -94,7 +94,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 0.9428590857423842,
+				"value": 0.2547127737198025,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -676,20 +676,60 @@
 			],
 			"type": "logic",
 			"links": {
-				"blockLink-in0-0-blockqkdelsa01zxa-0": {
-					"nodeA": "in0",
+				"blockLink-in1-0-blockAz6t3yj4gejv-0": {
+					"nodeA": "in1",
 					"logicA": 0,
-					"nodeB": "blockqkdelsa01zxa",
+					"nodeB": "blockAz6t3yj4gejv",
 					"logicB": 0,
 					"loop": false,
 					"health": 0,
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLink-blockqkdelsa01zxa-0-out1-0": {
-					"nodeA": "blockqkdelsa01zxa",
+				"blockLink4x2vbl2g5gyh": {
+					"nodeA": "blockAz6t3yj4gejv",
+					"logicA": 0,
+					"nodeB": "block8e92mz2lxu3d",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLink-block8e92mz2lxu3d-0-out1-0": {
+					"nodeA": "block8e92mz2lxu3d",
 					"logicA": 0,
 					"nodeB": "out1",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLink-in2-0-blockAz6t3yj4gejv-1": {
+					"nodeA": "in2",
+					"logicA": 0,
+					"nodeB": "blockAz6t3yj4gejv",
+					"logicB": 1,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLinkA8gr4i4j175v": {
+					"nodeA": "blockAz6t3yj4gejv",
+					"logicA": 1,
+					"nodeB": "blocklPjbach5xtxb",
+					"logicB": 0,
+					"loop": false,
+					"health": 0,
+					"ballAnimationCount": 0,
+					"route": null
+				},
+				"blockLink-blocklPjbach5xtxb-0-out3-0": {
+					"nodeA": "blocklPjbach5xtxb",
+					"logicA": 0,
+					"nodeB": "out3",
 					"logicB": 0,
 					"loop": false,
 					"health": 0,
@@ -745,7 +785,7 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0.9428590857423842,
+							"value": 0.2547127737198025,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -777,7 +817,7 @@
 					"type": "default",
 					"processedData": [
 						{
-							"value": 0.9428590857423842,
+							"value": 0.2547127737198025,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -944,7 +984,7 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0.11069006659090519,
+							"value": 0.15780732384882867,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -976,7 +1016,7 @@
 					"type": "default",
 					"processedData": [
 						{
-							"value": 0.11069006659090519,
+							"value": 0.15780732384882867,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -1057,18 +1097,18 @@
 					"stress": 0,
 					"type": "default"
 				},
-				"blockqkdelsa01zxa": {
+				"block8e92mz2lxu3d": {
 					"type": "delay",
-					"x": 0,
-					"y": 1,
+					"x": 1,
+					"y": 2,
 					"blockSize": 1,
-					"globalId": "blockqkdelsa01zxa",
+					"globalId": "block8e92mz2lxu3d",
 					"checksum": null,
 					"data": [
 						{
-							"value": 0.9428590857423842,
+							"value": 0,
 							"mode": "f",
-							"unit": false,
+							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
@@ -1126,23 +1166,155 @@
 					"name": "delay",
 					"stress": 0,
 					"isTempBlock": false,
-					"isPortBlock": false,
-					"processedData": [
+					"isPortBlock": false
+				},
+				"blocklPjbach5xtxb": {
+					"type": "delay",
+					"x": 3,
+					"y": 1,
+					"blockSize": 1,
+					"globalId": "blocklPjbach5xtxb",
+					"checksum": null,
+					"data": [
 						{
-							"value": 0.9428590857423842,
+							"value": 0,
 							"mode": "f",
-							"unit": false,
+							"unit": "",
 							"unitMin": 0,
 							"unitMax": 1
 						},
-						{},
-						{},
-						{}
-					]
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"privateData": {},
+					"publicData": {
+						"delayTime": 1000
+					},
+					"activeInputs": [
+						true,
+						false,
+						false,
+						false
+					],
+					"activeOutputs": [
+						true,
+						false,
+						false,
+						false
+					],
+					"nameInput": [
+						"in",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"out",
+						"",
+						"",
+						""
+					],
+					"iconImage": null,
+					"name": "delay",
+					"stress": 0,
+					"isTempBlock": false,
+					"isPortBlock": false
+				},
+				"blockAz6t3yj4gejv": {
+					"type": "switch",
+					"x": 1,
+					"y": 1,
+					"blockSize": 2,
+					"globalId": "blockAz6t3yj4gejv",
+					"checksum": null,
+					"data": [
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						},
+						{
+							"value": 0,
+							"mode": "f",
+							"unit": "",
+							"unitMin": 0,
+							"unitMax": 1
+						}
+					],
+					"privateData": {},
+					"publicData": {
+						"switchType": "toggle",
+						"switch": false,
+						"toggle": false
+					},
+					"activeInputs": [
+						true,
+						true,
+						false,
+						false
+					],
+					"activeOutputs": [
+						true,
+						true,
+						false,
+						false
+					],
+					"nameInput": [
+						"in",
+						"stream in",
+						"",
+						""
+					],
+					"nameOutput": [
+						"out",
+						"stream out",
+						"",
+						""
+					],
+					"iconImage": null,
+					"name": "switch",
+					"stress": 0,
+					"isTempBlock": false,
+					"isPortBlock": false
 				}
 			},
 			"routeBuffer": [
-				0.9428590857423842,
+				0.2547127737198025,
 				0,
 				0,
 				0.42700667888857424
