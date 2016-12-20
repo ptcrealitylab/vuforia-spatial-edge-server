@@ -48,6 +48,7 @@ var utilities = require(__dirname+'/utilities');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
+var pathUtilities = require('path');
 
 
 
@@ -734,7 +735,7 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
 
     var llist;
 
-   nameOld = "";
+   var nameOld = "";
 
     text +=
         '<html>\n' +
@@ -962,4 +963,13 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
 
     return text;
 
-}
+};
+
+exports.editContent = function(req, res) {
+    console.log(req.params);
+    var path = req.params[0];
+    // TODO sanitize path for security
+    var file = pathUtilities.basename(path);
+    var context = {id: req.params.id, file: file, backUrl: '/content/' + req.params.id, path: path};
+    res.render('edit', context);
+};

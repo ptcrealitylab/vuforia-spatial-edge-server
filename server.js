@@ -120,9 +120,20 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
+var exphbs = require('express-handlebars'); // View Template library
+
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
+webServer.set('views', 'libraries/webInterface/views');
+
+webServer.engine('handlebars', exphbs({
+    defaultLayout: 'main',
+    layoutsDir: 'libraries/webInterface/views/layouts',
+    partialsDir: 'libraries/webInterface/views/partials'
+}));
+webServer.set('view engine', 'handlebars');
+
 var http = require('http').createServer(webServer).listen(serverPort, function () {
     cout('webserver + socket.io is listening on port: ' + serverPort);
 });
@@ -1145,6 +1156,7 @@ function objectWebServer() {
 
     if (globalVariables.developer === true) {
         webServer.use("/libraries", express.static(__dirname + '/libraries/webInterface/'));
+        webServer.use("/libraries/monaco-editor/", express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
     // use the cors cross origin REST model
@@ -1539,6 +1551,61 @@ function objectWebServer() {
     });
 
     // changing the size and possition of an item. *1 is the object *2 is the node id
+
+    
+
+    
+    // Handler of new memory uploads
+    webServer.post('/object/:id/memory', function (req, res) {
+        var objId = req.params.id;
+        if (!objects.hasOwnProperty(objId)) {
+            res.status(404);
+            res.send('Object ' + objId + ' not found');
+            return;
+        }
+
+        var obj = objects[objId];
+
+        var memoryDir = __dirname + '/objects/' + obj.folder + '/memory/';
+        if (!fs.existsSync(memoryDir)) {
+            fs.mkdirSync(memoryDir);
+        }
+
+        var form = new formidable.IncomingForm({
+            uploadDir: memoryDir,
+            keepExtensions: true,
+            accept: 'image/jpeg'
+        });
+
+        form.on('error', function(err) {
+            res.status(500);
+            res.send(err);
+            throw err;
+        });
+
+        form.on('fileBegin', function(name, file) {
+            if (name === 'memoryThumbnailImage') {
+                file.path = form.uploadDir + '/memoryThumbnail.jpg';
+            } else {
+                file.path = form.uploadDir + '/memory.jpg';
+            }
+        });
+
+        form.parse(req, function(err, fields) {
+            if (obj) {
+                obj.memory = JSON.parse(fields.memoryInfo);
+                utilities.writeObjectToFile(objects, objId, __dirname);
+                actionSender({loadMemory:{object: objId, ip: obj.ip}});
+            }
+
+            res.status(200);
+            res.send('received');
+        });
+    });
+
+
+    // changing the size and possition of an item. *1 is the object *2 is the datapoint id
+   
     // ****************************************************************************************************************
 
     if (globalVariables.developer === true) {
@@ -1635,6 +1702,21 @@ function objectWebServer() {
             res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
         });
 
+        webServer.get(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+            webFrontend.editContent(req, res);
+        });
+
+        webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+            // TODO insecure, requires sanitization of path
+            console.log('PUT', req.path, req.body.content);
+            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function(err) {
+                if (err) {
+                    throw err;
+                }
+                // Success!
+                res.end('');
+            });
+        });
         // sends the target page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
@@ -1685,7 +1767,7 @@ function objectWebServer() {
 
             var Archiver = require('archiver');
 
-            var zip = Archiver('zip', false);
+            var zip = Archiver.create('zip', false);
             zip.pipe(res);
             zip.directory(__dirname + "/objects/" + req.params[0], req.params[0] + "/");
             zip.finalize();
@@ -1829,10 +1911,7 @@ function objectWebServer() {
                     file.path = form.uploadDir + "/" + file.name;
                 });
 
-                form.parse(req, function (err, fields, files) {
-                    var old_path = files.file.path,
-                        file_size = files.file.size;
-                });
+                form.parse(req);
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
@@ -1955,11 +2034,7 @@ function objectWebServer() {
                     }
                 });
 
-                form.parse(req, function (err, fields, files) {
-                    var old_path = files.file.path,
-                        file_size = files.file.size;
-                    // new_path = path.join(__dirname, '/uploads/', files.file.name);
-                });
+                form.parse(req);
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
