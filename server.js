@@ -1566,7 +1566,7 @@ function objectWebServer() {
 
         var obj = objects[objId];
 
-        var memoryDir = __dirname + '/objects/' + obj.folder + '/memory/';
+        var memoryDir = __dirname + '/objects/' + obj.name + '/memory/';
         if (!fs.existsSync(memoryDir)) {
             fs.mkdirSync(memoryDir);
         }
