@@ -47,11 +47,12 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+    var wedo2 = require("wedo2");
 
     server.enableDeveloperUI(true);
 
