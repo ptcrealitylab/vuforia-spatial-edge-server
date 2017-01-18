@@ -433,6 +433,7 @@ function ObjectFrame(src) {
         0, 0, 1, 0,
         0, 0, 0, 1
     ];
+    this.developer = true;
 }
 
 /**
@@ -1636,13 +1637,13 @@ function objectWebServer() {
     webServer.post('/object/*/frames/', function (req, res) {
         var objectId = req.params[0];
 
-        if (!objectExp.hasOwnProperty(objectId)) {
+        if (!objects.hasOwnProperty(objectId)) {
             res.status(404).end('object ' + objectId + ' not found');
             return;
         }
 
-        var object = objectExp[objectId];
-        var frameId = 'frame' + HybridObjectsUtilities.uuidTime();
+        var object = objects[objectId];
+        var frameId = 'frame' + utilities.uuidTime();
         var frame = req.body;
 
         if (!frame.src) {
@@ -1651,13 +1652,13 @@ function objectWebServer() {
         }
 
         if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(src);
+            object.frames[frameId] = new ObjectFrame(frame.src);
         }
 
         // Copy over all properties of frame
         Object.assign(object.frames[frameId], frame);
 
-        HybridObjectsUtilities.writeObjectToFile(objectExp, objectId, __dirname);
+        utilities.writeObjectToFile(objects, objectId, __dirname);
 
         res.json({success: true, frameId: frameId}).end();
     });
@@ -1667,12 +1668,12 @@ function objectWebServer() {
         var objectId = req.params[0];
         var frameId = req.params[1];
 
-        if (!objectExp.hasOwnProperty(objectId)) {
+        if (!objects.hasOwnProperty(objectId)) {
             res.status(404).end('object ' + objectId + ' not found');
             return;
         }
 
-        var object = objectExp[objectId];
+        var object = objects[objectId];
         var frame = req.body;
 
         if (!frame.src) {
@@ -1684,10 +1685,11 @@ function objectWebServer() {
             object.frames[frameId] = new ObjectFrame(src);
         }
 
+        frame.loaded = false;
         // Copy over all properties of frame
         Object.assign(object.frames[frameId], frame);
 
-        HybridObjectsUtilities.writeObjectToFile(objectExp, objectId, __dirname);
+        utilities.writeObjectToFile(objects, objectId, __dirname);
 
         res.json({success: true}).end();
     });
