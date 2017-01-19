@@ -54,7 +54,7 @@
 		"obj45y4gk159d097qone": {
 			"name": "one",
 			"data": {
-				"value": 0.2547127737198025,
+				"value": 0.7794148311950266,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -69,7 +69,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 0.2547127737198025,
+				"value": 0.7794148311950266,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -79,7 +79,7 @@
 		"obj45y4gk159d097qtwo": {
 			"name": "two",
 			"data": {
-				"value": 0.2547127737198025,
+				"value": 0.7794148311950266,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -94,7 +94,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 0.2547127737198025,
+				"value": 0.7794148311950266,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -676,16 +676,6 @@
 			],
 			"type": "logic",
 			"links": {
-				"blockLink-in1-0-blockAz6t3yj4gejv-0": {
-					"nodeA": "in1",
-					"logicA": 0,
-					"nodeB": "blockAz6t3yj4gejv",
-					"logicB": 0,
-					"loop": false,
-					"health": 0,
-					"ballAnimationCount": 0,
-					"route": null
-				},
 				"blockLink4x2vbl2g5gyh": {
 					"nodeA": "blockAz6t3yj4gejv",
 					"logicA": 0,
@@ -696,30 +686,30 @@
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLink-block8e92mz2lxu3d-0-out1-0": {
-					"nodeA": "block8e92mz2lxu3d",
-					"logicA": 0,
-					"nodeB": "out1",
+				"blockLinkA8gr4i4j175v": {
+					"nodeA": "blockAz6t3yj4gejv",
+					"logicA": 1,
+					"nodeB": "blocklPjbach5xtxb",
 					"logicB": 0,
 					"loop": false,
 					"health": 0,
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLink-in2-0-blockAz6t3yj4gejv-1": {
-					"nodeA": "in2",
+				"blockLink-in1-0-blockAz6t3yj4gejv-0": {
+					"nodeA": "in1",
 					"logicA": 0,
 					"nodeB": "blockAz6t3yj4gejv",
-					"logicB": 1,
+					"logicB": 0,
 					"loop": false,
 					"health": 0,
 					"ballAnimationCount": 0,
 					"route": null
 				},
-				"blockLinkA8gr4i4j175v": {
-					"nodeA": "blockAz6t3yj4gejv",
-					"logicA": 1,
-					"nodeB": "blocklPjbach5xtxb",
+				"blockLink-block8e92mz2lxu3d-0-out1-0": {
+					"nodeA": "block8e92mz2lxu3d",
+					"logicA": 0,
+					"nodeB": "out1",
 					"logicB": 0,
 					"loop": false,
 					"health": 0,
@@ -785,7 +775,7 @@
 					"name": "",
 					"data": [
 						{
-							"value": 0.2547127737198025,
+							"value": 0.7794148311950266,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -817,7 +807,7 @@
 					"type": "default",
 					"processedData": [
 						{
-							"value": 0.2547127737198025,
+							"value": 0.7794148311950266,
 							"mode": "f",
 							"unit": false,
 							"unitMin": 0,
@@ -1314,7 +1304,7 @@
 				}
 			},
 			"routeBuffer": [
-				0.2547127737198025,
+				0.7794148311950266,
 				0,
 				0,
 				0.42700667888857424
