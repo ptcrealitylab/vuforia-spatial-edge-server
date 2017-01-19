@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/object.js"></script>
+</head>
+<body>
+<div id="number"><span id="numbervalue">0 ms</span><br>
+    <input id="slider" type="range" value="0" min="0" max="1000" style="width:90%"></div>
+
+
+<form action="" id="form1">
+
+    <label for="bigger">
+        <input type="radio" name="direction" value=">" id="bigger"> <span>select bigger&nbsp;</span>
+    </label>
+    <label for="smaller">
+        <input type="radio" name="direction" value="<" id="smaller" > <span>select smaller</span>
+    </label>
+</form>
+
+<form action="" id="form2">
+
+    <label for="digital">
+        <input type="radio" name="digital" value="digital" id="digital"> <span>digital output&nbsp;</span>
+    </label>
+    <label for="analog">
+        <input type="radio" name="digital" value="analog" id="analog" > <span>analog output</span>
+    </label>
+</form>
+
+<script>
+    var logic = new HybridLogic();
+
+    var number = document.getElementById('numbervalue');
+
+    var digitalNumber = logic.readPublicData("digital", true); // value and default if not existing (optional)
+    var directionValue = logic.readPublicData("direction", ">"); // value and default if not existing (optional)
+
+    if(digitalNumber === true){
+        document.getElementById("digital").checked = true;
+    } else {
+        document.getElementById("analog").checked = true;
+    }
+
+    if(directionValue === ">"){
+        document.getElementById("bigger").checked = true;
+    } else {
+        document.getElementById("smaller").checked = true;
+    }
+
+    // todo this needs to wait until the reality editor has sent the initial data.
+    var thresholdValue = logic.readPublicData("threshold", 0.5); // value and default if not existing (optional)
+    number.innerHTML = "threshold: " + thresholdValue.toFixed(3);
+    slider.value = thresholdValue*1000;
+
+    slider.addEventListener("input", function () {
+        var value = slider.value / 1000;
+        number.innerHTML = "threshold: " + (value).toFixed(3);
+        logic.writePublicData("threshold", value);
+
+        // logic.writePrivateData("delayTime",  slider.value);
+    }, false);
+
+    var thisDirection = document.getElementById("form1");
+    var thisDigital = document.getElementById("form2");
+
+    thisDirection.addEventListener('change', function (){
+        var radios = document.getElementsByName("direction");
+        var val;
+        for(var i = 0; i < radios.length; i++){
+            if(radios[i].checked){
+                val = radios[i].value;
+            }
+        }
+
+        logic.writePublicData("direction",  val);
+    }, false);
+
+    thisDigital.addEventListener('change', function (){
+        var radios = document.getElementsByName("digital");
+        var val;
+        for(var i = 0; i < radios.length; i++){
+            if(radios[i].checked){
+                val = radios[i].value;
+            }
+        }
+        var sendValue = false;
+        if(val === "digital")
+            sendValue = true;
+        logic.writePublicData("digital",  sendValue);
+    }, false);
+
+
+</script>
+</body>
+</html>

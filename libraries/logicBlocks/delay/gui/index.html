@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/object.js"></script>
+</head>
+<body>
+<div class="number" id="loading" style="display: inline;"></div>
+<div id="done" style="display: none">
+<div class="number" id="number"><span id="numbervalue">0 ms</span><br>
+<input id="slider" type="range" value="0" min="0" max="10000" style="width:90%"></div>
+</div>
+<script>
+    var logic = new HybridLogic();
+
+    var number = document.getElementById('numbervalue');
+
+
+    // todo this needs to wait until the reality editor has sent the initial data.
+    var delayValue = logic.readPublicData("delayTime", 5000); // value and default if not existing (optional)
+
+    writeNumber(delayValue);
+    slider.value = delayValue;
+
+    slider.addEventListener("input", function () {
+        writeNumber(slider.value);
+        logic.writePublicData("delayTime",  slider.value);
+       // logic.writePrivateData("delayTime",  slider.value);
+
+    }, false);
+
+    logic.addReadPublicDataListener("delayTime",function (delayValue){
+
+        document.getElementById('loading').style.display = "none";
+        document.getElementById('done').style.display = "inline";
+        console.log(delayValue);
+        writeNumber(delayValue);
+    slider.value = delayValue;
+    });
+
+    function writeNumber(value){
+        if(value>=1000){
+            number.innerHTML =  (value/1000).toFixed(2)+" sec";
+        } else {
+            number.innerHTML = value+" ms";
+        }
+    }
+
+</script>
+</body>
+</html>
