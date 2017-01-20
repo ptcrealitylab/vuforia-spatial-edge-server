@@ -403,7 +403,11 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
                 "" + thisHtmlNode.routeBuffer[2] + "<br>" +
                 "" + thisHtmlNode.routeBuffer[3] + "<br></td></tr>";
         } else {
-            text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+            if(!thisHtmlNode.text) {
+                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+            } else {
+                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.text + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+            }
 
         }
 

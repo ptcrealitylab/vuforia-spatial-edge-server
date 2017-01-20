@@ -1,7 +1,7 @@
 {
 	"objectId": "obj45y4gk159d097q",
 	"name": "obj45",
-	"ip": "192.168.1.6",
+	"ip": "192.168.1.5",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "bsyBi",
@@ -1782,5 +1782,6 @@
 				}
 			}
 		}
-	}
+	},
+	"deactivated": true
 }
