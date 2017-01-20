@@ -145,6 +145,7 @@ exports.addNode = function (objectName, nodeName, type) {
 
             var thisObj = objects[objectID].nodes[nodeUuid];
             thisObj.name = nodeName;
+            thisObj.text = undefined;
             thisObj.type = type;
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
@@ -166,17 +167,17 @@ exports.renameNode = function (objectName,oldNodeName, newNodeName) {
         if (objects.hasOwnProperty(objectID)) {
             var thisNode = objectID+oldNodeName;
 
-            if(thisNode in objects[objectID]){
-                objects[objectID].nodes[thisNode].name = newNodeName;
-                return
-            } else {
+            if(thisNode in objects[objectID].nodes){
+                objects[objectID].nodes[thisNode].text = newNodeName;
+               // return
+            } /*else {
                 for (var key in objects[objectID].nodes) {
                     if (objects[objectID].nodes[key].name === oldNodeName) {
                         objects[objectID].nodes[key].name = newNodeName;
                         return;
                     }
                 }
-            }
+            }*/
         }
     }
     actionCallback({reloadObject: {object: objectID}});
