@@ -67,58 +67,56 @@ if (exports.enabled) {
         if (wedo.wedo[uuid]) {
             names[uuid] = {px1 : "port 1", px2 : "port 2",py1 : "none 1", py2 : "none 2"};
             names[uuid].name = wedo.wedo[uuid].name;
-            var thisWedo = wedo.wedo[uuid].name;
-            server.activate(thisWedo);
+            if(wedo.wedo[uuid].name) {
+                var thisWedo = wedo.wedo[uuid].name;
 
-            server.addNode(thisWedo, "port 1", "node");
-            server.addNode(thisWedo, "none 1", "node");
+                server.addNode(thisWedo, "port 1", "node");
+                server.addNode(thisWedo, "none 1", "node");
 
-            server.addNode(thisWedo, "port 2", "node");
-            server.addNode(thisWedo, "none 2", "node");
+                server.addNode(thisWedo, "port 2", "node");
+                server.addNode(thisWedo, "none 2", "node");
 
-            server.addNode(thisWedo, "button", "node");
+                server.addNode(thisWedo, "button", "node");
 
-            server.renameNode(names[uuid].name, "port 1", "x1");
-            server.renameNode(names[uuid].name, "none 1", "y1");
-            server.renameNode(names[uuid].name, "port 2", "x2");
-            server.renameNode(names[uuid].name, "none 2", "y2");
+                server.renameNode(names[uuid].name, "port 1", "x1");
+                server.renameNode(names[uuid].name, "none 1", "y1");
+                server.renameNode(names[uuid].name, "port 2", "x2");
+                server.renameNode(names[uuid].name, "none 2", "y2");
 
+                server.activate(thisWedo);
 
-         server.addReadListener(names[uuid].name, "port 1", function (names,wedo,uuid,data){
-               // console.log(names[uuid].name,data);
-               if(names[uuid].px1 === "motor 1") {
-                 wedo.setMotor(server.map(data.value,0,1,-100,100), 1, uuid);
-               }
-           }.bind(this,names,wedo,uuid));
+                server.addReadListener(names[uuid].name, "port 1", function (names, wedo, uuid, data) {
+                    // console.log(names[uuid].name,data);
+                    if (names[uuid].px1 === "motor 1") {
+                        wedo.setMotor(server.map(data.value, 0, 1, -100, 100), 1, uuid);
+                    }
+                }.bind(this, names, wedo, uuid));
 
+                server.addReadListener(names[uuid].name, "port 2", function (names, wedo, uuid, data) {
+                    //  console.log(names[uuid].name,data);
+                    if (names[uuid].px2 === "motor 2") {
+                        //  console.log(server.map(data.value,0,1,-100,100));
+                        wedo.setMotor(server.map(data.value, 0, 1, -100, 100), 2, uuid);
+                    }
 
+                }.bind(this, names, wedo, uuid));
 
-            server.addReadListener(names[uuid].name, "port 2", function (names,wedo,uuid,data){
-              //  console.log(names[uuid].name,data);
-                if(names[uuid].px2 === "motor 2") {
-                  //  console.log(server.map(data.value,0,1,-100,100));
-                    wedo.setMotor(server.map(data.value,0,1,-100,100), 2, uuid);
-                }
-            }.bind(this,names,wedo,uuid));
+                /*  server.addReadListener(names[uuid].name, "port2", function (names,wedo,uuid, data){
 
+                 if(names[uuid].p1 === "motor") {
+                 wedo.setMotor(server.map(data.value,0,1,-100,100), 2, uuid);
+                 }
+                 }.bind(this, names,wedo,uuid))
+                 */
 
-          /*  server.addReadListener(names[uuid].name, "port2", function (names,wedo,uuid, data){
+                wedo.on('button', function (button, uuid) {
+                    if (uuid in names) {
+                        server.write(names[uuid].name, "button", button, "f");
+                    }
 
-                if(names[uuid].p1 === "motor") {
-                    wedo.setMotor(server.map(data.value,0,1,-100,100), 2, uuid);
-                }
-            }.bind(this, names,wedo,uuid))
-*/
+                });
 
-
-            wedo.on('button', function (button, uuid) {
-                if(uuid in names) {
-                    server.write(names[uuid].name, "button", button, "f");
-                }
-
-            });
-
-
+            }
 
 
 
@@ -129,6 +127,9 @@ if (exports.enabled) {
 
 
     wedo.on('disconnected', function (uuid) {
+
+        // remove all listeners when disconnected
+
         if (names[uuid].name) {
             server.deactivate( names[uuid].name);
 
