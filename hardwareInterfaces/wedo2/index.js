@@ -52,8 +52,9 @@ exports.enabled = true;
 if (exports.enabled) {
 
     var names = {};
+    var Wedo = require('WeDo2');
+    var wedo = new Wedo("lego");
 
-    var wedo = require('WeDo2');
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
     server.enableDeveloperUI(true);
@@ -142,6 +143,8 @@ if (exports.enabled) {
             names[uuid].py1 = "none 1";
             server.renameNode(names[uuid].name, "none 2", " ");
             names[uuid].py2 = "none 2";
+
+            server.removeReadListeners(names[uuid].name);
 
             resetNode(uuid,1);
             resetNode(uuid,2);

@@ -294,6 +294,12 @@ exports.addReadListener = function (objectName, nodeName, callBack) {
     }
 };
 
+exports.removeReadListeners = function (objectName){
+    var objectID = utilities.readObject(objectLookup, objectName);
+    if(callBacks[objectID])
+    delete callBacks[objectID];
+};
+
 exports.map = function (x, in_min, in_max, out_min, out_max) {
     if (x > in_max) x = in_max;
     if (x < in_min) x = in_min;
