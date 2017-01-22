@@ -2462,21 +2462,23 @@ var engine = {
                     else {
                         this.blockKey = "in" + this.link.logicB;
 
-                        this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB].blocks[this.blockKey];
+                        if (this.objects[this.link.objectB].nodes[this.link.nodeB] && this.blockKey) {
+                        if (this.objects[this.link.objectB].nodes[this.link.nodeB].blocks) {
+                                this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB].blocks[this.blockKey];
 
-                        var key;
-                        for (key in thisNode.processedData) {
-                            this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                for (var key in thisNode.processedData) {
+                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                }
+
+                                this.nextLogic = this.objects[this.link.objectB].nodes[this.link.nodeB];
+                                // this needs to be at the beginning;
+                                if (!this.nextLogic.routeBuffer)
+                                    this.nextLogic.routeBuffer = [0, 0, 0, 0];
+
+                                this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
+                                this.blockTrigger(this.link.objectB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
+                            }
                         }
-
-                        this.nextLogic = this.objects[this.link.objectB].nodes[this.link.nodeB];
-                        // this needs to be at the beginning;
-                        if (!this.nextLogic.routeBuffer)
-                            this.nextLogic.routeBuffer = [0, 0, 0, 0];
-
-                        this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
-
-                        this.blockTrigger(this.link.objectB, this.link.nodeB, this.blockKey, this.link.logicB, this.internalObjectDestination);
                     }
 
                 }
@@ -2520,8 +2522,8 @@ var engine = {
     },
 // this is for after a logic block is processed.
     processBlockLinks: function (object, node, block, index, thisBlock) {
-        var i;
-        for (i = 0; i < 4; i++) {
+
+        for (var i = 0; i < 4; i++) {
 
             // check if there is data to be processed
             if (typeof thisBlock.processedData[i].value === "number") {
@@ -2565,7 +2567,7 @@ var engine = {
                                 this.link = this.logic.links[linkKey];
 
                                 this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
-                                var key
+                                var key;
                                 for (key in thisBlock.processedData[i]) {
                                     this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
                                 }

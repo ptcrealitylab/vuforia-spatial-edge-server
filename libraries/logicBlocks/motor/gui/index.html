@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/object.js"></script>
+</head>
+<body>
+<form action="" id="form">
+
+    <label for="toggle">
+    <input type="radio" name="switch" value="toggle" id="toggle"> <span>Toggle Switch</span>
+    </label>
+    <label for="push">
+    <input type="radio" name="switch" value="push" id="push" > <span>Push Switch&nbsp;&nbsp;&nbsp;</span>
+    </label>
+</form>
+<script>
+    var logic = new HybridLogic();
+
+    logic.addReadPublicDataListener("switchType",function (switchValue){
+
+
+        if(switchValue === "toggle"){
+            document.getElementById("toggle").checked = true;
+            document.getElementById("push").checked = false;
+
+        } else if(switchValue === "push"){
+            document.getElementById("push").checked = true;
+            document.getElementById("toggle").checked = false;
+        }
+
+    });
+
+
+    var switchValue = logic.readPublicData("switchType", "toggle"); // value and default if not existing (optional)
+
+    if(switchValue === "toggle"){
+        document.getElementById("toggle").checked = true;
+    } else if(switchValue === "push"){
+        document.getElementById("push").checked = true;
+    }
+
+    document.addEventListener('change', function (){
+        var radios = document.getElementsByName("switch");
+        var val;
+        for(var i = 0; i < radios.length; i++){
+            if(radios[i].checked){
+                val = radios[i].value;
+            }
+        }
+        console.log(val);
+        logic.writePublicData("switchType",  val);
+    }, false);
+</script>
+</body>
+</html>
