@@ -2604,6 +2604,10 @@ var engine = {
     },
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
+        if (!internalObjectDestination) {
+            console.log('temporarily ignored undefined destination in computeProcessedData', thisNode, thisLink);
+            return;
+        }
 
         // save data in local destination object;
         var key;
