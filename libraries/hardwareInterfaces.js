@@ -145,6 +145,7 @@ exports.addNode = function (objectName, nodeName, type) {
 
             var thisObj = objects[objectID].nodes[nodeUuid];
             thisObj.name = nodeName;
+            thisObj.text = undefined;
             thisObj.type = type;
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
@@ -159,6 +160,52 @@ exports.addNode = function (objectName, nodeName, type) {
     }
     objectID = undefined;
 };
+
+exports.renameNode = function (objectName,oldNodeName, newNodeName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            var thisNode = objectID+oldNodeName;
+
+            if(thisNode in objects[objectID].nodes){
+                objects[objectID].nodes[thisNode].text = newNodeName;
+               // return
+            } /*else {
+                for (var key in objects[objectID].nodes) {
+                    if (objects[objectID].nodes[key].name === oldNodeName) {
+                        objects[objectID].nodes[key].name = newNodeName;
+                        return;
+                    }
+                }
+            }*/
+        }
+    }
+    actionCallback({reloadObject: {object: objectID}});
+    objectID = undefined;
+};
+
+exports.activate = function (objectName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            objects[objectID].deactivated = false;
+        }
+    }
+};
+
+exports.deactivate = function (objectName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    console.log("--------- deactive---------")
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            objects[objectID].deactivated = true;
+
+        }
+    }
+};
+
+
+
 
 exports.getObjectIdFromObjectName = function (objectName) {
     return utilities.getObjectIdFromTarget(objectName, dirnameO);
@@ -246,6 +293,19 @@ exports.addReadListener = function (objectName, nodeName, callBack) {
         }
     }
 };
+
+exports.removeReadListeners = function (objectName){
+    var objectID = utilities.readObject(objectLookup, objectName);
+    if(callBacks[objectID])
+    delete callBacks[objectID];
+};
+
+exports.map = function (x, in_min, in_max, out_min, out_max) {
+    if (x > in_max) x = in_max;
+    if (x < in_min) x = in_min;
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+};
+
 
 exports.addEventListener = function (option, callBack){
     if(option === "reset") {
