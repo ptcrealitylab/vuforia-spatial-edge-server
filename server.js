@@ -2461,22 +2461,23 @@ var engine = {
                     }
                     else {
                         this.blockKey = "in" + this.link.logicB;
-                        if (this.objects[this.link.objectB].nodes[this.link.nodeB]) {
-                            this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB].blocks[this.blockKey];
 
-                            var key;
-                            for (key in thisNode.processedData) {
-                                this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                        if (this.objects[this.link.objectB].nodes[this.link.nodeB] && this.blockKey) {
+                        if (this.objects[this.link.objectB].nodes[this.link.nodeB].blocks) {
+                                this.internalObjectDestination = this.objects[this.link.objectB].nodes[this.link.nodeB].blocks[this.blockKey];
+
+                                for (var key in thisNode.processedData) {
+                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                }
+
+                                this.nextLogic = this.objects[this.link.objectB].nodes[this.link.nodeB];
+                                // this needs to be at the beginning;
+                                if (!this.nextLogic.routeBuffer)
+                                    this.nextLogic.routeBuffer = [0, 0, 0, 0];
+
+                                this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
+                                this.blockTrigger(this.link.objectB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
                             }
-
-                            this.nextLogic = this.objects[this.link.objectB].nodes[this.link.nodeB];
-                            // this needs to be at the beginning;
-                            if (!this.nextLogic.routeBuffer)
-                                this.nextLogic.routeBuffer = [0, 0, 0, 0];
-
-                            this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
-
-                            this.blockTrigger(this.link.objectB, this.link.nodeB, this.blockKey, this.link.logicB, this.internalObjectDestination);
                         }
                     }
 
