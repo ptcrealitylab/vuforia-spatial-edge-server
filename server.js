@@ -1580,11 +1580,27 @@ function objectWebServer() {
         }
     });
 
-    // changing the size and possition of an item. *1 is the object *2 is the node id
+    // Add a new node to an object linked to a frame
+    webServer.post('/object/:objectKey/node/:nodeKey/', function (req, res) {
+        var objectKey = req.params.objectKey;
+        var nodeKey = req.params.nodeKey;
+        var node = req.body;
 
-    
+        if (!objects.hasOwnProperty(objectKey)) {
+            res.status(404);
+            res.send('Object ' + objectKey + ' not found');
+            return;
+        }
 
-    
+        var obj = objects[objectKey];
+        obj.nodes[nodeKey] = node;
+        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        actionSender({reloadObject: {object: objectKey}});
+
+        res.json({success: 'true'}).end();
+    });
+
+
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
         var objId = req.params.id;
