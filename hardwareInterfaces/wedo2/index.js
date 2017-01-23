@@ -66,23 +66,25 @@ if (exports.enabled) {
         // todo make nodes invisible on command
 
         if (wedo.wedo[uuid]) {
-            names[uuid] = {px1 : "port 1", px2 : "port 2",py1 : "none 1", py2 : "none 2"};
+            names[uuid] = {px1 : "port 1", px2 : "port 2"};
             names[uuid].name = wedo.wedo[uuid].name;
             if(wedo.wedo[uuid].name) {
                 var thisWedo = wedo.wedo[uuid].name;
 
                 server.addNode(thisWedo, "port 1", "node");
-                server.addNode(thisWedo, "none 1", "node");
+               // server.addNode(thisWedo, "none 1", "node");
 
                 server.addNode(thisWedo, "port 2", "node");
-                server.addNode(thisWedo, "none 2", "node");
+               // server.addNode(thisWedo, "none 2", "node");
 
                 server.addNode(thisWedo, "button", "node");
 
-                server.renameNode(names[uuid].name, "port 1", "x1");
-                server.renameNode(names[uuid].name, "none 1", "y1");
-                server.renameNode(names[uuid].name, "port 2", "x2");
-                server.renameNode(names[uuid].name, "none 2", "y2");
+                server.addNode(thisWedo, "light", "node");
+
+                server.renameNode(names[uuid].name, "port 1", "port 1");
+               // server.renameNode(names[uuid].name, "none 1", "y1");
+                server.renameNode(names[uuid].name, "port 2", "port 2");
+               // server.renameNode(names[uuid].name, "none 2", "y2");
 
                 server.activate(thisWedo);
 
@@ -99,7 +101,12 @@ if (exports.enabled) {
                         //  console.log(server.map(data.value,0,1,-100,100));
                         wedo.setMotor(server.map(data.value, 0, 1, -100, 100), 2, uuid);
                     }
+                }.bind(this, names, wedo, uuid));
 
+
+                server.addReadListener(names[uuid].name, "light", function (names, wedo, uuid, data) {
+                        var color = parseInt(data.value*255);
+                        wedo.setLedColor(color,color,color, uuid);
                 }.bind(this, names, wedo, uuid));
 
                 /*  server.addReadListener(names[uuid].name, "port2", function (names,wedo,uuid, data){
@@ -118,10 +125,6 @@ if (exports.enabled) {
                 });
 
             }
-
-
-
-
         }
     }.bind(this));
 
@@ -139,10 +142,10 @@ if (exports.enabled) {
                 server.renameNode(names[uuid].name, "port 2", " ");
                 names[uuid].px2 = "port 2";
 
-            server.renameNode(names[uuid].name, "none 1", " ");
-            names[uuid].py1 = "none 1";
-            server.renameNode(names[uuid].name, "none 2", " ");
-            names[uuid].py2 = "none 2";
+           // server.renameNode(names[uuid].name, "none 1", " ");
+            //names[uuid].py1 = "none 1";
+            //server.renameNode(names[uuid].name, "none 2", " ");
+            //names[uuid].py2 = "none 2";
 
             server.removeReadListeners(names[uuid].name);
 
@@ -163,7 +166,7 @@ if (exports.enabled) {
         if(uuid in names) {
             Math.round( 20.49);
             server.write(names[uuid].name, "port "+port,  Math.round(server.map(x,-45,45,0,1)*100)/100, "f");
-            server.write(names[uuid].name, "none "+port,   Math.round(server.map(y,-45,45,0,1)*100)/100, "f");
+          //  server.write(names[uuid].name, "none "+port,   Math.round(server.map(y,-45,45,0,1)*100)/100, "f");
         }
     });
 
@@ -182,44 +185,46 @@ if (exports.enabled) {
                 x = "motor";
             }
             if(type==="tiltSensor"){
-                x = "x";
-                y = "y";
+                x = "motion";
+            //    y = "y";
             }
 
             var thisWedo = wedo.wedo[uuid].name;
             if (port === 1 && connected) {
                 server.renameNode(thisWedo, "port 1", x);
                 names[uuid].px1 = x + " 1";
-                if(y === " "){
+              /*  if(y === " "){
                     server.renameNode(thisWedo, "none 1"," ");
                 } else {
                     server.renameNode(thisWedo, "none 1", y);
                 }
                 names[uuid].py1 = y + " 1";
+                */
             }
             if (port === 2 && connected) {
                 server.renameNode(thisWedo, "port 2", x);
                 names[uuid].px2 = x + " 2";
-                if(y === " ") {
+              /*  if(y === " ") {
                     server.renameNode(thisWedo, "none 2"," ");
                 } else {
                     server.renameNode(thisWedo, "none 2", y);
                 }
                 names[uuid].py2 = y + " 2";
+                */
             }
 
             if (port === 1 && !connected) {
                 server.renameNode(thisWedo, "port 1", " ");
                 names[uuid].px1 = "port 1";
-                server.renameNode(thisWedo, "none 1", " ");
-                names[uuid].py1 = "none 1";
+               // server.renameNode(thisWedo, "none 1", " ");
+               // names[uuid].py1 = "none 1";
                 resetNode(uuid,1);
             }
             if (port === 2 && !connected) {
                 server.renameNode(thisWedo, "port 2", " ");
                 names[uuid].px2 = "port 2";
-                server.renameNode(thisWedo, "none 2", " ");
-                names[uuid].py2 = "none 2";
+               // server.renameNode(thisWedo, "none 2", " ");
+               // names[uuid].py2 = "none 2";
                 resetNode(uuid,2);
             }
 
@@ -230,6 +235,6 @@ if (exports.enabled) {
 
 function resetNode (uuid, port){
     server.write(names[uuid].name, "port "+port, 0, "f");
-    server.write(names[uuid].name, "none "+port, 0, "f");
+  //  server.write(names[uuid].name, "none "+port, 0, "f");
 
 }
