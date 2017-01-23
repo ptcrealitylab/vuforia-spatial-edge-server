@@ -2575,6 +2575,7 @@ var engine = {
                     this.logic = this.objects[object].nodes[node];
                     // process all links in the block
                     for (linkKey in this.logic.links) {
+                        if(this.logic.links[linkKey])
                         if (this.logic.links[linkKey].nodeA === block) {
                             if (this.logic.links[linkKey].logicA === i) {
 
