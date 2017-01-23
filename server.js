@@ -917,6 +917,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
  **/
 
 function actionSender(action) {
+	console.log(action);
 
     var HOST = '255.255.255.255';
     var message;
@@ -1174,7 +1175,7 @@ function objectWebServer() {
 
     // delete a logic link. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
-    webServer.delete('/logic/*/*/link/*/', function (req, res) {
+    webServer.delete('/logic/*/*/link/*/lastEditor/*/', function (req, res) {
 
         var thisLinkId = req.params[2];
         var fullEntry = objects[req.params[0]].nodes[req.params[1]].links[thisLinkId];
@@ -1183,7 +1184,7 @@ function objectWebServer() {
         delete objects[req.params[0]].nodes[req.params[1]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
-        actionSender({reloadLink: {object: req.params[0]}});
+		actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.params[3]});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in logic "+ req.params[1] +" for object: " + req.params[0]);
 
@@ -1211,7 +1212,7 @@ function objectWebServer() {
 
             if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender({reloadLink: {object: req.params[0]}});
+                actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
                 updateStatus = "added";
                 cout("added link: " + req.params[2]);
                 // check if there are new connections associated with the new link.
@@ -1285,7 +1286,7 @@ function objectWebServer() {
             }
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            actionSender({reloadLink: {object: req.params[0]}});
+			actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
             updateStatus = "added";
             cout("added block: " + req.params[2]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
@@ -1295,7 +1296,7 @@ function objectWebServer() {
 
     // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
-    webServer.delete('/logic/*/*/block/*/', function (req, res) {
+    webServer.delete('/logic/*/*/block/*/lastEditor/*/', function (req, res) {
 
         var thisLinkId = req.params[2];
         var fullEntry = objects[req.params[0]].nodes[req.params[1]].blocks[thisLinkId];
@@ -1312,7 +1313,7 @@ function objectWebServer() {
             }
         }
 
-        actionSender({reloadLink: {object: req.params[0]}});
+		actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.params[3]});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
         res.send("deleted: " + thisLinkId + " in blocks for object: " + req.params[0]);
     });
@@ -1338,8 +1339,7 @@ function objectWebServer() {
             tempObject.y = req.body.y;
 
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
-
-            actionSender({reloadObject: {object: thisObject}});
+			actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
             updateStatus = "ok";
             res.send(updateStatus);
         } else
@@ -1351,7 +1351,7 @@ function objectWebServer() {
      * Logic Nodes
      **/
 
-    // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
+    // adding a new logic node block to an object. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
     webServer.post('/logic/*/*/node/', function (req, res) {
 
@@ -1375,17 +1375,20 @@ function objectWebServer() {
             objects[req.params[0]].nodes[req.params[1]].type = "logic";
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            actionSender({reloadLink: {object: req.params[0]}});
             updateStatus = "added";
             cout("added logic node: " + req.params[1]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+			console.log(objects[req.params[0]].nodes[req.params[1]]);
+			actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
+
             res.send(updateStatus);
         }
     });
 
     // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
-    webServer.delete('/logic/*/*/node/', function (req, res) {
+    webServer.delete('/logic/*/*/node/lastEditor/*/', function (req, res) {
 
         var fullEntry = objects[req.params[0]].nodes[req.params[1]];
 
@@ -1401,9 +1404,8 @@ function objectWebServer() {
                 delete objects[req.params[0]].links[subCheckerKey];
             }
         }
-
-        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
+		actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.params[2]});
         res.send("deleted: " + req.params[1] + " in object: " + req.params[0]);
 
     });
@@ -1441,7 +1443,8 @@ function objectWebServer() {
         if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-            actionSender({reloadObject: {object: thisObject}});
+          //  actionSender({reloadObject: {object: thisObject}});
+			actionSender({reloadObject: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
             updateStatus = "ok";
         }
 
@@ -1482,7 +1485,7 @@ function objectWebServer() {
 
     // delete a link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
-    webServer.delete('/object/*/link/*/', function (req, res) {
+    webServer.delete('/object/*/link/*/lastEditor/*/', function (req, res) {
 
         var thisLinkId = req.params[1];
         var fullEntry = objects[req.params[0]].links[thisLinkId];
@@ -1491,8 +1494,8 @@ function objectWebServer() {
         delete objects[req.params[0]].links[thisLinkId];
         cout("deleted link: " + thisLinkId);
         // cout(objects[req.params[0]].links);
-        actionSender({reloadLink: {object: req.params[0]}});
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
+		actionSender({reloadLink: {object: req.params[0]}, lastEditor: req.params[2]});
         res.send("deleted: " + thisLinkId + " in object: " + req.params[0]);
 
         var checkIfIpIsUsed = false;
@@ -1533,8 +1536,6 @@ function objectWebServer() {
             }
 
             if (!thisObject.loop) {
-                // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender({reloadLink: {object: req.params[0]}});
                 updateStatus = "added";
                 cout("added link: " + req.params[1]);
                 // check if there are new connections associated with the new link.
@@ -1542,6 +1543,8 @@ function objectWebServer() {
 
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
+				// call an action that asks all devices to reload their links, once the links are changed.
+				actionSender({reloadLink: {object: req.params[0]}, lastEditor: req.body.lastEditor});
             } else {
                 updateStatus = "found endless Loop";
             }
@@ -1645,7 +1648,8 @@ function objectWebServer() {
             if ((typeof req.body.x === "number" && typeof req.body.y === "number" && typeof req.body.scale === "number") || (typeof req.body.matrix === "object" )) {
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-                actionSender({reloadObject: {object: thisObject}});
+               actionSender({reloadObject: {object: thisObject}, lastEditor: req.body.lastEditor});
+			//	actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
                 updateStatus = "added object";
             }
 
@@ -1773,13 +1777,23 @@ function objectWebServer() {
             zip.finalize();
         });
 
-        // sends json object for a specific hybrid object. * is the object name
+		// sends json object for a specific hybrid object. * is the object name
+		// ths is the most relevant for
+		// ****************************************************************************************************************
+		webServer.get('/object/:object/node/:node/', function (req, res) {
+			//  cout("get 7");
+			res.json(objects[req.params.object].nodes[req.params.node]);
+		});
+
+		// sends json object for a specific hybrid object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/', function (req, res) {
             //  cout("get 7");
             res.json(objects[req.params[0]]);
         });
+
+
 
         // ****************************************************************************************************************
         // post interfaces
@@ -2561,6 +2575,7 @@ var engine = {
                     this.logic = this.objects[object].nodes[node];
                     // process all links in the block
                     for (linkKey in this.logic.links) {
+                        if(this.logic.links[linkKey])
                         if (this.logic.links[linkKey].nodeA === block) {
                             if (this.logic.links[linkKey].logicA === i) {
 
