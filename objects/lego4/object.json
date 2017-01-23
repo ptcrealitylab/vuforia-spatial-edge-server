@@ -1,0 +1,128 @@
+{
+	"objectId": "lego40i73qtpzc80n",
+	"name": "lego4",
+	"ip": "192.168.1.5",
+	"version": "1.7.0",
+	"deactivated": false,
+	"protocol": "R1",
+	"tcs": "CuT7b",
+	"x": 0,
+	"y": 0,
+	"scale": 1,
+	"matrix": [],
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"developer": true,
+	"memory": {
+		"matrix": [
+			-0.9949462413787842,
+			-0.09977176785469055,
+			-0.06682159751653671,
+			0,
+			-0.09851891547441483,
+			1.14111602306366,
+			0.5055122971534729,
+			0,
+			0.01939180307090282,
+			0.6783261895179749,
+			-0.8602280020713806,
+			0,
+			217.8303680419922,
+			-90.42867279052734,
+			1378.0703125,
+			1
+		]
+	},
+	"links": {},
+	"nodes": {
+		"lego40i73qtpzc80nport 1": {
+			"name": "port 1",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 125.97762987286478,
+			"y": 138.28180726410937,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"text": "x1"
+		},
+		"lego40i73qtpzc80nport 2": {
+			"name": "port 2",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -112.55501993498183,
+			"y": 142.32293332810514,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"text": "x2"
+		},
+		"lego40i73qtpzc80nbutton": {
+			"name": "button",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -6.842036685975472,
+			"y": -252.51751060799143,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"processedData": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
+		},
+		"lego40i73qtpzc80nlight": {
+			"name": "light",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -2.759803212972656,
+			"y": -489.3391485055836,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"processedData": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
+		}
+	}
+}

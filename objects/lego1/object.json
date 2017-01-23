@@ -1,0 +1,135 @@
+{
+	"objectId": "lego1Mih8ul6sqsow",
+	"name": "lego1",
+	"ip": "192.168.1.5",
+	"version": "1.7.0",
+	"deactivated": false,
+	"protocol": "R1",
+	"tcs": "41SIxV",
+	"x": 0,
+	"y": 0,
+	"scale": 1,
+	"matrix": [],
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"developer": true,
+	"memory": {
+		"matrix": [
+			-0.9944484233856201,
+			-0.0680159255862236,
+			-0.09198922663927078,
+			0,
+			-0.08941574394702911,
+			1.15974497795105,
+			0.4827709794044495,
+			0,
+			0.05547261238098145,
+			0.6500707864761353,
+			-0.8709020018577576,
+			0,
+			217.40771484375,
+			-23.5766544342041,
+			1346.669921875,
+			1
+		]
+	},
+	"links": {},
+	"nodes": {
+		"lego1Mih8ul6sqsowport 1": {
+			"name": "port 1",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 131.69264806859064,
+			"y": 143.73935275443364,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"text": "x1"
+		},
+		"lego1Mih8ul6sqsowport 2": {
+			"name": "port 2",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -121.99635393283825,
+			"y": 146.77284211906954,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"text": "x2",
+			"processedData": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
+		},
+		"lego1Mih8ul6sqsowbutton": {
+			"name": "button",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -1.5721425158644706,
+			"y": -279.68752849282464,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"processedData": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
+		},
+		"lego1Mih8ul6sqsowlight": {
+			"name": "light",
+			"data": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -1.0741697439761992,
+			"y": -505.98239159127115,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100,
+			"processedData": {
+				"value": 1,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
+		}
+	}
+}

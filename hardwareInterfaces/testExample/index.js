@@ -51,4 +51,12 @@ exports.enabled = false;
 
 
 if (exports.enabled) {
+	var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
+	server.enableDeveloperUI(true);
+	server.addNode("lego1", "light1", "node");
+	server.addNode("lego2", "light2", "node");
+	server.addNode("lego3", "light1", "node");
+	server.addNode("lego4", "light2", "node");
+	server.addNode("lego5", "light1", "node");
 }
