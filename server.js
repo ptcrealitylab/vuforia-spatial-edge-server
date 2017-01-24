@@ -1595,7 +1595,7 @@ function objectWebServer() {
         var obj = objects[objectKey];
         obj.nodes[nodeKey] = node;
         utilities.writeObjectToFile(objects, objectKey, __dirname);
-        actionSender({reloadObject: {object: objectKey}});
+        actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
 
         res.json({success: 'true'}).end();
     });
@@ -1676,6 +1676,8 @@ function objectWebServer() {
 
         utilities.writeObjectToFile(objects, objectId, __dirname);
 
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+
         res.json({success: true, frameId: frameId}).end();
     });
 
@@ -1706,6 +1708,8 @@ function objectWebServer() {
         Object.assign(object.frames[frameId], frame);
 
         utilities.writeObjectToFile(objects, objectId, __dirname);
+
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
     });
@@ -1755,10 +1759,12 @@ function objectWebServer() {
 
             if (linkObjectHasChanged) {
                 utilities.writeObjectToFile(objects, linkObjectId, __dirname);
+                actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
             }
         }
 
         utilities.writeObjectToFile(objects, objectId, __dirname);
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
     });
