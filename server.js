@@ -1710,6 +1710,51 @@ function objectWebServer() {
         res.json({success: true}).end();
     });
 
+    webServer.delete('/object/:objectId/frames/:frameId/', function(req, res) {
+        var objectId = req.params.objectId;
+        var frameId = req.params.frameId;
+        // Delete frame
+        var object = objects[objectId];
+        if (!object) {
+            res.status(404).end('object ' + objectId + ' not found');
+            return;
+        }
+
+        var frame = object.frames[frameId];
+        if (!frame) {
+            res.status(404).end('frame ' + frameId + ' not found');
+            return;
+        }
+
+        delete object.frames[frameId];
+
+        // Delete frame's nodes
+        var deletedNodes = {};
+        for (var nodeId in object.nodes) {
+            var node = object.nodes[nodeId];
+            if (node.frame === frameId) {
+                deletedNodes[nodeId] = true;
+                delete object.nodes[nodeId];
+            }
+        }
+
+        // Delete links involving frame's nodes
+        for (var linkObjectId in objects) {
+            var linkObject = objects[linkObjectId];
+
+            for (var linkId in linkObject.links) {
+                var link = linkObject.links[linkId];
+                if (link.objectA === objectId || link.objectB === objectId) {
+                    if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
+                        delete linkObject.links[linkId];
+                    }
+                }
+            }
+        }
+
+        res.json({success: true}).end();
+    });
+
     // changing the size and possition of an item. *1 is the object *2 is the datapoint id
    
     // ****************************************************************************************************************
