@@ -1588,7 +1588,7 @@ function objectWebServer() {
 
         if (!objects.hasOwnProperty(objectKey)) {
             res.status(404);
-            res.send('Object ' + objectKey + ' not found');
+            res.json({failure: true, error: 'Object ' + objectKey + ' not found'}).end();
             return;
         }
 
@@ -1606,7 +1606,7 @@ function objectWebServer() {
         var objId = req.params.id;
         if (!objects.hasOwnProperty(objId)) {
             res.status(404);
-            res.send('Object ' + objId + ' not found');
+            res.json({failure: true, error: 'Object ' + objId + ' not found'}).end();
             return;
         }
 
@@ -1645,7 +1645,7 @@ function objectWebServer() {
             }
 
             res.status(200);
-            res.send('received');
+            res.json({success: true}).end();
         });
     });
 
@@ -1654,7 +1654,7 @@ function objectWebServer() {
         var objectId = req.params[0];
 
         if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).end('object ' + objectId + ' not found');
+            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
             return;
         }
 
@@ -1663,7 +1663,7 @@ function objectWebServer() {
         var frame = req.body;
 
         if (!frame.src) {
-            res.status(500).end('frame must have src');
+            res.status(500).json({failure: true, error: 'frame must have src'}).end();
             return;
         }
 
@@ -1685,7 +1685,7 @@ function objectWebServer() {
         var frameId = req.params[1];
 
         if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).end('object ' + objectId + ' not found');
+            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
             return;
         }
 
@@ -1693,7 +1693,7 @@ function objectWebServer() {
         var frame = req.body;
 
         if (!frame.src) {
-            res.status(500).end('frame must have src');
+            res.status(500).json({failure: true, error: 'frame must have src'}).end();
             return;
         }
 
@@ -1716,13 +1716,13 @@ function objectWebServer() {
         // Delete frame
         var object = objects[objectId];
         if (!object) {
-            res.status(404).end('object ' + objectId + ' not found');
+            res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
             return;
         }
 
         var frame = object.frames[frameId];
         if (!frame) {
-            res.status(404).end('frame ' + frameId + ' not found');
+            res.status(404).json({failure: true, error: 'frame ' + frameId + ' not found'}).end();
             return;
         }
 
