@@ -801,7 +801,7 @@ process.on('SIGINT', exit);
  **/
 
 function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
-    if (_.isUndefined(oneTimeOnly)) {
+    if (typeof oneTimeOnly === "undefined") {
         oneTimeOnly = false;
     }
 
@@ -1379,14 +1379,14 @@ function objectWebServer() {
             cout("added logic node: " + req.params[1]);
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-			console.log(objects[req.params[0]].nodes[req.params[1]]);
+		//	console.log(objects[req.params[0]].nodes[req.params[1]]);
 			actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
 
             res.send(updateStatus);
         }
     });
 
-    // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
+    // delete a logic node from the logic. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
     webServer.delete('/logic/*/*/node/lastEditor/*/', function (req, res) {
 
@@ -1395,15 +1395,21 @@ function objectWebServer() {
         delete objects[req.params[0]].nodes[req.params[1]];
         cout("deleted node: " + req.params[1]);
 
+
+        //todo check all links as well in object
+
         // Make sure that no links are connected to deleted objects
-        for (var subCheckerKey in  objects[req.params[0]].links) {
+      /*  for (var subCheckerKey in  objects[req.params[0]].links) {
+
             if (objects[req.params[0]].links[subCheckerKey].nodeA === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectA === req.params[0]) {
                 delete objects[req.params[0]].links[subCheckerKey];
             }
             if (objects[req.params[0]].links[subCheckerKey].nodeB === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectB === req.params[0]) {
                 delete objects[req.params[0]].links[subCheckerKey];
             }
-        }
+        }*/
+
+        console.log("deleted Object");
         utilities.writeObjectToFile(objects, req.params[0], __dirname);
 		actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.params[2]});
         res.send("deleted: " + req.params[1] + " in object: " + req.params[0]);
