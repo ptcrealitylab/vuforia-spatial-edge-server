@@ -1700,7 +1700,7 @@ function objectWebServer() {
         }
 
         if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(src);
+            object.frames[frameId] = new ObjectFrame(frame.src);
         }
 
         frame.loaded = false;
