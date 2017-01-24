@@ -1741,16 +1741,24 @@ function objectWebServer() {
         // Delete links involving frame's nodes
         for (var linkObjectId in objects) {
             var linkObject = objects[linkObjectId];
+            var linkObjectHasChanged = false;
 
             for (var linkId in linkObject.links) {
                 var link = linkObject.links[linkId];
                 if (link.objectA === objectId || link.objectB === objectId) {
                     if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
+                        linkObjectHasChanged = true;
                         delete linkObject.links[linkId];
                     }
                 }
             }
+
+            if (linkObjectHasChanged) {
+                utilities.writeObjectToFile(objects, linkObjectId, __dirname);
+            }
         }
+
+        utilities.writeObjectToFile(objects, objectId, __dirname);
 
         res.json({success: true}).end();
     });
