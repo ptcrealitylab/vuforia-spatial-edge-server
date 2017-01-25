@@ -1788,7 +1788,7 @@ function objectWebServer() {
 		// ****************************************************************************************************************
 		webServer.get('/object/:object/node/:node/', function (req, res) {
 			//  cout("get 7");
-			res.json(objects[req.params.object].nodes[req.params.node]);
+			res.json(objects[req.params.object].nodes[req.params.node] || {});
 		});
 
 		// sends json object for a specific hybrid object. * is the object name
