@@ -634,3 +634,54 @@ function HybridLogic() {
     }
 
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var touchTimer = null;
+    var sendTouchEvents = false;
+
+    function sendTouchEvent(event) {
+        parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            object: realityObject.object,
+            touchEvent: {
+                type: event.type,
+                x: event.changedTouches[0].screenX,
+                y: event.changedTouches[0].screenY
+            }
+        }), '*');
+    }
+
+    document.body.addEventListener('touchstart', function() {
+        touchTimer = setTimeout(function() {
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                object: realityObject.object,
+                beginTouchEditing: true
+            }), '*');
+            sendTouchEvents = true;
+        }, 400);
+    });
+
+    document.body.addEventListener('touchmove', function(event) {
+        if (sendTouchEvents) {
+            sendTouchEvent(event);
+        }
+        clearTimeout(touchTimer);
+    });
+
+    document.body.addEventListener('touchend', function(event) {
+        if (sendTouchEvents) {
+            sendTouchEvent(event);
+        }
+        clearTimeout(touchTimer);
+    });
+
+    window.addEventListener("message", function (msg) {
+        var msgContent = JSON.parse(msg.data);
+        if (msgContent.stopTouchEditing) {
+            sendTouchEvents = false;
+        }
+    });
+}, false);
