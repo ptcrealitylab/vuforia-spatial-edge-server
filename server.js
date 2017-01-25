@@ -215,6 +215,8 @@ function Objects() {
     this.links = {};
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
+    // Store the frames. These embed content positioned relative to the object
+    this.frames = {};
 }
 
 /**
@@ -413,6 +415,25 @@ function Data() {
     // scale of the unit that is used. Usually the scale is between 0 and 1.
     this.unitMin = 0;
     this.unitMax = 1;
+}
+
+/**
+ * Embedded content positioned relative to an object
+ * @constructor
+ * @param {String} src - path to content
+ */
+function ObjectFrame(src) {
+    this.src = src;
+    this.x = 0;
+    this.y = 0;
+    this.scale = 1;
+    this.matrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ];
+    this.developer = true;
 }
 
 /**
@@ -1559,17 +1580,33 @@ function objectWebServer() {
         }
     });
 
-    // changing the size and possition of an item. *1 is the object *2 is the node id
+    // Add a new node to an object linked to a frame
+    webServer.post('/object/:objectKey/node/:nodeKey/', function (req, res) {
+        var objectKey = req.params.objectKey;
+        var nodeKey = req.params.nodeKey;
+        var node = req.body;
 
-    
+        if (!objects.hasOwnProperty(objectKey)) {
+            res.status(404);
+            res.json({failure: true, error: 'Object ' + objectKey + ' not found'}).end();
+            return;
+        }
 
-    
+        var obj = objects[objectKey];
+        obj.nodes[nodeKey] = node;
+        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
+
+        res.json({success: 'true'}).end();
+    });
+
+
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
         var objId = req.params.id;
         if (!objects.hasOwnProperty(objId)) {
             res.status(404);
-            res.send('Object ' + objId + ' not found');
+            res.json({failure: true, error: 'Object ' + objId + ' not found'}).end();
             return;
         }
 
@@ -1608,10 +1645,129 @@ function objectWebServer() {
             }
 
             res.status(200);
-            res.send('received');
+            res.json({success: true}).end();
         });
     });
 
+    // Create a frame for an object
+    webServer.post('/object/*/frames/', function (req, res) {
+        var objectId = req.params[0];
+
+        if (!objects.hasOwnProperty(objectId)) {
+            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
+            return;
+        }
+
+        var object = objects[objectId];
+        var frameId = 'frame' + utilities.uuidTime();
+        var frame = req.body;
+
+        if (!frame.src) {
+            res.status(500).json({failure: true, error: 'frame must have src'}).end();
+            return;
+        }
+
+        if (!object.frames[frameId]) {
+            object.frames[frameId] = new ObjectFrame(frame.src);
+        }
+
+        // Copy over all properties of frame
+        Object.assign(object.frames[frameId], frame);
+
+        utilities.writeObjectToFile(objects, objectId, __dirname);
+
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+
+        res.json({success: true, frameId: frameId}).end();
+    });
+
+    // Update an object's frame
+    webServer.post('/object/*/frames/*/', function (req, res) {
+        var objectId = req.params[0];
+        var frameId = req.params[1];
+
+        if (!objects.hasOwnProperty(objectId)) {
+            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
+            return;
+        }
+
+        var object = objects[objectId];
+        var frame = req.body;
+
+        if (!frame.src) {
+            res.status(500).json({failure: true, error: 'frame must have src'}).end();
+            return;
+        }
+
+        if (!object.frames[frameId]) {
+            object.frames[frameId] = new ObjectFrame(frame.src);
+        }
+
+        frame.loaded = false;
+        // Copy over all properties of frame
+        Object.assign(object.frames[frameId], frame);
+
+        utilities.writeObjectToFile(objects, objectId, __dirname);
+
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+
+        res.json({success: true}).end();
+    });
+
+    webServer.delete('/object/:objectId/frames/:frameId/', function(req, res) {
+        var objectId = req.params.objectId;
+        var frameId = req.params.frameId;
+        // Delete frame
+        var object = objects[objectId];
+        if (!object) {
+            res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
+            return;
+        }
+
+        var frame = object.frames[frameId];
+        if (!frame) {
+            res.status(404).json({failure: true, error: 'frame ' + frameId + ' not found'}).end();
+            return;
+        }
+
+        delete object.frames[frameId];
+
+        // Delete frame's nodes
+        var deletedNodes = {};
+        for (var nodeId in object.nodes) {
+            var node = object.nodes[nodeId];
+            if (node.frame === frameId) {
+                deletedNodes[nodeId] = true;
+                delete object.nodes[nodeId];
+            }
+        }
+
+        // Delete links involving frame's nodes
+        for (var linkObjectId in objects) {
+            var linkObject = objects[linkObjectId];
+            var linkObjectHasChanged = false;
+
+            for (var linkId in linkObject.links) {
+                var link = linkObject.links[linkId];
+                if (link.objectA === objectId || link.objectB === objectId) {
+                    if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
+                        linkObjectHasChanged = true;
+                        delete linkObject.links[linkId];
+                    }
+                }
+            }
+
+            if (linkObjectHasChanged) {
+                utilities.writeObjectToFile(objects, linkObjectId, __dirname);
+                actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
+            }
+        }
+
+        utilities.writeObjectToFile(objects, objectId, __dirname);
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+
+        res.json({success: true}).end();
+    });
 
     // changing the size and possition of an item. *1 is the object *2 is the datapoint id
    
@@ -1788,7 +1944,7 @@ function objectWebServer() {
 		// ****************************************************************************************************************
 		webServer.get('/object/:object/node/:node/', function (req, res) {
 			//  cout("get 7");
-			res.json(objects[req.params.object].nodes[req.params.node]);
+			res.json(objects[req.params.object].nodes[req.params.node] || {});
 		});
 
 		// sends json object for a specific hybrid object. * is the object name
@@ -2507,6 +2663,10 @@ var engine = {
     },
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
+        if (!internalObjectDestination) {
+            console.log('temporarily ignored undefined destination in computeProcessedData', thisNode, thisLink);
+            return;
+        }
 
         // save data in local destination object;
         var key;
