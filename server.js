@@ -1667,6 +1667,10 @@ function objectWebServer() {
             return;
         }
 
+        if (!object.frames) {
+            object.frames = {};
+        }
+
         if (!object.frames[frameId]) {
             object.frames[frameId] = new ObjectFrame(frame.src);
         }
@@ -1697,6 +1701,10 @@ function objectWebServer() {
         if (!frame.src) {
             res.status(500).json({failure: true, error: 'frame must have src'}).end();
             return;
+        }
+
+        if (!object.frames) {
+            object.frames = {};
         }
 
         if (!object.frames[frameId]) {
