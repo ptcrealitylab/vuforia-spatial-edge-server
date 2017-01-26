@@ -250,9 +250,14 @@ exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, o
 
 exports.reset = function (){
     for (var objectKey in objects) {
-        for (var nodeKey in objects[objectKey].nodes) {
-            if(objects[objectKey].nodes[nodeKey].type !== "logic")
-            _this.addNode(objects[objectKey].name,  objects[objectKey].nodes[nodeKey].name, objects[objectKey].nodes[nodeKey].type);
+        var object = objects[objectKey];
+        for (var nodeKey in object.nodes) {
+            var node = object.nodes[nodeKey]
+            if (node.type === "logic" || node.frame) {
+                continue;
+            }
+            // addNode requires that nodeKey === object.name + node.name
+            _this.addNode(object.name, node.name, node.type);
         }
         _this.clearObject(objectKey);
     }
