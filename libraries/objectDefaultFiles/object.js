@@ -638,6 +638,19 @@ function HybridLogic() {
 document.addEventListener('DOMContentLoaded', function() {
     var touchTimer = null;
     var sendTouchEvents = false;
+    var startCoords = {
+        x: 0,
+        y: 0
+    };
+    var touchMoveTolerance = 100;
+
+    function getTouchX(event) {
+        return event.changedTouches[0].screenX;
+    }
+
+    function getTouchY(event) {
+        return event.changedTouches[0].screenY;
+    }
 
     function sendTouchEvent(event) {
         parent.postMessage(JSON.stringify({
@@ -646,13 +659,24 @@ document.addEventListener('DOMContentLoaded', function() {
             object: realityObject.object,
             touchEvent: {
                 type: event.type,
-                x: event.changedTouches[0].screenX,
-                y: event.changedTouches[0].screenY
+                x: getTouchX(event),
+                y: getTouchY(event)
             }
         }), '*');
     }
 
     document.body.addEventListener('touchstart', function() {
+        if (!realityObject.width) {
+            return;
+        }
+
+        if (touchTimer) {
+            return;
+        }
+
+        startCoords.x = getTouchX(event);
+        startCoords.y = getTouchY(event);
+
         touchTimer = setTimeout(function() {
             parent.postMessage(JSON.stringify({
                 version: realityObject.version,
@@ -661,14 +685,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 beginTouchEditing: true
             }), '*');
             sendTouchEvents = true;
+            touchTimer = null;
         }, 400);
     });
 
     document.body.addEventListener('touchmove', function(event) {
         if (sendTouchEvents) {
             sendTouchEvent(event);
+        } else if (touchTimer) {
+            var dx = getTouchX(event) - startCoords.x;
+            var dy = getTouchY(event) - startCoords.y;
+            if (dx * dx + dy * dy > touchMoveTolerance) {
+                clearTimeout(touchTimer);
+                touchTimer = null;
+            }
         }
-        clearTimeout(touchTimer);
     });
 
     document.body.addEventListener('touchend', function(event) {
@@ -676,9 +707,10 @@ document.addEventListener('DOMContentLoaded', function() {
             sendTouchEvent(event);
         }
         clearTimeout(touchTimer);
+        touchTimer = null;
     });
 
-    window.addEventListener("message", function (msg) {
+    window.addEventListener('message', function (msg) {
         var msgContent = JSON.parse(msg.data);
         if (msgContent.stopTouchEditing) {
             sendTouchEvents = false;
