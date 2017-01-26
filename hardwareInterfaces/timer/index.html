@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Timer</title>
+</head>
+<body>
+<div id="timer" style=" width:100%; font-family: Helvetica; font-size: 250px;display:inline-block;     text-align: right;background-color: #00edff ">0</div>
+<br><br><br><br><br><br>
+<center><div><img src="marker.jpg" style="height: 300px;width: 300px"></div><center>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io();
+
+   var timer = null;
+   var counter = 0.1;
+
+    document.getElementById("timer").innerText= (counter/100).toFixed(2);
+
+    socket.on('timer', function(msg){
+console.log(msg.timer);
+        if(msg.timer === "start") {
+            if (timer === null) {
+                timer = setInterval(function () {
+                    counter++;
+                    document.getElementById("timer").innerText= (counter/100).toFixed(2);
+                }, 10);
+            }
+        }
+
+        if(msg.timer === "stop") {
+            clearInterval(timer);
+            timer = null;
+        }
+
+        if(msg.timer === "reset") {
+           counter = 0;
+            document.getElementById("timer").innerText= (counter/100).toFixed(2);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 {
 	"objectId": "lego1Mih8ul6sqsow",
 	"name": "lego1",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "41SIxV",
 	"x": 0,
@@ -34,14 +34,33 @@
 			1
 		]
 	},
-	"links": {},
+	"links": {
+		"Hrkyhk4o": {
+			"objectA": "lego1Mih8ul6sqsow",
+			"objectB": "lego1Mih8ul6sqsow",
+			"nodeA": "lego1Mih8ul6sqsowbutton",
+			"nodeB": "lego1Mih8ul6sqsowlight",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"lego1",
+				"button"
+			],
+			"namesB": [
+				"lego1",
+				"light"
+			],
+			"lastEditor": "W3ubqra0",
+			"loop": false
+		}
+	},
 	"nodes": {
 		"lego1Mih8ul6sqsowport 1": {
 			"name": "port 1",
 			"data": {
-				"value": 0,
+				"value": 0.2,
 				"mode": "f",
-				"unit": "",
+				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -53,12 +72,18 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "x1"
+			"processedData": {
+				"value": 0.2,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
 		},
 		"lego1Mih8ul6sqsowport 2": {
 			"name": "port 2",
 			"data": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -72,9 +97,8 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "x2",
 			"processedData": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -109,7 +133,7 @@
 		"lego1Mih8ul6sqsowlight": {
 			"name": "light",
 			"data": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -124,7 +148,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,

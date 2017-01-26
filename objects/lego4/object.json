@@ -1,9 +1,9 @@
 {
 	"objectId": "lego40i73qtpzc80n",
 	"name": "lego4",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "CuT7b",
 	"x": 0,
@@ -34,7 +34,26 @@
 			1
 		]
 	},
-	"links": {},
+	"links": {
+		"edDqmleg": {
+			"objectA": "lego40i73qtpzc80n",
+			"objectB": "lego40i73qtpzc80n",
+			"nodeA": "lego40i73qtpzc80nbutton",
+			"nodeB": "lego40i73qtpzc80nlight",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"lego4",
+				"button"
+			],
+			"namesB": [
+				"lego4",
+				"light"
+			],
+			"lastEditor": "rkIz2y6w",
+			"loop": false
+		}
+	},
 	"nodes": {
 		"lego40i73qtpzc80nport 1": {
 			"name": "port 1",
@@ -52,15 +71,14 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"text": "x1"
+			"frameSizeY": 100
 		},
 		"lego40i73qtpzc80nport 2": {
 			"name": "port 2",
 			"data": {
 				"value": 0,
 				"mode": "f",
-				"unit": "",
+				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -72,7 +90,13 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "x2"
+			"processedData": {
+				"value": 0,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
 		},
 		"lego40i73qtpzc80nbutton": {
 			"name": "button",

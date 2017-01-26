@@ -1,9 +1,9 @@
 {
 	"objectId": "lego3Rc8s06n61f7o",
 	"name": "lego3",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "1Djycp",
 	"x": 0,
@@ -34,7 +34,26 @@
 			1
 		]
 	},
-	"links": {},
+	"links": {
+		"gl1ib914": {
+			"objectA": "lego3Rc8s06n61f7o",
+			"objectB": "lego3Rc8s06n61f7o",
+			"nodeA": "lego3Rc8s06n61f7obutton",
+			"nodeB": "lego3Rc8s06n61f7olight",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"lego3",
+				"button"
+			],
+			"namesB": [
+				"lego3",
+				"light"
+			],
+			"lastEditor": "rkIz2y6w",
+			"loop": false
+		}
+	},
 	"nodes": {
 		"lego3Rc8s06n61f7oport 1": {
 			"name": "port 1",
@@ -53,7 +72,6 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "motor",
 			"processedData": {
 				"value": 0.5,
 				"mode": "f",
@@ -65,7 +83,7 @@
 		"lego3Rc8s06n61f7oport 2": {
 			"name": "port 2",
 			"data": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -79,9 +97,8 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "distance",
 			"processedData": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -116,7 +133,7 @@
 		"lego3Rc8s06n61f7olight": {
 			"name": "light",
 			"data": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -131,7 +148,7 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 1,
+				"value": 0,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
