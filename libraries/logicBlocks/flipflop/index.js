@@ -77,19 +77,15 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 exports.render = function (object, node, block, index, thisBlock, callback)  {
 
-    for (var key in thisBlock.data[index]) {
-        thisBlock.processedData[index][key] = thisBlock.data[index][key];
-    }
-
     if (index === 0) {
         if(thisBlock.data[0].value > 0.5 ){
             if(thisBlock.publicData.toggle !== true) {
 
                 thisBlock.publicData.toggle = true;
-                console.log("opened flow");
-
                 thisBlock.processedData[0].value = 1;
                 thisBlock.processedData[1].value = 0;
+                return callback(object, node, block, index, thisBlock);
+
             }
         }
     }
@@ -99,20 +95,18 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
             if(thisBlock.publicData.toggle !== false) {
 
                 thisBlock.publicData.toggle = false;
-                console.log("closed flow");
-
                 thisBlock.processedData[0].value = 0;
                 thisBlock.processedData[1].value = 1;
+                return callback(object, node, block, index, thisBlock);
             }
         }
 
     } else if (index === 2) {
 
-        if (thisBlock.publicData.toggle) {
+        if (thisBlock.publicData.toggle === true) {
             thisBlock.processedData[2] = thisBlock.data[2];
+            return callback(object, node, block, index, thisBlock);
         }
-
     }
 
-    callback(object, node, block, index, thisBlock);
 };
