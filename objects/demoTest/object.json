@@ -16,62 +16,25 @@
 	"developer": true,
 	"memory": {
 		"matrix": [
-			-1.000910997390747,
-			-0.001655061496421695,
-			-0.0228459145873785,
+			-1.000336289405823,
+			0.007616966497153044,
+			-0.04017903655767441,
 			0,
-			-0.002621522638946772,
-			0.99910569190979,
-			0.04220367223024368,
+			0.004037053789943457,
+			0.9960631728172302,
+			0.08855444937944412,
 			0,
-			0.0227823369204998,
-			0.04225241765379906,
-			-0.9988478422164917,
+			0.040743138641119,
+			0.0883183553814888,
+			-0.9952607154846191,
 			0,
-			57.49431610107422,
-			-22.55577850341797,
-			828.7373657226562,
+			48.25081253051758,
+			-146.3660125732422,
+			928.7445068359375,
 			1
 		]
 	},
-	"links": {
-		"4uWgvmdc": {
-			"objectA": "demoTestvs8z3en96db0",
-			"objectB": "demoTestvs8z3en96db0",
-			"nodeA": "demoTestvs8z3en96db0distance",
-			"nodeB": "3lfrog9qetnx",
-			"logicA": false,
-			"logicB": 0,
-			"namesA": [
-				"demoTest",
-				"distance"
-			],
-			"namesB": [
-				"demoTest",
-				"LOGIC0:BLUE"
-			],
-			"lastEditor": "Ckjq3th4",
-			"loop": false
-		},
-		"FkCbn08w": {
-			"objectA": "demoTestvs8z3en96db0",
-			"objectB": "demoTestvs8z3en96db0",
-			"nodeA": "3lfrog9qetnx",
-			"nodeB": "demoTestvs8z3en96db0motor",
-			"logicA": 1,
-			"logicB": false,
-			"namesA": [
-				"demoTest",
-				"LOGIC0:GREEN"
-			],
-			"namesB": [
-				"demoTest",
-				"motor"
-			],
-			"lastEditor": "Ckjq3th4",
-			"loop": false
-		}
-	},
+	"links": {},
 	"nodes": {
 		"demoTestvs8z3en96db0distance": {
 			"name": "distance",
@@ -108,43 +71,15 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100
-		},
-		"3lfrog9qetnx": {
-			"name": "LOGIC0",
-			"data": {
-				"value": 0,
-				"mode": "f",
-				"unit": "",
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": 8.290512509727705,
-			"y": -149.96975114444922,
+		}
+	},
+	"frames": {
+		"framess3k4w4xt8bj": {
+			"src": "bower_components/reality-control-slider-kinetic/index.html",
+			"x": 538.7165634155099,
+			"y": -149.7197439333795,
 			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleEditing": false,
-			"lastSetting": false,
-			"lastSettingBlock": "",
-			"iconImage": null,
-			"nameInput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"nameOutput": [
-				"",
-				"",
-				"",
-				""
-			],
-			"type": "logic",
-			"links": {},
-			"uuid": "3lfrog9qetnx",
-			"loaded": false,
-			"animationScale": 0,
-			"begin": [
+			"matrix": [
 				1,
 				0,
 				0,
@@ -162,313 +97,11 @@
 				0,
 				1
 			],
-			"temp": [
-				954.3282657104721,
-				1.7012794288000002,
-				-0.04578347538400001,
-				-0.045692,
-				-2.8058458622880003,
-				952.5321108819201,
-				-0.084576984816,
-				-0.084408,
-				-28.954408141264,
-				-34.85976994944,
-				-2.001695387392,
-				-1.997696,
-				-48830.21771191187,
-				17008.07172792288,
-				1656.788992413464,
-				1657.474732
-			],
-			"screenX": 259.7464024706889,
-			"screenY": 84.6423218228093,
-			"screenZ": 1669.0934133034575,
-			"screenLinearZ": 7.114925099742116,
-			"fullScreen": false,
-			"blocks": {
-				"in0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"in1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"in2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"in3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"out0": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"out1": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"out2": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				},
-				"out3": {
-					"name": "",
-					"data": [
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						},
-						{
-							"value": 0,
-							"mode": "f",
-							"unit": "",
-							"unitMin": 0,
-							"unitMax": 1
-						}
-					],
-					"stress": 0,
-					"type": "default"
-				}
-			},
-			"lastEditor": "Ckjq3th4"
+			"developer": true,
+			"width": "206",
+			"height": "526",
+			"lastEditor": "kK1f5njg",
+			"loaded": false
 		}
-	},
-	"frames": {}
+	}
 }

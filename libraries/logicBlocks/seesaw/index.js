@@ -54,16 +54,16 @@
  **/
 
 var generalProperties = {
-    name : "flipflop",
+    name : "seesaw",
     blockSize : 3,
     privateData : {},
     publicData : {toggle: true},
     activeInputs : [true, true, true, false],
     activeOutputs : [true, true, true, false],
     iconImage : "icon.png",
-    nameInput : ["close", "open", "in", ""],
-    nameOutput : ["stopped", "started", "out", ""],
-    type : "flipflop"
+    nameInput : ["in", "in", "in", ""],
+    nameOutput : ["digital out", "digital out", "out", ""],
+    type : "seesaw"
 };
 
 exports.properties = generalProperties;
@@ -79,9 +79,9 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
 
     if (index === 0) {
         if(thisBlock.data[0].value > 0.5 ){
-            if(thisBlock.publicData.toggle !== true) {
+            if(thisBlock.publicData.toggle !== false) {
 
-                thisBlock.publicData.toggle = true;
+                thisBlock.publicData.toggle = false;
                 thisBlock.processedData[0].value = 1;
                 thisBlock.processedData[1].value = 0;
                 return callback(object, node, block, index, thisBlock);
@@ -92,9 +92,9 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
 
     else if (index === 1) {
         if(thisBlock.data[1].value > 0.5 ){
-            if(thisBlock.publicData.toggle !== false) {
+            if(thisBlock.publicData.toggle !== true) {
 
-                thisBlock.publicData.toggle = false;
+                thisBlock.publicData.toggle = true;
                 thisBlock.processedData[0].value = 0;
                 thisBlock.processedData[1].value = 1;
                 return callback(object, node, block, index, thisBlock);
