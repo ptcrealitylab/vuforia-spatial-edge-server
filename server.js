@@ -1600,6 +1600,138 @@ function objectWebServer() {
         res.json({success: 'true'}).end();
     });
 
+    // adding a new lock to an object. *1 is the object *2 is the datapoint id
+    // ****************************************************************************************************************
+    webServer.post('/object/*/lock/*/', function (req, res) {
+
+        console.log("adding node lock...");
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            var previousLockHolder = objects[req.params[0]].nodes[req.params[1]].lockHolder;
+            var newLockHolder = req.body['lockHolder'];
+
+            console.log("prev = " + previousLockHolder);
+            console.log("new = " + newLockHolder);
+
+            if ((previousLockHolder === null || previousLockHolder === undefined) && !(newLockHolder === null || newLockHolder === undefined)) {
+                objects[req.params[0]].nodes[req.params[1]].lockHolder = newLockHolder;
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+                actionSender({reloadNode: {object: req.params[0], node: req.params[1]}});
+
+                console.log("reloadObject " + req.params[0] + " node " + req.params[1] + " with lock");
+                updateStatus = "added";
+
+            } else {
+                if (previousLockHolder === newLockHolder) {
+                    updateStatus = "already locked by this user";
+                } else {
+                    updateStatus = "not authorized to add";
+                }
+            }
+        }
+
+        res.send(updateStatus);
+    });
+
+    // delete a lock. *1 is the object *2 is the datapoint id *3 is the encrypted user id
+    // ****************************************************************************************************************
+    webServer.delete('/object/*/lock/*/user/*/', function (req, res) {
+
+        console.log("deleting node lock...");
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            var previousLockHolder = objects[req.params[0]].nodes[req.params[1]].lockHolder;
+            var newLockHolder = req.params[2];
+
+            if (newLockHolder === previousLockHolder || newLockHolder === "DEBUG") { // TODO: remove DEBUG mode
+                objects[req.params[0]].nodes[req.params[1]].lockHolder = null;
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+                actionSender({reloadNode: {object: req.params[0], node: req.params[1]}});
+
+                console.log("reloadObject " + req.params[0] + " node " + req.params[1] + " without lock");
+                updateStatus = "added";
+            } else {
+                updateStatus = "not authorized to delete"
+            }
+        }
+
+        res.send(updateStatus);
+    });
+
+    // adding a new lock to an object link. *1 is the object *2 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/object/*/linkLock/*/', function (req, res) {
+
+        console.log("adding link lock...");
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            var previousLockHolder = objects[req.params[0]].links[req.params[1]].lockHolder;
+            var newLockHolder = req.body['lockHolder'];
+
+            console.log("prev = " + previousLockHolder);
+            console.log("new = " + newLockHolder);
+
+            if ((previousLockHolder === null || previousLockHolder === undefined) && !(newLockHolder === null || newLockHolder === undefined)) {
+                objects[req.params[0]].links[req.params[1]].lockHolder = newLockHolder;
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+                actionSender({reloadLink: {object: req.params[0]}});
+
+                console.log("reloadObject " + req.params[0] + " link " + req.params[1] + " with lock");
+                updateStatus = "added";
+
+            } else {
+                if (previousLockHolder === newLockHolder) {
+                    updateStatus = "already locked by this user";
+                } else {
+                    updateStatus = "not authorized to add";
+                }
+            }
+        }
+
+        res.send(updateStatus);
+    });
+
+    // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
+    // ****************************************************************************************************************
+    webServer.delete('/object/*/linkLock/*/user/*/', function (req, res) {
+
+        console.log("deleting link lock...");
+
+        var updateStatus = "nothing happened";
+
+        if (objects.hasOwnProperty(req.params[0])) {
+
+            var previousLockHolder = objects[req.params[0]].links[req.params[1]].lockHolder;
+            var newLockHolder = req.params[2];
+
+            if (newLockHolder === previousLockHolder || newLockHolder === "DEBUG") { // TODO: remove DEBUG mode
+                objects[req.params[0]].links[req.params[1]].lockHolder = null;
+                utilities.writeObjectToFile(objects, req.params[0], __dirname);
+
+                actionSender({reloadLink: {object: req.params[0]}});
+
+                console.log("reloadObject " + req.params[0] + " link " + req.params[1] + " without lock");
+                updateStatus = "added";
+            } else {
+                updateStatus = "not authorized to delete"
+            }
+        }
+
+        res.send(updateStatus);
+    });
+
 
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
