@@ -2,7 +2,10 @@ exports.enabled = true;
 
 if (exports.enabled) {
     var http = require('http');
-    var server = require('../../libraries/HybridObjectsHardwareInterfaces.js');
+
+    var server = require('../../libraries/hardwareInterfaces');
+    server.enableDeveloperUI(true);
+
     var SMTPServer = require('smtp-server').SMTPServer;
     var smtpServer = new SMTPServer({
         onAuth: onSMTPAuth,
@@ -33,9 +36,6 @@ if (exports.enabled) {
         });
     }
 
-    exports.receive = function() {
-    };
-
     var deadzone = 0.01;
     var pan = 0;
     var tilt = 0;
@@ -55,7 +55,7 @@ if (exports.enabled) {
 
     function writeMotion(newMotion) {
         motion = newMotion;
-        server.writeIOToServer(objectName, 'motion', motion, 'f');
+        server.write(objectName, 'motion', motion, 'f');
     }
 
     function update() {
@@ -127,35 +127,26 @@ if (exports.enabled) {
         req.end();
     }
 
-    exports.send = function(objName, ioName, value, mode, type) {
-        if (type !== 'camera') {
-            return;
-        }
+    server.addNode(objectName, 'pan', 'default');
+    server.addNode(objectName, 'tilt', 'default');
+    server.addNode(objectName, 'motion', 'default');
 
-        if (typeof(value) !== 'number') {
-            return;
-        }
-        value = (value - 0.5) * 2;
+    server.activate(objectName);
 
-        if (ioName === 'pan') {
-            pan = value;
-        } else if (ioName === 'tilt') {
-            tilt = value;
-        }
-    };
+    server.addReadListener(objectName, 'pan', function(data) {
+        pan = (data.value - 0.5) * 2;
+    });
 
-    exports.init = function() {
-        server.addIO(objectName, 'pan', 'default', 'camera');
-        server.addIO(objectName, 'tilt', 'default', 'camera');
-        server.addIO(objectName, 'motion', 'default', 'camera');
-        server.clearIO(objectName);
+    server.addReadListener(objectName, 'tilt', function(data) {
+        tilt = (data.value - 0.5) * 2;
+    });
 
-        update();
-    };
+    update();
 
-    exports.shutdown = function() {
+
+    server.addEventListener('shutdown', function() {
         if (updateTimeout) {
             clearTimeout(updateTimeout);
         }
-    };
+    });
 }
