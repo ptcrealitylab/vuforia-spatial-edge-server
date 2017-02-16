@@ -1610,14 +1610,13 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var previousLockHolder = objects[req.params[0]].nodes[req.params[1]].lockHolder;
-            var newLockHolder = req.body['lockHolder'];
+            var previousLockPassword = objects[req.params[0]].nodes[req.params[1]].lockPassword;
+            var newLockPassword = req.body['lockPassword'];
 
-            console.log("prev = " + previousLockHolder);
-            console.log("new = " + newLockHolder);
+            console.log("prev = " + previousLockPassword, "new = " + newLockPassword);
 
-            if ((previousLockHolder === null || previousLockHolder === undefined) && !(newLockHolder === null || newLockHolder === undefined)) {
-                objects[req.params[0]].nodes[req.params[1]].lockHolder = newLockHolder;
+            if (!previousLockPassword && !!newLockPassword) {
+                objects[req.params[0]].nodes[req.params[1]].lockPassword = newLockPassword;
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
                 actionSender({reloadNode: {object: req.params[0], node: req.params[1]}});
@@ -1626,7 +1625,7 @@ function objectWebServer() {
                 updateStatus = "added";
 
             } else {
-                if (previousLockHolder === newLockHolder) {
+                if (previousLockPassword === newLockPassword) {
                     updateStatus = "already locked by this user";
                 } else {
                     updateStatus = "not authorized to add";
@@ -1639,7 +1638,7 @@ function objectWebServer() {
 
     // delete a lock. *1 is the object *2 is the datapoint id *3 is the encrypted user id
     // ****************************************************************************************************************
-    webServer.delete('/object/*/lock/*/user/*/', function (req, res) {
+    webServer.delete('/object/*/lock/*/password/*/', function (req, res) {
 
         console.log("deleting node lock...");
 
@@ -1647,17 +1646,17 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var previousLockHolder = objects[req.params[0]].nodes[req.params[1]].lockHolder;
-            var newLockHolder = req.params[2];
+            var previousLockPassword = objects[req.params[0]].nodes[req.params[1]].lockPassword;
+            var newLockPassword = req.params[2];
 
-            if (newLockHolder === previousLockHolder || newLockHolder === "DEBUG") { // TODO: remove DEBUG mode
-                objects[req.params[0]].nodes[req.params[1]].lockHolder = null;
+            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
+                objects[req.params[0]].nodes[req.params[1]].lockPassword = null;
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
                 actionSender({reloadNode: {object: req.params[0], node: req.params[1]}});
 
                 console.log("reloadObject " + req.params[0] + " node " + req.params[1] + " without lock");
-                updateStatus = "added";
+                updateStatus = "deleted";
             } else {
                 updateStatus = "not authorized to delete"
             }
@@ -1676,14 +1675,13 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var previousLockHolder = objects[req.params[0]].links[req.params[1]].lockHolder;
-            var newLockHolder = req.body['lockHolder'];
+            var previousLockPassword = objects[req.params[0]].links[req.params[1]].lockPassword;
+            var newLockPassword = req.body['lockPassword'];
 
-            console.log("prev = " + previousLockHolder);
-            console.log("new = " + newLockHolder);
+            console.log("prev = " + previousLockPassword, "new = " + newLockPassword);
 
-            if ((previousLockHolder === null || previousLockHolder === undefined) && !(newLockHolder === null || newLockHolder === undefined)) {
-                objects[req.params[0]].links[req.params[1]].lockHolder = newLockHolder;
+            if (!previousLockPassword && !!newLockPassword) {
+                objects[req.params[0]].links[req.params[1]].lockPassword = newLockPassword;
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
                 actionSender({reloadLink: {object: req.params[0]}});
@@ -1692,7 +1690,7 @@ function objectWebServer() {
                 updateStatus = "added";
 
             } else {
-                if (previousLockHolder === newLockHolder) {
+                if (previousLockPassword === newLockPassword) {
                     updateStatus = "already locked by this user";
                 } else {
                     updateStatus = "not authorized to add";
@@ -1705,7 +1703,7 @@ function objectWebServer() {
 
     // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
     // ****************************************************************************************************************
-    webServer.delete('/object/*/linkLock/*/user/*/', function (req, res) {
+    webServer.delete('/object/*/linkLock/*/password/*/', function (req, res) {
 
         console.log("deleting link lock...");
 
@@ -1713,17 +1711,17 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(req.params[0])) {
 
-            var previousLockHolder = objects[req.params[0]].links[req.params[1]].lockHolder;
-            var newLockHolder = req.params[2];
+            var previousLockPassword = objects[req.params[0]].links[req.params[1]].lockPassword;
+            var newLockPassword = req.params[2];
 
-            if (newLockHolder === previousLockHolder || newLockHolder === "DEBUG") { // TODO: remove DEBUG mode
-                objects[req.params[0]].links[req.params[1]].lockHolder = null;
+            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
+                objects[req.params[0]].links[req.params[1]].lockPassword = null;
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
                 actionSender({reloadLink: {object: req.params[0]}});
 
                 console.log("reloadObject " + req.params[0] + " link " + req.params[1] + " without lock");
-                updateStatus = "added";
+                updateStatus = "deleted";
             } else {
                 updateStatus = "not authorized to delete"
             }
