@@ -60,6 +60,7 @@ var realityObject = {
     socketIoRequest: {},
     style: document.createElement('style'),
     messageCallBacks: {},
+    interface : "gui",
     version: 200
 };
 
@@ -160,6 +161,9 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.visibility = msgContent.visibility;
     }
 
+    if (typeof msgContent.interface !== "undefined") {
+        realityObject.interface = msgContent.interface
+    }
 };
 
 /**
@@ -335,6 +339,27 @@ function HybridObject() {
         realityObject.messageCallBacks.visibilityCall = function (msgContent) {
             if (typeof msgContent.visibility !== "undefined") {
                 callback(msgContent.visibility);
+            }
+        };
+    };
+
+
+    /**
+     ************************************************************
+     */
+
+    this.getInterface= function () {
+        return realityObject.interface;
+    };
+
+    /**
+     ************************************************************
+     */
+
+    this.addInterfaceListener = function (callback) {
+        realityObject.messageCallBacks.interfaceCall = function (msgContent) {
+            if (typeof msgContent.interface !== "undefined") {
+                callback(msgContent.interface);
             }
         };
     };

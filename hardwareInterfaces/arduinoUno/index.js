@@ -42,8 +42,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-exports.enabled = false
-;
+exports.enabled = false;
 
 if (exports.enabled) {
     var _ = require('lodash');
@@ -55,7 +54,7 @@ if (exports.enabled) {
 
     // change this to what ever is your Arudino Serial Port
 
-    const serialSource = "/dev/cu.usbmodem1431"; // this is pointing to the arduino
+    const serialSource = "/dev/cu.usbmodem1411"; // this is pointing to the arduino
 
     function ArduinoIndex() {
         this.objName = null;
@@ -102,6 +101,7 @@ if (exports.enabled) {
             //var okCounter = 0;
 
             serialPort.on('data', function (data) {
+              //  console.log(data);
                 switch (dataSwitch) {
                     case 0:
                         if (data === "f") {
@@ -192,14 +192,17 @@ if (exports.enabled) {
                         if (!FullLookup.hasOwnProperty(thisObjectID)) {
                             FullLookup[thisObjectID] = {};
                         }
-                        server.addNode(obj, pos, thisPlugin);
+                        server.addNode(obj, pos, "node");
 
                         if(thisObjectID) {
                             FullLookup[thisObjectID][thisObjectID+pos] = arrayID;
 
-                            server.addReadListener(obj, pos, function (item, obj, pos) {
-                                serialSender(serialPort, obj, pos, item.number, "f");
-                            });
+                           // console.log("dddddsasdasdasdasdasdasdasdasdasdsd ",obj, pos);
+                            server.addReadListener(obj, pos, function (obj,pos,node,data) {
+                             //   console.log(obj,pos,data);
+                              serialSender(serialPort, obj, pos, data.value, "f");
+                            }.bind(data,thisObjectID,thisObjectID+pos,"node"));
+
                         }
 
 
@@ -234,12 +237,16 @@ if (exports.enabled) {
 
 
     function serialSender(serialPort, objName, ioName, value, mode) {
+       // console.log("check index: ", objName);
 
+       // console.log(FullLookup);
         if (FullLookup.hasOwnProperty(objName)) {
 
             if (FullLookup[objName].hasOwnProperty(ioName)) {
 
                 var index = FullLookup[objName][ioName];
+
+               // console.log("check index: ", index);
                 var yunModes = ["f", "d", "p", "n"];
                 if (_.includes(yunModes, mode)) {
                     serialPort.write(mode + "\n");
