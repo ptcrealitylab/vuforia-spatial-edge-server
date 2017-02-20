@@ -54,16 +54,16 @@
  **/
 
 var generalProperties = {
-    name : "flipflop",
-    blockSize : 3,
+    name : "scale",
+    blockSize : 1,
     privateData : {},
-    publicData : {toggle: true},
-    activeInputs : [true, true, true, false],
-    activeOutputs : [true, true, true, false],
+    publicData : {scale : 1000},
+    activeInputs : [true, false, false, false],
+    activeOutputs : [true, false, false, false],
     iconImage : "icon.png",
-    nameInput : ["close", "open", "in", ""],
-    nameOutput : ["stopped", "started", "out", ""],
-    type : "flipflop"
+    nameInput : ["in", "", "", ""],
+    nameOutput : ["out", "", "", ""],
+    type : "scale"
 };
 
 exports.properties = generalProperties;
@@ -75,38 +75,17 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, node, block, index, thisBlock, callback)  {
+exports.render = function (object, node, block, index, thisBlock, callback) {
 
-    if (index === 0) {
-        if(thisBlock.data[0].value > 0.5 ){
-            if(thisBlock.publicData.toggle !== true) {
-
-                thisBlock.publicData.toggle = true;
-                thisBlock.processedData[0].value = 1;
-                thisBlock.processedData[1].value = 0;
-                return callback(object, node, block, index, thisBlock);
-
-            }
+    for (var key in thisBlock.data[0]) {
+        if(key === "value"){
+            console.log(thisBlock.data[0][key]);
+            thisBlock.processedData[0][key] = thisBlock.data[0][key] *  thisBlock.publicData.scale;
+        } else {
+            thisBlock.processedData[0][key] = thisBlock.data[0][key];
         }
     }
 
-    else if (index === 1) {
-        if(thisBlock.data[1].value > 0.5 ){
-            if(thisBlock.publicData.toggle !== false) {
-
-                thisBlock.publicData.toggle = false;
-                thisBlock.processedData[0].value = 0;
-                thisBlock.processedData[1].value = 1;
-                return callback(object, node, block, index, thisBlock);
-            }
-        }
-
-    } else if (index === 2) {
-
-        if (thisBlock.publicData.toggle === true) {
-            thisBlock.processedData[2] = thisBlock.data[2];
-            return callback(object, node, block, index, thisBlock);
-        }
-    }
+    callback(object, node, block, index, thisBlock);
 
 };

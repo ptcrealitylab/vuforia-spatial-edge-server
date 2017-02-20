@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -91,7 +91,7 @@ if (exports.enabled) {
                 server.addReadListener(names[uuid].name, "port 1", function (names, wedo, uuid, data) {
                     // console.log(names[uuid].name,data);
                     if (names[uuid].px1 === "motor 1") {
-                        wedo.setMotor(server.map(data.value, 0, 1, -100, 100), 1, uuid);
+                        wedo.setMotor(server.map(data.value, -1, 1, -100, 100), 1, uuid);
                     }
                 }.bind(this, names, wedo, uuid));
 
@@ -99,7 +99,7 @@ if (exports.enabled) {
                     //  console.log(names[uuid].name,data);
                     if (names[uuid].px2 === "motor 2") {
                         //  console.log(server.map(data.value,0,1,-100,100));
-                        wedo.setMotor(server.map(data.value, 0, 1, -100, 100), 2, uuid);
+                        wedo.setMotor(server.map(data.value, -1, 1, -100, 100), 2, uuid);
                     }
                 }.bind(this, names, wedo, uuid));
 
@@ -158,7 +158,7 @@ if (exports.enabled) {
 
     wedo.on('distanceSensor', function (distance, port, uuid) {
        if(uuid in names) {
-           server.write(names[uuid].name, "port "+port, server.map(distance,0,10,0,1), "f");
+           server.write(names[uuid].name, "port "+port, server.map(10-distance,0,10,0,1), "f");
        }
     });
 

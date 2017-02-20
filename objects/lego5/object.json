@@ -1,9 +1,9 @@
 {
 	"objectId": "lego51Ci4r2m9thih",
 	"name": "lego5",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "1o7d6e",
 	"x": 0,
@@ -34,14 +34,33 @@
 			1
 		]
 	},
-	"links": {},
+	"links": {
+		"3Uk9yh8g": {
+			"objectA": "lego51Ci4r2m9thih",
+			"objectB": "lego51Ci4r2m9thih",
+			"nodeA": "lego51Ci4r2m9thihbutton",
+			"nodeB": "lego51Ci4r2m9thihlight",
+			"logicA": false,
+			"logicB": false,
+			"namesA": [
+				"lego5",
+				"button"
+			],
+			"namesB": [
+				"lego5",
+				"light"
+			],
+			"lastEditor": "W3ubqra0",
+			"loop": false
+		}
+	},
 	"nodes": {
 		"lego51Ci4r2m9thihport 1": {
 			"name": "port 1",
 			"data": {
-				"value": 0,
+				"value": 0.5,
 				"mode": "f",
-				"unit": "",
+				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -53,7 +72,13 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "x1"
+			"processedData": {
+				"value": 0.5,
+				"mode": "f",
+				"unit": false,
+				"unitMin": 0,
+				"unitMax": 1
+			}
 		},
 		"lego51Ci4r2m9thihport 2": {
 			"name": "port 2",
@@ -72,7 +97,6 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "distance",
 			"processedData": {
 				"value": 1,
 				"mode": "f",

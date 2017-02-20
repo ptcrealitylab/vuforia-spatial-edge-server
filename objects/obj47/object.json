@@ -1,7 +1,7 @@
 {
 	"objectId": "obj47n32vbg5gk3he",
 	"name": "obj47",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
 	"protocol": "R1",
 	"tcs": "4o9q5c",
@@ -15,23 +15,6 @@
 	"developer": true,
 	"memory": {},
 	"links": {
-		"aH1juvbj": {
-			"objectA": "obj47n32vbg5gk3he",
-			"objectB": "obj47n32vbg5gk3he",
-			"nodeA": "B16bdwue18rq",
-			"nodeB": "Q9gcy2dj13gu",
-			"logicA": 0,
-			"logicB": 2,
-			"namesA": [
-				"obj47",
-				"LOGIC0:BLUE"
-			],
-			"namesB": [
-				"obj47",
-				"LOGIC1:YELLOW"
-			],
-			"loop": false
-		},
 		"Rh269jpr": {
 			"objectA": "obj47n32vbg5gk3he",
 			"objectB": "obj47n32vbg5gk3he",
@@ -60,8 +43,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -16.694259005844287,
-			"y": 156.85004682175247,
+			"x": 245.30615238491737,
+			"y": 230.77724921674235,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -78,8 +61,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -23.743537815460286,
-			"y": -103.19668796408882,
+			"x": -117.92000213538995,
+			"y": -216.0064614935036,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -96,8 +79,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -83,
-			"y": -37,
+			"x": -347.2689108199629,
+			"y": 208.1054391519574,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -121,8 +104,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -54,
-			"y": -7,
+			"x": -323.42933924104,
+			"y": 1.720590661640017,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -146,8 +129,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -76,
-			"y": -89,
+			"x": -347.173061093883,
+			"y": -188.78789735520695,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -171,8 +154,8 @@
 				"unitMin": 0,
 				"unitMax": 1
 			},
-			"x": -24,
-			"y": 48,
+			"x": -120.17964998885873,
+			"y": 185.42282736005654,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",
@@ -902,8 +885,44 @@
 					"type": "default"
 				}
 			}
+		},
+		"obj47n32vbg5gk3hedistance": {
+			"name": "distance",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -113.6345797601025,
+			"y": -50.445298123140674,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"obj47n32vbg5gk3hemotor": {
+			"name": "motor",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": 461.62845528755133,
+			"y": 15.318016481502127,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
 		}
 	},
 	"logic": {},
-	"deactivated": true
+	"deactivated": false
 }

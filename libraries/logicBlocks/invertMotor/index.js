@@ -33,7 +33,6 @@
  *             ╩ ╩ ┴ └─┘┴└─┴─┴┘  ╚═╝└─┘└┘└─┘└─┘ ┴ └─┘
  *
  * Created by Valentin on 10/22/14.
- * Modified by Carsten on 12/06/15.
  *
  * Copyright (c) 2015 Valentin Heun
  *
@@ -45,43 +44,43 @@
  */
 
 /**
- * Set to true to enable the hardware interface
+ * @desc prototype for a plugin. This prototype is called when a value should be changed.
+ * It defines how this value should be transformed before sending it to the destination.
+ * @param {object} objectID Origin object in which the related link is saved.
+ * @param {string} linkID the id of the link that is related to the call
+ * @param {object} inputData the data that needs to be processed
+ * @param {function} callback the function that is called for when the process is rendered.
+ * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-exports.enabled = true;
 
-if (exports.enabled) {
+var generalProperties = {
+    name : "invert Motor",
+    blockSize : 1,
+    privateData : {},
+    publicData : {},
+    activeInputs : [true, false, false, false],
+    activeOutputs : [true, false, false, false],
+    iconImage : "icon.png",
+    nameInput : ["in", "", "", ""],
+    nameOutput : ["out", "", "", ""],
+    type : "invertMotor"
+};
 
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var switchValue = 0;
 
-    server.enableDeveloperUI(true);
+exports.properties = generalProperties;
 
-    server.addNode("demoTest", "distance", "node");
-    server.addNode("demoTest", "motor", "node");
+exports.setup = function (object,logic, block, activeBlockProperties){
+// add code here that should be executed once.
 
-/*
-    server.addNode("obj45", "one", "node");
-    server.addNode("obj45", "two", "node");
-    server.addNode("obj45", "three", "node");
-    server.addNode("obj45", "four", "node");
-    */
+};
 
-    server.addEventListener("reset", function () {
+exports.render = function (object, node, block, index, thisBlock, callback)  {
 
-    });
-
-    server.addEventListener("shutdown", function () {
-
-    });
-
-    /*
-   setInterval(function () {
-
-        server.advertiseConnection("obj45","one");
-
-       setTimeout(function() {
-           server.advertiseConnection("obj47", "hans");
-       }, 4000);
-
-    }, 8000);*/
-
-}
+    for (var key in thisBlock.data[0]) {
+        if (key === "value") {
+                thisBlock.processedData[0].value = thisBlock.data[0].value * -1;
+        }
+    }
+    callback(object, node, block, index, thisBlock);
+};

@@ -1,9 +1,9 @@
 {
 	"objectId": "lego2PM1e5heefta7",
 	"name": "lego2",
-	"ip": "192.168.1.5",
+	"ip": "192.168.1.8",
 	"version": "1.7.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "26FIr3",
 	"x": 0,
@@ -53,7 +53,6 @@
 			"stress": 0,
 			"frameSizeX": 100,
 			"frameSizeY": 100,
-			"text": "distance",
 			"processedData": {
 				"value": 0.7,
 				"mode": "f",
@@ -78,8 +77,7 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"text": "motor"
+			"frameSizeY": 100
 		},
 		"lego2PM1e5heefta7button": {
 			"name": "button",

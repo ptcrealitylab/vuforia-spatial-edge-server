@@ -53,17 +53,59 @@ if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
+    var app = require('express')();
+    var http = require('http').Server(app);
+    var io = require('socket.io')(http);
+
+
+    app.get('/', function(req, res){
+        res.sendFile(__dirname + '/index.html');
+    });
+    app.get('/marker.jpg', function(req, res){
+        res.sendFile(__dirname + '/marker.jpg');
+    });
+
+
+    http.listen(3000, function(){
+        console.log('listening on *:3000');
+    });
+
+    var counter = 0;
+    var timer = false;
     server.enableDeveloperUI(true);
 
-    server.addNode("demoTest", "distance", "node");
-    server.addNode("demoTest", "motor", "node");
+    server.addNode("timer", "start", "node");
+    server.addNode("timer", "stop", "node");
 
-/*
-    server.addNode("obj45", "one", "node");
-    server.addNode("obj45", "two", "node");
-    server.addNode("obj45", "three", "node");
-    server.addNode("obj45", "four", "node");
-    */
+    server.addNode("timer", "reset", "node");
+
+    server.addReadListener("timer", "start", function (data) {
+     if(data.value >0.5){
+        if(!timer) {
+                io.emit('timer', {timer: "start"});
+              timer = true;
+         }
+     }
+    });
+
+
+
+    server.addReadListener("timer", "reset", function (data) {
+        if(data.value >0.5){
+            io.emit('timer', {timer: "reset"});
+        }
+    });
+
+    server.addReadListener("timer", "stop", function (data) {
+        console.log(data.value);
+        if(data.value >0.5) {
+            if (timer) {
+                io.emit('timer', {timer: "stop"});
+                timer = false;
+
+            }
+        }
+    });
 
     server.addEventListener("reset", function () {
 
@@ -73,15 +115,13 @@ if (exports.enabled) {
 
     });
 
-    /*
-   setInterval(function () {
 
-        server.advertiseConnection("obj45","one");
+    io.on('connection', function(socket){
 
-       setTimeout(function() {
-           server.advertiseConnection("obj47", "hans");
-       }, 4000);
+      timer = false;
+    });
 
-    }, 8000);*/
+
+
 
 }
