@@ -48,10 +48,34 @@ if (exports.enabled) {
         path: '/pantiltcontrol.cgi',
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Referer': 'http://192.168.1.138'
         },
         auth: 'admin:fluidnsa'
     };
+
+    function postToServer(path, body, callback) {
+        options.path = path;
+        options.headers['Content-Length'] = Buffer.byteLength(body);
+        var req = http.request(options, function() {
+            if (callback) {
+                callback();
+            }
+        });
+        req.on('error', function(e) {
+            console.log('Problem with request:', e.message);
+            if (callback) {
+                callback();
+            }
+        });
+
+        req.write(body);
+        req.end();
+    }
+
+    function sendPreset(preset) {
+        postToServer('/setControlPanTilt', 'PanTiltPresetPositionMove=' + preset);
+    }
 
     function writeMotion(newMotion) {
         motion = newMotion;
@@ -106,25 +130,17 @@ if (exports.enabled) {
     }
 
     function sendMovement(index) {
+        // Note that this must balance overwhelming the camera with requests
+        // (causing lag at end time) and sending requests too infrequently
+        // (causing jitter)
         if (requestInFlight) {
             return;
         }
         requestInFlight = true;
-        // Note that this must balance overwhelming the camera with requests
-        // (causing lag at end time) and sending requests too infrequently
-        // (causing jitter)
         var body = 'PanSingleMoveDegree=1&TiltSingleMoveDegree=1&PanTiltSingleMove=' + index;
-        options.headers['Content-Length'] = Buffer.byteLength(body);
-        var req = http.request(options, function() {
+        postToServer('/pantiltcontrol.cgi', body, function() {
             requestInFlight = false;
         });
-        req.on('error', function(e) {
-            console.log('Problem with request:', e.message);
-            requestInFlight = false;
-        });
-
-        req.write(body);
-        req.end();
     }
 
     server.addNode(objectName, 'pan', 'default');
@@ -148,5 +164,15 @@ if (exports.enabled) {
         if (updateTimeout) {
             clearTimeout(updateTimeout);
         }
+    });
+
+    var express = require('express');
+    var app = express();
+    app.use('/preset/:presetId', function(req, res) {
+        console.log('sendPreset', req.params.presetId);
+        sendPreset(req.params.presetId);
+    });
+    app.listen(42448, function() {
+        console.log('listening on 42448');
     });
 }
