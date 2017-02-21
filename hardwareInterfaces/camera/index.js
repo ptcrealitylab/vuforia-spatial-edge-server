@@ -168,9 +168,11 @@ if (exports.enabled) {
 
     var express = require('express');
     var app = express();
+    var cors = require('cors');
+    app.use(cors());
     app.use('/preset/:presetId', function(req, res) {
-        console.log('sendPreset', req.params.presetId);
         sendPreset(req.params.presetId);
+        res.send('complete');
     });
     app.listen(42448, function() {
         console.log('listening on 42448');
