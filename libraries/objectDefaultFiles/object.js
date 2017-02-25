@@ -358,8 +358,10 @@ function HybridObject() {
 
     this.addInterfaceListener = function (callback) {
         realityObject.messageCallBacks.interfaceCall = function (msgContent) {
-            if (typeof msgContent.interface !== "undefined") {
-                callback(msgContent.interface);
+            if (typeof msgContent.interface !== "undefined" && typeof msgContent.search === "undefined") {
+                callback(msgContent.interface, null);
+            } else  if (typeof msgContent.interface !== "undefined" && typeof msgContent.search !== "undefined") {
+                callback(msgContent.interface, msgContent.search);
             }
         };
     };
@@ -367,6 +369,28 @@ function HybridObject() {
     /**
      ************************************************************
      */
+
+    this.search = function (ingredients, userList) {
+        for (var key in userList) {
+
+            if (userList[key].state === false) {
+                if(typeof ingredients[key] !== "undefined"){
+                    if(ingredients[key].state === true){
+                        return false;
+                    }
+                }
+            }
+
+            if (userList[key].state === true) {
+                if(typeof ingredients[key] !== "undefined"){
+                    if(ingredients[key].state === false){
+                        return false;
+                    }
+                } else return false;
+            }
+        }
+        return true;
+    }
 
     this.getPossitionX = function () {
         if (typeof realityObject.modelViewMatrix[12] !== "undefined") {
