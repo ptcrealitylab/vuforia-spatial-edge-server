@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg id="Layer_1" style="enable-background:new 0 0 92 46;" x="0px" y="0px" viewBox="0 0 368 46" xmlns="http://www.w3.org/2000/svg">
+  <style type="text/css">
+	.st0{opacity:0.4;}
+	.st1{fill:none;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
+	.st2{fill:none;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;stroke-dasharray:5.71,5.71;}
+</style>
+  <title>label</title>
+  <g class="st0" transform="matrix(1, 0, 0, 1, -0.01162, -0.045173)">
+    <line class="st1" x1="46" y1="0" x2="46" y2="3"/>
+    <line class="st2" x1="46" y1="8.7" x2="46" y2="40.1"/>
+    <line class="st1" x1="46" y1="43" x2="46" y2="46"/>
+    <line class="st2" x1="135.899" y1="24.513" x2="45.935" y2="24.513"/>
+    <line class="st2" x1="326.934" y1="24.513" x2="231.021" y2="24.513"/>
+    <line class="st1" x1="325.951" y1="0" x2="325.951" y2="3"/>
+    <line class="st2" x1="325.951" y1="8.7" x2="325.951" y2="23.502"/>
+  </g>
+  <g class="st0" transform="matrix(1, 0, 0, 1, 136.939499, -0.045173)">
+    <line class="st1" x1="46" y1="0" x2="46" y2="3"/>
+    <line class="st2" x1="46" y1="8.7" x2="46" y2="14.568"/>
+  </g>
+  <text x="144.76" y="29.705" style="fill: rgb(255, 255, 255); font-size: 18px; white-space: pre; font-family: Helvetica Neue, Helvetica, sans-serif;">A + B + C</text>
+</svg>
