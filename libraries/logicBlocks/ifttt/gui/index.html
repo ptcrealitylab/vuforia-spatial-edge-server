@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/object.js"></script>
+</head>
+
+<body>
+<div id="description">
+    This will make trigger an IFTTT event
+    <!--<br/>-->
+    <!--with the body: <span class="code">{ blockData: <span class="placeholder">_array_with_one_value_</span> }</span>-->
+</div>
+
+<div id="interaction">
+    Current event name: <span id="currentEventNameText"></span> <br/>
+    <input type="text" id="eventNameTextField" placeholder="Enter new event name here"></input> <br/>
+    <button type="button" id="updateButton" onclick="updateEventName();">Update</button>
+    <br/>
+    Current IFTTT Key: <span id="currentIFTTTKeyText"></span> <br/>
+    <input type="text" id="iftttTextField" placeholder="Enter new IFTTT key here"></input> <br/>
+    <button type="button" id="updateButton" onclick="updateIFTTTKey();">Update</button>
+</div>
+
+<script>
+
+    var logic = new HybridLogic();
+    var currentEventName = "reality_editor_43bb26f9";
+    var currentIFTTTKey = "d7KguEO4Vn2Xhut0sR0_JI";
+
+    function updateEventName() {
+        var eventNameTextField = document.getElementById("eventNameTextField");
+        currentEventName = eventNameTextField.value;
+        console.log("set eventName to " + currentEventName);
+        logic.writePublicData("eventName",  currentEventName);
+        redisplay();
+    }
+
+    function updateIFTTTKey() {
+        var iftttTextField = document.getElementById("iftttTextField");
+        currentIFTTTKey = iftttTextField.value;
+        console.log("set ifttt_key to " + currentIFTTTKey);
+        logic.writePublicData("ifttt_key",  currentIFTTTKey);
+        redisplay();
+    }
+
+    function redisplay() {
+        document.getElementById("currentEventNameText").innerHTML = currentEventName;
+        document.getElementById("eventNameTextField").value = currentEventName;
+
+        document.getElementById("currentIFTTTKeyText").innerHTML = currentIFTTTKey;
+        document.getElementById("iftttTextField").value = currentIFTTTKey;
+    }
+
+    // todo this needs to wait until the reality editor has sent the initial data.
+    var eventName = logic.readPublicData("eventName"); // value and default if not existing (optional)
+    console.log("got eventName " + eventName);
+    currentEventName = eventName;
+
+    var ifttt_key = logic.readPublicData("ifttt_key"); // value and default if not existing (optional)
+    console.log("got ifttt_key " + ifttt_key);
+    currentIFTTTKey = ifttt_key;
+
+    redisplay();
+
+    logic.addReadPublicDataListener("ifttt_key",function (ifttt_key){
+        currentIFTTTKey = ifttt_key;
+        redisplay();
+    });
+
+    logic.addReadPublicDataListener("eventName",function (eventName){
+        currentEventName = eventName;
+        redisplay();
+    });
+
+</script>
+</body>
+</html>
