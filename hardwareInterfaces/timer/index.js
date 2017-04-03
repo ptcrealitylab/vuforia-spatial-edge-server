@@ -76,52 +76,44 @@ if (exports.enabled) {
 
     server.addNode("timer", "start", "node");
     server.addNode("timer", "stop", "node");
-
     server.addNode("timer", "reset", "node");
+    server.addNode("timer", "running", "node");
 
     server.addReadListener("timer", "start", function (data) {
-     if(data.value >0.5){
-        if(!timer) {
+        if (data.value > 0.5) {
+            if (!timer) {
                 io.emit('timer', {timer: "start"});
-              timer = true;
-         }
-     }
+                timer = true;
+                server.write('timer', 'running', 1.0, 'f');
+            }
+        }
     });
 
-
-
     server.addReadListener("timer", "reset", function (data) {
-        if(data.value >0.5){
+        if (data.value > 0.5) {
             io.emit('timer', {timer: "reset"});
         }
     });
 
     server.addReadListener("timer", "stop", function (data) {
         console.log(data.value);
-        if(data.value >0.5) {
+        if (data.value > 0.5) {
             if (timer) {
                 io.emit('timer', {timer: "stop"});
                 timer = false;
-
+                server.write('timer', 'running', 0.0, 'f');
             }
         }
     });
 
     server.addEventListener("reset", function () {
-
     });
 
     server.addEventListener("shutdown", function () {
-
     });
-
 
     io.on('connection', function(socket){
-
-      timer = false;
+        timer = false;
     });
-
-
-
-
 }
+
