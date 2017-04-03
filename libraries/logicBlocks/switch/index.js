@@ -105,13 +105,10 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
             thisBlock.processedData[index][key] = thisBlock.data[index][key];
         }
 
-        if (index === 0)   thisBlock.processedData[0].value = 1;
-        thisBlock.processedData[1].value = 1;
+        if (index === 0)   thisBlock.processedData[index].value = 1;
     }
     else {
         thisBlock.processedData[index].value = 0;
-
-        thisBlock.processedData[1].value = 0;
     }
 
     callback(object, node, block, index, thisBlock);
