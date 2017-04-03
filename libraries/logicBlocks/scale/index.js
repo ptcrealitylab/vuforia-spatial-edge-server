@@ -57,7 +57,7 @@ var generalProperties = {
     name : "scale",
     blockSize : 1,
     privateData : {},
-    publicData : {scale : 1000},
+    publicData : {scale : 1},
     activeInputs : [true, false, false, false],
     activeOutputs : [true, false, false, false],
     iconImage : "icon.png",
