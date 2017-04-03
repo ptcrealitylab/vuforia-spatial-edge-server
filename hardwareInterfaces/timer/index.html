@@ -12,30 +12,34 @@
 <script>
     var socket = io();
 
-   var timer = null;
-   var counter = 0.1;
+    var timer = null;
+    var counter = 0;
 
-    document.getElementById("timer").innerText= (counter/100).toFixed(2);
+    function updateCounter() {
+        document.getElementById("timer").innerText = (counter/100).toFixed(2);
+    }
 
-    socket.on('timer', function(msg){
-console.log(msg.timer);
-        if(msg.timer === "start") {
-            if (timer === null) {
-                timer = setInterval(function () {
+    updateCounter();
+
+    socket.on('timer', function(msg) {
+        console.log(msg.timer);
+        if (msg.timer === "start") {
+            if (!timer) {
+                timer = setInterval(function() {
                     counter++;
-                    document.getElementById("timer").innerText= (counter/100).toFixed(2);
+                    updateCounter();
                 }, 10);
             }
         }
 
-        if(msg.timer === "stop") {
+        if (msg.timer === "stop") {
             clearInterval(timer);
             timer = null;
         }
 
-        if(msg.timer === "reset") {
-           counter = 0;
-            document.getElementById("timer").innerText= (counter/100).toFixed(2);
+        if (msg.timer === "reset") {
+            counter = 0;
+            updateCounter();
         }
     });
 </script>
