@@ -76,12 +76,10 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
 exports.render = function (object, node, block, index, thisBlock, callback) {
-
-    for (var key in thisBlock.data[index]) {
-        thisBlock.processedData[index][key] = thisBlock.data[index][key];
-    }
+    var delayedValue = thisBlock.data[index].value;
 
     setTimeout(function() {
+        thisBlock.processedData[index].value = delayedValue;
         callback(object, node, block, index, thisBlock);
     }, thisBlock.publicData.delayTime);
 
