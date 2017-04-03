@@ -148,13 +148,13 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
  * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides. 
  **/
 exports.writeObjectToFile = function (objects, object, dirnameO) {
-
+console.log("start saving");
     var outputFilename = dirnameO + '/objects/' + objects[object].name + '/object.json';
     fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
         if (err) {
             console.log(err);
         } else {
-            if (debug) console.log("JSON saved to " + outputFilename);
+           console.log("JSON saved to " + outputFilename);
         }
     });
 };
