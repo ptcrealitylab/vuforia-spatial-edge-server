@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/object.js"></script>
+</head>
+
+<body>
+<div id="description">
+    This will make a post request to the specified URL <br/>
+    with the body: <span class="code">{ blockData: <span class="placeholder">_array_with_two_values_</span> }</span>
+</div>
+
+<div id="interaction">
+    Current Endpoint: <span id="currentEndpointURLText"></span> <br/>
+    <input type="text" id="endpointTextField" placeholder="Enter new endpoint URL here"></input> <br/>
+    <button type="button" id="updateButton" onclick="updateEndpoint();">Update</button>
+</div>
+
+<script>
+
+    var logic = new HybridLogic();
+    var currentEndpointURL = "http://192.168.1.12:8082/test2";
+
+    function updateEndpoint() {
+        var endpointTextField = document.getElementById("endpointTextField");
+        currentEndpointURL = endpointTextField.value;
+        console.log("set endpoint to " + currentEndpointURL);
+        logic.writePublicData("endpointUrl",  currentEndpointURL);
+        redisplayEndpointURL();
+    }
+
+    function redisplayEndpointURL() {
+        document.getElementById("currentEndpointURLText").innerHTML = currentEndpointURL;
+        document.getElementById("endpointTextField").value = currentEndpointURL;
+    }
+
+    // todo this needs to wait until the reality editor has sent the initial data.
+    var endpointUrl = logic.readPublicData("endpointUrl"); // value and default if not existing (optional)
+    console.log("got endpointUrl " + endpointUrl);
+    currentEndpointURL = endpointUrl;
+    redisplayEndpointURL();
+
+    logic.addReadPublicDataListener("endpointUrl",function (endpointUrl){
+        currentEndpointURL = endpointUrl;
+        redisplayEndpointURL();
+    });
+
+</script>
+</body>
+</html>

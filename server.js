@@ -1546,6 +1546,7 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.post('/object/*/link/*/', function (req, res) {
 
+        console.log("new link");
         var updateStatus = "nothing happened";
 
         if (objects.hasOwnProperty(req.params[0])) {
@@ -1566,10 +1567,9 @@ function objectWebServer() {
                 updateStatus = "added";
                 cout("added link: " + req.params[1]);
                 // check if there are new connections associated with the new link.
-                socketUpdater();
-
-                // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, req.params[0], __dirname);
+                // write the object state to the permanent storage.
+                socketUpdater();
 				// call an action that asks all devices to reload their links, once the links are changed.
 				actionSender({reloadLink: {object: req.params[0]}, lastEditor: req.body.lastEditor});
             } else {
