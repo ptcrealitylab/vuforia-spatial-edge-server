@@ -72,7 +72,7 @@
 
 var globalVariables = {
     developer: true, // show developer web GUI
-    debug: true      // debug messages to console
+    debug: false      // debug messages to console
 };
 
 // ports used to define the server behaviour
@@ -987,7 +987,7 @@ function objectBeatServer() {
         // check if object ping
         msgContent = JSON.parse(msg);
 
-        if (msgContent.id && msgContent.ip && !(msgContent.id in objects) && !(msgContent.id in knownObjects)) {
+        if (msgContent.id && msgContent.ip && !checkObjectActivation(msgContent.id) && !(msgContent.id in knownObjects)) {
 
             if(!knownObjects[msgContent.id]){
                 knownObjects[msgContent.id] = {};
@@ -2646,7 +2646,7 @@ function socketServer() {
 
         socket.on('block/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
-            console.log(msg);
+           // console.log(msg);
             if (typeof msg.object !== "undefined" && typeof  msg.logic !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
                     if (msg.logic in objects[msg.object].nodes) {
@@ -2762,7 +2762,7 @@ var engine = {
             this.link = this.objects[object].links[linkKey];
 
             if (this.link.nodeA === node && this.link.objectA === object) {
-                if (!(this.link.objectB in this.objects)) {
+                if (!checkObjectActivation(this.link.objectB)) {
                     socketSender(object, linkKey, thisNode.processedData);
                 }
                 else {
@@ -2801,7 +2801,7 @@ var engine = {
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
         if (!internalObjectDestination) {
-            console.log('temporarily ignored undefined destination in computeProcessedData', thisNode, thisLink);
+            console.log('temporarily ignored undefined destination in computeProcessedData', thisLink);
             return;
         }
 
@@ -2861,7 +2861,7 @@ var engine = {
 
                         if (this.link.nodeA === node &&
                             this.link.objectA === object && this.link.logicA === this.router) {
-                            if (!(this.link.objectB in this.objects)) {
+                            if (!(checkObjectActivation(this.link.objectB))) {
                                 socketSender(object, linkKey, thisBlock.processedData[i]);
                             }
                             else {
@@ -2944,7 +2944,7 @@ function socketSender(object, link, data) {
         }
 
         try {
-            var thisIp = knownObjects[thisLink.objectB];
+            var thisIp = knownObjects[thisLink.objectB].ip;
             var presentObjectConnection = socketArray[thisIp].io;
             if (presentObjectConnection.connected) {
                 presentObjectConnection.emit("object", msg);
@@ -2977,9 +2977,9 @@ function socketUpdater() {
         // check if the link is used somewhere. if it is not used delete it.
         for (objectKey in objects) {
             for (nodeKey in objects[objectKey].links) {
-                var thisIp = knownObjects[objects[objectKey].links[nodeKey].objectB];
+                var thisSocket = knownObjects[objects[objectKey].links[nodeKey].objectB];
 
-                if (thisIp === sockKey) {
+                if (thisSocket === sockKey) {
                     socketIsUsed = true;
                 }
             }
@@ -2992,9 +2992,9 @@ function socketUpdater() {
         for (nodeKey in objects[objectKey].links) {
             var thisLink = objects[objectKey].links[nodeKey];
 
-            if (!(thisLink.objectB in objects) && (thisLink.objectB in knownObjects)) {
+            if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
 
-                var thisIp = knownObjects[thisLink.objectB];
+                var thisIp = knownObjects[thisLink.objectB].ip;
                 //cout("this ip: "+ip);
                 if (!(thisIp in socketArray)) {
                     // cout("shoudl not show up -----------");
@@ -3058,4 +3058,10 @@ function socketUpdaterInterval() {
 
 function cout(msg) {
     if (globalVariables.debug) console.log(msg);
+}
+
+function checkObjectActivation(id){
+    if(id in objects){
+        return !objects[id].deactivated
+    } else return false;
 }
