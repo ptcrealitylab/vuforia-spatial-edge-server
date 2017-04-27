@@ -1,0 +1,14 @@
+{
+  "Light1": {
+    "host": "192.168.1.12",
+    "url": "/api/Hw2QChjzsx82qtAnOEbSwt7-P8aztrWIEXzaPrOg/lights/1",
+    "id": "Light1",
+    "port": "80"
+  },
+  "Light2": {
+    "host": "192.168.1.12",
+    "url": "/api/Hw2QChjzsx82qtAnOEbSwt7-P8aztrWIEXzaPrOg/lights/2",
+    "id": "Light2",
+    "port": "80"
+  }
+}
