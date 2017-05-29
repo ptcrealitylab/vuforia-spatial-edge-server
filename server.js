@@ -159,13 +159,6 @@ var events = require("events"); // node.js events used for the socket events.
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
 
-var pnrickmem = require('pubnub-rickshaw-memory');
-pnrickmem.init({
-    timeout: 1000,
-    dev: true,
-    channel :"server"
-});
-
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/

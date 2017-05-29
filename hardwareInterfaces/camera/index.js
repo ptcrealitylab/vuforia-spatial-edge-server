@@ -1,4 +1,4 @@
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
     var http = require('http');
