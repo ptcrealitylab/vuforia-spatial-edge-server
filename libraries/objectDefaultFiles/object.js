@@ -54,6 +54,7 @@ var realityObject = {
     sendMatrix: false,
     sendAcceleration: false,
     sendFullScreen: false,
+    sendSticky : false,
     height: "100%",
     width: "100%",
     socketIoScript: {},
@@ -119,7 +120,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 width: realityObject.width,
                 sendMatrix: realityObject.sendMatrix,
                 sendAcceleration: realityObject.sendAcceleration,
-                fullScreen: realityObject.sendFullScreen
+                fullScreen: realityObject.sendFullScreen,
+                stickiness: realityObject.sendSticky
             }
             )
             // this needs to contain the final interface source
@@ -159,6 +161,25 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
 
     if (typeof msgContent.visibility !== "undefined") {
         realityObject.visibility = msgContent.visibility;
+
+        if(realityObject.visibility === "visible"){
+            if (typeof realityObject.node !== "undefined") {
+                if(realityObject.sendSticky) {
+                    parent.postMessage(JSON.stringify(
+                        {
+                            version: realityObject.version,
+                            node: realityObject.node,
+                            object: realityObject.object,
+                            height: realityObject.height,
+                            width: realityObject.width,
+                            sendMatrix: realityObject.sendMatrix,
+                            sendAcceleration: realityObject.sendAcceleration,
+                            fullScreen: realityObject.sendFullScreen,
+                            stickiness: realityObject.sendSticky
+                        }), "*");
+                }
+            }
+        }
     }
 
     if (typeof msgContent.interface !== "undefined") {
@@ -247,7 +268,8 @@ function HybridObject() {
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
                 }), "*");
         }
     };
@@ -265,7 +287,8 @@ function HybridObject() {
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
                 }), "*");
         }
     };
@@ -293,7 +316,8 @@ function HybridObject() {
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
                 }), "*");
         }
     };
@@ -318,9 +342,61 @@ function HybridObject() {
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
                 }), "*");
         }
+    };
+
+    /**
+     ************************************************************
+     */
+
+    this.setStickyFullScreenOn = function () {
+        realityObject.sendFullScreen = "sticky";
+        realityObject.sendSticky = true;
+        if (typeof realityObject.node !== "undefined") {
+
+            realityObject.height = "100%";
+            realityObject.width = "100%";
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), "*");
+        }
+    };
+
+    /**
+     ************************************************************
+     */
+
+    this.setStickinessOff = function () {
+        console.log(realityObject.visibility);
+   //if(realityObject.visibility === "hidden"){
+        if (typeof realityObject.node !== "undefined") {
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: false
+                }), "*");
+        }
+
     };
 
     /**
