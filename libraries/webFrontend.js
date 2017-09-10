@@ -114,86 +114,183 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
             tempFiles.splice(0, 1);
         }
 
+        var allFilesOn = false;
+
         for (var i = 0; i < tempFiles.length; i++) {
-            resText += "<li class='list-group-item'>" +
-                "<div class='row'>" +
-                "<div class='col-xs-4'>" +
-                "<font size='5'>" + tempFiles[i] + "</font>" +
-                "</div>" +
-                "<div class='col-xs-8 text-right' style='' >";
+            if(tempFiles[i] === "allTargetsPlaceholder") {
 
-            if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
-                resText +=
-                    "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
-            } else {
-                resText +=
-                    "<button  class='btn btn-info' disabled='disabled'>Info</button> ";
-            }
+                resText += "<li class='list-group-item'>" +
+                    "<div class='row'>" +
+                    "<div class='col-xs-4'>" +
+                    "<font size='5'>single Targets File</font>" +
+                    "</div>" +
+                    "<div class='col-xs-8 text-right' style='' >";
 
+                if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
+                    resText +=
+                        "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
+                } else {
+                    resText +=
+                        "<button style='display: none;' class='btn btn-info' disabled='disabled'>Info</button> ";
+                }
 
-            resText += "<button  class='";
-            if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
-                resText += "btn btn-success";
-            } else {
-                resText += "btn btn-primary";
-            }
-
-
-            resText += "' onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
-                "<button  class='";
-
-            if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.html")) {
-
-                if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml")&& fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
+                resText += "<button style='width:120px;  position: relative; right: 262px;' class='pull-right ";
+                if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
                     resText += "btn btn-success";
-                }
-                else {
-                    resText += "btn btn-warning";
-                }
-            } else {
-                resText += "btn btn-primary";
-            }
-
-            resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
-
-            var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
-
-            if (objects.hasOwnProperty(thisObject)) {
-                if(objects[thisObject].deactivated !== true) {
-                    resText += " <button class='btn btn-success'";
-                    resText += "' onclick=\"window.location.href='/object/" + thisObject+ "/deactivate/'\">on</button> ";
-                }
-                else{
-                    resText += " <button class='btn btn-warning'";
-                    resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
+                } else {
+                    resText += "btn btn-primary";
                 }
 
-            } else {
-                resText += " <button class='btn btn-default' disabled='disabled'>off</button>";
-            }
+                resText += "' onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
+                    "<button  style='visibility: hidden;' class='";
 
-            resText +=
+                if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.html")) {
 
-                // "</div>"+
+                    if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
+                        resText += "btn btn-success";
+                    }
+                    else {
+                        resText += "btn btn-warning";
+                    }
+                } else {
+                    resText += "btn btn-primary";
+                }
+
+                resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
+
+                var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
+
+                if (objects.hasOwnProperty(thisObject)) {
+
+                    if (objects[thisObject].deactivated !== true) {
+                        allFilesOn = true;
+                        resText += " <button style='width:125px; position: relative; right: 13px;'  class='btn btn-success pull-right'";
+                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/deactivate/'\">on</button> ";
+                    }
+                    else {
+                        allFilesOn = false;
+                        resText += " <button  style='width:125px; position: relative; right: 13px;'  class='btn btn-warning pull-right'";
+                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
+                    }
+
+                } else {
+                    resText += " <button style='width:125px; position: relative; right: 13px;' class='btn btn-default pull-right' disabled='disabled'>off</button>";
+                }
+
+                resText +=
+
+                    // "</div>"+
                     // "<div class='col-xs-3'>"+
 
                     // " <div>" +
-                ' <button  class="btn btn-default" onclick="window.location.href=\'/object/' + tempFiles[i] + '/zipBackup/\'"' + tempFiles[i] + '\'" > ' +
+                    ' <button  style="display: none;" class="btn btn-default" onclick="window.location.href=\'/object/' + tempFiles[i] + '/zipBackup/\'"' + tempFiles[i] + '\'" > ' +
 
-                'Download' +
-                '</button> ' +
-                " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
-                "<input type='hidden' name='name' value='" + tempFiles[i] + "'>" +
-                "<input type='hidden' name='action' value='delete'>" +
-                " <input type='submit'  class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
-                "</form>";
+                    'Download' +
+                    '</button> ' +
+                    " <form  style='display: none; id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden'  style='display: none;' name='name' value='" + tempFiles[i] + "'>" +
+                    "<input type='hidden'   style='display: none;' name='action' value='delete'>" +
+                    " <input type='submit'   style='display: none;' class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
+                    "</form>";
 
-            resText +=
+                resText +=
                     //" </div>"+
-                "</div>" +
-                "</div></li>";
+                    "</div>" +
+                    "</div></li>";
+
+            }
+
+        }
+
+        resText += "</ul><ul class='list-group'>";
+
+        for (var i = 0; i < tempFiles.length; i++) {
+
+            if(tempFiles[i] !== "allTargetsPlaceholder") {
+
+                resText += "<li class='list-group-item'>" +
+                    "<div class='row'>" +
+                    "<div class='col-xs-4'>" +
+                    "<font size='5'>" + tempFiles[i] + "</font>" +
+                    "</div>" +
+                    "<div class='col-xs-8 text-right' style='' >";
+
+                if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectPath + "/" + tempFiles[i] + "/target/target.xml")) {
+                    resText +=
+                        "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
+                } else {
+                    resText +=
+                        "<button  class='btn btn-info' disabled='disabled'>Info</button> ";
+                }
+
+                resText += "<button  class='";
+                if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
+                    resText += "btn btn-success'";
+                } else {
+                    resText += "btn btn-primary'";
+                }
 
 
+                if(allFilesOn){
+                   // resText += " disabled='disabled'";
+                }
+
+
+                resText += " onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
+                    "<button  class='";
+
+                if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectPath + '/' + tempFiles[i] + "/index.html")) {
+
+                    if (fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectPath + '/' + tempFiles[i] + "/target/target.jpg")) {
+                        resText += "btn btn-success";
+                    }
+                    else {
+                        resText += "btn btn-warning";
+                    }
+                } else {
+                    resText += "btn btn-primary";
+                }
+
+                resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
+
+                var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
+
+                if (objects.hasOwnProperty(thisObject)) {
+                    if (objects[thisObject].deactivated !== true) {
+                        resText += " <button class='btn btn-success'";
+                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/deactivate/'\">on</button> ";
+                    }
+                    else {
+                        resText += " <button class='btn btn-warning'";
+                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
+                    }
+
+                } else {
+                    resText += " <button class='btn btn-default' disabled='disabled'>off</button>";
+                }
+
+                resText +=
+
+                    // "</div>"+
+                    // "<div class='col-xs-3'>"+
+
+                    // " <div>" +
+                    ' <button  class="btn btn-default" onclick="window.location.href=\'/object/' + tempFiles[i] + '/zipBackup/\'"' + tempFiles[i] + '\'" > ' +
+
+                    'Download' +
+                    '</button> ' +
+                    " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + tempFiles[i] + "'>" +
+                    "<input type='hidden' name='action' value='delete'>" +
+                    " <input type='submit'  class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
+                    "</form>";
+
+                resText +=
+                    //" </div>"+
+                    "</div>" +
+                    "</div></li>";
+
+            }
         }
 
     }
@@ -580,19 +677,40 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '<body style="height:100vh; weight: 100%; background-color: #ffffff;  background:repeating-linear-gradient(-45deg, #e4f6ff, #e4f6ff 5px, white 5px, white 10px);" >\n' +
         '<div class="container" id="container" style="width: 750px;">\n' +
         '    <div class="panel panel-primary">\n' +
-        '        <div class="panel-heading">\n' +
-        '            <h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - Target&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
+        '        <div class="panel-heading">\n';
+
+    if (parm !== "allTargetsPlaceholder") {
+        text +=
+            '            <h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - Target&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
+    } else {
+        text +=
+            '            <h3 class="panel-title"><font size="6">Hybrid Object - single Targets File&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
+    }
+    text +=
         '        </div>\n' +
         '    </div>\n' +
         '    <div id="actions" class="row">\n' +
-        '        <div class="col-xs-7">\n' +
+        '        <div class="col-xs-7">\n';
+
+    if (parm !== "allTargetsPlaceholder") {
+        text +=
             '  <b>1. Upload your target source image (jpg only, < 0.5 MB)</b><br>' +
-        '            2. Login to the Vuforia Target Manager.<br>' +
-        '            3. Create a new or open a Device Databases.<br>' +
-        '            4. Create a target for your Object and name it exactly:<br><b>&nbsp;&nbsp;&nbsp;&nbsp;' + objectName + '</b><br>' +
-        '            5. Make sure that only this one Target is Activated.<br>' +
-        '            6. Download the database and then upload it here:<br>' +
-        '            (You can just drag and drop the files anywhere in the striped area)' +
+            '            2. Login to the Vuforia Target Manager.<br>' +
+            '            3. Create a new or open a Device Databases.<br>' +
+            '            4. Create a target for your Object and name it exactly:<br><b>&nbsp;&nbsp;&nbsp;&nbsp;' + objectName + '</b><br>' +
+            '            5. Make sure that only this one Target is Activated.<br>' +
+            '            6. Download the database and then upload it here:<br>' +
+            '            (You can just drag and drop the files anywhere in the striped area)';
+    } else {
+        text +=
+            '  <b>1. Upload a random jpg image (jpg only, < 0.5 MB)</b><br>' +
+            '            2. Login to the Vuforia Target Manager.<br>' +
+            '            3. Download a device database that includes all targets generated for your objects.<br>' +
+            '            6. Download the database and then upload it here:<br>' +
+            '            (You can just drag and drop the files anywhere in the striped area)';
+    }
+
+     text +=
         '        </div>' +
         '        <div class="col-xs-5">' +
         '            ' +

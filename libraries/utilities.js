@@ -120,6 +120,10 @@ exports.uuidTime = function () {
 
 exports.getObjectIdFromTarget = function (folderName, dirnameO) {
 
+    if(folderName === "allTargetsPlaceholder"){
+        return "allTargetsPlaceholder000000000000";
+    }
+
     var xmlFile = dirnameO + '/objects/' + folderName + '/target/target.xml';
 
     if (fs.existsSync(xmlFile)) {
