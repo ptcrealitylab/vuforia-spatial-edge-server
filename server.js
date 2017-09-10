@@ -91,7 +91,7 @@ const beatPort = 52316;            // this is the port for UDP broadcasting so t
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const version = "1.7.0";           // the version of this server
+const version = "1.7.5";           // the version of this server
 const protocol = "R1";           // the version of this server
 const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
@@ -2029,7 +2029,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+            res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ip.address(),serverPort));
         });
 
 
@@ -2086,7 +2086,36 @@ function objectWebServer() {
         });
 
 
+        // use allObjects for TCP/IP object discovery
+        // ****************************************************************************************************************
 
+        webServer.get('/allObjects/', function (req, res) {
+
+           var returnJSON = [];
+
+            for(var thisId in objects) {
+                if (objects[thisId].deactivated) continue;
+
+                objects[thisId].version = version;
+                objects[thisId].protocol = protocol;
+
+                var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ""));
+
+                if (typeof objects[thisId].tcs === "undefined") {
+                    objects[thisId].tcs = 0;
+                }
+                returnJSON.push({
+                    id: thisId,
+                    ip: objects[thisId].ip,
+                    vn: thisVersionNumber,
+                    pr: protocol,
+                    tcs: objects[thisId].tcs
+                });
+            }
+
+           res.json(returnJSON);
+        });
+        
         // ****************************************************************************************************************
         // post interfaces
         // ****************************************************************************************************************
