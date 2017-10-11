@@ -1,10 +1,67 @@
-.region {
-    border: 2px solid black;
-    position: fixed;
-    width: 50%;
-    height: 50%;
+@font-face {
+    font-family: myriadPro;
+    src: url(resources/MyriadPro-Regular.otf);
+}
+
+body {
+    background-color: rgb(34,34,34);
+    /*font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;*/
+    /*font-size: 12pt;*/
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    cursor: default;
     text-align: center;
 }
+
+#container {
+    width: 800px;
+    height: 800px;
+    position: relative;
+    border: 1px solid white;
+    /*padding: 25px;*/
+    margin: auto;
+}
+
+.region {
+    /*border: 2px solid black;*/
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    /*font-size: 48pt;*/
+
+
+    /*color: rgb(45,255,255);*/
+    font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-weight: medium;
+    font-size: 28pt;
+}
+
+.green {
+    color: rgb(41,253,47);
+    border: 2px solid rgb(41,253,47);
+}
+
+.red {
+    color: rgb(242,22,121);
+    border: 2px solid rgb(242,22,121);
+}
+
+.blue {
+    color: rgb(45,255,255);
+    border: 2px solid rgb(45,255,255);
+    background-color: rgba(45,255,255,0.15);
+}
+
+.white {
+    color: rgb(255,255,255);
+    background-color: rgba(255,255,255,0.15);
+}
+
+.inactive {
+    opacity: 0.25;
+}
+
 
 .top {
     top: 0;
@@ -29,6 +86,18 @@
     /*vertical-align: middle;*/
 }
 
+.centerContentsOuter {
+    display: table;
+    height:100%;
+    width:100%;
+}
+
+.centerContentsInner {
+    display: table-cell;
+    vertical-align: middle;
+    text-align:center;
+}
+
 /*.centerContents {*/
     /*display: table;*/
     /*vertical-align: middle;*/
@@ -41,4 +110,4 @@
     /*position: absolute;*/
     /*left: 50%;*/
     /*top: 50%;*/
-}
+/*}*/
