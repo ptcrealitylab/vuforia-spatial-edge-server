@@ -7,10 +7,41 @@
 </head>
 <body>
 
-<div class="region top left" id="topLeft">Top Left</div>
-<div class="region top right" id="topRight">Top Right</div>
-<div class="region bottom left" id="bottomLeft">Bottom Left</div>
-<div class="region bottom right"><img class="marker center" src="marker.jpg"></div>
+
+<div id="container">
+    <div class="region top left" id="topLeft">
+        <div class="centerContentsOuter">
+            <div class="centerContentsInner blue inactive">
+                No Connection
+            </div>
+        </div>
+    </div>
+
+    <div class="region top right" id="topRight">
+        <div class="centerContentsOuter">
+            <div class="centerContentsInner blue inactive">
+                No Connection
+            </div>
+        </div>
+    </div>
+
+    <div class="region bottom left" id="bottomLeft">
+        <div class="centerContentsOuter">
+            <div class="centerContentsInner blue inactive">
+                No Connection
+            </div>
+        </div>
+    </div>
+
+    <div class="region bottom right">
+        <div class="centerContentsOuter">
+            <div class="centerContentsInner blue">
+                <img class="marker center" src="marker.jpg">
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <!--<div class="centerContents"><img class="marker center" src="../timer/marker.jpg"></div>-->
 
@@ -19,6 +50,26 @@
     var socket = io();
 
     var counter = 0;
+
+    var nodes = ["topLeft", "topRight", "bottomLeft"];
+
+
+    function getPanelContents(nodeName) {
+        return document.getElementById(nodeName).firstElementChild.firstElementChild;
+    }
+
+    function activatePanel(nodeName, shouldBeActive) {
+        var panelContents = getPanelContents(nodeName);
+
+        if (shouldBeActive) {
+            panelContents.classList.remove("inactive");
+            panelContents.classList.add("active");
+        } else {
+            panelContents.classList.remove("active");
+            panelContents.classList.add("inactive");
+        }
+
+    }
 
     socket.on('dashboard', function(msg) {
 
@@ -38,7 +89,14 @@
         if (msg.action === "update") {
             console.log("update!");
             counter += 1;
-            document.getElementById(nodeName).innerHTML = counter;
+//            document.getElementById(nodeName).innerHTML = counter;
+
+            getPanelContents(nodeName).innerHTML = counter;
+
+            nodes.forEach(function(otherNode) {
+                activatePanel(otherNode, otherNode === nodeName);
+            });
+//            activatePanel(nodeName, true);
         }
 
     });
