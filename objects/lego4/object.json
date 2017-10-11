@@ -1,8 +1,8 @@
 {
 	"objectId": "lego40i73qtpzc80n",
 	"name": "lego4",
-	"ip": "192.168.1.8",
-	"version": "1.7.0",
+	"ip": "192.168.1.7",
+	"version": "1.7.6",
 	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "CuT7b",
@@ -71,12 +71,13 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100
+			"frameSizeY": 100,
+			"text": "motor"
 		},
 		"lego40i73qtpzc80nport 2": {
 			"name": "port 2",
 			"data": {
-				"value": 0,
+				"value": 0.9,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
@@ -91,12 +92,13 @@
 			"frameSizeX": 100,
 			"frameSizeY": 100,
 			"processedData": {
-				"value": 0,
+				"value": 0.9,
 				"mode": "f",
 				"unit": false,
 				"unitMin": 0,
 				"unitMax": 1
-			}
+			},
+			"text": "distance"
 		},
 		"lego40i73qtpzc80nbutton": {
 			"name": "button",

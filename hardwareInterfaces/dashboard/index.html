@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+<body>
+
+<div class="region top left" id="topLeft">Top Left</div>
+<div class="region top right" id="topRight">Top Right</div>
+<div class="region bottom left" id="bottomLeft">Bottom Left</div>
+<div class="region bottom right"><img class="marker center" src="marker.jpg"></div>
+
+<!--<div class="centerContents"><img class="marker center" src="../timer/marker.jpg"></div>-->
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io();
+
+    var counter = 0;
+
+    socket.on('dashboard', function(msg) {
+
+        var nodeName = msg.nodeName;
+        var action = msg.action;
+
+        console.log(nodeName, action);
+
+        if (msg.action === "connect") {
+            console.log("connected!");
+        }
+
+        if (msg.action === "disconnect") {
+            console.log("disconnected!");
+        }
+
+        if (msg.action === "update") {
+            console.log("update!");
+            counter += 1;
+            document.getElementById(nodeName).innerHTML = counter;
+        }
+
+    });
+</script>
+</body>
+</html>
