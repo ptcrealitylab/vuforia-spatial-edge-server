@@ -49,9 +49,9 @@
 <script>
     var socket = io();
 
-    var counter = 0;
+//    var counter = 0;
 
-    var nodes = ["topLeft", "topRight", "bottomLeft"];
+//    var nodes = ["topLeft", "topRight", "bottomLeft"];
 
 
     function getPanelContents(nodeName) {
@@ -64,9 +64,12 @@
         if (shouldBeActive) {
             panelContents.classList.remove("inactive");
             panelContents.classList.add("active");
+            panelContents.innerHTML = "Connected";
         } else {
             panelContents.classList.remove("active");
             panelContents.classList.add("inactive");
+            panelContents.innerHTML = "No Connection";
+
         }
 
     }
@@ -79,23 +82,37 @@
         console.log(nodeName, action);
 
         if (msg.action === "connect") {
-            console.log("connected!");
+            console.log(msg.data);
+
+            if (msg.data.added === true) {
+                console.log("connected!");
+                activatePanel(msg.data.nameNodeB, true);
+
+            } else {
+                console.log("disconnected!");
+                activatePanel(msg.data.nameNodeB, false);
+
+            }
+
         }
 
-        if (msg.action === "disconnect") {
-            console.log("disconnected!");
-        }
+//        if (msg.action === "disconnect") {
+//            console.log("disconnected!");
+//        }
 
         if (msg.action === "update") {
             console.log("update!");
-            counter += 1;
+            console.log(msg.data);
+//            counter += 1;
 //            document.getElementById(nodeName).innerHTML = counter;
 
-            getPanelContents(nodeName).innerHTML = counter;
+//            getPanelContents(nodeName).innerHTML = counter;
 
-            nodes.forEach(function(otherNode) {
-                activatePanel(otherNode, otherNode === nodeName);
-            });
+            getPanelContents(nodeName).innerHTML = msg.data.value.toFixed(2);
+
+//            nodes.forEach(function(otherNode) {
+//                activatePanel(otherNode, otherNode === nodeName);
+//            });
 //            activatePanel(nodeName, true);
         }
 

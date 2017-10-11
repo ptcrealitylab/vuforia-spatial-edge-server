@@ -83,7 +83,11 @@ if (exports.enabled) {
         server.addNode("dashboard", nodeName, "node");
 
         server.addReadListener("dashboard", nodeName, function (data) {
-            io.emit("dashboard", {nodeName: nodeName, action: "update"});
+            io.emit("dashboard", {nodeName: nodeName, action: "update", data: data});
+        });
+
+        server.addConnectionListener("dashboard", nodeName, function(data) {
+            io.emit("dashboard", {nodeName: nodeName, action: "connect", data: data});
         })
 
     });

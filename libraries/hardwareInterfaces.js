@@ -299,6 +299,43 @@ exports.addReadListener = function (objectName, nodeName, callBack) {
     }
 };
 
+exports.connectCall = function (objectName, nodeName, data) {
+    if (callBacks.hasOwnProperty(objectName)) {
+        if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
+
+            if (typeof callBacks[objectName].nodes[nodeName].connectionCallBack == 'function') {
+                callBacks[objectName].nodes[nodeName].connectionCallBack(data);
+                console.log("connection callback called");
+            } else {
+                console.log("no connection callback");
+            }
+        }
+    }
+};
+
+exports.addConnectionListener = function (objectName, nodeName, callBack) {
+    var objectID = utilities.readObject(objectLookup, objectName);
+    var nodeID = objectID+nodeName;
+
+    cout("Add connection listener for objectID: " + objectID);
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+
+        if (objects.hasOwnProperty(objectID)) {
+            if (!callBacks.hasOwnProperty(objectID)) {
+                callBacks[objectID] = new Object(objectID);
+            }
+
+            if (!callBacks[objectID].nodes.hasOwnProperty(nodeID)) {
+                callBacks[objectID].nodes[nodeID] = new EmptyNode(nodeName);
+                callBacks[objectID].nodes[nodeID].connectionCallBack = callBack;
+            } else {
+                callBacks[objectID].nodes[nodeID].connectionCallBack = callBack;
+            }
+        }
+    }
+}
+
 exports.removeReadListeners = function (objectName){
     var objectID = utilities.readObject(objectLookup, objectName);
     if(callBacks[objectID])
