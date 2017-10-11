@@ -1,8 +1,8 @@
 {
 	"objectId": "lego1Mih8ul6sqsow",
 	"name": "lego1",
-	"ip": "192.168.1.8",
-	"version": "1.7.0",
+	"ip": "192.168.1.7",
+	"version": "1.7.6",
 	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "41SIxV",
