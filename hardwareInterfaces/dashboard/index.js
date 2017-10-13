@@ -76,11 +76,40 @@ if (exports.enabled) {
     // var timer = false;
     server.enableDeveloperUI(true);
 
-    var nodes = ["topLeft", "topRight", "bottomLeft"];
+    var rows = 4;
+    var columns = 5;
 
-    nodes.forEach(function(nodeName) {
+    // var nodes = ["topLeft", "topRight", "bottomLeft"];
+
+    function getIdForPanel(row, column) {
+        return "panel_row" + row + "_col" + column;
+    }
+
+    var nodes = [];
+    for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < columns; c++) {
+            nodes.push(getIdForPanel(r,c));
+        }
+    }
+
+    function getNodeColumn(i) {
+        return i % columns;
+    }
+
+    function getNodeRow(i) {
+        return Math.floor(i / columns);
+    }
+
+    nodes.forEach(function(nodeName, i) {
+
+        if (i === 0) return;
 
         server.addNode("dashboard", nodeName, "node");
+
+        var xSpacing = 300;
+        var ySpacing = 300;
+
+        server.moveNode("dashboard", nodeName, getNodeColumn(i) * xSpacing, getNodeRow(i) * ySpacing);
 
         server.addReadListener("dashboard", nodeName, function (data) {
             io.emit("dashboard", {nodeName: nodeName, action: "update", data: data});
@@ -135,6 +164,8 @@ if (exports.enabled) {
 
     io.on('connection', function(socket){
         // timer = false;
+        io.emit("initialize", {rows: rows, columns: columns});
+
     });
 }
 

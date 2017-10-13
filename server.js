@@ -1510,33 +1510,40 @@ function objectWebServer() {
         /////
         // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
         // hardwareAPI.connectCall(msgContent.object, msgContent.node, true);
-        var thisObject = objects[req.params[0]].links[req.params[1]];
         console.log("req.params[0] is " + req.params[0]);
         console.log("req.params[1] is " + req.params[1]);
+        var thisObject = objects[req.params[0]].links[req.params[1]];
+        if (thisObject) {
+            console.log(thisObject);
 
-        var linkObjectA = thisObject["objectA"];
-        var linkObjectB = thisObject["objectB"];
-        var linkNodeA = thisObject["nodeA"];
-        var linkNodeB = thisObject["nodeB"];
-        var objectAName = objects[linkObjectA].name;
-        var objectBName = objects[linkObjectB].name;
-        var nodeAName = objects[linkObjectA].nodes[linkNodeA].name;
-        var nodeBName = objects[linkObjectB].nodes[linkNodeB].name;
+            var linkObjectA = thisObject["objectA"];
+            var linkObjectB = thisObject["objectB"];
+            var linkNodeA = thisObject["nodeA"];
+            var linkNodeB = thisObject["nodeB"];
+            var objectAName = objects[linkObjectA].name;
+            var objectBName = objects[linkObjectB].name;
+            var nodeAName = objects[linkObjectA].nodes[linkNodeA].name;
+            var nodeBName = objects[linkObjectB].nodes[linkNodeB].name;
 
-        var linkAddedData = {
-            added: false,
-            idObjectA: linkObjectA,
-            idObjectB: linkObjectB,
-            idNodeA: linkNodeA,
-            idNodeB: linkNodeB,
-            nameObjectA: objectAName,
-            nameObjectB: objectBName,
-            nameNodeA: nodeAName,
-            nameNodeB: nodeBName
-        };
+            var linkAddedData = {
+                added: false,
+                idObjectA: linkObjectA,
+                idObjectB: linkObjectB,
+                idNodeA: linkNodeA,
+                idNodeB: linkNodeB,
+                nameObjectA: objectAName,
+                nameObjectB: objectBName,
+                nameNodeA: nodeAName,
+                nameNodeB: nodeBName
+            };
 
-        hardwareAPI.connectCall(linkObjectA, linkNodeA, linkAddedData);
-        hardwareAPI.connectCall(linkObjectB, linkNodeB, linkAddedData);
+            hardwareAPI.connectCall(linkObjectA, linkNodeA, linkAddedData);
+            hardwareAPI.connectCall(linkObjectB, linkNodeB, linkAddedData);
+
+        } else {
+            console.log("thisObject does not exist");
+        }
+
         /////
 
         var thisLinkId = req.params[1];
@@ -1601,30 +1608,33 @@ function objectWebServer() {
                 // hardwareAPI.connectCall(msgContent.object, msgContent.node, true);
                 console.log("req.params[0] is " + req.params[0]);
                 console.log("req.params[1] is " + req.params[1]);
+                if (thisObject) {
+                    var linkObjectA = thisObject["objectA"];
+                    var linkObjectB = thisObject["objectB"];
+                    var linkNodeA = thisObject["nodeA"];
+                    var linkNodeB = thisObject["nodeB"];
+                    var objectAName = objects[linkObjectA].name;
+                    var objectBName = objects[linkObjectB].name;
+                    var nodeAName = objects[linkObjectA].nodes[linkNodeA].name;
+                    var nodeBName = objects[linkObjectB].nodes[linkNodeB].name;
 
-                var linkObjectA = thisObject["objectA"];
-                var linkObjectB = thisObject["objectB"];
-                var linkNodeA = thisObject["nodeA"];
-                var linkNodeB = thisObject["nodeB"];
-                var objectAName = objects[linkObjectA].name;
-                var objectBName = objects[linkObjectB].name;
-                var nodeAName = objects[linkObjectA].nodes[linkNodeA].name;
-                var nodeBName = objects[linkObjectB].nodes[linkNodeB].name;
+                    var linkAddedData = {
+                        added: true,
+                        idObjectA: linkObjectA,
+                        idObjectB: linkObjectB,
+                        idNodeA: linkNodeA,
+                        idNodeB: linkNodeB,
+                        nameObjectA: objectAName,
+                        nameObjectB: objectBName,
+                        nameNodeA: nodeAName,
+                        nameNodeB: nodeBName
+                    };
 
-                var linkAddedData = {
-                    added: true,
-                    idObjectA: linkObjectA,
-                    idObjectB: linkObjectB,
-                    idNodeA: linkNodeA,
-                    idNodeB: linkNodeB,
-                    nameObjectA: objectAName,
-                    nameObjectB: objectBName,
-                    nameNodeA: nodeAName,
-                    nameNodeB: nodeBName
-                };
-
-                hardwareAPI.connectCall(linkObjectA, linkNodeA, linkAddedData);
-                hardwareAPI.connectCall(linkObjectB, linkNodeB, linkAddedData);
+                    hardwareAPI.connectCall(linkObjectA, linkNodeA, linkAddedData);
+                    hardwareAPI.connectCall(linkObjectB, linkNodeB, linkAddedData);
+                } else {
+                    console.log("thisObject does not exist");
+                }
                 /////
 
                 // call an action that asks all devices to reload their links, once the links are changed.
