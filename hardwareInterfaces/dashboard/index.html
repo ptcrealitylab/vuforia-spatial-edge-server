@@ -21,12 +21,26 @@
     var sidebar = document.getElementById("sidebar");
     createControlPanel(["decimal", "gauge", "graph", "light"]);
 
+    var NUM_COLUMNS;
+    var NUM_ROWS;
+    var MAX_COLUMNS = 8;
+    var MIN_COLUMNS = 1;
+    var MAX_ROWS = 8;
+    var MIN_ROWS = 1;
+
     //    var createdPanels = createPanels(3,4); // need to wait until HW interface connects
     var createdPanels = [];
     socket.on("initialize", function(msg) {
-        container.innerHTML = "";
-        createdPanels = createPanels(msg.rows, msg.columns);
+        console.log(msg);
+        NUM_ROWS = msg.rows;
+        NUM_COLUMNS = msg.columns;
+        redrawGrid();
     });
+
+    function redrawGrid() {
+        container.innerHTML = "";
+        createdPanels = createPanels(NUM_ROWS, NUM_COLUMNS);
+    }
 
 //    var controls = ["decimal", "gauge", "graph", "light"];
 
@@ -192,6 +206,66 @@
 //            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
 
         });
+
+        var moreColumnsButton = document.createElement("button");
+        moreColumnsButton.innerHTML = "Columns ++";
+        moreColumnsButton.addEventListener('click', addColumn);
+        sidebar.appendChild(moreColumnsButton);
+
+        var fewerColumnsButton = document.createElement("button");
+        fewerColumnsButton.innerHTML = "Columns --";
+        fewerColumnsButton.addEventListener('click', removeColumn);
+        sidebar.appendChild(fewerColumnsButton);
+
+        sidebar.appendChild(document.createElement('br'));
+
+        var moreRowsButton = document.createElement("button");
+        moreRowsButton.innerHTML = "Rows ++";
+        moreRowsButton.addEventListener('click', addRow);
+        sidebar.appendChild(moreRowsButton);
+
+        var fewerRowsButton = document.createElement("button");
+        fewerRowsButton.innerHTML = "Rows --";
+        fewerRowsButton.addEventListener('click', removeRow);
+        sidebar.appendChild(fewerRowsButton);
+
+
+    }
+
+    function addColumn(e) {
+        if (NUM_COLUMNS < MAX_COLUMNS) {
+            NUM_COLUMNS++;
+            // redraw interface, etc
+            redrawGrid();
+            // communicate to nodes
+        }
+    }
+
+    function removeColumn(e) {
+        if (NUM_COLUMNS > MIN_COLUMNS) {
+            NUM_COLUMNS--;
+            // redraw
+            redrawGrid();
+            // communicate to nodes
+        }
+    }
+
+    function addRow(e) {
+        if (NUM_ROWS < MAX_ROWS) {
+            NUM_ROWS++;
+            // redraw interface, etc
+            redrawGrid();
+            // communicate to nodes
+        }
+    }
+
+    function removeRow(e) {
+        if (NUM_ROWS > MIN_ROWS) {
+            NUM_ROWS--;
+            // redraw
+            redrawGrid();
+            // communicate to nodes
+        }
     }
 
     var currentlyDraggedPanel = null;
