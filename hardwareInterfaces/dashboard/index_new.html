@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+<body>
+
+<div id="container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io();
+
+    var container = document.getElementById("container");
+    container.style.width = "80%";
+    container.style.height = "1400px";
+
+//    var createdPanels = createPanels(3,4);
+
+    var createdPanels = [];
+
+    socket.on("initialize", function(msg) {
+        createdPanels = createPanels(msg.rows, msg.columns);
+    });
+
+    function createPanels(rows, columns) {
+
+        var panelArray = [];
+
+        for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < columns; c++) {
+
+                var newPanel = document.createElement("div");
+                newPanel.classList.add("region");
+                newPanel.id = getIdForPanel(r, c);
+                newPanel.style.width = ((1.0 / columns) * 100) + "%";
+                newPanel.style.height = ((1.0 / rows) * 100) + "%";
+                newPanel.style.left = (((1.0 / columns) * 100) * c) + "%";
+                newPanel.style.top = (((1.0 / rows) * 100) * r) + "%";
+
+                container.appendChild(newPanel);
+
+                var centerContentsOuter = document.createElement("div");
+                centerContentsOuter.className = "centerContentsOuter";
+                newPanel.appendChild(centerContentsOuter);
+
+                var centerContentsInner = document.createElement("div");
+                centerContentsInner.classList.add("centerContentsInner");
+                centerContentsInner.classList.add("blue");
+                centerContentsOuter.appendChild(centerContentsInner);
+
+                if (r === 0 && c === 0) {
+                    var markerImage = document.createElement("img");
+                    markerImage.classList.add("marker");
+                    markerImage.src = "marker.jpg";
+                    centerContentsInner.appendChild(markerImage);
+                } else {
+                    centerContentsInner.innerHTML = "(" + r + ", " + c + ")";
+                    centerContentsInner.classList.add("inactive");
+                }
+
+                panelArray.push(newPanel);
+            }
+        }
+
+        return panelArray;
+    }
+
+    function getIdForPanel(row, column) {
+        return "panel_row" + row + "_col" + column;
+    }
+
+    function getPanelContents(nodeName) {
+        return document.getElementById(nodeName).firstElementChild.firstElementChild;
+    }
+
+    function activatePanel(nodeName, shouldBeActive) {
+        var panelContents = getPanelContents(nodeName);
+
+        if (shouldBeActive) {
+            panelContents.classList.remove("inactive");
+            panelContents.classList.add("active");
+            panelContents.innerHTML = "Connected";
+        } else {
+            panelContents.classList.remove("active");
+            panelContents.classList.add("inactive");
+            panelContents.innerHTML = "No Connection";
+
+        }
+
+    }
+
+    function updatePanelText(nodeName, value) {
+        getPanelContents(nodeName).innerHTML = value.toFixed(2);
+
+        getPanelContents(nodeName).classList.remove("greenText");
+        getPanelContents(nodeName).classList.remove("redText");
+        getPanelContents(nodeName).classList.remove("whiteText");
+
+        if (value > 0) {
+            getPanelContents(nodeName).classList.add("greenText");
+        } else if (value === 0) {
+            getPanelContents(nodeName).classList.add("whiteText");
+        } else {
+            getPanelContents(nodeName).classList.add("redText");
+        }
+    }
+
+    socket.on('dashboard', function(msg) {
+
+        var nodeName = msg.nodeName;
+        var action = msg.action;
+
+        console.log(nodeName, action);
+
+        if (msg.action === "connect") {
+            console.log(msg.data);
+
+            if (msg.data.added === true) {
+                console.log("connected!");
+                activatePanel(msg.data.nameNodeB, true);
+
+            } else {
+                console.log("disconnected!");
+                activatePanel(msg.data.nameNodeB, false);
+
+            }
+
+        }
+
+//        if (msg.action === "disconnect") {
+//            console.log("disconnected!");
+//        }
+
+        if (msg.action === "update") {
+            console.log("update!");
+            console.log(msg.data);
+//            counter += 1;
+//            document.getElementById(nodeName).innerHTML = counter;
+
+//            getPanelContents(nodeName).innerHTML = counter;
+
+            updatePanelText(nodeName, msg.data.value);
+
+//            getPanelContents(nodeName).innerHTML = msg.data.value.toFixed(2);
+
+//            nodes.forEach(function(otherNode) {
+//                activatePanel(otherNode, otherNode === nodeName);
+//            });
+//            activatePanel(nodeName, true);
+        }
+
+    });
+</script>
+</body>
+</html>

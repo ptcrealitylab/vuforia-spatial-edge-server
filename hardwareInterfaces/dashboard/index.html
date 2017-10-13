@@ -7,52 +7,78 @@
 </head>
 <body>
 
-
-<div id="container">
-    <div class="region top left" id="topLeft">
-        <div class="centerContentsOuter">
-            <div class="centerContentsInner blue inactive">
-                No Connection
-            </div>
-        </div>
-    </div>
-
-    <div class="region top right" id="topRight">
-        <div class="centerContentsOuter">
-            <div class="centerContentsInner blue inactive">
-                No Connection
-            </div>
-        </div>
-    </div>
-
-    <div class="region bottom left" id="bottomLeft">
-        <div class="centerContentsOuter">
-            <div class="centerContentsInner blue inactive">
-                No Connection
-            </div>
-        </div>
-    </div>
-
-    <div class="region bottom right">
-        <div class="centerContentsOuter">
-            <div class="centerContentsInner blue">
-                <img class="marker center" src="marker.jpg">
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!--<div class="centerContents"><img class="marker center" src="../timer/marker.jpg"></div>-->
+<div id="container"></div>
+<div id="sidebar" class="region blue smallText">Control Panel</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     var socket = io();
 
-//    var counter = 0;
+    var container = document.getElementById("container");
+    container.style.width = "60%";
+    container.style.height = "1200px";
 
-//    var nodes = ["topLeft", "topRight", "bottomLeft"];
+    var sidebar = document.getElementById("sidebar");
+    createControlPanel(["decimal", "gauge", "graph", "light"]);
 
+    //    var createdPanels = createPanels(3,4); // need to wait until HW interface connects
+    var createdPanels = [];
+    socket.on("initialize", function(msg) {
+        container.innerHTML = "";
+        createdPanels = createPanels(msg.rows, msg.columns);
+    });
+
+//    var controls = ["decimal", "gauge", "graph", "light"];
+
+    function createPanels(rows, columns) {
+
+        var panelArray = [];
+
+        for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < columns; c++) {
+
+                var newPanel = document.createElement("div");
+                newPanel.classList.add("region");
+                newPanel.id = getIdForPanel(r, c);
+                newPanel.style.width = ((1.0 / columns) * 100) + "%";
+                newPanel.style.height = ((1.0 / rows) * 100) + "%";
+                newPanel.style.left = (((1.0 / columns) * 100) * c) + "%";
+                newPanel.style.top = (((1.0 / rows) * 100) * r) + "%";
+
+                container.appendChild(newPanel);
+
+                newPanel.addEventListener('click', function(e) {
+//                    toggleConnected(e.currentTarget);
+                    clickedOnPanel(e.currentTarget);
+                });
+
+                var centerContentsOuter = document.createElement("div");
+                centerContentsOuter.className = "centerContentsOuter";
+                newPanel.appendChild(centerContentsOuter);
+
+                var centerContentsInner = document.createElement("div");
+                centerContentsInner.classList.add("centerContentsInner");
+                centerContentsInner.classList.add("blue");
+                centerContentsOuter.appendChild(centerContentsInner);
+
+                if (r === 0 && c === 0) {
+                    var markerImage = document.createElement("img");
+                    markerImage.classList.add("marker");
+                    markerImage.src = "marker.jpg";
+                    centerContentsInner.appendChild(markerImage);
+                } else {
+                    activatePanel(getIdForPanel(r, c), false);
+                }
+
+                panelArray.push(newPanel);
+            }
+        }
+        return panelArray;
+    }
+
+    function getIdForPanel(row, column) {
+        return "panel_row" + row + "_col" + column;
+    }
 
     function getPanelContents(nodeName) {
         return document.getElementById(nodeName).firstElementChild.firstElementChild;
@@ -69,8 +95,36 @@
             panelContents.classList.remove("active");
             panelContents.classList.add("inactive");
             panelContents.innerHTML = "No Connection";
-
         }
+
+        panelContents.classList.remove("greenText");
+        panelContents.classList.remove("redText");
+        panelContents.classList.remove("whiteText");
+
+        panelContents.classList.remove("largeText");
+        panelContents.classList.add("smallText");
+
+    }
+
+    function updatePanelText(nodeName, value) {
+        var panelContents = getPanelContents(nodeName);
+
+        panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
+
+        panelContents.classList.remove("greenText");
+        panelContents.classList.remove("redText");
+        panelContents.classList.remove("whiteText");
+
+        if (value > 0) {
+            panelContents.classList.add("greenText");
+        } else if (value === 0) {
+            panelContents.classList.add("whiteText");
+        } else {
+            panelContents.classList.add("redText");
+        }
+
+        panelContents.classList.remove("smallText");
+        panelContents.classList.add("largeText");
 
     }
 
@@ -96,27 +150,127 @@
 
         }
 
-//        if (msg.action === "disconnect") {
-//            console.log("disconnected!");
-//        }
-
         if (msg.action === "update") {
             console.log("update!");
             console.log(msg.data);
-//            counter += 1;
-//            document.getElementById(nodeName).innerHTML = counter;
-
-//            getPanelContents(nodeName).innerHTML = counter;
-
-            getPanelContents(nodeName).innerHTML = msg.data.value.toFixed(2);
-
-//            nodes.forEach(function(otherNode) {
-//                activatePanel(otherNode, otherNode === nodeName);
-//            });
-//            activatePanel(nodeName, true);
+            updatePanelText(nodeName, msg.data.value);
         }
 
     });
+
+    function createSidebarPanel(controlName) {
+        var sidebarPanel = document.createElement("div");
+        sidebarPanel.className = "sidebarPanel";
+        sidebarPanel.id = controlName;
+
+        var centerContentsOuter = document.createElement("div");
+        centerContentsOuter.className = "centerContentsOuter";
+        sidebarPanel.appendChild(centerContentsOuter);
+
+        var centerContentsInner = document.createElement("div");
+        centerContentsInner.classList.add("centerContentsInner");
+        centerContentsInner.classList.add("blue");
+        centerContentsOuter.appendChild(centerContentsInner);
+
+        centerContentsInner.innerHTML = controlName;
+        return sidebarPanel;
+    }
+
+    function createControlPanel(controls) {
+
+        startLoop();
+
+        sidebar.style.width = "400px";
+        sidebar.style.height = "1200px";
+
+        controls.forEach( function(controlName) {
+
+            var sidebarPanel = createSidebarPanel(controlName);
+            sidebar.appendChild(sidebarPanel);
+            sidebarPanel.addEventListener('click', sidebarPanelClick);
+//            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
+//            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
+
+        });
+    }
+
+    var currentlyDraggedPanel = null;
+
+    function sidebarPanelClick(e) {
+        console.log("clicked on sidebar panel", e);
+        console.log(e.currentTarget);
+
+        if (!currentlyDraggedPanel) {
+            var sidebarPanelClone = createSidebarPanel(e.currentTarget.id);
+            sidebarPanelClone.classList.add("region");
+            sidebarPanelClone.classList.add("smallText");
+//            .appendChild(currentlyDraggedPanel);
+            currentlyDraggedPanel = sidebarPanelClone;
+            document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+            sidebarPanelClone.classList.add("draggedPanel");
+        }
+    }
+
+    function startLoop() {
+        setInterval(function () {
+            if (currentlyDraggedPanel) {
+//                currentlyDraggedPanel.style.left = mouseX;
+//                currentlyDraggedPanel.style.top = mouseY;
+//                console.log(currentlyDraggedPanel);
+//                console.log('moved to ', currentlyDraggedPanel.style.left, currentlyDraggedPanel.style.top);
+
+                currentlyDraggedPanel.style.position = "absolute";
+
+//                console.log( mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px" );
+//                console.log(mouseX, mouseY);
+
+                currentlyDraggedPanel.style.top = mouseY + 20 + "px"; //mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px";
+                currentlyDraggedPanel.style.left = mouseX + 20 + "px"; //mouseX - (mouseX - currentlyDraggedPanel.offsetLeft) + "px";
+            }
+        }, 16.67);
+    }
+
+    var mouseX = null;
+    var mouseY = null;
+
+    document.addEventListener('mousemove', onMouseUpdate, false);
+    document.addEventListener('mouseenter', onMouseUpdate, false);
+
+    function onMouseUpdate(e) {
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+//        console.log('mouse moved', mouseX, mouseY);
+    }
+
+    function clickedOnPanel(panel) {
+
+        if (currentlyDraggedPanel) {
+            console.log('clicked on panel');
+
+            setPanelDisplay(panel, currentlyDraggedPanel.id);
+
+//        activatePanel(panel.id, !getPanelContents(panel.id).classList.contains("active"));
+
+            document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
+            currentlyDraggedPanel = null;
+        }
+
+    }
+
+    function setPanelDisplay(panel, controlName) {
+
+        getPanelContents(panel.id).innerHTML = controlName;
+
+    }
+
+//    function getMouseX() {
+//        return x;
+//    }
+//
+//    function getMouseY() {
+//        return y;
+//    }
+
 </script>
 </body>
 </html>
