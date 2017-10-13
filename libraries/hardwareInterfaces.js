@@ -184,6 +184,20 @@ exports.renameNode = function (objectName,oldNodeName, newNodeName) {
     objectID = undefined;
 };
 
+exports.moveNode = function (objectName, nodeName, x, y) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            var thisNode = objectID + nodeName;
+            if (thisNode in objects[objectID].nodes) {
+                objects[objectID].nodes[thisNode].x = x;
+                objects[objectID].nodes[thisNode].y = y;
+                console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
+            }
+        }
+    }
+};
+
 exports.activate = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
