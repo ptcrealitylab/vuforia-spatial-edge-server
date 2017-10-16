@@ -60,15 +60,6 @@ if (exports.enabled) {
     app.get('/', function(req, res){
         res.sendFile(__dirname + '/index.html');
     });
-    // app.get('/marker.jpg', function(req, res){
-    //     res.sendFile(__dirname + '/marker.jpg');
-    // });
-    // app.get('/index.css', function(req, res){
-    //     res.sendFile(__dirname + '/index.css');
-    // });
-    // app.get('/frame_gauge.html', function(req, res){
-    //     res.sendFile(__dirname + '/frame_gauge.html');
-    // });
 
     var filesToServe = ['/marker.jpg', '/index.css', '/frame_gauge.html', '/resources/gauge-outline-1.svg', '/resources/gauge-needle-1.svg'];
     filesToServe.forEach( function(filename) {
@@ -85,83 +76,78 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    var rows = 4;
-    var columns = 5;
-
     var nodes = [];
-    for (var r = 0; r < rows; r++) {
-        for (var c = 0; c < columns; c++) {
-            nodes.push(getIdForPanel(r,c));
-        }
+    var rows = 2;
+    var columns = 3;
+
+    function getIdForPanel(row, column) {
+        return "panel_row" + row + "_col" + column;
     }
 
-    nodes.forEach(function(nodeName, i) {
+    function createNodesAndRenderInterface() {
+        server.removeAllNodes("dashboard"); // TODO: hopefully don't need to do this in the future but necessary now to refresh when loaded
 
-        if (i === 0) return;
+        nodes = [];
+        for (var r = 0; r < rows; r++) {
+            var row = [];
+            for (var c = 0; c < columns; c++) {
+                row.push(getIdForPanel(r,c));
+            }
+            nodes.push(row);
+        }
+
+        forEachNode(createNode);
+
+        server.reloadNodeUI("dashboard");
+
+        io.emit("redrawGrid", {rows: rows, columns: columns});
+    }
+
+    function createNode(nodeName, row, column) {
+        if (row === 0 && column === 0) { return; } // this is always reserved for the marker
 
         server.addNode("dashboard", nodeName, "node");
 
         var xSpacing = 300;
         var ySpacing = 300;
 
-        server.moveNode("dashboard", nodeName, getNodeColumn(i) * xSpacing, getNodeRow(i) * ySpacing);
+        server.moveNode("dashboard", nodeName, column * xSpacing, row * ySpacing);
 
+        // when a new value arrives, forward it to the frontend
         server.addReadListener("dashboard", nodeName, function (data) {
             io.emit("dashboard", {nodeName: nodeName, action: "update", data: data});
         });
 
+        // when a node gets connected, notify the frontend
         server.addConnectionListener("dashboard", nodeName, function(data) {
             io.emit("dashboard", {nodeName: nodeName, action: "connect", data: data});
-        })
-
-    });
-
-    function getNodeColumn(i) {
-        return i % columns;
+        });
     }
 
-    function getNodeRow(i) {
-        return Math.floor(i / columns);
+    function deleteNode(nodeName, row, column) {
+        if (row === 0 && column === 0) { return; } // this is always reserved for the marker
+        server.removeNode("dashboard", nodeName);
     }
 
-    function getIdForPanel(row, column) {
-        return "panel_row" + row + "_col" + column;
+    function forEachNode(callback) {
+        nodes.forEach(function(row, r) {
+            row.forEach(function(node, c) {
+                callback(node, r, c);
+            });
+        });
     }
 
-    // server.addNode("dashboard", "topLeft", "node");
-    // server.addNode("dashboard", "topRight", "node");
-    // server.addNode("dashboard", "bottomLeft", "node");
-    //
-    // server.addReadListener("dashboard", "topLeft", function (data) {
-    //     io.emit("dashboard", {dashboard: "update"});
-    // });
+    function forEachNodeInRow(rowNumber, callback) {
+        nodes[rowNumber].forEach(function(node, c) {
+            callback(node, rowNumber, c);
+        });
+    }
 
-    // server.addReadListener("timer", "start", function (data) {
-    //     if (data.value > 0.5) {
-    //         if (!timer) {
-    //             io.emit('timer', {timer: "start"});
-    //             timer = true;
-    //             server.write('timer', 'running', 1.0, 'f');
-    //         }
-    //     }
-    // });
-    //
-    // server.addReadListener("timer", "reset", function (data) {
-    //     if (data.value > 0.5) {
-    //         io.emit('timer', {timer: "reset"});
-    //     }
-    // });
-    //
-    // server.addReadListener("timer", "stop", function (data) {
-    //     console.log(data.value);
-    //     if (data.value > 0.5) {
-    //         if (timer) {
-    //             io.emit('timer', {timer: "stop"});
-    //             timer = false;
-    //             server.write('timer', 'running', 0.0, 'f');
-    //         }
-    //     }
-    // });
+    function forEachNodeInColumn(colNumber, callback) {
+        nodes.forEach( function (row, rowNumber) {
+           callback(row[colNumber], rowNumber, colNumber);
+        });
+    }
 
     server.addEventListener("reset", function () {
     });
@@ -170,9 +156,55 @@ if (exports.enabled) {
     });
 
     io.on('connection', function(socket){
-        // timer = false;
-        io.emit("initialize", {rows: rows, columns: columns});
+
+        createNodesAndRenderInterface();
+
+        socket.on('addRow', function() {
+            console.log('addRow');
+            rows++;
+            var newRow = [];
+            for (var c = 0; c < columns; c++) {
+                newRow.push(getIdForPanel(rows-1,c));
+            }
+            nodes.push(newRow);
+            forEachNodeInRow(rows-1, createNode);
+            server.reloadNodeUI("dashboard");
+            io.emit("redrawGrid", {rows: rows, columns: columns});
+        });
+
+        socket.on('removeRow', function() {
+            console.log('removeRow');
+            forEachNodeInRow(rows-1, deleteNode);
+            rows--;
+            nodes.pop();
+            server.reloadNodeUI("dashboard");
+            io.emit("redrawGrid", {rows: rows, columns: columns});
+        });
+
+        socket.on('addColumn', function() {
+            console.log('addColumn');
+            columns++;
+            for (var r = 0; r < rows; r++) {
+                console.log("new node id: " + getIdForPanel(r, columns-1));
+                nodes[r].push(getIdForPanel(r, columns-1));
+            }
+            forEachNodeInColumn(columns-1, createNode);
+            server.reloadNodeUI("dashboard");
+            io.emit("redrawGrid", {rows: rows, columns: columns});
+        });
+
+        socket.on('removeColumn', function() {
+            console.log('removeColumn');
+            forEachNodeInColumn(columns-1, deleteNode);
+            columns--;
+            nodes.forEach( function(row) {
+                row.pop();
+            });
+            server.reloadNodeUI("dashboard");
+            io.emit("redrawGrid", {rows: rows, columns: columns});
+        });
 
     });
+
 }
 

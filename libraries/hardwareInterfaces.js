@@ -31,6 +31,7 @@ var blockModules;
 var callback;
 var Node;
 var actionCallback;
+var writeObjectCallback;
 var hardwareObjects = {};
 var callBacks = new Objects();
 var _this = this;
@@ -108,6 +109,38 @@ exports.clearObject = function (objectId) {
     cout("object is all cleared");
 };
 
+exports.removeAllNodes = function (objectName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            console.log("object exists");
+            for (var nodeKey in objects[objectID].nodes) {
+                if (!objects[objectID].nodes.hasOwnProperty(nodeKey)) continue;
+                    delete objects[objectID].nodes[nodeKey];
+            }
+        }
+    }
+};
+
+exports.removeNode = function (objectName, nodeName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            var thisNode = objectID + nodeName;
+            if (thisNode in objects[objectID].nodes) {
+                console.log("deleting node " + thisNode);
+                delete objects[objectID].nodes[thisNode];
+            }
+        }
+    }
+};
+
+exports.reloadNodeUI = function (objectName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    actionCallback({reloadObject: {object: objectID}});
+    writeObjectCallback(objectID);
+};
+
 /**
  * @desc addIO() a new IO point to the specified HybridObject
  * @param {string} objectName The name of the HybridObject
@@ -115,8 +148,6 @@ exports.clearObject = function (objectId) {
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  **/
 exports.addNode = function (objectName, nodeName, type) {
-
-
 
     utilities.createFolder(objectName, dirnameO, globalVariables.debug);
 
@@ -250,7 +281,7 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue, actionCallBack) {
+exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue, actionCallBack, writeCallback) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
@@ -260,6 +291,7 @@ exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, o
     callback = cb;
     Node = objValue;
     actionCallback = actionCallBack;
+    writeObjectCallback = writeCallback;
 };
 
 exports.reset = function (){

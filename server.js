@@ -624,7 +624,10 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeMod
 
 }, Node, function(thisAction){
     actionSender(thisAction);
+}, function(objectID) {
+    utilities.writeObjectToFile(objects, objectID, __dirname);
 });
+
 cout("Done");
 
 cout("Loading Objects");
