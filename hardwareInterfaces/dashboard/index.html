@@ -167,7 +167,13 @@
         if (msg.action === "update") {
             console.log("update!");
             console.log(msg.data);
-            updatePanelText(nodeName, msg.data.value);
+            if (document.getElementById(nodeName).controlType !== "gauge") {
+                updatePanelText(nodeName, msg.data.value);
+            } else {
+                var panelContents = getPanelContents(nodeName);
+                var gaugeFrame = panelContents.firstChild;
+                gaugeFrame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");//, "https://robertnyman.com");
+            }
         }
 
     });
@@ -186,8 +192,36 @@
         centerContentsInner.classList.add("blue");
         centerContentsOuter.appendChild(centerContentsInner);
 
-        centerContentsInner.innerHTML = controlName;
+
+        if (controlName === 'gauge') {
+//            var gaugeFrame = document.createElement('iframe');
+//            gaugeFrame.id = 'gaugeFrame';
+//            gaugeFrame.src = "/frame_gauge.html";
+//            gaugeFrame.scrolling = "no";
+//            gaugeFrame.style.border = "0px solid transparent";
+//            gaugeFrame.onload = function(e) {
+//                gaugeFrame.contentWindow.postMessage({value: 0.6}, "http://localhost:3030");//, "https://robertnyman.com");
+//            };
+            var gaugeFrame = createGaugeFrame();
+            centerContentsInner.appendChild(gaugeFrame);
+        } else {
+            centerContentsInner.innerHTML = controlName;
+        }
+
+
         return sidebarPanel;
+    }
+
+    function createGaugeFrame() {
+        var gaugeFrame = document.createElement('iframe');
+        gaugeFrame.id = 'gaugeFrame';
+        gaugeFrame.src = "/frame_gauge.html";
+        gaugeFrame.scrolling = "no";
+        gaugeFrame.style.border = "0px solid transparent";
+        gaugeFrame.onload = function(e) {
+            gaugeFrame.contentWindow.postMessage({value: 0.6}, "http://localhost:3030");//, "https://robertnyman.com");
+        };
+        return gaugeFrame;
     }
 
     function createControlPanel(controls) {
@@ -333,7 +367,15 @@
 
     function setPanelDisplay(panel, controlName) {
 
-        getPanelContents(panel.id).innerHTML = controlName;
+        getPanelContents(panel.id).innerHTML = "controlName";
+        panel.controlType = controlName;
+
+        if (controlName === "gauge") {
+            getPanelContents(panel.id).innerHTML = "";
+            var gaugeFrame = createGaugeFrame();
+            getPanelContents(panel.id).appendChild(gaugeFrame);
+//            centerContentsInner.appendChild(gaugeFrame);
+        }
 
     }
 

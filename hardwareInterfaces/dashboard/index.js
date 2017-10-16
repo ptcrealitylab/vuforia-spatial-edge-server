@@ -60,44 +60,39 @@ if (exports.enabled) {
     app.get('/', function(req, res){
         res.sendFile(__dirname + '/index.html');
     });
-    app.get('/marker.jpg', function(req, res){
-        res.sendFile(__dirname + '/marker.jpg');
-    });
-    app.get('/index.css', function(req, res){
-        res.sendFile(__dirname + '/index.css');
-    });
+    // app.get('/marker.jpg', function(req, res){
+    //     res.sendFile(__dirname + '/marker.jpg');
+    // });
+    // app.get('/index.css', function(req, res){
+    //     res.sendFile(__dirname + '/index.css');
+    // });
+    // app.get('/frame_gauge.html', function(req, res){
+    //     res.sendFile(__dirname + '/frame_gauge.html');
+    // });
 
+    var filesToServe = ['/marker.jpg', '/index.css', '/frame_gauge.html', '/resources/gauge-outline-1.svg', '/resources/gauge-needle-1.svg'];
+    filesToServe.forEach( function(filename) {
+
+        app.get(filename, function(req, res){
+            res.sendFile(__dirname + filename);
+        });
+
+    });
 
     http.listen(3030, function(){
         console.log('listening on *:3030');
     });
 
-    // var counter = 0;
-    // var timer = false;
     server.enableDeveloperUI(true);
 
     var rows = 4;
     var columns = 5;
-
-    // var nodes = ["topLeft", "topRight", "bottomLeft"];
-
-    function getIdForPanel(row, column) {
-        return "panel_row" + row + "_col" + column;
-    }
 
     var nodes = [];
     for (var r = 0; r < rows; r++) {
         for (var c = 0; c < columns; c++) {
             nodes.push(getIdForPanel(r,c));
         }
-    }
-
-    function getNodeColumn(i) {
-        return i % columns;
-    }
-
-    function getNodeRow(i) {
-        return Math.floor(i / columns);
     }
 
     nodes.forEach(function(nodeName, i) {
@@ -120,6 +115,18 @@ if (exports.enabled) {
         })
 
     });
+
+    function getNodeColumn(i) {
+        return i % columns;
+    }
+
+    function getNodeRow(i) {
+        return Math.floor(i / columns);
+    }
+
+    function getIdForPanel(row, column) {
+        return "panel_row" + row + "_col" + column;
+    }
 
     // server.addNode("dashboard", "topLeft", "node");
     // server.addNode("dashboard", "topRight", "node");
