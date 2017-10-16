@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style>
+
+        body {
+            background-color: rgb(34, 34, 34);
+        }
+
+        .region {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 48pt;
+        }
+
+        .centerContentsOuter {
+            display: table;
+            height:100%;
+            width:100%;
+        }
+
+        .centerContentsInner {
+            display: table-cell;
+            vertical-align: middle;
+            text-align:center;
+        }
+
+        .green {
+            color: rgb(41,253,47);
+            border: 2px solid rgb(41,253,47);
+        }
+
+        .red {
+            color: rgb(242,22,121);
+            border: 2px solid rgb(242,22,121);
+        }
+
+        .blue {
+            color: rgb(45,255,255);
+            border: 2px solid rgb(45,255,255);
+            background-color: rgba(45,255,255,0.15);
+        }
+
+        .white {
+            color: rgb(255,255,255);
+            background-color: rgba(255,255,255,0.15);
+        }
+
+        .greenText {
+            color: rgb(41,253,47);
+        }
+
+        .redText {
+            color: rgb(242,22,121);
+        }
+
+        .blueText {
+            color: rgb(45,255,255);
+        }
+
+        .whiteText {
+            color: rgb(255,255,255);
+        }
+
+        .inactive {
+            opacity: 0.25;
+        }
+
+        .smallText {
+            font-size: 28pt;
+        }
+
+        .largeText {
+            font-size: 72pt;
+            /*font-size: 48pt;*/
+            /*font-size: 50%;*/
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="region" id="panel">
+    <div class="centerContentsOuter">
+        <div class="centerContentsInner blue inactive smallText">No Connection</div>
+    </div>
+</div>
+
+<script>
+
+    // debug: turn this on first
+    activatePanel(true);
+
+    function getPanelContents() {
+        return document.getElementById("panel").firstElementChild.firstElementChild;
+    }
+
+    function activatePanel(shouldBeActive) {
+        var panelContents = getPanelContents();
+
+        if (shouldBeActive) {
+            panelContents.classList.remove("inactive");
+            panelContents.classList.add("active");
+            panelContents.innerHTML = "Connected";
+        } else {
+            panelContents.classList.remove("active");
+            panelContents.classList.add("inactive");
+            panelContents.innerHTML = "No Connection";
+        }
+
+        panelContents.classList.remove("greenText");
+        panelContents.classList.remove("redText");
+        panelContents.classList.remove("whiteText");
+
+        panelContents.classList.remove("largeText");
+        panelContents.classList.add("smallText");
+    }
+
+    function updatePanelText(value) {
+        var panelContents = getPanelContents();
+
+        panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
+
+        panelContents.classList.remove("greenText");
+        panelContents.classList.remove("redText");
+        panelContents.classList.remove("whiteText");
+
+        if (value > 0) {
+            panelContents.classList.add("greenText");
+        } else if (value === 0) {
+            panelContents.classList.add("whiteText");
+        } else {
+            panelContents.classList.add("redText");
+        }
+
+        panelContents.classList.remove("smallText");
+        panelContents.classList.add("largeText");
+    }
+
+</script>
+
+</body>
+</html>
