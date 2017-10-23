@@ -2,33 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Decimal</title>
 
     <style>
-
-        body {
-            background-color: rgb(34, 34, 34);
-        }
-
-        .region {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
-            font-size: 48pt;
-        }
-
-        .centerContentsOuter {
-            display: table;
-            height:100%;
-            width:100%;
-        }
-
-        .centerContentsInner {
-            display: table-cell;
-            vertical-align: middle;
-            text-align:center;
-        }
 
         .green {
             color: rgb(41,253,47);
@@ -77,73 +53,154 @@
 
         .largeText {
             font-size: 72pt;
-            /*font-size: 48pt;*/
-            /*font-size: 50%;*/
         }
+
+        #decimalText {
+            width: 100%;
+            height: 100%;
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+        }
+
 
     </style>
 </head>
 
 <body>
 
-<div class="region" id="panel">
-    <div class="centerContentsOuter">
-        <div class="centerContentsInner blue inactive smallText">No Connection</div>
-    </div>
-</div>
+    <div id="decimalText" class="blueText">1.0</div>
 
-<script>
+    <!--<div class="centerContentsOuter">-->
+        <!--<div class="centerContentsInner blue inactive smallText">No Connection</div>-->
+    <!--</div>-->
 
-    // debug: turn this on first
-    activatePanel(true);
+    <script>
+        var optimizedResize = (function() {
 
-    function getPanelContents() {
-        return document.getElementById("panel").firstElementChild.firstElementChild;
-    }
+            var callbacks = [],
+                running = false;
 
-    function activatePanel(shouldBeActive) {
-        var panelContents = getPanelContents();
+            // fired on resize event
+            function resize() {
 
-        if (shouldBeActive) {
-            panelContents.classList.remove("inactive");
-            panelContents.classList.add("active");
-            panelContents.innerHTML = "Connected";
-        } else {
-            panelContents.classList.remove("active");
-            panelContents.classList.add("inactive");
-            panelContents.innerHTML = "No Connection";
+                if (!running) {
+                    running = true;
+
+                    if (window.requestAnimationFrame) {
+                        window.requestAnimationFrame(runCallbacks);
+                    } else {
+                        setTimeout(runCallbacks, 66);
+                    }
+                }
+
+            }
+
+            // run the actual callbacks
+            function runCallbacks() {
+
+                callbacks.forEach(function(callback) {
+                    callback.callbackFunction.apply(null, callback.callbackArguments);
+                });
+
+                running = false;
+            }
+
+            // adds callback to loop
+            function addCallback(callback, arguments) {
+
+                arguments = arguments || [];
+
+                if (callback) {
+                    callbacks.push({callbackFunction: callback, callbackArguments: arguments});
+                }
+
+            }
+
+            /**
+             * Uses canvas.measureText to compute and return the width of the given text of given font in pixels.
+             *
+             * @param {String} text The text to be rendered.
+             * @param {String} font The css font descriptor that text is to be rendered with (e.g. "bold 14px verdana").
+             *
+             * @see https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript/21015393#21015393
+             */
+            function getTextWidth(text, font) {
+                // re-use canvas object for better performance
+                var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+                var context = canvas.getContext("2d");
+                context.font = font;
+                var metrics = context.measureText(text);
+                return metrics.width;
+            }
+
+            function css( element, property ) {
+                return window.getComputedStyle( element, null ).getPropertyValue( property );
+            }
+
+            function resizeTextCallback(element, widthProportion) {
+                var textWidth = getTextWidth(element.innerHTML, css(element, 'font')); //text.style.fontSize
+                var textHeight = parseInt(element.clientHeight);
+                var containerWidth = parseInt(document.body.clientWidth);
+                element.style.fontSize = widthProportion * (containerWidth / textWidth * textHeight) + "px";
+            }
+
+            return {
+                // public method to add additional callback
+                add: function(callback) {
+                    if (!callbacks.length) {
+                        window.addEventListener('resize', resize);
+                    }
+                    addCallback(callback);
+                },
+
+                scaleText: function(element, widthProportion) {
+
+                    if (!callbacks.length) {
+                        window.addEventListener('resize', resize);
+                    }
+                    addCallback(resizeTextCallback, [element, widthProportion]);
+
+                    runCallbacks();
+                }
+            }
+        }());
+    </script>
+
+    <script>
+
+        function getPanelContents() {
+            return document.getElementById("panel").firstElementChild.firstElementChild;
         }
 
-        panelContents.classList.remove("greenText");
-        panelContents.classList.remove("redText");
-        panelContents.classList.remove("whiteText");
+        // todo
+        function updatePanelText(value) {
+            var panelContents = getPanelContents();
 
-        panelContents.classList.remove("largeText");
-        panelContents.classList.add("smallText");
-    }
+            panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
 
-    function updatePanelText(value) {
-        var panelContents = getPanelContents();
+            panelContents.classList.remove("greenText");
+            panelContents.classList.remove("redText");
+            panelContents.classList.remove("whiteText");
 
-        panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
+            if (value > 0) {
+                panelContents.classList.add("greenText");
+            } else if (value === 0) {
+                panelContents.classList.add("whiteText");
+            } else {
+                panelContents.classList.add("redText");
+            }
 
-        panelContents.classList.remove("greenText");
-        panelContents.classList.remove("redText");
-        panelContents.classList.remove("whiteText");
-
-        if (value > 0) {
-            panelContents.classList.add("greenText");
-        } else if (value === 0) {
-            panelContents.classList.add("whiteText");
-        } else {
-            panelContents.classList.add("redText");
+            panelContents.classList.remove("smallText");
+            panelContents.classList.add("largeText");
         }
 
-        panelContents.classList.remove("smallText");
-        panelContents.classList.add("largeText");
-    }
+        window.onload = function() {
+            // scale text to fit window width (80%)
+            optimizedResize.scaleText(document.getElementById("decimalText"), 0.7);
+        };
 
-</script>
+
+    </script>
+
 
 </body>
 </html>

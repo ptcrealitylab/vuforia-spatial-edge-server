@@ -2,87 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Gauge</title>
 
     <style>
 
-        /*body {*/
-            /*background-color: rgb(34, 34, 34);*/
-        /*}*/
-
-        .region {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
-            font-size: 48pt;
-        }
-
-        .centerContentsOuter {
-            display: table;
-            height:100%;
-            width:100%;
-        }
-
-        .centerContentsInner {
-            display: table-cell;
-            vertical-align: middle;
-            text-align:center;
-        }
-
-        .green {
-            color: rgb(41,253,47);
-            border: 2px solid rgb(41,253,47);
-        }
-
-        .red {
-            color: rgb(242,22,121);
-            border: 2px solid rgb(242,22,121);
-        }
-
-        .blue {
-            color: rgb(45,255,255);
-            border: 2px solid rgb(45,255,255);
-            background-color: rgba(45,255,255,0.15);
-        }
-
-        .white {
-            color: rgb(255,255,255);
-            background-color: rgba(255,255,255,0.15);
-        }
-
-        .greenText {
-            color: rgb(41,253,47);
-        }
-
-        .redText {
-            color: rgb(242,22,121);
-        }
-
-        .blueText {
-            color: rgb(45,255,255);
-        }
-
-        .whiteText {
-            color: rgb(255,255,255);
-        }
-
-        .inactive {
-            opacity: 0.25;
-        }
-
-        .smallText {
-            font-size: 28pt;
-        }
-
-        .largeText {
-            font-size: 72pt;
-            /*font-size: 48pt;*/
-            /*font-size: 50%;*/
+        #gauge {
+            width: 100%;
+            height: 100%;
         }
 
         #needle {
             /*transform: rotate(180deg);*/
+
+            width: 50%;
+            height: 50%;
 
             /* doesn't work as intended in Firefox
              * % values are taken relative to the SVG, not the element
@@ -95,66 +28,24 @@
 
     </style>
 
-    <!--<script src="justgage/raphael.2.1.0.min.js"></script>-->
-    <!--<script src="justgage/justgage.1.0.1.min.js"></script>-->
-
 </head>
 
 <body>
 
-<!--<div class="region" id="panel">-->
-    <!--<div class="centerContentsOuter">-->
-        <!--<div class="centerContentsInner blue inactive smallText">-->
+<div id="gaugeContainer" style="position: relative">
 
-            <div id="gaugeContainer" style="position: relative">
-
-                <!--<img id="gauge" src="resources/gauge-outline-1.svg" width="300px" height="300px">-->
-                <!--<img id="needle" src="resources/gauge-needle-1.svg" width="150px" height="150px" style="position: absolute; right: 50%; top: 50%;">-->
-
-                <img id="gauge" src="resources/gauge-outline-1.svg" width="100%" height="100%">
-                <img id="needle" src="resources/gauge-needle-1.svg" width="50%" height="50%">
+    <img id="gauge" src="resources/gauge-outline-1.svg">
+    <img id="needle" src="resources/gauge-needle-1.svg">
 
 
-            </div>
+</div>
 
-        <!--</div>-->
-    <!--</div>-->
-<!--</div>-->
 
 <script>
-
-    // debug: turn this on first
-//    activatePanel(true);
-
-//    function getPanelContents() {
-//        return document.getElementById("panel").firstElementChild.firstElementChild;
-//    }
-
-//    function activatePanel(shouldBeActive) {
-////        var panelContents = getPanelContents();
-//
-//        if (shouldBeActive) {
-//            panelContents.classList.remove("inactive");
-//            panelContents.classList.add("active");
-//
-//            panelContents.innerHTML = "            <div id=\"gaugeContainer\" style=\"position: relative\">\n" +
-//                "\n" +
-//                "                <img id=\"gauge\" src=\"resources/gauge-outline-1.svg\" width=\"300px\" height=\"300px\">\n" +
-//                "                <img id=\"needle\" src=\"resources/gauge-needle-1.svg\" width=\"150px\" height=\"150px\" style=\"position: absolute; right: 50%; top: 50%;\">\n" +
-//                "\n" +
-//                "            </div>";
-//
-//        } else {
-//            panelContents.classList.remove("active");
-//            panelContents.classList.add("inactive");
-//            panelContents.innerHTML = "No Connection";
-//        }
-//    }
 
     function displayValue(msg) {
         console.log("displayValue", msg);
         var value = msg.data.value;
-//        var panelContents = getPanelContents();
         var needle = document.getElementById("needle");
         var rotationFromValue = value * 180.0;
         needle.style.transform = "rotate(" + rotationFromValue + "deg)";
