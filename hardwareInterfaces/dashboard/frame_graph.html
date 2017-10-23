@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Graph</title>
+
+    <style>
+
+        html, body
+        {
+            margin: 0;
+            padding: 0;
+        }
+
+        #gauge {
+            width: 100%;
+            height: 100%;
+        }
+
+        #needle {
+            /*transform: rotate(180deg);*/
+
+            width: 50%;
+            height: 50%;
+
+            /* doesn't work as intended in Firefox
+             * % values are taken relative to the SVG, not the element
+             * which actually seems to be correct */
+            transform-origin: 100% 50%;
+            position: absolute;
+            right: 50%;
+            top: 70%;
+        }
+
+        #graphContainer {
+            width: 400px;
+            height: 300px;
+            border: 2px solid cyan;
+            position: relative;
+        }
+
+        .datapoint {
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            border: 2px solid cyan;
+            background-color: cyan;
+            position: absolute;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div id="graphContainer">
+
+</div>
+
+
+<script>
+
+    var GRAPH_WIDTH = 296; //400;
+    var GRAPH_HEIGHT = 145; //300;
+    var NUM_TO_STORE = 40;
+
+    var DOT_SIZE = (GRAPH_WIDTH / NUM_TO_STORE) * 0.5; //10;
+
+    var storedValues = []; //[0,0.1,0.2,0.3,0.8,0.5,1.0,0.7,0.1,0.0,0.2];
+    var container;
+
+    var lastValue = 0;
+    var oldWeight = 0.8;
+
+    var RENDER_DEBUG_STREAM = false;
+
+    window.onload = function() {
+        container = document.getElementById("graphContainer");
+
+        container.style.width = GRAPH_WIDTH + "px";
+        container.style.height = GRAPH_HEIGHT + "px";
+
+        for (var i = 0; i < NUM_TO_STORE; i++) {
+            var point = document.createElement('div');
+            point.classList.add("datapoint");
+            point.id = "datapoint" + i;
+            point.style.left = (i * (GRAPH_WIDTH / NUM_TO_STORE)) + "px";
+            point.style.bottom = "0";
+
+            point.style.width = DOT_SIZE + "px";
+            point.style.height = DOT_SIZE + "px";
+            point.style.borderRadius = DOT_SIZE + "px";
+
+            container.appendChild(point);
+        }
+
+        if (RENDER_DEBUG_STREAM) {
+            setInterval(function() {
+                var newValue = Math.random();
+                var weightedValue = oldWeight * lastValue + (1.0 - oldWeight) * newValue;
+                displayValue({data: {value: weightedValue}});
+                lastValue = weightedValue;
+            }, 100);
+        }
+    };
+
+    function addDatapoint(value) {
+        storedValues.push(value);
+        if (storedValues.length > NUM_TO_STORE) {
+            storedValues.shift();
+        }
+    }
+
+    function displayValue(msg) {
+        console.log("displayValue", msg);
+        var value = msg.data.value;
+        addDatapoint(value);
+
+        for (i = 0; i < storedValues.length; i++) {
+            var thisPoint = document.getElementById("datapoint" + i);
+            thisPoint.style.bottom = (storedValues[i] * (GRAPH_HEIGHT - DOT_SIZE)) + "px";
+        }
+    }
+
+    if (window.addEventListener) {
+        // For standards-compliant web browsers
+        window.addEventListener("message", displayValue, false);
+    }
+    else {
+        window.attachEvent("message", displayValue);
+    }
+
+</script>
+
+</body>
+</html>

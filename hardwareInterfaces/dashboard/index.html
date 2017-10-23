@@ -167,19 +167,18 @@
                 activatePanel(msg.data.nameNodeB, false);
 
             }
-
         }
 
         if (msg.action === "update") {
             console.log("update!");
             console.log(msg.data);
-            if (document.getElementById(nodeName).controlType !== "gauge") {
-                updatePanelText(nodeName, msg.data.value);
-            } else {
+//            if (document.getElementById(nodeName).controlType !== "gauge") {
+//                updatePanelText(nodeName, msg.data.value);
+//            } else {
                 var panelContents = getPanelContents(nodeName);
-                var gaugeFrame = panelContents.firstChild;
-                gaugeFrame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");//, "https://robertnyman.com");
-            }
+                var frame = panelContents.firstChild;
+                frame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");//, "https://robertnyman.com");
+//            }
         }
 
     });
@@ -201,21 +200,21 @@
         centerContentsOuter.appendChild(centerContentsInner);
 
         if (controlName === 'decimal') {
-
             var decimalFrame = createDecimalFrame();
             centerContentsInner.appendChild(decimalFrame);
 
         } else if (controlName === 'gauge') {
-//            var gaugeFrame = document.createElement('iframe');
-//            gaugeFrame.id = 'gaugeFrame';
-//            gaugeFrame.src = "/frame_gauge.html";
-//            gaugeFrame.scrolling = "no";
-//            gaugeFrame.style.border = "0px solid transparent";
-//            gaugeFrame.onload = function(e) {
-//                gaugeFrame.contentWindow.postMessage({value: 0.6}, "http://localhost:3030");//, "https://robertnyman.com");
-//            };
             var gaugeFrame = createGaugeFrame();
             centerContentsInner.appendChild(gaugeFrame);
+
+        } else if (controlName === 'graph') {
+            var graphFrame = createGraphFrame();
+            centerContentsInner.appendChild(graphFrame);
+
+        } else if (controlName === 'light') {
+            var lightFrame = createLightFrame();
+            centerContentsInner.appendChild(lightFrame);
+
         } else {
             centerContentsInner.innerHTML = controlName;
         }
@@ -224,6 +223,8 @@
         return sidebarPanel;
     }
 
+    var defaultValue = 0.00;
+
     function createDecimalFrame() {
         var decimalFrame = document.createElement('iframe');
         decimalFrame.id = 'decimalFrame';
@@ -231,7 +232,7 @@
         decimalFrame.scrolling = "no";
         decimalFrame.style.border = "0px solid transparent";
         decimalFrame.onload = function(e) {
-            decimalFrame.contentWindow.postMessage({value: 0.0}, "http://localhost:3030");//, "https://robertnyman.com");
+            decimalFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
         };
         return decimalFrame;
     }
@@ -243,9 +244,33 @@
         gaugeFrame.scrolling = "no";
         gaugeFrame.style.border = "0px solid transparent";
         gaugeFrame.onload = function(e) {
-            gaugeFrame.contentWindow.postMessage({value: 0.0}, "http://localhost:3030");//, "https://robertnyman.com");
+            gaugeFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
         };
         return gaugeFrame;
+    }
+
+    function createGraphFrame() {
+        var graphFrame = document.createElement('iframe');
+        graphFrame.id = 'graphFrame';
+        graphFrame.src = "/frame_graph.html";
+        graphFrame.scrolling = "no";
+        graphFrame.style.border = "0px solid transparent";
+        graphFrame.onload = function(e) {
+            graphFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
+        };
+        return graphFrame;
+    }
+
+    function createLightFrame() {
+        var lightFrame = document.createElement('iframe');
+        lightFrame.id = 'lightFrame';
+        lightFrame.src = "/frame_light.html";
+        lightFrame.scrolling = "no";
+        lightFrame.style.border = "0px solid transparent";
+        lightFrame.onload = function(e) {
+            lightFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
+        };
+        return lightFrame;
     }
 
     function createControlPanel(controls) {
@@ -262,7 +287,6 @@
             sidebarPanel.addEventListener('click', sidebarPanelClick);
 //            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
 //            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
-
         });
 
         var moreColumnsButton = document.createElement("button");
@@ -424,6 +448,16 @@
             getPanelContents(panel.id).innerHTML = "";
             var gaugeFrame = createGaugeFrame();
             getPanelContents(panel.id).appendChild(gaugeFrame);
+
+        } else if (controlName === "graph") {
+            getPanelContents(panel.id).innerHTML = "";
+            var graphFrame = createGraphFrame();
+            getPanelContents(panel.id).appendChild(graphFrame);
+
+        } else if (controlName === "light") {
+            getPanelContents(panel.id).innerHTML = "";
+            var lightFrame = createLightFrame();
+            getPanelContents(panel.id).appendChild(lightFrame);
         }
 
     }
