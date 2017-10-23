@@ -61,7 +61,7 @@ if (exports.enabled) {
         res.sendFile(__dirname + '/index.html');
     });
 
-    var filesToServe = ['/marker.jpg', '/index.css', '/frame_gauge.html', '/resources/gauge-outline-1.svg', '/resources/gauge-needle-1.svg'];
+    var filesToServe = ['/marker.jpg', '/index.css', '/frame_decimal.html', '/frame_gauge.html', '/resources/gauge-outline-1.svg', '/resources/gauge-needle-1.svg'];
     filesToServe.forEach( function(filename) {
 
         app.get(filename, function(req, res){
