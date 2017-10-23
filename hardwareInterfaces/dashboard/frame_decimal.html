@@ -59,8 +59,8 @@
             width: 100%;
             height: 100%;
             font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            text-align: center;
         }
-
 
     </style>
 </head>
@@ -68,10 +68,6 @@
 <body>
 
     <div id="decimalText" class="blueText">1.0</div>
-
-    <!--<div class="centerContentsOuter">-->
-        <!--<div class="centerContentsInner blue inactive smallText">No Connection</div>-->
-    <!--</div>-->
 
     <script>
         var optimizedResize = (function() {
@@ -167,16 +163,20 @@
 
     <script>
 
-        function getPanelContents() {
-            return document.getElementById("panel").firstElementChild.firstElementChild;
-        }
+        window.onload = function() {
+            // scale text to fit window width (80%)
+            optimizedResize.scaleText(document.getElementById("decimalText"), 0.5);
+        };
 
-        // todo
-        function updatePanelText(value) {
-            var panelContents = getPanelContents();
+        function displayValue(msg) {
+            console.log("displayValue", msg);
+            var value = msg.data.value;
+
+            var panelContents = document.getElementById("decimalText");
 
             panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
 
+            panelContents.classList.remove("blueText");
             panelContents.classList.remove("greenText");
             panelContents.classList.remove("redText");
             panelContents.classList.remove("whiteText");
@@ -184,20 +184,20 @@
             if (value > 0) {
                 panelContents.classList.add("greenText");
             } else if (value === 0) {
-                panelContents.classList.add("whiteText");
+                panelContents.classList.add("blueText");
             } else {
                 panelContents.classList.add("redText");
             }
 
-            panelContents.classList.remove("smallText");
-            panelContents.classList.add("largeText");
         }
 
-        window.onload = function() {
-            // scale text to fit window width (80%)
-            optimizedResize.scaleText(document.getElementById("decimalText"), 0.7);
-        };
-
+        if (window.addEventListener) {
+            // For standards-compliant web browsers
+            window.addEventListener("message", displayValue, false);
+        }
+        else {
+            window.attachEvent("message", displayValue);
+        }
 
     </script>
 

@@ -200,7 +200,12 @@
 
         centerContentsOuter.appendChild(centerContentsInner);
 
-        if (controlName === 'gauge') {
+        if (controlName === 'decimal') {
+
+            var decimalFrame = createDecimalFrame();
+            centerContentsInner.appendChild(decimalFrame);
+
+        } else if (controlName === 'gauge') {
 //            var gaugeFrame = document.createElement('iframe');
 //            gaugeFrame.id = 'gaugeFrame';
 //            gaugeFrame.src = "/frame_gauge.html";
@@ -219,6 +224,18 @@
         return sidebarPanel;
     }
 
+    function createDecimalFrame() {
+        var decimalFrame = document.createElement('iframe');
+        decimalFrame.id = 'decimalFrame';
+        decimalFrame.src = "/frame_decimal.html";
+        decimalFrame.scrolling = "no";
+        decimalFrame.style.border = "0px solid transparent";
+        decimalFrame.onload = function(e) {
+            decimalFrame.contentWindow.postMessage({value: 0.0}, "http://localhost:3030");//, "https://robertnyman.com");
+        };
+        return decimalFrame;
+    }
+
     function createGaugeFrame() {
         var gaugeFrame = document.createElement('iframe');
         gaugeFrame.id = 'gaugeFrame';
@@ -226,7 +243,7 @@
         gaugeFrame.scrolling = "no";
         gaugeFrame.style.border = "0px solid transparent";
         gaugeFrame.onload = function(e) {
-            gaugeFrame.contentWindow.postMessage({value: 0.6}, "http://localhost:3030");//, "https://robertnyman.com");
+            gaugeFrame.contentWindow.postMessage({value: 0.0}, "http://localhost:3030");//, "https://robertnyman.com");
         };
         return gaugeFrame;
     }
@@ -395,25 +412,21 @@
 
     function setPanelDisplay(panel, controlName) {
 
-        getPanelContents(panel.id).innerHTML = "controlName";
+        getPanelContents(panel.id).innerHTML = controlName;
         panel.controlType = controlName;
 
-        if (controlName === "gauge") {
+        if (controlName === "decimal") {
+            getPanelContents(panel.id).innerHTML = "";
+            var decimalFrame = createDecimalFrame();
+            getPanelContents(panel.id).appendChild(decimalFrame);
+
+        } else if (controlName === "gauge") {
             getPanelContents(panel.id).innerHTML = "";
             var gaugeFrame = createGaugeFrame();
             getPanelContents(panel.id).appendChild(gaugeFrame);
-//            centerContentsInner.appendChild(gaugeFrame);
         }
 
     }
-
-//    function getMouseX() {
-//        return x;
-//    }
-//
-//    function getMouseY() {
-//        return y;
-//    }
 
 </script>
 </body>
