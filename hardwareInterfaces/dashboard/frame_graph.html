@@ -12,40 +12,16 @@
             padding: 0;
         }
 
-        #gauge {
-            width: 100%;
-            height: 100%;
-        }
-
-        #needle {
-            /*transform: rotate(180deg);*/
-
-            width: 50%;
-            height: 50%;
-
-            /* doesn't work as intended in Firefox
-             * % values are taken relative to the SVG, not the element
-             * which actually seems to be correct */
-            transform-origin: 100% 50%;
-            position: absolute;
-            right: 50%;
-            top: 70%;
-        }
-
         #graphContainer {
-            width: 400px;
-            height: 300px;
             border: 2px solid cyan;
             position: relative;
+            background: transparent;
         }
 
-        .datapoint {
-            width: 10px;
-            height: 10px;
-            border-radius: 10px;
-            border: 2px solid cyan;
-            background-color: cyan;
-            position: absolute;
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
         }
 
     </style>
@@ -54,21 +30,73 @@
 
 <body>
 
-<div id="graphContainer">
+<canvas id="graphContainer"></canvas>
 
-</div>
+<script>
+    var optimizedResize = (function() {
+
+        var callbacks = [],
+            running = false;
+
+        // fired on resize event
+        function resize() {
+
+            if (!running) {
+                running = true;
+
+                if (window.requestAnimationFrame) {
+                    window.requestAnimationFrame(runCallbacks);
+                } else {
+                    setTimeout(runCallbacks, 66);
+                }
+            }
+
+        }
+
+        // run the actual callbacks
+        function runCallbacks() {
+
+            callbacks.forEach(function(callback) {
+                callback.callbackFunction.apply(null, callback.callbackArguments);
+            });
+
+            running = false;
+        }
+
+        // adds callback to loop
+        function addCallback(callback, arguments) {
+
+            arguments = arguments || [];
+
+            if (callback) {
+                callbacks.push({callbackFunction: callback, callbackArguments: arguments});
+            }
+
+        }
+
+        return {
+            // public method to add additional callback
+            add: function(callback) {
+                if (!callbacks.length) {
+                    window.addEventListener('resize', resize);
+                }
+                addCallback(callback);
+                runCallbacks();
+            }
+        }
+    }());
+</script>
 
 
 <script>
 
-    var GRAPH_WIDTH = 296; //400;
-    var GRAPH_HEIGHT = 145; //300;
+    var GRAPH_WIDTH = 296; // default value - now scales to fill window
+    var GRAPH_HEIGHT = 145; // default value - now scales to fill window
     var NUM_TO_STORE = 40;
 
-    var DOT_SIZE = (GRAPH_WIDTH / NUM_TO_STORE) * 0.5; //10;
-
-    var storedValues = []; //[0,0.1,0.2,0.3,0.8,0.5,1.0,0.7,0.1,0.0,0.2];
+    var storedValues = [];
     var container;
+    var ctx;
 
     var lastValue = 0;
     var oldWeight = 0.8;
@@ -76,24 +104,15 @@
     var RENDER_DEBUG_STREAM = false;
 
     window.onload = function() {
-        container = document.getElementById("graphContainer");
 
+        container = document.getElementById("graphContainer");
         container.style.width = GRAPH_WIDTH + "px";
         container.style.height = GRAPH_HEIGHT + "px";
-
-        for (var i = 0; i < NUM_TO_STORE; i++) {
-            var point = document.createElement('div');
-            point.classList.add("datapoint");
-            point.id = "datapoint" + i;
-            point.style.left = (i * (GRAPH_WIDTH / NUM_TO_STORE)) + "px";
-            point.style.bottom = "0";
-
-            point.style.width = DOT_SIZE + "px";
-            point.style.height = DOT_SIZE + "px";
-            point.style.borderRadius = DOT_SIZE + "px";
-
-            container.appendChild(point);
-        }
+        container.width = GRAPH_WIDTH;
+        container.height = GRAPH_HEIGHT;
+        ctx = container.getContext('2d');
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "cyan";
 
         if (RENDER_DEBUG_STREAM) {
             setInterval(function() {
@@ -103,6 +122,21 @@
                 lastValue = weightedValue;
             }, 100);
         }
+
+        optimizedResize.add( function() {
+
+            GRAPH_WIDTH = window.innerWidth;
+            GRAPH_HEIGHT = window.innerHeight-10;
+
+            container.style.width = GRAPH_WIDTH + "px";
+            container.style.height = GRAPH_HEIGHT + "px";
+            container.width = GRAPH_WIDTH;
+            container.height = GRAPH_HEIGHT;
+
+            ctx.lineWidth = 5 + Math.floor((GRAPH_WIDTH+GRAPH_HEIGHT) / 800);
+            ctx.strokeStyle = "cyan";
+
+        });
     };
 
     function addDatapoint(value) {
@@ -113,14 +147,37 @@
     }
 
     function displayValue(msg) {
-        console.log("displayValue", msg);
+
+        // draws random graph for preview icon
+        if (msg.data.debug) {
+            for (var i = 0; i < NUM_TO_STORE; i++) {
+                var newValue = Math.random();
+                var weightedValue = oldWeight * lastValue + (1.0 - oldWeight) * newValue;
+                displayValue({data: {value: weightedValue}});
+                lastValue = weightedValue;
+            }
+            return;
+        }
+
         var value = msg.data.value;
         addDatapoint(value);
+        renderGraph();
+    }
 
+    function renderGraph() {
+        ctx.clearRect(0, 0, GRAPH_WIDTH, GRAPH_HEIGHT);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
         for (i = 0; i < storedValues.length; i++) {
-            var thisPoint = document.getElementById("datapoint" + i);
-            thisPoint.style.bottom = (storedValues[i] * (GRAPH_HEIGHT - DOT_SIZE)) + "px";
+            var x = (i * (GRAPH_WIDTH / (NUM_TO_STORE-1)));
+            var y = GRAPH_HEIGHT - (storedValues[i] * (GRAPH_HEIGHT));
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         }
+        ctx.stroke();
     }
 
     if (window.addEventListener) {
