@@ -208,7 +208,7 @@
             centerContentsInner.appendChild(gaugeFrame);
 
         } else if (controlName === 'graph') {
-            var graphFrame = createGraphFrame();
+            var graphFrame = createGraphFrame('debug');
             centerContentsInner.appendChild(graphFrame);
 
         } else if (controlName === 'light') {
@@ -249,7 +249,7 @@
         return gaugeFrame;
     }
 
-    function createGraphFrame() {
+    function createGraphFrame(debug) {
         var graphFrame = document.createElement('iframe');
         graphFrame.id = 'graphFrame';
         graphFrame.src = "/frame_graph.html";
@@ -257,6 +257,9 @@
         graphFrame.style.border = "0px solid transparent";
         graphFrame.onload = function(e) {
             graphFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
+            if (debug) {
+                graphFrame.contentWindow.postMessage({debug: true}, "http://localhost:3030");
+            }
         };
         return graphFrame;
     }
