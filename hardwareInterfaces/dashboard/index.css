@@ -160,6 +160,7 @@ body {
 .sidebarPanel {
     width: 100%;
     height: 200px;
+    position: relative;
 }
 
 .eventCapture {

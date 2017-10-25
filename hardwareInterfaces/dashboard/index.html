@@ -93,9 +93,9 @@
 
                 container.appendChild(newPanel);
 
-                newPanel.addEventListener('click', function(e) {
-                    clickedOnPanel(e.currentTarget);
-                });
+//                newPanel.addEventListener('click', function(e) {
+//                    clickedOnPanel(e.currentTarget);
+//                });
 
                 var eventCaptureDiv = document.createElement('div');
                 eventCaptureDiv.className = "eventCapture";
@@ -305,7 +305,7 @@
 
     function createControlPanel(controls) {
 
-        startLoop();
+//        startLoop();
 
         sidebar.style.width = "400px";
         sidebar.style.height = "1200px";
@@ -313,7 +313,7 @@
         controls.forEach( function(controlName) {
             var sidebarPanel = createSidebarPanel(controlName);
             sidebar.appendChild(sidebarPanel);
-            sidebarPanel.addEventListener('click', sidebarPanelClick);
+//            sidebarPanel.addEventListener('click', sidebarPanelClick);
         });
 
         var moreColumnsButton = document.createElement("button");
@@ -383,19 +383,19 @@
         }
     }
 
-    function sidebarPanelClick(e) {
-        console.log("clicked on sidebar panel", e);
-        console.log(e.currentTarget);
-
-        if (!currentlyDraggedPanel) {
-            var sidebarPanelClone = createSidebarPanel(e.currentTarget.id);
-            sidebarPanelClone.classList.add("region");
-            sidebarPanelClone.classList.add("smallText");
-            currentlyDraggedPanel = sidebarPanelClone;
-            document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
-            sidebarPanelClone.classList.add("draggedPanel");
-        }
-    }
+//    function sidebarPanelClick(e) {
+//        console.log("clicked on sidebar panel", e);
+//        console.log(e.currentTarget);
+//
+//        if (!currentlyDraggedPanel) {
+//            var sidebarPanelClone = createSidebarPanel(e.currentTarget.id);
+//            sidebarPanelClone.classList.add("region");
+//            sidebarPanelClone.classList.add("smallText");
+//            currentlyDraggedPanel = sidebarPanelClone;
+//            document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+//            sidebarPanelClone.classList.add("draggedPanel");
+//        }
+//    }
 
     function initializeDragInterface(exports) {
 
@@ -415,7 +415,14 @@
 
         function onMouseMove(e) {
             console.log("mousemove", interactionState);
+            mouseX = e.pageX;
+            mouseY = e.pageY;
             interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
+
+            if (currentlyDraggedPanel) {
+                currentlyDraggedPanel.style.top = mouseY + 20 + "px";
+                currentlyDraggedPanel.style.left = mouseX + 20 + "px";
+            }
         }
 
         function onMouseUp(e) {
@@ -498,15 +505,18 @@
             switch (event) {
                 case getEvents().MOUSE_START_CLICK:
                     console.log("keep track of what you clicked on");
+                    startClick();
                     timer = setTimeout(function(){
                         interactionState = performAction(getActions().TIME_PASSED, interactionState);
                     }, 1000);
                     break;
                 case getEvents().MOUSE_START_HOLD:
                     console.log("set clicked target as thing being held... show visual feedback");
+                    startHoldOrDrag();
                     break;
                 case getEvents().MOUSE_START_DRAG:
                     console.log("move held target to mouse position");
+                    startHoldOrDrag();
                     break;
                 case getEvents().MOUSE_STOP_CLICK:
                     console.log("trigger click event on whatever you were over");
@@ -514,53 +524,99 @@
                 case getEvents().MOUSE_STOP_HOLD:
                 case getEvents().MOUSE_STOP_DRAG:
                     console.log("if holding anything, put it down where you are. assign held target to panel if possible.");
+                    stopHoldOrDrag();
                     break;
                 default:
                     console.log("shouldn't happen");
             }
+
+            console.log("->", clickedPanelContainer, currentlyDraggedPanel);
         }
 
-    }
+        var clickedPanelContainer = null;
 
-    function startLoop() {
-        setInterval(function () {
-            if (currentlyDraggedPanel) {
-//                currentlyDraggedPanel.style.left = mouseX;
-//                currentlyDraggedPanel.style.top = mouseY;
-//                console.log(currentlyDraggedPanel);
-//                console.log('moved to ', currentlyDraggedPanel.style.left, currentlyDraggedPanel.style.top);
-
-                currentlyDraggedPanel.style.position = "absolute";
-
-//                console.log( mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px" );
-//                console.log(mouseX, mouseY);
-
-                currentlyDraggedPanel.style.top = mouseY + 20 + "px"; //mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px";
-                currentlyDraggedPanel.style.left = mouseX + 20 + "px"; //mouseX - (mouseX - currentlyDraggedPanel.offsetLeft) + "px";
+        function startClick() {
+            var clickedElement = document.elementFromPoint(mouseX,mouseY);//.parentElement.id
+            if (clickedElement.className === 'eventCapture') {
+                var parent = clickedElement.parentElement;
+                console.log(parent.id);
+                clickedPanelContainer = parent;
+            } else {
+                clickedPanelContainer = null;
             }
-        }, 16.67);
-    }
 
-    function onMouseUpdate(e) {
-        mouseX = e.pageX;
-        mouseY = e.pageY;
-//        console.log('mouse moved', mouseX, mouseY);
-    }
-
-    function clickedOnPanel(panel) {
-
-        if (currentlyDraggedPanel) {
-            console.log('clicked on panel');
-
-            setPanelDisplay(panel, currentlyDraggedPanel.id);
-
-//        activatePanel(panel.id, !getPanelContents(panel.id).classList.contains("active"));
-
-            document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
-            currentlyDraggedPanel = null;
         }
 
+        function startHoldOrDrag() {
+            if (!currentlyDraggedPanel && clickedPanelContainer) {
+                var sidebarPanelClone = createSidebarPanel(clickedPanelContainer.id);
+                sidebarPanelClone.classList.add("region");
+                sidebarPanelClone.classList.add("smallText");
+                currentlyDraggedPanel = sidebarPanelClone;
+                currentlyDraggedPanel.style.position = "absolute";
+                document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+                sidebarPanelClone.classList.add("draggedPanel");
+
+                clickedPanelContainer = null;
+            }
+        }
+
+        function stopHoldOrDrag() {
+            if (currentlyDraggedPanel) {
+                // get panel it's closest to or on top of
+                var elementUnderMouse = document.elementFromPoint(mouseX,mouseY);//.parentElement.id
+                if (elementUnderMouse.classList.contains("centerContentsInner")) {
+                    var panel = elementUnderMouse.parentElement.parentElement;
+                    if (panel) {
+                        console.log('released on panel');
+                        setPanelDisplay(panel, currentlyDraggedPanel.id);
+                    }
+                }
+                document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
+                currentlyDraggedPanel = null;
+            }
+        }
     }
+
+//    function startLoop() {
+//        setInterval(function () {
+//            if (currentlyDraggedPanel) {
+////                currentlyDraggedPanel.style.left = mouseX;
+////                currentlyDraggedPanel.style.top = mouseY;
+////                console.log(currentlyDraggedPanel);
+////                console.log('moved to ', currentlyDraggedPanel.style.left, currentlyDraggedPanel.style.top);
+//
+//                currentlyDraggedPanel.style.position = "absolute";
+//
+////                console.log( mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px" );
+////                console.log(mouseX, mouseY);
+//
+//                currentlyDraggedPanel.style.top = mouseY + 20 + "px"; //mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px";
+//                currentlyDraggedPanel.style.left = mouseX + 20 + "px"; //mouseX - (mouseX - currentlyDraggedPanel.offsetLeft) + "px";
+//            }
+//        }, 16.67);
+//    }
+//
+//    function onMouseUpdate(e) {
+//        mouseX = e.pageX;
+//        mouseY = e.pageY;
+////        console.log('mouse moved', mouseX, mouseY);
+//    }
+//
+//    function clickedOnPanel(panel) {
+//
+//        if (currentlyDraggedPanel) {
+//            console.log('clicked on panel');
+//
+//            setPanelDisplay(panel, currentlyDraggedPanel.id);
+//
+////        activatePanel(panel.id, !getPanelContents(panel.id).classList.contains("active"));
+//
+//            document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
+//            currentlyDraggedPanel = null;
+//        }
+//
+//    }
 
     var widthPercentage = 0.9;
     var heightToWidthRatio = 0.5;
