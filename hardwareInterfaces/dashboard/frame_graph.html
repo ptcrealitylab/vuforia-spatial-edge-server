@@ -170,7 +170,7 @@
         ctx.moveTo(0,0);
         for (i = 0; i < storedValues.length; i++) {
             var x = (i * (GRAPH_WIDTH / (NUM_TO_STORE-1)));
-            var y = GRAPH_HEIGHT - (storedValues[i] * (GRAPH_HEIGHT));
+            var y = GRAPH_HEIGHT - ( Math.abs(storedValues[i]) * (GRAPH_HEIGHT)); // absolute value to graph negative numbers
             if (i === 0) {
                 ctx.moveTo(x, y);
             } else {

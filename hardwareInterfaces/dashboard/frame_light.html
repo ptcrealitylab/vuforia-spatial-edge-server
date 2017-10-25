@@ -66,16 +66,17 @@
             console.log("displayValue", msg);
             var value = msg.data.value;
 
-            if (value < 0.5) {
-                document.getElementById("lightOn").classList.remove("on");
-                document.getElementById("lightOn").classList.add("off");
-                document.getElementById("lightOff").classList.remove("off");
-                document.getElementById("lightOff").classList.add("on");
+            if (value <= 0) {
+                document.getElementById("lightOn").style.display = "none";
+                document.getElementById("lightOff").style.display = "inline-block";
+                document.getElementById("lightOff").style.opacity = "0.3";
+            } else if (value < 0.5) {
+                document.getElementById("lightOn").style.display = "none";
+                document.getElementById("lightOff").style.display = "inline-block";
+                document.getElementById("lightOff").style.opacity = "1.0";
             } else {
-                document.getElementById("lightOff").classList.remove("on");
-                document.getElementById("lightOff").classList.add("off");
-                document.getElementById("lightOn").classList.remove("off");
-                document.getElementById("lightOn").classList.add("on");
+                document.getElementById("lightOn").style.display = "inline-block";
+                document.getElementById("lightOff").style.display = "none";
             }
         }
 
