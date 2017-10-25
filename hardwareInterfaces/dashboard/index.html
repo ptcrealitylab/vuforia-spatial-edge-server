@@ -12,24 +12,30 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+
     var socket = io();
-
     var container = document.getElementById("container");
-    container.style.width = "50%";
-    container.style.height = "900px";
-
     var sidebar = document.getElementById("sidebar");
-    createControlPanel(["decimal", "gauge", "graph", "light"]);
-
     var NUM_COLUMNS;
     var NUM_ROWS;
-    var MAX_COLUMNS = 8;
+    var MAX_COLUMNS = 5;
     var MIN_COLUMNS = 1;
-    var MAX_ROWS = 8;
+    var MAX_ROWS = 3;
     var MIN_ROWS = 1;
-
-    //    var createdPanels = createPanels(3,4); // need to wait until HW interface connects
+    var defaultValue = 0.00;
     var createdPanels = [];
+    var currentlyDraggedPanel = null;
+    var mouseX = null;
+    var mouseY = null;
+
+    createControlPanel(["decimal", "gauge", "graph", "light"]);
+    redrawGrid();
+
+//    document.addEventListener('mousemove', onMouseUpdate, false);
+//    document.addEventListener('mouseenter', onMouseUpdate, false);
+
+    initializeDragInterface();
+
     socket.on("redrawGrid", function(msg) {
         console.log(msg);
         NUM_ROWS = msg.rows;
@@ -38,15 +44,37 @@
     });
 
     function redrawGrid() {
+
+        container.style.width = 600 * NUM_COLUMNS + "px"; //50 + (30 * NUM_COLUMNS / MAX_COLUMNS) + "%";
+        container.style.height = 600 * NUM_ROWS + "px"; //1000 + (800 * NUM_ROWS / MAX_ROWS) + "px";
+
         container.innerHTML = "";
         createdPanels = createPanels(NUM_ROWS, NUM_COLUMNS);
 
-        container.style.width = 50 + (30 * NUM_COLUMNS / MAX_COLUMNS) + "%";
-        container.style.height = 1000 + (800 * NUM_ROWS / MAX_ROWS) + "px";
-
+        updateGridButtonAppearance();
     }
 
-//    var controls = ["decimal", "gauge", "graph", "light"];
+    function updateGridButtonAppearance() {
+        var buttonIds = ["moreColumns", "fewerColumns", "moreRows", "fewerRows"];
+        buttonIds.forEach(function(buttonId) {
+            document.getElementById(buttonId).classList.remove("inactive");
+            document.getElementById(buttonId).classList.add('active');
+        });
+        if (NUM_COLUMNS >= MAX_COLUMNS) {
+            document.getElementById("moreColumns").classList.add("inactive");
+            document.getElementById("moreColumns").classList.remove('active');
+        } else if (NUM_COLUMNS <= MIN_COLUMNS) {
+            document.getElementById("fewerColumns").classList.add("inactive");
+            document.getElementById("fewerColumns").classList.remove('active');
+        }
+        if (NUM_ROWS >= MAX_ROWS) {
+            document.getElementById("moreRows").classList.add("inactive");
+            document.getElementById("moreRows").classList.remove('active');
+        } else if (NUM_ROWS <= MIN_ROWS) {
+            document.getElementById("fewerRows").classList.add("inactive");
+            document.getElementById("fewerRows").classList.remove('active');
+        }
+    }
 
     function createPanels(rows, columns) {
 
@@ -66,9 +94,12 @@
                 container.appendChild(newPanel);
 
                 newPanel.addEventListener('click', function(e) {
-//                    toggleConnected(e.currentTarget);
                     clickedOnPanel(e.currentTarget);
                 });
+
+                var eventCaptureDiv = document.createElement('div');
+                eventCaptureDiv.className = "eventCapture";
+                newPanel.appendChild(eventCaptureDiv);
 
                 var centerContentsOuter = document.createElement("div");
                 centerContentsOuter.className = "centerContentsOuter";
@@ -80,12 +111,7 @@
                 centerContentsOuter.appendChild(centerContentsInner);
 
                 if (r === 0 && c === 0) {
-
                     centerContentsInner.classList.add("marker");
-//                    var markerImage = document.createElement("div");
-//                    markerImage.classList.add("marker");
-//                    markerImage.src = "marker.jpg";
-//                    centerContentsInner.appendChild(markerImage);
                 } else {
                     activatePanel(getIdForPanel(r, c), false);
                 }
@@ -101,7 +127,7 @@
     }
 
     function getPanelContents(nodeName) {
-        return document.getElementById(nodeName).firstElementChild.firstElementChild;
+        return document.getElementById(nodeName).children[1].firstElementChild;
     }
 
     function activatePanel(nodeName, shouldBeActive) {
@@ -110,7 +136,7 @@
         if (shouldBeActive) {
             panelContents.classList.remove("inactive");
             panelContents.classList.add("active");
-            panelContents.innerHTML = "Connected";
+            panelContents.innerHTML = "Connected.\nAdd a vizualizer.";
         } else {
             panelContents.classList.remove("active");
             panelContents.classList.add("inactive");
@@ -172,13 +198,9 @@
         if (msg.action === "update") {
             console.log("update!");
             console.log(msg.data);
-//            if (document.getElementById(nodeName).controlType !== "gauge") {
-//                updatePanelText(nodeName, msg.data.value);
-//            } else {
-                var panelContents = getPanelContents(nodeName);
-                var frame = panelContents.firstChild;
-                frame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");//, "https://robertnyman.com");
-//            }
+            var panelContents = getPanelContents(nodeName);
+            var frame = panelContents.firstChild;
+            frame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");
         }
 
     });
@@ -187,6 +209,10 @@
         var sidebarPanel = document.createElement("div");
         sidebarPanel.className = "sidebarPanel";
         sidebarPanel.id = controlName;
+
+        var eventCaptureDiv = document.createElement('div');
+        eventCaptureDiv.className = "eventCapture";
+        sidebarPanel.appendChild(eventCaptureDiv);
 
         var centerContentsOuter = document.createElement("div");
         centerContentsOuter.className = "centerContentsOuter";
@@ -219,14 +245,12 @@
             centerContentsInner.innerHTML = controlName;
         }
 
-
         return sidebarPanel;
     }
 
-    var defaultValue = 0.00;
-
     function createDecimalFrame() {
         var decimalFrame = document.createElement('iframe');
+        decimalFrame.classList.add('controlFrame');
         decimalFrame.id = 'decimalFrame';
         decimalFrame.src = "/frame_decimal.html";
         decimalFrame.scrolling = "no";
@@ -239,6 +263,7 @@
 
     function createGaugeFrame() {
         var gaugeFrame = document.createElement('iframe');
+        gaugeFrame.classList.add('controlFrame');
         gaugeFrame.id = 'gaugeFrame';
         gaugeFrame.src = "/frame_gauge.html";
         gaugeFrame.scrolling = "no";
@@ -251,6 +276,7 @@
 
     function createGraphFrame(debug) {
         var graphFrame = document.createElement('iframe');
+        graphFrame.classList.add('controlFrame');
         graphFrame.id = 'graphFrame';
         graphFrame.src = "/frame_graph.html";
         graphFrame.scrolling = "no";
@@ -266,6 +292,7 @@
 
     function createLightFrame() {
         var lightFrame = document.createElement('iframe');
+        lightFrame.classList.add('controlFrame');
         lightFrame.id = 'lightFrame';
         lightFrame.src = "/frame_light.html";
         lightFrame.scrolling = "no";
@@ -284,15 +311,13 @@
         sidebar.style.height = "1200px";
 
         controls.forEach( function(controlName) {
-
             var sidebarPanel = createSidebarPanel(controlName);
             sidebar.appendChild(sidebarPanel);
             sidebarPanel.addEventListener('click', sidebarPanelClick);
-//            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
-//            sidebarPanel.addEventListener('mousedown', sidebarPanelMouseDown);
         });
 
         var moreColumnsButton = document.createElement("button");
+        moreColumnsButton.id = "moreColumns";
         moreColumnsButton.classList.add('button');
         moreColumnsButton.classList.add('blue');
         moreColumnsButton.classList.add('active');
@@ -301,6 +326,7 @@
         sidebar.appendChild(moreColumnsButton);
 
         var fewerColumnsButton = document.createElement("button");
+        fewerColumnsButton.id = "fewerColumns";
         fewerColumnsButton.classList.add('button');
         fewerColumnsButton.classList.add('blue');
         fewerColumnsButton.classList.add('active');
@@ -311,6 +337,7 @@
         sidebar.appendChild(document.createElement('br'));
 
         var moreRowsButton = document.createElement("button");
+        moreRowsButton.id = "moreRows";
         moreRowsButton.classList.add('button');
         moreRowsButton.classList.add('blue');
         moreRowsButton.classList.add('active');
@@ -319,6 +346,7 @@
         sidebar.appendChild(moreRowsButton);
 
         var fewerRowsButton = document.createElement("button");
+        fewerRowsButton.id = "fewerRows";
         fewerRowsButton.classList.add('button');
         fewerRowsButton.classList.add('blue');
         fewerRowsButton.classList.add('active');
@@ -330,10 +358,6 @@
     function addColumn(e) {
         if (NUM_COLUMNS < MAX_COLUMNS) {
             NUM_COLUMNS++;
-            // redraw interface, etc
-//            redrawGrid();
-            // communicate to nodes
-//            updateServerNodes(0,1);
             socket.emit("addColumn");
         }
     }
@@ -341,40 +365,23 @@
     function removeColumn(e) {
         if (NUM_COLUMNS > MIN_COLUMNS) {
             NUM_COLUMNS--;
-            // redraw
-//            redrawGrid();
-            // communicate to nodes
-//            updateServerNodes(0,-1);
             socket.emit("removeColumn");
-
         }
     }
 
     function addRow(e) {
         if (NUM_ROWS < MAX_ROWS) {
             NUM_ROWS++;
-            // redraw interface, etc
-//            redrawGrid();
-            // communicate to nodes
-//            updateServerNodes(1,0);
             socket.emit("addRow");
-
         }
     }
 
     function removeRow(e) {
         if (NUM_ROWS > MIN_ROWS) {
             NUM_ROWS--;
-            // redraw
-//            redrawGrid();
-            // communicate to nodes
-//            updateServerNodes(-1,0);
             socket.emit("removeRow");
-
         }
     }
-
-    var currentlyDraggedPanel = null;
 
     function sidebarPanelClick(e) {
         console.log("clicked on sidebar panel", e);
@@ -384,11 +391,135 @@
             var sidebarPanelClone = createSidebarPanel(e.currentTarget.id);
             sidebarPanelClone.classList.add("region");
             sidebarPanelClone.classList.add("smallText");
-//            .appendChild(currentlyDraggedPanel);
             currentlyDraggedPanel = sidebarPanelClone;
             document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
             sidebarPanelClone.classList.add("draggedPanel");
         }
+    }
+
+    function initializeDragInterface(exports) {
+
+        // add event listeners for mouse down, up, move, (cancel?)
+
+        document.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+//        document.addEventListener('mouseout', onMouseUpdate, false);
+
+        var interactionState = getStates().NONE;
+
+        function onMouseDown(e) {
+            console.log("mousedown", interactionState);
+            interactionState = performAction(getActions().MOUSE_DOWN, interactionState);
+        }
+
+        function onMouseMove(e) {
+            console.log("mousemove", interactionState);
+            interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
+        }
+
+        function onMouseUp(e) {
+            console.log("mouseup", interactionState);
+            interactionState = performAction(getActions().MOUSE_UP, interactionState);
+        }
+
+        // maintain a state machine that triggers actions upon entering each state
+
+        function getStates() {
+            return {
+                NONE: 0,
+                CLICK: 1,
+                HOLD: 3,
+                DRAG: 5
+            };
+        }
+
+        function getActions() {
+            return {
+                NONE: 0,
+                MOUSE_DOWN: 1,
+                MOUSE_MOVE: 2,
+                MOUSE_UP: 3,
+                MOUSE_CANCEL: 4,
+                TIME_PASSED: 5
+            };
+        }
+
+        function getEvents() {
+            return {
+                MOUSE_START_CLICK: 0,
+                MOUSE_STOP_CLICK: 1,
+                MOUSE_START_HOLD: 2,
+                MOUSE_STOP_HOLD: 3,
+                MOUSE_START_DRAG: 4,
+                MOUSE_STOP_DRAG: 5
+            };
+        }
+
+        function performAction(action, currentState) {
+
+            if (action === getActions().MOUSE_DOWN) {
+                if (currentState === getStates().NONE) {
+                    triggerEvent(getEvents().MOUSE_START_CLICK);
+                    return getStates().CLICK;
+                }
+
+            } else if (action === getActions().TIME_PASSED) {
+                if (currentState === getStates().CLICK) {
+                    triggerEvent(getEvents().MOUSE_START_HOLD);
+                    return getStates().HOLD;
+                }
+
+            } else if (action === getActions().MOUSE_MOVE) {
+                if (currentState === getStates().CLICK || currentState === getStates().HOLD) {
+                    triggerEvent(getEvents().MOUSE_START_DRAG);
+                    return getStates().DRAG;
+                }
+
+            } else if (action === getActions().MOUSE_UP || action === getActions().MOUSE_CANCEL) {
+                if (currentState === getStates().CLICK) {
+                    triggerEvent(getEvents().MOUSE_STOP_CLICK)
+                } else if (currentState === getStates().HOLD) {
+                    triggerEvent(getEvents().MOUSE_START_HOLD);
+                } else if (currentState === getStates().DRAG) {
+                    triggerEvent(getEvents().MOUSE_STOP_DRAG);
+                }
+
+                return getStates().NONE;
+
+            }
+            return currentState;
+        }
+
+        var timer;
+
+        function triggerEvent(event) {
+            clearTimeout(timer);
+            switch (event) {
+                case getEvents().MOUSE_START_CLICK:
+                    console.log("keep track of what you clicked on");
+                    timer = setTimeout(function(){
+                        interactionState = performAction(getActions().TIME_PASSED, interactionState);
+                    }, 1000);
+                    break;
+                case getEvents().MOUSE_START_HOLD:
+                    console.log("set clicked target as thing being held... show visual feedback");
+                    break;
+                case getEvents().MOUSE_START_DRAG:
+                    console.log("move held target to mouse position");
+                    break;
+                case getEvents().MOUSE_STOP_CLICK:
+                    console.log("trigger click event on whatever you were over");
+                    break;
+                case getEvents().MOUSE_STOP_HOLD:
+                case getEvents().MOUSE_STOP_DRAG:
+                    console.log("if holding anything, put it down where you are. assign held target to panel if possible.");
+                    break;
+                default:
+                    console.log("shouldn't happen");
+            }
+        }
+
     }
 
     function startLoop() {
@@ -409,12 +540,6 @@
             }
         }, 16.67);
     }
-
-    var mouseX = null;
-    var mouseY = null;
-
-    document.addEventListener('mousemove', onMouseUpdate, false);
-    document.addEventListener('mouseenter', onMouseUpdate, false);
 
     function onMouseUpdate(e) {
         mouseX = e.pageX;
@@ -437,32 +562,31 @@
 
     }
 
+    var widthPercentage = 0.9;
+    var heightToWidthRatio = 0.5;
+
     function setPanelDisplay(panel, controlName) {
 
-        getPanelContents(panel.id).innerHTML = controlName;
-        panel.controlType = controlName;
+        getPanelContents(panel.id).innerHTML = "";
+        var frame;
 
         if (controlName === "decimal") {
-            getPanelContents(panel.id).innerHTML = "";
-            var decimalFrame = createDecimalFrame();
-            getPanelContents(panel.id).appendChild(decimalFrame);
+            frame = createDecimalFrame();
 
         } else if (controlName === "gauge") {
-            getPanelContents(panel.id).innerHTML = "";
-            var gaugeFrame = createGaugeFrame();
-            getPanelContents(panel.id).appendChild(gaugeFrame);
+            frame = createGaugeFrame();
 
         } else if (controlName === "graph") {
-            getPanelContents(panel.id).innerHTML = "";
-            var graphFrame = createGraphFrame();
-            getPanelContents(panel.id).appendChild(graphFrame);
+            frame = createGraphFrame();
 
         } else if (controlName === "light") {
-            getPanelContents(panel.id).innerHTML = "";
-            var lightFrame = createLightFrame();
-            getPanelContents(panel.id).appendChild(lightFrame);
+            frame = createLightFrame();
         }
 
+        frame.style.width = (getPanelContents(panel.id).clientWidth * widthPercentage) + "px";
+        frame.style.height = (getPanelContents(panel.id).clientHeight * widthPercentage * heightToWidthRatio) + "px";
+
+        getPanelContents(panel.id).appendChild(frame);
     }
 
 </script>

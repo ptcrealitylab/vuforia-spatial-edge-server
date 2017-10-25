@@ -52,6 +52,7 @@
     function displayValue(msg) {
         console.log("displayValue", msg);
         var value = msg.data.value;
+        value = Math.abs(value); // displays negatives as absolute value
         var needle = document.getElementById("needle");
         var rotationFromValue = value * 180.0;
         needle.style.transform = "rotate(" + rotationFromValue + "deg)";

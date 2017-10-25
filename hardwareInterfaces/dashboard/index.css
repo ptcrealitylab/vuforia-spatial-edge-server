@@ -162,6 +162,16 @@ body {
     height: 200px;
 }
 
+.eventCapture {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.controlFrame {
+    pointer-events: none;
+}
+
 .draggedPanel {
     position: absolute;
     width: 400px;
