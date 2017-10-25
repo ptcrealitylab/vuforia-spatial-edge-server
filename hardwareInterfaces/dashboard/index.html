@@ -24,6 +24,7 @@
     var MIN_ROWS = 1;
     var defaultValue = 0.00;
     var createdPanels = [];
+    var panelVisualizationTypes = {};
     var currentlyDraggedPanel = null;
     var mouseX = null;
     var mouseY = null;
@@ -113,7 +114,12 @@
                 if (r === 0 && c === 0) {
                     centerContentsInner.classList.add("marker");
                 } else {
-                    activatePanel(getIdForPanel(r, c), false);
+
+                    if (!panelVisualizationTypes.hasOwnProperty(newPanel.id)) {
+                        panelVisualizationTypes[newPanel.id] = "empty";
+                    }
+
+                    activatePanel(newPanel.id, false);
                 }
 
                 panelArray.push(newPanel);
@@ -136,11 +142,16 @@
         if (shouldBeActive) {
             panelContents.classList.remove("inactive");
             panelContents.classList.add("active");
-            panelContents.innerHTML = "Connected.\nAdd a vizualizer.";
+            panelContents.innerHTML = "Connected.\nAdd a visualizer.";
         } else {
             panelContents.classList.remove("active");
             panelContents.classList.add("inactive");
             panelContents.innerHTML = "No Connection";
+        }
+
+        if (panelVisualizationTypes.hasOwnProperty(nodeName) && !(panelVisualizationTypes[nodeName] === "empty")) {
+            var visualizationType = panelVisualizationTypes[nodeName];
+            setPanelDisplay(document.getElementById(nodeName), visualizationType);
         }
 
         panelContents.classList.remove("greenText");
@@ -569,6 +580,7 @@
                     var panel = elementUnderMouse.parentElement.parentElement;
                     if (panel) {
                         console.log('released on panel');
+                        panelVisualizationTypes[panel.id] = currentlyDraggedPanel.id;
                         setPanelDisplay(panel, currentlyDraggedPanel.id);
                     }
                 }
