@@ -141,6 +141,42 @@ exports.reloadNodeUI = function (objectName) {
     writeObjectCallback(objectID);
 };
 
+exports.getAllNodes = function (objectName) {
+
+    // get object ID
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+
+    // lookup object properties using name
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            // get all of its nodes
+            var nodes = objects[objectID].nodes;
+            // return node list
+            return nodes;
+        }
+    }
+
+    return {};
+};
+
+exports.getAllLinksToNodes = function (objectName) {
+
+    // get object ID
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+
+    // lookup object properties using name
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            // get all of its nodes
+            var links = objects[objectID].links;
+            // return node list
+            return links;
+        }
+    }
+
+    return {};
+};
+
 /**
  * @desc addIO() a new IO point to the specified HybridObject
  * @param {string} objectName The name of the HybridObject

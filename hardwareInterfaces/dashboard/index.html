@@ -11,6 +11,62 @@
 <div id="sidebar" class="region blue smallText">Control Panel</div>
 
 <script src="/socket.io/socket.io.js"></script>
+
+<script>
+    var optimizedResize = (function() {
+
+        var callbacks = [],
+            running = false;
+
+        // fired on resize event
+        function resize() {
+
+            if (!running) {
+                running = true;
+
+                if (window.requestAnimationFrame) {
+                    window.requestAnimationFrame(runCallbacks);
+                } else {
+                    setTimeout(runCallbacks, 66);
+                }
+            }
+
+        }
+
+        // run the actual callbacks
+        function runCallbacks() {
+
+            callbacks.forEach(function(callback) {
+                callback.callbackFunction.apply(null, callback.callbackArguments);
+            });
+
+            running = false;
+        }
+
+        // adds callback to loop
+        function addCallback(callback, arguments) {
+
+            arguments = arguments || [];
+
+            if (callback) {
+                callbacks.push({callbackFunction: callback, callbackArguments: arguments});
+            }
+
+        }
+
+        return {
+            // public method to add additional callback
+            add: function(callback) {
+                if (!callbacks.length) {
+                    window.addEventListener('resize', resize);
+                }
+                addCallback(callback);
+                runCallbacks();
+            }
+        }
+    }());
+</script>
+
 <script>
 
     var socket = io();
@@ -26,31 +82,103 @@
     var createdPanels = [];
     var panelVisualizationTypes = {};
     var currentlyDraggedPanel = null;
+    var dragOffsetX = 0;
+    var dragOffsetY = 0;
     var mouseX = null;
     var mouseY = null;
+    var PANEL_SIZE = 600;
 
-    createControlPanel(["decimal", "gauge", "graph", "light"]);
-    redrawGrid();
+    window.onload = function() {
 
-//    document.addEventListener('mousemove', onMouseUpdate, false);
-//    document.addEventListener('mouseenter', onMouseUpdate, false);
+        createControlPanel(["decimal", "gauge", "graph", "light"]);
 
-    initializeDragInterface();
+        optimizedResize.add( function() {
 
-    socket.on("redrawGrid", function(msg) {
-        console.log(msg);
-        NUM_ROWS = msg.rows;
-        NUM_COLUMNS = msg.columns;
+            MAX_ROWS = Math.max(1, Math.floor(window.innerHeight / PANEL_SIZE));
+            MAX_COLUMNS = Math.max(1, Math.floor(window.innerWidth / PANEL_SIZE));
+            console.log("Max Rows: " + MAX_ROWS);
+            console.log("Max Cols: " + MAX_COLUMNS);
+
+            updateGridButtonAppearance();
+
+        });
+
         redrawGrid();
-    });
+
+        initializeDragInterface();
+
+        socket.on("redrawGrid", function(msg) {
+            console.log(msg);
+            NUM_ROWS = msg.rows;
+            NUM_COLUMNS = msg.columns;
+            redrawGrid();
+        });
+
+        socket.on('dashboard', function(msg) {
+
+            var nodeName = msg.nodeName;
+            var action = msg.action;
+
+            console.log(nodeName, action);
+
+            if (msg.action === "connect") {
+                console.log(msg.data);
+
+                if (msg.data.added === true) {
+                    console.log("connected!");
+                    activatePanel(msg.data.nameNodeB, true);
+
+                } else {
+                    console.log("disconnected!");
+                    activatePanel(msg.data.nameNodeB, false);
+
+                }
+            }
+
+            if (msg.action === "update") {
+                console.log("update!");
+                console.log(msg.data);
+                var panelContents = getPanelContents(nodeName);
+                var frame = panelContents.firstChild;
+                if (frame.tagName === 'IFRAME') {
+                    frame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");
+                }
+            }
+
+        });
+
+        socket.on('displayLinks', function(msg) {
+            console.log('displayLinks');
+            console.log(msg);
+
+//            for (var linkKey in msg) {
+//                if (!msg.hasOwnProperty(linkKey)) continue;
+//
+//                var link = msg[linkKey];
+//            }
+
+             var linkList = Object.values(msg).map(function(elt) {
+                 return elt.namesB[1];
+             });
+
+             linkList.forEach( function(panelId) {
+                 activatePanel(panelId, true);
+             });
+
+             console.log(linkList);
+        });
+
+    };
 
     function redrawGrid() {
 
-        container.style.width = 600 * NUM_COLUMNS + "px"; //50 + (30 * NUM_COLUMNS / MAX_COLUMNS) + "%";
-        container.style.height = 600 * NUM_ROWS + "px"; //1000 + (800 * NUM_ROWS / MAX_ROWS) + "px";
+        container.style.width = PANEL_SIZE * NUM_COLUMNS + "px"; //50 + (30 * NUM_COLUMNS / MAX_COLUMNS) + "%";
+        container.style.height = PANEL_SIZE * NUM_ROWS + "px"; //1000 + (800 * NUM_ROWS / MAX_ROWS) + "px";
 
         container.innerHTML = "";
         createdPanels = createPanels(NUM_ROWS, NUM_COLUMNS);
+
+        socket.emit('dashboardLoaded');
 
         updateGridButtonAppearance();
     }
@@ -94,10 +222,6 @@
 
                 container.appendChild(newPanel);
 
-//                newPanel.addEventListener('click', function(e) {
-//                    clickedOnPanel(e.currentTarget);
-//                });
-
                 var eventCaptureDiv = document.createElement('div');
                 eventCaptureDiv.className = "eventCapture";
                 newPanel.appendChild(eventCaptureDiv);
@@ -133,12 +257,20 @@
     }
 
     function getPanelContents(nodeName) {
-        return document.getElementById(nodeName).children[1].firstElementChild;
+        var panel = document.getElementById(nodeName);
+        console.log(panel);
+        if (panel) {
+            return document.getElementById(nodeName).children[1].firstElementChild;
+        } else {
+            return null;
+        }
     }
 
     function activatePanel(nodeName, shouldBeActive) {
         var panelContents = getPanelContents(nodeName);
 
+        if (!panelContents) return;
+        
         if (shouldBeActive) {
             panelContents.classList.remove("inactive");
             panelContents.classList.add("active");
@@ -162,59 +294,6 @@
         panelContents.classList.add("smallText");
 
     }
-
-    function updatePanelText(nodeName, value) {
-        var panelContents = getPanelContents(nodeName);
-
-        panelContents.innerHTML = value.toFixed(2);// + '\n' + data.nameObjectA + " - " + data.nameNodeA;
-
-        panelContents.classList.remove("greenText");
-        panelContents.classList.remove("redText");
-        panelContents.classList.remove("whiteText");
-
-        if (value > 0) {
-            panelContents.classList.add("greenText");
-        } else if (value === 0) {
-            panelContents.classList.add("whiteText");
-        } else {
-            panelContents.classList.add("redText");
-        }
-
-        panelContents.classList.remove("smallText");
-        panelContents.classList.add("largeText");
-
-    }
-
-    socket.on('dashboard', function(msg) {
-
-        var nodeName = msg.nodeName;
-        var action = msg.action;
-
-        console.log(nodeName, action);
-
-        if (msg.action === "connect") {
-            console.log(msg.data);
-
-            if (msg.data.added === true) {
-                console.log("connected!");
-                activatePanel(msg.data.nameNodeB, true);
-
-            } else {
-                console.log("disconnected!");
-                activatePanel(msg.data.nameNodeB, false);
-
-            }
-        }
-
-        if (msg.action === "update") {
-            console.log("update!");
-            console.log(msg.data);
-            var panelContents = getPanelContents(nodeName);
-            var frame = panelContents.firstChild;
-            frame.contentWindow.postMessage({value: msg.data.value}, "http://localhost:3030");
-        }
-
-    });
 
     function createSidebarPanel(controlName) {
         var sidebarPanel = document.createElement("div");
@@ -316,15 +395,12 @@
 
     function createControlPanel(controls) {
 
-//        startLoop();
-
         sidebar.style.width = "400px";
         sidebar.style.height = "1200px";
 
         controls.forEach( function(controlName) {
             var sidebarPanel = createSidebarPanel(controlName);
             sidebar.appendChild(sidebarPanel);
-//            sidebarPanel.addEventListener('click', sidebarPanelClick);
         });
 
         var moreColumnsButton = document.createElement("button");
@@ -394,21 +470,10 @@
         }
     }
 
-//    function sidebarPanelClick(e) {
-//        console.log("clicked on sidebar panel", e);
-//        console.log(e.currentTarget);
-//
-//        if (!currentlyDraggedPanel) {
-//            var sidebarPanelClone = createSidebarPanel(e.currentTarget.id);
-//            sidebarPanelClone.classList.add("region");
-//            sidebarPanelClone.classList.add("smallText");
-//            currentlyDraggedPanel = sidebarPanelClone;
-//            document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
-//            sidebarPanelClone.classList.add("draggedPanel");
-//        }
-//    }
-
     function initializeDragInterface(exports) {
+
+        var timer;
+        var clickedPanelContainer = null;
 
         // add event listeners for mouse down, up, move, (cancel?)
 
@@ -420,24 +485,24 @@
         var interactionState = getStates().NONE;
 
         function onMouseDown(e) {
-            console.log("mousedown", interactionState);
+//            console.log("mousedown", interactionState);
             interactionState = performAction(getActions().MOUSE_DOWN, interactionState);
         }
 
         function onMouseMove(e) {
-            console.log("mousemove", interactionState);
+//            console.log("mousemove", interactionState);
             mouseX = e.pageX;
             mouseY = e.pageY;
             interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
 
             if (currentlyDraggedPanel) {
-                currentlyDraggedPanel.style.top = mouseY + 20 + "px";
-                currentlyDraggedPanel.style.left = mouseX + 20 + "px";
+                currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
+                currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20
             }
         }
 
         function onMouseUp(e) {
-            console.log("mouseup", interactionState);
+//            console.log("mouseup", interactionState);
             interactionState = performAction(getActions().MOUSE_UP, interactionState);
         }
 
@@ -509,8 +574,6 @@
             return currentState;
         }
 
-        var timer;
-
         function triggerEvent(event) {
             clearTimeout(timer);
             switch (event) {
@@ -544,14 +607,14 @@
             console.log("->", clickedPanelContainer, currentlyDraggedPanel);
         }
 
-        var clickedPanelContainer = null;
-
         function startClick() {
             var clickedElement = document.elementFromPoint(mouseX,mouseY);//.parentElement.id
             if (clickedElement.className === 'eventCapture') {
                 var parent = clickedElement.parentElement;
                 console.log(parent.id);
                 clickedPanelContainer = parent;
+                dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
+                dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
             } else {
                 clickedPanelContainer = null;
             }
@@ -567,73 +630,51 @@
                 currentlyDraggedPanel.style.position = "absolute";
                 document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
                 sidebarPanelClone.classList.add("draggedPanel");
-
+//                dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
+//                dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
                 clickedPanelContainer = null;
             }
         }
 
         function stopHoldOrDrag() {
             if (currentlyDraggedPanel) {
-                // get panel it's closest to or on top of
-                var elementUnderMouse = document.elementFromPoint(mouseX,mouseY);//.parentElement.id
-                if (elementUnderMouse.classList.contains("centerContentsInner")) {
-                    var panel = elementUnderMouse.parentElement.parentElement;
-                    if (panel) {
+                // get panel it's on top of
+                var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
+                allDivsHere.forEach( function(element) {
+                    if (element.classList.contains('region') &&  element.id.startsWith('panel_')) {
                         console.log('released on panel');
-                        panelVisualizationTypes[panel.id] = currentlyDraggedPanel.id;
-                        setPanelDisplay(panel, currentlyDraggedPanel.id);
+                        panelVisualizationTypes[element.id] = currentlyDraggedPanel.id;
+                        setPanelDisplay(element, currentlyDraggedPanel.id);
                     }
-                }
+                });
+
                 document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
                 currentlyDraggedPanel = null;
             }
         }
+
+        function getAllDivsUnderCoordinate(x, y) {
+            var res = [];
+
+            var ele = document.elementFromPoint(x,y);
+            while(ele && ele.tagName != "BODY" && ele.tagName != "HTML"){
+                res.push(ele);
+                ele.style.display = "none";
+                ele = document.elementFromPoint(x,y);
+            }
+
+            for(var i = 0; i < res.length; i++){
+                res[i].style.display = "";  // TODO: more correct if you set back to original display type
+            }
+            console.log(res);
+            return res;
+        }
     }
 
-//    function startLoop() {
-//        setInterval(function () {
-//            if (currentlyDraggedPanel) {
-////                currentlyDraggedPanel.style.left = mouseX;
-////                currentlyDraggedPanel.style.top = mouseY;
-////                console.log(currentlyDraggedPanel);
-////                console.log('moved to ', currentlyDraggedPanel.style.left, currentlyDraggedPanel.style.top);
-//
-//                currentlyDraggedPanel.style.position = "absolute";
-//
-////                console.log( mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px" );
-////                console.log(mouseX, mouseY);
-//
-//                currentlyDraggedPanel.style.top = mouseY + 20 + "px"; //mouseY - (mouseY - currentlyDraggedPanel.offsetTop) + "px";
-//                currentlyDraggedPanel.style.left = mouseX + 20 + "px"; //mouseX - (mouseX - currentlyDraggedPanel.offsetLeft) + "px";
-//            }
-//        }, 16.67);
-//    }
-//
-//    function onMouseUpdate(e) {
-//        mouseX = e.pageX;
-//        mouseY = e.pageY;
-////        console.log('mouse moved', mouseX, mouseY);
-//    }
-//
-//    function clickedOnPanel(panel) {
-//
-//        if (currentlyDraggedPanel) {
-//            console.log('clicked on panel');
-//
-//            setPanelDisplay(panel, currentlyDraggedPanel.id);
-//
-////        activatePanel(panel.id, !getPanelContents(panel.id).classList.contains("active"));
-//
-//            document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
-//            currentlyDraggedPanel = null;
-//        }
-//
-//    }
-
-    var widthPercentage = 0.9;
-    var heightToWidthRatio = 0.5;
-
     function setPanelDisplay(panel, controlName) {
+
+        var iframeWidthPercentage = 0.9;
+        var iframeHeightToWidthRatio = 0.5;
 
         getPanelContents(panel.id).innerHTML = "";
         var frame;
@@ -651,8 +692,8 @@
             frame = createLightFrame();
         }
 
-        frame.style.width = (getPanelContents(panel.id).clientWidth * widthPercentage) + "px";
-        frame.style.height = (getPanelContents(panel.id).clientHeight * widthPercentage * heightToWidthRatio) + "px";
+        frame.style.width = (getPanelContents(panel.id).clientWidth * iframeWidthPercentage) + "px";
+        frame.style.height = (getPanelContents(panel.id).clientHeight * iframeWidthPercentage * iframeHeightToWidthRatio) + "px";
 
         getPanelContents(panel.id).appendChild(frame);
     }

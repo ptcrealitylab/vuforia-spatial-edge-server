@@ -215,6 +215,25 @@ if (exports.enabled) {
             io.emit("redrawGrid", {rows: rows, columns: columns});
         });
 
+        socket.on('dashboardLoaded', function() {
+            console.log("ask server for links");
+            var links = server.getAllLinksToNodes("dashboard"); // TODO: this currently only has all links originating from this object... scan entire object tree to find them all
+
+            // var linkList = Object.values(links);
+            // linkList = linkList.map(function(elt) {
+            //     return {
+            //         namesA: elt.namesA,
+            //         namesB: elt.namesB
+            //     }
+            // });
+
+            console.log("get all links: ");
+            console.log(links);
+            // console.log(nodeList);
+            io.emit("displayLinks", links);
+
+        });
+
     });
 
 }
