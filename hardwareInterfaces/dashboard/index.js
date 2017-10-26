@@ -61,16 +61,18 @@ if (exports.enabled) {
         res.sendFile(__dirname + '/index.html');
     });
 
-    var filesToServe = ['/marker.jpg',
+    var filesToServe = [
                         '/index.css',
-                        '/frame_decimal.html',
-                        '/frame_gauge.html',
-                        '/frame_graph.html',
-                        '/frame_light.html',
+                        '/frames/decimal.html',
+                        '/frames/gauge.html',
+                        '/frames/graph.html',
+                        '/frames/light.html',
+                        '/resources/marker.jpg',
                         '/resources/gauge-outline-1.svg',
                         '/resources/gauge-needle-2.svg',
                         '/resources/light-on.svg',
-                        '/resources/light-off.svg'];
+                        '/resources/light-off.svg'
+                        ];
 
 
     filesToServe.forEach( function(filename) {

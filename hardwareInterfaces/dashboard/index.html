@@ -338,11 +338,13 @@
         return sidebarPanel;
     }
 
+    // TODO: DRY
+
     function createDecimalFrame() {
         var decimalFrame = document.createElement('iframe');
         decimalFrame.classList.add('controlFrame');
         decimalFrame.id = 'decimalFrame';
-        decimalFrame.src = "/frame_decimal.html";
+        decimalFrame.src = "/frames/decimal.html";
         decimalFrame.scrolling = "no";
         decimalFrame.style.border = "0px solid transparent";
         decimalFrame.onload = function(e) {
@@ -355,7 +357,7 @@
         var gaugeFrame = document.createElement('iframe');
         gaugeFrame.classList.add('controlFrame');
         gaugeFrame.id = 'gaugeFrame';
-        gaugeFrame.src = "/frame_gauge.html";
+        gaugeFrame.src = "/frames/gauge.html";
         gaugeFrame.scrolling = "no";
         gaugeFrame.style.border = "0px solid transparent";
         gaugeFrame.onload = function(e) {
@@ -368,7 +370,7 @@
         var graphFrame = document.createElement('iframe');
         graphFrame.classList.add('controlFrame');
         graphFrame.id = 'graphFrame';
-        graphFrame.src = "/frame_graph.html";
+        graphFrame.src = "/frames/graph.html";
         graphFrame.scrolling = "no";
         graphFrame.style.border = "0px solid transparent";
         graphFrame.onload = function(e) {
@@ -384,7 +386,7 @@
         var lightFrame = document.createElement('iframe');
         lightFrame.classList.add('controlFrame');
         lightFrame.id = 'lightFrame';
-        lightFrame.src = "/frame_light.html";
+        lightFrame.src = "/frames/light.html";
         lightFrame.scrolling = "no";
         lightFrame.style.border = "0px solid transparent";
         lightFrame.onload = function(e) {
@@ -403,43 +405,22 @@
             sidebar.appendChild(sidebarPanel);
         });
 
-        var moreColumnsButton = document.createElement("button");
-        moreColumnsButton.id = "moreColumns";
-        moreColumnsButton.classList.add('button');
-        moreColumnsButton.classList.add('blue');
-        moreColumnsButton.classList.add('active');
-        moreColumnsButton.innerHTML = "Columns +";
-        moreColumnsButton.addEventListener('click', addColumn);
-        sidebar.appendChild(moreColumnsButton);
-
-        var fewerColumnsButton = document.createElement("button");
-        fewerColumnsButton.id = "fewerColumns";
-        fewerColumnsButton.classList.add('button');
-        fewerColumnsButton.classList.add('blue');
-        fewerColumnsButton.classList.add('active');
-        fewerColumnsButton.innerHTML = "Columns -";
-        fewerColumnsButton.addEventListener('click', removeColumn);
-        sidebar.appendChild(fewerColumnsButton);
-
+        appendGridResizeButton("moreColumns", "Columns +", addColumn);
+        appendGridResizeButton("fewerColumns", "Columns -", removeColumn);
         sidebar.appendChild(document.createElement('br'));
+        appendGridResizeButton("moreRows", "Rows +", addRow);
+        appendGridResizeButton("fewerRows", "Rows -", removeRow);
+    }
 
-        var moreRowsButton = document.createElement("button");
-        moreRowsButton.id = "moreRows";
-        moreRowsButton.classList.add('button');
-        moreRowsButton.classList.add('blue');
-        moreRowsButton.classList.add('active');
-        moreRowsButton.innerHTML = "Rows +";
-        moreRowsButton.addEventListener('click', addRow);
-        sidebar.appendChild(moreRowsButton);
-
-        var fewerRowsButton = document.createElement("button");
-        fewerRowsButton.id = "fewerRows";
-        fewerRowsButton.classList.add('button');
-        fewerRowsButton.classList.add('blue');
-        fewerRowsButton.classList.add('active');
-        fewerRowsButton.innerHTML = "Rows -";
-        fewerRowsButton.addEventListener('click', removeRow);
-        sidebar.appendChild(fewerRowsButton);
+    function appendGridResizeButton(id, innerHTML, clickCallback) {
+        var thisButton = document.createElement("button");
+        thisButton.id = id;
+        thisButton.classList.add('button');
+        thisButton.classList.add('blue');
+        thisButton.classList.add('active');
+        thisButton.innerHTML = innerHTML;
+        thisButton.addEventListener('click', clickCallback);
+        sidebar.appendChild(thisButton);
     }
 
     function addColumn(e) {
@@ -470,7 +451,7 @@
         }
     }
 
-    function initializeDragInterface(exports) {
+    function initializeDragInterface(exports) { // TODO: do we need exports at all?
 
         var timer;
         var clickedPanelContainer = null;
@@ -578,33 +559,26 @@
             clearTimeout(timer);
             switch (event) {
                 case getEvents().MOUSE_START_CLICK:
-                    console.log("keep track of what you clicked on");
                     startClick();
                     timer = setTimeout(function(){
                         interactionState = performAction(getActions().TIME_PASSED, interactionState);
                     }, 1000);
                     break;
                 case getEvents().MOUSE_START_HOLD:
-                    console.log("set clicked target as thing being held... show visual feedback");
                     startHoldOrDrag();
                     break;
                 case getEvents().MOUSE_START_DRAG:
-                    console.log("move held target to mouse position");
                     startHoldOrDrag();
                     break;
                 case getEvents().MOUSE_STOP_CLICK:
-                    console.log("trigger click event on whatever you were over");
                     break;
                 case getEvents().MOUSE_STOP_HOLD:
                 case getEvents().MOUSE_STOP_DRAG:
-                    console.log("if holding anything, put it down where you are. assign held target to panel if possible.");
                     stopHoldOrDrag();
                     break;
                 default:
                     console.log("shouldn't happen");
             }
-
-            console.log("->", clickedPanelContainer, currentlyDraggedPanel);
         }
 
         function startClick() {
@@ -630,8 +604,6 @@
                 currentlyDraggedPanel.style.position = "absolute";
                 document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
                 sidebarPanelClone.classList.add("draggedPanel");
-//                dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
-//                dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
                 clickedPanelContainer = null;
             }
         }

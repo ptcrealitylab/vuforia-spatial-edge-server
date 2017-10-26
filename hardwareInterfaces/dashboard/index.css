@@ -129,7 +129,7 @@ body {
     height: 10px;
     display: inline-block;
 
-    background-image: url("marker.jpg");
+    background-image: url("/resources/marker.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
