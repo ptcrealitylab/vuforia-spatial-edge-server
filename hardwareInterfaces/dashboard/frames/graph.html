@@ -13,6 +13,7 @@
         }
 
         #graphContainer {
+            margin-top: 3%;
             border: 2px solid cyan;
             position: relative;
             background: transparent;
@@ -126,7 +127,7 @@
         optimizedResize.add( function() {
 
             GRAPH_WIDTH = window.innerWidth;
-            GRAPH_HEIGHT = window.innerHeight-10;
+            GRAPH_HEIGHT = window.innerHeight * 0.97 - 10;
 
             container.style.width = GRAPH_WIDTH + "px";
             container.style.height = GRAPH_HEIGHT + "px";

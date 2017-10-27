@@ -165,10 +165,42 @@
                  activatePanel(panelId, true);
              });
 
-             console.log(linkList);
+//             console.log(linkList);
+        });
+
+        socket.on('remoteTouchDown', function(msg) {
+            console.log('remoteTouchDown', msg);
+            simulateMouseEvent(msg.pageX, msg.pageY, 'mousedown');
+        });
+
+        socket.on('remoteTouchMove', function(msg) {
+            console.log('remoteTouchMove', msg);
+            simulateMouseEvent(msg.pageX, msg.pageY, 'mousemove');
+        });
+
+        socket.on('remoteTouchUp', function(msg) {
+            console.log('remoteTouchUp', msg);
+            simulateMouseEvent(msg.pageX, msg.pageY, 'mouseup');
         });
 
     };
+
+    function simulateMouseEvent(x,y,eventName) {
+        mouseX = x * 2.0;
+        mouseY = y * 2.0;
+
+        var ev = new MouseEvent(eventName, {
+            'view': window,
+            'bubbles': true,
+            'cancelable': true,
+            'screenX': x,
+            'screenY': y
+        });
+        ev.simulated = true;
+
+        var el = document.elementFromPoint(x, y);
+        el.dispatchEvent(ev);
+    }
 
     function redrawGrid() {
 
@@ -258,7 +290,7 @@
 
     function getPanelContents(nodeName) {
         var panel = document.getElementById(nodeName);
-        console.log(panel);
+//        console.log(panel);
         if (panel) {
             return document.getElementById(nodeName).children[1].firstElementChild;
         } else {
@@ -466,16 +498,25 @@
         var interactionState = getStates().NONE;
 
         function onMouseDown(e) {
-//            console.log("mousedown", interactionState);
+            console.log("mousedown", interactionState);
             interactionState = performAction(getActions().MOUSE_DOWN, interactionState);
         }
 
         function onMouseMove(e) {
-//            console.log("mousemove", interactionState);
-            mouseX = e.pageX;
-            mouseY = e.pageY;
+            console.log("mousemove", interactionState);
+
+            // remote touch came from phone
+            if (e.simulated) {
+                mouseX = e.screenX * 2.0;
+                mouseY = e.screenY * 2.0;
+            } else {
+                mouseX = e.pageX;
+                mouseY = e.pageY;
+            }
+
             interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
 
+            console.log(currentlyDraggedPanel);
             if (currentlyDraggedPanel) {
                 currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
                 currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20
@@ -483,7 +524,7 @@
         }
 
         function onMouseUp(e) {
-//            console.log("mouseup", interactionState);
+            console.log("mouseup", interactionState);
             interactionState = performAction(getActions().MOUSE_UP, interactionState);
         }
 
