@@ -623,17 +623,16 @@
         }
 
         function startClick() {
-            var clickedElement = document.elementFromPoint(mouseX,mouseY);//.parentElement.id
-            if (clickedElement.className === 'eventCapture') {
-                var parent = clickedElement.parentElement;
-                console.log(parent.id);
-                clickedPanelContainer = parent;
-                dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
-                dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
-            } else {
-                clickedPanelContainer = null;
-            }
-
+            clickedPanelContainer = null;
+            var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
+            allDivsHere.some( function(clickedElement) {
+                if (clickedElement.classList.contains('sidebarPanel')) {
+                    clickedPanelContainer = clickedElement;
+                    dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
+                    dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
+                }
+                return (!!clickedPanelContainer);
+            });
         }
 
         function startHoldOrDrag() {

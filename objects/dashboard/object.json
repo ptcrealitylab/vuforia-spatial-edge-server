@@ -6,8 +6,8 @@
 	"deactivated": false,
 	"protocol": "R1",
 	"tcs": null,
-	"x": 295.316682467208,
-	"y": 175.85746962222038,
+	"x": 334.64659900800325,
+	"y": -25.536647521017585,
 	"scale": 1,
 	"matrix": [],
 	"visible": false,
@@ -15,87 +15,14 @@
 	"visibleEditing": false,
 	"developer": true,
 	"memory": {},
-	"links": {
-		"ztVebcl7": {
-			"objectA": "dashboardpaaqwnqq3ggg",
-			"objectB": "dashboardpaaqwnqq3ggg",
-			"nodeA": "framergbc6bzqy3thvalue",
-			"nodeB": "dashboardpaaqwnqq3gggpanel_row0_col1",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"dashboard",
-				"value"
-			],
-			"namesB": [
-				"dashboard",
-				"panel_row0_col1"
-			],
-			"lastEditor": "5V1f9t6z",
-			"loop": false
-		},
-		"g6M2hcy5": {
-			"objectA": "dashboardpaaqwnqq3ggg",
-			"objectB": "dashboardpaaqwnqq3ggg",
-			"nodeA": "framePq32f5bk0i8ivalue",
-			"nodeB": "dashboardpaaqwnqq3gggpanel_row1_col2",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"dashboard",
-				"value"
-			],
-			"namesB": [
-				"dashboard",
-				"panel_row1_col2"
-			],
-			"lastEditor": "yVa4w4el",
-			"loop": false
-		},
-		"gom2u7wt": {
-			"objectA": "dashboardpaaqwnqq3ggg",
-			"objectB": "dashboardpaaqwnqq3ggg",
-			"nodeA": "framePq32f5bk0i8ivalue",
-			"nodeB": "dashboardpaaqwnqq3gggpanel_row0_col2",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"dashboard",
-				"value"
-			],
-			"namesB": [
-				"dashboard",
-				"panel_row0_col2"
-			],
-			"lastEditor": "yVa4w4el",
-			"loop": false
-		},
-		"PSPHi77x": {
-			"objectA": "dashboardpaaqwnqq3ggg",
-			"objectB": "dashboardpaaqwnqq3ggg",
-			"nodeA": "framePq32f5bk0i8ivalue",
-			"nodeB": "dashboardpaaqwnqq3gggpanel_row1_col0",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"dashboard",
-				"value"
-			],
-			"namesB": [
-				"dashboard",
-				"panel_row1_col0"
-			],
-			"lastEditor": "yVa4w4el",
-			"loop": false
-		}
-	},
+	"links": {},
 	"nodes": {
 		"dashboardpaaqwnqq3gggpanel_row0_col1": {
 			"name": "panel_row0_col1",
 			"data": {
-				"value": 0.7772223692673903,
+				"value": 0,
 				"mode": "f",
-				"unit": false,
+				"unit": "",
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -106,21 +33,14 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0.7772223692673903,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
+			"frameSizeY": 100
 		},
 		"dashboardpaaqwnqq3gggpanel_row0_col2": {
 			"name": "panel_row0_col2",
 			"data": {
-				"value": 0.7772223692673903,
+				"value": 0,
 				"mode": "f",
-				"unit": false,
+				"unit": "",
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -131,21 +51,14 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0.7772223692673903,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
+			"frameSizeY": 100
 		},
 		"dashboardpaaqwnqq3gggpanel_row1_col0": {
 			"name": "panel_row1_col0",
 			"data": {
-				"value": 0.7772223692673903,
+				"value": 0,
 				"mode": "f",
-				"unit": false,
+				"unit": "",
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -156,21 +69,14 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0.7772223692673903,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
+			"frameSizeY": 100
 		},
 		"dashboardpaaqwnqq3gggpanel_row1_col1": {
 			"name": "panel_row1_col1",
 			"data": {
-				"value": -0.13966663067157453,
+				"value": 0,
 				"mode": "f",
-				"unit": false,
+				"unit": "",
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -181,21 +87,14 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": -0.13966663067157453,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
+			"frameSizeY": 100
 		},
 		"dashboardpaaqwnqq3gggpanel_row1_col2": {
 			"name": "panel_row1_col2",
 			"data": {
-				"value": -0.13966663067157453,
+				"value": 0,
 				"mode": "f",
-				"unit": false,
+				"unit": "",
 				"unitMin": 0,
 				"unitMax": 1
 			},
@@ -206,102 +105,8 @@
 			"type": "node",
 			"stress": 0,
 			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": -0.13966663067157453,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
-		},
-		"framePq32f5bk0i8ivalue": {
-			"name": "value",
-			"data": {
-				"value": -0.13966663067157453,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": -540.6979156575399,
-			"y": 211.6398551739403,
-			"scale": 1,
-			"matrix": [],
-			"type": "node",
-			"src": "",
-			"stress": 0,
-			"lockPassword": null,
-			"lockType": null,
-			"frame": "framePq32f5bk0i8i",
-			"lastEditor": "yVa4w4el",
-			"processedData": {
-				"value": -0.13966663067157453,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
+			"frameSizeY": 100
 		}
 	},
-	"frames": {
-		"framergbc6bzqy3th": {
-			"src": "thirdPartyCode/bower_components/reality-control-slider-kinetic/index.html",
-			"x": -273.1072996845296,
-			"y": 161.85414413182298,
-			"scale": 1,
-			"matrix": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"developer": true,
-			"width": "206",
-			"height": "526",
-			"lastEditor": "yVa4w4el",
-			"loaded": false
-		},
-		"framePq32f5bk0i8i": {
-			"src": "thirdPartyCode/bower_components/reality-control-slider-kinetic/index.html",
-			"x": 933.6460373899026,
-			"y": 182.3285355475382,
-			"scale": 1,
-			"matrix": [
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1,
-				0,
-				0,
-				0,
-				0,
-				1
-			],
-			"developer": true,
-			"width": "206",
-			"height": "526",
-			"lastEditor": "yVa4w4el",
-			"loaded": false
-		}
-	}
+	"frames": {}
 }

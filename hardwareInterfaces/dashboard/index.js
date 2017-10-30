@@ -87,12 +87,6 @@ if (exports.enabled) {
         console.log('listening on *:3030');
     });
 
-    console.log('\n');
-    console.log(io);
-    console.log('\n');
-    console.log(http);
-    console.log('\n');
-
     server.enableDeveloperUI(true);
 
     var nodes = [];
@@ -243,17 +237,17 @@ if (exports.enabled) {
         });
 
         socket.on('pointerdown', function(msg) {
-            console.log("SERVER POINTER DOWN", msg)
+            // console.log("SERVER POINTER DOWN", msg)
             io.emit("remoteTouchDown", msg);
         });
 
         socket.on('pointermove', function(msg) {
-            console.log("SERVER POINTER MOVE", msg)
+            // console.log("SERVER POINTER MOVE", msg)
             io.emit("remoteTouchMove", msg);
         });
 
         socket.on('pointerup', function(msg) {
-            console.log("SERVER POINTER UP", msg)
+            // console.log("SERVER POINTER UP", msg)
             io.emit("remoteTouchUp", msg);
         });
 
