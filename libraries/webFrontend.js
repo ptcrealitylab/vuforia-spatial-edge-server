@@ -459,8 +459,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
 
-    var uploadInfoTexttempArray = objects[objectName].links;
-    var uploadInfoTexttempArrayValue = objects[objectName].nodes;
+    var uploadInfoTexttempArray = objects[objectName];
+    var uploadInfoTexttempArrayValue = objects[objectName];
 
     var ArduinoINstance = 0;
 
@@ -490,35 +490,41 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     if(objects[objectName].protocol === "R1") protocolText = "R1 over WebSocket";
 
     var infoCount = 0;
-    for (var subKey in uploadInfoTexttempArrayValue) {
-
-        var thisHtmlNode = uploadInfoTexttempArrayValue[subKey];
-
-
-        if(thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
-
-        if(typeof thisHtmlNode.routeBuffer !== "undefined" && thisHtmlNode.routeBuffer !== null && thisHtmlNode.type === "logic") {
-
-            text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.routeBuffer[0] + "<br>" +
-                "" + thisHtmlNode.routeBuffer[1] + "<br>" +
-                "" + thisHtmlNode.routeBuffer[2] + "<br>" +
-                "" + thisHtmlNode.routeBuffer[3] + "<br></td></tr>";
-        } else {
-            if(!thisHtmlNode.text) {
-                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
-            } else {
-                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.text + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
-            }
-
+    for (var frameKey in uploadInfoTexttempArrayValue.frames) {
+        if( Object.keys(uploadInfoTexttempArrayValue.frames).length >1) {
+            text += '          <tr>\n' +
+                '            <td  colspan="3"><b>Frame: ' + uploadInfoTexttempArrayValue.frames[frameKey].name + '</b></td>\n' +
+                '        </tr>\n';
         }
 
 
+        for (var subKey in uploadInfoTexttempArrayValue.frames[frameKey].nodes) {
 
-        infoCount++;
+            var thisHtmlNode = uploadInfoTexttempArrayValue.frames[frameKey].nodes[subKey];
 
 
+            if (thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
+
+            if (typeof thisHtmlNode.routeBuffer !== "undefined" && thisHtmlNode.routeBuffer !== null && thisHtmlNode.type === "logic") {
+
+                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.routeBuffer[0] + "<br>" +
+                    "" + thisHtmlNode.routeBuffer[1] + "<br>" +
+                    "" + thisHtmlNode.routeBuffer[2] + "<br>" +
+                    "" + thisHtmlNode.routeBuffer[3] + "<br></td></tr>";
+            } else {
+                if (!thisHtmlNode.text) {
+                    text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+                } else {
+                    text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.text + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+                }
+
+            }
 
 
+            infoCount++;
+
+
+        }
     }
 
     if (infoCount === 0) {
@@ -617,13 +623,22 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
     infoCount = 0;
-    for (subKey in uploadInfoTexttempArray) {
-        if(uploadInfoTexttempArray[subKey].hasOwnProperty("namesA"))
-        text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].namesB[1] + '</font></td></tr>\n';
-        else
-            text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray[subKey].nodeB + '</font></td></tr>\n';
+    for (framekey in uploadInfoTexttempArray.frames) {
+        if( Object.keys(uploadInfoTexttempArray.frames).length >1) {
+            text += '          <tr>\n' +
+                '            <td  colspan="5"><b>Frame: ' + uploadInfoTexttempArrayValue.frames[frameKey].name + '</b></td>\n' +
+                '        </tr>\n';
+        }
 
-        infoCount++;
+
+        for (subKey in uploadInfoTexttempArray.frames[framekey].links) {
+            if (uploadInfoTexttempArray.frames[framekey].links[subKey].hasOwnProperty("namesA"))
+                text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[1] + '</font></td></tr>\n';
+            else
+                text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].nodeB + '</font></td></tr>\n';
+
+            infoCount++;
+        }
     }
 
     if (infoCount === 0) {

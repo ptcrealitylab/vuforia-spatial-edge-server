@@ -53,6 +53,42 @@ function EmptyNode(nodeName, type) {
     this.callBack = {};
 }
 
+
+
+function Frame() {
+    // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
+    this.objectId = null;
+    // The name for the object used for interfaces.
+    this.name = "";
+    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
+    this.x = 0;
+    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
+    this.y = 0;
+    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
+    this.scale = 1;
+    // Unconstrained positioning in 3D space
+    this.matrix = [];
+    // Used internally from the reality editor to indicate if an object should be rendered or not.
+    this.visible = false;
+    // Used internally from the reality editor to trigger the visibility of naming UI elements.
+    this.visibleText = false;
+    // Used internally from the reality editor to indicate the editing status.
+    this.visibleEditing = false;
+    // Intended future use is to keep a memory of the last matrix transformation when interacted.
+    // This data can be used for interacting with objects for when they are not visible.
+    this.memory = {}; // TODO use this to store UI interface for image later.
+    // Stores all the links that emerge from within the object. If a IOPoint has new data,
+    // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
+    this.links = {};
+    // Stores all IOPoints. These points are used to keep the state of an object and process its data.
+    this.nodes = {};
+    // local or global. If local, node-name is exposed to hardware interface
+    this.location = "local";
+    // source
+    this.src = "editor";
+}
+
+
 /*
  ********** API FUNCTIONS *********
  */
@@ -64,7 +100,8 @@ function EmptyNode(nodeName, type) {
  * @param {value} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
-exports.write = function (objectName, nodeName, value, mode, unit, unitMin, unitMax) {
+exports.write = function (objectName, frameName, nodeName, value, mode, unit, unitMin, unitMax) {
+
     if (typeof mode === 'undefined')  mode = "f";
     if (typeof unit === 'undefined')  unit = false;
     if (typeof unitMin === 'undefined')  unitMin = 0;
@@ -73,19 +110,20 @@ exports.write = function (objectName, nodeName, value, mode, unit, unitMin, unit
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     //  var valueKey = nodeName + objKey2;
 
-    var nodeUuid = objectKey+nodeName;
+    var nodeUuid = objectKey+frameName+nodeName;
+    var frameUuid = objectKey+frameName;
     //console.log(objectLookup);
 //    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
     if (objects.hasOwnProperty(objectKey)) {
-        if (objects[objectKey].nodes.hasOwnProperty(nodeUuid)) {
-            var thisData = objects[objectKey].nodes[nodeUuid].data;
+        if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+            var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].data;
             thisData.value = value;
             thisData.mode = mode;
             thisData.unit = unit;
             thisData.unitMin = unitMin;
             thisData.unitMax = unitMax;
             //callback is objectEngine in server.js. Notify data has changed.
-            callback(objectKey, nodeUuid, thisData, objects, nodeTypeModules);
+            callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
         }
     }
 };
@@ -94,16 +132,15 @@ exports.write = function (objectName, nodeName, value, mode, unit, unitMin, unit
  * @desc clearIO() removes IO points which are no longer needed. It should be called in your hardware interface after all addIO() calls have finished.
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
-exports.clearObject = function (objectId) {
+exports.clearObject = function (objectId, frameID) {
     var objectID = utilities.getObjectIdFromTarget(objectId, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-        for (var key in objects[objectID].nodes) {
+        for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
-                cout("Deleting: " + objectID + "   " + key);
-                delete objects[objectID].nodes[key];
+                cout("Deleting: " + objectID + "   "+ objectID + "   " + key);
+                delete objects[objectID].frames[frameID].nodes[key];
             }
         }
-
     }
     //TODO: clear links too
     cout("object is all cleared");
@@ -180,37 +217,50 @@ exports.getAllLinksToNodes = function (objectName) {
 /**
  * @desc addIO() a new IO point to the specified HybridObject
  * @param {string} objectName The name of the HybridObject
+ *  * @param {string} frameName The name of the HybridObject frame
  * @param {string} nodeName The name of the nodeName
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  **/
-exports.addNode = function (objectName, nodeName, type) {
 
-    utilities.createFolder(objectName, dirnameO, globalVariables.debug);
+exports.addNode = function (objectName, frameName, nodeName, type) {
+
+    utilities.createFolder(objectName, frameName, dirnameO, globalVariables.debug);
 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     cout("AddIO objectID: " + objectID);
 
-    var nodeUuid = objectID+nodeName;
+    var nodeUuid = objectID+frameName+nodeName;
+    var frameUuid = objectID+frameName;
 
     //objID = nodeName + objectID;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
-        cout("I will save: " + objectName + " and: " + nodeName);
+        cout("I will save: " + objectName + " and " + nodeName +"for frame "+ frameName);
 
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = objectName;
 
-            if (!objects[objectID].nodes.hasOwnProperty(nodeUuid)) {
-                var thisObject = objects[objectID].nodes[nodeUuid] = new Node();
+
+            if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
+                objects[objectID].frames[frameUuid] = new Frame();
+            }
+            if (!objects[objectID].frames[frameUuid].hasOwnProperty("nodes")) {
+                objects[objectID].frames[frameUuid].nodes = {};
+            }
+
+            objects[objectID].frames[frameUuid].name = frameName;
+
+            if (!objects[objectID].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                var thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
                 thisObject.frameSizeX = 100;
                 thisObject.frameSizeY = 100;
             }
 
-            var thisObj = objects[objectID].nodes[nodeUuid];
+            var thisObj = objects[objectID].frames[frameUuid].nodes[nodeUuid];
             thisObj.name = nodeName;
             thisObj.text = undefined;
             thisObj.type = type;
@@ -219,23 +269,35 @@ exports.addNode = function (objectName, nodeName, type) {
                 hardwareObjects[objectName] = new Object(objectName);
             }
 
-            if (!hardwareObjects[objectName].nodes.hasOwnProperty(nodeUuid)) {
-                hardwareObjects[objectName].nodes[nodeUuid] = new EmptyNode(nodeName);
-                hardwareObjects[objectName].nodes[nodeUuid].type = type;
+            if (!hardwareObjects.hasOwnProperty("frames")) {
+                hardwareObjects[objectName].frames = {};
+            }
+
+            if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
+                hardwareObjects[objectName].frames[frameUuid] = {};
+            }
+            if (!hardwareObjects[objectName].frames[frameUuid].hasOwnProperty("nodes")) {
+                hardwareObjects[objectName].frames[frameUuid].nodes = {};
+            }
+
+            if (!hardwareObjects[objectName].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                hardwareObjects[objectName].frames[frameUuid].nodes[nodeUuid] = new EmptyNode(nodeName);
+                hardwareObjects[objectName].frames[frameUuid].nodes[nodeUuid].type = type;
             }
         }
     }
     objectID = undefined;
 };
 
-exports.renameNode = function (objectName,oldNodeName, newNodeName) {
+exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var thisNode = objectID+oldNodeName;
+            var nodeUUID = objectID+ frameName+ oldNodeName;
+            var frameUUID = objectID+ frameName+ oldNodeName;
 
-            if(thisNode in objects[objectID].nodes){
-                objects[objectID].nodes[thisNode].text = newNodeName;
+            if(nodeUUID in objects[objectID].frames[frameUUID].nodes){
+                objects[objectID].frames[frameUUID].nodes[nodeUUID].text = newNodeName;
                // return
             } /*else {
                 for (var key in objects[objectID].nodes) {
@@ -247,7 +309,7 @@ exports.renameNode = function (objectName,oldNodeName, newNodeName) {
             }*/
         }
     }
-    actionCallback({reloadObject: {object: objectID}});
+    actionCallback({reloadObject: {object: objectID, frame: frameUUID}});
     objectID = undefined;
 };
 
@@ -332,16 +394,18 @@ exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, o
 
 exports.reset = function (){
     for (var objectKey in objects) {
-        var object = objects[objectKey];
-        for (var nodeKey in object.nodes) {
-            var node = object.nodes[nodeKey]
-            if (node.type === "logic" || node.frame) {
-                continue;
+        for (var frameKey in objects[objectKey].frames) {
+            var frame = objects[objectKey].frames[frameKey];
+            for (var nodeKey in frame.nodes) {
+                var node = frame.nodes[nodeKey];
+                if (node.type === "logic" || node.frame) {
+                    continue;
+                }
+                // addNode requires that nodeKey === object.name + node.name
+                _this.addNode(objects[objectKey].name, frame.name, node.name, node.type);
             }
-            // addNode requires that nodeKey === object.name + node.name
-            _this.addNode(object.name, node.name, node.type);
+            _this.clearObject(objectKey);
         }
-        _this.clearObject(objectKey);
     }
 
     cout("sendReset");
@@ -350,43 +414,50 @@ exports.reset = function (){
     }
 };
 
-exports.readCall = function (objectName, nodeName, data) {
+exports.readCall = function (objectName, frameName, nodeName, data) {
     if (callBacks.hasOwnProperty(objectName)) {
-        if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
-            callBacks[objectName].nodes[nodeName].callBack(data);
+        if (callBacks[objectName].frames[frameName].nodes.hasOwnProperty(nodeName)) {
+            callBacks[objectName].frames[frameName].nodes[nodeName].callBack(data);
         }
     }
 };
 
-exports.addReadListener = function (objectName, nodeName, callBack) {
+exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
-    var nodeID = objectID+nodeName;
+    var nodeID = objectID+frameName+nodeName;
+    var frameID = objectID+frameName;
 
     cout("Add read listener for objectID: " + objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
-            if (!callBacks.hasOwnProperty(objectID)) {
-                callBacks[objectID] = new Object(objectID);
-            }
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                if (!callBacks.hasOwnProperty(objectID)) {
+                    callBacks[objectID] = new Object(objectID);
+                }
 
-            if (!callBacks[objectID].nodes.hasOwnProperty(nodeID)) {
-                callBacks[objectID].nodes[nodeID] = new EmptyNode(nodeName);
-                callBacks[objectID].nodes[nodeID].callBack = callBack;
-            } else {
-                callBacks[objectID].nodes[nodeID].callBack = callBack;
+                if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
+                    callBacks[objectID].frames[frameID] = {};
+                }
+
+                if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
+                } else {
+                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
+                }
             }
         }
     }
 };
 
-exports.connectCall = function (objectName, nodeName, data) {
+exports.connectCall = function (objectName, frameName, nodeName, data) {
     if (callBacks.hasOwnProperty(objectName)) {
         if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
 
-            if (typeof callBacks[objectName].nodes[nodeName].connectionCallBack == 'function') {
-                callBacks[objectName].nodes[nodeName].connectionCallBack(data);
+            if (typeof callBacks[objectName].frames[frameName].nodes[nodeName].connectionCallBack == 'function') {
+                callBacks[objectName].frames[frameName].nodes[nodeName].connectionCallBack(data);
                 console.log("connection callback called");
             } else {
                 console.log("no connection callback");
@@ -395,9 +466,10 @@ exports.connectCall = function (objectName, nodeName, data) {
     }
 };
 
-exports.addConnectionListener = function (objectName, nodeName, callBack) {
+exports.addConnectionListener = function (objectName, frameName, nodeName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
-    var nodeID = objectID+nodeName;
+    var frameID = objectID + frameName;
+    var nodeID = objectID + nodeName;
 
     cout("Add connection listener for objectID: " + objectID);
 
@@ -416,12 +488,13 @@ exports.addConnectionListener = function (objectName, nodeName, callBack) {
             }
         }
     }
-}
+};
 
-exports.removeReadListeners = function (objectName){
+exports.removeReadListeners = function (objectName, frameName){
     var objectID = utilities.readObject(objectLookup, objectName);
-    if(callBacks[objectID])
-    delete callBacks[objectID];
+    var frameID = objectID + frameName;
+    if(callBacks[objectID].frames[frameID])
+    delete callBacks[objectID].frames[frameID];
 };
 
 exports.map = function (x, in_min, in_max, out_min, out_max) {
@@ -443,15 +516,17 @@ exports.addEventListener = function (option, callBack){
 
 };
 
-exports.advertiseConnection = function (object, node, logic){
+exports.advertiseConnection = function (object, frame, node, logic){
     if(typeof logic === "undefined") {
         logic = false;
     }
     var objectID = utilities.readObject(objectLookup, object);
-    var nodeID = objectID+node;
+    var nodeID = objectID+frame+node;
+    var frameID = objectID+frame;
 
     var message = {advertiseConnection:{
         object: objectID,
+        frame: frameID,
         node: nodeID,
         logic: logic,
         names: [object, node],
