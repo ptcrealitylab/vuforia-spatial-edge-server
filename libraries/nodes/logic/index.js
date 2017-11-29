@@ -59,13 +59,13 @@
 
  */
 
-exports.render = function (objectID, linkID, inputData, callback) {
+exports.render = function (objectID, frameID, linkID, inputData, callback) {
     var outputData = {};
     var key;
         for (key in inputData) {
             outputData[key] = inputData[key];
         }
-    callback(objectID, linkID, outputData);
+    callback(objectID, frameID, linkID, outputData);
 };
 /* // example for delay
  exports.render = function (objectID, linkID, inputData, callback) {

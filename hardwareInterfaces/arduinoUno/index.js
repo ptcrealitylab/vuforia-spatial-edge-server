@@ -54,7 +54,7 @@ if (exports.enabled) {
 
     // change this to what ever is your Arudino Serial Port
 
-    const serialSource = "/dev/cu.usbmodem1411"; // this is pointing to the arduino
+    const serialSource = "/dev/cu.usbmodem141141"; // this is pointing to the arduino
 
     function ArduinoIndex() {
         this.objName = null;
@@ -68,11 +68,24 @@ if (exports.enabled) {
     var serialPortOpen = false;
 
     //initialisation of the socket connection
-    var SerialP = serialport.SerialPort; // localize object constructor
+   /* var SerialP = serialport.SerialPort; // localize object constructor
     var serialPort = new SerialP(serialSource, {
         parser: serialport.parsers.readline("\n"),
         baudrate: serialBaudRate
     }, false);
+    */
+    const SerialPort = require('serialport');
+    const Readline = SerialPort.parsers.Readline;
+    const serialPort = new SerialPort(serialSource, {
+        baudRate: 19200
+    });
+    const parser = serialPort.pipe(new Readline({ delimiter: '\n' }));
+    parser.on('data', function (data) {
+        /* get a buffer of data from the serial port */
+       // console.log(data,"test");
+});
+
+
 
     serialPort.on('error', function (err) {
         console.error("Serial port error", err);
@@ -82,8 +95,9 @@ if (exports.enabled) {
 
     function serialServer(serialPort) {
         if (server.getDebug()) console.log("opneserial");
-        serialPort.open();
-        serialPort.on("open", function () {
+       // serialPort.open();
+
+        serialPort.on('open', function () {
 
             if (server.getDebug()) console.log('Serial port opened');
             serialPortOpen = true;
@@ -100,8 +114,9 @@ if (exports.enabled) {
             var amount = 0;
             //var okCounter = 0;
 
-            serialPort.on('data', function (data) {
-              //  console.log(data);
+        parser.on('data', function (data) {
+           // console.log(data.toString());
+               // console.log(data);
                 switch (dataSwitch) {
                     case 0:
                         if (data === "f") {

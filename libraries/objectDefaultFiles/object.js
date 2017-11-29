@@ -44,6 +44,7 @@
  */
 var realityObject = {
     node: "",
+    frame: "",
     object: "",
     logic: "",
     block: "",
@@ -115,6 +116,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
             {
                 version: realityObject.version,
                 node: msgContent.node,
+                frame: msgContent.frame,
                 object: msgContent.object,
                 height: realityObject.height,
                 width: realityObject.width,
@@ -128,6 +130,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
             , "*");
 
         realityObject.node = msgContent.node;
+        realityObject.frame = msgContent.frame;
         realityObject.object = msgContent.object;
     }
     else if (typeof msgContent.logic !== "undefined") {
@@ -138,6 +141,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 version: realityObject.version,
                 block: msgContent.block,
                 logic: msgContent.logic,
+                frame: msgContent.frame,
                 object: msgContent.object,
                 publicData: msgContent.publicData
             }
@@ -147,6 +151,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
 
         realityObject.block = msgContent.block;
         realityObject.logic = msgContent.logic;
+        realityObject.frame = msgContent.frame;
         realityObject.object = msgContent.object;
         realityObject.publicData = msgContent.publicData;
     }
@@ -169,6 +174,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                         {
                             version: realityObject.version,
                             node: realityObject.node,
+                            frame: realityObject.frame,
                             object: realityObject.object,
                             height: realityObject.height,
                             width: realityObject.width,
@@ -203,6 +209,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     globalMessage: ohMSG
                 });
@@ -263,6 +270,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -282,6 +290,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -311,6 +320,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -337,6 +347,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -364,6 +375,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -387,6 +399,7 @@ function HybridObject() {
                 {
                     version: realityObject.version,
                     node: realityObject.node,
+                    frame: realityObject.frame,
                     object: realityObject.object,
                     height: realityObject.height,
                     width: realityObject.width,
@@ -546,7 +559,8 @@ function HybridObject() {
             if (_this.oldValueList[node] !== value) {
                 this.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
-                    node: realityObject.object+node,
+                    frame: realityObject.object+realityObject.frame,
+                    node: realityObject.object+realityObject.frame+node,
                     data: thisData
                 }));
             }
@@ -558,7 +572,7 @@ function HybridObject() {
          */
 
         this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, node: realityObject.object+node}));
+            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.object+realityObject.frame, node: realityObject.object+realityObject.frame+node}));
         };
 
         /**
@@ -566,7 +580,7 @@ function HybridObject() {
          */
 
         this.read = function (node, msg) {
-            if (msg.node === realityObject.object+node) {
+            if (msg.node === realityObject.object+realityObject.frame+node) {
                 return msg.data.value;
             } else {
                 return undefined;
@@ -581,7 +595,7 @@ function HybridObject() {
             _this.ioObject.on("object", function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== "undefined") {
-                    if (thisMsg.node === realityObject.object+node) {
+                    if (thisMsg.node === realityObject.object+realityObject.frame+node) {
                         if (typeof thisMsg.data !== "undefined")
                             callback(thisMsg.data.value);
                     }
@@ -674,6 +688,7 @@ function HybridLogic() {
                 _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify(
                     {
                         object: realityObject.object,
+                        frame: realityObject.frame,
                         logic:realityObject.logic,
                         block: realityObject.block
                     }));
@@ -691,6 +706,7 @@ function HybridLogic() {
 
             this.ioObject.emit('block/publicData', JSON.stringify({
                 object: realityObject.object,
+                frame: realityObject.frame,
                 logic: realityObject.logic,
                 block: realityObject.block,
                 publicData: realityObject.publicData
@@ -702,6 +718,7 @@ function HybridLogic() {
                     block: realityObject.block,
                     logic: realityObject.logic,
                     object: realityObject.object,
+                    frame: realityObject.frame,
                     publicData: realityObject.publicData
                 }
             ), "*");
@@ -714,6 +731,7 @@ function HybridLogic() {
 
             this.ioObject.emit('block/privateData', JSON.stringify({
                 object: realityObject.object,
+                frame: realityObject.frame,
                 logic: realityObject.logic,
                 block: realityObject.block,
                 privateData: thisItem
@@ -781,6 +799,7 @@ document.addEventListener('DOMContentLoaded', function() {
         parent.postMessage(JSON.stringify({
             version: realityObject.version,
             node: realityObject.node,
+            frame: realityObject.frame,
             object: realityObject.object,
             touchEvent: {
                 type: event.type,
@@ -806,6 +825,7 @@ document.addEventListener('DOMContentLoaded', function() {
             parent.postMessage(JSON.stringify({
                 version: realityObject.version,
                 node: realityObject.node,
+                frame: realityObject.frame,
                 object: realityObject.object,
                 beginTouchEditing: true
             }), '*');

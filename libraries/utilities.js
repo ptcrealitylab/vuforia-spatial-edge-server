@@ -71,24 +71,42 @@ exports.readObject = function (objectLookup, folder) {
     }
 };
 
-exports.createFolder = function (folderVar, dirnameO, debug) {
+exports.createFolder = function (folderVar, frameVar, dirnameO, debug) {
 
     var folder = dirnameO + '/objects/' + folderVar + '/';
+    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
+    var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
     if (debug) console.log("Creating folder: " + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, "0766", function (err) {
             if (err) {
                 console.log(err);
-                res.send("ERROR! Can't make the directory! \n"); // echo the result back
             }
         });
+    }
+
+        if (!fs.existsSync(frames)) {
+            fs.mkdirSync(frames, "0766", function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+        }
+
+        if (!fs.existsSync(firstFrame)) {
+            fs.mkdirSync(firstFrame, "0766", function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+
 
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
           //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/bird.png"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
