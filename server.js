@@ -1522,10 +1522,12 @@ function objectWebServer() {
 
 
     webServer.post('/logic/*/*/nodeSize/', function (req, res) {
+        console.log('routed by 3');
         res.send(changeNodeSize(req.params[0], req.params[0], req.params[1], req.body));
     });
 
     webServer.post('/object/*/frame/*/node/*/nodeSize/', function (req, res) {
+        console.log('routed by 4');
         res.send(changeNodeSize(req.params[0], req.params[1], req.params[2], req.body));
     });
 
@@ -1649,44 +1651,62 @@ function objectWebServer() {
     // adding a new link to an object. *1 is the object *2 is the link id
     // ****************************************************************************************************************
     webServer.post('/object/*/link/*/', function (req, res) {
-        res.send(newLink(req.params[0], req.params[0], req.params[1], req.body));
-    });
-    webServer.post('/object/*/frame/*/link/*/addLink/', function (req, res) {
-        res.send(newLink(req.params[0], req.params[1], req.params[2], req.body));
+        console.log("routed by 1");
+        res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
     });
 
-       function newLink(objectID, frameID, linkID, body) {
+    webServer.post('/addLink/:objectKey/frame/:frameKey/link/:linkKey', function (req, res) {
+        console.log("routed by 2");
+        res.status(200).send(newLink(req.params.objectKey, req.params.frameKey, req.params.linkKey, req.body));
+    });
+
+    function newLink(objectID, frameID, linkID, body) {
         console.log("new link");
+        console.log("object: " + objectID);
+        console.log("frame: " + frameID);
+        console.log("link: " + linkID);
+
         var updateStatus = "nothing happened";
+
+        for (var objectKey in objects) {
+            console.log(objectKey);
+        }
 
         if (objects.hasOwnProperty(objectID)) {
 
-            objects[objectID].frames[frameID].links[linkID] = body;
+            var thisObject = objects[objectID];
+            if (thisObject && thisObject.frames.hasOwnProperty(frameID)) {
+                var thisFrame = thisObject.frames[frameID];
+                if (thisFrame) {
 
-            var thisObject = objects[objectID].frames[frameID].links[linkID];
+                    console.log("found frame to add link to");
 
-            thisObject.loop = false;
+                    // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
+                    // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
+                    body.loop = (body.objectA === body.objectB &&
+                                 body.frameA === body.frameB &&
+                                 body.nodeA === body.nodeB);
 
-            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
-            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisObject.objectA === thisObject.objectB && thisObject.nodeA === thisObject.nodeB) {
-                thisObject.loop = true;
-            }
+                    thisFrame.links[linkID] = body;
 
-            if (!thisObject.loop) {
-                updateStatus = "added";
-                cout("added link: " + linkID);
-                // check if there are new connections associated with the new link.
-                utilities.writeObjectToFile(objects, objectID, __dirname);
-                // write the object state to the permanent storage.
-                socketUpdater();
-                // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
-            } else {
-                updateStatus = "found endless Loop";
+                    if (!body.loop) {
+                        updateStatus = "added";
+                        cout("added link: " + linkID);
+                        // check if there are new connections associated with the new link.
+                        utilities.writeObjectToFile(objects, objectID, __dirname);
+                        // write the object state to the permanent storage.
+                        socketUpdater();
+                        // call an action that asks all devices to reload their links, once the links are changed.
+                        actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
+
+                    } else {
+                        updateStatus = "found endless Loop";
+                    }
+
+                }
             }
         }
-           return updateStatus;
+        return updateStatus;
     }
 
     // todo change the rest of the code following this methods
@@ -2084,27 +2104,33 @@ function objectWebServer() {
 
     if (globalVariables.developer === true) {
 
-        webServer.post('/object/*/size/*/', function (req, res) {
-            res.send(changeSize(req.params[0],req.params[1], req.body));
-        });
         webServer.post('/object/*/frame/*/node/*/size/', function (req, res) {
-            res.send(changeSize(req.params[0],req.params[1],req.params[2], req.body));
+            console.log('routed by 5');
+            res.send(changeSize(req.params[0], req.params[1], req.params[2], req.body));
         });
 
-        function changeSize(object,node, body){
+        // TODO: ask Valentin what this is used for?
+        // webServer.post('/object/*/size/*/', function (req, res) {
+        //     console.log("post 1");
+        //     console.log(req.params);
+        //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
+        // });
+
+        function changeSize(object, frame, node, body){ //TODO: add frame
 
             // cout("post 2");
             var updateStatus = "nothing happened";
             var thisObject = object;
-            var thisValue = node;
+            var thisFrame = frame;
+            var thisNode = node;
 
-            cout("changing Size for :" + thisObject + " : " + thisValue);
+            cout("changing Size for :" + thisObject + " : " + thisFrame + " : " + thisNode);
 
             var tempObject;
-            if (thisObject === thisValue) {
+            if (thisObject === thisFrame || !thisFrame || !thisNode) {
                 tempObject = objects[thisObject];
             } else {
-                tempObject = objects[thisObject].nodes[thisValue];
+                tempObject = objects[thisObject].frames[thisFrame].nodes[thisNode];
             }
 
             // check that the numbers are valid numbers..
@@ -2996,7 +3022,10 @@ var engine = {
                 }
                 else {
 
-                    this.internalObjectDestination = this.objects[this.link.objectB].frame[this.link.frameB].nodes[this.link.nodeB];
+                    // console.log('testing...');
+                    // console.log(this.link);
+
+                    this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
 
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                         this.computeProcessedData(thisNode, this.link, this.internalObjectDestination)
