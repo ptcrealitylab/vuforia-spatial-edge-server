@@ -75,12 +75,12 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 };
 
-exports.render = function (object, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
 
     for (var key in thisBlock.data[0]) {
         if (key === "value") {
                 thisBlock.processedData[0].value = thisBlock.data[0].value * -1;
         }
     }
-    callback(object, node, block, index, thisBlock);
+    callback(object, frame, node, block, index, thisBlock);
 };

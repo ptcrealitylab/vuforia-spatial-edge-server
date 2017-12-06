@@ -1307,8 +1307,8 @@ function objectWebServer() {
 
     // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
-    webServer.post('/object/*/frame/*/node/*/block/*/addBlock/', function (req, res) {
-        res.send(addNewBlock(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/addBlock/', function (req, res) {
+        res.send(addNewBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
     });
 
     webServer.post('/logic/*/*/block/*/', function (req, res) {
@@ -1356,16 +1356,16 @@ function objectWebServer() {
 
              if (!breakPoint)*/
 
-            thisBlocks[blockID] = req.body;
+            thisBlocks[blockID] = body;
 
             // todo this can be removed once the system runs smoothly
             if (typeof thisBlocks[blockID].type === "undefined") {
                 thisBlocks[blockID].type = thisBlocks[blockID].name;
             }
 
-            for (var k in  objects[objectID].frames[frameID].nodes[nodeID].blocks) {
-                console.log("k");
-            }
+            // for (var k in  objects[objectID].frames[frameID].nodes[nodeID].blocks) {
+            //     console.log("k");
+            // }
 
             // call an action that asks all devices to reload their links, once the links are changed.
             actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
@@ -1378,15 +1378,17 @@ function objectWebServer() {
 
     // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
-    webServer.delete('/object/*/frame/*/node/*/block/*/editor/*/deleteBlock/', function (req, res) {
-        res.send(deleteBlock(req.params[0], req.params[0], req.params[1], req.params[2], req.params[2]));
+    webServer.delete('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/editor/:lastEditor/deleteBlock/', function (req, res) {
+        res.send(deleteBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.params.lastEditor));
     });
-    webServer.delete('/logic/*/*/*/block/*/lastEditor/*/', function (req, res) {
-        res.send(deleteBlock(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
-    });
+    // webServer.delete('/logic/*/*/*/block/*/lastEditor/*/', function (req, res) {
+    //     res.send(deleteBlock(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
+    // });
 
-    function deleteBlock(objectID, frameID, nodeID, linkID, lastEditor) {
-        var thisLinkId = linkID;
+    function deleteBlock(objectID, frameID, nodeID, blockID, lastEditor) {
+        var thisLinkId = blockID;
+        console.log(objectID, frameID, nodeID, blockID, lastEditor);
+        console.log(objects[objectID].frames[frameID]);
         var fullEntry = objects[objectID].frames[frameID].nodes[nodeID].blocks[thisLinkId];
         var destinationIp = knownObjects[fullEntry.objectB];
 
@@ -1395,9 +1397,9 @@ function objectWebServer() {
 
         var thisLinks = objects[objectID].frames[frameID].nodes[nodeID].links;
         // Make sure that no links are connected to deleted objects
-        for (var subCheckerKey in thisLinks) {
-            if (thisLinks[subCheckerKey].nodeA === thisLinkId || thisLinks[subCheckerKey].nodeB === thisLinkId) {
-                delete objects[objectID].frames[frameID].nodes[nodeID].links[subCheckerKey];
+        for (var linkCheckerKey in thisLinks) {
+            if (thisLinks[linkCheckerKey].nodeA === thisLinkId || thisLinks[linkCheckerKey].nodeB === thisLinkId) {
+                delete objects[objectID].frames[frameID].nodes[nodeID].links[linkCheckerKey];
             }
         }
 
@@ -1456,7 +1458,7 @@ function objectWebServer() {
 
         if (objects.hasOwnProperty(objectID)) {
 
-            objects[objectID].frames[frameID].nodes[nodeID] = req.body;
+            objects[objectID].frames[frameID].nodes[nodeID] = body;
 
             objects[objectID].frames[frameID].nodes[nodeID].blocks["in0"] = new EdgeBlock();
             objects[objectID].frames[frameID].nodes[nodeID].blocks["in1"] = new EdgeBlock();
@@ -1576,10 +1578,14 @@ function objectWebServer() {
     // ths is the most relevant for
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
+        console.log("get available logic blocks");
         res.json(getLogicBlockList())
     });
 
     function getLogicBlockList() {
+
+        console.log("list");
+
         //  cout("get 7");
         var blockList = {};
         // Create a objects list with all IO-Points code.
@@ -1615,25 +1621,23 @@ function objectWebServer() {
         res.send(deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
-    function deleteLink(objectID, frameID, linkID, editorID){
+    function deleteLink(objectKey, frameKey, linkKey, editorID){
 
-        var thisLinkId = linkID;
-        var fullEntry = objects[objectID].frames[frameID].links[thisLinkId];
+        var fullEntry = objects[objectKey].frames[frameKey].links[linkKey]; // TODO: retrieve this in a safe way (everywhere)
         var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objects[objectID].frames[frameID].links[thisLinkId];
-        cout("deleted link: " + thisLinkId);
-        // cout(objects[req.params[0]].links);
-        utilities.writeObjectToFile(objects, objectID, __dirname);
-        actionSender({reloadLink: {object: objectID, frame: frameID}, lastEditor: editorID});
+        delete objects[objectKey].frames[frameKey].links[linkKey];
 
+        cout("deleted link: " + linkKey);
+        // cout(objects[req.params[0]].links);
+        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         var checkIfIpIsUsed = false;
-        var checkerKey, subCheckerKey, frameKey;
-        for (checkerKey in objects) {
-            for (frameKey in objects[checkerKey]) {
-                for (subCheckerKey in objects[checkerKey].frames[frameKey].links) {
-                    if (objects[checkerKey].frames[frameKey].links[subCheckerKey].objectB === fullEntry.objectB) {
+        for (var objectCheckerKey in objects) {
+            for (var frameCheckerKey in objects[objectCheckerKey].frames) {
+                for (var linkCheckerKey in objects[objectCheckerKey].frames[frameCheckerKey].links) {
+                    if (objects[objectCheckerKey].frames[frameCheckerKey].links[linkCheckerKey].objectB === fullEntry.objectB) {
                         checkIfIpIsUsed = true;
                     }
                 }
@@ -1644,7 +1648,7 @@ function objectWebServer() {
             // socketArray.splice(destinationIp, 1);
             delete socketArray[destinationIp];
         }
-        return "deleted: " + thisLinkId + " in object: " + objectID;
+        return "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
     }
 
     // todo links for programms as well
