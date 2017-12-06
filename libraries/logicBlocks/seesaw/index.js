@@ -75,7 +75,7 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
 
     if (index === 0) {
         if(thisBlock.data[0].value > 0.5 ){
@@ -84,7 +84,7 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
                 thisBlock.publicData.toggle = false;
                 thisBlock.processedData[0].value = 1;
                 thisBlock.processedData[1].value = 0;
-                return callback(object, node, block, index, thisBlock);
+                return callback(object, frame, node, block, index, thisBlock);
 
             }
         }
@@ -97,7 +97,7 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
                 thisBlock.publicData.toggle = true;
                 thisBlock.processedData[0].value = 0;
                 thisBlock.processedData[1].value = 1;
-                return callback(object, node, block, index, thisBlock);
+                return callback(object, frame, node, block, index, thisBlock);
             }
         }
 
@@ -105,7 +105,7 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
 
         if (thisBlock.publicData.toggle === true) {
             thisBlock.processedData[2] = thisBlock.data[2];
-            return callback(object, node, block, index, thisBlock);
+            return callback(object, frame, node, block, index, thisBlock);
         }
     }
 

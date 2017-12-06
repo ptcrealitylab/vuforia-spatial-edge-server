@@ -74,7 +74,7 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 };
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, node, block, index, thisBlock, callback) {
+exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
     var product = 0;
     // add value from A
@@ -92,5 +92,5 @@ exports.render = function (object, node, block, index, thisBlock, callback) {
 
     thisBlock.processedData[0].value = product;
 
-    callback(object, node, block, index, thisBlock);
+    callback(object, frame, node, block, index, thisBlock);
 };

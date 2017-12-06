@@ -83,7 +83,7 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, node, block, index, thisBlock, callback) {
+exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
     // data flows through it like normal
     for (var key in thisBlock.data[index]) {
@@ -137,5 +137,5 @@ exports.render = function (object, node, block, index, thisBlock, callback) {
 
     //console.log(endpointUrl, requestBody);
 
-    callback(object, node, block, index, thisBlock);
+    callback(object, frame, node, block, index, thisBlock);
 };

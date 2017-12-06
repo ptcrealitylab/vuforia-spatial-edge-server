@@ -76,7 +76,7 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
     // check orientations and calculate if threshold is meet.
     var pass = false;
     if(thisBlock.publicData.direction === ">")
@@ -99,17 +99,17 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
     if(pass){
         if(thisBlock.publicData.digital){
             thisBlock.processedData[0].value = 1;
-            callback(object, node, block, index, thisBlock);
+            callback(object, frame, node, block, index, thisBlock);
 
         }
     } else {
         thisBlock.processedData[0].value = 0;
-        callback(object, node, block, index, thisBlock);
+        callback(object, frame, node, block, index, thisBlock);
 
     }
 
     if(!thisBlock.publicData.digital){
 
-        callback(object, node, block, index, thisBlock);
+        callback(object, frame, node, block, index, thisBlock);
     }
 };
