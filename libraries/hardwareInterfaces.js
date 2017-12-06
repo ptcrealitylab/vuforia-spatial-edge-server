@@ -293,8 +293,8 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var nodeUUID = objectID+ frameName+ oldNodeName;
-            var frameUUID = objectID+ frameName+ oldNodeName;
+            var nodeUUID = objectID + frameName + oldNodeName;
+            var frameUUID = objectID + frameName + oldNodeName;
 
             if(nodeUUID in objects[objectID].frames[frameUUID].nodes){
                 objects[objectID].frames[frameUUID].nodes[nodeUUID].text = newNodeName;

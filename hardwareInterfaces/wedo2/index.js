@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -56,6 +56,8 @@ if (exports.enabled) {
     var wedo = new Wedo("lego");
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
+    var FRAME_NAME = "zero";
 
     server.enableDeveloperUI(true);
 
@@ -71,31 +73,31 @@ if (exports.enabled) {
             if(wedo.wedo[uuid].name) {
                 var thisWedo = wedo.wedo[uuid].name;
 
-                server.addNode(thisWedo, "port 1", "node");
+                server.addNode(thisWedo, FRAME_NAME, "port 1", "node");
                // server.addNode(thisWedo, "none 1", "node");
 
-                server.addNode(thisWedo, "port 2", "node");
+                server.addNode(thisWedo, FRAME_NAME, "port 2", "node");
                // server.addNode(thisWedo, "none 2", "node");
 
-                server.addNode(thisWedo, "button", "node");
+                server.addNode(thisWedo, FRAME_NAME, "button", "node");
 
-                server.addNode(thisWedo, "light", "node");
+                server.addNode(thisWedo, FRAME_NAME, "light", "node");
 
-                server.renameNode(names[uuid].name, "port 1", "port 1");
+                server.renameNode(names[uuid].name, FRAME_NAME, "port 1", "port 1");
                // server.renameNode(names[uuid].name, "none 1", "y1");
-                server.renameNode(names[uuid].name, "port 2", "port 2");
+                server.renameNode(names[uuid].name, FRAME_NAME, "port 2", "port 2");
                // server.renameNode(names[uuid].name, "none 2", "y2");
 
                 server.activate(thisWedo);
 
-                server.addReadListener(names[uuid].name, "port 1", function (names, wedo, uuid, data) {
+                server.addReadListener(names[uuid].name, FRAME_NAME, "port 1", function (names, wedo, uuid, data) {
                     // console.log(names[uuid].name,data);
                     if (names[uuid].px1 === "motor 1") {
                         wedo.setMotor(server.map(data.value, -1, 1, -100, 100), 1, uuid);
                     }
                 }.bind(this, names, wedo, uuid));
 
-                server.addReadListener(names[uuid].name, "port 2", function (names, wedo, uuid, data) {
+                server.addReadListener(names[uuid].name, FRAME_NAME, "port 2", function (names, wedo, uuid, data) {
                     //  console.log(names[uuid].name,data);
                     if (names[uuid].px2 === "motor 2") {
                         //  console.log(server.map(data.value,0,1,-100,100));
@@ -104,7 +106,7 @@ if (exports.enabled) {
                 }.bind(this, names, wedo, uuid));
 
 
-                server.addReadListener(names[uuid].name, "light", function (names, wedo, uuid, data) {
+                server.addReadListener(names[uuid].name, FRAME_NAME, "light", function (names, wedo, uuid, data) {
                         var color = parseInt(data.value*255);
                         wedo.setLedColor(color,color,color, uuid);
                 }.bind(this, names, wedo, uuid));
@@ -119,7 +121,7 @@ if (exports.enabled) {
 
                 wedo.on('button', function (button, uuid) {
                     if (uuid in names) {
-                        server.write(names[uuid].name, "button", button, "f");
+                        server.write(names[uuid].name, FRAME_NAME, "button", button, "f");
                     }
 
                 });
@@ -137,9 +139,9 @@ if (exports.enabled) {
         if (names[uuid].name) {
             server.deactivate( names[uuid].name);
 
-                server.renameNode(names[uuid].name, "port 1", " ");
+                server.renameNode(names[uuid].name, FRAME_NAME, "port 1", " ");
                 names[uuid].px1 = "port 1";
-                server.renameNode(names[uuid].name, "port 2", " ");
+                server.renameNode(names[uuid].name, FRAME_NAME, "port 2", " ");
                 names[uuid].px2 = "port 2";
 
            // server.renameNode(names[uuid].name, "none 1", " ");
@@ -147,7 +149,7 @@ if (exports.enabled) {
             //server.renameNode(names[uuid].name, "none 2", " ");
             //names[uuid].py2 = "none 2";
 
-            server.removeReadListeners(names[uuid].name);
+            server.removeReadListeners(names[uuid].name, FRAME_NAME);
 
             resetNode(uuid,1);
             resetNode(uuid,2);
@@ -158,14 +160,14 @@ if (exports.enabled) {
 
     wedo.on('distanceSensor', function (distance, port, uuid) {
        if(uuid in names) {
-           server.write(names[uuid].name, "port "+port, server.map(10-distance,0,10,0,1), "f");
+           server.write(names[uuid].name, FRAME_NAME, "port "+port, server.map(10-distance,0,10,0,1), "f");
        }
     });
 
     wedo.on('tiltSensor', function (x,y, port, uuid) {
         if(uuid in names) {
             Math.round( 20.49);
-            server.write(names[uuid].name, "port "+port,  Math.round(server.map(x,-45,45,0,1)*100)/100, "f");
+            server.write(names[uuid].name, FRAME_NAME, "port "+port,  Math.round(server.map(x,-45,45,0,1)*100)/100, "f");
           //  server.write(names[uuid].name, "none "+port,   Math.round(server.map(y,-45,45,0,1)*100)/100, "f");
         }
     });
@@ -191,7 +193,7 @@ if (exports.enabled) {
 
             var thisWedo = wedo.wedo[uuid].name;
             if (port === 1 && connected) {
-                server.renameNode(thisWedo, "port 1", x);
+                server.renameNode(thisWedo, FRAME_NAME, "port 1", x);
                 names[uuid].px1 = x + " 1";
               /*  if(y === " "){
                     server.renameNode(thisWedo, "none 1"," ");
@@ -202,7 +204,7 @@ if (exports.enabled) {
                 */
             }
             if (port === 2 && connected) {
-                server.renameNode(thisWedo, "port 2", x);
+                server.renameNode(thisWedo, FRAME_NAME, "port 2", x);
                 names[uuid].px2 = x + " 2";
               /*  if(y === " ") {
                     server.renameNode(thisWedo, "none 2"," ");
@@ -214,14 +216,14 @@ if (exports.enabled) {
             }
 
             if (port === 1 && !connected) {
-                server.renameNode(thisWedo, "port 1", " ");
+                server.renameNode(thisWedo, FRAME_NAME, "port 1", " ");
                 names[uuid].px1 = "port 1";
                // server.renameNode(thisWedo, "none 1", " ");
                // names[uuid].py1 = "none 1";
                 resetNode(uuid,1);
             }
             if (port === 2 && !connected) {
-                server.renameNode(thisWedo, "port 2", " ");
+                server.renameNode(thisWedo, FRAME_NAME, "port 2", " ");
                 names[uuid].px2 = "port 2";
                // server.renameNode(thisWedo, "none 2", " ");
                // names[uuid].py2 = "none 2";
@@ -234,7 +236,7 @@ if (exports.enabled) {
 
 
 function resetNode (uuid, port){
-    server.write(names[uuid].name, "port "+port, 0, "f");
+    server.write(names[uuid].name, FRAME_NAME, "port "+port, 0, "f");
   //  server.write(names[uuid].name, "none "+port, 0, "f");
 
 }
