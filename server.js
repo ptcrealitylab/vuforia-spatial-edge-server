@@ -1654,14 +1654,15 @@ function objectWebServer() {
     // todo links for programms as well
     // adding a new link to an object. *1 is the object *2 is the link id
     // ****************************************************************************************************************
+
+    webServer.post('/object/:objectID/frame/:frameID/link/:linkID/addLink/', function (req, res) {
+        console.log("routed by 2");
+        res.status(200).send(newLink(req.params.objectID, req.params.frameID, req.params.linkID, req.body));
+    });
+
     webServer.post('/object/*/link/*/', function (req, res) {
         console.log("routed by 1");
         res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
-    });
-
-    webServer.post('/addLink/:objectKey/frame/:frameKey/link/:linkKey', function (req, res) {
-        console.log("routed by 2");
-        res.status(200).send(newLink(req.params.objectKey, req.params.frameKey, req.params.linkKey, req.body));
     });
 
     function newLink(objectID, frameID, linkID, body) {
@@ -1935,7 +1936,7 @@ function objectWebServer() {
                 return;
             }
 
-        var obj = objects[objId].frame[frame];
+        var obj = objects[objId].frames[frame];
 
         var memoryDir = __dirname + '/objects/' + obj.name + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -3119,8 +3120,8 @@ var engine = {
 
                 if (this.router !== null) {
 
-                    for (linkKey in this.objects[object].frame[frame].links) {
-                        this.link = this.objects[object].frame[frame].links[linkKey];
+                    for (linkKey in this.objects[object].frames[frame].links) {
+                        this.link = this.objects[object].frames[frame].links[linkKey];
 
                         if (this.link.nodeA === node &&
                             this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
