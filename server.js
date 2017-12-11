@@ -190,8 +190,6 @@ function Objects() {
     this.visibleText = false;
     // Used internally from the reality editor to indicate the editing status.
     this.visibleEditing = false;
-    // every object holds the developer mode variable. It indicates if an object is editable in the Reality Editor.
-    this.developer = true;
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
 }
@@ -215,6 +213,8 @@ function Frame() {
     this.visibleText = false;
     // Used internally from the reality editor to indicate the editing status.
     this.visibleEditing = false;
+    // every object holds the developer mode variable. It indicates if an object is editable in the Reality Editor.
+    this.developer = true;
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
     // This data can be used for interacting with objects for when they are not visible.
     this.memory = {}; // TODO use this to store UI interface for image later.

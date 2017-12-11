@@ -9,7 +9,6 @@
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
-	"developer": true,
 	"frames": {
 		"lego40i73qtpzc80nzero": {
 			"objectId": null,
@@ -21,6 +20,7 @@
 			"visible": false,
 			"visibleText": false,
 			"visibleEditing": false,
+			"developer": true,
 			"memory": {},
 			"links": {
 				"xvI7p6hl": {
@@ -32,28 +32,6 @@
 						"lego4",
 						"zero",
 						"button"
-					],
-					"objectB": "lego40i73qtpzc80n",
-					"frameB": "lego40i73qtpzc80nzero",
-					"nodeB": "lego40i73qtpzc80nzerolight",
-					"logicB": false,
-					"namesB": [
-						"lego4",
-						"zero",
-						"light"
-					],
-					"lastEditor": "ZGd3454p",
-					"loop": false
-				},
-				"4m197idd": {
-					"objectA": "lego40i73qtpzc80n",
-					"frameA": "lego40i73qtpzc80nzero",
-					"nodeA": "lego40i73qtpzc80nzeroport 2",
-					"logicA": false,
-					"namesA": [
-						"lego4",
-						"zero",
-						"port 2"
 					],
 					"objectB": "lego40i73qtpzc80n",
 					"frameB": "lego40i73qtpzc80nzero",
@@ -88,6 +66,50 @@
 					],
 					"lastEditor": "ZGd3454p",
 					"loop": false
+				},
+				"7L1jxkiz": {
+					"objectA": "lego40i73qtpzc80n",
+					"frameA": "lego40i73qtpzc80nzero",
+					"nodeA": "lego40i73qtpzc80nzeroport 2",
+					"logicA": false,
+					"namesA": [
+						"lego4",
+						"zero",
+						"port 2"
+					],
+					"objectB": "lego40i73qtpzc80n",
+					"frameB": "lego40i73qtpzc80nzero",
+					"nodeB": "lego40i73qtpzc80nzeroport 1",
+					"logicB": false,
+					"namesB": [
+						"lego4",
+						"zero",
+						"port 1"
+					],
+					"lastEditor": "KPflxmsr",
+					"loop": false
+				},
+				"Um14t5rf": {
+					"objectA": "lego40i73qtpzc80n",
+					"frameA": "lego40i73qtpzc80nzero",
+					"nodeA": "lego40i73qtpzc80nzeroport 2",
+					"logicA": false,
+					"namesA": [
+						"lego4",
+						"zero",
+						"port 2"
+					],
+					"objectB": "lego40i73qtpzc80n",
+					"frameB": "lego40i73qtpzc80nzero",
+					"nodeB": "lego40i73qtpzc80nzerobutton",
+					"logicB": false,
+					"namesB": [
+						"lego4",
+						"zero",
+						"button"
+					],
+					"lastEditor": "KPflxmsr",
+					"loop": false
 				}
 			},
 			"nodes": {
@@ -114,8 +136,7 @@
 						"unit": false,
 						"unitMin": 0,
 						"unitMax": 1
-					},
-					"text": "motor"
+					}
 				},
 				"lego40i73qtpzc80nzeroport 2": {
 					"name": "port 2",
@@ -140,8 +161,7 @@
 						"unit": false,
 						"unitMin": 0,
 						"unitMax": 1
-					},
-					"text": "distance"
+					}
 				},
 				"lego40i73qtpzc80nzerobutton": {
 					"name": "button",
@@ -192,10 +212,989 @@
 						"unitMin": 0,
 						"unitMax": 1
 					}
+				},
+				"Cf966z65x2an": {
+					"name": "LOGIC0",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -33.356976521085016,
+					"y": -33.87381772411754,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "Cf966z65x2an",
+					"screenZ": 1000,
+					"loaded": false,
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"edgePlaceholderIn0": {
+							"type": "default",
+							"x": 0,
+							"y": 0,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderIn0",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderIn0",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderIn1": {
+							"type": "default",
+							"x": 1,
+							"y": 0,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderIn1",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderIn1",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderIn2": {
+							"type": "default",
+							"x": 2,
+							"y": 0,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderIn2",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderIn2",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderIn3": {
+							"type": "default",
+							"x": 3,
+							"y": 0,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderIn3",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderIn3",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderOut0": {
+							"type": "default",
+							"x": 0,
+							"y": 3,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderOut0",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderOut0",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderOut1": {
+							"type": "default",
+							"x": 1,
+							"y": 3,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderOut1",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderOut1",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderOut2": {
+							"type": "default",
+							"x": 2,
+							"y": 3,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderOut2",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderOut2",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						},
+						"edgePlaceholderOut3": {
+							"type": "default",
+							"x": 3,
+							"y": 3,
+							"blockSize": 1,
+							"globalId": "edgePlaceholderOut3",
+							"checksum": null,
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"privateData": {},
+							"publicData": {},
+							"activeInputs": [
+								true,
+								false,
+								false,
+								false
+							],
+							"activeOutputs": [
+								false,
+								false,
+								false,
+								false
+							],
+							"nameInput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"nameOutput": [
+								"",
+								"",
+								"",
+								""
+							],
+							"iconImage": null,
+							"name": "edgePlaceholderOut3",
+							"stress": 0,
+							"isTempBlock": false,
+							"isPortBlock": true,
+							"lastEditor": "KPflxmsr"
+						}
+					},
+					"links": {
+						"blockLink-in0-edgePlaceholderIn0": {
+							"nodeA": "in0",
+							"logicA": 0,
+							"nodeB": "edgePlaceholderIn0",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-in0-edgePlaceholderIn0",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-in1-edgePlaceholderIn1": {
+							"nodeA": "in1",
+							"logicA": 0,
+							"nodeB": "edgePlaceholderIn1",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-in1-edgePlaceholderIn1",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-in2-edgePlaceholderIn2": {
+							"nodeA": "in2",
+							"logicA": 0,
+							"nodeB": "edgePlaceholderIn2",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-in2-edgePlaceholderIn2",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-in3-edgePlaceholderIn3": {
+							"nodeA": "in3",
+							"logicA": 0,
+							"nodeB": "edgePlaceholderIn3",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-in3-edgePlaceholderIn3",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-edgePlaceholderOut0-out0": {
+							"nodeA": "edgePlaceholderOut0",
+							"logicA": 0,
+							"nodeB": "out0",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-edgePlaceholderOut0-out0",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-edgePlaceholderOut1-out1": {
+							"nodeA": "edgePlaceholderOut1",
+							"logicA": 0,
+							"nodeB": "out1",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-edgePlaceholderOut1-out1",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-edgePlaceholderOut2-out2": {
+							"nodeA": "edgePlaceholderOut2",
+							"logicA": 0,
+							"nodeB": "out2",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-edgePlaceholderOut2-out2",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						},
+						"blockLink-edgePlaceholderOut3-out3": {
+							"nodeA": "edgePlaceholderOut3",
+							"logicA": 0,
+							"nodeB": "out3",
+							"logicB": 0,
+							"loop": false,
+							"health": 0,
+							"ballAnimationCount": 0,
+							"globalId": "blockLink-edgePlaceholderOut3-out3",
+							"route": null,
+							"lastEditor": "KPflxmsr"
+						}
+					},
+					"lastEditor": "ZGd3454p"
 				}
 			},
 			"location": "local",
 			"src": "editor"
 		}
-	}
+	},
+	"developer": true
 }
