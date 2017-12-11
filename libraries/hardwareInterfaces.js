@@ -150,27 +150,33 @@ exports.clearObject = function (objectId, frameID) {
     cout("object is all cleared");
 };
 
-exports.removeAllNodes = function (objectName) {
+exports.removeAllNodes = function (objectName, frameName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var frameID = objectID + frameName;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            console.log("object exists");
-            for (var nodeKey in objects[objectID].nodes) {
-                if (!objects[objectID].nodes.hasOwnProperty(nodeKey)) continue;
-                    delete objects[objectID].nodes[nodeKey];
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                console.log("object+frame exists");
+                for (var nodeKey in objects[objectID].frames[frameID].nodes) {
+                    if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
+                    delete objects[objectID].frames[frameID].nodes[nodeKey];
+                }
             }
         }
     }
 };
 
-exports.removeNode = function (objectName, nodeName) {
+exports.removeNode = function (objectName, frameName, nodeName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var frameID = objectID + frameName;
+    var nodeID = objectID + frameName + nodeName;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var thisNode = objectID + nodeName;
-            if (thisNode in objects[objectID].nodes) {
-                console.log("deleting node " + thisNode);
-                delete objects[objectID].nodes[thisNode];
+            if (objects[objectID].hasOwnProperty(frameID)) {
+                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    console.log("deleting node " + thisNode);
+                    delete objects[objectID].frames[frameID].nodes[nodeID];
+                }
             }
         }
     }
@@ -200,18 +206,19 @@ exports.getAllNodes = function (objectName) {
     return {};
 };
 
-exports.getAllLinksToNodes = function (objectName) {
-
-    // get object ID
+exports.getAllLinksToNodes = function (objectName, frameName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var frameID = objectID + frameName;
 
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            // get all of its nodes
-            var links = objects[objectID].links;
-            // return node list
-            return links;
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                // get all of its nodes
+                var links = objects[objectID].frames[frameID].links;
+                // return node list
+                return links; // TODO: this isn't complete. need to search for links in all objects that have this destination
+            }
         }
     }
 
@@ -310,15 +317,19 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     objectID = undefined;
 };
 
-exports.moveNode = function (objectName, nodeName, x, y) {
+exports.moveNode = function (objectName, frameName, nodeName, x, y) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var frameID = objectID + frameName;
+    var nodeID = objectID + frameName + nodeName;
+
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var thisNode = objectID + nodeName;
-            if (thisNode in objects[objectID].nodes) {
-                objects[objectID].nodes[thisNode].x = x;
-                objects[objectID].nodes[thisNode].y = y;
-                console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    objects[objectID].frames[frameID].nodes[nodeID].x = x;
+                    objects[objectID].frames[frameID].nodes[nodeID].y = y;
+                    console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
+                }
             }
         }
     }
@@ -411,10 +422,12 @@ exports.reset = function (){
     }
 };
 
-exports.readCall = function (objectName, frameName, nodeName, data) {
-    if (callBacks.hasOwnProperty(objectName)) {
-        if (callBacks[objectName].frames[frameName].nodes.hasOwnProperty(nodeName)) {
-            callBacks[objectName].frames[frameName].nodes[nodeName].callBack(data);
+exports.readCall = function (objectID, frameID, nodeID, data) {
+    if (callBacks.hasOwnProperty(objectID)) {
+        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
+            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
+            }
         }
     }
 };
@@ -450,15 +463,32 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     }
 };
 
-exports.connectCall = function (objectName, frameName, nodeName, data) {
-    if (callBacks.hasOwnProperty(objectName)) {
-        if (callBacks[objectName].nodes.hasOwnProperty(nodeName)) {
-
-            if (typeof callBacks[objectName].frames[frameName].nodes[nodeName].connectionCallBack == 'function') {
-                callBacks[objectName].frames[frameName].nodes[nodeName].connectionCallBack(data);
-                console.log("connection callback called");
-            } else {
-                console.log("no connection callback");
+exports.connectCall = function (objectID, frameID, nodeID, data) {
+    console.log('\ncallBacks...\n');
+    // console.log(callBacks);
+    // var prettyprintCallbacks = {};
+    {
+        for (var c in callBacks) {
+            if (callBacks[c].hasOwnProperty('frames')) {
+                // prettyprintCallbacks[c] = callBacks[c].frames;
+                for (var f in callBacks[c].frames) {
+                    console.log(callBacks[c].frames[f].nodes);
+                }
+            }
+        }
+    }
+    // console.log(prettyprintCallbacks);
+    console.log('\n');
+    if (callBacks.hasOwnProperty(objectID)) {
+        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
+            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+                if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
+                    callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
+                    console.log("connection callback called");
+                } else {
+                    console.log("no connection callback");
+                }
             }
         }
     }
@@ -467,23 +497,37 @@ exports.connectCall = function (objectName, frameName, nodeName, data) {
 exports.addConnectionListener = function (objectName, frameName, nodeName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
     var frameID = objectID + frameName;
-    var nodeID = objectID + nodeName;
+    var nodeID = objectID + frameName + nodeName;
 
-    cout("Add connection listener for objectID: " + objectID);
+    cout("Add connection listener for objectID: " + objectID + ", " + frameID + ", " + nodeName);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
+
             if (!callBacks.hasOwnProperty(objectID)) {
-                callBacks[objectID] = new Object(objectID);
+                callBacks[objectID] = new EmptyObject(objectID);
+                console.log('1');
             }
 
-            if (!callBacks[objectID].nodes.hasOwnProperty(nodeID)) {
-                callBacks[objectID].nodes[nodeID] = new EmptyNode(nodeName);
-                callBacks[objectID].nodes[nodeID].connectionCallBack = callBack;
-            } else {
-                callBacks[objectID].nodes[nodeID].connectionCallBack = callBack;
+            var callbackObject = callBacks[objectID];
+
+            if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
+                callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
+                console.log('2');
             }
+
+            if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                console.log('3');
+            }
+
+            console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+
+            callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack = callBack;
+
+            console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+
         }
     }
 };

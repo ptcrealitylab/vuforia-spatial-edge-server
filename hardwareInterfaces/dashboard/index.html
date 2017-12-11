@@ -96,8 +96,8 @@
 
             MAX_ROWS = Math.max(1, Math.floor(window.innerHeight / PANEL_SIZE));
             MAX_COLUMNS = Math.max(1, Math.floor(window.innerWidth / PANEL_SIZE));
-            console.log("Max Rows: " + MAX_ROWS);
-            console.log("Max Cols: " + MAX_COLUMNS);
+            // console.log("Max Rows: " + MAX_ROWS);
+            // console.log("Max Cols: " + MAX_COLUMNS);
 
             updateGridButtonAppearance();
 
@@ -503,7 +503,7 @@
         }
 
         function onMouseMove(e) {
-            console.log("mousemove", interactionState);
+            // console.log("mousemove", interactionState);
 
             // remote touch came from phone
             if (e.simulated) {
@@ -516,7 +516,7 @@
 
             interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
 
-            console.log(currentlyDraggedPanel);
+            // console.log(currentlyDraggedPanel);
             if (currentlyDraggedPanel) {
                 currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
                 currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20

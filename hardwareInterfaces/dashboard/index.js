@@ -53,6 +53,8 @@ if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
+    var FRAME_NAME = "zero";
+
     var app = require('express')();
     var http = require('http').Server(app);
     var io = require('socket.io')(http);
@@ -98,7 +100,7 @@ if (exports.enabled) {
     }
 
     function createNodesAndRenderInterface() {
-        server.removeAllNodes("dashboard"); // TODO: hopefully don't need to do this in the future but necessary now to refresh when loaded
+        server.removeAllNodes("dashboard", FRAME_NAME); // TODO: hopefully don't need to do this in the future but necessary now to refresh when loaded
 
         nodes = [];
         for (var r = 0; r < rows; r++) {
@@ -111,7 +113,7 @@ if (exports.enabled) {
 
         forEachNode(createNode);
 
-        server.reloadNodeUI("dashboard");
+        server.reloadNodeUI("dashboard"); // TODO: should this include a frame too?
 
         io.emit("redrawGrid", {rows: rows, columns: columns});
     }
@@ -119,27 +121,28 @@ if (exports.enabled) {
     function createNode(nodeName, row, column) {
         if (row === 0 && column === 0) { return; } // this is always reserved for the marker
 
-        server.addNode("dashboard", nodeName, "node");
+        server.addNode("dashboard", FRAME_NAME, nodeName, "node");
 
         var xSpacing = 300;
         var ySpacing = 300;
 
-        server.moveNode("dashboard", nodeName, column * xSpacing, row * ySpacing);
+        server.moveNode("dashboard", FRAME_NAME, nodeName, column * xSpacing, row * ySpacing);
 
         // when a new value arrives, forward it to the frontend
-        server.addReadListener("dashboard", nodeName, function (data) {
-            io.emit("dashboard", {nodeName: nodeName, action: "update", data: data});
+        server.addReadListener("dashboard", FRAME_NAME, nodeName, function (data) {
+            io.emit("dashboard", {nodeName: nodeName, action: "update", data: data}); // TODO: emit frame name too?
         });
 
         // when a node gets connected, notify the frontend
-        server.addConnectionListener("dashboard", nodeName, function(data) {
-            io.emit("dashboard", {nodeName: nodeName, action: "connect", data: data});
+        server.addConnectionListener("dashboard", FRAME_NAME, nodeName, function(data) {
+            console.log('connection listened');
+            io.emit("dashboard", {nodeName: nodeName, action: "connect", data: data}); // TODO: ^
         });
     }
 
     function deleteNode(nodeName, row, column) {
         if (row === 0 && column === 0) { return; } // this is always reserved for the marker
-        server.removeNode("dashboard", nodeName);
+        server.removeNode("dashboard", FRAME_NAME, nodeName);
     }
 
     function forEachNode(callback) {
@@ -219,7 +222,7 @@ if (exports.enabled) {
 
         socket.on('dashboardLoaded', function() {
             console.log("ask server for links");
-            var links = server.getAllLinksToNodes("dashboard"); // TODO: this currently only has all links originating from this object... scan entire object tree to find them all
+            var links = server.getAllLinksToNodes("dashboard", FRAME_NAME); // TODO: this currently only has all links originating from this object... scan entire object tree to find them all
 
             // var linkList = Object.values(links);
             // linkList = linkList.map(function(elt) {

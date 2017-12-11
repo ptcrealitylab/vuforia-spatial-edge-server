@@ -1621,10 +1621,60 @@ function objectWebServer() {
         res.send(deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
+    function getLinkData(fullEntry, wasAdded) {
+        var linkAddedData = null;
+
+        if (fullEntry) {
+            console.log(fullEntry);
+
+            var linkObjectA = fullEntry["objectA"];
+            var linkObjectB = fullEntry["objectB"];
+            var linkFrameA = fullEntry["frameA"];
+            var linkFrameB = fullEntry["frameB"];
+            var linkNodeA = fullEntry["nodeA"];
+            var linkNodeB = fullEntry["nodeB"];
+            var objectAName = objects[linkObjectA].name;
+            var objectBName = objects[linkObjectB].name;
+            var frameAName = objects[linkObjectA].frames[linkFrameA].name;
+            var frameBName = objects[linkObjectB].frames[linkFrameB].name;
+            var nodeAName = objects[linkObjectA].frames[linkFrameA].nodes[linkNodeA].name;
+            var nodeBName = objects[linkObjectB].frames[linkFrameB].nodes[linkNodeB].name;
+
+            linkAddedData = {
+                added: wasAdded,
+                idObjectA: linkObjectA,
+                idObjectB: linkObjectB,
+                idFrameA: linkFrameA,
+                idFrameB: linkFrameB,
+                idNodeA: linkNodeA,
+                idNodeB: linkNodeB,
+                nameObjectA: objectAName,
+                nameObjectB: objectBName,
+                nameFrameA: frameAName,
+                nameFrameB: frameBName,
+                nameNodeA: nodeAName,
+                nameNodeB: nodeBName
+            };
+
+        } else {
+            console.log("thisObject does not exist");
+        }
+        return linkAddedData;
+    }
+
     function deleteLink(objectKey, frameKey, linkKey, editorID){
 
         var fullEntry = objects[objectKey].frames[frameKey].links[linkKey]; // TODO: retrieve this in a safe way (everywhere)
         var destinationIp = knownObjects[fullEntry.objectB];
+
+        /////
+        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+        var linkAddedData = getLinkData(fullEntry, false);
+        if (linkAddedData) {
+            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
+        }
+        /////
 
         delete objects[objectKey].frames[frameKey].links[linkKey];
 
@@ -1701,6 +1751,17 @@ function objectWebServer() {
                         utilities.writeObjectToFile(objects, objectID, __dirname);
                         // write the object state to the permanent storage.
                         socketUpdater();
+
+                        /////
+                        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+                        var fullEntry = objects[objectID].frames[frameID].links[linkID]; // TODO: retrieve this in a safe way (everywhere)
+                        var linkAddedData = getLinkData(fullEntry, true);
+                        if (linkAddedData) {
+                            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+                            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
+                        }
+                        /////
+
                         // call an action that asks all devices to reload their links, once the links are changed.
                         actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
 
