@@ -41,10 +41,14 @@ function Objects() {
     this.shutdownCallBacks = [];
 }
 
-function Object(objectName) {
+function EmptyObject(objectName) {
     this.name = objectName;
-    this.nodes = {};
+    this.frames = {};
+}
 
+function EmptyFrame(frameName) {
+    this.name = frameName;
+    this.nodes = {};
 }
 
 function EmptyNode(nodeName, type) {
@@ -266,18 +270,11 @@ exports.addNode = function (objectName, frameName, nodeName, type) {
             thisObj.type = type;
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
-                hardwareObjects[objectName] = new Object(objectName);
-            }
-
-            if (!hardwareObjects.hasOwnProperty("frames")) {
-                hardwareObjects[objectName].frames = {};
+                hardwareObjects[objectName] = new EmptyObject(objectName);
             }
 
             if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
-                hardwareObjects[objectName].frames[frameUuid] = {};
-            }
-            if (!hardwareObjects[objectName].frames[frameUuid].hasOwnProperty("nodes")) {
-                hardwareObjects[objectName].frames[frameUuid].nodes = {};
+                hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
             }
 
             if (!hardwareObjects[objectName].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
@@ -293,8 +290,8 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
+            var frameUUID = objectID + frameName;
             var nodeUUID = objectID + frameName + oldNodeName;
-            var frameUUID = objectID + frameName + oldNodeName;
 
             if(nodeUUID in objects[objectID].frames[frameUUID].nodes){
                 objects[objectID].frames[frameUUID].nodes[nodeUUID].text = newNodeName;
@@ -433,20 +430,21 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
+
                 if (!callBacks.hasOwnProperty(objectID)) {
-                    callBacks[objectID] = new Object(objectID);
+                    callBacks[objectID] = new EmptyObject(objectID);
                 }
 
                 if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
-                    callBacks[objectID].frames[frameID] = {};
+                    callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
                 }
 
                 if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
-                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
-                } else {
-                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
                 }
+
+                callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
+
             }
         }
     }
