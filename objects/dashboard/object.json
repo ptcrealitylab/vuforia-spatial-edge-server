@@ -9,7 +9,6 @@
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
-	"developer": true,
 	"frames": {
 		"dashboardpaaqwnqq3gggzero": {
 			"objectId": null,
@@ -21,6 +20,7 @@
 			"visible": false,
 			"visibleText": false,
 			"visibleEditing": false,
+			"developer": true,
 			"memory": {},
 			"links": {
 				"VgKv5uo1": {
@@ -154,7 +154,7 @@
 					"data": {
 						"value": 0,
 						"mode": "f",
-						"unit": false,
+						"unit": "",
 						"unitMin": 0,
 						"unitMax": 1
 					},
@@ -165,21 +165,14 @@
 					"type": "node",
 					"stress": 0,
 					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"processedData": {
-						"value": 0,
-						"mode": "f",
-						"unit": false,
-						"unitMin": 0,
-						"unitMax": 1
-					}
+					"frameSizeY": 100
 				},
 				"dashboardpaaqwnqq3gggzeropanel_row1_col1": {
 					"name": "panel_row1_col1",
 					"data": {
-						"value": 0.6,
+						"value": 0,
 						"mode": "f",
-						"unit": false,
+						"unit": "",
 						"unitMin": 0,
 						"unitMax": 1
 					},
@@ -190,21 +183,14 @@
 					"type": "node",
 					"stress": 0,
 					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"processedData": {
-						"value": 0.6,
-						"mode": "f",
-						"unit": false,
-						"unitMin": 0,
-						"unitMax": 1
-					}
+					"frameSizeY": 100
 				},
 				"dashboardpaaqwnqq3gggzeropanel_row1_col2": {
 					"name": "panel_row1_col2",
 					"data": {
-						"value": 0.6,
+						"value": 0,
 						"mode": "f",
-						"unit": false,
+						"unit": "",
 						"unitMin": 0,
 						"unitMax": 1
 					},
@@ -215,188 +201,12 @@
 					"type": "node",
 					"stress": 0,
 					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"processedData": {
-						"value": 0.6,
-						"mode": "f",
-						"unit": false,
-						"unitMin": 0,
-						"unitMax": 1
-					}
-				}
-			},
-			"location": "local",
-			"src": "editor"
-		},
-		"dashboardpaaqwnqq3gggpanel_row0_col1": {
-			"objectId": null,
-			"name": "panel_row0_col1",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"memory": {},
-			"links": {},
-			"nodes": {
-				"dashboardpaaqwnqq3gggpanel_row0_col1node": {
-					"name": "node",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 69,
-					"y": -25,
-					"scale": 1,
-					"matrix": [],
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor"
-		},
-		"dashboardpaaqwnqq3gggpanel_row0_col2": {
-			"objectId": null,
-			"name": "panel_row0_col2",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"memory": {},
-			"links": {},
-			"nodes": {
-				"dashboardpaaqwnqq3gggpanel_row0_col2node": {
-					"name": "node",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -99,
-					"y": -77,
-					"scale": 1,
-					"matrix": [],
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor"
-		},
-		"dashboardpaaqwnqq3gggpanel_row1_col0": {
-			"objectId": null,
-			"name": "panel_row1_col0",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"memory": {},
-			"links": {},
-			"nodes": {
-				"dashboardpaaqwnqq3gggpanel_row1_col0node": {
-					"name": "node",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -99,
-					"y": -34,
-					"scale": 1,
-					"matrix": [],
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor"
-		},
-		"dashboardpaaqwnqq3gggpanel_row1_col1": {
-			"objectId": null,
-			"name": "panel_row1_col1",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"memory": {},
-			"links": {},
-			"nodes": {
-				"dashboardpaaqwnqq3gggpanel_row1_col1node": {
-					"name": "node",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 97,
-					"y": -75,
-					"scale": 1,
-					"matrix": [],
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor"
-		},
-		"dashboardpaaqwnqq3gggpanel_row1_col2": {
-			"objectId": null,
-			"name": "panel_row1_col2",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"memory": {},
-			"links": {},
-			"nodes": {
-				"dashboardpaaqwnqq3gggpanel_row1_col2node": {
-					"name": "node",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 74,
-					"y": 35,
-					"scale": 1,
-					"matrix": [],
-					"stress": 0,
-					"frameSizeX": 100,
 					"frameSizeY": 100
 				}
 			},
 			"location": "local",
 			"src": "editor"
 		}
-	}
+	},
+	"developer": true
 }

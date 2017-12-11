@@ -9,7 +9,6 @@
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
-	"developer": true,
 	"frames": {
 		"lego1Mih8ul6sqsowzero": {
 			"objectId": null,
@@ -21,6 +20,7 @@
 			"visible": false,
 			"visibleText": false,
 			"visibleEditing": false,
+			"developer": true,
 			"memory": {},
 			"links": {
 				"X4840jtv": {
