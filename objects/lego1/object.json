@@ -11,31 +11,83 @@
 	"visibleEditing": false,
 	"frames": {
 		"lego1Mih8ul6sqsowzero": {
-			"objectId": null,
+			"objectId": "lego1Mih8ul6sqsow",
 			"name": "zero",
-			"x": 0,
-			"y": 0,
-			"scale": 1,
-			"matrix": [],
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
 			"visible": false,
 			"visibleText": false,
 			"visibleEditing": false,
 			"developer": true,
 			"memory": {},
 			"links": {
-				"X4840jtv": {
-					"objectA": "lego1Mih8ul6sqsow",
-					"frameA": "lego1Mih8ul6sqsowzero",
-					"nodeA": "lego1Mih8ul6sqsowzerobutton",
+				"XXtf9n5v": {
+					"objectA": "lego3Rc8s06n61f7o",
+					"frameA": "lego3Rc8s06n61f7ozero",
+					"nodeA": "lego3Rc8s06n61f7ozerobutton",
 					"logicA": false,
 					"namesA": [
 						"lego1",
 						"zero",
 						"button"
 					],
-					"objectB": "lego1Mih8ul6sqsow",
-					"frameB": "lego1Mih8ul6sqsowzero",
-					"nodeB": "lego1Mih8ul6sqsowzerolight",
+					"objectB": "lego3Rc8s06n61f7o",
+					"frameB": "lego3Rc8s06n61f7ozero",
+					"nodeB": "lego3Rc8s06n61f7ozeroport 2",
+					"logicB": false,
+					"namesB": [
+						"lego1",
+						"zero",
+						"port 2"
+					],
+					"lastEditor": "zO1emrq3",
+					"loop": false
+				},
+				"GJ6hrnwj": {
+					"objectA": "lego3Rc8s06n61f7o",
+					"frameA": "lego3Rc8s06n61f7ozero",
+					"nodeA": "lego3Rc8s06n61f7ozerobutton",
+					"logicA": false,
+					"namesA": [
+						"lego1",
+						"zero",
+						"button"
+					],
+					"objectB": "lego3Rc8s06n61f7o",
+					"frameB": "lego3Rc8s06n61f7ozero",
+					"nodeB": "lego3Rc8s06n61f7ozeroport 1",
+					"logicB": false,
+					"namesB": [
+						"lego1",
+						"zero",
+						"port 1"
+					],
+					"lastEditor": "zO1emrq3",
+					"loop": false
+				},
+				"X4840jtv": {
+					"objectA": "lego3Rc8s06n61f7o",
+					"frameA": "lego3Rc8s06n61f7ozero",
+					"nodeA": "lego3Rc8s06n61f7ozerobutton",
+					"logicA": false,
+					"namesA": [
+						"lego1",
+						"zero",
+						"button"
+					],
+					"objectB": "lego3Rc8s06n61f7o",
+					"frameB": "lego3Rc8s06n61f7ozero",
+					"nodeB": "lego3Rc8s06n61f7ozerolight",
 					"logicB": false,
 					"namesB": [
 						"lego1",
@@ -47,7 +99,7 @@
 				}
 			},
 			"nodes": {
-				"lego1Mih8ul6sqsowzeroport 1": {
+				"lego3Rc8s06n61f7ozeroport 1": {
 					"name": "port 1",
 					"data": {
 						"value": 0,
@@ -72,7 +124,7 @@
 						"unitMax": 1
 					}
 				},
-				"lego1Mih8ul6sqsowzeroport 2": {
+				"lego3Rc8s06n61f7ozeroport 2": {
 					"name": "port 2",
 					"data": {
 						"value": 0,
@@ -97,7 +149,7 @@
 						"unitMax": 1
 					}
 				},
-				"lego1Mih8ul6sqsowzerobutton": {
+				"lego3Rc8s06n61f7ozerobutton": {
 					"name": "button",
 					"data": {
 						"value": 0,
@@ -122,7 +174,7 @@
 						"unitMax": 1
 					}
 				},
-				"lego1Mih8ul6sqsowzerolight": {
+				"lego3Rc8s06n61f7ozerolight": {
 					"name": "light",
 					"data": {
 						"value": 0,
@@ -146,10 +198,1485 @@
 						"unitMin": 0,
 						"unitMax": 1
 					}
+				},
+				"Gf2dlxjxrndy": {
+					"name": "LOGIC0",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 226,
+					"y": 7,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "Gf2dlxjxrndy",
+					"screenZ": 1000,
+					"loaded": false,
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						}
+					},
+					"links": {},
+					"lastEditor": "213azfgp"
+				},
+				"gvf9yr8uqy66": {
+					"name": "LOGIC1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "gvf9yr8uqy66",
+					"screenZ": 1000,
+					"loaded": false,
+					"animationScale": 0,
+					"begin": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"temp": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						}
+					},
+					"links": {},
+					"lastEditor": "gAkg60a9"
+				},
+				"P13r8gnz9gwy": {
+					"name": "LOGIC2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "P13r8gnz9gwy",
+					"screenZ": 1000,
+					"loaded": false,
+					"animationScale": 0,
+					"begin": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"temp": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						}
+					},
+					"links": {},
+					"lastEditor": "gAkg60a9"
+				},
+				"lego1Mih8ul6sqsowzeroport 1": {
+					"name": "port 1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -68,
+					"y": 50,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"lego1Mih8ul6sqsowzeroport 2": {
+					"name": "port 2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -56,
+					"y": 2,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"lego1Mih8ul6sqsowzerobutton": {
+					"name": "button",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -100,
+					"y": -19,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"lego1Mih8ul6sqsowzerolight": {
+					"name": "light",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -25,
+					"y": -12,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"yWh1rq5575gq": {
+					"name": "LOGIC3",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 223,
+					"y": -1,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "yWh1rq5575gq",
+					"screenZ": 2321.825034428064,
+					"loaded": false,
+					"width": 100,
+					"height": 100,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"animationScale": 0,
+					"begin": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"temp": [
+						219.28734153849598,
+						925.1310467942399,
+						0.22370496251600003,
+						0.223258,
+						-858.309146617728,
+						242.33015739648,
+						-0.740934386908,
+						-0.739454,
+						364.77338194847994,
+						14.05816861824,
+						-1.84851332964,
+						-1.84482,
+						-57816.747497134456,
+						18107.472564386557,
+						2268.0118015886364,
+						2267.476318
+					],
+					"screenX": 287.59587022086777,
+					"screenY": 251.8015120019282,
+					"screenLinearZ": 5.051427159171503,
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						}
+					},
+					"links": {},
+					"lastEditor": "bfD493p6"
 				}
 			},
 			"location": "local",
 			"src": "editor"
 		}
-	}
+	},
+	"developer": true
 }

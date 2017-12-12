@@ -481,7 +481,7 @@ function HybridObject() {
         return true;
     }
 
-    this.getPossitionX = function () {
+    this.getPositionX = function () {
         if (typeof realityObject.modelViewMatrix[12] !== "undefined") {
             return realityObject.modelViewMatrix[12];
         } else return undefined;
@@ -491,7 +491,7 @@ function HybridObject() {
      ************************************************************
      */
 
-    this.getPossitionY = function () {
+    this.getPositionY = function () {
         if (typeof realityObject.modelViewMatrix[13] !== "undefined") {
             return realityObject.modelViewMatrix[13];
         } else return undefined;
@@ -501,7 +501,7 @@ function HybridObject() {
      ************************************************************
      */
 
-    this.getPossitionZ = function () {
+    this.getPositionZ = function () {
         if (typeof realityObject.modelViewMatrix[14] !== "undefined") {
             return realityObject.modelViewMatrix[14];
         } else return undefined;

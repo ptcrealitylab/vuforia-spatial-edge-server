@@ -199,14 +199,28 @@ function Frame() {
     this.objectId = null;
     // The name for the object used for interfaces.
     this.name = "";
-    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
-    this.x = 0;
-    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
-    this.y = 0;
-    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-    this.scale = 1;
-    // Unconstrained positioning in 3D space
-    this.matrix = [];
+    // which visualization mode it should use right now ("ar" or "screen")
+    this.visualization = "ar";
+    // position data for the ar visualization mode
+    this.ar = {
+        // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
+        x : 0,
+        // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
+        y : 0,
+        // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
+        scale : 1,
+        // Unconstrained positioning in 3D space
+        matrix : []
+    };
+    // position data for the screen visualization mode
+    this.screen = {
+        // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
+        x : 0,
+        // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
+        y : 0,
+        // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
+        scale : 1
+    };
     // Used internally from the reality editor to indicate if an object should be rendered or not.
     this.visible = false;
     // Used internally from the reality editor to trigger the visibility of naming UI elements.
@@ -275,9 +289,9 @@ function Node() {
     this.name = "";
     // the actual data of the node
     this.data = new Data();
-    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
+    // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
-    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
+    // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
     this.y = 0;
     // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
     this.scale = 1;
@@ -302,9 +316,9 @@ function Logic() {
     this.name = "";
     // data for logic blocks. depending on the blockSize which one is used.
     this.data = new Data();
-    // Reality Editor: This is used to possition the UI element within its x axis in 3D Space. Relative to Marker origin.
+    // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
     this.x = 0;
-    // Reality Editor: This is used to possition the UI element within its y axis in 3D Space. Relative to Marker origin.
+    // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
     this.y = 0;
     // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
     this.scale = 1;
@@ -1420,7 +1434,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        cout("changing Possition for :" + objectID + " : " + nodeID + " : " + blockID);
+        cout("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
 
         var tempObject = objects[objectID].frames[frameID].nodes[nodeID].blocks[blockID];
 
@@ -2164,69 +2178,85 @@ function objectWebServer() {
         res.json({success: true}).end();
     });
 
-    // changing the size and possition of an item. *1 is the object *2 is the datapoint id
+    // changing the size and position of an item. *1 is the object *2 is the datapoint id
 
     // ****************************************************************************************************************
 
     if (globalVariables.developer === true) {
 
-        webServer.post('/object/*/frame/*/node/*/size/', function (req, res) {
+        webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
             console.log('routed by 5');
-            res.send(changeSize(req.params[0], req.params[1], req.params[2], req.body));
+            res.send(changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body));
         });
 
-        // TODO: ask Valentin what this is used for?
-        // webServer.post('/object/*/size/*/', function (req, res) {
+        webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
+            console.log('routed by 6');
+            res.send(changeSize(req.params.objectID, req.params.frameID, null, req.body));
+        });
+
+        // // TODO: ask Valentin what this route was used for?
+        // webServer.post('/object/*/size/*', function (req, res) {
         //     console.log("post 1");
         //     console.log(req.params);
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
 
-        function changeSize(object, frame, node, body){ //TODO: add frame
+        function changeSize(objectID, frameID, nodeID, body) {
 
             // cout("post 2");
             var updateStatus = "nothing happened";
-            var thisObject = object;
-            var thisFrame = frame;
-            var thisNode = node;
 
-            cout("changing Size for :" + thisObject + " : " + thisFrame + " : " + thisNode);
+            cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
 
-            var tempObject;
-            if (thisObject === thisFrame || !thisFrame || !thisNode) {
-                tempObject = objects[thisObject];
-            } else {
-                tempObject = objects[thisObject].frames[thisFrame].nodes[thisNode];
+            var activeVehicle = null;
+
+            if (objects.hasOwnProperty(objectID)) {
+                if (frameID && objects[objectID].frames.hasOwnProperty(frameID)) {
+                    activeVehicle = objects[objectID].frames[frameID];
+                    if (nodeID && activeVehicle.nodes.hasOwnProperty(nodeID)) {
+                        activeVehicle = activeVehicle.nodes[nodeID];
+                    }
+                }
             }
+
+            // console.log('really changing size for ... ' + activeVehicle.uuid, body);
+
+            // for frames, the position data is inside "ar" or "screen"
+            if (activeVehicle.hasOwnProperty('visualization')) {
+                if (activeVehicle.visualization === "ar") {
+                    activeVehicle = activeVehicle.ar;
+                } else if (activeVehicle.visualization === "screen") {
+                    activeVehicle = activeVehicle.screen;
+                }
+            }
+
+            var didUpdate = false;
 
             // check that the numbers are valid numbers..
             if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
 
                 // if the object is equal the datapoint id, the item is actually the object it self.
-
-                tempObject.x = body.x;
-                tempObject.y = body.y;
-                tempObject.scale = body.scale;
+                activeVehicle.x = body.x;
+                activeVehicle.y = body.y;
+                activeVehicle.scale = body.scale;
                 // console.log(req.body);
                 // ask the devices to reload the objects
+                didUpdate = true;
             }
 
-            if (typeof body.matrix === "object") {
-
-                tempObject.matrix = body.matrix;
+            if (typeof body.matrix === "object" && activeVehicle.hasOwnProperty('matrix')) {
+                activeVehicle.matrix = body.matrix;
+                didUpdate = true;
             }
 
-            if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
-                utilities.writeObjectToFile(objects, object, __dirname);
-
-                actionSender({reloadObject: {object: thisObject}, lastEditor: body.lastEditor});
-                //	actionSender({reloadNode: {object: req.params[0], node: req.params[1]}, lastEditor: req.body.lastEditor});
+            if (didUpdate) {
+                // utilities.writeObjectToFile(objects, objectID, __dirname);
+                // actionSender({reloadObject: {object: objects[objectID]}, lastEditor: body.lastEditor});
                 updateStatus = "added object";
             }
 
             return updateStatus;
-           // res.send(updateStatus);
-        };
+        }
     }
 
     /**
