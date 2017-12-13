@@ -2391,9 +2391,9 @@ function objectWebServer() {
         // sends json object for a specific hybrid object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
-        webServer.get('/object/:object/node/:node/', function (req, res) {
+        webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
             //  cout("get 7");
-            res.json(objects[req.params.object].nodes[req.params.node] || {});
+            res.json(objects[req.params.objectID].frames[req.params.frameID].nodes[req.params.nodeID] || {});
         });
 
         // sends json object for a specific hybrid object. * is the object name
