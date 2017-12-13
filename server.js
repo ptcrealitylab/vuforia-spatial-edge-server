@@ -190,6 +190,9 @@ function Objects() {
     this.visibleText = false;
     // Used internally from the reality editor to indicate the editing status.
     this.visibleEditing = false;
+    // Intended future use is to keep a memory of the last matrix transformation when interacted.
+    // This data can be used for interacting with objects for when they are not visible.
+    this.memory = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
 }
@@ -229,9 +232,6 @@ function Frame() {
     this.visibleEditing = false;
     // every object holds the developer mode variable. It indicates if an object is editable in the Reality Editor.
     this.developer = true;
-    // Intended future use is to keep a memory of the last matrix transformation when interacted.
-    // This data can be used for interacting with objects for when they are not visible.
-    this.memory = {}; // TODO use this to store UI interface for image later.
     // Stores all the links that emerge from within the object. If a IOPoint has new data,
     // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
     this.links = {};
@@ -1460,14 +1460,14 @@ function objectWebServer() {
     // adding a new logic node block to an object. *1 is the object *2 is the logic *3 is the link id
     // ****************************************************************************************************************
     webServer.post('/logic/*/*/node/', function (req, res) {
-        res.send(addLogicBlock(req.params[0], req.params[0], req.params[1], req.body));
+        res.send(addLogicNode(req.params[0], req.params[0], req.params[1], req.body));
     });
 
     webServer.post('/object/*/frame/*/node/*/addLogicNode/', function (req, res) {
-        res.send(addLogicBlock(req.params[0], req.params[1], req.params[2], req.body));
+        res.send(addLogicNode(req.params[0], req.params[1], req.params[2], req.body));
     });
 
-    function addLogicBlock(objectID, frameID, nodeID, body) {
+    function addLogicNode(objectID, frameID, nodeID, body) {
         var updateStatus = "nothing happened";
 
         if (objects.hasOwnProperty(objectID)) {
@@ -1651,7 +1651,7 @@ function objectWebServer() {
             var objectBName = objects[linkObjectB].name;
             var frameAName = objects[linkObjectA].frames[linkFrameA].name;
             var frameBName = objects[linkObjectB].frames[linkFrameB].name;
-            var nodeAName = objects[linkObjectA].frames[linkFrameA].nodes[linkNodeA].name;
+            var nodeAName = objects[linkObjectA].frames[linkFrameA].nodes[linkNodeA].name; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
             var nodeBName = objects[linkObjectB].frames[linkFrameB].nodes[linkNodeB].name;
 
             linkAddedData = {
@@ -1988,30 +1988,28 @@ function objectWebServer() {
 
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
-        memoryUpload(req.params.id, req.params.id, req,res);
-    });
-    webServer.post('/object/:id/frame/:frame/memory', function (req, res) {
-        memoryUpload(req.params.id, req.params.frame, req,res);
+        memoryUpload(req.params.id, /*req.params.id,*/ req, res);
     });
 
+    // webServer.post('/object/:id/frame/:frame/memory', function (req, res) {
+    //     memoryUpload(req.params.id, req.params.frame, req, res);
+    // });
 
+    function memoryUpload(objectID, /*frame,*/ req, res){
 
-        function memoryUpload(object, frame, req,res){
-
-        var objId = object;
-        if (!objects.hasOwnProperty(objId)) {
+        if (!objects.hasOwnProperty(objectID)) {
             res.status(404);
-            res.json({failure: true, error: 'Object ' + objId + ' not found'}).end();
+            res.json({failure: true, error: 'Object ' + objectID + ' not found'}).end();
             return;
         }
 
-            if (!objects[objId].frames.hasOwnProperty(frame)) {
-                res.status(404);
-                res.json({failure: true, error: 'Object ' + objId + ' frame '+frame+' not found'}).end();
-                return;
-            }
+        // if (!objects[objectID].frames.hasOwnProperty(frame)) {
+        //     res.status(404);
+        //     res.json({failure: true, error: 'Object ' + objId + ' frame '+frame+' not found'}).end();
+        //     return;
+        // }
 
-        var obj = objects[objId].frames[frame];
+        var obj = objects[objectID];//.frames[frame];
 
         var memoryDir = __dirname + '/objects/' + obj.name + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -2041,14 +2039,16 @@ function objectWebServer() {
         form.parse(req, function (err, fields) {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
-                utilities.writeObjectToFile(objects, objId, __dirname);
-                actionSender({loadMemory: {object: objId, ip: obj.ip}});
+                utilities.writeObjectToFile(objects, objectID, __dirname);
+                actionSender({loadMemory: {object: objectID, ip: obj.ip}});
             }
+
+            console.log('successfully created memory');
 
             res.status(200);
             res.json({success: true}).end();
         });
-    };
+    }
 
     // Create a frame for an object
     webServer.post('/object/*/frames/', function (req, res) {
@@ -2219,7 +2219,7 @@ function objectWebServer() {
                 }
             }
 
-            // console.log('really changing size for ... ' + activeVehicle.uuid, body);
+            console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
             // for frames, the position data is inside "ar" or "screen"
             if (activeVehicle.hasOwnProperty('visualization')) {
