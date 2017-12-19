@@ -2403,7 +2403,7 @@ function objectWebServer() {
             //  cout("get 7");
 
             console.log("----x---xx----xx--x-----");
-            console.log(objects[req.params[0]]);
+            // console.log(objects[req.params[0]]);
             res.json(objects[req.params[0]]);
         });
 

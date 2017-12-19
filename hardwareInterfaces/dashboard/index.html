@@ -88,6 +88,13 @@
     var mouseY = null;
     var PANEL_SIZE = 600;
 
+    var arFrameState = {
+        flipThreshold: 1000,
+        x: 0,
+        y: 0,
+        isInScreen: true
+    };
+
     window.onload = function() {
 
         createControlPanel(["decimal", "gauge", "graph", "light"]);
@@ -169,18 +176,88 @@
         });
 
         socket.on('remoteTouchDown', function(msg) {
-            console.log('remoteTouchDown', msg);
+            // console.log('remoteTouchDown', msg);
             simulateMouseEvent(msg.pageX, msg.pageY, 'mousedown');
         });
 
         socket.on('remoteTouchMove', function(msg) {
-            console.log('remoteTouchMove', msg);
+            // console.log('remoteTouchMove', msg);
             simulateMouseEvent(msg.pageX, msg.pageY, 'mousemove');
         });
 
         socket.on('remoteTouchUp', function(msg) {
             console.log('remoteTouchUp', msg);
+            arFrameState.isInScreen = true;
             simulateMouseEvent(msg.pageX, msg.pageY, 'mouseup');
+        });
+
+        socket.on('zWhilePointerDown', function(msg) {
+            var zPosition = msg.zPosition;
+
+            // console.log('1');
+
+            if (currentlyDraggedPanel) {
+
+                // console.log('2');
+
+                var draggedPanelX = parseInt(currentlyDraggedPanel.style.left);
+                var draggedPanelY = parseInt(currentlyDraggedPanel.style.top);
+
+                var frameType = currentlyDraggedPanel.id;
+
+                // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
+
+                var msgData = {
+                    destination: 'ar',
+                    xPosition: draggedPanelX,
+                    yPosition: draggedPanelY,
+                    zPosition: zPosition,
+                    frameData: {
+                        uniqueName: frameType + uuidTime(),
+                        type: frameType
+                    }
+                };
+
+                if (arFrameState.isInScreen) {
+
+                    // console.log('3');
+
+                    if (zPosition > arFrameState.flipThreshold) {
+
+                        console.log('send to 3D');
+
+                        // hide the 2D frame on the hardware interface and display a 3D frame in the editor
+                        // making sure to set the 3D frame to the correct position
+                        currentlyDraggedPanel.style.opacity = 0.5;
+
+                        socket.emit('transportFrame', msgData);
+
+                        arFrameState.isInScreen = false;
+
+                    }
+
+                } else {
+
+                    if (zPosition < arFrameState.flipThreshold) {
+
+                        console.log('send to 2D');
+
+                        // hide the 3D frame in the editor and show the 2D frame on the hardware interface
+                        // making sure to set the 2D frame to the correct position
+                        currentlyDraggedPanel.style.opacity = 1;
+
+                        msgData.destination = 'screen';
+
+                        socket.emit('transportFrame', msgData);
+
+                        arFrameState.isInScreen = true;
+
+                    }
+
+                }
+
+            }
+
         });
 
     };
@@ -290,7 +367,6 @@
 
     function getPanelContents(nodeName) {
         var panel = document.getElementById(nodeName);
-//        console.log(panel);
         if (panel) {
             return document.getElementById(nodeName).children[1].firstElementChild;
         } else {
@@ -347,84 +423,26 @@
 
         centerContentsOuter.appendChild(centerContentsInner);
 
-        if (controlName === 'decimal') {
-            var decimalFrame = createDecimalFrame();
-            centerContentsInner.appendChild(decimalFrame);
-
-        } else if (controlName === 'gauge') {
-            var gaugeFrame = createGaugeFrame();
-            centerContentsInner.appendChild(gaugeFrame);
-
-        } else if (controlName === 'graph') {
-            var graphFrame = createGraphFrame('debug');
-            centerContentsInner.appendChild(graphFrame);
-
-        } else if (controlName === 'light') {
-            var lightFrame = createLightFrame();
-            centerContentsInner.appendChild(lightFrame);
-
-        } else {
-            centerContentsInner.innerHTML = controlName;
-        }
+        var frame = createFrame(controlName);
+        centerContentsInner.appendChild(frame);
 
         return sidebarPanel;
     }
 
     // TODO: DRY
 
-    function createDecimalFrame() {
-        var decimalFrame = document.createElement('iframe');
-        decimalFrame.classList.add('controlFrame');
-        decimalFrame.id = 'decimalFrame';
-        decimalFrame.src = "/frames/decimal.html";
-        decimalFrame.scrolling = "no";
-        decimalFrame.style.border = "0px solid transparent";
-        decimalFrame.onload = function(e) {
-            decimalFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
+    function createFrame(frameType) {
+        var frameDomElement = document.createElement('iframe');
+        frameDomElement.classList.add('controlFrame');
+        frameDomElement.frameType = frameType;
+        frameDomElement.id = frameType + 'Frame';
+        frameDomElement.src = '/frames/' + frameType + '.html';
+        frameDomElement.scrolling = 'no';
+        frameDomElement.style.border = '0px solid transparent';
+        frameDomElement.onload = function() {
+            frameDomElement.contentWindow.postMessage({value: defaultValue}, 'http://localhost:3030'); // TODO: change localhost in production?
         };
-        return decimalFrame;
-    }
-
-    function createGaugeFrame() {
-        var gaugeFrame = document.createElement('iframe');
-        gaugeFrame.classList.add('controlFrame');
-        gaugeFrame.id = 'gaugeFrame';
-        gaugeFrame.src = "/frames/gauge.html";
-        gaugeFrame.scrolling = "no";
-        gaugeFrame.style.border = "0px solid transparent";
-        gaugeFrame.onload = function(e) {
-            gaugeFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
-        };
-        return gaugeFrame;
-    }
-
-    function createGraphFrame(debug) {
-        var graphFrame = document.createElement('iframe');
-        graphFrame.classList.add('controlFrame');
-        graphFrame.id = 'graphFrame';
-        graphFrame.src = "/frames/graph.html";
-        graphFrame.scrolling = "no";
-        graphFrame.style.border = "0px solid transparent";
-        graphFrame.onload = function(e) {
-            graphFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
-            if (debug) {
-                graphFrame.contentWindow.postMessage({debug: true}, "http://localhost:3030");
-            }
-        };
-        return graphFrame;
-    }
-
-    function createLightFrame() {
-        var lightFrame = document.createElement('iframe');
-        lightFrame.classList.add('controlFrame');
-        lightFrame.id = 'lightFrame';
-        lightFrame.src = "/frames/light.html";
-        lightFrame.scrolling = "no";
-        lightFrame.style.border = "0px solid transparent";
-        lightFrame.onload = function(e) {
-            lightFrame.contentWindow.postMessage({value: defaultValue}, "http://localhost:3030");
-        };
-        return lightFrame;
+        return frameDomElement;
     }
 
     function createControlPanel(controls) {
@@ -455,35 +473,35 @@
         sidebar.appendChild(thisButton);
     }
 
-    function addColumn(e) {
+    function addColumn() {
         if (NUM_COLUMNS < MAX_COLUMNS) {
             NUM_COLUMNS++;
             socket.emit("addColumn");
         }
     }
 
-    function removeColumn(e) {
+    function removeColumn() {
         if (NUM_COLUMNS > MIN_COLUMNS) {
             NUM_COLUMNS--;
             socket.emit("removeColumn");
         }
     }
 
-    function addRow(e) {
+    function addRow() {
         if (NUM_ROWS < MAX_ROWS) {
             NUM_ROWS++;
             socket.emit("addRow");
         }
     }
 
-    function removeRow(e) {
+    function removeRow() {
         if (NUM_ROWS > MIN_ROWS) {
             NUM_ROWS--;
             socket.emit("removeRow");
         }
     }
 
-    function initializeDragInterface(exports) { // TODO: do we need exports at all?
+    function initializeDragInterface() {
 
         var timer;
         var clickedPanelContainer = null;
@@ -653,7 +671,7 @@
                 // get panel it's on top of
                 var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
                 allDivsHere.forEach( function(element) {
-                    if (element.classList.contains('region') &&  element.id.startsWith('panel_')) {
+                    if (element.classList.contains('region') &&  element.id.startsWith('panel_') && element.id !== 'panel_row0_col0') {
                         console.log('released on panel');
                         panelVisualizationTypes[element.id] = currentlyDraggedPanel.id;
                         setPanelDisplay(element, currentlyDraggedPanel.id);
@@ -669,7 +687,7 @@
             var res = [];
 
             var ele = document.elementFromPoint(x,y);
-            while(ele && ele.tagName != "BODY" && ele.tagName != "HTML"){
+            while(ele && ele.tagName !== "BODY" && ele.tagName !== "HTML"){
                 res.push(ele);
                 ele.style.display = "none";
                 ele = document.elementFromPoint(x,y);
@@ -689,25 +707,22 @@
         var iframeHeightToWidthRatio = 0.5;
 
         getPanelContents(panel.id).innerHTML = "";
-        var frame;
-
-        if (controlName === "decimal") {
-            frame = createDecimalFrame();
-
-        } else if (controlName === "gauge") {
-            frame = createGaugeFrame();
-
-        } else if (controlName === "graph") {
-            frame = createGraphFrame();
-
-        } else if (controlName === "light") {
-            frame = createLightFrame();
-        }
-
+        var frame = createFrame(controlName);
         frame.style.width = (getPanelContents(panel.id).clientWidth * iframeWidthPercentage) + "px";
         frame.style.height = (getPanelContents(panel.id).clientHeight * iframeWidthPercentage * iframeHeightToWidthRatio) + "px";
 
         getPanelContents(panel.id).appendChild(frame);
+    }
+
+    // ..... UTILITIES ..... //
+
+    // copied from userinterface realityEditor.device.utilities.uuidTime
+    function uuidTime() {
+        var dateUuidTime = new Date();
+        var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+        while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+        return stampUuidTime;
     }
 
 </script>

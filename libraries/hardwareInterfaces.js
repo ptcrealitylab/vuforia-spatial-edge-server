@@ -244,6 +244,82 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  **/
 
+exports.addFrame = function (objectName, frameName, type, x, y) {
+
+    utilities.createFolder(objectName, frameName, dirnameO, globalVariables.debug);
+
+    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    cout("Add Frame to objectID: " + objectID);
+
+    var frameUuid = objectID+frameName;
+    var thisFrame = {};
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+
+        cout("I will save: " + objectName + "for frame "+ frameName);
+
+        if (objects.hasOwnProperty(objectID)) {
+            objects[objectID].developer = globalVariables.developer;
+            objects[objectID].name = objectName;
+
+            if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
+                objects[objectID].frames[frameUuid] = new Frame();
+            }
+
+            thisFrame = objects[objectID].frames[frameUuid];
+            thisFrame.name = frameName;
+            thisFrame.objectId = objectID;
+            thisFrame.type = type;
+
+            thisFrame.screen.x = x;
+            thisFrame.screen.y = y;
+            thisFrame.ar.x = x;
+            thisFrame.ar.y = y;
+
+            if (!hardwareObjects.hasOwnProperty(objectName)) {
+                hardwareObjects[objectName] = new EmptyObject(objectName);
+            }
+
+            if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
+                hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
+                hardwareObjects[objectName].frames[frameUuid].type = type;
+            }
+        }
+    }
+
+    // utilities.writeObjectToFile(objects, objectID, __dirname);
+    writeObjectCallback(objectID);
+    // actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
+
+    console.log(JSON.stringify(thisFrame));
+
+    actionCallback({
+        addFrame: {
+            objectID: objectID,
+            frameID: frameUuid,
+            // frameData: {
+                name: thisFrame.name,
+                // ar: thisFrame.ar,
+                x: thisFrame.ar.x,
+                y: thisFrame.ar.y,
+                scale: thisFrame.ar.scale,
+                // screen: thisFrame.screen,
+                location: thisFrame.location,
+                src: thisFrame.src,
+                type: thisFrame.type
+            // }
+        }
+    });
+};
+
+/**
+ * @desc addIO() a new IO point to the specified HybridObject
+ * @param {string} objectName The name of the HybridObject
+ *  * @param {string} frameName The name of the HybridObject frame
+ * @param {string} nodeName The name of the nodeName
+ * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
+ **/
+
 exports.addNode = function (objectName, frameName, nodeName, type) {
 
 
@@ -304,7 +380,6 @@ exports.addNode = function (objectName, frameName, nodeName, type) {
             }
         }
     }
-    objectID = undefined;
 };
 
 exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) {
@@ -521,19 +596,16 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
 
             if (!callBacks.hasOwnProperty(objectID)) {
                 callBacks[objectID] = new EmptyObject(objectID);
-                console.log('1');
             }
 
             var callbackObject = callBacks[objectID];
 
             if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
                 callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
-                console.log('2');
             }
 
             if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                 callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
-                console.log('3');
             }
 
             console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
