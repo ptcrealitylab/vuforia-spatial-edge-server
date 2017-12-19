@@ -53,7 +53,7 @@ if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
-    var FRAME_NAME = "zero";
+    var FRAME_NAME = 'zero';
 
     var app = require('express')();
     var http = require('http').Server(app);
@@ -95,12 +95,26 @@ if (exports.enabled) {
     var rows = 2;
     var columns = 3;
 
+    var didConnect = false;
+
+    // var arFrameState = {
+    //     flipThreshold: 500,
+    //     x: 0,
+    //     y: 0,
+    //     isInScreen: true
+    // };
+
     function getIdForPanel(row, column) {
-        return "panel_row" + row + "_col" + column;
+        return 'panel_row' + row + '_col' + column;
     }
 
     function createNodesAndRenderInterface() {
-        server.removeAllNodes("dashboard", FRAME_NAME); // TODO: hopefully don't need to do this in the future but necessary now to refresh when loaded
+
+        console.log('createNodesAndRenderInterface');
+
+        if (didConnect) return;
+
+        server.removeAllNodes('dashboard', FRAME_NAME); // TODO: hopefully don't need to do this in the future but necessary now to refresh when loaded
 
         nodes = [];
         for (var r = 0; r < rows; r++) {
@@ -113,36 +127,41 @@ if (exports.enabled) {
 
         forEachNode(createNode);
 
-        server.reloadNodeUI("dashboard"); // TODO: should this include a frame too?
+        server.reloadNodeUI('dashboard'); // TODO: should this include a frame too?
 
-        io.emit("redrawGrid", {rows: rows, columns: columns});
+        io.emit('redrawGrid', {rows: rows, columns: columns});
+
+        didConnect = true;
+
     }
 
     function createNode(nodeName, row, column) {
         if (row === 0 && column === 0) { return; } // this is always reserved for the marker
 
-        server.addNode("dashboard", FRAME_NAME, nodeName, "node");
+        // console.log(' ~~~ CREATE NODE ~~~ ');
+
+        server.addNode('dashboard', FRAME_NAME, nodeName, 'node');
 
         var xSpacing = 300;
         var ySpacing = 300;
 
-        server.moveNode("dashboard", FRAME_NAME, nodeName, column * xSpacing, row * ySpacing);
+        server.moveNode('dashboard', FRAME_NAME, nodeName, column * xSpacing, row * ySpacing);
 
         // when a new value arrives, forward it to the frontend
-        server.addReadListener("dashboard", FRAME_NAME, nodeName, function (data) {
-            io.emit("dashboard", {nodeName: nodeName, action: "update", data: data}); // TODO: emit frame name too?
+        server.addReadListener('dashboard', FRAME_NAME, nodeName, function (data) {
+            io.emit('dashboard', {nodeName: nodeName, action: 'update', data: data}); // TODO: emit frame name too?
         });
 
         // when a node gets connected, notify the frontend
-        server.addConnectionListener("dashboard", FRAME_NAME, nodeName, function(data) {
+        server.addConnectionListener('dashboard', FRAME_NAME, nodeName, function(data) {
             console.log('connection listened');
-            io.emit("dashboard", {nodeName: nodeName, action: "connect", data: data}); // TODO: ^
+            io.emit('dashboard', {nodeName: nodeName, action: 'connect', data: data}); // TODO: ^
         });
     }
 
     function deleteNode(nodeName, row, column) {
         if (row === 0 && column === 0) { return; } // this is always reserved for the marker
-        server.removeNode("dashboard", FRAME_NAME, nodeName);
+        server.removeNode('dashboard', FRAME_NAME, nodeName);
     }
 
     function forEachNode(callback) {
@@ -165,15 +184,19 @@ if (exports.enabled) {
         });
     }
 
-    server.addEventListener("reset", function () {
+    server.addEventListener('reset', function () {
     });
 
-    server.addEventListener("shutdown", function () {
+    server.addEventListener('shutdown', function () {
     });
 
     io.on('connection', function(socket){
 
         createNodesAndRenderInterface();
+
+        if (!didConnect) {
+            console.log( ' ~~~ SOCKET CONNECTION ~~~ ');
+        }
 
         socket.on('addRow', function() {
             console.log('addRow');
@@ -184,8 +207,8 @@ if (exports.enabled) {
             }
             nodes.push(newRow);
             forEachNodeInRow(rows-1, createNode);
-            server.reloadNodeUI("dashboard");
-            io.emit("redrawGrid", {rows: rows, columns: columns});
+            server.reloadNodeUI('dashboard');
+            io.emit('redrawGrid', {rows: rows, columns: columns});
         });
 
         socket.on('removeRow', function() {
@@ -193,20 +216,20 @@ if (exports.enabled) {
             forEachNodeInRow(rows-1, deleteNode);
             rows--;
             nodes.pop();
-            server.reloadNodeUI("dashboard");
-            io.emit("redrawGrid", {rows: rows, columns: columns});
+            server.reloadNodeUI('dashboard');
+            io.emit('redrawGrid', {rows: rows, columns: columns});
         });
 
         socket.on('addColumn', function() {
             console.log('addColumn');
             columns++;
             for (var r = 0; r < rows; r++) {
-                console.log("new node id: " + getIdForPanel(r, columns-1));
+                console.log('new node id: ' + getIdForPanel(r, columns-1));
                 nodes[r].push(getIdForPanel(r, columns-1));
             }
             forEachNodeInColumn(columns-1, createNode);
-            server.reloadNodeUI("dashboard");
-            io.emit("redrawGrid", {rows: rows, columns: columns});
+            server.reloadNodeUI('dashboard');
+            io.emit('redrawGrid', {rows: rows, columns: columns});
         });
 
         socket.on('removeColumn', function() {
@@ -216,13 +239,13 @@ if (exports.enabled) {
             nodes.forEach( function(row) {
                 row.pop();
             });
-            server.reloadNodeUI("dashboard");
-            io.emit("redrawGrid", {rows: rows, columns: columns});
+            server.reloadNodeUI('dashboard');
+            io.emit('redrawGrid', {rows: rows, columns: columns});
         });
 
         socket.on('dashboardLoaded', function() {
-            console.log("ask server for links");
-            var links = server.getAllLinksToNodes("dashboard", FRAME_NAME); // TODO: this currently only has all links originating from this object... scan entire object tree to find them all
+            console.log('ask server for links');
+            var links = server.getAllLinksToNodes('dashboard', FRAME_NAME); // TODO: this currently only has all links originating from this object... scan entire object tree to find them all
 
             // var linkList = Object.values(links);
             // linkList = linkList.map(function(elt) {
@@ -232,26 +255,62 @@ if (exports.enabled) {
             //     }
             // });
 
-            console.log("get all links: ");
+            console.log('get all links: ');
             // console.log(links);
             // console.log(nodeList);
-            io.emit("displayLinks", links);
+            io.emit('displayLinks', links);
 
         });
 
         socket.on('pointerdown', function(msg) {
-            // console.log("SERVER POINTER DOWN", msg)
-            io.emit("remoteTouchDown", msg);
+            // console.log('SERVER POINTER DOWN', msg)
+            io.emit('remoteTouchDown', msg);
         });
 
         socket.on('pointermove', function(msg) {
-            // console.log("SERVER POINTER MOVE", msg)
-            io.emit("remoteTouchMove", msg);
+            // console.log('SERVER POINTER MOVE', msg)
+            io.emit('remoteTouchMove', msg);
         });
 
         socket.on('pointerup', function(msg) {
-            // console.log("SERVER POINTER UP", msg)
-            io.emit("remoteTouchUp", msg);
+            // console.log('SERVER POINTER UP', msg)
+            io.emit('remoteTouchUp', msg);
+        });
+
+        socket.on('zWhilePointerDown', function(msg) {
+
+            // console.log('relaying message... ' + msg.zPosition);
+
+            io.emit('zWhilePointerDown', msg);
+
+            // if (frameState.isInScreen) {
+            //     if (zPosition > flipThreshold) {
+            //         // hide the frame in the screen and broadcast a message to the editor to show a 3D frame
+            //         // frameState.x =
+            //
+            //     }
+            //
+            // } else {
+            //     if (zPosition < flipThreshold) {
+            //         // broadcast a message to the editor to hide the 3D frame, and show it in the screen instead
+            //     }
+            // }
+
+        });
+
+        socket.on('transportFrame', function(msg) {
+
+            var xPosition = msg.xPosition;
+            var yPosition = msg.yPosition;
+            var zPosition = msg.zPosition;
+            var destination = msg.destination;
+            var frameData = msg.frameData;
+
+            if (destination === 'ar') {
+                console.log(frameData.uniqueName);
+                server.addFrame('dashboard', frameData.uniqueName, frameData.type, xPosition, yPosition);
+            }
+
         });
 
     });

@@ -77,7 +77,7 @@ realityObject.socketIoRequest.open('GET', "/socket.io/socket.io.js", false);
 realityObject.socketIoRequest.send();
 
 //Only add script if fetch was successful
-if (realityObject.socketIoRequest.status == 200) {
+if (realityObject.socketIoRequest.status === 200) {
     realityObject.socketIoScript = document.createElement('script');
     realityObject.socketIoScript.type = "text/javascript";
     realityObject.socketIoScript.text = realityObject.socketIoRequest.responseText;
@@ -102,8 +102,8 @@ window.addEventListener("message", function (MSG) {
 
 realityObject.messageCallBacks.mainCall = function (msgContent) {
 
-    console.log("------------------------------");
-    console.log(msgContent);
+    // console.log("------------------------------");
+    // console.log(msgContent);
 
     if (typeof msgContent.node !== "undefined") {
 

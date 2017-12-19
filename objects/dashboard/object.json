@@ -9,7 +9,32 @@
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
+	"memory": {},
 	"frames": {
+		"dashboardpaaqwnqq3ggg": {
+			"objectId": null,
+			"name": "dashboard",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "",
+			"src": "editor"
+		},
 		"dashboardpaaqwnqq3gggzero": {
 			"objectId": "dashboardpaaqwnqq3ggg",
 			"name": "zero",
@@ -29,75 +54,7 @@
 			"visibleText": false,
 			"visibleEditing": false,
 			"developer": true,
-			"memory": {},
-			"links": {
-				"VgKv5uo1": {
-					"objectA": "dashboardpaaqwnqq3ggg",
-					"frameA": "dashboardpaaqwnqq3gggzero",
-					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row1_col2",
-					"logicA": false,
-					"namesA": [
-						"dashboard",
-						"zero",
-						"panel_row1_col2"
-					],
-					"objectB": "dashboardpaaqwnqq3ggg",
-					"frameB": "dashboardpaaqwnqq3gggzero",
-					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row0_col2",
-					"logicB": false,
-					"namesB": [
-						"dashboard",
-						"zero",
-						"panel_row0_col2"
-					],
-					"lastEditor": "ZGd3454p",
-					"loop": false
-				},
-				"fx19xegx": {
-					"objectA": "dashboardpaaqwnqq3ggg",
-					"frameA": "dashboardpaaqwnqq3gggzero",
-					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row0_col1",
-					"logicA": false,
-					"namesA": [
-						"dashboard",
-						"zero",
-						"panel_row0_col1"
-					],
-					"objectB": "dashboardpaaqwnqq3ggg",
-					"frameB": "dashboardpaaqwnqq3gggzero",
-					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col1",
-					"logicB": false,
-					"namesB": [
-						"dashboard",
-						"zero",
-						"panel_row1_col1"
-					],
-					"lastEditor": "ZGd3454p",
-					"loop": false
-				},
-				"cB3k5bz5": {
-					"objectA": "dashboardpaaqwnqq3ggg",
-					"frameA": "dashboardpaaqwnqq3gggzero",
-					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row1_col1",
-					"logicA": false,
-					"namesA": [
-						"dashboard",
-						"zero",
-						"panel_row1_col1"
-					],
-					"objectB": "dashboardpaaqwnqq3ggg",
-					"frameB": "dashboardpaaqwnqq3gggzero",
-					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col0",
-					"logicB": false,
-					"namesB": [
-						"dashboard",
-						"zero",
-						"panel_row1_col0"
-					],
-					"lastEditor": "ZGd3454p",
-					"loop": false
-				}
-			},
+			"links": {},
 			"nodes": {
 				"dashboardpaaqwnqq3gggzeropanel_row0_col1": {
 					"name": "panel_row0_col1",
@@ -188,1105 +145,385 @@
 					"stress": 0,
 					"frameSizeX": 100,
 					"frameSizeY": 100
-				},
-				"we7lh88btxmp": {
-					"name": "LOGIC0",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 886.4894030791475,
-					"y": 21.188449499721173,
-					"scale": 1,
-					"matrix": [],
-					"visible": false,
-					"visibleEditing": false,
-					"lastSetting": false,
-					"lastSettingBlock": "",
-					"iconImage": null,
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"type": "logic",
-					"lockPassword": null,
-					"lockType": null,
-					"uuid": "we7lh88btxmp",
-					"screenZ": 2551.5165838293237,
-					"loaded": false,
-					"width": 100,
-					"height": 100,
-					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"animationScale": 0,
-					"begin": [
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1
-					],
-					"temp": [
-						957.9796665418239,
-						-4.19832698496,
-						-0.009504990972000001,
-						-0.009486,
-						3.707253417344,
-						955.2301510784,
-						-0.09919018198400001,
-						-0.098992,
-						-10.087728770752,
-						-48.027102545919995,
-						-2.001525047052,
-						-1.997526,
-						-329646.2267442856,
-						13631.02793278976,
-						2656.7479704555844,
-						2655.435792
-					],
-					"screenX": 492.665014683472,
-					"screenY": 179.33980814631568,
-					"screenLinearZ": 4.576423830874305,
-					"blocks": {
-						"in0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						}
-					},
-					"links": {},
-					"lastEditor": "nihi1rbu"
-				},
-				"o1acqageg68x": {
-					"name": "LOGIC1",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 891.3609905987978,
-					"y": 265.1836084581628,
-					"scale": 1,
-					"matrix": [],
-					"visible": false,
-					"visibleEditing": false,
-					"lastSetting": false,
-					"lastSettingBlock": "",
-					"iconImage": null,
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"type": "logic",
-					"lockPassword": null,
-					"lockType": null,
-					"uuid": "o1acqageg68x",
-					"screenZ": 2729.128057541813,
-					"loaded": false,
-					"width": 100,
-					"height": 100,
-					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"animationScale": 0,
-					"begin": [
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1
-					],
-					"temp": [
-						957.975431070336,
-						-2.55134242816,
-						0.033779491424000004,
-						0.033712,
-						2.461809041664,
-						956.40359315968,
-						0.019625211172,
-						0.019586,
-						10.825150765632,
-						8.6176375296,
-						-2.00362323924,
-						-1.99962,
-						-478560.0164088442,
-						-48673.96614518528,
-						2677.586235308844,
-						2676.232422
-					],
-					"screenX": 420.91411778017203,
-					"screenY": 240.09416937571473,
-					"screenLinearZ": 4.263939512030767,
-					"blocks": {
-						"in0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						}
-					},
-					"links": {},
-					"lastEditor": "nihi1rbu"
-				},
-				"fY707km1yeas": {
-					"name": "LOGIC2",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 443.7460583485081,
-					"y": -130.57710344382212,
-					"scale": 1,
-					"matrix": [],
-					"visible": false,
-					"visibleEditing": false,
-					"lastSetting": false,
-					"lastSettingBlock": "",
-					"iconImage": null,
-					"nameInput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"nameOutput": [
-						"",
-						"",
-						"",
-						""
-					],
-					"type": "logic",
-					"lockPassword": null,
-					"lockType": null,
-					"uuid": "fY707km1yeas",
-					"screenZ": 2662.0001381025577,
-					"loaded": false,
-					"width": 100,
-					"height": 100,
-					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"animationScale": 0,
-					"begin": [
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1,
-						0,
-						0,
-						0,
-						0,
-						1
-					],
-					"temp": [
-						955.096981637184,
-						19.855077598719998,
-						-0.140166051772,
-						-0.139886,
-						-14.513016829823998,
-						953.70837562496,
-						0.149731162864,
-						0.149432,
-						-73.620691301248,
-						69.52575263615998,
-						-1.993480974996,
-						-1.989498,
-						-441847.7916256828,
-						-68848.54604390785,
-						2693.0079178305846,
-						2691.623292
-					],
-					"screenX": 284.0859090814458,
-					"screenY": 116.37132571738593,
-					"screenLinearZ": 4.377140630847705,
-					"blocks": {
-						"in0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"in3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out0": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out1": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out2": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						},
-						"out3": {
-							"name": "",
-							"data": [
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								},
-								{
-									"value": 0,
-									"mode": "f",
-									"unit": "",
-									"unitMin": 0,
-									"unitMax": 1
-								}
-							],
-							"stress": 0,
-							"type": "default"
-						}
-					},
-					"links": {},
-					"lastEditor": "nihi1rbu"
 				}
 			},
 			"location": "local",
 			"src": "editor"
+		},
+		"dashboardpaaqwnqq3ggggauge5Za96oskrkef": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gauge5Za96oskrkef",
+			"visualization": "ar",
+			"ar": {
+				"x": 22,
+				"y": 266,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 22,
+				"y": 266,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3gggdecimal1SBb657679co": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "decimal1SBb657679co",
+			"visualization": "ar",
+			"ar": {
+				"x": 790,
+				"y": 166,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 790,
+				"y": 166,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "decimal"
+		},
+		"dashboardpaaqwnqq3ggglight8Dimhheifqzr": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "light8Dimhheifqzr",
+			"visualization": "ar",
+			"ar": {
+				"x": 1242,
+				"y": 842,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1242,
+				"y": 842,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "light"
+		},
+		"dashboardpaaqwnqq3gggdecimalfLeop3xu6qh8": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "decimalfLeop3xu6qh8",
+			"visualization": "ar",
+			"ar": {
+				"x": 472,
+				"y": 296,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 472,
+				"y": 296,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "decimal"
+		},
+		"dashboardpaaqwnqq3ggglightoi0b6576a2wj": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "lightoi0b6576a2wj",
+			"visualization": "ar",
+			"ar": {
+				"x": 604,
+				"y": 712,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 604,
+				"y": 712,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "light"
+		},
+		"dashboardpaaqwnqq3ggggaugeidhu4lws1uv9": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugeidhu4lws1uv9",
+			"visualization": "ar",
+			"ar": {
+				"x": 636,
+				"y": 470,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 636,
+				"y": 470,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggaugef15fhtwgacp3": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugef15fhtwgacp3",
+			"visualization": "ar",
+			"ar": {
+				"x": 636,
+				"y": 470,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 636,
+				"y": 470,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggauge7Whjhs3mn3d0": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gauge7Whjhs3mn3d0",
+			"visualization": "ar",
+			"ar": {
+				"x": 620,
+				"y": 280,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 620,
+				"y": 280,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3gggdecimalBT64b3ggyxbj": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "decimalBT64b3ggyxbj",
+			"visualization": "ar",
+			"ar": {
+				"x": 496,
+				"y": 312,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 496,
+				"y": 312,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "decimal"
+		},
+		"dashboardpaaqwnqq3ggglightVI8ogxt3z3sh": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "lightVI8ogxt3z3sh",
+			"visualization": "ar",
+			"ar": {
+				"x": 574,
+				"y": 682,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 574,
+				"y": 682,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "light"
+		},
+		"dashboardpaaqwnqq3ggggaugeRn2yvlhj7bcb": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugeRn2yvlhj7bcb",
+			"visualization": "ar",
+			"ar": {
+				"x": 482,
+				"y": 404,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 482,
+				"y": 404,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggaugeBTcf63ecrbtl": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugeBTcf63ecrbtl",
+			"visualization": "ar",
+			"ar": {
+				"x": 492,
+				"y": 434,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 492,
+				"y": 434,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggauge185by7yqm38y": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gauge185by7yqm38y",
+			"visualization": "ar",
+			"ar": {
+				"x": 492,
+				"y": 434,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 492,
+				"y": 434,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggaugeFEh5bccrjhev": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugeFEh5bccrjhev",
+			"visualization": "ar",
+			"ar": {
+				"x": 1820,
+				"y": 186,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1820,
+				"y": 186,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggraphb3Cb6576fsnk": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "graphb3Cb6576fsnk",
+			"visualization": "ar",
+			"ar": {
+				"x": 1836,
+				"y": 882,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1836,
+				"y": 882,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "graph"
 		}
 	},
 	"developer": true
