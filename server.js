@@ -2479,7 +2479,8 @@ function objectWebServer() {
                 // cout(req.body);
                 if (req.body.name !== "") {
 
-                    utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
+                    var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
+                    utilities.createFolder(req.body.name, defaultFrameName, __dirname, globalVariables.debug);
 
                 }
                 res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
