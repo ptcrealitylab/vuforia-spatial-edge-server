@@ -1,0 +1,197 @@
+{
+	"objectId": "framePaletteRm48yj9xak5u",
+	"name": "framePalette",
+	"ip": "10.0.1.14",
+	"version": "3.0.0",
+	"deactivated": false,
+	"protocol": "R2",
+	"tcs": "470pVK",
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"memory": {},
+	"frames": {
+		"framePaletteRm48yj9xak5uzero": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "zero",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor"
+		},
+		"framePaletteRm48yj9xak5udecimalS99da7z8vv0h": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "decimalS99da7z8vv0h",
+			"visualization": "ar",
+			"ar": {
+				"x": 1145,
+				"y": 248,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1145,
+				"y": 248,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5udecimalS99da7z8vv0hvalue": {
+					"name": "value",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 72,
+					"y": -26,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "decimal"
+		},
+		"framePaletteRm48yj9xak5ugaugeH7f9ys69cl9a": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugeH7f9ys69cl9a",
+			"visualization": "ar",
+			"ar": {
+				"x": 1227,
+				"y": 430,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1227,
+				"y": 430,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugeH7f9ys69cl9avalue": {
+					"name": "value",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -19,
+					"y": 47,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"framePaletteRm48yj9xak5ugaugeRi4ci57opb6m": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugeRi4ci57opb6m",
+			"visualization": "ar",
+			"ar": {
+				"x": 1167,
+				"y": 594,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1167,
+				"y": 594,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugeRi4ci57opb6mvalue": {
+					"name": "value",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -55,
+					"y": -62,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"framePaletteRm48yj9xak5ugauge8zcww5p1yzwg": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gauge8zcww5p1yzwg",
+			"visualization": "ar",
+			"ar": {
+				"x": 109,
+				"y": 386,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 109,
+				"y": 386,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		}
+	},
+	"developer": true
+}
