@@ -14,6 +14,7 @@
 
 <script>
 
+    var marker = document.querySelector('.paletteMarker');
     var sidebar = document.getElementById("sidebar");
     var socket = io();
 
@@ -60,6 +61,9 @@
 
                 // console.log('2');
 
+                var markerRect = marker.getClientRects()[0];
+                var scaleFactor = 300.0 / markerRect.height;
+
                 var draggedPanelX = parseInt(currentlyDraggedPanel.style.left);
                 var draggedPanelY = parseInt(currentlyDraggedPanel.style.top);
 
@@ -69,8 +73,8 @@
 
                 var msgData = {
                     destination: 'ar',
-                    xPosition: draggedPanelX,
-                    yPosition: draggedPanelY,
+                    xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
+                    yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
                     zPosition: zPosition,
                     frameData: {
                         uniqueName: frameType + uuidTime(),
@@ -78,17 +82,20 @@
                     }
                 };
 
+                // TODO: scale xPosition and yPosition by (position - markerOffset) * (300 / markerWidth)
+
                 if (arFrameState.isInScreen) {
 
                     // console.log('3');
 
                     if (zPosition > arFrameState.flipThreshold) {
 
-                        console.log('send to 3D');
+                        console.log('send to 3D', msgData);
 
                         // hide the 2D frame on the hardware interface and display a 3D frame in the editor
                         // making sure to set the 3D frame to the correct position
-                        currentlyDraggedPanel.style.opacity = 0.5;
+                        // currentlyDraggedPanel.style.opacity = 0.5;
+                        currentlyDraggedPanel.style.visibility = 'hidden';
 
                         socket.emit('transportFrame', msgData);
 
@@ -105,6 +112,7 @@
                         // hide the 3D frame in the editor and show the 2D frame on the hardware interface
                         // making sure to set the 2D frame to the correct position
                         currentlyDraggedPanel.style.opacity = 1;
+                        currentlyDraggedPanel.style.visibility = 'visible';
 
                         msgData.destination = 'screen';
 

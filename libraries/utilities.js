@@ -117,6 +117,49 @@ exports.createFolder = function (folderVar, frameVar, dirnameO, debug) {
 };
 
 /**
+ * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
+ * @param objectKey
+ * @param frameKey
+ * @param dirname0
+ */
+exports.deleteFrameFolder = function(objectName, frameName, dirname0) {
+
+    function deleteFolderRecursive(path) {
+        console.log('deleteFolderRecursive');
+        if (fs.existsSync(path)) {
+            fs.readdirSync(path).forEach(function(file, index){
+                var curPath = path + "/" + file;
+                if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                    deleteFolderRecursive(curPath);
+                } else { // delete file
+                    fs.unlinkSync(curPath);
+                }
+            });
+            fs.rmdirSync(path);
+        }
+    }
+
+    console.log('objectName: ' + objectName);
+    console.log('frameName: ' + frameName);
+
+    var folderPath = dirname0 + '/objects/' + objectName + '/frames/' + frameName;
+    console.log('delete frame folder: ' + folderPath);
+
+    var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
+    var isDeletableFrame = false;
+    acceptableFrameNames.forEach(function(nameOption) {
+        if (frameName.indexOf(nameOption) > -1) {
+            isDeletableFrame = true;
+            console.log('it is a ' + nameOption + ' frame');
+        }
+    });
+
+    if (isDeletableFrame) {
+        deleteFolderRecursive(folderPath);
+    }
+};
+
+/**
  * Generates a random number between the two inputs, inclusive.
  * @param {number} min - The minimum possible value.
  * @param {number} max - The maximum possible value.

@@ -1,9 +1,9 @@
 {
 	"objectId": "dashboardpaaqwnqq3ggg",
 	"name": "dashboard",
-	"ip": "10.68.23.38",
+	"ip": "10.0.1.14",
 	"version": "3.0.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R2",
 	"tcs": null,
 	"visible": false,
@@ -40,8 +40,8 @@
 			"name": "zero",
 			"visualization": "ar",
 			"ar": {
-				"x": 0,
-				"y": 0,
+				"x": 473.2137805810198,
+				"y": 186.8714912009891,
 				"scale": 1,
 				"matrix": []
 			},
@@ -54,7 +54,74 @@
 			"visibleText": false,
 			"visibleEditing": false,
 			"developer": true,
-			"links": {},
+			"links": {
+				"i5Crao1e": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row0_col1",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row0_col1"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row0_col2",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row0_col2"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				},
+				"fyzPlfdu": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row0_col2",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row0_col2"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col2",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row1_col2"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				},
+				"nv447jdu": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row1_col2",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row1_col2"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col1",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row1_col1"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				}
+			},
 			"nodes": {
 				"dashboardpaaqwnqq3gggzeropanel_row0_col1": {
 					"name": "panel_row0_col1",
@@ -150,18 +217,18 @@
 			"location": "local",
 			"src": "editor"
 		},
-		"dashboardpaaqwnqq3ggggauge5Za96oskrkef": {
+		"dashboardpaaqwnqq3ggggaugeMYel5im6uu39": {
 			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gauge5Za96oskrkef",
+			"name": "gaugeMYel5im6uu39",
 			"visualization": "ar",
 			"ar": {
-				"x": 22,
+				"x": 12,
 				"y": 266,
 				"scale": 1,
 				"matrix": []
 			},
 			"screen": {
-				"x": 22,
+				"x": 12,
 				"y": 266,
 				"scale": 1
 			},
@@ -175,19 +242,19 @@
 			"src": "editor",
 			"type": "gauge"
 		},
-		"dashboardpaaqwnqq3gggdecimal1SBb657679co": {
+		"dashboardpaaqwnqq3ggggauge1A6t4dmlolad": {
 			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "decimal1SBb657679co",
+			"name": "gauge1A6t4dmlolad",
 			"visualization": "ar",
 			"ar": {
-				"x": 790,
-				"y": 166,
+				"x": 10,
+				"y": 260,
 				"scale": 1,
 				"matrix": []
 			},
 			"screen": {
-				"x": 790,
-				"y": 166,
+				"x": 10,
+				"y": 260,
 				"scale": 1
 			},
 			"visible": false,
@@ -195,324 +262,43 @@
 			"visibleEditing": false,
 			"developer": true,
 			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "decimal"
-		},
-		"dashboardpaaqwnqq3ggglight8Dimhheifqzr": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "light8Dimhheifqzr",
-			"visualization": "ar",
-			"ar": {
-				"x": 1242,
-				"y": 842,
-				"scale": 1,
-				"matrix": []
+			"nodes": {
+				"dashboardpaaqwnqq3ggggauge1A6t4dmloladvalue": {
+					"name": "value",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -76,
+					"y": -26,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
 			},
-			"screen": {
-				"x": 1242,
-				"y": 842,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "light"
-		},
-		"dashboardpaaqwnqq3gggdecimalfLeop3xu6qh8": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "decimalfLeop3xu6qh8",
-			"visualization": "ar",
-			"ar": {
-				"x": 472,
-				"y": 296,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 472,
-				"y": 296,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "decimal"
-		},
-		"dashboardpaaqwnqq3ggglightoi0b6576a2wj": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "lightoi0b6576a2wj",
-			"visualization": "ar",
-			"ar": {
-				"x": 604,
-				"y": 712,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 604,
-				"y": 712,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "light"
-		},
-		"dashboardpaaqwnqq3ggggaugeidhu4lws1uv9": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gaugeidhu4lws1uv9",
-			"visualization": "ar",
-			"ar": {
-				"x": 636,
-				"y": 470,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 636,
-				"y": 470,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
 			"location": "local",
 			"src": "editor",
 			"type": "gauge"
 		},
-		"dashboardpaaqwnqq3ggggaugef15fhtwgacp3": {
+		"dashboardpaaqwnqq3ggggraphYj837asx6q0c": {
 			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gaugef15fhtwgacp3",
+			"name": "graphYj837asx6q0c",
 			"visualization": "ar",
 			"ar": {
-				"x": 636,
-				"y": 470,
+				"x": 1528,
+				"y": 686,
 				"scale": 1,
 				"matrix": []
 			},
 			"screen": {
-				"x": 636,
-				"y": 470,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3ggggauge7Whjhs3mn3d0": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gauge7Whjhs3mn3d0",
-			"visualization": "ar",
-			"ar": {
-				"x": 620,
-				"y": 280,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 620,
-				"y": 280,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3gggdecimalBT64b3ggyxbj": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "decimalBT64b3ggyxbj",
-			"visualization": "ar",
-			"ar": {
-				"x": 496,
-				"y": 312,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 496,
-				"y": 312,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "decimal"
-		},
-		"dashboardpaaqwnqq3ggglightVI8ogxt3z3sh": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "lightVI8ogxt3z3sh",
-			"visualization": "ar",
-			"ar": {
-				"x": 574,
-				"y": 682,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 574,
-				"y": 682,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "light"
-		},
-		"dashboardpaaqwnqq3ggggaugeRn2yvlhj7bcb": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gaugeRn2yvlhj7bcb",
-			"visualization": "ar",
-			"ar": {
-				"x": 482,
-				"y": 404,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 482,
-				"y": 404,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3ggggaugeBTcf63ecrbtl": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gaugeBTcf63ecrbtl",
-			"visualization": "ar",
-			"ar": {
-				"x": 492,
-				"y": 434,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 492,
-				"y": 434,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3ggggauge185by7yqm38y": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gauge185by7yqm38y",
-			"visualization": "ar",
-			"ar": {
-				"x": 492,
-				"y": 434,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 492,
-				"y": 434,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3ggggaugeFEh5bccrjhev": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "gaugeFEh5bccrjhev",
-			"visualization": "ar",
-			"ar": {
-				"x": 1820,
-				"y": 186,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 1820,
-				"y": 186,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"dashboardpaaqwnqq3ggggraphb3Cb6576fsnk": {
-			"objectId": "dashboardpaaqwnqq3ggg",
-			"name": "graphb3Cb6576fsnk",
-			"visualization": "ar",
-			"ar": {
-				"x": 1836,
-				"y": 882,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 1836,
-				"y": 882,
+				"x": 1528,
+				"y": 686,
 				"scale": 1
 			},
 			"visible": false,

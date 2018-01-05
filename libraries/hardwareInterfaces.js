@@ -276,6 +276,21 @@ exports.addFrame = function (objectName, frameName, type, x, y) {
             thisFrame.ar.x = x;
             thisFrame.ar.y = y;
 
+            // // TODO: add nodes specifically for each frame
+            // var newNodeID =
+            // if (!thisFrame.nodes.hasOwnProperty(nodeUuid)) {
+            //     var thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
+            //     thisObject.x = utilities.randomIntInc(0, 200) - 100;
+            //     thisObject.y = utilities.randomIntInc(0, 200) - 100;
+            //     thisObject.frameSizeX = 100;
+            //     thisObject.frameSizeY = 100;
+            // }
+            //
+            // var thisObj = objects[objectID].frames[frameUuid].nodes[nodeUuid];
+            // thisObj.name = nodeName;
+            // thisObj.text = undefined;
+            // thisObj.type = type;
+
             if (!hardwareObjects.hasOwnProperty(objectName)) {
                 hardwareObjects[objectName] = new EmptyObject(objectName);
             }
@@ -310,6 +325,10 @@ exports.addFrame = function (objectName, frameName, type, x, y) {
             // }
         }
     });
+
+    var nodeName = 'value';
+    this.addNode(objectName, frameName, nodeName, 'node');
+    // exports.addNode = function (objectName, frameName, nodeName, type) {
 };
 
 /**
