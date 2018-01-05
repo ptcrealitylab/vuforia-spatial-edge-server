@@ -9,17 +9,53 @@
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
-	"memory": {},
+	"memory": {
+		"matrix": [
+			-0.9981949329376221,
+			0.01960128918290138,
+			0.05676821246743202,
+			0,
+			0.01408534124493599,
+			0.9952831864356995,
+			-0.0959852859377861,
+			0,
+			-0.05838187783956528,
+			-0.09501244127750397,
+			-0.9937626123428345,
+			0,
+			310.8385925292969,
+			105.2101287841797,
+			1319.440551757812,
+			1
+		]
+	},
 	"frames": {
 		"framePaletteRm48yj9xak5uzero": {
 			"objectId": "framePaletteRm48yj9xak5u",
 			"name": "zero",
 			"visualization": "ar",
 			"ar": {
-				"x": 0,
-				"y": 0,
+				"x": 48.4213663167975,
+				"y": 46.64753289531836,
 				"scale": 1,
-				"matrix": []
+				"matrix": [
+					0.9997982288273246,
+					-0.01399556573352534,
+					0.014433299937397948,
+					0,
+					0.01432714183366568,
+					0.9996300986862214,
+					-0.023112800596766903,
+					-8.673617379884035e-19,
+					-0.014105419783497553,
+					0.02331638931150337,
+					0.9996282080535366,
+					0,
+					23.35664300053395,
+					-16.0638871454521,
+					55.08310769224772,
+					0.9999999999999432
+				]
 			},
 			"screen": {
 				"x": 0,
@@ -34,163 +70,6 @@
 			"nodes": {},
 			"location": "local",
 			"src": "editor"
-		},
-		"framePaletteRm48yj9xak5udecimalS99da7z8vv0h": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "decimalS99da7z8vv0h",
-			"visualization": "ar",
-			"ar": {
-				"x": 1145,
-				"y": 248,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 1145,
-				"y": 248,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5udecimalS99da7z8vv0hvalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 72,
-					"y": -26,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "decimal"
-		},
-		"framePaletteRm48yj9xak5ugaugeH7f9ys69cl9a": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "gaugeH7f9ys69cl9a",
-			"visualization": "ar",
-			"ar": {
-				"x": 1227,
-				"y": 430,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 1227,
-				"y": 430,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugaugeH7f9ys69cl9avalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -19,
-					"y": 47,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"framePaletteRm48yj9xak5ugaugeRi4ci57opb6m": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "gaugeRi4ci57opb6m",
-			"visualization": "ar",
-			"ar": {
-				"x": 1167,
-				"y": 594,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 1167,
-				"y": 594,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugaugeRi4ci57opb6mvalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -55,
-					"y": -62,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
-		},
-		"framePaletteRm48yj9xak5ugauge8zcww5p1yzwg": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "gauge8zcww5p1yzwg",
-			"visualization": "ar",
-			"ar": {
-				"x": 109,
-				"y": 386,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 109,
-				"y": 386,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge"
 		}
 	},
 	"developer": true

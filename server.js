@@ -2124,8 +2124,12 @@ function objectWebServer() {
     });
 
     webServer.delete('/object/:objectId/frames/:frameId/', function (req, res) {
+
         var objectId = req.params.objectId;
         var frameId = req.params.frameId;
+
+        console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
+
         // Delete frame
         var object = objects[objectId];
         if (!object) {
@@ -2139,7 +2143,13 @@ function objectWebServer() {
             return;
         }
 
+        var objectName = object.name;
+        var frameName = object.frames[frameId].name;
+
         delete object.frames[frameId];
+
+        // remove the frame directory from the object
+        utilities.deleteFrameFolder(objectName, frameName, __dirname);
 
         // Delete frame's nodes
         var deletedNodes = {};
@@ -2172,7 +2182,9 @@ function objectWebServer() {
             }
         }
 
+        // write changes to object.json
         utilities.writeObjectToFile(objects, objectId, __dirname);
+
         actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();

@@ -10,6 +10,8 @@
 <style>
     #container {
         border: 10px solid greenyellow;
+        /*border: 1px solid white;*/
+        /*background-color: rgba(0,0,0,0.1);*/
         /*width: 900px;*/
         /*height: 600px;*/
         width: 800px;
@@ -17,8 +19,8 @@
     }
 </style>
 <script src="/socket.io/socket.io.js"></script>
-<body>
-    <div id="container" touch-action="none">
+<body touch-action="none">
+    <div id="container">
 
         <!--<img src="bird.png" width="300" height="300" alt=""/>-->
 
@@ -95,7 +97,7 @@
         }
 
         // var previousZ = 1000;
-        var i = 0;
+        // var i = 0;
 
         window.onload = function() {
 
@@ -124,18 +126,18 @@
 
 //            document.querySelector('img').setAttribute('touch-action', 'none')
 
-            document.addEventListener('pointerdown', function(e) { // TODO: I'll need another way to trigger these events if you tap down on a 3D frame in AR space
+            document.body.addEventListener('pointerdown', function(e) { // TODO: I'll need another way to trigger these events if you tap down on a 3D frame in AR space
                 console.log('framePalette object mousedown: ' + e.pageX + ", " + e.pageY);
                 socket.emit('pointerdown', {pageX: e.pageX, pageY: e.pageY});
                 isPointerDown = true;
             });
 
-            document.addEventListener('pointermove', function(e) {
+            document.body.addEventListener('pointermove', function(e) {
                 // console.log('framePalette object mousemove: ' + e.pageX + ", " + e.pageY);
                 socket.emit('pointermove', {pageX: e.pageX, pageY: e.pageY});
             });
 
-            document.addEventListener('pointerup', function(e) {
+            document.body.addEventListener('pointerup', function(e) {
                 console.log('framePalette object mouseup: ' + e.pageX + ", " + e.pageY);
                 socket.emit('pointerup', {pageX: e.pageX, pageY: e.pageY});
                 isPointerDown = false;
