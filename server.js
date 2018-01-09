@@ -939,11 +939,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 }));
 
 // this is an uglly trick to sync each object with being a developer object
+//                 console.warn('ugly trick');
+                /*
                 if (globalVariables.developer) {
                     objects[thisId].developer = true;
                 } else {
                     objects[thisId].developer = false;
                 }
+                */
                 //console.log(globalVariables.developer);
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
@@ -1008,6 +1011,7 @@ function actionSender(action) {
         }
         client.close();
     });
+
 }
 
 /**********************************************************************************************************************
@@ -2230,6 +2234,8 @@ function objectWebServer() {
                     }
                 }
             }
+
+            if (!activeVehicle) return updateStatus;
 
             console.log('really changing size for ... ' + activeVehicle.uuid, body);
 

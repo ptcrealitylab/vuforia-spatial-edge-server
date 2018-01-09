@@ -306,9 +306,12 @@ if (exports.enabled) {
             var destination = msg.destination;
             var frameData = msg.frameData;
 
+            var width = msg.width;
+            var height = msg.height;
+
             if (destination === 'ar') {
                 console.log(frameData.uniqueName);
-                server.addFrame('dashboard', frameData.uniqueName, frameData.type, xPosition, yPosition);
+                server.addFrame('dashboard', frameData.uniqueName, frameData.type, xPosition, yPosition, width, height);
             }
 
         });
