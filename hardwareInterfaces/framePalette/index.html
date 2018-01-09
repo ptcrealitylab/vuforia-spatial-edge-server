@@ -38,6 +38,60 @@
         createControlPanel(["decimal", "gauge", "graph", "light"]);
         initializeDragInterface();
 
+        socket.on('frameReceived', function(msg) {
+            console.log('received frame!', msg);
+
+            var markerRect = marker.getClientRects()[0];
+            var scaleFactor = 300.0 / markerRect.height;
+
+            // var screenX = (msg.ar.x / scaleFactor) + markerRect.x;
+            // var screenY = (msg.ar.y / scaleFactor) + markerRect.y;
+
+            // var screenPanelWidth = msg.frameSizeX / scaleFactor;
+            // var screenPanelHeight = msg.frameSizeY / scaleFactor;
+
+            console.log('AR: ' + msg.ar.x + ', ' + msg.ar.y);
+            console.log('Sc: ' + msg.screen.x + ', ' + msg.screen.y);
+
+
+            var screenX = markerRect.x + markerRect.width/2 + (msg.screen.x / scaleFactor); // screenPanelWidth/2 ... how to know relative touch pos compared to AR element?
+            var screenY = markerRect.y + markerRect.height/2 + (msg.screen.y / scaleFactor); // screenPanelHeight/2 ?
+
+            console.log(screenX, screenY); //, screenWidth, screenHeight);
+
+            createPanelElements(msg.type);
+
+            simulateMouseEvent(screenX / 2, screenY / 2, 'mousemove');
+
+            // var offsetX = parseFloat(dragOffsetX) || 0;
+            // var offsetY = parseFloat(dragOffsetY) || 0;
+            // console.log(offsetX, offsetY);
+            // var draggedPanelX = parseInt(currentlyDraggedPanel.style.left) + offsetX;
+            // var draggedPanelY = parseInt(currentlyDraggedPanel.style.top) + offsetY;
+            //
+            // var panelWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
+            // var panelHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
+            //
+            // var frameType = currentlyDraggedPanel.id;
+            //
+            // // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
+            //
+            // var msgData = {
+            //     destination: 'ar',
+            //     xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
+            //     yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
+            //     zPosition: zPosition,
+            //     width: panelWidth,
+            //     height: panelHeight,
+            //     frameData: {
+            //         uniqueName: frameType + uuidTime(),
+            //         type: frameType
+            //     }
+            // };
+
+
+        });
+
         socket.on('remoteTouchDown', function(msg) {
             // console.log('remoteTouchDown', msg);
             simulateMouseEvent(msg.pageX, msg.pageY, 'mousedown');
@@ -111,9 +165,11 @@
 
                         arFrameState.isInScreen = false;
 
+                        simulateMouseEvent(0, 0, 'mouseup');
+
                     }
 
-                } else {
+                } /*else {
 
                     if (zPosition < arFrameState.flipThreshold) {
 
@@ -132,7 +188,7 @@
 
                     }
 
-                }
+                }*/
 
             }
 
@@ -362,13 +418,14 @@
 
         function startHoldOrDrag() {
             if (!currentlyDraggedPanel && clickedPanelContainer) {
-                var sidebarPanelClone = createSidebarPanel(clickedPanelContainer.id);
-                sidebarPanelClone.classList.add("region");
-                sidebarPanelClone.classList.add("smallText");
-                currentlyDraggedPanel = sidebarPanelClone;
-                currentlyDraggedPanel.style.position = "absolute";
-                document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
-                sidebarPanelClone.classList.add("draggedPanel");
+                createPanelElements(clickedPanelContainer.id);
+                // var sidebarPanelClone = createSidebarPanel(clickedPanelContainer.id);
+                // sidebarPanelClone.classList.add("region");
+                // sidebarPanelClone.classList.add("smallText");
+                // currentlyDraggedPanel = sidebarPanelClone;
+                // currentlyDraggedPanel.style.position = "absolute";
+                // document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+                // sidebarPanelClone.classList.add("draggedPanel");
                 clickedPanelContainer = null;
             }
         }
@@ -409,6 +466,16 @@
     }
 
     // ..... UTILITIES ..... //
+
+    function createPanelElements(type) {
+        var sidebarPanelClone = createSidebarPanel(type); //clickedPanelContainer.id
+        sidebarPanelClone.classList.add("region");
+        sidebarPanelClone.classList.add("smallText");
+        currentlyDraggedPanel = sidebarPanelClone;
+        currentlyDraggedPanel.style.position = "absolute";
+        document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+        sidebarPanelClone.classList.add("draggedPanel");
+    }
 
     // copied from userinterface realityEditor.device.utilities.uuidTime
     function uuidTime() {

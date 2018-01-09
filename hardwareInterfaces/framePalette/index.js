@@ -58,8 +58,12 @@ if (exports.enabled) {
     var app = require('express')();
     var http = require('http').Server(app);
     var io = require('socket.io')(http);
+    var bodyParser = require('body-parser');
 
-    app.get('/', function(req, res){
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+
+    app.get('/', function(req, res) {
         res.sendFile(__dirname + '/index.html');
     });
 
@@ -85,7 +89,23 @@ if (exports.enabled) {
 
     });
 
-    http.listen(3032, function(){
+    app.post('/frame', function(req, res) {
+        // res.success()
+        console.log('received a frame!');
+        console.log(req.body);
+
+        if (req.body.type) {
+            console.log('received a GOOD frame');
+            io.emit('frameReceived', req.body);
+
+        } else {
+            console.log('received a BAD frame');
+        }
+
+        res.json({success: true}).end();
+    });
+
+    http.listen(3032, function() {
         console.log('listening on *:3032');
     });
 
@@ -97,7 +117,7 @@ if (exports.enabled) {
     server.addEventListener('shutdown', function () {
     });
 
-    io.on('connection', function(socket){
+    io.on('connection', function(socket) {
 
         console.log('frame palette socket connected');
 
