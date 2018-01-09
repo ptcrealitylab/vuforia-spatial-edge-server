@@ -16,27 +16,10 @@
 			"name": "zero",
 			"visualization": "ar",
 			"ar": {
-				"x": -24.108452496817335,
-				"y": -7.285823113648462,
+				"x": 50,
+				"y": 50,
 				"scale": 1,
-				"matrix": [
-					0.999091947949168,
-					-0.004306687026472744,
-					0.0423849906365632,
-					2.7755575615628914e-17,
-					0.0033807260285732,
-					0.9997543361668875,
-					0.021893192034831088,
-					6.938893903907228e-18,
-					-0.04246809336304125,
-					-0.02172941076692325,
-					0.9988612739108476,
-					5.551115123125783e-17,
-					96.54277606168034,
-					64.62770027571605,
-					79.68886011000723,
-					0.9999999999999432
-				]
+				"matrix": []
 			},
 			"screen": {
 				"x": 0,
@@ -52,149 +35,19 @@
 			"location": "",
 			"src": "editor"
 		},
-		"framePaletteRm48yj9xak5ugauge9Waqwrazxqu7": {
+		"framePaletteRm48yj9xak5ugraphlm4qol6kxqoi": {
 			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "gauge9Waqwrazxqu7",
+			"name": "graphlm4qol6kxqoi",
 			"visualization": "ar",
 			"ar": {
-				"x": -242.4869275827441,
-				"y": 37.153585708838364,
-				"scale": 1,
-				"matrix": [
-					0.9532786963973514,
-					-0.011978276691968048,
-					0.3018560148099567,
-					1.3877787807814457e-17,
-					0.03153346286698344,
-					0.9977011841117402,
-					-0.05999014630565114,
-					0,
-					-0.30044346605350114,
-					0.06670710430461924,
-					0.9514647040477939,
-					0,
-					69.09680591547658,
-					-22.435574665862077,
-					214.9237802210264,
-					0.9999999999999432
-				]
-			},
-			"screen": {
-				"x": 112.16959629935403,
-				"y": 142.0704851145145,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugauge9Waqwrazxqu7value": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 65,
-					"y": -39,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "gauge",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
-		},
-		"framePaletteRm48yj9xak5ugraphSF172ngh1g05": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "graphSF172ngh1g05",
-			"visualization": "ar",
-			"ar": {
-				"x": 116.60859007139516,
-				"y": 114.45467121468391,
-				"scale": 1,
-				"matrix": [
-					0.9996146853858967,
-					-0.02315446885739547,
-					-0.015308830881551216,
-					-1.3877787807814457e-17,
-					0.023505559168228274,
-					0.9994549861062296,
-					0.02315855837825609,
-					-1.3877787807814457e-17,
-					0.014763902659097994,
-					-0.02351018957766371,
-					0.9996144152476063,
-					-5.551115123125783e-17,
-					-1.749536448289291,
-					15.917772062326549,
-					282.5001680760761,
-					1
-				]
-			},
-			"screen": {
-				"x": 168.6673898584381,
-				"y": 107.37885749051551,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugraphSF172ngh1g05value": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -78,
-					"y": -48,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "graph",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
-		},
-		"framePaletteRm48yj9xak5ulightGMcf6487xkep": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "lightGMcf6487xkep",
-			"visualization": "ar",
-			"ar": {
-				"x": 219.21804725340806,
-				"y": 251.10131478993992,
+				"x": -92.01541200189719,
+				"y": 205.50660419839838,
 				"scale": 1,
 				"matrix": []
 			},
 			"screen": {
-				"x": 219.21804725340806,
-				"y": 251.10131478993992,
+				"x": -92.01541200189719,
+				"y": 205.50660419839838,
 				"scale": 1
 			},
 			"visible": false,
@@ -203,7 +56,7 @@
 			"developer": true,
 			"links": {},
 			"nodes": {
-				"framePaletteRm48yj9xak5ulightGMcf6487xkepvalue": {
+				"framePaletteRm48yj9xak5ugraphlm4qol6kxqoivalue": {
 					"name": "value",
 					"data": {
 						"value": 0,
@@ -212,152 +65,8 @@
 						"unitMin": 0,
 						"unitMax": 1
 					},
-					"x": 74,
-					"y": 2,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "light",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
-		},
-		"framePaletteRm48yj9xak5ugraphgF67uq821zqf": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "graphgF67uq821zqf",
-			"visualization": "ar",
-			"ar": {
-				"x": -30.56167163938469,
-				"y": 243.17179990445445,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": -30.56167163938469,
-				"y": 243.17179990445445,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugraphgF67uq821zqfvalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -35,
-					"y": -82,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "graph",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
-		},
-		"framePaletteRm48yj9xak5ugraphGvd7izpyeiik": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "graphGvd7izpyeiik",
-			"visualization": "ar",
-			"ar": {
-				"x": -281.3325798928631,
-				"y": 150.99118936068567,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": -281.3325798928631,
-				"y": 150.99118936068567,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugraphGvd7izpyeiikvalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 1,
-					"y": -91,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "graph",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
-		},
-		"framePaletteRm48yj9xak5ugraph0Y7aufixy42e": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "graph0Y7aufixy42e",
-			"visualization": "ar",
-			"ar": {
-				"x": 326.2664982074621,
-				"y": -108.20482845862108,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": 326.2664982074621,
-				"y": -108.20482845862108,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugraph0Y7aufixy42evalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 40,
-					"y": 84,
+					"x": 96,
+					"y": -80,
 					"scale": 1,
 					"matrix": [],
 					"type": "node",

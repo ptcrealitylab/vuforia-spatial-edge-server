@@ -142,6 +142,7 @@ var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+var request = require('request');
 
 // additional files containing project code
 
@@ -2127,6 +2128,73 @@ function objectWebServer() {
         res.json({success: true}).end();
     });
 
+    ///object/:objectId/frames/:frameId/sendToScreen
+    // webServer.post('/object/:objectId/frames/:frameId/sendToScreen', function (req, res) {
+    webServer.post('/screen/:objectId/frames/:frameId', function (req, res) {
+
+        var objectId = req.params.objectId;
+        var frameId = req.params.frameId;
+
+        console.log('send frame to screen: ' + objectId + ' :: ' + frameId);
+        console.log(req.body.x, req.body.y);
+
+        var object = objects[objectId];
+        var frame = object.frames[frameId];
+
+        frame.screen.x = req.body.x;
+        frame.screen.y = req.body.y;
+
+        console.log(object);
+
+        ////////////////////
+        // make a POST request to the framePalette hardwareInterface, which will create the frame on the screen
+
+        var options = { method: 'POST',
+            url: 'http://' + object.ip + ':3032/frame',
+            headers:
+                {   'cache-control': 'no-cache',
+                    'content-type': 'application/json' },
+            body: frame,
+            json: true };
+
+        request(options, function (error, response, body) {
+            if (error) throw new Error(error);
+
+            console.log(body);
+        });
+
+        // var options = {
+        //     "method": "POST",
+        //     "hostname": object.ip,
+        //     "port": "3032",
+        //     "path": "/frame",
+        //     "headers": {
+        //         "cache-control": "no-cache"
+        //     }
+        // };
+        //
+        // var request = http.request(options, function (response) {
+        //     var chunks = [];
+        //
+        //     response.on("data", function (chunk) {
+        //         chunks.push(chunk);
+        //     });
+        //
+        //     response.on("end", function () {
+        //         var body = Buffer.concat(chunks);
+        //         console.log(body.toString());
+        //     });
+        // });
+
+        // var body = JSON.stringify(frame);
+        // request.write(body); // JSON.stringify({ type: 'graph' }));
+        // request.end();
+        ////////////////////
+
+        res.json({success: true}).end();
+    });
+
+    // delete a frame from an object
     webServer.delete('/object/:objectId/frames/:frameId/', function (req, res) {
 
         var objectId = req.params.objectId;
