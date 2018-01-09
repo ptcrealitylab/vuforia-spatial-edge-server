@@ -125,13 +125,16 @@ if (exports.enabled) {
 
             var xPosition = msg.xPosition;
             var yPosition = msg.yPosition;
-            var zPosition = msg.zPosition;
+            var zPosition = msg.zPosition; // TODO: send this too? (or just remove this declaration)
             var destination = msg.destination;
             var frameData = msg.frameData;
 
+            var width = msg.width;
+            var height = msg.height;
+
             if (destination === 'ar') {
                 console.log(frameData.uniqueName);
-                server.addFrame('framePalette', frameData.uniqueName, frameData.type, xPosition, yPosition);
+                server.addFrame('framePalette', frameData.uniqueName, frameData.type, xPosition, yPosition, width, height);
             }
 
         });

@@ -23,6 +23,8 @@
 
     // variables for drag interface
     var currentlyDraggedPanel = null;
+    var dragOffsetX = 0;
+    var dragOffsetY = 0;
 
     // variables for screen <-> AR transition
     var arFrameState = {
@@ -64,8 +66,14 @@
                 var markerRect = marker.getClientRects()[0];
                 var scaleFactor = 300.0 / markerRect.height;
 
-                var draggedPanelX = parseInt(currentlyDraggedPanel.style.left);
-                var draggedPanelY = parseInt(currentlyDraggedPanel.style.top);
+                var offsetX = parseFloat(dragOffsetX) || 0;
+                var offsetY = parseFloat(dragOffsetY) || 0;
+                console.log(offsetX, offsetY);
+                var draggedPanelX = parseInt(currentlyDraggedPanel.style.left) + offsetX;
+                var draggedPanelY = parseInt(currentlyDraggedPanel.style.top) + offsetY;
+
+                var panelWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
+                var panelHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
 
                 var frameType = currentlyDraggedPanel.id;
 
@@ -76,6 +84,8 @@
                     xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
                     yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
                     zPosition: zPosition,
+                    width: panelWidth,
+                    height: panelHeight,
                     frameData: {
                         uniqueName: frameType + uuidTime(),
                         type: frameType
