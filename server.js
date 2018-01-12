@@ -2149,6 +2149,7 @@ function objectWebServer() {
         ////////////////////
         // make a POST request to the framePalette hardwareInterface, which will create the frame on the screen
 
+        // TODO: get 3032 port from req - needs to be stored in object or frame somewhere
         var options = { method: 'POST',
             url: 'http://' + object.ip + ':3032/frame',
             headers:
