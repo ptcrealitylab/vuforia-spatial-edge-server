@@ -60,6 +60,12 @@ if (exports.enabled) {
     var io = require('socket.io')(http);
     var bodyParser = require('body-parser');
 
+    console.log('before');
+    var frameAR = require('framear-server')(__dirname);
+    frameAR.startHTTPServer(3032);
+    frameAR.createSocketListeners();
+    console.log('after');
+
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
 
