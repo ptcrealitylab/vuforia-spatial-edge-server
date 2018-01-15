@@ -317,7 +317,7 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
     // actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
 
     var nodeName = 'value';
-    this.addNode(objectName, frameName, nodeName, 'node');
+    this.addNode(objectName, frameName, nodeName, 'node', {x: 0, y: 0});
 
     console.log(JSON.stringify(thisFrame));
 
@@ -354,9 +354,10 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
  *  * @param {string} frameName The name of the HybridObject frame
  * @param {string} nodeName The name of the nodeName
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
+ * @param {object} position - an optional {x: float, y: float} object for the node's starting position. otherwise random
  **/
 
-exports.addNode = function (objectName, frameName, nodeName, type) {
+exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
     utilities.createFolder(objectName, frameName, dirnameO, globalVariables.debug);
 
@@ -394,6 +395,10 @@ exports.addNode = function (objectName, frameName, nodeName, type) {
                 thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
+                if (position) {
+                    if (position.x !== undefined) thisObject.x = position.x;
+                    if (position.y !== undefined) thisObject.y = position.y;
+                }
                 thisObject.frameSizeX = 100;
                 thisObject.frameSizeY = 100;
             }

@@ -1,7 +1,7 @@
 {
 	"objectId": "framePaletteRm48yj9xak5u",
 	"name": "framePalette",
-	"ip": "192.168.1.10",
+	"ip": "10.0.0.245",
 	"version": "3.0.0",
 	"deactivated": false,
 	"protocol": "R2",
@@ -11,13 +11,13 @@
 	"visibleEditing": false,
 	"memory": {},
 	"frames": {
-		"framePaletteRm48yj9xak5uzero": {
+		"framePaletteRm48yj9xak5uscreen": {
 			"objectId": null,
-			"name": "zero",
+			"name": "screen",
 			"visualization": "ar",
 			"ar": {
-				"x": 50,
-				"y": 50,
+				"x": 0,
+				"y": 0,
 				"scale": 1,
 				"matrix": []
 			},
@@ -34,54 +34,6 @@
 			"nodes": {},
 			"location": "",
 			"src": "editor"
-		},
-		"framePaletteRm48yj9xak5ugraphlm4qol6kxqoi": {
-			"objectId": "framePaletteRm48yj9xak5u",
-			"name": "graphlm4qol6kxqoi",
-			"visualization": "ar",
-			"ar": {
-				"x": -92.01541200189719,
-				"y": 205.50660419839838,
-				"scale": 1,
-				"matrix": []
-			},
-			"screen": {
-				"x": -92.01541200189719,
-				"y": 205.50660419839838,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {
-				"framePaletteRm48yj9xak5ugraphlm4qol6kxqoivalue": {
-					"name": "value",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 96,
-					"y": -80,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100
-				}
-			},
-			"location": "local",
-			"src": "editor",
-			"type": "graph",
-			"frameSizeX": 198.23787213713712,
-			"frameSizeY": 99.11893606856856,
-			"width": 198.23787213713712,
-			"height": 99.11893606856856
 		}
 	},
 	"developer": true
