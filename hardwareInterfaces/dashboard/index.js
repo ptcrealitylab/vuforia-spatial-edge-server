@@ -53,7 +53,7 @@ if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
-    var FRAME_NAME = 'zero';
+    var FRAME_NAME = 'screen';
 
     var app = require('express')();
     var http = require('http').Server(app);
@@ -277,11 +277,11 @@ if (exports.enabled) {
             io.emit('remoteTouchUp', msg);
         });
 
-        socket.on('zWhilePointerDown', function(msg) {
+        socket.on('zPosition', function(msg) {
 
             // console.log('relaying message... ' + msg.zPosition);
 
-            io.emit('zWhilePointerDown', msg);
+            io.emit('zPosition', msg);
 
             // if (frameState.isInScreen) {
             //     if (zPosition > flipThreshold) {

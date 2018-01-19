@@ -191,7 +191,7 @@
             simulateMouseEvent(msg.pageX, msg.pageY, 'mouseup');
         });
 
-        socket.on('zWhilePointerDown', function(msg) {
+        socket.on('zPosition', function(msg) {
             var zPosition = msg.zPosition;
 
             // console.log('1');

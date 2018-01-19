@@ -53,7 +53,7 @@ if (exports.enabled) {
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     var frameAR = require(__dirname + '/../../libraries/frameScreenTransfer/frameAR-server')(__dirname);
-    frameAR.startHTTPServer(3032);
+    frameAR.startHTTPServer(3033);
     frameAR.createSocketListeners(server.addFrame.bind(server));
 
 }
