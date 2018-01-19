@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Frame Palette</title>
+    <title>Frame Palette 2</title>
     <link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 
 <script>
 
-    var objectName = 'framePalette';
+    var objectName = 'framePalette2';
 
     var marker = document.querySelector('.paletteMarker');
     var sidebar = document.getElementById("sidebar");
@@ -28,13 +28,9 @@
     var dragOffsetX = 0;
     var dragOffsetY = 0;
 
-    var mostRecentZ;
-    var startDragZ;
-    var DEFAULT_START_DRAG_Z = 500;
-
     // variables for screen <-> AR transition
     var arFrameState = {
-        flipThreshold: 300,
+        flipThreshold: 1000,
         x: 0,
         y: 0,
         isInScreen: true
@@ -50,27 +46,66 @@
             var markerRect = marker.getClientRects()[0];
             var scaleFactor = 300.0 / markerRect.height;
 
-            // console.log('AR: ' + msg.ar.x + ', ' + msg.ar.y);
-            // console.log('Sc: ' + msg.screen.x + ', ' + msg.screen.y);
+            // var screenX = (msg.ar.x / scaleFactor) + markerRect.x;
+            // var screenY = (msg.ar.y / scaleFactor) + markerRect.y;
 
-            var screenX = markerRect.x + markerRect.width/2 + (msg.screen.x / scaleFactor);
-            var screenY = markerRect.y + markerRect.height/2 + (msg.screen.y / scaleFactor);
+            // var screenPanelWidth = msg.frameSizeX / scaleFactor;
+            // var screenPanelHeight = msg.frameSizeY / scaleFactor;
+
+            console.log('AR: ' + msg.ar.x + ', ' + msg.ar.y);
+            console.log('Sc: ' + msg.screen.x + ', ' + msg.screen.y);
+
+
+            var screenX = markerRect.x + markerRect.width/2 + (msg.screen.x / scaleFactor); // screenPanelWidth/2 ... how to know relative touch pos compared to AR element?
+            var screenY = markerRect.y + markerRect.height/2 + (msg.screen.y / scaleFactor); // screenPanelHeight/2 ?
+
+            console.log(screenX, screenY); //, screenWidth, screenHeight);
 
             createPanelElements(msg.type);
 
             simulateMouseEvent(screenX / 2, screenY / 2, 'mousemove');
 
+            // var offsetX = parseFloat(dragOffsetX) || 0;
+            // var offsetY = parseFloat(dragOffsetY) || 0;
+            // console.log(offsetX, offsetY);
+            // var draggedPanelX = parseInt(currentlyDraggedPanel.style.left) + offsetX;
+            // var draggedPanelY = parseInt(currentlyDraggedPanel.style.top) + offsetY;
+            //
+            // var panelWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
+            // var panelHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
+            //
+            // var frameType = currentlyDraggedPanel.id;
+            //
+            // // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
+            //
+            // var msgData = {
+            //     destination: 'ar',
+            //     xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
+            //     yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
+            //     zPosition: zPosition,
+            //     width: panelWidth,
+            //     height: panelHeight,
+            //     frameData: {
+            //         uniqueName: frameType + uuidTime(),
+            //         type: frameType
+            //     }
+            // };
+
+
         });
 
         socket.on('remoteTouchDown', function(msg) {
+            // console.log('remoteTouchDown', msg);
             simulateMouseEvent(msg.pageX, msg.pageY, 'mousedown');
         });
 
         socket.on('remoteTouchMove', function(msg) {
+            // console.log('remoteTouchMove', msg);
             simulateMouseEvent(msg.pageX, msg.pageY, 'mousemove');
         });
 
         socket.on('remoteTouchUp', function(msg) {
+            console.log('remoteTouchUp', msg);
             arFrameState.isInScreen = true;
             simulateMouseEvent(msg.pageX, msg.pageY, 'mouseup');
         });
@@ -78,58 +113,86 @@
         socket.on('zPosition', function(msg) {
             var zPosition = msg.zPosition;
 
-            mostRecentZ = zPosition;
-            console.log(mostRecentZ, startDragZ);
+            // console.log('1');
 
-            if (currentlyDraggedPanel && arFrameState.isInScreen) {
-                if (zPosition > startDragZ + arFrameState.flipThreshold) { //arFrameState.flipThreshold) {
+            if (currentlyDraggedPanel) {
 
-                    var markerRect = marker.getClientRects()[0];
-                    var scaleFactor = 300.0 / markerRect.height;
+                // console.log('2');
 
-                    var offsetX = parseFloat(dragOffsetX) || 0;
-                    var offsetY = parseFloat(dragOffsetY) || 0;
-                    console.log(offsetX, offsetY);
-                    var draggedPanelX = parseInt(currentlyDraggedPanel.style.left) + offsetX;
-                    var draggedPanelY = parseInt(currentlyDraggedPanel.style.top) + offsetY;
+                var markerRect = marker.getClientRects()[0];
+                var scaleFactor = 300.0 / markerRect.height;
 
-                    var panelWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
-                    var panelHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
+                var offsetX = parseFloat(dragOffsetX) || 0;
+                var offsetY = parseFloat(dragOffsetY) || 0;
+                console.log(offsetX, offsetY);
+                var draggedPanelX = parseInt(currentlyDraggedPanel.style.left) + offsetX;
+                var draggedPanelY = parseInt(currentlyDraggedPanel.style.top) + offsetY;
 
-                    var frameType = currentlyDraggedPanel.id;
+                var panelWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
+                var panelHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
 
-                    // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
+                var frameType = currentlyDraggedPanel.id;
 
-                    var msgData = {
-                        objectName: objectName,
-                        destination: 'ar',
-                        xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
-                        yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
-                        zPosition: zPosition,
-                        width: panelWidth,
-                        height: panelHeight,
-                        frameData: {
-                            uniqueName: frameType + uuidTime(),
-                            type: frameType
-                        }
-                    };
+                // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
 
-                    console.log('send to 3D', msgData);
+                var msgData = {
+                    objectName: objectName,
+                    destination: 'ar',
+                    xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
+                    yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
+                    zPosition: zPosition,
+                    width: panelWidth,
+                    height: panelHeight,
+                    frameData: {
+                        uniqueName: frameType + uuidTime(),
+                        type: frameType
+                    }
+                };
 
+                // TODO: scale xPosition and yPosition by (position - markerOffset) * (300 / markerWidth)
 
+                if (arFrameState.isInScreen) {
 
-                    // hide the 2D frame on the hardware interface and display a 3D frame in the editor
-                    // making sure to set the 3D frame to the correct position
-                    // currentlyDraggedPanel.style.opacity = 0.5;
-                    currentlyDraggedPanel.style.visibility = 'hidden';
+                    // console.log('3');
 
-                    socket.emit('transportFrame', msgData);
+                    if (zPosition > arFrameState.flipThreshold) {
 
-                    arFrameState.isInScreen = false;
+                        console.log('send to 3D', msgData);
 
-                    simulateMouseEvent(0, 0, 'mouseup');
+                        // hide the 2D frame on the hardware interface and display a 3D frame in the editor
+                        // making sure to set the 3D frame to the correct position
+                        // currentlyDraggedPanel.style.opacity = 0.5;
+                        currentlyDraggedPanel.style.visibility = 'hidden';
 
-                }
+                        socket.emit('transportFrame', msgData);
+
+                        arFrameState.isInScreen = false;
+
+                        simulateMouseEvent(0, 0, 'mouseup');
+
+                    }
+
+                } /*else {
+
+                    if (zPosition < arFrameState.flipThreshold) {
+
+                        console.log('send to 2D');
+
+                        // hide the 3D frame in the editor and show the 2D frame on the hardware interface
+                        // making sure to set the 2D frame to the correct position
+                        currentlyDraggedPanel.style.opacity = 1;
+                        currentlyDraggedPanel.style.visibility = 'visible';
+
+                        msgData.destination = 'screen';
+
+                        socket.emit('transportFrame', msgData);
+
+                        arFrameState.isInScreen = true;
+
+                    }
+
+                }*/
+
             }
 
         });
@@ -412,7 +475,6 @@
         sidebarPanelClone.classList.add("region");
         sidebarPanelClone.classList.add("smallText");
         currentlyDraggedPanel = sidebarPanelClone;
-        startDragZ = mostRecentZ || DEFAULT_START_DRAG_Z;
         currentlyDraggedPanel.style.position = "absolute";
         document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
         sidebarPanelClone.classList.add("draggedPanel");

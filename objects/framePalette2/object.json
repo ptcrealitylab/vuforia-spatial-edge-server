@@ -1,0 +1,40 @@
+{
+	"objectId": "framePalette2io9kdgazn9dr",
+	"name": "framePalette2",
+	"ip": "10.68.23.38",
+	"version": "3.0.0",
+	"deactivated": false,
+	"protocol": "R2",
+	"tcs": "2WSqBX",
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"memory": {},
+	"frames": {
+		"framePalette2io9kdgazn9drscreen": {
+			"objectId": null,
+			"name": "screen",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": false,
+			"links": {},
+			"nodes": {},
+			"location": "",
+			"src": "editor"
+		}
+	},
+	"developer": true
+}

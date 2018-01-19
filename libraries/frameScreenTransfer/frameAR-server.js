@@ -52,13 +52,14 @@ module.exports = function(rootDirectory) {
                 io.emit('remoteTouchUp', msg);
             });
 
-            socket.on('zWhilePointerDown', function(msg) {
-                io.emit('zWhilePointerDown', msg);
+            socket.on('zPosition', function(msg) {
+                io.emit('zPosition', msg);
             });
 
             // make a callback to the server to notify it to add a frame to AR space
             socket.on('transportFrame', function(msg) {
 
+                var objectName = msg.objectName;
                 var xPosition = msg.xPosition;
                 var yPosition = msg.yPosition;
                 var destination = msg.destination; // TODO: not necessary with new design
@@ -67,7 +68,7 @@ module.exports = function(rootDirectory) {
                 var height = msg.height;
 
                 if (destination === 'ar') {
-                    addFrameCallback('framePalette', frameData.uniqueName, frameData.type, xPosition, yPosition, width, height);
+                    addFrameCallback(objectName, frameData.uniqueName, frameData.type, xPosition, yPosition, width, height);
                 }
 
             });
