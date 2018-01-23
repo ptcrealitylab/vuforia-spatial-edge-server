@@ -89,6 +89,7 @@
     }
 
     exports.optimizedResize = optimizedResize;
-    exports.createControlPanel =createControlPanel;
+    exports.createControlPanel = createControlPanel;
+    exports.createSidebarPanel = createSidebarPanel;
 
 })(window);
