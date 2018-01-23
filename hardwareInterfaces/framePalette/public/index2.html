@@ -15,7 +15,7 @@
     // constants
     var defaultValue = 0.00;
     var PORT = 3032;
-
+    var framePullOutThreshold = 300;
 </script>
 
 <script src='/socket.io/socket.io.js'></script>
@@ -63,9 +63,24 @@
 
         });
 
-        frameAR.initializeDragInterface();
+        frameAR.initializeDragInterface(createPanelElements);
         frameAR.createSocketListeners(onFrameReceived, shouldSendFrameOnZ, onFrameSend);
 
+    }
+
+    /**
+     * @callback createDraggedFrameCallback
+     * @param {string} type - the type of frame element to add within the panel
+     * @return {DOMElement} - the new frame DOM element you want to drag
+     */
+    function createPanelElements(type) {
+        var sidebarPanelClone = createSidebarPanel(type); //comes from clickedPanelContainer.id
+        sidebarPanelClone.classList.add("region");
+        sidebarPanelClone.classList.add("smallText");
+        sidebarPanelClone.style.position = "absolute";
+        document.getElementsByTagName('body')[0].appendChild(sidebarPanelClone);
+        sidebarPanelClone.classList.add("draggedPanel");
+        return sidebarPanelClone;
     }
 
     /**

@@ -9,7 +9,7 @@
 
 <style>
     #container {
-        border: 10px solid greenyellow;
+        border: 3px dashed greenyellow;
         /*border: 1px solid white;*/
         /*background-color: rgba(0,0,0,0.1);*/
         /*width: 900px;*/
@@ -73,7 +73,7 @@
 
                 var zPosition = modelViewMatrix[14];
                 // console.log(zPosition);
-                socket.emit('zWhilePointerDown', {zPosition: zPosition});
+                socket.emit('zPosition', {zPosition: zPosition});
 
                 //
                 // if (frameState.isInScreen) {
@@ -112,7 +112,7 @@
             //     // console.log(zPosition);
             //     if (isPointerDown) {
             //         console.log('emit zPosition ' + zPosition);
-            //         socket.emit('zWhilePointerDown', {zPosition: zPosition});
+            //         socket.emit('zPosition', {zPosition: zPosition});
             //     }
             //     // previousZ = zPosition;
             // }, 100);
