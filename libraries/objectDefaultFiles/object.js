@@ -55,6 +55,7 @@ var realityObject = {
     sendMatrix: false,
     sendAcceleration: false,
     sendFullScreen: false,
+    fullscreenZPosition: 0,
     sendSticky : false,
     height: "100%",
     width: "100%",
@@ -259,7 +260,7 @@ function HybridObject() {
     // subscriptions
     this.subscribeToMatrix = function () {
         realityObject.sendMatrix = true;
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             if (realityObject.sendFullScreen === false) {
                 realityObject.height = document.body.scrollHeight;
@@ -308,13 +309,16 @@ function HybridObject() {
      ************************************************************
      */
 
-    this.setFullScreenOn = function () {
+    this.setFullScreenOn = function (zPosition) {
         realityObject.sendFullScreen = true;
         console.log("fullscreen is loaded");
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             realityObject.height = "100%";
             realityObject.width = "100%";
+            if (zPosition !== undefined) {
+                realityObject.fullscreenZPosition = zPosition;
+            }
 
             parent.postMessage(JSON.stringify(
                 {
@@ -327,6 +331,7 @@ function HybridObject() {
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
+                    fullscreenZPosition: realityObject.fullscreenZPosition,
                     stickiness: realityObject.sendSticky
                 }), "*");
         }
