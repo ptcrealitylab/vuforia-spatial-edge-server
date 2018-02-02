@@ -403,12 +403,14 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
                 thisObject.frameSizeY = 100;
             }
 
-            thisObj = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            thisObj.name = nodeName;
-            thisObj.text = undefined;
-            thisObj.type = type;
+            thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
+            thisObject.name = nodeName;
+            thisObject.frameId = frameUuid;
+            thisObject.objectId = objectID;
+            thisObject.text = undefined;
+            thisObject.type = type;
 
-            console.log('set new node name to ' + thisObj.name);
+            console.log('set new node name to ' + thisObject.name);
             console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
