@@ -288,6 +288,10 @@ function Link() {
 function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = "";
+    // the ID of the containing object.
+    this.objectId = null;
+    // the ID of the containing frame.
+    this.frameId = null;
     // the actual data of the node
     this.data = new Data();
     // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
