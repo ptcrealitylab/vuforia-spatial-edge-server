@@ -51,7 +51,90 @@ var debug = false;
 var pathUtilities = require('path');
 
 
+exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
+{
+console.log(objectInterfaceName);
+    function ThisObjects() {
+        this.name = "";
+        this.initialized = false;
+        this.frames = {};
+        this.visualization = "AR";
+        this.active = false;
+    };
 
+    var newObject = {};
+
+    var tempFiles = "";
+    var objectPath = dirnameO + "/objects";
+    var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
+        return fs.statSync(objectPath + '/' + file).isDirectory();
+    });
+    // remove hidden directories
+    if (typeof tempFiles[0] !== "undefined") {
+        while (tempFiles[0][0] === ".") {
+            tempFiles.splice(0, 1);
+        }
+    }
+
+
+
+
+    tempFiles.forEach(function(objectKey) {
+        var thisObjectKey = objectKey;
+        for(var objectSubKey in objects){
+            if(objects[objectSubKey].name === objectKey) {
+                thisObjectKey = objectSubKey;
+               break;
+            }
+        }
+
+        newObject[thisObjectKey] = new ThisObjects();
+
+        // check if file is activated
+        var objectPath = dirnameO + "/objects";
+
+            if(!fs.readdirSync(objectPath).filter(function (file) {return fs.statSync(objectPath + '/' + file).isDirectory();
+                })) return;
+
+        if (fs.existsSync(objectPath + '/' + objectKey + "/target/target.dat") && fs.existsSync(objectPath + '/' + objectKey + "/target/target.xml") && fs.existsSync(objectPath + '/' + objectKey + "/target/target.jpg"))
+        {
+            newObject[thisObjectKey].initialized = true;
+
+            newObject[thisObjectKey].targetName = thisObjectKey;
+        }else {
+            newObject[thisObjectKey].initialized = false;
+            newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime();
+        }
+
+        if(objectKey !== thisObjectKey) {
+            newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
+        }
+
+        newObject[thisObjectKey].name = objectKey;
+        newObject[thisObjectKey].visualization = "AR";
+
+    });
+
+    var html = fs.readFileSync(__dirname+"/webInterface/gui/index.html", 'utf8');
+
+
+    html = html.replace(/href="/g, "href=\"../libraries/gui/");
+    html = html.replace(/src="/g, "src=\"../libraries/gui/");
+
+    var states= {
+        version : version,
+        ipAdress: ipAddress,
+        serverPort : serverPort
+    };
+
+    html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
+
+    html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
+    return html;
+
+};
+
+/*
 exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort) {
     var resText = "<!DOCTYPE html>" +
         "<html>" +
@@ -389,7 +472,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
     return resText;
 
 }
-
+*/
 exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
     var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
