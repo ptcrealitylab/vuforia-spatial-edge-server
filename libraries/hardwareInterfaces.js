@@ -247,7 +247,7 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
 
 exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
 
-    utilities.createFolder(objectName, frameName, dirnameO, globalVariables.debug);
+    utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug);
 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     cout("Add Frame to objectID: " + objectID);
@@ -359,7 +359,7 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
 
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
-    utilities.createFolder(objectName, frameName, dirnameO, globalVariables.debug);
+    utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug);
 
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     cout("AddIO objectID: " + objectID);

@@ -62,6 +62,10 @@ console.log(objectInterfaceName);
         this.active = false;
     };
 
+    function Frame() {
+        this.name = "";
+    };
+
     var newObject = {};
 
     var tempFiles = "";
@@ -108,10 +112,17 @@ console.log(objectInterfaceName);
 
         if(objectKey !== thisObjectKey) {
             newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
+            for(var frameKey in objects[thisObjectKey].frames){
+                newObject[thisObjectKey].frames[frameKey] = new Frame();
+                newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
+                newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
+            }
+
+
         }
 
         newObject[thisObjectKey].name = objectKey;
-        newObject[thisObjectKey].visualization = "AR";
+
 
     });
 
@@ -1085,6 +1096,298 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
                 }
             }
          
+        }
+
+    }
+
+    text +=
+
+        '' +
+        '</div>' +
+        '        </tbody>\n' +
+        '    </table>\n' +
+        '</div> <div class="col-xs-5">\n' +
+        'Drag and Drop your interface files anywhere on this window. Make sure that <b>index.html</b> is your startpoint.' +
+        ' You can drop all your files at the same time.<br><br>' +
+        '<b>object.json</b> holds all relevant information about your object.<br>' +
+
+        ' <br><br><span class="fileupload-process">' +
+        '          <div id="total-progress" class="progress progress-striped active" role="progressbar" aria-valuemin="0"' +
+        '               aria-valuemax="100" aria-valuenow="0">' +
+        '              <div class="progress-bar progress-bar-success" style="width:100%;" data-dz-uploadprogress></div>' +
+        '          </div>' +
+        '        </span>' +
+        '        <span class="btn ';
+    if (debug)console.log(objectPath + parm + "/target/target.dat");
+    if (fs.existsSync(objectPath + parm + "/index.htm") || fs.existsSync(objectPath + '/' + parm + "/index.html")) {
+        if (fs.existsSync(objectPath + parm + "/target/target.dat") && fs.existsSync(objectPath + '/' + parm + "/target/target.xml") && fs.existsSync(objectPath + '/' + parm + "/target/target.jpg")) {
+            text += "btn-success";
+        }
+        else {
+            text += "btn-warning";
+        }
+    } else {
+        text += "btn-primary";
+    }
+    ;
+
+
+    text += ' fileinput-button" id="targetButton">' +
+        '            <span>' +
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+        "Add Interface Files" +
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+        '               </span>' +
+        '        </span>' +
+
+        '   <div class="table table-striped" class="files" id="previews" style="visibility: hidden">' +
+        '        <div id="template" class="file-row">' +
+        '        </div>' +
+        '    </div>' +
+        '    <script>' +
+        '        var previewNode = document.querySelector("#template");' +
+        '        previewNode.id = "";' +
+        '        var previewTemplate = previewNode.parentNode.innerHTML;' +
+        '        previewNode.parentNode.removeChild(previewNode);' +
+        '        var myDropzone = new Dropzone(document.body, {' +
+        '            url: "/content/' + parm + '",' +
+        '            autoProcessQueue: true,' +
+        '            thumbnailWidth: 80,' +
+        '            thumbnailHeight: 80,' +
+        '            parallelUploads: 20,' +
+        'headers: { "type": "contentUpload" },'+
+        '            createImageThumbnails: false,' +
+        '            previewTemplate: previewTemplate,' +
+        '            autoQueue: true,' +
+        '            previewsContainer: "#previews",' +
+        '            clickable: ".fileinput-button"' +
+        '        });' +
+        '        myDropzone.on("addedfile", function (file) {' +
+        '           ' +
+        '           ' +
+        '        });' +
+        '        myDropzone.on("drop", function (file) {' +
+        '           ' +
+        '            myDropzone.enqueueFiles(myDropzone.getFilesWithStatus(Dropzone.ADDED));' +
+        '        });' +
+        '        ' +
+        '        myDropzone.on("totaluploadprogress", function (progress) {' +
+        '            document.querySelector("#total-progress").style.width = progress + "%";' +
+        '        });' +
+        '        myDropzone.on("sending", function (file) {' +
+        '           ' +
+        '            document.querySelector("#total-progress").style.opacity = "1";' +
+        '           ' +
+        '            ' +
+        '        });' +
+        '        ' +
+        '        myDropzone.on("queuecomplete", function (progress) {' +
+        '        document.querySelector("#total-progress").style.opacity = "0";' +
+        '    });' +
+
+
+        '       myDropzone.on("success", function (file, responseText) {' +
+        '      if(responseText  === "done") {   document.querySelector("#total-progress").style.opacity = "0"; ' +
+        'location.reload();}' +
+        '    });' +
+
+
+        '    </script>' +
+        '</body>\n' +
+        '</html>\n';
+
+    return text;
+
+};
+
+exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterfaceName) {
+    if(debug) console.log("interface content");
+    var text =
+
+        '';
+
+    var objectPath = dirname0 + "/objects/"+ parm +"/frames/";
+
+    var objectPath2 = dirname0 + "/objects/" + parm +"/frames/"+frame;
+
+    var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
+        return fs.statSync(objectPath + '/' + file).isDirectory();
+    });
+
+
+    var fileList;
+    // List all files in a directory in Node.js recursively in a synchronous fashion
+    /*  var walkSync = function(dir, filelist) {
+     var fs = fs || require('fs'),
+     files = fs.readdirSync(dir);
+     filelist = filelist || [];
+     files.forEach(function(file) {
+     if (fs.statSync(dir + '/' + file).isDirectory()) {
+     filelist = walkSync(dir +'/'+ file + '/', filelist);
+     folderDepth++;
+     filelist.push("<");
+     filelist.push(file);
+     }
+     else {
+     if(file[0] !== "." )
+     filelist.push(file);
+     }
+     }
+     );
+     if(folderDepth !==0){
+     filelist.push(">");}
+
+     return filelist;
+     };*/
+
+    var walk = function (dir) {
+        var results = [];
+        var list = fs.readdirSync(dir);
+        list.forEach(function (file) {
+            file = dir + '/' + file;
+            var stat = fs.statSync(file);
+            if (stat && stat.isDirectory()) results = results.concat(walk(file));
+            else results.push(file)
+        });
+        return results
+    };
+
+    var listeliste = walk(objectPath2);
+
+    //  var folderContent = walkSync(objectPath,fileList);
+    var nameSpace = "";
+
+
+    var nameOrigin = "/obj/";
+
+    var llist;
+
+    var nameOld = "";
+
+    text +=
+        '<html>\n' +
+        '<head>\n' +
+        '<head>\n' +
+        '    <link rel="stylesheet" href="../../libraries/css/bootstrap.min.css">\n' +
+        '    <link rel="stylesheet" href="../../libraries/css/bootstrap-theme.min.css">\n' +
+        '   <script src="../../libraries/js/dropzone.js"></script>\n' +
+        '    <style>\n' +
+        '        #total-progress {\n' +
+        '            opacity: 0;\n' +
+        '            transition: opacity 0.3s linear;\n' +
+        '        }\n' +
+        '    </style>\n' +
+        '</head>\n' +
+        '<body style="height: 100%; width: 100%">\n' +
+        '<div class="container" id="container" style="width: 750px;">\n' +
+        '    <div class="panel panel-primary">\n' +
+        '<div class="panel-heading">\n' +
+        '<h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - File&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
+        '      </div>\n' +
+        '</div>\n' +
+        '<div id="actions" class="row">\n' +
+        ' <div class="col-xs-7">\n' +
+        '   <table class="table table-hover">\n' +
+        '        <thead>\n' +
+        '        <tr>\n' +
+        '            <th class="info">Object Folder</th>\n' +
+        '            <th class="info"></th>\n' +
+        '        </tr>\n' +
+        '        </thead>\n' +
+        '        <tbody>\n';
+
+
+    for (var i = 0; i < listeliste.length; i++) {
+
+        var content = listeliste[i].replace(objectPath2 + '/', '').split("/");
+
+        if (content[1] !== undefined) {
+            if (content[0] !== nameOld) {
+
+                // console.log("---" + content[0]);
+
+                text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
+
+                var dateiTobeRemoved = parm + '/' + content[0];
+                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "/"+frame+"/x' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
+                    "<input type='hidden' name='action' value='delete'>";
+
+                text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
+
+            }
+            // console.log("-"+content[0]);
+            //  console.log(content[0]+" / "+content[1]);
+
+            if (content[1][0] !== "." && content[1][0] !== "_") {
+                if (debug)console.log(content[1]);
+                var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
+
+                text += '<tr ';
+                if (content[1] === "target.dat" || content[1] === "target.xml" || content[1] === "target.jpg") {
+                    text += 'class="success"';
+                }
+
+
+                text += '><td><font size="2">';
+                text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                text += '<span class="';
+
+                if (fileTypeF === "jpg" || fileTypeF === "png" || fileTypeF === "gif" || fileTypeF === "jpeg") {
+                    text += 'glyphicon glyphicon-picture';
+                } else {
+                    text += 'glyphicon glyphicon-file';
+                }
+
+
+                text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
+
+                var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
+                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
+                    "<input type='hidden' name='action' value='delete'>";
+                if (debug) console.log(dateiTobeRemoved);
+                text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
+            }
+
+
+            nameOld = content[0];
+        } else {
+            if (content[0][0] !== "." && content[0][0] !== "_") {
+                var fileTypeF2 = changeCase.lowerCase(content[0].split(".")[1]);//.toLowerCase();
+                text += '<tr ';
+                if (fileTypeF2 === "html" || fileTypeF2 === "htm") {
+                    text += 'class="success"';
+                } else if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                    text += 'class="active"';
+                }
+
+
+                text += '><td><font size="2">';
+                text += '<span class="';
+                if (fileTypeF2 === "jpg" || fileTypeF2 === "png" || fileTypeF2 === "gif" || fileTypeF2 === "jpeg") {
+                    text += 'glyphicon glyphicon-picture';
+                } else {
+                    text += 'glyphicon glyphicon-file';
+                }
+
+
+                text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
+
+                var dateiTobeRemoved = parm + '/' + content[0];
+                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
+                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
+                    "<input type='hidden' name='action' value='delete'>";
+
+
+                if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                    text += '<span class="badge">delete</span></form></td></tr>';
+
+                } else {
+                    text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
+                }
+            }
+
         }
 
     }
