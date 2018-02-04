@@ -630,10 +630,10 @@ realityServer.toggleFullScreen = function (item) {
             thisScreen.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
         }
     } else {
-        if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
+        if (thisScreen.mozCancelFullScreen) {
+            thisScreen.mozCancelFullScreen();
         } else {
-            document.webkitCancelFullScreen();
+            thisScreen.webkitCancelFullScreen();
         }
     }
 };
