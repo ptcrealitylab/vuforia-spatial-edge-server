@@ -453,6 +453,7 @@ console.log(document.getElementById("textEntryObject"));
         realityServer.sendRequest("/", "POST", function(state){
             if(state === "ok") {
                 thisEventObject.style.color = "rgb(41,253,47)";
+                realityServer.objects[objectKey].zone = thisEventObject.innerText;
             }
             }, "action=zone&name="+realityServer.objects[objectKey].name+"&zone="+thisEventObject.innerText);
 
