@@ -2647,7 +2647,7 @@ function objectWebServer() {
 
             if (req.body.action === "new") {
                 // cout(req.body);
-                if (req.body.name !== "" && req.body.frame === "") {
+                if (req.body.name !== "" && !req.body.frame) {
                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
                 } else if(req.body.name !== "" && req.body.frame !== ""){
