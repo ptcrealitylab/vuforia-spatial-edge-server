@@ -70,7 +70,9 @@
         </div><div class='space hidden'>
         </div><div class='singleTarget button yellow two inactive'>Activate Single Target File
         </div><div class='space hidden'>
-        </div><div class='upload button blue two inactive'>Upload Object File</div>
+        </div><div class='upload button blue two inactive'>Upload Object File
+    </div><div class='space hidden'>
+    </div><div class='activateHardware button blue two inactive'>Manage Hardware Interfaces</div>
     </div>
 </template>
 
@@ -108,7 +110,7 @@
     <!--    </div><div class='item space'>
     </div><div class='item space halfPlus'>-->
     </div><div class='item space'>
-    </div><div class='hardware item button blue one inactive'>Hardware
+    </div><div class='hardware item button blue one inactive'>Hardware I/O
 
     </div><div class='item space'>
     </div><div class='remove item button red half'>X
@@ -185,6 +187,15 @@
     </div>
 </template>
 
+<template id="fullScreenId">
+    <div class="fullScreenObject">
+        <div class='button hidden one'>
+        </div><div class='item space hidden'>
+        </div><div class='fullscreen item button purple fiveAndHalf clickAble'>OPEN USER INTERFACE IN FULLSCREEN
+        </div>
+    </div>
+</template>
+
 <script>
     var realityServer = {
         myTargetDropzone : {},
@@ -204,6 +215,5 @@
 <div id="templateZone">
             </div>
 </div>
-<br> <br> <br>
 </body>
 </html>

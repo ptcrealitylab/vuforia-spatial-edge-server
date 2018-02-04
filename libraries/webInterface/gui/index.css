@@ -62,7 +62,7 @@ body {
   margin: 0px;
    width: 104px;
    height: 32px;
-   line-height: 32px;
+   line-height: 35px;
    text-align: center;
    vertical-align: middle;
    border: 2px solid white;
@@ -171,6 +171,9 @@ body {
 .four {
    width: 452px;
  }
+.fiveAndHalf  {
+  width: 626px;
+}
 
 .fourAndHalf {
   width: 514px;
