@@ -67,7 +67,72 @@ body {
    border: 2px solid white;
    margin-top: 10px;
    display: inline-block;
+
  }
+
+.expand {
+  animation: sizeMatters 0.05s;
+}
+
+.expandTarget {
+  animation: sizeMattersExtra 0.08s;
+  overflow: hidden;
+}
+
+.collapse {
+  animation: sizeMattersCollapse 0.05s forwards;
+}
+
+.collapseTarget {
+  animation: sizeMattersExtraCollapse 0.08s forwards;
+  overflow: hidden;
+}
+
+@keyframes sizeMatters {
+  0% {
+    visibility: hidden;
+    height: 0px;
+  }
+  100% {
+    height: 44px;
+    visibility: visible;
+  }
+}
+
+@keyframes sizeMattersExtra {
+  0% {
+    visibility: hidden;
+    height: 0px;
+  }
+  100% {
+    height: 260px;
+    visibility: visible;
+  }
+}
+
+@keyframes sizeMattersCollapse {
+  0% {
+    height: 44px;
+    visibility: hidden;
+
+  }
+  100% {
+    visibility: hidden;
+    height: 0px;
+  }
+}
+
+@keyframes sizeMattersExtraCollapse {
+  0% {
+    height: 260px;
+    visibility: hidden;
+  }
+  100% {
+
+    visibility: hidden;
+    height: 0px;
+  }
+}
 
 .space {
   padding: 0px;

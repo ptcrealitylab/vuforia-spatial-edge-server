@@ -149,7 +149,8 @@ realityServer.gotClick = function (event) {
         if(realityServer.dropZoneId !== "targetDropZone"+objectKey) {
             var elementList = document.querySelectorAll(".dropZoneElement");
             for (var i = 0; i < elementList.length; ++i) {
-                elementList[i].remove();
+               // elementList[i].remove();
+                realityServer.removeAnimated(elementList[i], "expandcollapseTarget", "expandTarget", "collapseTarget");
             }
 
 
@@ -207,7 +208,8 @@ realityServer.gotClick = function (event) {
             realityServer.dropZoneId = "";
             var removeNode = document.getElementById("targetDropZone"+objectKey);
             console.log(removeNode);
-            removeNode.remove();
+          //  removeNode.remove();
+            realityServer.removeAnimated(removeNode, "expandcollapseTarget", "expandTarget", "collapseTarget");
         }
 
         // realityServer.objects[objectKey].dom.appendChild(document.getElementById("target").content.cloneNode(true));
@@ -216,7 +218,8 @@ realityServer.gotClick = function (event) {
     } else {
         var elementList = document.querySelectorAll(".dropZoneElement");
         for (var i = 0; i < elementList.length; ++i) {
-            elementList[i].remove();
+            realityServer.removeAnimated(elementList[i]);
+            //elementList[i].remove();
             realityServer.dropZoneId = "";
         }
     }
@@ -289,7 +292,8 @@ realityServer.gotClick = function (event) {
         }
         if(realityServer.domObjects.querySelector(".resetOK")){
             var thisYes = realityServer.domObjects.querySelector(".resetOK");
-            thisYes.remove();
+            realityServer.removeAnimated(thisYes);
+           // thisYes.remove();
         }
         console.log(oldID);
         if(oldID !== "frame"+objectKey+frameKey) {
@@ -304,7 +308,8 @@ realityServer.gotClick = function (event) {
     } else {
         if(document.querySelector(".resetOK")) {
             var removeNode = document.querySelector(".resetOK");
-            removeNode.remove();
+            realityServer.removeAnimated(removeNode);
+            //removeNode.remove();
         }
     }
 
@@ -343,7 +348,8 @@ realityServer.gotClick = function (event) {
         }
         if(realityServer.domObjects.querySelector(".deleteOK")){
             var thisYes = realityServer.domObjects.querySelector(".deleteOK");
-            thisYes.remove();
+            realityServer.removeAnimated(thisYes);
+            //thisYes.remove();
         }
         console.log(oldID);
         if(oldID !== whatKindOfObject+objectKey+frameKey) {
@@ -357,7 +363,8 @@ realityServer.gotClick = function (event) {
     } else {
         if(document.querySelector(".deleteOK")){
             var removeNode = document.querySelector(".deleteOK");
-            removeNode.remove();
+            realityServer.removeAnimated(removeNode);
+           // removeNode.remove();
         }
     }
 
@@ -400,7 +407,8 @@ console.log(document.getElementById("textEntryObject"));
            // realityServer.domObjects.querySelector(".textfield").setAttribute("contenteditable", "true");
         } else {
             var removeNode = document.getElementById("textEntryObject");
-            removeNode.remove();
+            realityServer.removeAnimated(removeNode);
+           // removeNode.remove();
         }
     }
 
@@ -410,7 +418,8 @@ console.log(document.getElementById("textEntryObject"));
       else {
           console.log(textContent);
           var removeNode = document.getElementById("textEntryObject");
-          removeNode.remove();
+          realityServer.removeAnimated(removeNode);
+        //  removeNode.remove();
 
           if (textContent !== "") {
               realityServer.sendRequest("/", "POST", function(state){
@@ -430,7 +439,8 @@ console.log(document.getElementById("textEntryObject"));
         else {
             console.log(textContent);
             var removeNode = document.querySelector(".textEntryFrame");
-            removeNode.remove();
+            realityServer.removeAnimated(removeNode);
+           // removeNode.remove();
 
             if (textContent !== "") {
                 realityServer.sendRequest("/", "POST", function(state){
@@ -467,7 +477,8 @@ console.log(document.getElementById("textEntryObject"));
         }
         if(realityServer.domObjects.querySelector(".textEntryFrame")){
             var thisYes = realityServer.domObjects.querySelector(".textEntryFrame");
-            thisYes.remove();
+            realityServer.removeAnimated(thisYes);
+           // thisYes.remove();
         }
         console.log("object "+objectKey);
         console.log("frame "+frameKey);
@@ -493,7 +504,8 @@ console.log(document.getElementById("textEntryObject"));
     } else {
         if(document.querySelector(".textEntryFrame")){
             var removeNode = document.querySelector(".textEntryFrame");
-            removeNode.remove();
+            realityServer.removeAnimated(removeNode);
+           // removeNode.remove();
         }
     }
 
@@ -635,6 +647,26 @@ realityServer.toggleFullScreen = function (item) {
         } else {
             thisScreen.webkitCancelFullScreen();
         }
+    }
+};
+
+
+realityServer.removeAnimated = function (item, target, expand, collapse){
+    if(!target) target = "expandcollapse";
+    if(!expand) expand = "expand";
+    if(!collapse) collapse = "collapse";
+    var parent = item.parentNode;
+
+    if(parent.classList.contains(target)){
+        if(parent.classList.contains(expand)){
+            parent.classList.remove(expand);
+        }
+        parent.classList.add(collapse);
+        setTimeout(function() {
+            parent.remove();
+        }, 500);
+    } else {
+        parent.remove();
     }
 };
 
