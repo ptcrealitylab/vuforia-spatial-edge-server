@@ -21,8 +21,7 @@ body {
 }
 
 #app {
-  width: 1324px;
-  padding: 25px;
+  padding-top: 25px;
 }
 
 #header {
