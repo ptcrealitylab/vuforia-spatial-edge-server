@@ -76,6 +76,7 @@ realityServer.update = function () {
             realityServer.switchClass(thisObject.dom.querySelector(".visualization"), "blue", "purple");
             realityServer.switchClass(thisObject.dom.querySelector(".addFrame"), "blue", "purple");
             realityServer.switchClass(thisObject.dom.querySelector(".download"), "blue", "purple");
+
             thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
         }
 
@@ -95,6 +96,7 @@ realityServer.update = function () {
 
             if(thisObject.visualization === "screen") {
                 realityServer.switchClass(thisFrame.dom.querySelector(".reset"), "blue", "purple");
+                realityServer.switchClass(thisFrame.dom.querySelector(".hardware"), "blue", "purple");
             }
 
             // check if items are active
@@ -533,15 +535,18 @@ realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, 
     for (var x = 0; x < allItems.length; x++) {
         allItems[x].setAttribute('objectID', objectKey);
         allItems[x].setAttribute('frameID', frameKey);
+        if(!allItems[x].classList.contains("hardware"))
         this.switchClass(allItems[x], "inactive");
 
         if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("target"))) {
             realityServer.setDeactive (allItems[x]);
         } else {
+        if(!allItems[x].classList.contains("hardware"))
             realityServer.setActive(allItems[x]);
         }
 
         if(realityServer.objects[objectKey].initialized && (allItems[x].classList.contains("active") || allItems[x].classList.contains("download"))){
+            if(!allItems[x].classList.contains("hardware"))
             realityServer.setActive(allItems[x]);
         }
     }
