@@ -83,9 +83,13 @@ realityServer.update = function () {
 
         thisObject.dom.querySelector(".name").innerText = thisObject.name;
 
-
-
         this.domObjects.appendChild(thisObject.dom);
+        if(thisObject.visualization === "screen") {
+            var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
+            thisFullScreen.querySelector(".fullscreen").id = "fullscreen"+objectKey;
+            this.domObjects.appendChild(thisFullScreen);
+            document.getElementById("fullscreen"+objectKey).addEventListener("click", realityServer.gotClick, false);
+        }
 
         for (var frameKey in this.objects[objectKey].frames) {
             var thisFrame = this.objects[objectKey].frames[frameKey];
@@ -111,6 +115,7 @@ realityServer.update = function () {
         }
     }
     this.domObjects.appendChild(this.templates[3].content.cloneNode(true));
+
 };
 
 
@@ -267,6 +272,11 @@ realityServer.gotClick = function (event) {
                 realityServer.update();
             });
         }
+    }
+
+    if (buttonClassList.contains("fullscreen")) {
+        console.log("fullscreen");
+        realityServer.toggleFullScreen(thisEventObject);
     }
 
     /**
@@ -607,5 +617,24 @@ realityServer.setActive = function(item){
      }*/
 };
 
+
+realityServer.toggleFullScreen = function (item) {
+    var thisScreen = document.body;
+    if(item) thisScreen = item;
+
+    if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
+        if (thisScreen.mozRequestFullScreen) {
+            thisScreen.mozRequestFullScreen();
+        } else {
+            thisScreen.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    } else {
+        if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else {
+            document.webkitCancelFullScreen();
+        }
+    }
+};
 
 realityServer.initialize();
