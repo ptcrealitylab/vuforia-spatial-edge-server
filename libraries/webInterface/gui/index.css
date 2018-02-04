@@ -1,0 +1,259 @@
+* { 
+    /*-moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+     box-sizing: border-box; */
+}
+
+@font-face {
+    font-family: myriadPro;
+    src: url(resources/MyriadPro-Regular.otf);
+}
+
+body {
+  background-color: rgb(34,34,34);
+  font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
+  font-size: 12pt;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+
+  /*position: fixed;*/
+
+}
+
+#app {
+  width: 1024px;
+  padding: 25px;
+}
+
+#header {
+  margin-top: -10px;
+}
+
+#title {
+  color: rgb(45,255,255);
+  font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+  font-weight: medium;
+  font-size: 28pt;
+}
+
+#logo {
+  width: 22pt;
+  height: 22pt;
+}
+
+#subtitle {
+  color: rgb(255,255,255);
+}
+
+#contents {
+  color: rgb(255,255,255);
+}
+
+.objectGroup {
+  margin-top: 42px;
+}
+
+.unitGroup {
+  margin-top: 0px;
+}
+
+.button {
+  padding: 0px;
+  margin: 0px;
+   width: 104px;
+   height: 32px;
+   line-height: 32px;
+   text-align: center;
+   vertical-align: middle;
+   border: 2px solid white;
+   margin-top: 10px;
+   display: inline-block;
+ }
+
+.space {
+  padding: 0px;
+  margin: 0px;
+  width: 8px;
+  height: 36px;
+  line-height: 32px;
+  text-align: center;
+  vertical-align: middle;
+  margin-top: 10px;
+  display: inline-block;
+  color: rgb(255,255,255);
+  background-color: rgba(255,255,255,0.15);
+  z-index: -1;
+}
+
+.clickAble:hover {
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.green {
+  color: rgb(41,253,47);
+  border: 2px solid rgb(41,253,47);
+  background-color: rgba(41,253,47,0.05);
+}
+
+.red {
+  color: rgb(242,22,121);
+  border: 2px solid rgb(242,22,121);
+  background-color: rgba(242,22,121,0.05);
+}
+
+.blue {
+  color: rgb(45,255,255);
+  border: 2px solid rgb(45,255,255);
+  background-color: rgba(45,255,255,0.05);
+}
+
+.purple {
+  color: rgb(210,113,255);
+  border: 2px solid rgb(210,113,255);
+  background-color: rgba(210,113,255,0.05);
+}
+
+.yellow {
+  color: rgb(255,255,45);
+  border: 2px solid rgb(255,255,45);
+  background-color: rgba(255,255,45,0.05);
+}
+
+.hidden {
+  visibility: hidden;
+  color: rgba(255,255,255,0.0);;
+  background-color: rgba(255,255,255,0.0);
+}
+
+.white {
+  color: rgb(255,255,255);
+  background-color: rgba(255,255,255,0.05);
+}
+
+.noBorder {
+  padding: 0px;
+
+  margin-top: 0px;
+
+  height: 42px;
+  line-height: 54px;
+  text-align: center;
+  vertical-align: middle;
+  display: inline-block;
+  color: rgb(255,255,255);
+  border: 2px solid rgba(255,255,255,0);
+  background-color: rgba(255,255,255,0.15);
+}
+
+.half {
+  width: 46px;
+}
+.halfPlus {
+  width: 49px;
+}
+
+.one {
+  width: 104px;
+}
+
+.two {
+  width: 220px;
+}
+.twoAndHalf{
+  width: 278px;
+}
+
+.three {
+  width: 336px;
+}
+
+.four {
+   width: 452px;
+ }
+
+.fourAndHalf {
+  width: 514px;
+}
+
+.dropZoneContent {
+  height:220px;
+
+  margin-top: 0px;
+
+  background-image: url("/libraries/gui/resources/dropZone.svg?2");
+  background-repeat: no-repeat, repeat;
+
+
+
+}
+
+.makeTextSelectAble {
+  cursor: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+.textfield{
+ /* border: 2px solid white;
+  -moz-appearance: textfield;
+  -webkit-appearance: textfield;
+*/
+  cursor: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+  font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
+  font-size: 12pt;
+}
+
+
+.dropZoneContentBackground {
+  height:220px;  width: 0px;
+position: relative;
+  margin-top: -220px;
+  margin-left: 232px;
+  background-color: rgba(41,253,253,0.3);
+  z-index: -3;
+}
+
+.leftText {
+  text-align: left;
+  padding-left: 10px;
+  padding-right: -10px;
+}
+
+.inactive {
+  opacity: 0.25;
+}
+/*Styling the HUE IP input*/
+.inputText {
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  user-select: auto;
+  cursor: auto;
+}
+#ipInput {
+  background: transparent;
+  border: none;
+  height: 28px;
+  line-height: 28px;
+  vertical-align: middle;
+  font-size: 12pt;
+  color: rgb(255,255,255);
+}
+#ipInput:focus {
+  outline: none;
+}
+#ipInput::-webkit-input-placeholder {
+  color: rgb(255,255,255);
+}
+#ipInput:-moz-placeholder {
+  color: rgb(255,255,255);
+}
+#ipInput::-moz-placeholder {
+  color: rgb(255,255,255);
+}
+

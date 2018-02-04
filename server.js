@@ -72,7 +72,7 @@
 
 var globalVariables = {
     developer: true, // show developer web GUI
-    debug: true      // debug messages to console
+    debug: false      // debug messages to console
 };
 
 // ports used to define the server behaviour
@@ -196,6 +196,8 @@ function Objects() {
     this.memory = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
+    // which visualization mode it should use right now ("ar" or "screen")
+    this.visualization = "ar";
 }
 
 function Frame() {
@@ -2423,6 +2425,12 @@ function objectWebServer() {
             res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
         });
 
+        webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
+            // cout("get 13");
+            console.log(req.params);
+            res.send(webFrontend.uploadTargetContentFrame(req.params.object, req.params.frame, __dirname, objectInterfaceFolder));
+        });
+
         webServer.get(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
             webFrontend.editContent(req, res);
         });
@@ -2464,15 +2472,51 @@ function objectWebServer() {
             objects[req.params[0]].deactivated = true;
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
-            res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-            res.redirect(req.get('referer'));
+            res.send("ok");
+          //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+           // res.redirect(req.get('referer'));
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
             objects[req.params[0]].deactivated = false;
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
-            res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-            res.redirect(req.get('referer'));
+
+            res.send("ok");
+           // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+           // res.redirect(req.get('referer'));
+        });
+
+
+        webServer.get('/object/*/screen/', function (req, res) {
+            objects[req.params[0]].visualization = "screen";
+            console.log(req.params[0], "screen");
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.send("ok");
+        });
+
+        webServer.get('/object/*/ar/', function (req, res) {
+            objects[req.params[0]].visualization = "ar";
+            console.log(req.params[0], "ar");
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.send("ok");
+        });
+
+        webServer.get('/object/*/*/reset/', function (req, res) {
+            objects[req.params[0]].frames[req.params[1]].ar = {
+                x : 0,
+                y : 0,
+                scale : 1,
+                matrix : []
+            };
+            // position data for the screen visualization mode
+            objects[req.params[0]].frames[req.params[1]].screen = {
+                x : 0,
+                y : 0,
+                scale : 1,
+                matrix : []
+            };
+            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            res.send("ok");
         });
 
         // request a zip-file with the object stored inside. *1 is the object
@@ -2580,18 +2624,28 @@ function objectWebServer() {
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
             // cout("post 22");
+            console.log(req.body);
             if (req.body.action === "new") {
                 // cout(req.body);
-                if (req.body.name !== "") {
+                if (req.body.name !== "" && req.body.frame === "") {
+                   // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
+                    utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
+                } else if(req.body.name !== "" && req.body.frame !== ""){
+                  utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug);
 
-                    var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
-                    utilities.createFolder(req.body.name, defaultFrameName, __dirname, globalVariables.debug);
+                    var objectKey = utilities.readObject(objectLookup, req.body.name);
 
+                    console.log(objectKey);
+                    if(!objects[objectKey].frames[req.body.frame]) {
+                        objects[objectKey].frames[req.body.frame] = new Frame();
+                        objects[objectKey].frames[req.body.frame].name = req.body.frame;
+                        utilities.writeObjectToFile(objects, objectKey, __dirname);
+                    }
                 }
-                res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+              //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+            res.send("ok");
             }
             if (req.body.action === "delete") {
-                var folderDel = __dirname + '/objects/' + req.body.name;
 
                 var deleteFolderRecursive = function (folderDel) {
                     if (fs.existsSync(folderDel)) {
@@ -2607,44 +2661,43 @@ function objectWebServer() {
                     }
                 };
 
-                deleteFolderRecursive(folderDel);
 
-                var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+                // remove when frame is implemented
+                if (req.body.frame !== "") {
+                    var folderDelFrame = __dirname + '/objects/' + req.body.name+"/frames/"+req.body.frame;
+                    deleteFolderRecursive(folderDelFrame);
 
-                if (tempFolderName2 !== null) {
-                    if (tempFolderName2 in objects) {
-                        cout("ist noch da");
-                    } else {
-                        cout("ist weg");
-                    }
-                    if (tempFolderName2 in knownObjects) {
-                        cout("ist noch da");
-                    } else {
-                        cout("ist weg");
+                    var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+
+                    if (objectKey !== null && req.body.frame !== null) {
+                        delete objects[objectKey].frames[req.body.frame];
                     }
 
-                    // remove object from tree
-                    delete objects[tempFolderName2];
-                    delete knownObjects[tempFolderName2];
-                    delete objectLookup[req.body.name];
+                    utilities.writeObjectToFile(objects, objectKey, __dirname);
+                    res.send("ok");
 
-                    if (tempFolderName2 in objects) {
-                        cout("ist noch da");
-                    } else {
-                        cout("ist weg");
+                } else {
+
+                    var folderDel = __dirname + '/objects/' + req.body.name;
+                    deleteFolderRecursive(folderDel);
+
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+
+                    if (tempFolderName2 !== null) {
+
+                        // remove object from tree
+                        delete objects[tempFolderName2];
+                        delete knownObjects[tempFolderName2];
+                        delete objectLookup[req.body.name];
+
                     }
-                    if (tempFolderName2 in knownObjects) {
-                        cout("ist noch da");
-                    } else {
-                        cout("ist weg");
-                    }
+
+                    cout("i deleted: " + tempFolderName2);
+
+                    //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                    res.send("ok");
                 }
-
-                cout("i deleted: " + tempFolderName2);
-
-                res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
             }
-
         });
 
         var tmpFolderFile = "";
@@ -2851,10 +2904,14 @@ function objectWebServer() {
 
                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
+                                res.status(200);
+                                res.send(thisObjectId);
+                            } else {
+                                res.status(200);
+                                res.send("ok");
                             }
 
-                            res.status(200);
-                            res.send("done");
+
                             //   fs.unlinkSync(folderD + "/" + filename);
                         }
 
@@ -2910,12 +2967,14 @@ function objectWebServer() {
 
                                             objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
+                                            res.status(200);
+                                            res.send(thisObjectId);
                                         }
 
                                     }
 
                                     res.status(200);
-                                    res.send("done");
+                                    res.send("ok");
                                 });
 
                                 unzipper.on('progress', function (fileIndex, fileCount) {
@@ -3003,6 +3062,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
         }
     }
 }
+
 
 /**
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.

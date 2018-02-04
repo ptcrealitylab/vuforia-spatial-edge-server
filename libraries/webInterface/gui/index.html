@@ -1,0 +1,201 @@
+<html>
+<head>
+    <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+    <META HTTP-EQUIV="EXPIRES" CONTENT="Mon, 22 Jul 2002 11:12:01 GMT">
+    <title>Reality Editor Starter App</title>
+    <link rel="stylesheet" type="text/css" href="index.css?32">
+    <script src="resources/dropzone.js"></script>
+
+
+</head>
+<body>
+<div id='app' style="  margin: 0 auto;
+     width: 746px; ">
+
+    <div id='header'>
+        <div id='title'>
+            <img src="resources/logo.svg" id='logo'>
+            Reality Server
+        </div>
+        <div id='subtitle'>Reality Server - V. 3.0. - Server IP: <span id="ip">xxx.xxx.xxx.xxx</span></div>
+    </div>
+
+    <div id='contents'>
+        <!--   <div class='objectGroup'>
+               <div class='unitGroup'>
+                   Reality Server Objects
+                   <br/>
+                   <div id="" class='button white two'>Name</div>
+                   <div id="" class='button blue half'>Info</div>
+                   <div id="" class='button red one'>Target</div>
+                   <div id="" class='button blue one'>Add Frame</div>
+                   <div id="" class='button blue one'>Screen</div>
+                   <div id="" class='button yellow half'>Off</div>
+                   <div id="" class='button blue half'>X</div>
+
+                   <br/>
+                   <div id='' class='button hidden one'></div>
+                   <div id='' class='button white two'>Name</div>
+                   <div id="" class='button blue half'>Info</div>
+                   <div id="" class='button green one'>Content</div>
+                   <div id="" class='button blue one'>Reset</div>
+                   <div id="" class='button blue one'>X</div>
+               </div>
+
+
+               <div class='unitGroup'>
+                   <div id='' class='button white two'>Name</div>
+                   <div id="" class='button blue half'>Info</div>
+                   <div id="" class='button green one'>Target</div>
+                   <div id="" class='button blue one'>Add Frame</div>
+                   <div id="" class='button blue one'>Screen</div>
+                   <div id="" class='button yellow half'>Off</div>
+                   <div id="" class='button blue half'>X</div>
+
+                   <br/>
+                   <div id='' class='button hidden one'></div>
+                   <div id='' class='button white two'>Name</div>
+                   <div id="" class='button blue half'>Info</div>
+                   <div id="" class='button green one'>Content</div>
+                   <div id="" class='button blue one'>Reset</div>
+                   <div id="" class='button blue one'>X</div>
+               </div>
+           </div> -->
+    </div>
+</div>
+
+<!--- Templates -->
+
+<template id="start">
+    <div class="start">
+        <div id="addObject" class='addObject button blue one clickAble' style="cursor: pointer">Add Object
+        </div><div class='space hidden'>
+        </div><div class='singleTarget button yellow two inactive'>Activate Single Target File
+        </div><div class='space hidden'>
+        </div><div class='upload button blue two inactive'>Upload Object File</div>
+    </div>
+</template>
+
+<template id="object">
+    <div class="object">
+        <div class='name item button white two'>Name
+        </div><div class='item space'>
+        </div><div class='target item button yellow one'>Target
+        </div><div class='item space'>
+        </div><div class='addFrame item button blue one'>Add Frame
+        </div><div class='item space'>
+        </div><div class='visualization item button blue one'>Screen
+        </div><div class='item space'>
+        </div><div class='remove item button red half'>X
+        </div><div class='item space'>
+        </div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">
+        </div><div class='item space'>
+        </div><div class='active item button yellow half'>Off</div>
+    </div>
+</template>
+
+<template id="frame">
+    <div class="frame">
+        <div class='button hidden one'>
+        </div><div class='item space hidden'>
+        </div><div class='name item button white two'>Name
+        </div><div class='item space'>
+        </div><div class='content item button green one'>Content
+        </div><div class='item space'>
+        </div><div class='reset item button blue one'>Reset
+    <!--    </div><div class='item space'>
+    </div><div class='item space halfPlus'>-->
+    </div><div class='item space'>
+        </div><div class='remove item button red half'>X</div>
+    </div>
+</template>
+
+<template id="end">
+    <div class="end">
+        <div class='button hidden one'></div>
+    </div>
+</template>
+
+<template id="targetId">
+    <div class="dropZoneElement">
+        <div class="dropZoneButtons">
+            <div class='button hidden two'>
+            </div><div class='item space hidden'>
+            </div><div class='name item button white twoAndHalf makeTextSelectAble'>Name
+            </div><div class='item space'>
+            </div><div class='content item button green two fileinput-button clickAble'>Upload Target
+            </div>
+        </div>
+        <div class="targetDropZone">
+            <div class='button hidden two'>
+            </div><div class='item space hidden'>
+            </div><div class='item dropZoneContent space fourAndHalf'></div>
+            <div class="dropZoneContentBackground"></div>
+        </div>
+    </div>
+</template>
+
+<template id="textEntryId">
+    <div class="textEntry">
+        <div class='textfield name item button white two' contenteditable
+             onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
+        </div><div class='addButton item button green three clickAble'>Add</div>
+    </div>
+</template>
+
+<template id="textEntryFrameId">
+    <div class="textEntryFrame">
+        <div class='button hidden three'>
+        </div><div class='item space hidden'>
+    </div><div class='textfield name item button white two' contenteditable
+             onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
+    </div><div class='addButtonFrame item button green one clickAble'>Add</div>
+    </div>
+</template>
+
+<template id="resetOKId">
+    <div class="resetOK">
+        <div class='button hidden four'>
+        </div><div class='item space hidden'>
+    </div><div class='reset item button white one noBorder'>Sure?
+    </div><div class='item space'>
+    </div><div class='resetYes item button green half clickAble'>Yes
+    </div>
+    </div>
+</template>
+
+<template id="deleteOKId">
+    <div class="deleteOK">
+        <div class='button hidden four'>
+        </div><div class='item space hidden'>
+    </div><div class='button hidden one'>
+        </div><div class='item space hidden'>
+    </div><div class='delete item button white half noBorder'>Sure?
+    </div><div class='item space'>
+    </div><div class='deleteYes item button green half clickAble'>Yes
+    </div>
+    </div>
+</template>
+
+<script>
+    var realityServer = {
+        myTargetDropzone : {},
+        dropZoneId : "",
+        objects: {/*replace Object*/},
+        states: {/*replace States*/},
+        domObjects: document.getElementById("contents"),
+        templates: document.getElementsByTagName("template")
+    };
+
+</script>
+
+<script src="index.js?33"></script>
+<script src="utilities.js"></script>
+
+<div style="display: none">
+<div id="templateZone">
+            </div>
+</div>
+<br> <br> <br>
+</body>
+</html>
