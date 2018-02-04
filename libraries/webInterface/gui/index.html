@@ -5,12 +5,10 @@
     <title>Reality Editor Starter App</title>
     <link rel="stylesheet" type="text/css" href="index.css?32">
     <script src="resources/dropzone.js"></script>
-
-
 </head>
 <body>
 <div id='app' style="  margin: 0 auto;
-     width: 746px; ">
+     width: 862px; ">
 
     <div id='header'>
         <div id='title'>
@@ -80,7 +78,7 @@
     <div class="object">
         <div class='name item button white two'>Name
         </div><div class='item space'>
-        </div><div class='target item button yellow one'>Target
+        </div><div class='target item button yellow one'>Add Target
         </div><div class='item space'>
         </div><div class='addFrame item button blue one'>Add Frame
         </div><div class='item space'>
@@ -90,7 +88,9 @@
         </div><div class='item space'>
         </div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">
         </div><div class='item space'>
-        </div><div class='active item button yellow half'>Off</div>
+        </div><div class='active item button yellow half'>Off
+        </div><div class='item space'></div><div class='textfield zone item button white one' contenteditable
+                                                 onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
     </div>
 </template>
 
@@ -102,7 +102,7 @@
         </div><div class='item space'>
         </div><div class='content item button green one'>Content
         </div><div class='item space'>
-        </div><div class='reset item button blue one'>Reset
+        </div><div class='reset item button blue one'>Reset UI
     <!--    </div><div class='item space'>
     </div><div class='item space halfPlus'>-->
     </div><div class='item space'>

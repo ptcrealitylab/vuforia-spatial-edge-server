@@ -45,8 +45,6 @@ realityServer.update = function () {
             realityServer.changeActiveState(thisObject.dom, false, objectKey);
         }
 
-        // define logic for buttons
-
         if (thisObject.initialized) {
             realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
         } else {
@@ -62,6 +60,12 @@ realityServer.update = function () {
         }
 
         thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
+
+        if(thisObject.zone === "" || !thisObject.zone){
+            thisObject.dom.querySelector(".zone").innerText = "Zone";
+        } else {
+            thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
+        }
 
         console.log(thisObject.visualization);
         if(thisObject.visualization === "AR") thisObject.visualization = "ar";
@@ -146,6 +150,7 @@ realityServer.gotClick = function (event) {
             newNode.querySelector(".dropZoneElement").id = "targetDropZone"+objectKey;
             newNode.querySelector(".name").innerText =realityServer.objects[objectKey].targetName;
             referenceNode.after(newNode);
+
             realityServer.dropZoneId = "targetDropZone"+objectKey;
 
             var previewNode = document.querySelector("#templateZone");
@@ -191,13 +196,6 @@ realityServer.gotClick = function (event) {
                 }
 
             });
-
-
-
-
-
-
-
         } else {
             realityServer.dropZoneId = "";
             var removeNode = document.getElementById("targetDropZone"+objectKey);
@@ -436,6 +434,18 @@ console.log(document.getElementById("textEntryObject"));
     /**
      *  ADD FRAME
      */
+
+    if (buttonClassList.contains("zone")) {
+        thisEventObject.style.color = "rgb(255,255,255)";
+
+        realityServer.sendRequest("/", "POST", function(state){
+            if(state === "ok") {
+                thisEventObject.style.color = "rgb(41,253,47)";
+            }
+            }, "action=zone&name="+realityServer.objects[objectKey].name+"&zone="+thisEventObject.innerText);
+
+        console.log(thisEventObject.innerText);
+    }
     if (buttonClassList.contains("addFrame")) {
 
         var oldID = null;
@@ -557,7 +567,11 @@ realityServer.setDeactive = function(item){
         item.classList.remove("clickAble");
     item.style.cursor = "default";
     item.style.pointerEvents = "none";
-    item.removeEventListener("click", realityServer.gotClick, false);
+    if (item.classList.contains("zone")) {
+        item.removeEventListener("keyup", realityServer.gotClick, false);
+    } else {
+        item.removeEventListener("click", realityServer.gotClick, false);
+    }
 };
 
 realityServer.setActive = function(item){
@@ -567,7 +581,18 @@ realityServer.setActive = function(item){
     item.style.pointerEvents = "all";
     item.style.cursor = "pointer";
     item.classList.add("clickAble");
-    item.addEventListener("click", realityServer.gotClick, false);
+
+
+    if (item.classList.contains("zone")){
+        item.addEventListener("keyup", realityServer.gotClick, false);
+    } else {
+        item.addEventListener("click", realityServer.gotClick, false);
+    }
+   /* onkeyup="realityServer.gotClick(this)"
+    // define logic for buttons
+
+    document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
+    */
     /* } else {
          item.removeEventListener("click", realityServer.gotClick, false);
          item.style.pointerEvents = "none";

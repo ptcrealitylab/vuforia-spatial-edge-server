@@ -60,6 +60,7 @@ console.log(objectInterfaceName);
         this.frames = {};
         this.visualization = "AR";
         this.active = false;
+        this.zone = "";
     };
 
     function Frame() {
@@ -116,6 +117,7 @@ console.log(objectInterfaceName);
                 newObject[thisObjectKey].frames[frameKey] = new Frame();
                 newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
                 newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
+                newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
             }
 
 

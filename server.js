@@ -198,6 +198,8 @@ function Objects() {
     this.frames = {};
     // which visualization mode it should use right now ("ar" or "screen")
     this.visualization = "ar";
+
+    this.zone = "";
 }
 
 function Frame() {
@@ -896,6 +898,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     // Objects
     cout("with version number: " + thisVersionNumber);
+    var zone = "";
+    if(objects[thisId].zone) zone = objects[thisId].zone;
 
     // json string to be send
     var message = new Buffer(JSON.stringify({
@@ -903,7 +907,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         ip: thisIp,
         vn: thisVersionNumber,
         pr: protocol,
-        tcs: objects[thisId].tcs
+        tcs: objects[thisId].tcs,
+        zone: zone
     }));
 
     if (globalVariables.debug) console.log("UDP broadcasting on port: " + PORT);
@@ -912,7 +917,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         ip: thisIp,
         vn: thisVersionNumber,
         pr: protocol,
-        tcs: objects[thisId].tcs
+        tcs: objects[thisId].tcs,
+        zone: zone
     }));
     cout("UDP broadcasting on port: " + PORT);
     cout("Sending beats... Content: " + JSON.stringify({
@@ -920,7 +926,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         ip: thisIp,
         vn: thisVersionNumber,
         pr: protocol,
-        tcs: objects[thisId].tcs
+        tcs: objects[thisId].tcs,
+        zone: zone
     }));
 
     // creating the datagram
@@ -936,13 +943,16 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // cout("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
+                var zone = "";
+                if(objects[thisId].zone) zone = objects[thisId].zone;
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
                     pr: protocol,
-                    tcs: objects[thisId].tcs
+                    tcs: objects[thisId].tcs,
+                    zone: zone
                 }));
 
 // this is an uglly trick to sync each object with being a developer object
@@ -973,12 +983,16 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
 
+                var zone = "";
+                if(objects[thisId].zone) zone = objects[thisId].zone;
+
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: thisIp,
                     vn: thisVersionNumber,
                     pr: protocol,
-                    tcs: objects[thisId].tcs
+                    tcs: objects[thisId].tcs,
+                    zone : zone
                 }));
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
@@ -2623,8 +2637,14 @@ function objectWebServer() {
 
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
-            // cout("post 22");
-            console.log(req.body);
+
+            if (req.body.action === "zone") {
+                var objectKey = utilities.readObject(objectLookup, req.body.name);
+                objects[objectKey].zone = req.body.zone;
+                utilities.writeObjectToFile(objects, objectKey, __dirname);
+                res.send("ok");
+            }
+
             if (req.body.action === "new") {
                 // cout(req.body);
                 if (req.body.name !== "" && req.body.frame === "") {
