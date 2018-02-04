@@ -65,6 +65,7 @@
 <!--- Templates -->
 
 <template id="start">
+    <div class="">
     <div class="start">
         <div id="addObject" class='addObject button blue one clickAble' style="cursor: pointer">Add Object
         </div><div class='space hidden'>
@@ -74,9 +75,11 @@
     </div><div class='space hidden'>
     </div><div class='activateHardware button blue two inactive'>Manage Hardware Interfaces</div>
     </div>
+    </div>
 </template>
 
 <template id="object">
+    <div class="">
     <div class="object">
         <div class='name item button white two'>Name
         </div><div class='item space'>
@@ -96,9 +99,11 @@
         </div><div class='active item button yellow half'>Off
     </div>
     </div>
+    </div>
 </template>
 
 <template id="frame">
+    <div class="">
     <div class="frame">
         <div class='button hidden one'>
         </div><div class='item space hidden'>
@@ -116,15 +121,19 @@
     </div><div class='remove item button red half'>X
     </div>
     </div>
+    </div>
 </template>
 
 <template id="end">
+    <div class="expandcollapse expand">
     <div class="end">
         <div class='button hidden one'></div>
+    </div>
     </div>
 </template>
 
 <template id="targetId">
+    <div class="expandcollapseTarget expandTarget">
     <div class="dropZoneElement">
         <div class="dropZoneButtons">
             <div class='button hidden two'>
@@ -141,17 +150,21 @@
             <div class="dropZoneContentBackground"></div>
         </div>
     </div>
+    </div>
 </template>
 
 <template id="textEntryId">
+    <div class="expandcollapse expand">
     <div class="textEntry">
         <div class='textfield name item button white two' contenteditable
              onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
         </div><div class='addButton item button green three clickAble'>Add</div>
     </div>
+    </div>
 </template>
 
 <template id="textEntryFrameId">
+    <div class="expandcollapse expand">
     <div class="textEntryFrame">
         <div class='button hidden three'>
         </div><div class='item space hidden'>
@@ -159,9 +172,11 @@
              onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
     </div><div class='addButtonFrame item button green one clickAble'>Add</div>
     </div>
+    </div>
 </template>
 
 <template id="resetOKId">
+    <div class="expandcollapse expand">
     <div class="resetOK">
         <div class='button hidden four'>
         </div><div class='item space hidden'>
@@ -170,9 +185,11 @@
     </div><div class='resetYes item button green half clickAble'>Yes
     </div>
     </div>
+    </div>
 </template>
 
 <template id="deleteOKId">
+    <div class="expandcollapse expand">
     <div class="deleteOK">
         <div class='button hidden four'>
         </div><div class='item space hidden'>
@@ -185,14 +202,17 @@
     </div><div class='deleteYes item button green half clickAble'>Yes
     </div>
     </div>
+    </div>
 </template>
 
 <template id="fullScreenId">
+    <div class="expandcollapse expand">
     <div class="fullScreenObject">
         <div class='button hidden one'>
         </div><div class='item space hidden'>
         </div><div class='fullscreen item button purple fiveAndHalf clickAble'>OPEN USER INTERFACE IN FULLSCREEN
         </div>
+    </div>
     </div>
 </template>
 
