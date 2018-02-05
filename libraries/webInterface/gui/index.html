@@ -2,6 +2,7 @@
 <head>
     <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
     <META HTTP-EQUIV="EXPIRES" CONTENT="Mon, 22 Jul 2002 11:12:01 GMT">
+    <meta name="viewport" initial-scale=0.1">
     <title>Reality Editor Starter App</title>
     <link rel="stylesheet" type="text/css" href="index.css?32">
     <script src="resources/dropzone.js"></script>
@@ -121,7 +122,9 @@
     </div><div class='remove item button red half'>X
     </div>
     </div>
+        <div class="appendix"><div class = "child"></div></div>
     </div>
+
 </template>
 
 <template id="end">
@@ -213,6 +216,52 @@
         </div><div class='fullscreen item button purple fiveAndHalf clickAble'>OPEN USER INTERFACE IN FULLSCREEN
         </div>
     </div>
+    </div>
+</template>
+
+<template id="fileId">
+    <div class="folderRemove">
+        <div class="files" style="z-index: -20;">
+            <div class='button nameSpace hidden two'>
+            </div><div class='item space hidden'>
+        </div><div class='fileName item button blue one clickAble'>file.dat
+        </div><div class='item space hidden'>
+        </div><div class='button removeSpace hidden two'>
+        </div><div class='item space hidden'>
+        </div><div class='remove item button red half clickAble'>X
+        </div>
+        </div>
+    </div>
+</template>
+
+<template id="folderId">
+    <div class="folderRemove">
+        <div class="files" style="z-index: -20;">
+            <div class='nameSpace button hidden two'>
+            </div><div class='item space hidden'>
+        </div><div class='folderName item button white one clickAble'>folder
+        </div><div class='folderDropZone item button white one noBorderLeft fontTransparent'>Drop Zone
+        </div><div class='item space hidden'>
+        </div><div class='button removeSpace hidden two'>
+        </div><div class='item space hidden'>
+        </div><div class='remove item button red half'>X
+        </div>
+        </div>
+    </div>
+</template>
+
+
+<template id="contentDropZoneId">
+    <div class="contentDropZone">
+        <div class="files" style="z-index: -20;">
+            <div class=' button hidden two'>
+            </div><div class='item space hidden'>
+        </div><div class=' item button white one hidden'>
+        </div><div class='item space hidden'>
+        </div><div class='folderDropZone item button white noBorder one fontTransparentNormal'>Drop Zone
+        </div>
+        </div>
+        </div>
     </div>
 </template>
 

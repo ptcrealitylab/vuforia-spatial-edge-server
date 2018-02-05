@@ -324,12 +324,112 @@ realityServer.gotClick = function (event) {
     }
 
     if (buttonClassList.contains("content")) {
-        console.log(frameKey);
-        window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
+        referenceNode = document.createElement("div");
+        var thisNode = thisEventObject.parentNode.parentNode.querySelector(".appendix");
+        thisNode.appendChild(referenceNode);
+
+        if(thisNode.getAttribute("showUI") === "true")
+        {
+            var last;
+            while (last = thisNode.lastChild) thisNode.removeChild(last);
+            thisNode.setAttribute("showUI", "false");
+        } else {
+            thisNode.setAttribute("showUI", "true");
+
+     //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
+
+        realityServer.sendRequest("/object/" + realityServer.objects[objectKey].name + "/"+ frameKey+"/frameFolder", "GET", function (state) {
+            if (state) {
+              var tree =  JSON.parse(state);
+                // console.log(tree.children);
+                var newNode = {};
+               var thisLevel = realityServer.printFiles(tree);
+                getLevels (thisLevel, 0);
+
+                newNode = document.getElementById("contentDropZoneId").content.cloneNode(true);
+                referenceNode.before(newNode);
+
+                function getLevels (thisLevel, level){
+                    level = level+1;
+                    var nameDepth , xDepth, xDepth2;
+
+                    if(level === 1){
+
+                        nameDepth = "three";
+                        xDepth = "two";
+                        xDepth2 = "one";
+                    }
+                    if(level === 2){
+
+                        nameDepth = "four";
+                        xDepth = "one";
+                        xDepth2 = "zero";
+                    }
+                    if(level === 3){
+                        nameDepth = "five";
+                        xDepth = "zero";
+                        xDepth2 = "zero";
+                    }
+
+                    // todo: change the depth for the folders
+
+
+                    for(var fileKey in thisLevel.files) {
+                        newNode = document.getElementById("fileId").content.cloneNode(true);
+                        newNode.querySelector(".fileName").setAttribute("file", thisLevel.files[fileKey].path);
+                        newNode.querySelector(".remove").setAttribute("path", thisLevel.files[fileKey].path);
+                        newNode.querySelector(".fileName").innerText = fileKey;
+                        realityServer.switchClass(newNode.querySelector(".nameSpace"), "two", nameDepth);
+                        realityServer.switchClass(newNode.querySelector(".removeSpace"), "two", xDepth);
+                        newNode.querySelector(".fileName").addEventListener("click", function (){window.location.href= this.getAttribute("file");}, false);
+
+                       referenceNode.appendChild(newNode);
+                    }
+                    for(var folderKey in thisLevel.folders) {
+                        if(level < 3) {
+                            newNode = document.getElementById("folderId").content.cloneNode(true);
+                            newNode.querySelector(".folderName").innerText = folderKey;
+                            realityServer.switchClass(newNode.querySelector(".nameSpace"), "two", nameDepth);
+                            realityServer.switchClass(newNode.querySelector(".removeSpace"), "two", xDepth2);
+                            referenceNode.appendChild(newNode);
+                            getLevels(realityServer.printFiles(thisLevel.folders[folderKey].link), level);
+                        }
+                    }
+
+                }
+
+
+
+
+
+            }
+        });
+        }
+
     }
 
+realityServer.printFiles = function (item){
+        var returnList = {
+            files: {},
+            folders:{}
+        };
 
-
+        for (var i = 0; i < item.children.length; i++) {
+            var thisItem = item.children[i];
+            if(thisItem.type === "file"){
+                returnList.files[thisItem.name] = {
+                    path: thisItem.path,
+                    extension: thisItem.extension
+                };
+            } else if(thisItem.type === "directory"){
+                returnList.folders[thisItem.name] = {
+                    path: thisItem.path,
+                    link: thisItem
+                };
+            }
+        }
+        return returnList;
+    }
 
     /**
      *  REMOVE
@@ -528,8 +628,6 @@ realityServer.sendRequest = function(url, httpStyle, callback, body) {
                 if (req.status === 200) {
                     // JSON.parse(req.responseText) etc.
                     if(req.responseText)
-                        console.log("this");
-                    console.log(req.responseText);
                     callback(req.responseText);
                 } else {
                     // Handle error case
