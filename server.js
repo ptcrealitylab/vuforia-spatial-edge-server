@@ -1197,12 +1197,10 @@ function objectWebServer() {
         var urlArray = req.originalUrl.split("/");
 
         // console.log(urlArray);
-        if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.html?$/))) {
-
+        if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
             var fileName = __dirname + "/objects" + req.url;
 
-            if (urlArray[3] !== "index.html" && urlArray[3] !== "index.htm") {
-
+            if (urlArray[urlArray.length-1] !== "index.html" && urlArray[urlArray.length-1] !== "index.htm") {
                 if (fs.existsSync(fileName + "index.html")) {
                     fileName = fileName + "index.html";
                 } else if (fs.existsSync(fileName + "index.htm")) {
@@ -1221,8 +1219,12 @@ function objectWebServer() {
             html = html.replace('<script src="objectIO.js"></script>', '');
             html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
 
+            var level = "";
+            for(var i = 2; i < urlArray.length; i++){
+                level += "../";
+            }
             var loadedHtml = cheerio.load(html);
-            var scriptNode = '<script src="../../../../objectDefaultFiles/object.js"></script>';
+            var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
@@ -2434,10 +2436,15 @@ function objectWebServer() {
 
         // sends the content page for the object :id
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder + 'content/:id', function (req, res) {
-            // cout("get 13");
-            res.send(webFrontend.uploadTargetContent(req.params.id, __dirname, objectInterfaceFolder));
+        webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
+            const dirTree = require('directory-tree');
+            var objectPath = __dirname + "/objects/" + req.params.object +"/frames/"+req.params.frame;
+            var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
+                item.path = item.path.replace(__dirname+"/objects", "/obj");
+            });
+            res.json(tree);
         });
+
 
         webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
             // cout("get 13");
@@ -2604,6 +2611,34 @@ function objectWebServer() {
         // ****************************************************************************************************************
         // post interfaces
         // ****************************************************************************************************************
+        webServer.post(objectInterfaceFolder + "contentDelete/:object/:frame", function (req, res) {
+            if (req.body.action === "delete") {
+                var folderDel = __dirname + req.path.substr(4);
+                if (fs.lstatSync(folderDel).isDirectory()) {
+                    var deleteFolderRecursive = function (folderDel) {
+                        if (fs.existsSync(folderDel)) {
+                            fs.readdirSync(folderDel).forEach(function (file, index) {
+                                var curPath = folderDel + "/" + file;
+                                if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                                    deleteFolderRecursive(curPath);
+                                } else { // delete file
+                                    fs.unlinkSync(curPath);
+                                }
+                            });
+                            fs.rmdirSync(folderDel);
+                        }
+                    };
+
+                    deleteFolderRecursive(folderDel);
+                }
+                else {
+                    fs.unlinkSync(folderDel);
+                }
+
+                res.send("ok");
+
+            }
+        });
 
         webServer.post(objectInterfaceFolder + "contentDelete/:id", function (req, res) {
             if (req.body.action === "delete") {

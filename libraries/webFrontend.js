@@ -49,6 +49,7 @@ var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
 var pathUtilities = require('path');
+var readdirp = require('readdirp');
 
 
 exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
@@ -1211,6 +1212,10 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
     var objectPath = dirname0 + "/objects/"+ parm +"/frames/";
 
     var objectPath2 = dirname0 + "/objects/" + parm +"/frames/"+frame;
+
+    // Import the module
+
+
 
     var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
         return fs.statSync(objectPath + '/' + file).isDirectory();
