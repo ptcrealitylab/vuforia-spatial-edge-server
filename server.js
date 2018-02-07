@@ -1176,6 +1176,8 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
 
+    webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
+
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
@@ -3068,7 +3070,7 @@ function socketServer() {
                     node: msgContent.node,
                     data: msgContent.data
                 });
-                engine.trigger(msgContent.object, msgContent.frame, msgContent.node, objects[msgContent.object].nodes[msgContent.node]);
+                engine.trigger(msgContent.object, msgContent.frame, msgContent.node, objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node]);
             }
 
         });
@@ -3226,6 +3228,13 @@ var engine = {
 
                     // console.log('testing...');
                     // console.log(this.link);
+
+                    if (!this.objects[this.link.objectB].frames[this.link.frameB]) {
+                        console.warn('link destination should exist but doesnt!');
+                        console.warn(this.link);
+                        console.warn(this.objects[this.link.objectB].frames);
+                        continue;
+                    }
 
                     this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
 
