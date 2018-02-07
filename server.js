@@ -2499,6 +2499,10 @@ function objectWebServer() {
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
+            console.log("------------------");
+            console.log(objects);
+            console.log("------------------");
+            console.log(req.params[0]);
             objects[req.params[0]].deactivated = false;
             utilities.writeObjectToFile(objects, req.params[0], __dirname);
 
@@ -2681,10 +2685,12 @@ function objectWebServer() {
             }
 
             if (req.body.action === "new") {
+                console.log("got NEW"+req.body.name );
                 // cout(req.body);
                 if (req.body.name !== "" && !req.body.frame) {
                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
+
                 } else if(req.body.name !== "" && req.body.frame !== ""){
                   utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug);
 
@@ -2698,6 +2704,8 @@ function objectWebServer() {
                     }
                 }
               //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+           console.log(objects);
+
             res.send("ok");
             }
             if (req.body.action === "delete") {
@@ -2912,6 +2920,8 @@ function objectWebServer() {
                     cout("------------" + form.uploadDir + "/" + filename);
 
                     if (req.headers.type === "targetUpload") {
+                        console.log(req.params.id);
+                        console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
                         var fileExtension = getFileExtension(filename);
 
                         if (fileExtension === "jpg") {
@@ -2950,8 +2960,23 @@ function objectWebServer() {
 
                             var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
+
                             if (typeof  objects[thisObjectId] !== "undefined") {
                                 var thisObject = objects[thisObjectId];
+
+                                var jpg = false;
+                                if(fs.existsSync(folderD + "/target/target.jpg")) jpg = true;
+                                var dat = false;
+                                if(fs.existsSync(folderD + "/target/target.dat") && fs.existsSync(folderD + "/target/target.xml")) dat = true;
+
+
+                                var sendObject = {
+                                    id : thisObjectId,
+                                    name: thisObject.name,
+                                    initialized : true,
+                                    jpgExists :jpg,
+                                    targetExists: dat
+                                };
 
                                 thisObject.tcs = utilities.genereateChecksums(objects, fileList);
 
@@ -2960,10 +2985,15 @@ function objectWebServer() {
                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                 res.status(200);
-                                res.send(thisObjectId);
+                                res.json(sendObject);
                             } else {
                                 res.status(200);
-                                res.send("ok");
+
+                                var sendObject = {
+                                    initialized : false
+                                };
+
+                                res.json("ok");
                             }
 
 
@@ -3023,13 +3053,32 @@ function objectWebServer() {
                                             objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                             res.status(200);
-                                            res.send(thisObjectId);
+
+
+                                            var jpg = false;
+                                            if(fs.existsSync(folderD + "/target/target.jpg")) jpg = true;
+                                            var dat = false;
+                                            if(fs.existsSync(folderD + "/target/target.dat") && fs.existsSync(folderD + "/target/target.xml")) dat = true;
+
+
+                                            var sendObject = {
+                                                id : thisObjectId,
+                                                name: thisObject.name,
+                                                initialized : true,
+                                                jpgExists :jpg,
+                                                targetExists: dat
+                                            };
+
+                                            res.json(sendObject);
                                         }
 
                                     }
 
+                                    var sendObject = {
+                                        initialized : false
+                                    };
                                     res.status(200);
-                                    res.send("ok");
+                                    res.json(sendObject);
                                 });
 
                                 unzipper.on('progress', function (fileIndex, fileCount) {

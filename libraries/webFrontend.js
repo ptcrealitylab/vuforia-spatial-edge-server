@@ -87,12 +87,12 @@ console.log(objectInterfaceName);
 
     tempFiles.forEach(function(objectKey) {
         var thisObjectKey = objectKey;
-        for(var objectSubKey in objects){
-            if(objects[objectSubKey].name === objectKey) {
-                thisObjectKey = objectSubKey;
-               break;
-            }
-        }
+       var tempKey = utilities.getObjectIdFromTarget(objectKey, dirnameO);
+
+       if(tempKey)
+           thisObjectKey = tempKey;
+
+    console.log(thisObjectKey);
 
         newObject[thisObjectKey] = new ThisObjects();
 
@@ -104,6 +104,7 @@ console.log(objectInterfaceName);
 
         if (fs.existsSync(objectPath + '/' + objectKey + "/target/target.dat") && fs.existsSync(objectPath + '/' + objectKey + "/target/target.xml") && fs.existsSync(objectPath + '/' + objectKey + "/target/target.jpg"))
         {
+            console.log("file Exists "+ objectKey)
             newObject[thisObjectKey].initialized = true;
 
             newObject[thisObjectKey].targetName = thisObjectKey;
@@ -113,14 +114,15 @@ console.log(objectInterfaceName);
         }
 
         if(objectKey !== thisObjectKey) {
-            newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
-            for(var frameKey in objects[thisObjectKey].frames){
-                newObject[thisObjectKey].frames[frameKey] = new Frame();
-                newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
-                newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
-                newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
+            if(objects[thisObjectKey]) {
+                newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
+                for (var frameKey in objects[thisObjectKey].frames) {
+                    newObject[thisObjectKey].frames[frameKey] = new Frame();
+                    newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
+                    newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
+                    newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
+                }
             }
-
 
         }
 
