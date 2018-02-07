@@ -25,17 +25,27 @@ realityServer.initialize = function () {
 
 };
 
-realityServer.update = function () {
+realityServer.update = function (thisItem2) {
+    if(!thisItem2) thisItem2 = "";
 
-    realityServer.domObjects.innerHTML = "";
-    this.domObjects.appendChild(this.templates[0].content.cloneNode(true));
-  //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
-    document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
+    if(thisItem2 === "") {
+        realityServer.domObjects.innerHTML = "";
+        this.domObjects.appendChild(this.templates[0].content.cloneNode(true));
+        //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
+        document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
+
+    }
 
     for (var objectKey in this.objects) {
         if(objectKey === "allTargetsPlaceholder000000000000") continue;
 
         var thisObject = this.objects[objectKey];
+
+        console.log("--------"+thisItem2);
+
+        if(!thisItem2 || thisItem2 === objectKey)  {
+
+            console.log(this.objects);
         thisObject.dom = this.templates[1].content.cloneNode(true);
         thisObject.dom.querySelector(".object").id = "object"+objectKey;
         // check if items are active
@@ -82,12 +92,25 @@ realityServer.update = function () {
 
 
         thisObject.dom.querySelector(".name").innerText = thisObject.name;
-
+            if(!thisItem2)
         this.domObjects.appendChild(thisObject.dom);
+
+
+            if(thisItem2 === objectKey) {
+                var thisItem = "object" + objectKey;
+                console.log(thisItem);
+                var thisDom = document.getElementById(thisItem);
+                console.log(thisDom);
+                 thisDom.before(thisObject.dom);
+                thisDom.remove();
+            }
+
+
         if(thisObject.visualization === "screen") {
             var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
             thisFullScreen.querySelector(".fullscreen").id = "fullscreen"+objectKey;
-            this.domObjects.appendChild(thisFullScreen);
+            if(!thisItem2)
+                this.domObjects.appendChild(thisFullScreen);
             document.getElementById("fullscreen"+objectKey).addEventListener("click", realityServer.gotClick, false);
         }
 
@@ -111,11 +134,17 @@ realityServer.update = function () {
             }
             thisFrame.dom.querySelector(".name").innerText = thisFrame.name;
 
+            if(!thisItem2)
             this.domObjects.appendChild(thisFrame.dom, true);
         }
-    }
-    this.domObjects.appendChild(this.templates[3].content.cloneNode(true));
+         }
 
+    }
+    if(thisItem2 === "") {
+        this.domObjects.appendChild(this.templates[3].content.cloneNode(true));
+    }
+
+console.log(realityServer.objects)
 };
 
 
@@ -156,6 +185,10 @@ realityServer.gotClick = function (event) {
 
             var newNode = document.getElementById("targetId").content.cloneNode(true);
             newNode.querySelector(".dropZoneElement").id = "targetDropZone"+objectKey;
+
+            if(!realityServer.objects[objectKey].targetName)
+                realityServer.objects[objectKey].targetName = realityServer.objects[objectKey].name+realityServer.uuidTime();
+
             newNode.querySelector(".name").innerText =realityServer.objects[objectKey].targetName;
             referenceNode.after(newNode);
 
@@ -196,11 +229,39 @@ realityServer.gotClick = function (event) {
             });
 
             realityServer.myTargetDropzone.on("success", function (file, responseText) {
-                if(responseText !== "ok"){
-                    realityServer.domObjects.querySelector(".dropZoneContentBackground").style.width = "0px";
-                    realityServer.objects[responseText].initialized = true;
-                    realityServer.changeActiveState(realityServer.objects[objectKey].dom, true, objectKey);
-                    realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
+                console.log(responseText);
+               // var conText = JSON.parse(responseText);
+
+                console.log("test");
+                realityServer.domObjects.querySelector(".dropZoneContentBackground").style.width = "0px";
+
+                if(responseText.initialized){
+                    if( realityServer.objects[responseText.name])
+                    {
+                        realityServer.objects[responseText.id] =  realityServer.objects[responseText.name];
+                       var thisObject  = document.getElementById("object"+responseText.name);
+                       thisObject.id = "object"+responseText.id;
+                        var objectList = thisObject.querySelectorAll("button");
+
+                        for(var i = 0; i < objectList.length; i++){
+                            objectList[i].id = responseText.id;
+                        }
+
+                      delete realityServer.objects[responseText.name];
+
+                        realityServer.objects = realityServer.sortObject(realityServer.objects);
+                    }
+
+                    if(responseText.jpgExists && responseText.targetExists) {
+                        realityServer.objects[responseText.id].initialized = true;
+                        realityServer.objects[responseText.id].active = true;
+                        realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "yellow", "green");
+                    }
+                    realityServer.update(responseText.id);
+
+
+                  //  realityServer.changeActiveState(realityServer.objects[objectKey].dom, true, objectKey);
+                   // realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
                 }
 
             });
@@ -527,6 +588,8 @@ console.log(document.getElementById("textEntryObject"));
                       realityServer.objects[textContent] = new Objects();
                       realityServer.objects[textContent].name = textContent;
                   }
+
+                  realityServer.objects =  realityServer.sortObject(realityServer.objects);
                   realityServer.update();}, "action=new&name="+textContent);
           }
       }//
@@ -731,7 +794,7 @@ realityServer.setActive = function(item){
 
 realityServer.toggleFullScreen = function (item) {
     var thisScreen = document.body;
-    if(item) thisScreen = item;
+   // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
         if (thisScreen.mozRequestFullScreen) {
@@ -766,6 +829,30 @@ realityServer.removeAnimated = function (item, target, expand, collapse){
     } else {
         parent.remove();
     }
+};
+
+realityServer.sortObject = function (o) {
+    var sorted = {};
+    var a = [],i;
+    for(i in o){
+        if(o.hasOwnProperty(i)){
+            a.push([o[i].name,i]);
+        }
+    }
+    a.sort(function(a,b){ return a[0]>b[0]?1:-1; });
+
+    for (key = 0; key < a.length; key++) {
+        sorted[a[key][1]] = o[a[key][1]];
+    }
+    return sorted;
+};
+
+realityServer.uuidTime = function () {
+    var dateUuidTime = new Date();
+    var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+    while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return stampUuidTime;
 };
 
 realityServer.initialize();
