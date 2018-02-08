@@ -15,7 +15,7 @@
             border-color: #00ff00;
         }
     </style>
-    <script src="object.js"></script>
+    <script src="../objectDefaultFiles/object.js"></script>
 </head>
 <body>
 <div id="output"></div>
@@ -27,8 +27,8 @@
         value: 0
     };
 
-    function setUIValue(value) {
-        if (value > 0.5) {
+    function renderProperties() {
+        if (properties.value > 0.5) {
             output.classList.add('active');
         } else {
             output.classList.remove('active');
@@ -38,8 +38,12 @@
     var hybridObject = new HybridObject();
     hybridObject.addReadListener('value', function(e) {
         properties.value = e;
-        setUIValue(properties.value);
+        renderProperties();
     });
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts();
 </script>
 </body>
 </html>

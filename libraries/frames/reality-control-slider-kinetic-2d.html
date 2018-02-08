@@ -26,7 +26,7 @@
             fill: #00ff00;
         }
     </style>
-    <script src="object.js"></script>
+    <script src="../objectDefaultFiles/object.js"></script>
     <script src="resources/pep.min.js"></script>
 </head>
 <body>
@@ -124,17 +124,16 @@
         
         properties.valueX = limit(dX / width + 0.5);
         properties.valueY = limit(dY / height + 0.5);
-
-        setUIValue(properties.valueX, properties.valueY);
+        renderProperties();
 
         hybridObject.write('valueX', properties.valueX);
         hybridObject.write('valueY', properties.valueY);
     }
     
-    function setUIValue(valueX, valueY) {
+    function renderProperties() {
 
-        var dX = (valueX - 0.5) * width;
-        var dY = (valueY - 0.5) * height;
+        var dX = (properties.valueX - 0.5) * width;
+        var dY = (properties.valueY - 0.5) * height;
         var absX = Math.abs(dX);
         var absY = Math.abs(dY);
         
@@ -220,13 +219,17 @@
     var hybridObject = new HybridObject();
     hybridObject.addReadListener('valueX', function(e) {
         properties.valueX = e;
-        setUIValue(properties.valueX, properties.valueY);
+        renderProperties();
     });
     hybridObject.addReadListener('valueY', function(e) {
         properties.valueY = e;
-        setUIValue(properties.valueX, properties.valueY);
+        renderProperties();
     });
     
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts();
 </script>
 
 </body>

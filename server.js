@@ -3230,9 +3230,12 @@ var engine = {
                     // console.log(this.link);
 
                     if (!this.objects[this.link.objectB].frames[this.link.frameB]) {
-                        console.warn('link destination should exist but doesnt!');
-                        console.warn(this.link);
-                        console.warn(this.objects[this.link.objectB].frames);
+                        console.warn('\nlink destination should exist but doesnt!');
+                        // console.warn(this.link);
+                        // console.warn(this.objects[this.link.objectB].frames);
+                        console.warn('deleting: \n');
+                        console.warn(this.objects[object].frames[frame].links[linkKey]);
+                        delete this.objects[object].frames[frame].links[linkKey];
                         continue;
                     }
 
