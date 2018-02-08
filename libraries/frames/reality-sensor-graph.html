@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>reality-sensor-graph</title>
+    <style>
+        #container {
+            border: 2px solid #fff;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 0;
+            padding: 0;
+        }
+
+        #graph {
+            stroke: none;
+            fill: #00ff00;
+        }
+    </style>
+    <script src="object.js"></script>
+</head>
+<body>
+
+<svg id="container" width="300" height="300" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+    <path id="graph"></path>
+</svg>
+
+<script>
+    var graph = document.querySelector('#graph');
+
+    var properties = {
+        value: 0,
+        width: 300,
+        height: 300,
+        ticks: 10
+    };
+
+    var data = [0.2, 0.1, 0.3, 0.4, 0.7, 0.8, 0.5, 0.6, 0.4, 0.9];
+    var isReady = false;
+
+    function drawGraph() {
+        if (!isReady) {
+            return;
+        }
+        var path = ['M 0', properties.height, 'L'];
+        for (var i = 0; i < properties.ticks; i++) {
+            var x = i * properties.width / (properties.ticks - 1);
+            var value = 0;
+            if (i < data.length) {
+                value = data[i];
+            }
+            var y = (1 - value) * properties.height;
+            path.push(x);
+            path.push(y);
+        }
+        path.push(properties.width);
+        path.push(properties.height);
+        path.push('Z');
+
+        graph.setAttribute('d', path.join(' '));
+    }
+
+    function ready() {
+        isReady = true;
+        drawGraph();
+    }
+
+    ready();
+
+    var hybridObject = new HybridObject();
+    hybridObject.addReadListener('value', function(e) {
+        if (!isReady) {
+            return;
+        }
+        properties.value = e;
+        data.push(properties.value);
+        data.shift();
+        drawGraph();
+    });
+
+
+</script>
+
+</body>
+</html>

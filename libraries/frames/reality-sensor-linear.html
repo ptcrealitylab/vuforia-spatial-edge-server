@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>reality-sensor-linear</title>
+    <style>
+        #container {
+            width: 200px;
+            height: 48px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid #fff;
+            padding: 0;
+            margin: 0;
+        }
+        #value {
+            width: 120px;
+            height: 48px;
+            background-color: #00ff00;
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+    <script src="object.js"></script>
+</head>
+<body>
+<div id="container">
+    <div id="value"></div>
+</div>
+
+<script>
+    var valueDiv = document.querySelector('#value');
+
+    var properties = {
+        value: 0,
+        width: 200,
+        height: 48
+    };
+
+    function setUIValue(value) {
+        valueDiv.style.width = value * properties.width + 'px';
+    }
+
+    var hybridObject = new HybridObject();
+    hybridObject.addReadListener('value', function(e) {
+        properties.value = e;
+        setUIValue(properties.value);
+    });
+</script>
+
+</body>
+</html>
