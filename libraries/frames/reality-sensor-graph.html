@@ -16,7 +16,7 @@
             fill: #00ff00;
         }
     </style>
-    <script src="object.js"></script>
+    <script src="../objectDefaultFiles/object.js"></script>
 </head>
 <body>
 
@@ -28,32 +28,33 @@
     var graph = document.querySelector('#graph');
 
     var properties = {
-        value: 0,
-        width: 300,
-        height: 300,
-        ticks: 10
+        value: 0
     };
+
+    var width = 300;
+    var height = 300;
+    var ticks = 10;
 
     var data = [0.2, 0.1, 0.3, 0.4, 0.7, 0.8, 0.5, 0.6, 0.4, 0.9];
     var isReady = false;
 
-    function drawGraph() {
+    function renderProperties() {
         if (!isReady) {
             return;
         }
-        var path = ['M 0', properties.height, 'L'];
-        for (var i = 0; i < properties.ticks; i++) {
-            var x = i * properties.width / (properties.ticks - 1);
+        var path = ['M 0', height, 'L'];
+        for (var i = 0; i < ticks; i++) {
+            var x = i * width / (ticks - 1);
             var value = 0;
             if (i < data.length) {
                 value = data[i];
             }
-            var y = (1 - value) * properties.height;
+            var y = (1 - value) * height;
             path.push(x);
             path.push(y);
         }
-        path.push(properties.width);
-        path.push(properties.height);
+        path.push(width);
+        path.push(height);
         path.push('Z');
 
         graph.setAttribute('d', path.join(' '));
@@ -61,7 +62,7 @@
 
     function ready() {
         isReady = true;
-        drawGraph();
+        renderProperties();
     }
 
     ready();
@@ -74,10 +75,17 @@
         properties.value = e;
         data.push(properties.value);
         data.shift();
-        drawGraph();
+        renderProperties();
     });
 
-
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts(function() {
+        data.push(properties.value);
+        data.shift();
+        renderProperties();
+    });
 </script>
 
 </body>

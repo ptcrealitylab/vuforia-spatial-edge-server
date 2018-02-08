@@ -20,7 +20,7 @@
             margin: 0;
         }
     </style>
-    <script src="object.js"></script>
+    <script src="../objectDefaultFiles/object.js"></script>
 </head>
 <body>
 <div id="container">
@@ -31,20 +31,26 @@
     var valueDiv = document.querySelector('#value');
 
     var properties = {
-        value: 0,
-        width: 200,
-        height: 48
+        value: 0
     };
 
-    function setUIValue(value) {
-        valueDiv.style.width = value * properties.width + 'px';
+    var width = 200;
+    var height = 48;
+
+    function renderProperties() {
+        valueDiv.style.width = properties.value * width + 'px';
     }
 
     var hybridObject = new HybridObject();
     hybridObject.addReadListener('value', function(e) {
         properties.value = e;
-        setUIValue(properties.value);
+        renderProperties();
     });
+
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts();
 </script>
 
 </body>

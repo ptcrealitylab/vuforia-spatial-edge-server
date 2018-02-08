@@ -22,7 +22,7 @@
             fill: #00ff00;
         }
     </style>
-    <script src="object.js"></script>
+    <script src="../objectDefaultFiles/object.js"></script>
     <script src="resources/pep.min.js"></script>
 </head>
 <body>
@@ -97,18 +97,17 @@
 
         // value = 1 - value;
 
-        setUIValue(value);
-
         properties.value = value;
+        renderProperties();
 
         hybridObject.write('value', properties.value);
     }
 
-    function setUIValue(value) {
+    function renderProperties() {
 
         // value = 1 - value;
 
-        var dY = (value - 0.5) * height;
+        var dY = (properties.value - 0.5) * height;
         var absY = Math.abs(dY);
 
         activation.setAttribute('height', absY);
@@ -155,50 +154,14 @@
     
     var hybridObject = new HybridObject();
     hybridObject.addReadListener('value', function(e) {
-        // console.log('received value ' + e);
-        setUIValue(e);
         properties.value = e;
-        // hybridObject.write('value', properties.value);
+        renderProperties();
     });
     
-    // function setupRealityNode() {
-    //     var isDemoMode = window.location.search.indexOf('demo=true') >= 0;
-    //
-    //     var hybridObject;
-    //     if ((typeof HybridObject === 'undefined') || isDemoMode) {
-    //         console.warn('HybridObject undefined or isDemoMode');
-    //         hybridObject = {
-    //             addReadListener: function() {},
-    //             write: function() {},
-    //             sendCreateNode: function() {}
-    //         };
-    //     } else {
-    //         hybridObject = new HybridObject();
-    //     }
-    //    
-    //    
-    //     function realityNodeReady() {
-    //         window.addEventListener('message', function(msg) {
-    //             var data = JSON.parse(msg.data);
-    //             if (!data.hasOwnProperty('demo')) {
-    //                 return;
-    //             }
-    //             if (data.demo) {
-    //                 this.startDemonstrating();
-    //             } else {
-    //                 this.stopDemonstrating();
-    //             }
-    //         });
-    //
-    //         hybridObject.sendCreateNode(this.name);
-    //     }
-    //    
-    //     realityNodeReady();
-    //    
-    // }
-    
-    // setupRealityNode();
-    
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts();
 </script>
 
 </body>
