@@ -564,8 +564,8 @@ function HybridObject() {
             if (_this.oldValueList[node] !== value) {
                 this.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
-                    frame: realityObject.object+realityObject.frame,
-                    node: realityObject.object+realityObject.frame+node,
+                    frame: realityObject.frame,
+                    node: realityObject.frame + node,
                     data: thisData
                 }));
             }
@@ -577,7 +577,7 @@ function HybridObject() {
          */
 
         this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.object+realityObject.frame, node: realityObject.object+realityObject.frame+node}));
+            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.frame, node: realityObject.frame + node}));
         };
 
         /**
@@ -585,7 +585,7 @@ function HybridObject() {
          */
 
         this.read = function (node, msg) {
-            if (msg.node === realityObject.object+realityObject.frame+node) {
+            if (msg.node === realityObject.frame + node) {
                 return msg.data.value;
             } else {
                 return undefined;
@@ -600,7 +600,7 @@ function HybridObject() {
             _this.ioObject.on("object", function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== "undefined") {
-                    if (thisMsg.node === realityObject.object+realityObject.frame+node) {
+                    if (thisMsg.node === realityObject.frame + node) {
                         if (typeof thisMsg.data !== "undefined")
                             callback(thisMsg.data.value);
                     }
