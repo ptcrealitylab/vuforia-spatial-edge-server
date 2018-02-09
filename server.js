@@ -2063,19 +2063,29 @@ function objectWebServer() {
 
     // Create a frame for an object
     webServer.post('/object/*/frames/', function (req, res) {
-        var objectId = req.params[0];
+        var frameId = 'frame' + utilities.uuidTime();
+        addFrameToObject(req.params[0], frameId, req.body, res);
 
-        if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
+    });
+
+    webServer.post('/object/*/addFrame/', function(req, res) {
+        var frame = req.body;
+        addFrameToObject(req.params[0], frame.uuid, frame, res);
+    });
+
+    function addFrameToObject(objectKey, frameKey, frame, res) {
+
+        console.log('added new frame: ' + frameKey);
+
+        if (!objects.hasOwnProperty(objectKey)) {
+            res.status(404).json({ failure: true, error: 'Object ' + objectKey + ' not found' }).end();
             return;
         }
 
-        var object = objects[objectId];
-        var frameId = 'frame' + utilities.uuidTime();
-        var frame = req.body;
+        var object = objects[objectKey];
 
         if (!frame.src) {
-            res.status(500).json({failure: true, error: 'frame must have src'}).end();
+            res.status(500).json({ failure: true, error: 'frame must have src' }).end();
             return;
         }
 
@@ -2083,19 +2093,14 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(frame.src);
-        }
+        object.frames[frameKey] = frame;
 
-        // Copy over all properties of frame
-        Object.assign(object.frames[frameId], frame);
+        utilities.writeObjectToFile(objects, objectKey, __dirname);
 
-        utilities.writeObjectToFile(objects, objectId, __dirname);
+        actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
-        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
-
-        res.json({success: true, frameId: frameId}).end();
-    });
+        res.json({success: true, frameId: frameKey}).end();
+    }
 
     // Update an object's frame
     webServer.post('/object/*/frames/*/', function (req, res) {
