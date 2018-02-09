@@ -400,6 +400,11 @@ realityServer.gotClick = function (event) {
      //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
 
         realityServer.sendRequest("/object/" + realityServer.objects[objectKey].name + "/"+ frameKey+"/frameFolder", "GET", function (state) {
+
+            console.log("got here");
+            console.log("-----------------------------xx---------------------");
+            console.log(state);
+
             if (state) {
               var tree =  JSON.parse(state);
                 // console.log(tree.children);
