@@ -399,7 +399,7 @@ realityServer.gotClick = function (event) {
 
      //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
 
-        realityServer.sendRequest("/object/" + realityServer.objects[objectKey].name + "/"+ frameKey+"/frameFolder", "GET", function (state) {
+        realityServer.sendRequest("/object/" + realityServer.objects[objectKey].name + "/"+ realityServer.objects[objectKey].frames[frameKey].name    +"/frameFolder", "GET", function (state) {
 
             console.log("got here");
             console.log("-----------------------------xx---------------------");
