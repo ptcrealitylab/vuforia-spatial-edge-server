@@ -1,9 +1,9 @@
 {
 	"objectId": "framePalette2io9kdgazn9dr",
 	"name": "framePalette2",
-	"ip": "10.68.23.38",
+	"ip": "192.168.56.2",
 	"version": "3.0.0",
-	"deactivated": false,
+	"deactivated": true,
 	"protocol": "R2",
 	"tcs": "2WSqBX",
 	"visible": false,

@@ -1,7 +1,7 @@
 {
 	"objectId": "framePaletteRm48yj9xak5u",
 	"name": "framePalette",
-	"ip": "10.0.0.245",
+	"ip": "192.168.56.2",
 	"version": "3.0.0",
 	"deactivated": false,
 	"protocol": "R2",
@@ -30,6 +30,30 @@
 			"visibleText": false,
 			"visibleEditing": false,
 			"developer": false,
+			"links": {},
+			"nodes": {},
+			"location": "",
+			"src": "editor"
+		},
+		"test": {
+			"objectId": null,
+			"name": "test",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
 			"links": {},
 			"nodes": {},
 			"location": "",

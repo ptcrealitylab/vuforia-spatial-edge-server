@@ -1192,8 +1192,6 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
 
-    webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
-
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
@@ -2081,29 +2079,19 @@ function objectWebServer() {
 
     // Create a frame for an object
     webServer.post('/object/*/frames/', function (req, res) {
-        var frameId = 'frame' + utilities.uuidTime();
-        addFrameToObject(req.params[0], frameId, req.body, res);
+        var objectId = req.params[0];
 
-    });
-
-    webServer.post('/object/*/addFrame/', function(req, res) {
-        var frame = req.body;
-        addFrameToObject(req.params[0], frame.uuid, frame, res);
-    });
-
-    function addFrameToObject(objectKey, frameKey, frame, res) {
-
-        console.log('added new frame: ' + frameKey);
-
-        if (!objects.hasOwnProperty(objectKey)) {
-            res.status(404).json({ failure: true, error: 'Object ' + objectKey + ' not found' }).end();
+        if (!objects.hasOwnProperty(objectId)) {
+            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
             return;
         }
 
-        var object = objects[objectKey];
+        var object = objects[objectId];
+        var frameId = 'frame' + utilities.uuidTime();
+        var frame = req.body;
 
         if (!frame.src) {
-            res.status(500).json({ failure: true, error: 'frame must have src' }).end();
+            res.status(500).json({failure: true, error: 'frame must have src'}).end();
             return;
         }
 
@@ -2111,14 +2099,19 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        object.frames[frameKey] = frame;
+        if (!object.frames[frameId]) {
+            object.frames[frameId] = new ObjectFrame(frame.src);
+        }
 
-        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        // Copy over all properties of frame
+        Object.assign(object.frames[frameId], frame);
 
-        actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+        utilities.writeObjectToFile(objects, objectId, __dirname);
 
-        res.json({success: true, frameId: frameKey}).end();
-    }
+        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+
+        res.json({success: true, frameId: frameId}).end();
+    });
 
     // Update an object's frame
     webServer.post('/object/*/frames/*/', function (req, res) {
@@ -2444,6 +2437,7 @@ function objectWebServer() {
         // sends the content page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
+            console.log(req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
             var objectPath = __dirname + "/objects/" + req.params.object +"/frames/"+req.params.frame;
             var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
@@ -3239,7 +3233,7 @@ function socketServer() {
                     node: msgContent.node,
                     data: msgContent.data
                 });
-                engine.trigger(msgContent.object, msgContent.frame, msgContent.node, objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node]);
+                engine.trigger(msgContent.object, msgContent.frame, msgContent.node, objects[msgContent.object].nodes[msgContent.node]);
             }
 
         });
@@ -3397,16 +3391,6 @@ var engine = {
 
                     // console.log('testing...');
                     // console.log(this.link);
-
-                    if (!this.objects[this.link.objectB].frames[this.link.frameB]) {
-                        console.warn('\nlink destination should exist but doesnt!');
-                        // console.warn(this.link);
-                        // console.warn(this.objects[this.link.objectB].frames);
-                        console.warn('deleting: \n');
-                        console.warn(this.objects[object].frames[frame].links[linkKey]);
-                        delete this.objects[object].frames[frame].links[linkKey];
-                        continue;
-                    }
 
                     this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
 

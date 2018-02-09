@@ -410,8 +410,8 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.text = undefined;
             thisObject.type = type;
 
-            console.log('set new node name to ' + thisObject.name);
-            console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
+            //console.log('set new node name to ' + thisObject.name);
+            //console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
                 hardwareObjects[objectName] = new EmptyObject(objectName);
