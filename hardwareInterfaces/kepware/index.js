@@ -64,8 +64,8 @@ if (exports.enabled) {
                 kepwareInterfaces[thisID].name = thisID.substr(thisID.lastIndexOf('.') + 1);
 
                 console.log(kepwareInterfaces[thisID].name);
-                server.addNode(kepwareServerName, kepwareServerName,kepwareInterfaces[thisID].name, "node");
-                setReadList(kepwareServerName, thisID, kepwareInterfaces[thisID].name, kepwareInterfaces);
+                server.addNode(kepwareServerName, kepwareServerName+"1",kepwareInterfaces[thisID].name, "node");
+                setReadList(kepwareServerName, kepwareServerName+"1",thisID, kepwareInterfaces[thisID].name, kepwareInterfaces);
             }
 
 
@@ -73,9 +73,9 @@ if (exports.enabled) {
         });
     }
 
-    function setReadList (object, node, name, kepwareInterfaces){
+    function setReadList (object, frame, node, name, kepwareInterfaces){
 
-        server.addReadListener(object,object, name, function (data) {
+        server.addReadListener(object,frame, name, function (data) {
             kepwareInterfaces[node].data.value = data.value;
             
             var args = {
@@ -130,7 +130,7 @@ if (exports.enabled) {
                     }
 
                     if(kepwareInterfaces[thisID].name &&  (kepwareInterfaces[thisID].dataOld.value !== kepwareInterfaces[thisID].data.value)){
-                        server.write(kepwareServerName, kepwareServerName,
+                        server.write(kepwareServerName, kepwareServerName+"1",
                             kepwareInterfaces[thisID].name,
                             kepwareInterfaces[thisID].data.value, "f", "",
                             kepwareInterfaces[thisID].data.min,
