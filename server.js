@@ -2686,7 +2686,7 @@ function objectWebServer() {
             }
 
             if (req.body.action === "new") {
-                console.log("got NEW"+req.body.name );
+                console.log("got NEW "+req.body.name );
                 // cout(req.body);
                 if (req.body.name !== "" && !req.body.frame) {
                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
@@ -2697,15 +2697,13 @@ function objectWebServer() {
 
                     var objectKey = utilities.readObject(objectLookup, req.body.name);
 
-                    console.log(objectKey);
-                    if(!objects[objectKey].frames[req.body.frame]) {
-                        objects[objectKey].frames[req.body.frame] = new Frame();
-                        objects[objectKey].frames[req.body.frame].name = req.body.frame;
+                    if(!objects[objectKey].frames[objectKey+ req.body.frame]) {
+                        objects[objectKey].frames[objectKey+ req.body.frame] = new Frame();
+                        objects[objectKey].frames[objectKey+ req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, __dirname);
                     }
                 }
               //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
-           console.log(objects);
 
             res.send("ok");
             }
