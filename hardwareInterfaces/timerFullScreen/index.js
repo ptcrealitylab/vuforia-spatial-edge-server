@@ -96,7 +96,7 @@ if (exports.enabled) {
     });
 
     server.addReadListener("timer", "timer01", "stop", function (data) {
-        console.log(data.value);
+      //  console.log(data.value);
         if (data.value > 0.5) {
             if (timer) {
                 io.emit('timer', {timer: "stop"});
