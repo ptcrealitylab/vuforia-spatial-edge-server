@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -55,15 +55,15 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    server.addNode("thisDemo", "zero", "distance", "node");
-    server.addNode("thisDemo", "zero", "motor", "node");
+   // server.addNode("thisDemo", "zero", "distance", "node");
+ //   server.addNode("thisDemo", "zero", "motor", "node");
 
 
     server.addNode("thisDemo", "zero2", "distance", "node");
     server.addNode("thisDemo", "zero2", "motor", "node");
 
-    server.addNode("thatDemo", "zero", "distance", "node");
-    server.addNode("thatDemo", "zero", "motor", "node");
+  //  server.addNode("thatDemo", "zero", "distance", "node");
+  //  server.addNode("thatDemo", "zero", "motor", "node");
 
 var count = 0;
    // server.write("thisDemo", "zero2", "distance", 0.5);

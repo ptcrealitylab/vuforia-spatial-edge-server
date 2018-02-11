@@ -49,71 +49,46 @@
  **/
 exports.enabled = false;
 
+
 if (exports.enabled) {
-
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-
-    var app = require('express')();
-    var http = require('http').Server(app);
-    var io = require('socket.io')(http);
-
-
-    app.get('/', function(req, res){
-        res.sendFile(__dirname + '/index.html');
-    });
-    app.get('/marker.jpg', function(req, res){
-        res.sendFile(__dirname + '/marker.jpg');
-    });
-
-
-    http.listen(3000, function(){
-        console.log('listening on *:3000');
-    });
-
-    var counter = 0;
-    var timer = false;
-    server.enableDeveloperUI(true);
-
-    server.addNode("timer", "timer01", "start", "node");
-    server.addNode("timer", "timer01", "stop", "node");
-    server.addNode("timer", "timer01", "reset", "node");
-    server.addNode("timer", "timer01", "running", "node");
-
-    server.addReadListener("timer", "timer01", "start", function (data) {
-        if (data.value > 0.5) {
-            if (!timer) {
-                io.emit('timer', {timer: "start"});
-                timer = true;
-                server.write('timer', "timer01", 'running', 1.0, 'f');
-            }
-        }
-    });
-
-    server.addReadListener("timer", "timer01", "reset", function (data) {
-        if (data.value > 0.5) {
-            io.emit('timer', {timer: "reset"});
-        }
-    });
-
-    server.addReadListener("timer", "timer01", "stop", function (data) {
-        console.log(data.value);
-        if (data.value > 0.5) {
-            if (timer) {
-                io.emit('timer', {timer: "stop"});
-                timer = false;
-                server.write('timer', "timer01", 'running', 0.0, 'f');
-            }
-        }
-    });
-
-    server.addEventListener("reset", function () {
-    });
+	var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+    var PowerMate = require('node-powermate');
+    var powermate = new PowerMate();
 
     server.addEventListener("shutdown", function () {
+        powermate.close();
     });
+	server.enableDeveloperUI(true);
+	server.addNode("box", "arduino01", "rotation", "node");
+	//server.addNode("box", "button", "node");
 
-    io.on('connection', function(socket){
-        timer = false;
-    });
+    powermate.on('buttonDown', function(){});
+    powermate.on('buttonUp',  function(){});
+
+    var buttonValue = 0.0;
+    var buttonValueOld = 0.1;
+
+    setInterval(function(){
+if(buttonValue != buttonValueOld)
+        server.write("box", "arduino01", "rotation", buttonValue);
+
+/*server.addReadListener("box","rotation",function(value){
+    console.log(value);
+});*/
+        buttonValueOld = buttonValue;
+
+    }, 20);
+
+    powermate.on('wheelTurn', function(data){
+
+        buttonValue =  Math.round((buttonValue+(data / 33)) * 100) / 100;
+
+
+        if(buttonValue >1) buttonValue =1;
+        if(buttonValue <-1) buttonValue =-1;
+        if(buttonValue <= 0.01 && buttonValue >= -0.01) buttonValue = 0;
+        //server.write("box", "rotation", buttonValue);
+    	//console.log(buttonValue);
+	});
+
 }
-

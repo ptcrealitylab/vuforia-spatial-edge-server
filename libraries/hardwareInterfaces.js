@@ -131,15 +131,17 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
     //console.log(objectLookup);
 //    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
     if (objects.hasOwnProperty(objectKey)) {
-        if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-            var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].data;
-            thisData.value = value;
-            thisData.mode = mode;
-            thisData.unit = unit;
-            thisData.unitMin = unitMin;
-            thisData.unitMax = unitMax;
-            //callback is objectEngine in server.js. Notify data has changed.
-            callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
+        if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
+            if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].data;
+                thisData.value = value;
+                thisData.mode = mode;
+                thisData.unit = unit;
+                thisData.unitMin = unitMin;
+                thisData.unitMax = unitMax;
+                //callback is objectEngine in server.js. Notify data has changed.
+                callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
+            }
         }
     }
 };

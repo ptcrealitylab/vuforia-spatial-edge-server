@@ -496,10 +496,11 @@ function EditorSocket(socketID, object) {
 }
 
 function Protocols() {
-
     this.R2 = {
+        objectData :{},
+        buffer : {},
         send: function (object, frame, node, logic, data) {
-            return JSON.stringify({object: object, frame:frame,  node: node, logic:logic, data: data})
+            return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data})
         },
         receive: function (message) {
             if (!message) return null;
@@ -507,21 +508,50 @@ function Protocols() {
             if (!msgContent.object) return null;
             if (!msgContent.frame) return null;
             if (!msgContent.node) return null;
-            if (!msgContent.logic) msgContent.logic = null;
+            if (!msgContent.logic) msgContent.logic = false;
             if (!msgContent.data) return null;
 
             if (msgContent.object in objects) {
                 if (msgContent.frame in objects[msgContent.object].frames) {
                     if (msgContent.node in objects[msgContent.object].frames[msgContent.frame].nodes) {
 
-                        var objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].data;
+                        if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
 
-                        for (var key in msgContent.data) {
-                            objectData[key] = msgContent.data[key];
+                            this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks["in" + msgContent.logic];
+
+                            for (var key in msgContent.data) {
+                                this.objectData.data[0][key] = msgContent.data[key];
+                            }
+
+                            this.buffer = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
+
+                            // this needs to be at the beginning;
+                            if (!this.buffer.routeBuffer)
+                                this.buffer.routeBuffer = [0, 0, 0, 0];
+
+                            this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
+
+                            engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, "in" + msgContent.logic, 0, this.objectData);
                         }
-                        return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, logic: msgContent.logic, data: objectData};
+
+                        else {
+                            this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
+
+                            for (var key in msgContent.data) {
+                                this.objectData.data[key] = msgContent.data[key];
+                            }
+                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
+                        }
                     }
                 }
+
+                return {
+                    object: msgContent.object,
+                    frame: msgContent.frame,
+                    node: msgContent.node,
+                    logic: msgContent.logic,
+                    data: this.objectData
+                };
             }
             return null
         }
@@ -540,11 +570,14 @@ function Protocols() {
             if (msgContent.object in objects) {
                 if (msgContent.node in objects[msgContent.object].nodes) {
 
-                    var objectData = objects[msgContent.object].nodes[msgContent.node].data;
+                    var objectData = objects[msgContent.object].frames[msgContent.object].nodes[msgContent.node];
 
                     for (var key in msgContent.data) {
-                        objectData[key] = msgContent.data[key];
+                        objectData.data[key] = msgContent.data[key];
                     }
+
+                    engine.trigger(msgContent.object, msgContent.object, msgContent.node, objectData);
+
                     return {object: msgContent.object, node: msgContent.node, data: objectData};
                 }
 
@@ -568,10 +601,12 @@ function Protocols() {
             if (msgContent.obj in objects) {
                 if (msgContent.pos in objects[msgContent.obj].nodes) {
 
-                    var objectData = objects[msgContent.obj].nodes[msgContent.pos].data;
+                    var objectData = objects[msgContent.obj].frames[msgContent.object].nodes[msgContent.pos].data;
 
                     objectData.value = msgContent.value;
                     objectData.mode = msgContent.mode;
+
+                    engine.trigger(msgContent.object, msgContent.object, msgContent.node, objectData);
 
                     return {object: msgContent.obj, node: msgContent.pos, data: objectData};
                 }
@@ -1674,12 +1709,12 @@ function objectWebServer() {
             var linkFrameB = fullEntry["frameB"];
             var linkNodeA = fullEntry["nodeA"];
             var linkNodeB = fullEntry["nodeB"];
-            var objectAName = objects[linkObjectA].name;
-            var objectBName = objects[linkObjectB].name;
-            var frameAName = objects[linkObjectA].frames[linkFrameA].name;
-            var frameBName = objects[linkObjectB].frames[linkFrameB].name;
-            var nodeAName = objects[linkObjectA].frames[linkFrameA].nodes[linkNodeA].name; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
-            var nodeBName = objects[linkObjectB].frames[linkFrameB].nodes[linkNodeB].name;
+            var objectAName = fullEntry["namesA"][0];
+            var objectBName = fullEntry["namesB"][0];
+            var frameAName = fullEntry["namesA"][1];
+            var frameBName = fullEntry["namesB"][1];
+            var nodeAName = fullEntry["namesA"][2]; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
+            var nodeBName = fullEntry["namesB"][2];
 
             linkAddedData = {
                 added: wasAdded,
@@ -3216,11 +3251,12 @@ function socketServer() {
 
 
         socket.on('object', function (msg) {
-
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
                 msgContent = protocols["R0"].receive(msg);
             }
+
+
 
             if (msgContent !== null) {
                 hardwareAPI.readCall(msgContent.object, msgContent.frame, msgContent.node, msgContent.data);
@@ -3231,9 +3267,7 @@ function socketServer() {
                     node: msgContent.node,
                     data: msgContent.data
                 });
-                engine.trigger(msgContent.object, msgContent.frame, msgContent.node, objects[msgContent.object].nodes[msgContent.node]);
             }
-
         });
 // todo do this stuff tomorrrow
 
@@ -3450,6 +3484,7 @@ var engine = {
     },
     // this is when a logic block is triggered.
     blockTrigger: function (object, frame, node, block, index, thisBlock) {
+      //  console.log(objects[object].frames[frame].nodes[node].blocks[block]);
         if (!thisBlock.processedData)
             thisBlock.processedData = [{}, {}, {}, {}];
 
@@ -3559,7 +3594,7 @@ function socketSender(object, frame, link, data) {
         if (knownObjects[thisLink.objectB].protocol) {
             var thisProtocol = knownObjects[thisLink.objectB].protocol;
             if (thisProtocol in protocols) {
-                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB,thisLink.nodeB, data);
+                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB,thisLink.nodeB, thisLink.logicB, data);
             }
             else {
                 msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
