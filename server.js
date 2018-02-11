@@ -499,6 +499,7 @@ function Protocols() {
     this.R2 = {
         objectData :{},
         buffer : {},
+        blockString : "",
         send: function (object, frame, node, logic, data) {
             return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data})
         },
@@ -516,22 +517,28 @@ function Protocols() {
                     if (msgContent.node in objects[msgContent.object].frames[msgContent.frame].nodes) {
 
                         if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
+                            this.blockString = "in" + msgContent.logic;
+                            if (objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks) {
+                                if (this.blockString in objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks) {
 
-                            this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks["in" + msgContent.logic];
 
-                            for (var key in msgContent.data) {
-                                this.objectData.data[0][key] = msgContent.data[key];
+                                    this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks[this.blockString];
+
+                                    for (var key in msgContent.data) {
+                                        this.objectData.data[0][key] = msgContent.data[key];
+                                    }
+
+                                    this.buffer = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
+
+                                    // this needs to be at the beginning;
+                                    if (!this.buffer.routeBuffer)
+                                        this.buffer.routeBuffer = [0, 0, 0, 0];
+
+                                    this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
+
+                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
+                                }
                             }
-
-                            this.buffer = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
-
-                            // this needs to be at the beginning;
-                            if (!this.buffer.routeBuffer)
-                                this.buffer.routeBuffer = [0, 0, 0, 0];
-
-                            this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
-
-                            engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, "in" + msgContent.logic, 0, this.objectData);
                         }
 
                         else {
