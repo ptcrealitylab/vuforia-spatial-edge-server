@@ -3431,6 +3431,11 @@ var engine = {
                     // console.log('testing...');
                     // console.log(this.link);
 
+                    if(!(this.link.objectB in this.objects)) return;
+                    if(!(this.link.frameB in this.objects[this.link.objectB].frames)) return;
+                    if(!(this.link.nodeB in this.objects[this.link.objectB].frames[this.link.frameB].nodes)) return;
+
+                    
                     this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
 
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
