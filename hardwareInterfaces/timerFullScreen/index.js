@@ -115,5 +115,42 @@ if (exports.enabled) {
     io.on('connection', function(socket){
         timer = false;
     });
+
+    function startWebBrowserInterface(){
+        var shell = require('shelljs');
+        console.log("starting webbrowser interface");
+        try {
+            shell.exec('sudo -i -u pi chromium-browser --disable-infobars --display=:0 -kiosk http://localhost:3000', {async: true});
+            child.stdout.on('data', function (data) {
+                console.log("got started")
+                setTimeout(function () {
+                    moveMouse(800,600);
+                }, 100);
+            });} catch (e) {
+            console.log("I am not sure if the display worked");
+
+            setTimeout(function () {
+                moveMouse(800,600);
+                shell.exec('sudo -i -u pi DISPLAY=:0 xset s off');
+                shell.exec('sudo -i -u pi DISPLAY=:0 xset -dpms');
+                shell.exec('sudo -i -u pi DISPLAY=:0 xset s noblank');
+            }, 100);
+        }
+
+
+    }
+
+    function moveMouse(x,y) {
+        try {
+            var shell = require('shelljs');
+            shell.exec('sudo -i -u pi DISPLAY=:0 xdotool mousemove '+x+' '+y+'', {async: true});
+            child.stdout.on('data', function (data) {
+                console.log("mouse moved")
+            });} catch (e) {
+            console.log("I am not sure if the mouse moved");
+        }
+    }
+
+    startWebBrowserInterface();
 }
 

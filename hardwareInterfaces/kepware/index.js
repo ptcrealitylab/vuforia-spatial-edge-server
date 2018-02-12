@@ -29,157 +29,167 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
-    var kepwareServerIP = "192.168.56.100";
-    var kepwareServerName = "kepwareBox";
-    var kepwareServerPort = "39320";
-    var kepwareServerRequestInterval = 100;
-    var kepwareInterfaces = {};
+    kepware1 = new Kepware("192.168.56.100", "kepwareBox", "39320", 100);
+   kepware1.setup();
+
+  var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
+     kepware2.setup();
 
 
 
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-    var Client = require('node-rest-client').Client;
-    var remoteDevice = new Client();
-
-    server.enableDeveloperUI(true);
-
-    var kepwareAddress = "http://" + kepwareServerIP + ":" + kepwareServerPort + "/iotgateway/";
-
-    remoteDevice.registerMethod("browse", kepwareAddress + "browse", "GET");
-    remoteDevice.registerMethod("read", kepwareAddress + "read", "GET");
-    remoteDevice.registerMethod("write", kepwareAddress + "write", "POST");
-
-    setup();
-
-    function setup () {
-        remoteDevice.get(kepwareAddress + "browse", function (data, res) {
-            for (i = 0; i < data.browseResults.length; i++) {
-                var thisID = data.browseResults[i].id;
-                kepwareInterfaces[thisID] = new KepwareData();
-                kepwareInterfaces[thisID].id = data.browseResults[i].id;
-                kepwareInterfaces[thisID].name = thisID.substr(thisID.lastIndexOf('.') + 1);
-
-                console.log(kepwareInterfaces[thisID].name);
-                server.addNode(kepwareServerName, kepwareServerName+"1",kepwareInterfaces[thisID].name, "node");
-                setReadList(kepwareServerName, kepwareServerName+"1",thisID, kepwareInterfaces[thisID].name, kepwareInterfaces);
-            }
-
-
-
-        });
-    }
-
-    function setReadList (object, frame, node, name, kepwareInterfaces){
-
-        server.addReadListener(object,frame, name, function (data) {
-            kepwareInterfaces[node].data.value = data.value;
-            
-            var args = {
-                data: [{id:node, v :  kepwareInterfaces[node].data.value}],
-                headers: { "Content-Type": "application/json" }
+    function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval){
+        this.KepwareData = function() {
+            this.name = "";
+            this.id = "";
+            this.data = {
+                "id": "",
+                "s": true,
+                "r": "",
+                "v": 0,
+                "t": 0,
+                "min": 10000,
+                "max":0,
+                "value":0
             };
+            this.dataOld = {
+                "id": "",
+                "s": true,
+                "r": "",
+                "v": 0,
+                "t": 0,
+                "min": 10000,
+                "max":0,
+                "value":0
+            };
+        };
+        this.kepwareInterfaces ={};
+        this.server = require(__dirname + '/../../libraries/hardwareInterfaces');
+        this.Client = require('node-rest-client').Client;
+        this.remoteDevice = new this.Client();
+        this.server.enableDeveloperUI(true);
+        this.kepwareAddress = "http://" + kepwareServerIP + ":" + kepwareServerPort + "/iotgateway/";
+        this.setup = function () {
+            this.thisID = {};
+            this.remoteDevice.get(this.kepwareAddress + "browse", function (data, res) {
+                for (i = 0; i < data.browseResults.length; i++) {
+                    this.thisID = data.browseResults[i].id;
+                    this.kepwareInterfaces[this.thisID] = new this.KepwareData();
+                    this.kepwareInterfaces[this.thisID].id = data.browseResults[i].id;
+                    this.kepwareInterfaces[this.thisID].name = this.thisID.substr(this.thisID.lastIndexOf('.') + 1);
+
+                    console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
+                    this.server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
+                    this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
+                }
 
 
-            remoteDevice.post(kepwareAddress + "write", args, function (data, res) {
-        });
 
-    });
-    }
+            }.bind(this)).on('error', function (err) {
+                this.error();
+            }.bind(this));
 
-    var interval = setInterval(start, kepwareServerRequestInterval);
+            this.interval = setInterval(this.start, kepwareServerRequestInterval);
+        }.bind(this);
 
-        function start(){
+       this.setReadList = function(object, frame, node, name, kepwareInterfaces){
+
+            this.server.addReadListener(object,frame, name, function (data) {
+                console.log(object);
+                kepwareInterfaces[node].data.value = data.value;
+
+                var args = {
+                    data: [{id:node, v :  kepwareInterfaces[node].data.value}],
+                    headers: { "Content-Type": "application/json" }
+                };
+
+
+                this.remoteDevice.post(this.kepwareAddress + "write", args, function (data, res) {
+                }).on('error', function (err) {
+                    this.error();
+                }.bind(this));
+
+            }.bind(this));
+        }.bind(this);
+
+
+
+        this.start = function (){
 
             var argstring = "?";
-            for (var key in kepwareInterfaces) {
+            for (var key in this.kepwareInterfaces) {
                 argstring += "ids="+ key +"&";
             }
 
-            remoteDevice.get(kepwareAddress + "read"+argstring, function (data, res) {
+            this.remoteDevice.get(this.kepwareAddress + "read"+argstring, function (data, res) {
                 // parsed response body as js object
 
                 for (i = 0; i < data.readResults.length; i++) {
                     var thisID = data.readResults[i].id;
-                    kepwareInterfaces[thisID].data.s = data.readResults[i].s;
-                    kepwareInterfaces[thisID].data.r = data.readResults[i].r;
-                    kepwareInterfaces[thisID].data.v = data.readResults[i].v;
-                    kepwareInterfaces[thisID].data.t = data.readResults[i].t;
-                    if(typeof kepwareInterfaces[thisID].data.v === "boolean" ){
-                        if(kepwareInterfaces[thisID].data.v)  {kepwareInterfaces[thisID].data.v = 1;}
-                        else  {kepwareInterfaces[thisID].data.v = 0;};
+                    this.kepwareInterfaces[thisID].data.s = data.readResults[i].s;
+                    this.kepwareInterfaces[thisID].data.r = data.readResults[i].r;
+                    this.kepwareInterfaces[thisID].data.v = data.readResults[i].v;
+                    this.kepwareInterfaces[thisID].data.t = data.readResults[i].t;
+                    if(typeof this.kepwareInterfaces[thisID].data.v === "boolean" ){
+                        if(this.kepwareInterfaces[thisID].data.v)  {this.kepwareInterfaces[thisID].data.v = 1;}
+                        else  {this.kepwareInterfaces[thisID].data.v = 0;};
                     }
-                    if(isNaN(kepwareInterfaces[thisID].data.v)){
-                        console.log( kepwareInterfaces[thisID].data.v);
-                        kepwareInterfaces[thisID].data.v = 0;
+                    if(isNaN(this.kepwareInterfaces[thisID].data.v)){
+                        console.log( this.kepwareInterfaces[thisID].data.v);
+                        this.kepwareInterfaces[thisID].data.v = 0;
                     }
-                    if(kepwareInterfaces[thisID].data.v > kepwareInterfaces[thisID].data.max) {
-                        kepwareInterfaces[thisID].data.max = kepwareInterfaces[thisID].data.v;
+                    if(this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
+                        this.kepwareInterfaces[thisID].data.max = this.kepwareInterfaces[thisID].data.v;
                     }
-                    if(kepwareInterfaces[thisID].data.v < kepwareInterfaces[thisID].data.min) {
-                        kepwareInterfaces[thisID].data.min = kepwareInterfaces[thisID].data.v;
+                    if(this.kepwareInterfaces[thisID].data.v < this.kepwareInterfaces[thisID].data.min) {
+                        this.kepwareInterfaces[thisID].data.min = this.kepwareInterfaces[thisID].data.v;
                     }
 
-                    if( kepwareInterfaces[thisID].data.v !== 0) {
-                        kepwareInterfaces[thisID].data.value = Math.round(server.map(kepwareInterfaces[thisID].data.v, kepwareInterfaces[thisID].data.min, kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
+                    if( this.kepwareInterfaces[thisID].data.v !== 0) {
+                        this.kepwareInterfaces[thisID].data.value = Math.round(this.server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
                     } else {
-                        kepwareInterfaces[thisID].data.value= 0;
+                        this.kepwareInterfaces[thisID].data.value= 0;
                     }
 
-                    if(kepwareInterfaces[thisID].name &&  (kepwareInterfaces[thisID].dataOld.value !== kepwareInterfaces[thisID].data.value)){
-                        server.write(kepwareServerName, kepwareServerName+"1",
-                            kepwareInterfaces[thisID].name,
-                            kepwareInterfaces[thisID].data.value, "f", "",
-                            kepwareInterfaces[thisID].data.min,
-                            kepwareInterfaces[thisID].data.max)
+                    if(this.kepwareInterfaces[thisID].name &&  (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)){
+
+
+                        this.server.write(kepwareServerName, kepwareServerName+"1",
+                            this.kepwareInterfaces[thisID].name,
+                            this.kepwareInterfaces[thisID].data.value, "f", "",
+                            this.kepwareInterfaces[thisID].data.min,
+                            this.kepwareInterfaces[thisID].data.max)
                     }
 
-                    kepwareInterfaces[thisID].dataOld.value = kepwareInterfaces[thisID].data.value;
-
+                    this.kepwareInterfaces[thisID].dataOld.value = this.kepwareInterfaces[thisID].data.value;
                 }
-
-               // console.log(kepwareInterfaces);
-                // raw response
-
-            });
-
-
-
-
+            }.bind(this)).on('error', function (err) {
+                this.error();
+            }.bind(this));
+        }.bind(this);
+        this.error = function() {
+            console.log("cant find server: "+ kepwareServerIP);
         }
+    }
 
 
-    /**
-    * CONSTRUCTORS
-    ***/
 
-    function KepwareData() {
-        this.name = "";
-        this.id = "";
-        this.data = {
-            "id": "",
-            "s": true,
-            "r": "",
-            "v": 0,
-            "t": 0,
-            "min": 10000,
-            "max":0,
-            "value":0
-        };
-        this.dataOld = {
-            "id": "",
-            "s": true,
-            "r": "",
-            "v": 0,
-            "t": 0,
-            "min": 10000,
-            "max":0,
-            "value":0
-        };
-    };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 
