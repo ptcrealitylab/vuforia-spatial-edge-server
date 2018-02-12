@@ -72,7 +72,8 @@
 
 var globalVariables = {
     developer: true, // show developer web GUI
-    debug: false      // debug messages to console
+    debug: false,
+    saveToDisk : true // allow system to save to file system// debug messages to console
 };
 
 // ports used to define the server behaviour
@@ -719,7 +720,7 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeMod
 }, Node, function (thisAction) {
     actionSender(thisAction);
 }, function(objectID) {
-    utilities.writeObjectToFile(objects, objectID, __dirname);
+    utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
 });
 
 cout("Done");
@@ -804,7 +805,7 @@ function loadObjects() {
             objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
-            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName);
+            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName, globalVariables.saveToDisk);
 
             // try to read a saved previous state of the object
             try {
@@ -1331,7 +1332,7 @@ function objectWebServer() {
         delete objects[objectID].frames[frameID].nodes[nodeID].links[linkID];
         cout("deleted link: " + linkID);
         actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
-        utilities.writeObjectToFile(objects, objectID, __dirname);
+        utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
         return "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
     }
 
@@ -1376,7 +1377,7 @@ function objectWebServer() {
                 cout("added link: " + linkID);
                 // check if there are new connections associated with the new link.
                 // write the object state to the permanent storage.
-                utilities.writeObjectToFile(objects, objectID, __dirname);
+                utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
             } else {
                 updateStatus = "found endless Loop";
             }
@@ -1454,7 +1455,7 @@ function objectWebServer() {
             actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             updateStatus = "added";
             cout("added block: " + blockID);
-            utilities.writeObjectToFile(objects, objectID, __dirname);
+            utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
             return updateStatus;
         }
     }
@@ -1487,7 +1488,7 @@ function objectWebServer() {
         }
 
         actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
-        utilities.writeObjectToFile(objects, objectID, __dirname);
+        utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
         return "deleted: " + thisLinkId + " in blocks for object: " + objectID;
     }
 
@@ -1513,7 +1514,7 @@ function objectWebServer() {
             tempObject.x = body.x;
             tempObject.y = body.y;
 
-            utilities.writeObjectToFile(objects, objectID, __dirname);
+            utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
             actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             updateStatus = "ok";
         }
@@ -1559,7 +1560,7 @@ function objectWebServer() {
             // call an action that asks all devices to reload their links, once the links are changed.
             updateStatus = "added";
             cout("added logic node: " + nodeID);
-            utilities.writeObjectToFile(objects, objectID, __dirname);
+            utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
 
             //	console.log(objects[req.params[0]].nodes[req.params[1]]);
             actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
@@ -1599,7 +1600,7 @@ function objectWebServer() {
           }*/
 
         console.log("deleted Object");
-        utilities.writeObjectToFile(objects, objectID, __dirname);
+        utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
         actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
 
         return "deleted: " + nodeID + " in frame: " + frameID + " of object: " + objectID;
@@ -1646,7 +1647,7 @@ function objectWebServer() {
         }
 
         if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
-            utilities.writeObjectToFile(objects, objectID, __dirname);
+            utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
 
             //  actionSender({reloadObject: {object: thisObject}});
             actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
@@ -1763,7 +1764,7 @@ function objectWebServer() {
 
         cout("deleted link: " + linkKey);
         // cout(objects[req.params[0]].links);
-        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
         actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         var checkIfIpIsUsed = false;
@@ -1831,7 +1832,7 @@ function objectWebServer() {
                         updateStatus = "added";
                         cout("added link: " + linkID);
                         // check if there are new connections associated with the new link.
-                        utilities.writeObjectToFile(objects, objectID, __dirname);
+                        utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
                         // write the object state to the permanent storage.
                         socketUpdater();
 
@@ -1886,7 +1887,7 @@ function objectWebServer() {
 
         var obj = objects[objectKey].frames[frameKey];
         obj.nodes[nodeKey] = node;
-        utilities.writeObjectToFile(objects, objectKey, __dirname);
+        utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
         actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
 
         res.json({success: 'true'}).end();
@@ -1921,7 +1922,7 @@ function objectWebServer() {
                 objects[object].frames[frame].nodes[node].lockPassword = newLockPassword;
                 objects[object].frames[frame].nodes[node].lockType = newLockType;
 
-                utilities.writeObjectToFile(objects, object, __dirname);
+                utilities.writeObjectToFile(objects, object, __dirname, globalVariables.saveToDisk);
 
                 actionSender({reloadNode: {object: object, frame: frame, node: node}});
 
@@ -1961,7 +1962,7 @@ function objectWebServer() {
             if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
                 objects[object].frames[frame].nodes[node].lockPassword = null;
                 objects[object].frames[frame].nodes[node].lockType = null;
-                utilities.writeObjectToFile(objects, object, __dirname);
+                utilities.writeObjectToFile(objects, object, __dirname, globalVariables.saveToDisk);
 
                 actionSender({reloadNode: {object: object, frame:frame, node: node}});
 
@@ -2003,7 +2004,7 @@ function objectWebServer() {
             if (isLockActionAllowed) {
                 objects[object].frames[frame].links[link].lockPassword = newLockPassword;
                 objects[object].frames[frame].links[link].lockType = newLockType;
-                utilities.writeObjectToFile(objects, object, __dirname);
+                utilities.writeObjectToFile(objects, object, __dirname, globalVariables.saveToDisk);
 
                 actionSender({reloadLink: {object: object}});
 
@@ -2041,7 +2042,7 @@ function objectWebServer() {
             if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
                 objects[object].frames[frame].links[node].lockPassword = null;
                 objects[object].frames[frame].links[node].lockType = null;
-                utilities.writeObjectToFile(objects, object, __dirname);
+                utilities.writeObjectToFile(objects, object, __dirname, globalVariables.saveToDisk);
 
                 actionSender({reloadLink: {object: object}});
 
@@ -2108,7 +2109,7 @@ function objectWebServer() {
         form.parse(req, function (err, fields) {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
-                utilities.writeObjectToFile(objects, objectID, __dirname);
+                utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
                 actionSender({loadMemory: {object: objectID, ip: obj.ip}});
             }
 
@@ -2121,19 +2122,29 @@ function objectWebServer() {
 
     // Create a frame for an object
     webServer.post('/object/*/frames/', function (req, res) {
-        var objectId = req.params[0];
+        var frameId = 'frame' + utilities.uuidTime();
+        addFrameToObject(req.params[0], frameId, req.body, res);
 
-        if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
+    });
+
+    webServer.post('/object/*/addFrame/', function(req, res) {
+        var frame = req.body;
+        addFrameToObject(req.params[0], frame.uuid, frame, res);
+    });
+
+    function addFrameToObject(objectKey, frameKey, frame, res) {
+
+        console.log('added new frame: ' + frameKey);
+
+        if (!objects.hasOwnProperty(objectKey)) {
+            res.status(404).json({ failure: true, error: 'Object ' + objectKey + ' not found' }).end();
             return;
         }
 
-        var object = objects[objectId];
-        var frameId = 'frame' + utilities.uuidTime();
-        var frame = req.body;
+        var object = objects[objectKey];
 
         if (!frame.src) {
-            res.status(500).json({failure: true, error: 'frame must have src'}).end();
+            res.status(500).json({ failure: true, error: 'frame must have src' }).end();
             return;
         }
 
@@ -2141,19 +2152,14 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(frame.src);
-        }
+        object.frames[frameKey] = frame;
 
-        // Copy over all properties of frame
-        Object.assign(object.frames[frameId], frame);
+        utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
-        utilities.writeObjectToFile(objects, objectId, __dirname);
+        actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
-        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
-
-        res.json({success: true, frameId: frameId}).end();
-    });
+        res.json({success: true, frameId: frameKey}).end();
+    }
 
     // Update an object's frame
     webServer.post('/object/*/frames/*/', function (req, res) {
@@ -2185,7 +2191,7 @@ function objectWebServer() {
         // Copy over all properties of frame
         Object.assign(object.frames[frameId], frame);
 
-        utilities.writeObjectToFile(objects, objectId, __dirname);
+        utilities.writeObjectToFile(objects, objectId, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
@@ -2328,13 +2334,13 @@ function objectWebServer() {
             }
 
             if (linkObjectHasChanged) {
-                utilities.writeObjectToFile(objects, linkObjectId, __dirname);
+                utilities.writeObjectToFile(objects, linkObjectId, __dirname, globalVariables.saveToDisk);
                 actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
             }
         }
 
         // write changes to object.json
-        utilities.writeObjectToFile(objects, objectId, __dirname);
+        utilities.writeObjectToFile(objects, objectId, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
@@ -2415,7 +2421,7 @@ function objectWebServer() {
             }
 
             if (didUpdate) {
-                // utilities.writeObjectToFile(objects, objectID, __dirname);
+                // utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
                 // actionSender({reloadObject: {object: objects[objectID]}, lastEditor: body.lastEditor});
                 updateStatus = "added object";
             }
@@ -2534,7 +2540,7 @@ function objectWebServer() {
 
         webServer.get('/object/*/deactivate/', function (req, res) {
             objects[req.params[0]].deactivated = true;
-            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
 
             res.send("ok");
           //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -2547,7 +2553,7 @@ function objectWebServer() {
             console.log("------------------");
             console.log(req.params[0]);
             objects[req.params[0]].deactivated = false;
-            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
 
             res.send("ok");
            // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -2558,14 +2564,14 @@ function objectWebServer() {
         webServer.get('/object/*/screen/', function (req, res) {
             objects[req.params[0]].visualization = "screen";
             console.log(req.params[0], "screen");
-            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         webServer.get('/object/*/ar/', function (req, res) {
             objects[req.params[0]].visualization = "ar";
             console.log(req.params[0], "ar");
-            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
             res.send("ok");
         });
 
@@ -2583,7 +2589,7 @@ function objectWebServer() {
                 scale : 1,
                 matrix : []
             };
-            utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
             res.send("ok");
         });
 
@@ -2723,7 +2729,7 @@ function objectWebServer() {
             if (req.body.action === "zone") {
                 var objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, __dirname);
+                utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
                 res.send("ok");
             }
 
@@ -2742,7 +2748,7 @@ function objectWebServer() {
                     if(!objects[objectKey].frames[objectKey+ req.body.frame]) {
                         objects[objectKey].frames[objectKey+ req.body.frame] = new Frame();
                         objects[objectKey].frames[objectKey+ req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, __dirname);
+                        utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
                     }
                 }
               //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2777,7 +2783,7 @@ function objectWebServer() {
                         delete objects[objectKey].frames[req.body.frame];
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, __dirname);
+                    utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
                     res.send("ok");
 
                 } else {
@@ -3021,7 +3027,7 @@ function objectWebServer() {
 
                                 thisObject.tcs = utilities.genereateChecksums(objects, fileList);
 
-                                utilities.writeObjectToFile(objects, thisObjectId, __dirname);
+                                utilities.writeObjectToFile(objects, thisObjectId, __dirname, globalVariables.saveToDisk);
 
                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3089,7 +3095,7 @@ function objectWebServer() {
 
                                             thisObject.tcs = utilities.genereateChecksums(objects, fileList);
 
-                                            utilities.writeObjectToFile(objects, thisObjectId, __dirname);
+                                            utilities.writeObjectToFile(objects, thisObjectId, __dirname, globalVariables.saveToDisk);
 
                                             objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3190,7 +3196,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
                     delete objects[utilities.readObject(objectLookup, folderVar)];
                 }
-                utilities.writeObject(objectLookup, folderVar, objectIDXML);
+                utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
                 // entering the obejct in to the lookup table
 
                 // ask the object to reinitialize
@@ -3200,7 +3206,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 hardwareAPI.reset();
 
                 cout("weiter im text " + objectIDXML);
-                utilities.writeObjectToFile(objects, objectIDXML, __dirname);
+                utilities.writeObjectToFile(objects, objectIDXML, __dirname, globalVariables.saveToDisk);
 
                 objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
             }
@@ -3340,13 +3346,13 @@ function socketServer() {
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
-                utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, __dirname);
+                utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, __dirname, globalVariables.saveToDisk);
                 actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
                 delete realityEditorBlockSocketArray[socket.id];
                 console.log("Settings for " + socket.id + " has disconnected");
             }
 
-            //utilities.writeObjectToFile(objects, req.params[0], __dirname);
+            //utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
 
         });
     });

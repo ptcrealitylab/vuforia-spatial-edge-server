@@ -263,9 +263,11 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
  *
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
- * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides. 
+ * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides.
+ * @param {string}   writeToFile  - Give permission to write to file.
  **/
-exports.writeObjectToFile = function (objects, object, dirnameO) {
+exports.writeObjectToFile = function (objects, object, dirnameO, writeToFile) {
+    if (writeToFile) {
 console.log("start saving");
     var outputFilename = dirnameO + '/objects/' + objects[object].name + '/object.json';
     fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
@@ -275,6 +277,9 @@ console.log("start saving");
            console.log("JSON saved to " + outputFilename);
         }
     });
+    } else {
+        console.log("I am not allowed to save");
+    }
 };
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
