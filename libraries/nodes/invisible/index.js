@@ -53,13 +53,13 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-exports.render = function (objectID, linkID, inputData, callback) {
+exports.render = function (objectID, frameID, linkID, inputData, callback) {
     var outputData = {};
     var key;
         for (key in inputData) {
             outputData[key] = inputData[key];
         }
-    callback(objectID, linkID, outputData);
+    callback(objectID, frameID, linkID, outputData);
 };
 
 /* // example for delay

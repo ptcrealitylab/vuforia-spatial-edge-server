@@ -1,152 +1,573 @@
 {
 	"objectId": "lego40i73qtpzc80n",
 	"name": "lego4",
-	"ip": "192.168.1.8",
-	"version": "1.7.0",
-	"deactivated": true,
-	"protocol": "R1",
-	"tcs": "CuT7b",
-	"x": 0,
-	"y": 0,
-	"scale": 1,
-	"matrix": [],
+	"ip": "10.68.23.38",
+	"version": "3.0.0",
+	"deactivated": false,
+	"protocol": "R2",
+	"tcs": null,
 	"visible": false,
 	"visibleText": false,
 	"visibleEditing": false,
-	"developer": true,
-	"memory": {
-		"matrix": [
-			-0.9949462413787842,
-			-0.09977176785469055,
-			-0.06682159751653671,
-			0,
-			-0.09851891547441483,
-			1.14111602306366,
-			0.5055122971534729,
-			0,
-			0.01939180307090282,
-			0.6783261895179749,
-			-0.8602280020713806,
-			0,
-			217.8303680419922,
-			-90.42867279052734,
-			1378.0703125,
-			1
-		]
-	},
-	"links": {
-		"edDqmleg": {
-			"objectA": "lego40i73qtpzc80n",
-			"objectB": "lego40i73qtpzc80n",
-			"nodeA": "lego40i73qtpzc80nbutton",
-			"nodeB": "lego40i73qtpzc80nlight",
-			"logicA": false,
-			"logicB": false,
-			"namesA": [
-				"lego4",
-				"button"
-			],
-			"namesB": [
-				"lego4",
-				"light"
-			],
-			"lastEditor": "rkIz2y6w",
-			"loop": false
+	"frames": {
+		"lego40i73qtpzc80nzero": {
+			"objectId": "lego40i73qtpzc80n",
+			"name": "zero",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"memory": {},
+			"links": {
+				"xvI7p6hl": {
+					"objectA": "lego40i73qtpzc80n",
+					"frameA": "lego40i73qtpzc80nzero",
+					"nodeA": "lego40i73qtpzc80nzerobutton",
+					"logicA": false,
+					"namesA": [
+						"lego4",
+						"zero",
+						"button"
+					],
+					"objectB": "lego40i73qtpzc80n",
+					"frameB": "lego40i73qtpzc80nzero",
+					"nodeB": "lego40i73qtpzc80nzerolight",
+					"logicB": false,
+					"namesB": [
+						"lego4",
+						"zero",
+						"light"
+					],
+					"lastEditor": "ZGd3454p",
+					"loop": false
+				},
+				"z413aj2s": {
+					"objectA": "lego40i73qtpzc80n",
+					"frameA": "lego40i73qtpzc80nzero",
+					"nodeA": "lego40i73qtpzc80nzerobutton",
+					"logicA": false,
+					"namesA": [
+						"lego4",
+						"zero",
+						"button"
+					],
+					"objectB": "lego40i73qtpzc80n",
+					"frameB": "lego40i73qtpzc80nzero",
+					"nodeB": "lego40i73qtpzc80nzeroport 1",
+					"logicB": false,
+					"namesB": [
+						"lego4",
+						"zero",
+						"port 1"
+					],
+					"lastEditor": "SJJ90trm",
+					"loop": false
+				},
+				"RvH43ogk": {
+					"objectA": "lego40i73qtpzc80n",
+					"frameA": "lego40i73qtpzc80nzero",
+					"nodeA": "lego40i73qtpzc80nzerobutton",
+					"logicA": false,
+					"namesA": [
+						"lego4",
+						"zero",
+						"button"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row0_col1",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row0_col1"
+					],
+					"lastEditor": "SJJ90trm",
+					"loop": false
+				}
+			},
+			"nodes": {
+				"lego40i73qtpzc80nzeroport 1": {
+					"name": "port 1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 166.12122242444457,
+					"y": 250.42038460442564,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"processedData": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					}
+				},
+				"lego40i73qtpzc80nzeroport 2": {
+					"name": "port 2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -140.64736256543256,
+					"y": 248.04525851088692,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"processedData": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					}
+				},
+				"lego40i73qtpzc80nzerobutton": {
+					"name": "button",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 5.317802267665684,
+					"y": -316.1039594185713,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"processedData": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					}
+				},
+				"lego40i73qtpzc80nzerolight": {
+					"name": "light",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 29.717234294352238,
+					"y": -660.9560393252177,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"processedData": {
+						"value": 0,
+						"mode": "f",
+						"unit": false,
+						"unitMin": 0,
+						"unitMax": 1
+					}
+				},
+				"v6guoi9pi89v": {
+					"name": "LOGIC7",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 177.63510098142797,
+					"y": -235.3239706303575,
+					"scale": 1,
+					"matrix": [],
+					"visible": false,
+					"visibleEditing": false,
+					"lastSetting": false,
+					"lastSettingBlock": "",
+					"iconImage": null,
+					"nameInput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"nameOutput": [
+						"",
+						"",
+						"",
+						""
+					],
+					"type": "logic",
+					"lockPassword": null,
+					"lockType": null,
+					"uuid": "v6guoi9pi89v",
+					"screenZ": 2721.1198965068443,
+					"loaded": false,
+					"width": 100,
+					"height": 100,
+					"frameSizeX": 100,
+					"frameSizeY": 100,
+					"animationScale": 0,
+					"begin": [
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1,
+						0,
+						0,
+						0,
+						0,
+						1
+					],
+					"temp": [
+						957.72348152,
+						-19.65349496064,
+						0.042039995912,
+						0.041956,
+						24.39689887968,
+						833.9637352755201,
+						-0.978262568616,
+						-0.976308,
+						3.2478377592319987,
+						-467.87466696959996,
+						-1.7485035100200002,
+						-1.74501,
+						-46061.70893229919,
+						69979.71441750144,
+						2472.1782721977283,
+						2471.234864
+					],
+					"screenX": 325.0047386955834,
+					"screenY": 111.66825285230433,
+					"screenLinearZ": 4.277150665141832,
+					"blocks": {
+						"in0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"in3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out0": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out1": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out2": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						},
+						"out3": {
+							"name": "",
+							"data": [
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								},
+								{
+									"value": 0,
+									"mode": "f",
+									"unit": "",
+									"unitMin": 0,
+									"unitMax": 1
+								}
+							],
+							"stress": 0,
+							"type": "default"
+						}
+					},
+					"links": {},
+					"lastEditor": "bfD493p6"
+				}
+			},
+			"location": "local",
+			"src": "editor"
 		}
 	},
-	"nodes": {
-		"lego40i73qtpzc80nport 1": {
-			"name": "port 1",
-			"data": {
-				"value": 0,
-				"mode": "f",
-				"unit": "",
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": 125.97762987286478,
-			"y": 138.28180726410937,
-			"scale": 1,
-			"matrix": [],
-			"type": "node",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100
-		},
-		"lego40i73qtpzc80nport 2": {
-			"name": "port 2",
-			"data": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": -112.55501993498183,
-			"y": 142.32293332810514,
-			"scale": 1,
-			"matrix": [],
-			"type": "node",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
-		},
-		"lego40i73qtpzc80nbutton": {
-			"name": "button",
-			"data": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": -6.842036685975472,
-			"y": -252.51751060799143,
-			"scale": 1,
-			"matrix": [],
-			"type": "node",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
-		},
-		"lego40i73qtpzc80nlight": {
-			"name": "light",
-			"data": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			},
-			"x": -2.759803212972656,
-			"y": -489.3391485055836,
-			"scale": 1,
-			"matrix": [],
-			"type": "node",
-			"stress": 0,
-			"frameSizeX": 100,
-			"frameSizeY": 100,
-			"processedData": {
-				"value": 0,
-				"mode": "f",
-				"unit": false,
-				"unitMin": 0,
-				"unitMax": 1
-			}
-		}
-	}
+	"developer": true
 }

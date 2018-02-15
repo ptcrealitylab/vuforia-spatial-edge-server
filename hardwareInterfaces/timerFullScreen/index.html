@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Timer</title>
+    <style>
+        @font-face {
+            font-family: 'dieSchrift';
+            src: url('speculum.ttf');
+        }
+
+        * {cursor: none;}
+    </style>
+</head>
+
+
+
+<body style="margin: 0px; padding: 0px;background-color: #000000">
+<div id="timer" style="position: fixed; width:100%; height: 100%; right: 30px; top:19%; bottom: 0px;
+color: #ffffff; font-family: 'DejaVu Sans Mono', 'Courier', serif; font-size: 50vh;display:inline-block;
+text-align: right;background-color: #000000 ">0</div>
+<!---<center><div><img src="marker.jpg" style="margin:0px; padding: 0px; height: 300px;width: 300px"></div><center>-->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io();
+
+    var timer = null;
+    var counter = 0;
+
+    function updateCounter() {
+        var count = (counter/100).toFixed(2);
+        if(count < 10){
+            document.getElementById("timer").innerText = "0"+count;
+        } else {
+            document.getElementById("timer").innerText = count;
+        }
+    }
+
+    updateCounter();
+
+    socket.on('timer', function(msg) {
+        console.log(msg.timer);
+        if (msg.timer === "start") {
+            if (!timer) {
+                timer = setInterval(function() {
+                    counter++;
+                    updateCounter();
+                }, 10);
+            }
+        }
+
+        if (msg.timer === "stop") {
+            clearInterval(timer);
+            timer = null;
+        }
+
+        if (msg.timer === "reset") {
+            counter = 0;
+            updateCounter();
+        }
+    });
+</script>
+</body>
+</html>

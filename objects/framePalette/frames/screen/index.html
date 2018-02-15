@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Default UI</title>
+    <script src="object.js"></script>
+    <script src="pep.min.js"></script>
+</head>
+
+<style>
+    #container {
+        border: 3px dashed greenyellow;
+        /*border: 1px solid white;*/
+        /*background-color: rgba(0,0,0,0.1);*/
+        /*width: 900px;*/
+        /*height: 600px;*/
+        width: 800px;
+        height: 400px;
+    }
+</style>
+<script src="/socket.io/socket.io.js"></script>
+<body touch-action="none">
+    <div id="container">
+
+        <!--<img src="bird.png" width="300" height="300" alt=""/>-->
+
+    </div>
+
+    <script>
+
+        var hybridObj;
+
+        var isPointerDown = false;
+        //
+        // var flipThreshold = 500;
+        //
+        // var frameState = {
+        //     x: 0,
+        //     y: 0,
+        //     isInScreen: true
+        // };
+
+        var socket;
+        // var socketServer;
+
+        function messageReceived(msg) {
+            // console.log("messageReceived", msg);
+            if (msg.data) {
+                var parsedData = JSON.parse(msg.data);
+                if (parsedData) {
+                    var objectData = parsedData.objectData;
+                    if (objectData) {
+                        var framePaletteIP = objectData.ip;
+                        console.log(' ~~~ CONNECT TO SOCKET ~~~ ');
+                        socket = io.connect('http://'+ framePaletteIP +':3032');
+                    }
+                }
+            }
+        }
+
+        function setupHybridObject() {
+            console.log('setup hybrid object');
+            hybridObj = new HybridObject();
+
+            hybridObj.subscribeToMatrix();
+
+            console.log(hybridObj.getPositionZ());
+
+            hybridObj.addMatrixListener( function(modelViewMatrix, projectionMatrix) {
+
+                // console.log('received matrix');
+                if (!isPointerDown) return;
+
+                var zPosition = modelViewMatrix[14];
+                // console.log(zPosition);
+                socket.emit('zPosition', {zPosition: zPosition});
+
+                //
+                // if (frameState.isInScreen) {
+                //     if (zPosition > flipThreshold) {
+                //         // hide the frame in the screen and broadcast a message to the editor to show a 3D frame
+                //         frameState.x =
+                //
+                //     }
+                //
+                // } else {
+                //     if (zPosition < flipThreshold) {
+                //         // broadcast a message to the editor to hide the 3D frame, and show it in the screen instead
+                //     }
+                // }
+
+            });
+
+            // hybridObj.subscribeToAcceleration();
+            // hybridObj.addAccelerationListener( function(acceleration) {
+            //     console.log(acceleration);
+            // });
+        }
+
+        // var previousZ = 1000;
+        // var i = 0;
+
+        window.onload = function() {
+
+            setupHybridObject();
+
+            // setInterval(function() {
+            //     i++;
+            //     // console.log(hybridObj.getPositionZ());
+            //     // var zPosition = 500 + 400 * Math.sin(2 * Math.PI * i / 100 + Math.PI);
+            //     // var zPosition = 550;
+            //     // console.log(zPosition);
+            //     if (isPointerDown) {
+            //         console.log('emit zPosition ' + zPosition);
+            //         socket.emit('zPosition', {zPosition: zPosition});
+            //     }
+            //     // previousZ = zPosition;
+            // }, 100);
+
+            if (window.addEventListener) {
+                // For standards-compliant web browsers
+                window.addEventListener("message", messageReceived, false);
+            }
+            else {
+                window.attachEvent("message", messageReceived);
+            }
+
+//            document.querySelector('img').setAttribute('touch-action', 'none')
+
+            document.body.addEventListener('pointerdown', function(e) { // TODO: I'll need another way to trigger these events if you tap down on a 3D frame in AR space
+                console.log('framePalette object mousedown: ' + e.pageX + ", " + e.pageY);
+                socket.emit('pointerdown', {pageX: e.pageX, pageY: e.pageY});
+                isPointerDown = true;
+            });
+
+            document.body.addEventListener('pointermove', function(e) {
+                // console.log('framePalette object mousemove: ' + e.pageX + ", " + e.pageY);
+                socket.emit('pointermove', {pageX: e.pageX, pageY: e.pageY});
+            });
+
+            document.body.addEventListener('pointerup', function(e) {
+                console.log('framePalette object mouseup: ' + e.pageX + ", " + e.pageY);
+                socket.emit('pointerup', {pageX: e.pageX, pageY: e.pageY});
+                isPointerDown = false;
+            });
+
+            // parent.postMessage(JSON.stringify({ finishedLoading: true }), "*");
+
+        }
+
+    </script>
+</body>
+</html>
+

@@ -80,7 +80,7 @@ function copyValuesToOutput(thisBlock, index) {
         thisBlock.processedData[0][key] = thisBlock.data[index][key];
     }
 }
-exports.render = function (object, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
 
     if(thisBlock.data[0].value > 0.5 ) {
         // Copy values from high input to out
@@ -90,5 +90,5 @@ exports.render = function (object, node, block, index, thisBlock, callback)  {
         copyValuesToOutput(thisBlock, 1);
     }
 
-    callback(object, node, block, index, thisBlock);
+    callback(object, frame, node, block, index, thisBlock);
 };

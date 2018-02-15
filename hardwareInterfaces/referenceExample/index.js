@@ -55,8 +55,27 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    server.addNode("demoTest", "distance", "node");
-    server.addNode("demoTest", "motor", "node");
+   // server.addNode("thisDemo", "zero", "distance", "node");
+ //   server.addNode("thisDemo", "zero", "motor", "node");
+
+
+    server.addNode("thisDemo", "zero2", "distance", "node");
+    server.addNode("thisDemo", "zero2", "motor", "node");
+
+  //  server.addNode("thatDemo", "zero", "distance", "node");
+  //  server.addNode("thatDemo", "zero", "motor", "node");
+
+var count = 0;
+   // server.write("thisDemo", "zero2", "distance", 0.5);
+    setInterval(function(){
+
+        server.write("thisDemo", "zero2", "distance", count/100);
+
+        count++;
+        if (count >= 300){
+            count = 0;
+        }
+    }, 400);
 
 /*
     server.addNode("obj45", "one", "node");

@@ -74,34 +74,34 @@ if (exports.enabled) {
     var timer = false;
     server.enableDeveloperUI(true);
 
-    server.addNode("timer", "start", "node");
-    server.addNode("timer", "stop", "node");
-    server.addNode("timer", "reset", "node");
-    server.addNode("timer", "running", "node");
+    server.addNode("timer", "timer01", "start", "node");
+    server.addNode("timer", "timer01", "stop", "node");
+    server.addNode("timer", "timer01", "reset", "node");
+    server.addNode("timer", "timer01", "running", "node");
 
-    server.addReadListener("timer", "start", function (data) {
+    server.addReadListener("timer", "timer01", "start", function (data) {
         if (data.value > 0.5) {
             if (!timer) {
                 io.emit('timer', {timer: "start"});
                 timer = true;
-                server.write('timer', 'running', 1.0, 'f');
+                server.write('timer', "timer01", 'running', 1.0, 'f');
             }
         }
     });
 
-    server.addReadListener("timer", "reset", function (data) {
+    server.addReadListener("timer", "timer01", "reset", function (data) {
         if (data.value > 0.5) {
             io.emit('timer', {timer: "reset"});
         }
     });
 
-    server.addReadListener("timer", "stop", function (data) {
+    server.addReadListener("timer", "timer01", "stop", function (data) {
         console.log(data.value);
         if (data.value > 0.5) {
             if (timer) {
                 io.emit('timer', {timer: "stop"});
                 timer = false;
-                server.write('timer', 'running', 0.0, 'f');
+                server.write('timer', "timer01", 'running', 0.0, 'f');
             }
         }
     });
