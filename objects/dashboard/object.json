@@ -1,0 +1,316 @@
+{
+	"objectId": "dashboardpaaqwnqq3ggg",
+	"name": "dashboard",
+	"ip": "10.68.23.38",
+	"version": "3.0.0",
+	"deactivated": true,
+	"protocol": "R2",
+	"tcs": null,
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"memory": {},
+	"frames": {
+		"dashboardpaaqwnqq3ggg": {
+			"objectId": null,
+			"name": "dashboard",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "",
+			"src": "editor"
+		},
+		"dashboardpaaqwnqq3gggzero": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "zero",
+			"visualization": "ar",
+			"ar": {
+				"x": 473.2137805810198,
+				"y": 186.8714912009891,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {
+				"i5Crao1e": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row0_col1",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row0_col1"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row0_col2",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row0_col2"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				},
+				"fyzPlfdu": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row0_col2",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row0_col2"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col2",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row1_col2"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				},
+				"nv447jdu": {
+					"objectA": "dashboardpaaqwnqq3ggg",
+					"frameA": "dashboardpaaqwnqq3gggzero",
+					"nodeA": "dashboardpaaqwnqq3gggzeropanel_row1_col2",
+					"logicA": false,
+					"namesA": [
+						"dashboard",
+						"zero",
+						"panel_row1_col2"
+					],
+					"objectB": "dashboardpaaqwnqq3ggg",
+					"frameB": "dashboardpaaqwnqq3gggzero",
+					"nodeB": "dashboardpaaqwnqq3gggzeropanel_row1_col1",
+					"logicB": false,
+					"namesB": [
+						"dashboard",
+						"zero",
+						"panel_row1_col1"
+					],
+					"lastEditor": "pdX9iun6",
+					"loop": false
+				}
+			},
+			"nodes": {
+				"dashboardpaaqwnqq3gggzeropanel_row0_col1": {
+					"name": "panel_row0_col1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 300,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"dashboardpaaqwnqq3gggzeropanel_row0_col2": {
+					"name": "panel_row0_col2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 600,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"dashboardpaaqwnqq3gggzeropanel_row1_col0": {
+					"name": "panel_row1_col0",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 300,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"dashboardpaaqwnqq3gggzeropanel_row1_col1": {
+					"name": "panel_row1_col1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 300,
+					"y": 300,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				},
+				"dashboardpaaqwnqq3gggzeropanel_row1_col2": {
+					"name": "panel_row1_col2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 600,
+					"y": 300,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor"
+		},
+		"dashboardpaaqwnqq3ggggaugeMYel5im6uu39": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gaugeMYel5im6uu39",
+			"visualization": "ar",
+			"ar": {
+				"x": 12,
+				"y": 266,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 12,
+				"y": 266,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggauge1A6t4dmlolad": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "gauge1A6t4dmlolad",
+			"visualization": "ar",
+			"ar": {
+				"x": 10,
+				"y": 260,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 10,
+				"y": 260,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"dashboardpaaqwnqq3ggggauge1A6t4dmloladvalue": {
+					"name": "value",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": -76,
+					"y": -26,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge"
+		},
+		"dashboardpaaqwnqq3ggggraphYj837asx6q0c": {
+			"objectId": "dashboardpaaqwnqq3ggg",
+			"name": "graphYj837asx6q0c",
+			"visualization": "ar",
+			"ar": {
+				"x": 1528,
+				"y": 686,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1528,
+				"y": 686,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor",
+			"type": "graph"
+		}
+	},
+	"developer": true
+}

@@ -59,6 +59,7 @@ var debug = false;
 var xml2js = require('xml2js');
 var fs = require('fs');
 
+
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
@@ -71,30 +72,143 @@ exports.readObject = function (objectLookup, folder) {
     }
 };
 
+
+
 exports.createFolder = function (folderVar, dirnameO, debug) {
 
     var folder = dirnameO + '/objects/' + folderVar + '/';
+    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
+    //var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
     if (debug) console.log("Creating folder: " + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, "0766", function (err) {
             if (err) {
                 console.log(err);
-                res.send("ERROR! Can't make the directory! \n"); // echo the result back
             }
         });
+    }
+
+        if (!fs.existsSync(frames)) {
+            fs.mkdirSync(frames, "0766", function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+        }
+/*
+        if (!fs.existsSync(firstFrame)) {
+            fs.mkdirSync(firstFrame, "0766", function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+
 
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
           //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/bird.png"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
         }
 
         //  writeObjectToFile(tempFolderName);
+    }
+    */
+};
+
+
+
+exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug) {
+
+    var folder = dirnameO + '/objects/' + folderVar + '/';
+    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
+    var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
+    if (debug) console.log("Creating frame folder: " + folder);
+
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, "0766", function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    }
+
+    if (!fs.existsSync(frames)) {
+        fs.mkdirSync(frames, "0766", function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    }
+
+    if (!fs.existsSync(firstFrame)) {
+        fs.mkdirSync(firstFrame, "0766", function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+
+
+        try {
+            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
+            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
+
+        } catch (e) {
+            if (debug) console.log("Could not copy source files", e);
+        }
+
+        //  writeObjectToFile(tempFolderName);
+    }
+};
+
+
+
+/**
+ * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
+ * @param objectKey
+ * @param frameKey
+ * @param dirname0
+ */
+exports.deleteFrameFolder = function(objectName, frameName, dirname0) {
+
+    function deleteFolderRecursive(path) {
+        console.log('deleteFolderRecursive');
+        if (fs.existsSync(path)) {
+            fs.readdirSync(path).forEach(function(file, index){
+                var curPath = path + "/" + file;
+                if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                    deleteFolderRecursive(curPath);
+                } else { // delete file
+                    fs.unlinkSync(curPath);
+                }
+            });
+            fs.rmdirSync(path);
+        }
+    }
+
+    console.log('objectName: ' + objectName);
+    console.log('frameName: ' + frameName);
+
+    var folderPath = dirname0 + '/objects/' + objectName + '/frames/' + frameName;
+    console.log('delete frame folder: ' + folderPath);
+
+    var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
+    var isDeletableFrame = false;
+    acceptableFrameNames.forEach(function(nameOption) {
+        if (frameName.indexOf(nameOption) > -1) {
+            isDeletableFrame = true;
+            console.log('it is a ' + nameOption + ' frame');
+        }
+    });
+
+    if (isDeletableFrame) {
+        deleteFolderRecursive(folderPath);
     }
 };
 
@@ -149,9 +263,11 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
  *
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
- * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides. 
+ * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides.
+ * @param {string}   writeToFile  - Give permission to write to file.
  **/
-exports.writeObjectToFile = function (objects, object, dirnameO) {
+exports.writeObjectToFile = function (objects, object, dirnameO, writeToFile) {
+    if (writeToFile) {
 console.log("start saving");
     var outputFilename = dirnameO + '/objects/' + objects[object].name + '/object.json';
     fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
@@ -161,6 +277,9 @@ console.log("start saving");
            console.log("JSON saved to " + outputFilename);
         }
     });
+    } else {
+        console.log("I am not allowed to save");
+    }
 };
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,

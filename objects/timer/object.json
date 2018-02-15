@@ -1,9 +1,9 @@
 {
 	"objectId": "timer1bfv827dfb7s",
 	"name": "timer",
-	"ip": "192.168.1.8",
-	"version": "1.7.0",
-	"deactivated": false,
+	"ip": "192.168.1.7",
+	"version": "1.7.6",
+	"deactivated": true,
 	"protocol": "R1",
 	"tcs": "1f968F",
 	"x": 0,
@@ -64,6 +64,24 @@
 			},
 			"x": 214.06152948633826,
 			"y": 216.25057089907932,
+			"scale": 1,
+			"matrix": [],
+			"type": "node",
+			"stress": 0,
+			"frameSizeX": 100,
+			"frameSizeY": 100
+		},
+		"timer1bfv827dfb7srunning": {
+			"name": "running",
+			"data": {
+				"value": 0,
+				"mode": "f",
+				"unit": "",
+				"unitMin": 0,
+				"unitMax": 1
+			},
+			"x": -66,
+			"y": -13,
 			"scale": 1,
 			"matrix": [],
 			"type": "node",

@@ -1,0 +1,180 @@
+@font-face {
+    font-family: myriadPro;
+    src: url(resources/MyriadPro-Regular.otf);
+}
+
+body {
+    background-color: rgb(34,34,34);
+    /*font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;*/
+    /*font-size: 12pt;*/
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    cursor: default;
+    text-align: center;
+    /*position: absolute;*/
+}
+
+.button {
+    width: 180px;
+    height: 72px;
+    text-align: center;
+    vertical-align: middle;
+    margin-top: 10px;
+    margin-right: 10px;
+    display: inline-block;
+    font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 24pt;
+}
+
+.active:hover {
+    /*background-color: rgba(45,255,255,0.25);*/
+    opacity: 0.75;
+}
+
+.active:active {
+    opacity: 0.5;
+}
+
+#container {
+    /*width: 800px;*/
+    /*height: 800px;*/
+    position: relative;
+    border: 1px solid white;
+    margin: auto;
+}
+
+#sidebar {
+    /*width: 200px;*/
+    /*height: 800px;*/
+    position: fixed;
+    left: 0;
+    top: 0;
+    margin: 10px;
+    border: 1px solid white;
+}
+
+.region {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+    font-size: 48pt;
+}
+
+.green {
+    color: rgb(41,253,47);
+    border: 2px solid rgb(41,253,47);
+}
+
+.red {
+    color: rgb(242,22,121);
+    border: 2px solid rgb(242,22,121);
+}
+
+.blue {
+    color: rgb(45,255,255);
+    border: 2px solid rgb(45,255,255);
+    background-color: rgba(45,255,255,0.15);
+}
+
+.white {
+    color: rgb(255,255,255);
+    background-color: rgba(255,255,255,0.15);
+}
+
+.greenText {
+    color: rgb(41,253,47);
+}
+
+.redText {
+    color: rgb(242,22,121);
+}
+
+.blueText {
+    color: rgb(45,255,255);
+}
+
+.whiteText {
+    color: rgb(255,255,255);
+}
+
+.inactive {
+    opacity: 0.25;
+}
+
+.top {
+    top: 0;
+}
+
+.bottom {
+    bottom: 0;
+}
+
+.left {
+    left: 0;
+}
+
+.right {
+    right: 0;
+}
+
+.marker {
+    /*min-height: 50%;*/
+    /*max-height: 90%;*/
+    /*height: 90%;*/
+    /*height: auto;*/
+    /*width: auto;*/
+    width: 100%;
+    height: 10px;
+    display: inline-block;
+
+    background-image: url("/resources/marker.jpg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.smallText {
+    font-size: 28pt;
+}
+
+.largeText {
+    font-size: 48pt;
+}
+
+.centerContentsOuter {
+    display: table;
+    height:100%;
+    width:100%;
+}
+
+.centerContentsInner {
+    display: table-cell;
+    vertical-align: middle;
+    text-align:center;
+    /*height: 75%;*/
+    /*width: 75%;*/
+}
+
+.sidebarPanel {
+    width: 100%;
+    height: 200px;
+    position: relative;
+}
+
+.eventCapture {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.controlFrame {
+    pointer-events: none;
+}
+
+.draggedPanel {
+    position: absolute;
+    width: 400px;
+    height: 200px;
+}

@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>THREE.js Reality Editor Example</title>
+    <script src="three.min.js"></script>
+</head>
+<body>
+    <script>
+        var camera, scene, renderer;
+        var threejsContainerObj;
+        var hybridObj;
+        var mesh;
+
+        var isProjectionMatrixSet = false;
+
+        var rendererWidth = screen.height;
+        var rendererHeight = screen.width;
+        var aspectRatio = rendererWidth / rendererHeight;
+
+        var hue = 0.5;
+        var saturation = 0.5;
+        var lightness = 0.5;
+
+        window.onload = function () {
+            // create a fullscreen webgl renderer for the threejs content and add to the dom
+            renderer = new THREE.WebGLRenderer( { alpha: true } );
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( rendererWidth, rendererHeight );
+            document.body.appendChild( renderer.domElement );
+
+            // create a threejs camera and scene
+            camera = new THREE.PerspectiveCamera( 70, aspectRatio, 1, 1000 );
+            scene = new THREE.Scene();
+
+            // create a parent 3D object to contain all the three js objects
+            // we can apply the marker transform to this object and all of its
+            // children objects will be affected
+            threejsContainerObj = new THREE.Object3D();
+            threejsContainerObj.matrixAutoUpdate = false;
+            scene.add(threejsContainerObj);
+
+            // light the scene with a combination of ambient and directional white light
+            var ambLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambLight);
+            var dirLight1 = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight1.position.set(100, 100, 100);
+            scene.add(dirLight1);
+            var dirLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight2.position.set(-100, -100, -100);
+            scene.add(dirLight2);
+
+            // add an icosahedron 3d model to the container object 
+            var radius = 75;
+            var geometry = new THREE.IcosahedronGeometry( radius, 1 );
+            var materials = [
+                new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors, shininess: 0 } ),
+                new THREE.MeshBasicMaterial( { color: 0x000000, shading: THREE.FlatShading, wireframe: true, transparent: true } )
+            ];
+            mesh = THREE.SceneUtils.createMultiMaterialObject( geometry, materials );
+            threejsContainerObj.add( mesh );
+            mesh.position.setZ(150);
+
+            // add spotlight for the shadows
+            var spotLight = new THREE.SpotLight(0xffffff);
+            spotLight.position.set(-30, -30, 150);
+            spotLight.castShadow = true;
+            mesh.add(spotLight);
+
+            // make the Hybrid Object fullscreen within the reality editor,
+            // and subscribe to the modelview and projection matrices
+            hybridObj = new HybridObject();
+            hybridObj.setFullScreenOn(150);
+            hybridObj.subscribeToMatrix();
+
+            // randomly update HSL color channels separately
+            hybridObj.addReadListener("hue", function(e){
+                hue = e;
+            });
+
+            hybridObj.addReadListener("saturation", function(e){
+                saturation = e;
+            });
+
+            hybridObj.addReadListener("lightness", function(e){
+                lightness = e;
+            });
+
+            // whenever we receive new matrices from the editor, update the 3d scene
+            hybridObj.addMatrixListener(renderScene);
+        };
+
+        function setMatrixFromArray(matrix, array) {
+            matrix.set( array[0], array[4], array[8], array[12],
+                        array[1], array[5], array[9], array[13],
+                        array[2], array[6], array[10], array[14],
+                        array[3], array[7], array[11], array[15]
+                    );
+        }
+
+        function renderScene(modelViewMatrix, projectionMatrix) {
+            // only set the projection matrix for the camera 1 time, since it stays the same
+            if (!isProjectionMatrixSet && projectionMatrix.length > 0) {
+                setMatrixFromArray(camera.projectionMatrix, projectionMatrix);
+                isProjectionMatrixSet = true;
+            }
+
+            if (isProjectionMatrixSet) { // don't turn into else statement, both can happen
+                // update models with newest values from hybrid object
+                mesh.children[0].material.color.setHSL( hue, saturation, lightness );
+                mesh.rotation.x += 0.005; // slow rotation, for aesthetic effect
+                mesh.rotation.y += 0.01;
+                // update model view matrix
+                setMatrixFromArray(threejsContainerObj.matrix, modelViewMatrix);
+                // render the scene
+                renderer.render( scene, camera );
+            }
+        }
+    </script>
+</body>
+</html>
