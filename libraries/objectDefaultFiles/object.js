@@ -64,12 +64,13 @@ var realityObject = {
     style: document.createElement('style'),
     messageCallBacks: {},
     interface : "gui",
+    moveDelay: 1000,
     version: 200
 };
 
 // adding css styles nessasary for acurate 3D transformations.
 realityObject.style.type = 'text/css';
-realityObject.style.innerHTML = 'body, html{ height: 100%; margin:0; padding:0;}';
+realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0;}';
 document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
 // Load socket.io.js synchronous so that it is available by the time the rest of the code is executed.
@@ -532,6 +533,10 @@ function HybridObject() {
         } else return undefined;
     };
 
+    this.setMoveDelay = function(delayInMilliseconds) {
+        realityObject.moveDelay = delayInMilliseconds
+    };
+
     if (typeof io !== "undefined") {
         var _this = this;
 
@@ -836,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }), '*');
             sendTouchEvents = true;
             touchTimer = null;
-        }, 400);
+        }, realityObject.moveDelay);
     });
 
     document.body.addEventListener('touchmove', function(event) {
