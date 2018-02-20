@@ -35,10 +35,10 @@ if (exports.enabled) {
 
     kepware1 = new Kepware("192.168.56.100", "kepwareBox", "39320", 100);
    kepware1.setup();
-
+/*
   var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
      kepware2.setup();
-
+*/
 
 
     function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval){
