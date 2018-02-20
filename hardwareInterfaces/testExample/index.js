@@ -53,6 +53,30 @@ exports.enabled = true;
 if (exports.enabled) {
 	var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
+
+	// call      obj.activateScreenObject(); in your webpage to active the channel
+
+    server.addScreenObjectListener("xxx",function(screenObject){
+        server.writeScreenObjects("20cmMarker", "frameKey", "nodeKey");
+        console.log(screenObject);
+    });
+
+    /*
+
+ screenObject = {
+        touchState : null,
+        closestObject : null,
+        x : 0,
+        y : 0,
+        scale : 1,
+        object : null,
+        frame : null,
+        node : null,
+        isScreenVisible: false
+};
+
+     */
+
 	server.enableDeveloperUI(true);
 	server.addNode("10cmMarker", "10cm", "node", "node");
     server.addNode("20cmMarker", "20cm", "node", "node");
