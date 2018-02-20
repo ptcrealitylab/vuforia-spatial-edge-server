@@ -64,6 +64,7 @@ var realityObject = {
     style: document.createElement('style'),
     messageCallBacks: {},
     interface : "gui",
+    moveDelay: 1000,
     version: 200
 };
 
@@ -532,6 +533,10 @@ function HybridObject() {
         } else return undefined;
     };
 
+    this.setMoveDelay = function(delayInMilliseconds) {
+        realityObject.moveDelay = delayInMilliseconds
+    };
+
     if (typeof io !== "undefined") {
         var _this = this;
 
@@ -836,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }), '*');
             sendTouchEvents = true;
             touchTimer = null;
-        }, 400);
+        }, realityObject.moveDelay);
     });
 
     document.body.addEventListener('touchmove', function(event) {
