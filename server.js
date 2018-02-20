@@ -3337,6 +3337,10 @@ function socketServer() {
             messagetoSend(msgContent, socket.id);
         });
 
+        socket.on('/object/screenObject', function (msg) {
+            hardwareAPI.screenObjectCall(JSON.parse(msg));
+        });
+
         socket.on('disconnect', function () {
 
 
@@ -3385,6 +3389,17 @@ function messagetoSend(msgContent, socketID) {
         }
     }
 }
+
+
+hardwareAPI.screenObjectServerCallBack(function(object, frame, node){
+    for (var thisEditor in realityEditorSocketArray) {
+        io.sockets.connected[thisEditor].emit('/object/screenObject', JSON.stringify({
+            object: object,
+            frame: frame,
+            node: node
+        }));
+    }
+});
 
 /**********************************************************************************************************************
  ******************************************** Engine ******************************************************************

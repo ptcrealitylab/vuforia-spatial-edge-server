@@ -55,6 +55,7 @@ var realityObject = {
     sendMatrix: false,
     sendAcceleration: false,
     sendFullScreen: false,
+    sendScreenObject : false,
     fullscreenZPosition: 0,
     sendSticky : false,
     height: "100%",
@@ -64,8 +65,16 @@ var realityObject = {
     style: document.createElement('style'),
     messageCallBacks: {},
     interface : "gui",
+    version: 200,
     moveDelay: 1000,
-    version: 200
+    eventObject : {
+        version : null,
+        object: null,
+        frame : null,
+        node : null,
+        x: 0,
+        y: 0,
+        type: null}
 };
 
 // adding css styles nessasary for acurate 3D transformations.
@@ -183,7 +192,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                             sendMatrix: realityObject.sendMatrix,
                             sendAcceleration: realityObject.sendAcceleration,
                             fullScreen: realityObject.sendFullScreen,
-                            stickiness: realityObject.sendSticky
+                            stickiness: realityObject.sendSticky,
+                            sendScreenObject : realityObject.sendScreenObject
                         }), "*");
                 }
             }
@@ -418,6 +428,17 @@ function HybridObject() {
 
     };
 
+    this.activateScreenObject = function() {
+        realityObject.sendScreenObject = true;
+        parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            sendScreenObject : true
+        }), '*');
+    };
+
     /**
      ************************************************************
      */
@@ -576,6 +597,40 @@ function HybridObject() {
             }
             _this.oldValueList[node] = value;
         };
+
+// Routing the messages via Server for Screen
+
+        this.addScreenObjectListener = function () {
+            realityObject.messageCallBacks.screenObjectCall = function (msgContent) {
+                if (typeof msgContent.screenObject !== "undefined") {
+                    _this.ioObject.emit('/object/screenObject', JSON.stringify(msgContent.screenObject));
+                }
+            };
+        };
+
+        this.addScreenObjectReadListener = function () {
+            _this.ioObject.on("/object/screenObject", function (msg) {
+                var thisMsg = JSON.parse(msg);
+                if (!thisMsg.object) thisMsg.object = null;
+                if (!thisMsg.frame) thisMsg.frame = null;
+                if (!thisMsg.node) thisMsg.node = null;
+
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    screenObject: {
+                        object: thisMsg.object,
+                        frame: thisMsg.frame,
+                        node: thisMsg.node
+                    }
+                }), '*');
+            });
+        };
+
+        this.addScreenObjectListener();
+        this.addScreenObjectReadListener();
 
         /**
          ************************************************************
@@ -805,6 +860,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return event.changedTouches[0].screenY;
     }
 
+    function getScreenPosition(event) {
+        realityObject.eventObject.version = realityObject.version;
+        realityObject.eventObject.object = realityObject.object;
+        realityObject.eventObject.frame = realityObject.frame;
+        realityObject.eventObject.node = realityObject.node;
+        realityObject.eventObject.x = event.changedTouches[0].screenX;
+        realityObject.eventObject.y = event.changedTouches[0].screenY;
+        realityObject.eventObject.type = event.type;
+        return realityObject.eventObject;
+    }
+
+    function sendEventObject(event) {
+
+        parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            eventObject: getScreenPosition(event)
+        }), '*');
+    }
+
+
     function sendTouchEvent(event) {
         parent.postMessage(JSON.stringify({
             version: realityObject.version,
@@ -819,7 +897,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }), '*');
     }
 
-    document.body.addEventListener('touchstart', function() {
+    document.body.addEventListener('touchstart', function(event) {
+        sendEventObject(event);
         if (!realityObject.width) {
             return;
         }
@@ -844,7 +923,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, realityObject.moveDelay);
     });
 
+
     document.body.addEventListener('touchmove', function(event) {
+        sendEventObject(event);
+
         if (sendTouchEvents) {
             sendTouchEvent(event);
         } else if (touchTimer) {
@@ -858,6 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.body.addEventListener('touchend', function(event) {
+        sendEventObject(event);
         if (sendTouchEvents) {
             sendTouchEvent(event);
         }
