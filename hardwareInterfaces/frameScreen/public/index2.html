@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Frame Palette 2</title>
+    <link rel='stylesheet' type='text/css' href='index.css'>
+</head>
+<body>
+
+<div id='sidebar' class='blue smallText'>Control Panel</div>
+<div id='mainContents'></div>
+<div id='markerContainer'></div>
+
+<script>
+    // constants
+    var defaultValue = 0.00;
+    var PORT = 3032;
+    var framePullOutThreshold = 300;
+</script>
+
+<script src='/socket.io/socket.io.js'></script>
+<script src='frameAR-client.js'></script>
+<script src='frameAR-custom.js'></script>
+<!--<script src='elements.js'></script>-->
+<!--<script src='custom.js'></script>-->
+
+<script>
+
+    function setupMarkerContainer() {
+
+        var sidebarRect = sidebar.getBoundingClientRect();
+        markerContainer.style.top = sidebarRect.bottom + sidebarRect.top + 'px';
+        markerContainer.style.width = sidebarRect.width + 'px';
+        markerContainer.width = sidebarRect.width;
+
+        // add marker to screen
+        var additionalStyles = {
+            width: '600px',
+            height: '600px',
+            left: '0', //'20px',
+            top: '0' //'20px'
+        };
+        var marker = frameAR.getMarkerElement('/resources/marker.jpg', additionalStyles);
+
+        markerContainer.appendChild(marker);
+        // document.body.appendChild(marker);
+    }
+
+    function initializeInterface() {
+
+        createControlPanel(['decimal', 'gauge', 'graph', 'light']);
+        setupMarkerContainer();
+
+        optimizedResize.add( function() {
+
+            var contentsWidth = window.innerWidth - 600 - 30;
+            var contentsHeight = window.innerHeight - 20;
+
+            mainContents.style.width = contentsWidth + 'px';
+            mainContents.style.height = contentsHeight + 'px';
+            mainContents.width = contentsWidth;
+            mainContents.height = contentsHeight;
+
+        });
+
+        frameAR.initializeDragInterface(createPanelElements);
+        frameAR.createSocketListeners(onFrameReceived, shouldSendFrameOnZ, onFrameSend);
+
+    }
+
+    /**
+     * @callback createDraggedFrameCallback
+     * @param {string} type - the type of frame element to add within the panel
+     * @return {DOMElement} - the new frame DOM element you want to drag
+     */
+    function createPanelElements(type) {
+        var sidebarPanelClone = createSidebarPanel(type); //comes from clickedPanelContainer.id
+        sidebarPanelClone.classList.add("region");
+        sidebarPanelClone.classList.add("smallText");
+        sidebarPanelClone.style.position = "absolute";
+        document.getElementsByTagName('body')[0].appendChild(sidebarPanelClone);
+        sidebarPanelClone.classList.add("draggedPanel");
+        return sidebarPanelClone;
+    }
+
+    /**
+     * Callback for updating the UI upon receiving a new frame to add to the screen.
+     *
+     * @callback frameReceivedCallback
+     * @param {Frame} msg - The frame object received from AR
+     */
+    function onFrameReceived(msg) {
+        var screenPos = getScreenPosFromARPos(msg.screen.x, msg.screen.y);
+        createPanelElements(msg.type);
+        simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
+    }
+
+    /**
+     * Callback for filtering whether to send a frame to AR given a certain z distance to the editor.
+     *
+     * @callback frameSendFilter
+     * @param {Object} msg - The message received via the socket.
+     * @param {number} msg.zPosition - The z distance to the active iOS editor. 0 is as close as possible. 300 is a z depth equal to the width of the marker.
+     * @return {boolean} True iff a frame should be sent to the AR context of the active iOS editor given the current application state.
+     */
+    function shouldSendFrameOnZ(msg) {
+        var zPosition = msg.zPosition;
+        var isPulledOutEnough = zPosition > (startDragZ + framePullOutThreshold);
+        return (currentlyDraggedPanel && isCurrentFrameInScreen && isPulledOutEnough);
+    }
+
+    /**
+     * Callback for collecting relevant information to send to AR with the frame (its position, size, type, etc) and update the UI to remove the screen frame.
+     *
+     * @callback frameSendCallback
+     * @return {Object} msgData - all of the data needed for the server to create an equivalent AR frame and render it in the iOS app.
+     * TODO: document every property that msgData must contain (or even better, turn it into a class)
+     */
+    function onFrameSend(msg) {
+
+        // 1. generate data about new AR frame so that it matches the exact appearance of the screen frame
+
+        var draggedPanelPos = getDraggedPanelPos();
+        var arPos = getARPosFromScreenPos(draggedPanelPos.x, draggedPanelPos.y);
+        var scaleFactor = getScreenScaleFactor();
+        var arFrameWidth = currentlyDraggedPanel.clientWidth * scaleFactor;
+        var arFrameHeight = currentlyDraggedPanel.clientHeight * scaleFactor;
+        var frameType = currentlyDraggedPanel.id;
+
+        var msgData = {
+            objectName: objectName,
+            destination: 'ar',
+            xPosition: arPos.x,
+            yPosition: arPos.y,
+            zPosition: msg.zPosition,
+            width: arFrameWidth,
+            height: arFrameHeight,
+            frameData: { // TODO: remove frameData intermediate layer in this object, make flat
+                uniqueName: frameType + uuidTime(),
+                type: frameType
+            }
+        };
+
+        console.log('send to 3D', msgData);
+
+        // 2. hide the 2D frame on the screen and update necessary state
+        currentlyDraggedPanel.style.visibility = 'hidden';
+        isCurrentFrameInScreen = false;
+        simulateMouseEvent(0, 0, 'mouseup');
+
+        // 3. return the frame data so that it can be sent by socket to the
+        return msgData;
+    }
+
+    window.onload = initializeInterface;
+
+</script>
+</body>
+</html>
