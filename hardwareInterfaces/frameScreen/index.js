@@ -26,6 +26,11 @@ if (exports.enabled) {
         frameAR.io.emit('screenObject', screenObject);
     });
 
+    server.subscribeToFrameData(function(data) {
+        //frameAR.frameDataCallback.bind(frameAR)
+        frameAR.io.emit('frameDataCallback', data);
+    });
+
     frameAR.io.on('connection', function(socket) {
 
         console.log('frame screen socket connected');
@@ -45,6 +50,31 @@ if (exports.enabled) {
 
         socket.on('zPosition', function (msg) {
             frameAR.io.emit('zPosition', msg);
+        });
+
+        socket.on('createFrame', function(msg) {
+
+            // objectName, frameName, src, x, y, width, height
+            var objectName = 'framePalette';
+            function uuidTime() {
+                var dateUuidTime = new Date();
+                var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+                while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+                return stampUuidTime;
+            }
+            var frameName = msg.src + uuidTime();
+            var src = msg.src;
+            var x = 100 + Math.random() * 400;
+            var y = 100 + Math.random() * 400;
+            var width = 300;
+            var height = 200;
+
+            // createFrameCallback(src);
+            // createFrameCallback(objectName, frameName, src, x, y, width, height);
+
+            server.createFrame(objectName, frameName, src, x, y, width, height);
+
         });
 
     });

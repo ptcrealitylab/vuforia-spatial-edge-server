@@ -58,6 +58,306 @@
 			"nodes": {},
 			"location": "",
 			"src": "editor"
+		},
+		"framePaletteRm48yj9xak5ugaugeYqiixy03e21s": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugeYqiixy03e21s",
+			"visualization": "screen",
+			"ar": {
+				"x": 407.12651318122823,
+				"y": 151.23495126059012,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 407.12651318122823,
+				"y": 151.23495126059012,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugeYqiixy03e21svalue": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugeYqiixy03e21s",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
+		},
+		"framePaletteRm48yj9xak5ugaugei2707nf83efq": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugei2707nf83efq",
+			"visualization": "screen",
+			"ar": {
+				"x": 346.61984090786905,
+				"y": 328.2226785202122,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 966.6041870117188,
+				"y": 256.2083435058594,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugei2707nf83efqvalue": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugei2707nf83efq",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
+		},
+		"framePaletteRm48yj9xak5ugaugeHrhfy8p7ujw1": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugeHrhfy8p7ujw1",
+			"visualization": "screen",
+			"ar": {
+				"x": 284.6970179588914,
+				"y": 143.96397051357334,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 284.6970179588914,
+				"y": 143.96397051357334,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugeHrhfy8p7ujw1value": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugeHrhfy8p7ujw1",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
+		},
+		"framePaletteRm48yj9xak5ugaugeeMh1rsycpiya": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugeeMh1rsycpiya",
+			"visualization": "screen",
+			"ar": {
+				"x": 338.5832162507815,
+				"y": 118.95084285815001,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 819.8498912245059,
+				"y": 244.02751073286925,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugeeMh1rsycpiyavalue": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugeeMh1rsycpiya",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
+		},
+		"framePaletteRm48yj9xak5ugaugewdbfq2khpig2": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugewdbfq2khpig2",
+			"visualization": "screen",
+			"ar": {
+				"x": 142.36202434771315,
+				"y": 298.045685192154,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 142.36202434771315,
+				"y": 298.045685192154,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugewdbfq2khpig2value": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugewdbfq2khpig2",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
+		},
+		"framePaletteRm48yj9xak5ugaugefug5vbiwhnyr": {
+			"objectId": "framePaletteRm48yj9xak5u",
+			"name": "gaugefug5vbiwhnyr",
+			"visualization": "screen",
+			"ar": {
+				"x": 320.44111177837124,
+				"y": 125.72069212767465,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 320.44111177837124,
+				"y": 125.72069212767465,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"framePaletteRm48yj9xak5ugaugefug5vbiwhnyrvalue": {
+					"name": "value",
+					"objectId": "framePaletteRm48yj9xak5u",
+					"frameId": "framePaletteRm48yj9xak5ugaugefug5vbiwhnyr",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 1,
+					"matrix": [],
+					"type": "node",
+					"stress": 0,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "local",
+			"src": "editor",
+			"type": "gauge",
+			"frameSizeX": 300,
+			"frameSizeY": 200,
+			"width": 300,
+			"height": 200
 		}
 	},
 	"developer": true
