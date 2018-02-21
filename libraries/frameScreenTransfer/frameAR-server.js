@@ -78,6 +78,7 @@ module.exports = function(rootDirectory) {
 
     return {
         startHTTPServer: startHTTPServer,
-        createSocketListeners: createSocketListeners
+        createSocketListeners: createSocketListeners,
+        io: io
     };
 };
