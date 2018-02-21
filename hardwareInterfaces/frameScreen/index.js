@@ -21,7 +21,7 @@ if (exports.enabled) {
     // frameAR.createSocketListeners(server.addFrame.bind(server));
 
     server.addScreenObjectListener("frameScreen",function(screenObject){
-        server.writeScreenObjects("objectKey", "frameKey", "nodeKey");
+        // server.writeScreenObjects("objectKey", "frameKey", "nodeKey");
         // console.log(screenObject);
         frameAR.io.emit('screenObject', screenObject);
     });
@@ -55,7 +55,7 @@ if (exports.enabled) {
         socket.on('createFrame', function(msg) {
 
             // objectName, frameName, src, x, y, width, height
-            var objectName = 'framePalette';
+            var objectName = 'frameScreen';
             function uuidTime() {
                 var dateUuidTime = new Date();
                 var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -77,6 +77,17 @@ if (exports.enabled) {
 
         });
 
+        socket.on('writeScreenObject', function(msg) {
+            console.log('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey);
+            server.writeScreenObjects(msg.objectKey, msg.frameKey);
+        });
+
+        // socket.on('testMessage', function(msg) {
+        //     console.log('testMessage', msg);
+        // });
+
     });
+
+
 
 }

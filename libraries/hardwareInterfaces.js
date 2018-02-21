@@ -675,8 +675,10 @@ exports.writeScreenObjects = function (object, frame, node) {
 
     var objectKey = utilities.readObject(objectLookup, object); //get globally unique object id
     if(objectKey) object = objectKey;
-    if(!node.includes(object)) node = object+frame+node;
-    if(!frame.includes(object)) frame = object+frame;
+    if(node && !node.includes(object)) node = object+frame+node;
+    if(frame && !frame.includes(object)) frame = object+frame;
+
+    console.log('set screenObject to ', object, frame, node)
 
     screenObjectServerCallBackObject(object, frame, node);
 };

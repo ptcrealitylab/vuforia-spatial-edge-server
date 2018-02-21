@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 
 if (exports.enabled) {
@@ -56,10 +56,10 @@ if (exports.enabled) {
 
 	// call      obj.activateScreenObject(); in your webpage to active the channel
 
-    server.addScreenObjectListener("xxx",function(screenObject){
-        server.writeScreenObjects("20cmMarker", "frameKey", "nodeKey");
-        console.log(screenObject);
-    });
+    // server.addScreenObjectListener("xxx",function(screenObject){
+        // server.writeScreenObjects("20cmMarker", "frameKey", "nodeKey");
+        // console.log(screenObject);
+    // });
 
     /*
 
