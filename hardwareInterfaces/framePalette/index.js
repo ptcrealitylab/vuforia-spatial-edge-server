@@ -56,4 +56,9 @@ if (exports.enabled) {
     frameAR.startHTTPServer(3032);
     frameAR.createSocketListeners(server.addFrame.bind(server));
 
+    server.addScreenObjectListener("xxx",function(screenObject){
+        server.writeScreenObjects("objectKey", "frameKey", "nodeKey");
+        console.log(screenObject);
+    });
+
 }
