@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<body style="background-color: #3c3c3c">
+
+<canvas id="myCanvas" width="800" height="800" style="border:0px">
+    Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+
+    var direction = false;
+
+    var c = document.getElementById("myCanvas");
+    var ctx = c.getContext("2d");
+    var center = [c.width/2, c.height/2];
+    var circleStartRadius = 100;
+    var color = "rgba(0,255,255,0.2)";
+    var lineWidth = 10;
+
+    var Circle = function (){
+        this.circleRadius = 0;
+        this.color = "rgba(0,255,255,0.2)";
+        this.lineWidth = lineWidth;
+    };
+
+    var circles = {};
+
+    setInterval(function(){
+        var thisItem = uuidTimeShort();
+        circles[thisItem] = new Circle();
+        circles[thisItem].circleRadius = circleStartRadius;
+    }, 500);
+
+    drawCircle();
+
+    var beatSize = 12;
+    var beatCircle = 0;
+
+    function drawCircle(){
+
+        var thisInterval = setInterval(function(){
+            ctx.clearRect(0, 0, c.width, c.height);
+
+         for(var key in circles){
+
+             circles[key].circleRadius = circles[key].circleRadius+4;
+             var alpha = ((c.width/2-circles[key].circleRadius)/(c.width/2));
+             if(alpha > 1.0) alpha =1.0;     if(alpha <= 0.0) alpha =0.0;
+             circles[key].color = "rgba(0,255,255,"+ alpha +")";
+             ctx.beginPath();
+             ctx.lineWidth=circles[key].lineWidth;
+             ctx.strokeStyle=circles[key].color;
+             ctx.arc(center[0], center[1], circles[key].circleRadius, 0, 2 * Math.PI);
+             ctx.stroke();
+
+             beatCircle = circles[key].circleRadius-circleStartRadius;
+             if(beatCircle >=beatSize){
+                 beatCircle = beatSize- (circles[key].circleRadius-circleStartRadius-beatSize);
+                  if(beatCircle <= 0)
+                     beatCircle = 0;
+             }
+
+             if(circles[key].circleRadius >= c.width/2){
+                 delete circles[key];
+             }
+
+
+         }
+console.log(Object.keys(circles).length);
+            ctx.beginPath();
+            ctx.lineWidth=lineWidth+beatCircle;
+            ctx.strokeStyle="rgba(0,255,255,1.0)";
+            ctx.arc(center[0], center[1], circleStartRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+
+        }, 10);
+
+    }
+
+
+  var uuidTimeShort = function () {
+        var dateUuidTime = new Date();
+        var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var stampUuidTime = parseInt("" + dateUuidTime.getMilliseconds() + dateUuidTime.getMinutes() + dateUuidTime.getHours() + dateUuidTime.getDay()).toString(36);
+        while (stampUuidTime.length < 8) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+        return stampUuidTime;
+    };
+
+</script>
+
+</body>
+</html>
+
