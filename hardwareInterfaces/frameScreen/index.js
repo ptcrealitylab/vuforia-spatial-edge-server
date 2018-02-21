@@ -11,7 +11,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -22,7 +22,31 @@ if (exports.enabled) {
 
     server.addScreenObjectListener("frameScreen",function(screenObject){
         server.writeScreenObjects("objectKey", "frameKey", "nodeKey");
-        console.log(screenObject);
+        // console.log(screenObject);
+        frameAR.io.emit('screenObject', screenObject);
+    });
+
+    frameAR.io.on('connection', function(socket) {
+
+        console.log('frame screen socket connected');
+
+        // relay messages (touch events and transformation data) from the AR interface to this app's frontend
+        socket.on('pointerdown', function (msg) {
+            frameAR.io.emit('remoteTouchDown', msg);
+        });
+
+        socket.on('pointermove', function (msg) {
+            frameAR.io.emit('remoteTouchMove', msg);
+        });
+
+        socket.on('pointerup', function (msg) {
+            frameAR.io.emit('remoteTouchUp', msg);
+        });
+
+        socket.on('zPosition', function (msg) {
+            frameAR.io.emit('zPosition', msg);
+        });
+
     });
 
 }
