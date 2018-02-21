@@ -43,7 +43,7 @@
 
 <script>
 
-    var SERVER_IP = '10.0.0.245'; //'10.68.23.38';
+    var SERVER_IP = '192.168.56.9'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
 
     var OBJECT_NAME = 'frameScreen';
@@ -418,9 +418,9 @@
         };
 
         socket.on('screenObject', function(msg) {
-            console.log(msg);
+            // console.log(msg);
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
-            console.log(screenPos.x + ', ' + screenPos.y);
+            // console.log(screenPos.x + ', ' + screenPos.y);
 
             if (msg.touchState === 'touchstart') {
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
@@ -433,6 +433,13 @@
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
 
             }
+
+            if (msg.object && msg.frame) {
+                // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
+                var frame = frames[msg.frame];
+                frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
+            }
+
         });
 
         socket.on('frameDataCallback', function(frame) {
@@ -816,6 +823,15 @@
             //     // sidebarPanelClone.classList.add("draggedPanel");
                 currentlyDraggedPanel = clickedPanelContainer;
                 clickedPanelContainer = null;
+
+                // console.log('socket emit ', {objectKey: OBJECT_ID, frameKey: currentlyDraggedPanel.id, nodeKey: null});
+                socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
+                // console.log('create frame');
+                // var frameData = {
+                //     src: 'gauge'
+                // };
+                // socket.emit('testMessage', {value: Math.random()});
+
             }
         }
 
