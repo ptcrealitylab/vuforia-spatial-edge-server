@@ -2,23 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Frame Palette</title>
+    <title>Frame Screen</title>
     <link rel="stylesheet" type="text/css" href="index.css">
+    <style>
+        button {
+            width: 360px;
+            height: 72px;
+            text-align: center;
+            vertical-align: middle;
+            /*margin-top: 10px;*/
+            /*margin-right: 10px;*/
+            margin: 20px;
+            display: inline-block;
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 24pt;
+            color: cyan;
+        }
+
+        .screenFrame {
+            display: inline;
+            /*opacity: 1.0;*/
+        }
+
+        .arFrame {
+            display: none;
+            /*opacity: 0.1;*/
+        }
+    </style>
 </head>
 <body>
 
-<div id="sidebar" class="region blue smallText">Control Panel</div>
+<div id="sidebar" class="region blue smallText">
+    Control Panel <br>
+    <button class="blue active" id="createButton">Create Gauge</button> <br>
+    <button class="blue active" id="moveButton">Move to AR</button>
+</div>
 <div class="paletteMarker"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
 
-    var objectName = 'framePalette';
+    var SERVER_IP = '10.0.0.245'; //'10.68.23.38';
+    var SERVER_PORT = '8080';
+
+    var OBJECT_NAME = 'frameScreen';
+    var OBJECT_ID = 'frameScreenkz1hpiyymp4c';
+    var frames = {};
 
     var marker = document.querySelector('.paletteMarker');
-    var sidebar = document.getElementById("sidebar");
+    var sidebar = document.getElementById('sidebar');
+    var createButton = document.getElementById('createButton');
+    var moveButton = document.getElementById('moveButton');
     var socket = io();
+
+    var AR_MARKER_SIZE = 300.0;
+
+    // var markerRect = marker.getClientRects()[0];
+    // var scaleFactor = 300.0 / markerRect.height;
 
     // constants
     var defaultValue = 0.00;
@@ -40,9 +81,386 @@
         isInScreen: true
     };
 
+    window.requestAnimFrame = function(){
+        return (
+            window.requestAnimationFrame       ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame    ||
+            window.oRequestAnimationFrame      ||
+            window.msRequestAnimationFrame     ||
+            function(/* function */ callback){
+                window.setTimeout(callback, 1000 / 60);
+            }
+        );
+    }();
+
+    function reloadFrames() {
+        console.log('reload frames');
+        var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + OBJECT_ID;
+        getData(OBJECT_ID, null, null, urlEndpoint, function (objectKey, frameKey, nodeKey, res) {
+            console.log('got them!');
+            console.log(objectKey, frameKey, nodeKey, res);
+            frames = res.frames;
+
+            // // filter out
+            // for (var frameKey in frames) {
+            //     if (!frames.hasOwnProperty(frameKey)) continue;
+            //     if (typeof frames[frameKey].type === 'undefined') {
+            //         delete frames[frameKey];
+            //     }
+            // }
+
+            renderFrames();
+        });
+    }
+
+    function getData(objectKey, frameKey, nodeKey, url, callback) {
+        if (!nodeKey) nodeKey = null;
+        if (!frameKey) frameKey = null;
+        var _this = this;
+        var req = new XMLHttpRequest();
+        try {
+            console.log('making GET request to ' + url);
+            req.open('GET', url, true);
+            // Just like regular ol' XHR
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    if (req.status === 200) {
+                        // JSON.parse(req.responseText) etc.
+                        if (req.responseText)
+                            callback(objectKey, frameKey, nodeKey, JSON.parse(req.responseText));
+                    } else {
+                        // Handle error case
+                        console.log("could not load content");
+                        _this.cout("could not load content");
+                    }
+                }
+            };
+            req.send();
+
+        }
+        catch (e) {
+            this.cout("could not connect to" + url);
+        }
+    }
+
+    /**
+     * POST data as json to url, calling callback with the
+     * JSON-encoded response data when finished
+     * @param {String} url
+     * @param {Object} body
+     * @param {Function<Error, Object>} callback
+     */
+    function postData (url, body, callback) {
+        var request = new XMLHttpRequest();
+        var params = JSON.stringify(body);
+        request.open('POST', url, true);
+        request.onreadystatechange = function () {
+            if (request.readyState !== 4) {
+                return;
+            }
+            if (!callback) {
+                return;
+            }
+
+            if (request.status === 200) {
+                try {
+                    callback(null, JSON.parse(request.responseText));
+                } catch (e) {
+                    callback({status: request.status, error: e, failure: true}, null);
+                }
+                return;
+            }
+
+            callback({status: request.status, failure: true}, null);
+        };
+
+        request.setRequestHeader("Content-type", "application/json");
+        //request.setRequestHeader("Content-length", params.length);
+        // request.setRequestHeader("Connection", "close");
+        request.send(params);
+    }
+
+    function renderFrames() {
+        // console.log('renderFrames');
+        for (var frameKey in frames) {
+            if (!frames.hasOwnProperty(frameKey)) continue;
+            var frame = frames[frameKey];
+            if (typeof frame.type === 'undefined') continue;
+
+            addElement(frameKey, frame);
+            drawTransformed(frameKey, frame);
+        }
+
+        requestAnimFrame(renderFrames);
+    }
+
+    function addElement(frameKey, frame) {
+        var iframeId = "iframe" + frameKey;
+        var iframeExists = document.querySelectorAll('#'+iframeId).length > 0;
+
+        if (!iframeExists) {
+
+            var addContainer = document.createElement('div');
+            addContainer.id = "object" + frameKey;
+            // addContainer.className = "main";
+            addContainer.classList.add('main', 'arFrame');
+            // addContainer.style.display = "none";
+            addContainer.style.border = 0;
+            addContainer.style.position = 'absolute';
+            var screenPos = getScreenPosFromARPos(frame.screen.x, frame.screen.y);
+            addContainer.style.left = screenPos.x + "px"; //frame.screen.x + "px";
+            addContainer.style.top = screenPos.y + "px"; //frame.screen.y + "px";
+
+            var addIframe = document.createElement('iframe');
+            addIframe.id = iframeId;
+            addIframe.classList.add('main', 'frame');
+            addIframe.frameBorder = 0;
+            var scaleFactor = getScreenScaleFactor();
+            addIframe.style.width = (frame.width / scaleFactor || 0) + "px";
+            addIframe.style.height = (frame.height / scaleFactor || 0) + "px";
+            addIframe.style.visibility = "visible";
+            // addIframe.style.pointerEvents = 'none';
+            addIframe.src = '/frames/' + frame.type + '.html';
+            addIframe.dataset.nodeKey = null;
+            addIframe.dataset.frameKey = frameKey;
+            addIframe.dataset.objectKey = frame.objectId;
+            addIframe.setAttribute("onload", 'onElementLoad(\"' + OBJECT_ID + '\",\"' + frameKey + '\")');
+            addIframe.setAttribute("sandbox", "allow-forms allow-pointer-lock allow-same-origin allow-scripts");
+            document.body.appendChild(addIframe);
+            addIframe.display = 'inline';
+
+            // add a cover object for touch event synthesizing
+            var cover = document.createElement('div');
+            cover.classList.add('main');
+            cover.style.visibility = 'visible';
+            cover.style.width = addIframe.style.width;
+            cover.style.height = addIframe.style.height;
+            cover.style.top = 0;
+            cover.style.left = 0;
+            cover.style.position = 'absolute';
+            frame.frameTouchSynthesizer = new FrameTouchSynthesizer(cover, addIframe);
+
+            document.body.appendChild(addContainer);
+            addContainer.appendChild(addIframe);
+            addContainer.appendChild(cover);
+        }
+    }
+
+    function onElementLoad (objectKey, frameKey) {
+        console.log('onElementLoad ' + objectKey + ' ' + frameKey);
+
+        var newStyle = {
+            object: objectKey,
+            frame: frameKey,
+            objectData: {
+                ip: SERVER_IP
+            },
+            node: null,
+            nodes: null,
+            interface: null
+        };
+        document.querySelector("#iframe" + frameKey)._loaded = true;
+        document.querySelector("#iframe" + frameKey).contentWindow.postMessage(JSON.stringify(newStyle), '*');
+        // document.querySelector("#iframe" + frameKey).contentWindow.postMessage(JSON.stringify({visualization: 'screen'}), '*');
+        console.log("on_load");
+    }
+
+    function drawTransformed(frameKey, frame) {
+        var frameContainerDom = document.querySelector('#object'+frameKey);
+        if (frame.visualization === 'screen') {
+            // frameContainerDom.style.display = 'inline';
+            frameContainerDom.classList.remove('arFrame');
+            frameContainerDom.classList.add('screenFrame');
+            frameContainerDom.style.left = frame.screen.x + 'px';
+            frameContainerDom.style.top = frame.screen.y + 'px';
+        } else {
+            // frameContainerDom.style.display = 'none';
+            frameContainerDom.classList.remove('screenFrame');
+            frameContainerDom.classList.add('arFrame');
+            var arPos = getARPosFromScreenPos(frame.screen.x, frame.screen.y);
+            frameContainerDom.style.left = arPos.x + 'px';
+            frameContainerDom.style.top = arPos.y + 'px';
+        }
+    }
+
+    function getScreenFrames() {
+        var screenFrames = [];
+        for (var frameKey in frames) {
+            if (!frames.hasOwnProperty(frameKey)) continue;
+            if (frames[frameKey].visualization === 'screen') {
+                screenFrames.push(frames[frameKey]);
+            }
+        }
+        return screenFrames;
+    }
+
+    function getARFrames() {
+        var arFrames = [];
+        for (var frameKey in frames) {
+            if (!frames.hasOwnProperty(frameKey)) continue;
+            if (frames[frameKey].visualization === 'ar') {
+                arFrames.push(frames[frameKey]);
+            }
+        }
+        return arFrames;
+    }
+
+    function getFrameKey(frame) {
+        return frame.objectId + frame.name;
+    }
+
+    /**
+     * Utility for getting scale factor between screen coordinates and AR marker coordinates.
+     * @return {number} scale factor. 1 means they are the same and 0.5 means marker in AR is half as big as marker on screen.
+     */
+    function getScreenScaleFactor() {
+        var markerRect = marker.getClientRects()[0];
+        return AR_MARKER_SIZE / markerRect.height;
+    }
+
+    /**
+     * Utility for converting coordinates from AR space to screen space.
+     * @param {number} arX - x coordinate in AR space relative to center of marker.
+     * @param {number} arY - y coordinate in AR space relative to center of marker.
+     * @return {{x: number, y: number}}
+     */
+    function getScreenPosFromARPos(arX, arY) {
+        var markerRect = marker.getClientRects()[0];
+        var scaleFactor = getScreenScaleFactor();
+        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor);
+        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor);
+        return {
+            x: screenX,
+            y: screenY
+        };
+    }
+
+    /**
+     * Utility for converting coordinates from screen space to AR space.
+     * @param {number} screenX - x coordinate relative to upper left of screen.
+     * @param {number} screenY - y coordinate relative to upper left of screen.
+     * @return {{x: number, y: number}}
+     */
+    function getARPosFromScreenPos(screenX, screenY) {
+        var markerRect = marker.getClientRects()[0];
+        var scaleFactor = getScreenScaleFactor();
+        var arX = (screenX - (markerRect.x + markerRect.width/2)) * scaleFactor;
+        var arY = (screenY - (markerRect.y + markerRect.height/2)) * scaleFactor;
+        return {
+            x: arX,
+            y: arY
+        };
+    }
+
     window.onload = function() {
-        createControlPanel(["decimal", "gauge", "graph", "light"]);
+        createControlPanel([]); //["decimal", "gauge", "graph", "light"]);
         initializeDragInterface();
+        reloadFrames();
+
+        createButton.onclick = function(event) {
+            console.log('create frame');
+            var frameData = {
+                src: 'gauge'
+            };
+            socket.emit('createFrame', frameData);
+        };
+
+        moveButton.onclick = function(event) {
+            console.log('move frame to AR');
+            // var frameDomToMove = document.querySelector('.main');
+            var screenFrames = getScreenFrames();
+            if (screenFrames.length === 0) return;
+            var thisFrame = screenFrames[0];
+            var frameDomToMove = document.querySelector('#iframe' + getFrameKey(thisFrame));
+            if (frameDomToMove) {
+                // var objectName = frameDomToMove.dataset.objectKey.slice(0, -12);
+                // var frameName = frameDomToMove.dataset.frameKey.slice(0, -12);
+
+                thisFrame.visualization = 'ar';
+                var arPos = getARPosFromScreenPos(thisFrame.screen.x, thisFrame.screen.y);
+                thisFrame.ar.x = arPos.x;
+                thisFrame.ar.y = arPos.y;
+                // var positionData = thisFrame.ar;
+
+                var content = {
+                    visualization: 'ar',
+                    positionData: thisFrame.ar
+                };
+
+                // urlEndpoint = 'http://10.68.23.38:8080/object/' + frameDomToMove.dataset.objectKey + "/frame/" + frameDomToMove.dataset.frameKey + "/visualization/";
+
+                // object/*/frame/*/visualization/
+
+                urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + frameDomToMove.dataset.objectKey + "/frame/" + frameDomToMove.dataset.frameKey + "/visualization/";
+                console.log('url endpoint = ' + urlEndpoint);
+                postData(urlEndpoint, content, function (err, response) {
+                    console.log('changed visualization to AR');
+                    console.log(err, response);
+                    // urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + frameDomToMove.dataset.objectKey + "/frame/" + frameDomToMove.dataset.frameKey + "/node/" + frameDomToMove.dataset.nodeKey + "/size/";
+                    // var content = thisFrame.ar;
+                    // console.log('url endpoint = ' + urlEndpoint);
+                    // postData(urlEndpoint, content, function (err, response) {
+                    //     console.log('set AR position');
+                    //     console.log(err, response);
+                    // });
+                });
+
+                // var frameData = {
+                //     src: 'gauge',
+                //     // objectName: objectName,
+                //     // frameName: frameName
+                //     objectKey: frameDomToMove.dataset.objectKey,
+                //     frameKey: frameDomToMove.dataset.frameKey
+                // };
+                // socket.emit('moveFrame', frameData);
+            }
+        };
+
+        socket.on('screenObject', function(msg) {
+            // console.log(msg);
+            var screenPos = getScreenPosFromARPos(msg.x, msg.y);
+            console.log(screenPos.x + ', ' + screenPos.y);
+
+        });
+
+        socket.on('frameDataCallback', function(frame) {
+
+            console.log('frameDataCallback', frame);
+
+            var frameKey = getFrameKey(frame);
+            frames[frameKey] = frame;
+
+            // frame.screen.x = 100 + Math.random() * 200;
+            // frame.screen.y = 100 + Math.random() * 200;
+
+            // if (msg.visualization === 'screen') {
+            //     var addIframe = document.createElement('iframe');
+            //     addIframe.id = "iframe" + msg.objectId + msg.name;
+            //     addIframe.className = "main";
+            //     addIframe.frameBorder = 0;
+            //     addIframe.style.width = (msg.width || 0) + "px";
+            //     addIframe.style.height = (msg.height || 0) + "px";
+            //     // addIframe.style.left = ((-1 * msg.width) / 2) + "px";
+            //     // addIframe.style.top = ((-1 * msg.height) / 2) + "px";
+            //     addIframe.style.visibility = "visible";
+            //     addIframe.src = '/frames/' + msg.type + '.html';
+            //     addIframe.dataset.nodeKey = null;
+            //     addIframe.dataset.frameKey = msg.objectId + msg.name;
+            //     addIframe.dataset.objectKey = msg.objectId;
+            //     // addIframe.setAttribute("onload", 'realityEditor.network.onElementLoad("' + msg.objectId + '","' + msg.objectId + msg.name + '","' + null + '")');
+            //     addIframe.setAttribute("sandbox", "allow-forms allow-pointer-lock allow-same-origin allow-scripts");
+            //
+            //     console.log(addIframe);
+            //     document.body.appendChild(addIframe);
+            //
+            //     addIframe.display = 'inline';
+            //
+            // } else {
+            //     var iFrame = document.getElementById('iframe' + msg.objectId + msg.name);
+            //     iFrame.style.display = 'none';
+            // }
+        });
 
         socket.on('frameReceived', function(msg) {
             console.log('received frame!', msg);
@@ -101,7 +519,7 @@
                     // console.log('xPosition: ' + draggedPanelX, 'yPosition: ' + draggedPanelY, 'zPosition: ' + zPosition);
 
                     var msgData = {
-                        objectName: objectName,
+                        objectName: OBJECT_NAME,
                         destination: 'ar',
                         xPosition: (draggedPanelX - markerRect.x) * scaleFactor,
                         yPosition: (draggedPanelY - markerRect.y) * scaleFactor,
@@ -238,9 +656,15 @@
             interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
 
             // console.log(currentlyDraggedPanel);
+            // if (currentlyDraggedPanel) {
+            //     currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
+            //     currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20
+            // }
+
             if (currentlyDraggedPanel) {
-                currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
-                currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20
+                var frame = frames[currentlyDraggedPanel.dataset.frameKey];
+                frame.screen.x = mouseX + dragOffsetX;
+                frame.screen.y = mouseY + dragOffsetY;
             }
         }
 
@@ -333,6 +757,7 @@
                     startHoldOrDrag();
                     break;
                 case getEvents().MOUSE_STOP_CLICK:
+                    stopClick();
                     break;
                 case getEvents().MOUSE_STOP_HOLD:
                 case getEvents().MOUSE_STOP_DRAG:
@@ -343,11 +768,15 @@
             }
         }
 
+        function isDraggableElement(clickedElement) {
+            return clickedElement.classList.contains('frame');
+        }
+
         function startClick() {
             clickedPanelContainer = null;
             var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
             allDivsHere.some( function(clickedElement) {
-                if (clickedElement.classList.contains('sidebarPanel')) {
+                if (isDraggableElement(clickedElement)) {
                     clickedPanelContainer = clickedElement;
                     dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
                     dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
@@ -356,35 +785,54 @@
             });
         }
 
+        function stopClick() {
+            console.log('clicked on frame');
+            console.log(clickedPanelContainer);
+        }
+
         function startHoldOrDrag() {
             if (!currentlyDraggedPanel && clickedPanelContainer) {
-                createPanelElements(clickedPanelContainer.id);
-                // var sidebarPanelClone = createSidebarPanel(clickedPanelContainer.id);
-                // sidebarPanelClone.classList.add("region");
-                // sidebarPanelClone.classList.add("smallText");
-                // currentlyDraggedPanel = sidebarPanelClone;
-                // currentlyDraggedPanel.style.position = "absolute";
-                // document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
-                // sidebarPanelClone.classList.add("draggedPanel");
+            //     createPanelElements(clickedPanelContainer.id);
+            //     // var sidebarPanelClone = createSidebarPanel(clickedPanelContainer.id);
+            //     // sidebarPanelClone.classList.add("region");
+            //     // sidebarPanelClone.classList.add("smallText");
+            //     // currentlyDraggedPanel = sidebarPanelClone;
+            //     // currentlyDraggedPanel.style.position = "absolute";
+            //     // document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
+            //     // sidebarPanelClone.classList.add("draggedPanel");
+                currentlyDraggedPanel = clickedPanelContainer;
                 clickedPanelContainer = null;
             }
         }
 
         function stopHoldOrDrag() {
-            if (currentlyDraggedPanel) {
-                // get panel it's on top of
-                var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
-                allDivsHere.forEach( function(element) {
-                    if (element.classList.contains('region') &&  element.id.startsWith('panel_') && element.id !== 'panel_row0_col0') {
-                        console.log('released on panel');
-                        panelVisualizationTypes[element.id] = currentlyDraggedPanel.id;
-                        setPanelDisplay(element, currentlyDraggedPanel.id);
-                    }
-                });
+            // if (currentlyDraggedPanel) {
+            //     // get panel it's on top of
+            //     var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
+            //     allDivsHere.forEach( function(element) {
+            //         if (element.classList.contains('region') &&  element.id.startsWith('panel_') && element.id !== 'panel_row0_col0') {
+            //             console.log('released on panel');
+            //             panelVisualizationTypes[element.id] = currentlyDraggedPanel.id;
+            //             setPanelDisplay(element, currentlyDraggedPanel.id);
+            //         }
+            //     });
+            //
+            //     document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
+            //     currentlyDraggedPanel = null;
+            // }
 
-                document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
-                currentlyDraggedPanel = null;
+            if (currentlyDraggedPanel) {
+                // post new position to server
+                var content = frames[currentlyDraggedPanel.dataset.frameKey].screen;
+
+                urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + currentlyDraggedPanel.dataset.objectKey + "/frame/" + currentlyDraggedPanel.dataset.frameKey + "/node/" + currentlyDraggedPanel.dataset.nodeKey + "/size/";
+
+                console.log('url endpoint = ' + urlEndpoint);
+                postData(urlEndpoint, content);
+
             }
+
+            currentlyDraggedPanel = null;
         }
 
         function getAllDivsUnderCoordinate(x, y) {
@@ -426,6 +874,70 @@
         while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
         return stampUuidTime;
     }
+
+    function FrameTouchSynthesizer(cover, iframe) {
+        this.cover = cover;
+        this.iframe = iframe;
+        this.beginTouchEditing = this.beginTouchEditing.bind(this);
+        this.onPointerEvent = this.onPointerEvent.bind(this);
+        this.cover.addEventListener('pointerdown', this.onPointerEvent);
+        this.cover.addEventListener('pointermove', this.onPointerEvent);
+        this.cover.addEventListener('pointerup', this.onPointerEvent);
+        this.cover.addEventListener('pointercancel', this.onPointerEvent);
+    }
+
+    FrameTouchSynthesizer.prototype.onPointerEvent = function(event) {
+        event.stopPropagation();
+
+        // Note that this is a legacy API that the GeometryUtils should eventually replace
+        var newCoords = webkitConvertPointFromPageToNode(this.iframe, new WebKitPoint(event.pageX, event.pageY));
+        this.iframe.contentWindow.postMessage(JSON.stringify({
+            event: {
+                type: event.type,
+                pointerId: event.pointerId,
+                pointerType: event.pointerType,
+                x: newCoords.x,
+                y: newCoords.y
+            }
+        }), '*');
+
+        if (event.type === 'pointerdown') {
+            this.start = {
+                x: event.pageX,
+                y: event.pageY
+            };
+            this.timer = setTimeout(this.beginTouchEditing, 400);
+        } else if (event.type === 'pointermove') {
+            if (this.timer) {
+                var dx = event.pageX - this.start.x;
+                var dy = event.pageY - this.start.y;
+                if (dx * dx + dy * dy > touchMoveTolerance) {
+                    clearTimeout(this.timer);
+                    this.timer = null;
+                }
+            }
+        } else {
+            if (this.timer) {
+                clearTimeout(this.timer);
+                this.timer = null;
+            }
+        }
+    };
+
+    FrameTouchSynthesizer.prototype.beginTouchEditing = function() {
+        var activeKey = this.iframe.dataset.nodeKey;
+        if (!activeKey || activeKey === "null") {
+            activeKey = this.iframe.dataset.frameKey;
+        }
+        realityEditor.device.beginTouchEditing(document.getElementById(activeKey));
+    };
+
+    FrameTouchSynthesizer.prototype.remove = function() {
+        this.cover.removeEventListener('pointerdown', this.onPointerEvent);
+        this.cover.removeEventListener('pointermove', this.onPointerEvent);
+        this.cover.removeEventListener('pointerup', this.onPointerEvent);
+        this.cover.removeEventListener('pointercancel', this.onPointerEvent);
+    };
 
 </script>
 
