@@ -291,12 +291,12 @@ exports.createFrame = function (objectName, frameName, src, x, y, width, height)
 
     writeObjectCallback(objectID);
 
-    for (var i = 0; i < 5; i++) {
-        setTimeout(function() {
-            actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
-            console.log("Send create heartbeat");
-        }, 1000 * i);
-    }
+    // for (var i = 0; i < 5; i++) {
+    //     setTimeout(function() {
+    actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
+    // console.log("Send create heartbeat");
+        // }, 1000 * i);
+    // }
 
     this.runFrameUpdateCallbacks(thisFrame);
 };
