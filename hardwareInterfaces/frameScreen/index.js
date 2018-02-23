@@ -35,22 +35,7 @@ if (exports.enabled) {
 
         console.log('frame screen socket connected');
 
-        // relay messages (touch events and transformation data) from the AR interface to this app's frontend
-        socket.on('pointerdown', function (msg) {
-            frameAR.io.emit('remoteTouchDown', msg);
-        });
-
-        socket.on('pointermove', function (msg) {
-            frameAR.io.emit('remoteTouchMove', msg);
-        });
-
-        socket.on('pointerup', function (msg) {
-            frameAR.io.emit('remoteTouchUp', msg);
-        });
-
-        socket.on('zPosition', function (msg) {
-            frameAR.io.emit('zPosition', msg);
-        });
+        // relay messages from the AR interface to this app's frontend
 
         socket.on('createFrame', function(msg) {
 
@@ -81,10 +66,6 @@ if (exports.enabled) {
             console.log('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey);
             server.writeScreenObjects(msg.objectKey, msg.frameKey);
         });
-
-        // socket.on('testMessage', function(msg) {
-        //     console.log('testMessage', msg);
-        // });
 
     });
 
