@@ -138,8 +138,8 @@ body {
 }
 
 .paletteMarker {
-    width: 600px;
-    height: 600px;
+    width: 900px;
+    height: 900px;
     position: absolute;
     left: 490px;
     top: 100px;
@@ -150,6 +150,7 @@ body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+    z-index: 1000;
 }
 
 .marker {

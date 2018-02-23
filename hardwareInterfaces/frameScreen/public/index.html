@@ -35,7 +35,7 @@
 <div id="sidebar" class="region blue smallText">
     Control Panel <br>
     <button class="blue active" id="createButton">Create Gauge</button> <br>
-    <button class="blue active" id="moveButton">Move to AR</button>
+    <!--<button class="blue active" id="moveButton">Move to AR</button>-->
 </div>
 <div class="paletteMarker"></div>
 
@@ -43,7 +43,7 @@
 
 <script>
 
-    var SERVER_IP = '192.168.56.9'; //'10.0.0.245'; //'10.68.23.38';
+    var SERVER_IP = '192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
 
     var OBJECT_NAME = 'frameScreen';
@@ -53,7 +53,7 @@
     var marker = document.querySelector('.paletteMarker');
     var sidebar = document.getElementById('sidebar');
     var createButton = document.getElementById('createButton');
-    var moveButton = document.getElementById('moveButton');
+    // var moveButton = document.getElementById('moveButton');
     var socket = io();
 
     var AR_MARKER_SIZE = 300.0;
@@ -366,6 +366,7 @@
             socket.emit('createFrame', frameData);
         };
 
+        /*
         moveButton.onclick = function(event) {
             console.log('move frame to AR');
             // var frameDomToMove = document.querySelector('.main');
@@ -389,8 +390,6 @@
                 };
 
                 // urlEndpoint = 'http://10.68.23.38:8080/object/' + frameDomToMove.dataset.objectKey + "/frame/" + frameDomToMove.dataset.frameKey + "/visualization/";
-
-                // object/*/frame/*/visualization/
 
                 urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + frameDomToMove.dataset.objectKey + "/frame/" + frameDomToMove.dataset.frameKey + "/visualization/";
                 console.log('url endpoint = ' + urlEndpoint);
@@ -416,6 +415,7 @@
                 // socket.emit('moveFrame', frameData);
             }
         };
+        */
 
         socket.on('screenObject', function(msg) {
             // console.log(msg);
@@ -480,6 +480,7 @@
             // }
         });
 
+        /*
         socket.on('frameReceived', function(msg) {
             console.log('received frame!', msg);
 
@@ -569,6 +570,7 @@
             }
 
         });
+        */
 
     };
 
@@ -826,6 +828,7 @@
 
                 // console.log('socket emit ', {objectKey: OBJECT_ID, frameKey: currentlyDraggedPanel.id, nodeKey: null});
                 socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
+                console.log('writeScreenObject');
                 // console.log('create frame');
                 // var frameData = {
                 //     src: 'gauge'
@@ -857,7 +860,7 @@
 
                 urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + currentlyDraggedPanel.dataset.objectKey + "/frame/" + currentlyDraggedPanel.dataset.frameKey + "/node/" + currentlyDraggedPanel.dataset.nodeKey + "/size/";
 
-                console.log('url endpoint = ' + urlEndpoint);
+                // console.log('url endpoint = ' + urlEndpoint);
                 postData(urlEndpoint, content);
 
             }
@@ -879,7 +882,7 @@
         for(var i = 0; i < res.length; i++){
             res[i].style.display = "";  // TODO: more correct if you set back to original display type
         }
-        console.log(res);
+        // console.log(res);
         return res;
     }
 
