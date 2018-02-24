@@ -2152,7 +2152,24 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        object.frames[frameKey] = frame;
+        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug);
+
+        var newFrame = new Frame();
+        newFrame.objectId = frame.objectId;
+        newFrame.name = frame.name;
+        newFrame.visualization = frame.visualization;
+        newFrame.ar = frame.ar;
+        newFrame.screen = frame.screen;
+        newFrame.visible = frame.visible;
+        newFrame.visibleText = frame.visibleText;
+        newFrame.visibleEditing = frame.visibleEditing;
+        newFrame.developer = frame.developer;
+        newFrame.links = frame.links;
+        newFrame.nodes = frame.nodes;
+        newFrame.location = frame.location;
+        newFrame.src = frame.src;
+        newFrame.type = frame.type;
+        object.frames[frameKey] = newFrame;
 
         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
