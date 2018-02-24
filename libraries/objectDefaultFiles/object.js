@@ -116,6 +116,18 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     // console.log("------------------------------");
     // console.log(msgContent);
 
+    if (msgContent.newObject) {
+        realityObject.object = msgContent.newObject;
+        // update sockets / callbacks
+
+    }
+
+    if (msgContent.newFrame) {
+        realityObject.frame = msgContent.newFrame;
+        // update sockets / callbacks
+
+    }
+
     if (typeof msgContent.node !== "undefined") {
 
         if (realityObject.sendFullScreen === false) {
