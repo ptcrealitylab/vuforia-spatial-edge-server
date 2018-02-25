@@ -28,7 +28,7 @@
 
     <script>
 
-        var hybridObj;
+        var reality;
 
         var isPointerDown = false;
         //
@@ -58,17 +58,17 @@
             }
         }
 
-        function setupHybridObject() {
-            console.log('setup hybrid object');
-            hybridObj = new HybridObject();
+        function setupRealityInterface() {
+            console.log('setup reality interface');
+            reality = new RealityInterface();
 
-            hybridObj.setMoveDelay(5000);
+            reality.setMoveDelay(5000);
 
-            hybridObj.subscribeToMatrix();
+            reality.subscribeToMatrix();
 
-            console.log(hybridObj.getPositionZ());
+            console.log(reality.getPositionZ());
 
-            hybridObj.addMatrixListener( function(modelViewMatrix, projectionMatrix) {
+            reality.addMatrixListener( function(modelViewMatrix, projectionMatrix) {
 
                 // console.log('received matrix');
                 if (!isPointerDown) return;
@@ -93,8 +93,8 @@
 
             });
 
-            // hybridObj.subscribeToAcceleration();
-            // hybridObj.addAccelerationListener( function(acceleration) {
+            // reality.subscribeToAcceleration();
+            // reality.addAccelerationListener( function(acceleration) {
             //     console.log(acceleration);
             // });
         }
@@ -104,11 +104,11 @@
 
         window.onload = function() {
 
-            setupHybridObject();
+            setupRealityInterface();
 
             // setInterval(function() {
             //     i++;
-            //     // console.log(hybridObj.getPositionZ());
+            //     // console.log(reality.getPositionZ());
             //     // var zPosition = 500 + 400 * Math.sin(2 * Math.PI * i / 100 + Math.PI);
             //     // var zPosition = 550;
             //     // console.log(zPosition);
