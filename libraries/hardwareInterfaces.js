@@ -10,7 +10,7 @@
  */
 
 /**
- * Hybrid Objecst Hardware Interface API
+ * Reality Objecst Hardware Interface API
  * 
  * This API is intended for users who want to create their own hardware interfaces.
  * To create a new hardware interface create a folder under hardwareInterfaces and create the file index.js.
@@ -111,8 +111,8 @@ function Frame() {
  */
 
 /**
- * @desc This function writes the values passed from the hardware interface to the HybridObjects server.
- * @param {string} objectName The name of the HybridObject
+ * @desc This function writes the values passed from the hardware interface to the RealityObjects server.
+ * @param {string} objectName The name of the RealityInterface
  * @param {string} nodeName The name of the IO point
  * @param {value} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
@@ -241,9 +241,9 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
 };
 
 /**
- * @desc addIO() a new IO point to the specified HybridObject
- * @param {string} objectName The name of the HybridObject
- *  * @param {string} frameName The name of the HybridObject frame
+ * @desc addIO() a new IO point to the specified RealityInterface
+ * @param {string} objectName The name of the RealityInterface
+ *  * @param {string} frameName The name of the RealityInterface frame
  * @param {string} nodeName The name of the nodeName
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  **/
@@ -352,9 +352,9 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
 };
 
 /**
- * @desc addIO() a new IO point to the specified HybridObject
- * @param {string} objectName The name of the HybridObject
- *  * @param {string} frameName The name of the HybridObject frame
+ * @desc addIO() a new IO point to the specified RealityInterface
+ * @param {string} objectName The name of the RealityInterface
+ *  * @param {string} frameName The name of the RealityInterface frame
  * @param {string} nodeName The name of the nodeName
  * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
  * @param {object} position - an optional {x: float, y: float} object for the node's starting position. otherwise random
@@ -502,7 +502,7 @@ exports.getObjectIdFromObjectName = function (objectName) {
 };
 
 /**
- * @desc developerOn() Enables the developer mode for all HybridObjects and enables the developer web interface
+ * @desc developerOn() Enables the developer mode for all RealityInterfaces and enables the developer web interface
  **/
 exports.enableDeveloperUI = function (developer) {
     globalVariables.developer = developer;

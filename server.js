@@ -166,7 +166,7 @@ webFrontend.debug = globalVariables.debug;
  **********************************************************************************************************************/
 
 /**
- * @desc This is the default constructor for the Hybrid Object.
+ * @desc This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
  **/
 
@@ -673,7 +673,7 @@ var nodeFolderList = fs.readdirSync(nodePath).filter(function (file) {
     return fs.statSync(nodePath + '/' + file).isDirectory();
 });
 
-// Remove eventually hidden files from the Hybrid Object list.
+// Remove eventually hidden files from the Reality Object list.
 while (nodeFolderList[0][0] === ".") {
     nodeFolderList.splice(0, 1);
 }
@@ -690,7 +690,7 @@ var blockFolderList = fs.readdirSync(blockPath).filter(function (file) {
     return fs.statSync(blockPath + '/' + file).isDirectory();
 });
 
-// Remove eventually hidden files from the Hybrid Object list.
+// Remove eventually hidden files from the Reality Object list.
 while (blockFolderList[0][0] === ".") {
     blockFolderList.splice(0, 1);
 }
@@ -1658,7 +1658,7 @@ function objectWebServer() {
     }
 
 
-    // sends json object for a specific hybrid object. * is the object name
+    // sends json object for a specific reality object. * is the object name
     // ths is the most relevant for
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
@@ -2611,7 +2611,7 @@ function objectWebServer() {
             zip.finalize();
         });
 
-        // sends json object for a specific hybrid object. * is the object name
+        // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
@@ -2619,7 +2619,7 @@ function objectWebServer() {
             res.json(objects[req.params.objectID].frames[req.params.frameID].nodes[req.params.nodeID] || {});
         });
 
-        // sends json object for a specific hybrid object. * is the object name
+        // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/', function (req, res) {

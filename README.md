@@ -2,7 +2,7 @@ Overview
 ========
 
 This page of notes outlines how to use a Mac OS X system to prepare an Arduino Yún linux image that turns
-the Arduino into a HybridObject.
+the Arduino into a RealityObject.
 
 
 How to install on an Arduino Yún

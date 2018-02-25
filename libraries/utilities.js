@@ -259,7 +259,7 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
 };
 
 /**
- * Saves the HybridObject as "object.json"
+ * Saves the RealityObject as "object.json"
  *
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
