@@ -209,7 +209,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
  ************************************************************
  */
 
-function HybridObject() {
+function RealityInterface() {
 
     /**
      ************************************************************
@@ -273,10 +273,14 @@ function HybridObject() {
         realityObject.sendMatrix = true;
         if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
+            /*
             if (realityObject.sendFullScreen === false) {
+                console.log("test",document.body.scrollHeight);
+               if(document.body.scrollHeight)
                 realityObject.height = document.body.scrollHeight;
+                if(document.body.scrollWidth)
                 realityObject.width = document.body.scrollWidth;
-            }
+            }*/
 
             parent.postMessage(JSON.stringify(
                 {
@@ -712,7 +716,7 @@ function HybridObject() {
 
 // these are functions used for the setup of logic blocks
 
-function HybridLogic() {
+function RealityLogic() {
     this.publicData = realityObject.publicData;
 
 

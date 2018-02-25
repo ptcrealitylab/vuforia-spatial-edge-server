@@ -171,7 +171,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
 
         "<div class='panel panel-primary'>" +
         "<div class='panel-heading'>" +
-        "<h3 class='panel-title'><font size='6'>Hybrid Object - Administration</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Version: "+version+"<br>" +
+        "<h3 class='panel-title'><font size='6'>Reality Object - Administration</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Version: "+version+"<br>" +
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
@@ -402,7 +402,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
         "<input type='hidden' name='action' value='new'>" +
         "</div>" +
         "<div class='col-xs-4' style='display: inline'>" +
-        "<button  class='btn btn-warning'>Create New Hybrid Object</button> " +
+        "<button  class='btn btn-warning'>Create New Reality Object</button> " +
         "</div>" +
         "</form>" +
         "<div class='col-xs-2' style='display: inline'>" +
@@ -510,7 +510,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
         '<div class="container" id="container" style="width: 750px;">\n' +
         '    <div class="panel panel-primary">\n' +
         '<div class="panel-heading">\n' +
-        '<h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - Info&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
+        '<h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - Info&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
         '      </div>\n' +
         '</div>\n' +
 '<div id="changeContent"></div>'+
@@ -795,10 +795,10 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
     if (parm !== "allTargetsPlaceholder") {
         text +=
-            '            <h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - Target&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
+            '            <h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - Target&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
     } else {
         text +=
-            '            <h3 class="panel-title"><font size="6">Hybrid Object - single Targets File&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
+            '            <h3 class="panel-title"><font size="6">Reality Object - single Targets File&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
     }
     text +=
         '        </div>\n' +
@@ -995,7 +995,7 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
         '<div class="container" id="container" style="width: 750px;">\n' +
         '    <div class="panel panel-primary">\n' +
         '<div class="panel-heading">\n' +
-        '<h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - File&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
+        '<h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - File&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
         '      </div>\n' +
         '</div>\n' +
         '<div id="actions" class="row">\n' +
@@ -1291,7 +1291,7 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
         '<div class="container" id="container" style="width: 750px;">\n' +
         '    <div class="panel panel-primary">\n' +
         '<div class="panel-heading">\n' +
-        '<h3 class="panel-title"><font size="6">Hybrid Object - ' + parm + ' - File&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
+        '<h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - File&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
         '      </div>\n' +
         '</div>\n' +
         '<div id="actions" class="row">\n' +

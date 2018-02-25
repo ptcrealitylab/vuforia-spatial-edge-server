@@ -17,7 +17,7 @@
  * {
  * "host":"localhost",                  // ip or hostname of the philips Hue bridge
  * "url":"/api/newdeveloper/lights/1",  // base path of the light on the bridge, replace newdeveloper with a valid username (see http://www.developers.meethue.com/documentation/getting-started)
- * "id":"Light1",                       // the name of the HybridObject
+ * "id":"Light1",                       // the name of the RealityInterface
  * "port":"80"                          // port the hue bridge is listening on (80 on all bridges by default)
  *
  * }
