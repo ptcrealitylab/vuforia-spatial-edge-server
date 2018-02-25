@@ -714,6 +714,9 @@ function RealityInterface() {
     }
 }
 
+
+
+
 // these are functions used for the setup of logic blocks
 
 function RealityLogic() {
@@ -846,6 +849,9 @@ function RealityLogic() {
     }
 
 }
+
+var HybridObject = RealityInterface;
+var HybridLogic = RealityLogic;
 
 document.addEventListener('DOMContentLoaded', function() {
     var touchTimer = null;
