@@ -168,21 +168,11 @@
     setupResizeCallback(function(resizeFrameData) {
         var newWidth = resizeFrameData.width;
         var newHeight = resizeFrameData.height;
-        console.log('set width and height to ' + newWidth + ' and ' + newHeight);
-        // container.width = newWidth;
-        // container.height = newHeight;
-        // width = newWidth;
-        // height = newHeight;
-
+        // console.log('set width and height to ' + newWidth + ' and ' + newHeight);
         var requiredScale = newWidth / parseInt(container.getAttribute('width'));
         console.log(requiredScale);
         container.setAttribute("transform-origin", "top left");
-        // container.setAttribute("transform", "scale("+ requiredScale +")");
         container.style.transform = "scale("+ requiredScale +")";
-
-        // container.setAttribute('width',  newWidth + 'px');
-        // container.setAttribute('height',  newHeight + 'px');
-
     });
 </script>
 
