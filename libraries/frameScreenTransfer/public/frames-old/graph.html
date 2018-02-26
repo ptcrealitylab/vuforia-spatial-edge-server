@@ -5,6 +5,7 @@
     <title>Graph</title>
 
     <style>
+
         html, body
         {
             margin: 0;
@@ -25,8 +26,6 @@
         }
 
     </style>
-
-    <script src="resources/object-frames.js"></script>
 
 </head>
 
@@ -148,20 +147,20 @@
         }
     }
 
-    function displayValue(value) {
+    function displayValue(msg) {
 
-        // // draws random graph for preview icon
-        // if (msg.data.debug) {
-        //     for (var i = 0; i < NUM_TO_STORE; i++) {
-        //         var newValue = Math.random();
-        //         var weightedValue = oldWeight * lastValue + (1.0 - oldWeight) * newValue;
-        //         displayValue({data: {value: weightedValue}});
-        //         lastValue = weightedValue;
-        //     }
-        //     return;
-        // }
-        //
-        // var value = msg.data.value;
+        // draws random graph for preview icon
+        if (msg.data.debug) {
+            for (var i = 0; i < NUM_TO_STORE; i++) {
+                var newValue = Math.random();
+                var weightedValue = oldWeight * lastValue + (1.0 - oldWeight) * newValue;
+                displayValue({data: {value: weightedValue}});
+                lastValue = weightedValue;
+            }
+            return;
+        }
+
+        var value = msg.data.value;
         addDatapoint(value);
         renderGraph();
     }
@@ -182,11 +181,13 @@
         ctx.stroke();
     }
 
-    var realityInterface = new RealityInterface();
-    realityInterface.addReadListener('value', function(e) {
-        displayValue(e);
-    });
-    realityInterface.setMoveDelay(10);
+    if (window.addEventListener) {
+        // For standards-compliant web browsers
+        window.addEventListener("message", displayValue, false);
+    }
+    else {
+        window.attachEvent("message", displayValue);
+    }
 
 </script>
 

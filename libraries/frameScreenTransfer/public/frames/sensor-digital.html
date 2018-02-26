@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>reality-sensor-digital</title>
+    <style>
+        div {
+            border: 2px solid #fff;
+            background-color: rgba(255, 255, 255, 0.3);
+            width: 96px;
+            height: 96px;
+        }
+        div.active {
+            background-color: #00ff00;
+            border-color: #00ff00;
+        }
+    </style>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+</head>
+<body>
+<div id="output" touch-action="none"></div>
+
+<script>
+    var output = document.querySelector('#output');
+
+    var properties = {
+        value: 0
+    };
+
+    function renderProperties() {
+        if (properties.value > 0.5) {
+            output.classList.add('active');
+        } else {
+            output.classList.remove('active');
+        }
+    }
+
+    var realityInterface = new RealityInterface();
+    realityInterface.addReadListener('value', function(e) {
+        properties.value = e;
+        renderProperties();
+    });
+</script>
+<script src="resources/demonstration.js"></script>
+<script src="resources/resizeFrameContent.js"></script>
+<script>
+    setupDemonstrationScripts();
+    setupResizeCallback(function(resizeFrameData) {
+        var newWidth = resizeFrameData.width;
+        var newHeight = resizeFrameData.height;
+        // console.log('set width and height to ' + newWidth + ' and ' + newHeight);
+        var requiredScale = newWidth / parseInt(container.getAttribute('width'));
+        console.log(requiredScale);
+        container.setAttribute("transform-origin", "top left");
+        container.style.transform = "scale("+ requiredScale +")";
+    });
+</script>
+
+</body>
+</html>
