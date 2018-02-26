@@ -1234,6 +1234,7 @@ function objectWebServer() {
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+    webServer.use('/frames', express.static(__dirname + '/libraries/frameScreenTransfer/public/frames/'));
 
     webServer.use("/obj", function (req, res, next) {
 
@@ -2152,11 +2153,32 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        object.frames[frameKey] = frame;
+        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug);
+
+        var newFrame = new Frame();
+        newFrame.objectId = frame.objectId;
+        newFrame.uuid = frameKey;
+        newFrame.name = frame.name;
+        newFrame.visualization = frame.visualization;
+        newFrame.ar = frame.ar;
+        newFrame.screen = frame.screen;
+        newFrame.visible = frame.visible;
+        newFrame.visibleText = frame.visibleText;
+        newFrame.visibleEditing = frame.visibleEditing;
+        newFrame.developer = frame.developer;
+        newFrame.links = frame.links;
+        newFrame.nodes = frame.nodes;
+        newFrame.location = frame.location;
+        newFrame.src = frame.src;
+        newFrame.type = frame.type;
+        newFrame.width = frame.width;
+        newFrame.height = frame.height;
+        object.frames[frameKey] = newFrame;
 
         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+        hardwareAPI.runFrameUpdateCallbacks(newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
     }
@@ -2427,6 +2449,40 @@ function objectWebServer() {
             }
 
             return updateStatus;
+        }
+
+        webServer.post('/object/*/frame/*/visualization/', function (req, res) {
+            console.log('change visualization');
+            changeVisualization(req.params[0], req.params[1], req.body, res);
+        });
+
+        function changeVisualization(objectKey, frameKey, body, res) {
+            var newVisualization = body.visualization;
+            // var newPosition = body.positionData;
+
+            var object = objects[objectKey];
+            if (object) {
+                var frame = object.frames[frameKey];
+                if (frame) {
+                    frame.visualization = newVisualization;
+                    // if (newPosition) {
+                    //     frame[newVisualization].x = newPosition.x;
+                    //     frame[newVisualization].y = newPosition.y;
+                    // }
+                    utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
+                    // for (var i = 0; i < 5; i++) {
+                    //     setTimeout(function() {
+                    //         actionSender({reloadObject: {object: objectKey, frame: frameKey}});
+                    //         console.log("Send visualization heartbeat");
+                    //     }, 1000 * i);
+                    // }
+                    res.status(200).json({success: true}).end();
+                    return;
+                }
+                res.status(404).json({failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey}).end();
+                return;
+            }
+            res.status(404).json({failure: true, error: 'object ' + objectKey + ' not found'}).end();
         }
     }
 
@@ -3223,6 +3279,8 @@ function socketServer() {
 
     io.on('connection', function (socket) {
 
+        console.log('connected to socket ' + socket.id);
+
         socket.on('/subscribe/realityEditor', function (msg) {
 
             var msgContent = JSON.parse(msg);
@@ -3253,12 +3311,27 @@ function socketServer() {
                 cout(realityEditorBlockSocketArray);
             }
 
+            var publicData = {};
+            var object = objects[msgContent.object];
+            if (object) {
+                var frame = object.frames[msgContent.frame];
+                if (frame) {
+                    var node = frame.nodes[msgContent.logic];
+                    if (node) {
+                        var block = node.blocks[msgContent.block];
+                        if (block) {
+                            publicData = block.publicData;
+                        }
+                    }
+                }
+            }
+
             io.sockets.connected[socket.id].emit('block', JSON.stringify({
                 object: msgContent.object,
                 frame: msgContent.frame,
                 node: msgContent.node,
                 block: msgContent.block,
-                publicData: objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.logic].blocks[msgContent.block].publicData
+                publicData: publicData
             }));//       socket.emit('object', msgToSend);
         });
 
@@ -3289,21 +3362,21 @@ function socketServer() {
 
             if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
-                    if(msg.frame in objects[msg.object].frames)
-                    if (msg.node in objects[msg.object].frames[msg.frame].nodes) {
-                        if (msg.block in objects[msg.object].nodes[msg.node].blocks) {
-                            if (typeof objects[msg.object].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
+                    if (msg.frame in objects[msg.object].frames) {
+                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
+                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
+                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
 
-                                var thisPublicData = objects[msg.object].nodes[msg.node].blocks[msg.block];
-                                blockModules[thisPublicData.type].setup(msg.object, msg.node, msg.block, thisPublicData);
+                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
+                                    blockModules[thisPublicData.type].setup(msg.object, msg.frame, msg.node, msg.block, thisPublicData);
 
+                                }
                             }
-
                         }
                     }
                 }
-
             }
+
         });
 
 
@@ -3313,18 +3386,18 @@ function socketServer() {
             if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
                     if (msg.frame in objects[msg.object].frames) {
-                    if (msg.logic in objects[msg.object].frames[msg.frame].nodes) {
-                        if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks) {
-                            if (typeof objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData !== "undefined") {
+                        if (msg.logic in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
+                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks) {
+                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData !== "undefined") {
 
-                                var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData;
+                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData;
 
-                                for (var key in msg.publicData) {
-                                    thisPublicData[key] = msg.publicData[key];
+                                    for (var key in msg.publicData) {
+                                        thisPublicData[key] = msg.publicData[key];
+                                    }
                                 }
                             }
                         }
-                    }
                     }
                 }
             }
