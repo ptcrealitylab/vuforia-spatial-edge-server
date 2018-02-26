@@ -5,6 +5,7 @@
     <title>Gauge</title>
 
     <style>
+
         html, body
         {
             /*margin: 0;*/
@@ -33,31 +34,37 @@
 
     </style>
 
-    <script src="resources/object-frames.js"></script>
-
 </head>
 
 <body>
 
 <div id="gaugeContainer" style="position: relative">
+
     <img id="gauge" src="resources/gauge-outline-1.svg">
     <img id="needle" src="resources/gauge-needle-2.svg">
+
+
 </div>
 
 
 <script>
 
-    function displayValue(value) {
+    function displayValue(msg) {
+        console.log("displayValue", msg);
+        var value = msg.data.value;
         value = Math.abs(value); // displays negatives as absolute value
         var needle = document.getElementById("needle");
         var rotationFromValue = value * 180.0;
         needle.style.transform = "rotate(" + rotationFromValue + "deg)";
     }
 
-    var realityInterface = new RealityInterface();
-    realityInterface.addReadListener('value', function(e) {
-        displayValue(e);
-    });
+    if (window.addEventListener) {
+        // For standards-compliant web browsers
+        window.addEventListener("message", displayValue, false);
+    }
+    else {
+        window.attachEvent("message", displayValue);
+    }
 
 </script>
 

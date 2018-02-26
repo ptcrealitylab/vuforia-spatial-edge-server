@@ -9,11 +9,18 @@ module.exports = function(rootDirectory) {
     var http = require('http').Server(app);
     var io = require('socket.io')(http);
     var bodyParser = require('body-parser');
+    var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 
     function startHTTPServer(port) {
         console.log('startHTTPServer on port' + port + ' with dir: ' + rootDirectory);
 
         // add the middleware
+
+        // use the CORS cross origin REST model
+        app.use(cors());
+        // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
+        app.options('*', cors());
+
         app.use(express.static(rootDirectory + '/public'));
         app.use(express.static(__dirname + '/public'));
         app.use(bodyParser.json());

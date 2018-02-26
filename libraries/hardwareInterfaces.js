@@ -256,6 +256,7 @@ exports.createFrame = function (objectName, frameName, src, x, y, width, height)
             }
 
             thisFrame = objects[objectID].frames[frameUuid];
+            thisFrame.uuid = frameUuid;
             thisFrame.name = frameName;
             thisFrame.objectId = objectID;
             thisFrame.objectId = objectID;

@@ -50,8 +50,8 @@ if (exports.enabled) {
             }
             var frameName = msg.src + uuidTime();
             var src = msg.src;
-            var x = 100 + Math.random() * 400;
-            var y = 100 + Math.random() * 400;
+            var x = 50 + Math.random() * 200;
+            var y = 50 + Math.random() * 200;
             var width = 300;
             var height = 200;
 
