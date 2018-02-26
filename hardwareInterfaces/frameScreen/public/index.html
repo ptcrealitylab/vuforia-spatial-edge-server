@@ -103,6 +103,17 @@
             console.log(objectKey, frameKey, nodeKey, res);
             frames = res.frames;
 
+            // for (var frameKey in frames) {
+            //     if (!frames.hasOwnProperty(frameKey)) continue;
+            //     var thisFrame = frames[frameKey];
+            //     if (!thisFrame.hasOwnProperty('width')) {
+            //         thisFrame.width = 300;
+            //     }
+            //     if (!thisFrame.hasOwnProperty('height')) {
+            //         thisFrame.height = 200;
+            //     }
+            // }
+
             // // filter out
             // for (var frameKey in frames) {
             //     if (!frames.hasOwnProperty(frameKey)) continue;
@@ -202,6 +213,17 @@
 
         if (!iframeExists) {
 
+            if (!frame.hasOwnProperty('width')) {
+                frame.width = 300;
+            }
+            if (!frame.hasOwnProperty('height')) {
+                frame.height = 200;
+            }
+
+            var scaleFactor = getScreenScaleFactor();
+            var screenFrameWidth = frame.width / scaleFactor;
+            var screenFrameHeight = frame.height / scaleFactor;
+
             var addContainer = document.createElement('div');
             addContainer.id = "object" + frameKey;
             // addContainer.className = "main";
@@ -217,12 +239,12 @@
             addIframe.id = iframeId;
             addIframe.classList.add('main', 'frame');
             addIframe.frameBorder = 0;
-            var scaleFactor = getScreenScaleFactor();
-            addIframe.style.width = (frame.width / scaleFactor || 0) + "px";
-            addIframe.style.height = (frame.height / scaleFactor || 0) + "px";
+            addIframe.style.width = (screenFrameWidth || 0) + "px";
+            addIframe.style.height = (screenFrameHeight || 0) + "px";
             addIframe.style.visibility = "visible";
             // addIframe.style.pointerEvents = 'none';
-            addIframe.src = '/frames/' + frame.type + '.html';
+            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + frame.type + '.html';
+            // addIframe.src = '/frames/' + frame.type + '.html';
             addIframe.dataset.nodeKey = null;
             addIframe.dataset.frameKey = frameKey;
             addIframe.dataset.objectKey = frame.objectId;
@@ -261,9 +283,17 @@
             nodes: null,
             interface: null
         };
-        document.querySelector("#iframe" + frameKey)._loaded = true;
-        document.querySelector("#iframe" + frameKey).contentWindow.postMessage(JSON.stringify(newStyle), '*');
-        // document.querySelector("#iframe" + frameKey).contentWindow.postMessage(JSON.stringify({visualization: 'screen'}), '*');
+        var thisIframe = document.querySelector("#iframe" + frameKey);
+        thisIframe._loaded = true;
+        thisIframe.contentWindow.postMessage(JSON.stringify(newStyle), '*');
+        thisIframe.contentWindow.postMessage(JSON.stringify({
+            resizeFrameData: {
+                width: parseInt(thisIframe.style.width),
+                height: parseInt(thisIframe.style.height)
+            }
+        }), '*');
+
+
         console.log("on_load");
     }
 
@@ -308,7 +338,7 @@
     }
 
     function getFrameKey(frame) {
-        return frame.objectId + frame.name;
+        return frame.uuid || frame.objectId + frame.name;
     }
 
     /**
@@ -370,17 +400,30 @@
         socket.on('screenObject', function(msg) {
             // console.log(msg);
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
-            console.log(screenPos.x + ', ' + screenPos.y);
+            // console.log(screenPos.x + ', ' + screenPos.y);
 
             if (msg.touchState === 'touchstart') {
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
+                if (msg.object && msg.frame) {
+                    console.log('dont move frame!', msg.object, msg.frame);
+
+                    currentlyDraggedPanel = document.querySelector('#iframe' + msg.frame);
+                    console.log('virtually set currentlyDraggedPanel to ', currentlyDraggedPanel);
+                    // if (currentlyDraggedPanel) {
+                    //     var frame = frames[currentlyDraggedPanel.dataset.frameKey];
+                    //     frame.screen.x = mouseX + dragOffsetX;
+                    //     frame.screen.y = mouseY + dragOffsetY;
+                    // }
+
+                } else {
+                    simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
+                    simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
+                }
 
             } else if (msg.touchState === 'touchmove') {
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
                 clickAvailable = true;
 
-            } else if (msg.touchState === 'touchend') {
+            } else if (msg.touchState === null) {
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
 
             }
@@ -640,8 +683,8 @@
         }
 
         function stopClick() {
-            console.log('clicked on frame');
-            console.log(clickedPanelContainer);
+            // console.log('clicked on frame');
+            // console.log(clickedPanelContainer);
         }
 
         function startHoldOrDrag() {
@@ -684,21 +727,27 @@
             }
 
             currentlyDraggedPanel = null;
+
+            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
+            console.log('writeScreenObject null');
+
         }
     }
 
     function getAllDivsUnderCoordinate(x, y) {
         var res = [];
+        var previousDisplayTypes = [];
 
         var ele = document.elementFromPoint(x,y);
         while(ele && ele.tagName !== "BODY" && ele.tagName !== "HTML"){
             res.push(ele);
+            previousDisplayTypes.push(ele.style.display);
             ele.style.display = "none";
             ele = document.elementFromPoint(x,y);
         }
 
         for(var i = 0; i < res.length; i++){
-            res[i].style.display = "";  // TODO: more correct if you set back to original display type
+            res[i].style.display = previousDisplayTypes[i];
         }
         // console.log(res);
         return res;

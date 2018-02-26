@@ -1234,6 +1234,7 @@ function objectWebServer() {
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+    webServer.use('/frames', express.static(__dirname + '/libraries/frameScreenTransfer/public/frames/'));
 
     webServer.use("/obj", function (req, res, next) {
 
@@ -2156,6 +2157,7 @@ function objectWebServer() {
 
         var newFrame = new Frame();
         newFrame.objectId = frame.objectId;
+        newFrame.uuid = frameKey;
         newFrame.name = frame.name;
         newFrame.visualization = frame.visualization;
         newFrame.ar = frame.ar;
@@ -2169,11 +2171,14 @@ function objectWebServer() {
         newFrame.location = frame.location;
         newFrame.src = frame.src;
         newFrame.type = frame.type;
+        newFrame.width = frame.width;
+        newFrame.height = frame.height;
         object.frames[frameKey] = newFrame;
 
         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+        hardwareAPI.runFrameUpdateCallbacks(newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
     }
