@@ -74,7 +74,20 @@ var realityObject = {
         node : null,
         x: 0,
         y: 0,
-        type: null}
+        type: null,
+        touches:[
+            {
+                screenX: 0,
+                screenY: 0,
+                type:null
+            },
+            {
+                screenX: 0,
+                screeny: 0,
+                type:null
+            }
+        ]
+    }
 };
 
 // adding css styles nessasary for acurate 3D transformations.
@@ -663,10 +676,12 @@ function RealityInterface() {
         this.addReadListener = function (node, callback) {
             _this.ioObject.on("object", function (msg) {
                 var thisMsg = JSON.parse(msg);
+                // console.log(realityObject.object+realityObject.frame+node, thisMsg.node);
                 if (typeof thisMsg.node !== "undefined") {
-                    if (thisMsg.node === realityObject.object+realityObject.frame+node) {
+                    if (thisMsg.node === realityObject.frame+node) {
+
                         if (typeof thisMsg.data !== "undefined")
-                            callback(thisMsg.data.value);
+                            callback(thisMsg.data);
                     }
                 }
             });
@@ -870,25 +885,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return event.changedTouches[0].screenY;
     }
 
-    function getScreenPosition(event) {
+    function getScreenPosition(evt, type) {
         realityObject.eventObject.version = realityObject.version;
         realityObject.eventObject.object = realityObject.object;
         realityObject.eventObject.frame = realityObject.frame;
         realityObject.eventObject.node = realityObject.node;
-        realityObject.eventObject.x = event.changedTouches[0].screenX;
-        realityObject.eventObject.y = event.changedTouches[0].screenY;
-        realityObject.eventObject.type = event.type;
+
+        if (evt.touches.length >= 1) {
+            realityObject.eventObject.x = evt.touches[0].screenX;
+            realityObject.eventObject.y = evt.touches[0].screenY;
+            realityObject.eventObject.type = type;
+            realityObject.eventObject.touches[0].screenX = evt.touches[0].screenX;
+            realityObject.eventObject.touches[0].screenY = evt.touches[0].screenY;
+            realityObject.eventObject.touches[0].type = type;
+        }
+        if (evt.touches.length >= 2) {
+            realityObject.eventObject.touches[1].screenX = evt.touches[1].screenX;
+            realityObject.eventObject.touches[1].screenY = evt.touches[1].screenY;
+            realityObject.eventObject.touches[1].type = type;
+        } else {
+            realityObject.eventObject.touches[1] = null;
+        }
         return realityObject.eventObject;
     }
 
-    function sendEventObject(event) {
-
+    function sendEventObject(event, type) {
         parent.postMessage(JSON.stringify({
             version: realityObject.version,
             node: realityObject.node,
             frame: realityObject.frame,
             object: realityObject.object,
-            eventObject: getScreenPosition(event)
+            eventObject: getScreenPosition(event, type)
         }), '*');
     }
 
@@ -908,7 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.body.addEventListener('touchstart', function(event) {
-        sendEventObject(event);
+        sendEventObject(event, 'touchstart');
         if (!realityObject.width) {
             return;
         }
@@ -935,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     document.body.addEventListener('touchmove', function(event) {
-        sendEventObject(event);
+        sendEventObject(event, 'touchmove');
 
         if (sendTouchEvents) {
             sendTouchEvent(event);
@@ -950,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.body.addEventListener('touchend', function(event) {
-        sendEventObject(event);
+        sendEventObject(event,'touchend');
         if (sendTouchEvents) {
             sendTouchEvent(event);
         }
