@@ -37,7 +37,7 @@ var sendTouchEvents = false;
 
     // adding css styles nessasary for acurate 3D transformations.
     realityObject.style.type = 'text/css';
-    realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0;}';
+    realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
     document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
     var realityInterfaces = [];
