@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -58,24 +58,28 @@ if (exports.enabled) {
    // server.addNode("thisDemo", "zero", "distance", "node");
  //   server.addNode("thisDemo", "zero", "motor", "node");
 
+    server.addNode("frameExperiements", "graph", "value", "node");
+    server.addNode("frameExperiements", "graph", "out", "node");
 
-    server.addNode("thisDemo", "zero2", "distance", "node");
-    server.addNode("thisDemo", "zero2", "motor", "node");
+
+   // server.addNode("thisDemo", "zero2", "distance", "node");
+   // server.addNode("thisDemo", "zero2", "motor", "node");
 
   //  server.addNode("thatDemo", "zero", "distance", "node");
   //  server.addNode("thatDemo", "zero", "motor", "node");
 
 var count = 0;
    // server.write("thisDemo", "zero2", "distance", 0.5);
-    setInterval(function(){
+   setInterval(function(){
+        server.write("frameExperiements", "graph", "out",  ((Math.random() * (0 - 100) + 100))/100, "f", "volt", 300, 0);
 
-        server.write("thisDemo", "zero2", "distance", count/100);
 
-        count++;
-        if (count >= 300){
+        /*count++;
+        if (count >= 100){
             count = 0;
-        }
-    }, 400);
+        }*/
+    }, 10);
+
 
 /*
     server.addNode("obj45", "one", "node");

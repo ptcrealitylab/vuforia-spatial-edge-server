@@ -452,7 +452,7 @@ if (exports.enabled) {
     server.addReadListener("RightUpperTilt6AxisEV3", "Upper Tilt", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 forearm_tilting=true;
@@ -467,7 +467,7 @@ if (exports.enabled) {
     server.addReadListener("Gripper6AxisEV3", "Upper Tilt + Top Joint", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 speed = value;
@@ -500,7 +500,7 @@ if (exports.enabled) {
     server.addReadListener("Gripper6AxisEV3", "Grip Rotation", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 speed = value;
@@ -512,7 +512,7 @@ if (exports.enabled) {
     server.addReadListener("Gripper6AxisEV3", "Grip Tilt", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-              var  value = Math.floor(map(item.number,0,1,-100,100));
+              var  value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 grip_val=value;
@@ -523,7 +523,7 @@ if (exports.enabled) {
     server.addReadListener("Gripper6AxisEV3", "grab", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 if(!grabbing){
@@ -548,7 +548,7 @@ if (exports.enabled) {
     server.addReadListener("TopForearm6AxisEV3", "Forearm Rotation", function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 speed = value;
@@ -566,7 +566,7 @@ if (exports.enabled) {
     server.addReadListener("RightUpperTilt6AxisEV3","Arm + Shoulder" , function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 speed = -value;
@@ -597,7 +597,7 @@ if (exports.enabled) {
     server.addReadListener("RightBase6AxisEV3","Base Rotation" , function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 speed = value;
@@ -609,7 +609,7 @@ if (exports.enabled) {
     server.addReadListener("RightBase6AxisEV3","Base Joint" , function (item) {
         if(bot_ready && top_ready) {
             if (shoulder_ready && upper_tilt_ready && forearm_twist_ready && grip_ready) { // makes sure that calibration is not running
-               var value = Math.floor(map(item.number,0,1,-100,100));
+               var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
                 //console.log("base joint " + value);
