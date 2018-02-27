@@ -1240,7 +1240,7 @@ function objectWebServer() {
 
         var urlArray = req.originalUrl.split("/");
 
-        // console.log(urlArray);
+
         if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
             var fileName = __dirname + "/objects" + req.url;
 
@@ -1269,6 +1269,12 @@ function objectWebServer() {
             }
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
+
+            var objectKey = utilities.readObject(objectLookup,urlArray[2]);
+            var frameKey = utilities.readObject(objectLookup,urlArray[2])+urlArray[4];
+
+             scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
+             scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
