@@ -395,7 +395,7 @@ var sendTouchEvents = false;
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === realityObject.frame + node) {
                         if (thisMsg.data) {
-                            callback(thisMsg.data.value);
+                            callback(thisMsg.data);
                         }
                     }
                 }
@@ -629,6 +629,8 @@ var sendTouchEvents = false;
         });
 
         window.addEventListener('message', function (msg) {
+            if (msg.origin === "https://www.youtube.com") return; // TODO: make a more generalized solution for this...
+
             var msgContent = JSON.parse(msg.data);
             if (msgContent.stopTouchEditing) {
                 sendTouchEvents = false;
@@ -636,7 +638,7 @@ var sendTouchEvents = false;
 
             if (msgContent.event) {
                 var eventData = msgContent.event;
-                var event = new PointerEvent(eventData.type, {
+               var event = new PointerEvent(eventData.type, {
                     view: window,
                     bubbles: true,
                     cancelable: true
@@ -651,6 +653,7 @@ var sendTouchEvents = false;
                 event.pageY = eventData.y;
                 event.screenX = eventData.x;
                 event.screenY = eventData.y;
+
                 var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
                 elt.dispatchEvent(event);
             }

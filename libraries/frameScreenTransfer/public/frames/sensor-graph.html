@@ -17,7 +17,6 @@
         }
     </style>
     <script src="resources/object-frames.js"></script>
-    <script src="resources/pep.min.js"></script>
 </head>
 <body>
 
@@ -73,7 +72,7 @@
         if (!isReady) {
             return;
         }
-        properties.value = e;
+        properties.value = e.value;
         data.push(properties.value);
         data.shift();
         renderProperties();
