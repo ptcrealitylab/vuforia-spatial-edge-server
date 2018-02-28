@@ -625,7 +625,7 @@
         }
 
         function isDraggableElement(clickedElement) {
-            return clickedElement.classList.contains('frame');
+            return (clickedElement.classList.contains('frame') && clickedElement.style.display !== 'none');
         }
 
         function startClick() {
@@ -674,6 +674,8 @@
             //     currentlyDraggedPanel = null;
             // }
 
+            // TODO: figure out a way to still update this data to persist state, without making action sender reload the associated AR object
+            /*
             if (currentlyDraggedPanel) {
                 // post new position to server
                 var content = frames[currentlyDraggedPanel.dataset.frameKey].screen;
@@ -684,6 +686,7 @@
                 postData(urlEndpoint, content);
 
             }
+            */
 
             currentlyDraggedPanel = null;
 
