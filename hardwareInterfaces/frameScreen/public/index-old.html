@@ -5,6 +5,20 @@
     <title>Frame Screen</title>
     <link rel="stylesheet" type="text/css" href="index.css">
     <style>
+        button {
+            width: 360px;
+            height: 288px;
+            text-align: center;
+            vertical-align: middle;
+            /*margin-top: 10px;*/
+            /*margin-right: 10px;*/
+            margin: 20px;
+            display: inline-block;
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 24pt;
+            color: cyan;
+        }
+
         .screenFrame {
             display: inline;
             /*opacity: 1.0;*/
@@ -14,28 +28,16 @@
             display: none;
             /*opacity: 0.1;*/
         }
-        body, html {
-            height: 100%;
-            margin: 0;
-        }
-
-        .bg {
-            /* The image used */
-            background-image: url("resources/frameScreen.jpg");
-
-            /* Full height */
-            height: 100%;
-
-            /* Center and scale the image nicely */
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-        }
     </style>
 </head>
 <body>
 
-<div class="bg"></div>
+<div id="sidebar" class="region blue smallText">
+    Control Panel <br>
+    <button class="blue active" id="createButton">Create Gauge</button> <br>
+    <!--<button class="blue active" id="moveButton">Move to AR</button>-->
+</div>
+<div class="paletteMarker"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 
@@ -49,9 +51,14 @@
     var frames = {};
 
     var marker = document.querySelector('.paletteMarker');
+    var sidebar = document.getElementById('sidebar');
+    var createButton = document.getElementById('createButton');
     var socket = io();
 
     var AR_MARKER_SIZE = 300.0;
+
+    // var markerRect = marker.getClientRects()[0];
+    // var scaleFactor = 300.0 / markerRect.height;
 
     // constants
     var defaultValue = 0.00;
@@ -334,29 +341,12 @@
         return frame.uuid || frame.objectId + frame.name;
     }
 
-    function getMarkerRect() {
-        var windowWidth = window.innerWidth;
-        var windowHeight = window.innerHeight;
-
-        var markerWidth = 600;
-        var markerHeight = 600;
-
-        var rect = {
-            x: (windowWidth/2 - markerWidth/2),
-            y: (windowHeight/2 - markerHeight/2),
-            width: markerWidth,
-            height: markerHeight
-        };
-
-        return rect;
-    }
-
     /**
      * Utility for getting scale factor between screen coordinates and AR marker coordinates.
      * @return {number} scale factor. 1 means they are the same and 0.5 means marker in AR is half as big as marker on screen.
      */
     function getScreenScaleFactor() {
-        var markerRect = getMarkerRect();
+        var markerRect = marker.getClientRects()[0];
         return AR_MARKER_SIZE / markerRect.height;
     }
 
@@ -367,7 +357,7 @@
      * @return {{x: number, y: number}}
      */
     function getScreenPosFromARPos(arX, arY) {
-        var markerRect = getMarkerRect();
+        var markerRect = marker.getClientRects()[0];
         var scaleFactor = getScreenScaleFactor();
         var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor);
         var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor);
@@ -384,7 +374,7 @@
      * @return {{x: number, y: number}}
      */
     function getARPosFromScreenPos(screenX, screenY) {
-        var markerRect = getMarkerRect();
+        var markerRect = marker.getClientRects()[0];
         var scaleFactor = getScreenScaleFactor();
         var arX = (screenX - (markerRect.x + markerRect.width/2)) * scaleFactor;
         var arY = (screenY - (markerRect.y + markerRect.height/2)) * scaleFactor;
@@ -395,16 +385,17 @@
     }
 
     window.onload = function() {
+        createControlPanel([]); //["decimal", "gauge", "graph", "light"]);
         initializeDragInterface();
         reloadFrames();
 
-        // createButton.onclick = function(event) {
-        //     console.log('create frame');
-        //     var frameData = {
-        //         src: 'gauge'
-        //     };
-        //     socket.emit('createFrame', frameData);
-        // };
+        createButton.onclick = function(event) {
+            console.log('create frame');
+            var frameData = {
+                src: 'gauge'
+            };
+            socket.emit('createFrame', frameData);
+        };
 
         socket.on('screenObject', function(msg) {
             // console.log(msg);
@@ -452,6 +443,57 @@
         });
 
     };
+
+    function createControlPanel(controls) {
+
+        sidebar.style.width = "400px";
+        sidebar.style.height = "1200px";
+
+        controls.forEach( function(controlName) {
+            var sidebarPanel = createSidebarPanel(controlName);
+            sidebar.appendChild(sidebarPanel);
+        });
+    }
+
+    function createSidebarPanel(controlName) {
+        var sidebarPanel = document.createElement("div");
+        sidebarPanel.className = "sidebarPanel";
+        sidebarPanel.id = controlName;
+
+        var eventCaptureDiv = document.createElement('div');
+        eventCaptureDiv.className = "eventCapture";
+        sidebarPanel.appendChild(eventCaptureDiv);
+
+        var centerContentsOuter = document.createElement("div");
+        centerContentsOuter.className = "centerContentsOuter";
+        sidebarPanel.appendChild(centerContentsOuter);
+
+        var centerContentsInner = document.createElement("div");
+        centerContentsInner.classList.add("centerContentsInner");
+        centerContentsInner.classList.add("blue");
+        centerContentsInner.classList.add("active");
+
+        centerContentsOuter.appendChild(centerContentsInner);
+
+        var frame = createFrame(controlName);
+        centerContentsInner.appendChild(frame);
+
+        return sidebarPanel;
+    }
+
+    function createFrame(frameType) {
+        var frameDomElement = document.createElement('iframe');
+        frameDomElement.classList.add('controlFrame');
+        frameDomElement.frameType = frameType;
+        frameDomElement.id = frameType + 'Frame';
+        frameDomElement.src = '/frames/' + frameType + '.html';
+        frameDomElement.scrolling = 'no';
+        frameDomElement.style.border = '0px solid transparent';
+        frameDomElement.onload = function() {
+            frameDomElement.contentWindow.postMessage({value: defaultValue}, 'http://localhost:3032'); // TODO: change localhost in production?
+        };
+        return frameDomElement;
+    }
 
     function simulateMouseEvent(x,y,eventName) {
         mouseX = x;// * 2.0;
