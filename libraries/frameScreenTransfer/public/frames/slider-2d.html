@@ -219,11 +219,11 @@
     var realityInterface = new RealityInterface();
     realityInterface.setMoveDelay(1000);
     realityInterface.addReadListener('valueX', function(e) {
-        properties.valueX = e;
+        properties.valueX = e.value;
         renderProperties();
     });
     realityInterface.addReadListener('valueY', function(e) {
-        properties.valueY = e;
+        properties.valueY = e.value.value;
         renderProperties();
     });
     

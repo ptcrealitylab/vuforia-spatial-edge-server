@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+<head>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Stock UI</title>
+    <script>
+
+    </script>
+    <style>
+        body{
+            background-color:rgba(51, 51, 51, 0.8);
+        }
+        .chart-area {
+            position: relative;
+            margin: auto;
+
+        }
+
+        .aspect-ratio {
+            padding-bottom: 80%;
+        }
+        .chart-wrapper {
+            position: absolute;
+            top:0;left:0;bottom:0;right:0;
+        }
+        .chart {
+            height: 100%;
+            width: 100%;
+        }
+
+
+
+        * {
+            color: #00edff;
+        }
+
+    </style>
+</head>
+<body style="height: 500px; width: 600px">
+<script src='//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js'></script>
+<script src="//code.highcharts.com/stock/highstock.js"></script>
+<script src="//code.highcharts.com/highcharts-more.js"></script>
+
+<div id="chart1" class="chart-area" >
+    <div class="aspect-ratio" ></div>
+    <div class="chart-wrapper" >
+        <div class="chart" ></div>
+    </div>
+</div>
+</body>
+
+<script>
+    var _now = new Date(),
+        _chart;
+
+    function $$(selector, context) {
+        context = context || document;
+        var items = context.querySelectorAll(selector);
+        return Array.from(items);
+    }
+
+    function createUrl(url, qs) {
+        if(!qs) { return url; }
+
+        var params = Object.keys(qs);
+        if(params.length) {
+            url = url + '?' + params.map(function(p) {
+                return p +'='+ encodeURIComponent(qs[p]);
+            }).join('&');
+        }
+
+        return url;
+    }
+
+    function getMean(items, getItemNumber) {
+        getItemNumber = getItemNumber || function(x) { return x; };
+
+        var len = items.length,
+            sum = 0;
+
+        var i = len;
+        while (i--) {
+            sum = sum + getItemNumber(items[i]);
+        }
+
+        var mean = sum/len;
+        return mean;
+    }
+
+    /* New Yahoo API - but CSV export requires some kind of authorization.. */
+    function createUrlYahoo(ticker, from, to) {
+        //"Historical Data" -> "Time Period" -> "Apply"..
+        //  https://finance.yahoo.com/quote/MSFT/history?period1=1492639200&period2=1498773600&interval=1d&filter=history&frequency=1d
+        //.. -> "Download Data":
+        //  https://query1.finance.yahoo.com/v7/finance/download/MSFT?period1=1492639200&period2=1498773600&interval=1d&events=history&crumb=E2mcvti0En9
+
+        var urlBase = 'https://finance.yahoo.com/quote/' + ticker + '/history';
+        //var urlBase = 'https://query1.finance.yahoo.com/v7/finance/download/' + ticker;
+        var qs = {};
+
+        function qsDate(param, date) {
+            //JS: Milliseconds, Yahoo: Seconds
+            var timestamp = Math.round(date.getTime() / 1000);
+            qs[param] = timestamp;
+        }
+
+        qsDate('period1', from);
+        qsDate('period2', to);
+        qs.interval = '1d';
+
+        qs.filter = 'history';
+        qs.frequency = '1d';
+        //qs.events = 'history';
+        //qs.crumb = 'E2mcvti0En9';
+
+        var url = createUrl(urlBase, qs);
+        console.log(url);
+        return url;
+    }
+
+    function parseYahoo(html) {
+        var doc = $(html),
+            table = $('[data-test="historical-prices"]', doc).get()[0],
+            rows = $$('tbody tr', table).map(tr => {
+                var cols = $$('td', tr).map(x => x.textContent);
+        return cols;
+    });
+        //console.log('rows', JSON.stringify(rows));
+        //  "Jul 25, 2017","21,638.56","21,670.62","21,577.37","21,613.43","21,613.43","304,300,000"
+        //  "Jul 24, 2017","21,577.78","21,577.78","21,496.13","21,513.17","21,513.17","284,080,000"
+        //  "Jul 21, 2017","21,591.72","21,592.61","21,503.78","21,580.07","21,580.07","362,830,000"
+        //  "Jul 20, 2017","21,641.54","21,661.91","21,576.96","21,611.78","21,611.78","313,950,000"
+
+        //Highcharts wants the data sorted ascending by date:
+        rows.reverse();
+
+        function yahooNumber(input) {
+            //"21,467.93" -> 21467.93
+            input = input.replace(/,/g, '');
+            return Number(input);
+        }
+
+        var ohlcData = rows.map(row => {
+            return [
+                new Date(row[0]).getTime(),
+
+                yahooNumber(row[1]),
+                yahooNumber(row[2]),
+                yahooNumber(row[3]),
+                yahooNumber(row[4]),
+            ];
+    });
+        //console.log(ohlcData);
+
+        return ohlcData;
+    }
+
+
+    function renderData(name, ohlcData) {
+        var ohlcSeries = {
+            name: name,
+            data: ohlcData,
+            color: "rgba(0,255,0,1)",
+            type: 'line',
+            //http://stackoverflow.com/questions/9849806/data-grouping-into-weekly-monthly-by-user
+            dataGrouping: { enabled: false },
+            tooltip:      { valueDecimals: 2 },
+        };
+        _chart.addSeries(ohlcSeries);
+
+
+        //Bollinger bands:
+        //https://bl.ocks.org/godds/6550889
+        var bandsData = [];
+        var period = 20;
+        var stdDevs = 2;
+        for (var i = period - 1, len = ohlcData.length; i < len; i++) {
+            var slice = ohlcData.slice(i + 1 - period , i+1);
+
+            var mean = getMean(slice, function(d) { return d[4]; });
+
+            var stdDev = Math.sqrt(getMean(slice.map(function(d) {
+                return Math.pow(d[4] - mean, 2);
+            })));
+
+            bandsData.push([
+                ohlcData[i][0],
+                mean - (stdDevs * stdDev),
+                mean + (stdDevs * stdDev)
+            ]);
+        }
+
+        //https://www.highcharts.com/component/content/article/2-news/46-gauges-ranges-and-polar-charts-in-beta#ranges
+        var bandsSeries = {
+            name: 'Bollinger',
+            data: bandsData,
+            color: "rgba(0,255,255,1)",
+            fontcolor: "rgba(0,255,255,1)",
+            type: 'arearange',
+            dataGrouping: { enabled: false },
+            tooltip:      { valueDecimals: 2 },
+            fillOpacity: 0.1,
+        };
+
+        /*
+        bandsSeries = {
+            name: 'PTC Stock Price',
+            data: bandsData,
+            type: 'area',
+            threshold: null,
+            tooltip: {
+                valueDecimals: 2
+            }
+        }],*/
+
+        _chart.addSeries(bandsSeries);
+
+        //console.log(JSON.stringify(ohlcData));
+        //console.log(JSON.stringify(bandsData));
+    }
+
+
+    $(function () {
+
+        _chart = new Highcharts.StockChart({
+            chart: {
+                renderTo: document.querySelector('#chart1 .chart'),
+                height: 500,
+                width: 600,
+                backgroundColor: "rgba(0,0,0,0.1)",
+                plotBackgroundColor: "rgba(0,0,0,0.3)",
+                borderColor:"rgba(0,0,255,0.3)",
+            },
+            title: {
+                text: 'PTC Stock Price',
+                style: {
+                    color: 'rgba(0,255,255,1)',
+                    font: 'Trebuchet MS, Verdana, sans-serif'
+                }
+            },
+            plotBackground :{backgroundColor: "rgba(0,0,0,1)"},
+            rangeSelector: {
+                //3 months:
+                selected: 1,
+
+            },
+            tooltip: {
+                backgroundColor: 'rgba(20,150,150,0.6',
+                borderColor: '#00ffff',
+                borderRadius: 2,
+                borderWidth: 2,
+                style: {
+                    color: 'rgba(255,255,255,1)',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    fontFamily: 'Trebuchet MS, Verdana, sans-serif'
+                }
+            },
+            responsive: {
+
+                rules: [{
+                    condition: {
+                        maxWidth: 500
+                    },
+                    chartOptions: {
+                        chart: {
+                            height: 300
+                        },
+                        subtitle: {
+                            text: null
+                        },
+                        navigator: {
+                            enabled: false
+                        }
+                    }
+                }]
+            },
+            xAxis: {
+                gridLineWidth: 1,
+                lineColor: 'rgba(0,255,255,1)',
+                tickColor: 'rgba(0,255,255,1)',
+                labels: {
+                    style: {
+                        color: 'rgba(0,255,255,1)',
+                        font: '11px Trebuchet MS, Verdana, sans-serif'
+                    }
+                },
+                title: {
+                    style: {
+                        color: 'rgba(0,255,255,1)',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        fontFamily: 'Trebuchet MS, Verdana, sans-serif'
+
+                    }
+                }
+            },
+            yAxis: {
+                lineColor: 'rgba(0,255,255,1)',
+                lineWidth: 1,
+                tickWidth: 1,
+                tickColor: 'rgba(0,255,255,1)',
+                labels: {
+                    style: {
+                        color: 'rgba(0,255,255,1)',
+                        font: '11px Trebuchet MS, Verdana, sans-serif'
+                    }
+                },
+                title: {
+                    style: {
+                        color: 'rgba(0,255,255,1)',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        fontFamily: 'Trebuchet MS, Verdana, sans-serif'
+                    }
+                }
+            }
+        });
+
+
+        var ticker = 'PTC'
+        var to = new Date(_now);
+        var from = new Date(to);
+        // console.log(to.getFullYear()-6);
+        from.setFullYear(to.getFullYear() - 2);
+        from.setMonth(to.getMonth() - 24);
+
+        _chart.showLoading();
+
+        //Responds with 404 through crossorigin.me. Alternative service:
+        //https://www.bountysource.com/issues/39833634-origin-header-is-required
+        //  var url = '//crossorigin.me/' + createUrlYahoo(ticker, from, to);
+        var url = '//cors-anywhere.herokuapp.com/' + createUrlYahoo(ticker, from, to);
+
+        $.get(url, function (data) {
+            //document.write('<pre>'+data+'</pre>');
+            renderData(ticker, parseYahoo(data));
+
+            _chart.hideLoading();
+        });
+    });
+
+
+    var realityInterface = new RealityInterface();
+    realityInterface.setMoveDelay(200);
+    
+</script>
+</html>
+
