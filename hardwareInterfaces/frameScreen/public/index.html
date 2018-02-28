@@ -214,6 +214,13 @@
                 frame.height = 200;
             }
 
+            if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
+                // getScreenPosFromARPos(getScreenFrames()[2].ar.x, getScreenFrames()[2].ar.y)
+                var screenPosConversion = getScreenPosFromARPos(frame.ar.x, frame.ar.y);
+                frame.screen.x = screenPosConversion.x;
+                frame.screen.y = screenPosConversion.y;
+            }
+
             var scaleFactor = getScreenScaleFactor();
             var screenFrameWidth = frame.width / scaleFactor;
             var screenFrameHeight = frame.height / scaleFactor;
@@ -416,8 +423,8 @@
                 if (msg.object && msg.frame) {
                     console.log('dont move frame!', msg.object, msg.frame);
 
-                    currentlyDraggedPanel = document.querySelector('#iframe' + msg.frame);
-                    console.log('virtually set currentlyDraggedPanel to ', currentlyDraggedPanel);
+                    // currentlyDraggedPanel = document.querySelector('#iframe' + msg.frame);
+                    // console.log('virtually set currentlyDraggedPanel to ', currentlyDraggedPanel);
                     // if (currentlyDraggedPanel) {
                     //     var frame = frames[currentlyDraggedPanel.dataset.frameKey];
                     //     frame.screen.x = mouseX + dragOffsetX;
@@ -441,7 +448,9 @@
             if (msg.object && msg.frame) {
                 // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
                 var frame = frames[msg.frame];
-                frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
+                if (frame) {
+                    frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
+                }
             }
 
         });
