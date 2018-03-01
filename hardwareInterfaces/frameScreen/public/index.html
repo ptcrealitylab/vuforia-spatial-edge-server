@@ -32,6 +32,9 @@
             background-repeat: no-repeat;
             background-size: cover;
         }
+        .frame {
+            transform-origin: left top;
+        }
     </style>
 </head>
 <body>
@@ -417,10 +420,12 @@
         //     socket.emit('createFrame', frameData);
         // };
 
+        window.addEventListener("message", onInternalPostMessage, false);
+
         socket.on('screenObject', function(msg) {
-            console.log(msg);
+            // console.log(msg);
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
-            console.log(screenPos.x + ', ' + screenPos.y);
+            // console.log(screenPos.x + ', ' + screenPos.y);
 
             if (msg.touchState === 'touchstart') {
                 if (msg.object && msg.frame) {
@@ -478,6 +483,32 @@
         });
 
     };
+
+    function onInternalPostMessage(e) {
+        var msgContent = {};
+        if (e.data) {
+            if (typeof e.data === 'string') {
+                msgContent = JSON.parse(e.data);
+            } else {
+               return;
+            }
+        } else {
+            if (typeof e === 'string') {
+                msgContent = JSON.parse(e);
+            } else {
+                return;
+            }
+        }
+
+        console.log(msgContent);
+
+        if (msgContent.width && msgContent.height) {
+            console.log('got width and height', msgContent.width, msgContent.height);
+            var iFrame = document.getElementById('iframe' + msgContent.frame);
+            iFrame.style.width = msgContent.width + 'px';
+            iFrame.style.height = msgContent.height + 'px';
+        }
+    }
 
     function simulateMouseEvent(x,y,eventName) {
         mouseX = x;// * 2.0;
