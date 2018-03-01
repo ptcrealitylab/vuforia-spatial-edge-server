@@ -58,8 +58,12 @@ if (exports.enabled) {
    // server.addNode("thisDemo", "zero", "distance", "node");
  //   server.addNode("thisDemo", "zero", "motor", "node");
 
-    server.addNode("frameExperiements", "graph", "value", "node");
-    server.addNode("frameExperiements", "graph", "out", "node");
+  //  server.addNode("frameExperiements", "graph", "value", "node");
+   // server.addNode("frameExperiements", "graph", "out", "node");
+
+   // server.addNode("frameExperiements", "youtube", "play", "node");
+
+
 
 
    // server.addNode("thisDemo", "zero2", "distance", "node");
@@ -70,15 +74,16 @@ if (exports.enabled) {
 
 var count = 0;
    // server.write("thisDemo", "zero2", "distance", 0.5);
-   setInterval(function(){
-        server.write("frameExperiements", "graph", "out",  ((Math.random() * (0 - 100) + 100))/100, "f", "volt", 300, 0);
+  /* setInterval(function(){
+        server.write("frameExperiements", "graph", "out",  ((Math.random() * (0 - 100) + 100))/100, "f", "F", -20, 10);
 
 
         /*count++;
         if (count >= 100){
             count = 0;
         }*/
-    }, 10);
+   /* }, 10);*/
+
 
 
 /*

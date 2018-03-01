@@ -575,6 +575,11 @@ function RealityInterface() {
         realityObject.moveDelay = delayInMilliseconds
     };
 
+    this.getUnitValue = function (dataPackage){
+            return {value: (dataPackage.value * (dataPackage.unitMax-dataPackage.unitMin))+dataPackage.unitMin,
+                unit: dataPackage.unit};
+    };
+
     if (typeof io !== "undefined") {
         var _this = this;
 
