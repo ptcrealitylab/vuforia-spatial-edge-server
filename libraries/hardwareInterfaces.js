@@ -118,6 +118,11 @@ function Frame() {
  * @param {value} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
+exports.getIP = function () {
+    var ip = require("ip");
+    return ip.address();
+}
+
 exports.write = function (objectName, frameName, nodeName, value, mode, unit, unitMin, unitMax) {
 
     if (typeof mode === 'undefined')  mode = "f";

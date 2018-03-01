@@ -41,8 +41,8 @@
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-
-    var SERVER_IP = '10.0.1.8'; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
+    console.log(location.origin.split(":")[1].split("//")[1]);
+    var SERVER_IP = location.origin.split(":")[1].split("//")[1]; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
 
     // var OBJECT_NAME = 'frameScreen';
