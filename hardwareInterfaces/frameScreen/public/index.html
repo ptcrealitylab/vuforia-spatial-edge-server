@@ -214,6 +214,7 @@
                 frame.height = 200;
             }
 
+            // frame.screen.scale = frame.ar.scale;
             if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
                 // getScreenPosFromARPos(getScreenFrames()[2].ar.x, getScreenFrames()[2].ar.y)
                 var screenPosConversion = getScreenPosFromARPos(frame.ar.x, frame.ar.y);
@@ -222,8 +223,8 @@
             }
 
             var scaleFactor = getScreenScaleFactor();
-            var screenFrameWidth = frame.width / scaleFactor;
-            var screenFrameHeight = frame.height / scaleFactor;
+            var screenFrameWidth = (frame.width / scaleFactor);// * frame.screen.scale;
+            var screenFrameHeight = (frame.height / scaleFactor);// * frame.screen.scale;
 
             var addContainer = document.createElement('div');
             addContainer.id = "object" + frameKey;
@@ -242,6 +243,8 @@
             addIframe.frameBorder = 0;
             addIframe.style.width = (screenFrameWidth || 0) + "px";
             addIframe.style.height = (screenFrameHeight || 0) + "px";
+            addIframe.style.transform = 'scale(' + frame.screen.scale + ')';
+
             addIframe.style.visibility = "visible";
             // addIframe.style.pointerEvents = 'none';
             addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + frame.type + '.html';
@@ -415,7 +418,7 @@
         // };
 
         socket.on('screenObject', function(msg) {
-            // console.log(msg);
+            console.log(msg);
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
             console.log(screenPos.x + ', ' + screenPos.y);
 
@@ -449,7 +452,18 @@
                 // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
                 var frame = frames[msg.frame];
                 if (frame) {
+                    var oldVisualization = frame.visualization;
                     frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
+
+                    if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
+                        frame.ar.scale = msg.scale;
+                        frame.screen.scale = msg.scale;
+                        var iframeId = "iframe" + msg.frame;
+                        var iframe = document.querySelector('#'+iframeId);
+                        if (iframe) {
+                            iframe.style.transform = 'scale(' + frame.screen.scale + ')';
+                        }
+                    }
                 }
             }
 
@@ -459,6 +473,8 @@
             console.log('frameDataCallback', frame);
             var frameKey = getFrameKey(frame);
             frames[frameKey] = frame;
+            frame.screen.scale = frame.ar.scale;
+
         });
 
     };

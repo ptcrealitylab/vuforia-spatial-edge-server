@@ -156,7 +156,7 @@
     var realityInterface = new RealityInterface();
     realityInterface.setMoveDelay(1000);
     realityInterface.addReadListener('value', function(e) {
-        properties.value = e;
+        properties.value = e.value;
         renderProperties();
     });
     
