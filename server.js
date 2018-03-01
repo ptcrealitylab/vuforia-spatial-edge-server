@@ -244,7 +244,7 @@ function Frame() {
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
     // local or global. If local, node-name is exposed to hardware interface
-    this.location = "";
+    this.location = "local";
     // source
     this.src = "editor";
 }
@@ -801,8 +801,9 @@ function loadObjects() {
             objects[tempFolderName].name = objectFolderList[i];
 
             // create first frame
-            objects[tempFolderName].frames[tempFolderName] = new Frame();
-            objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
+            // todo this need to be checked in the system
+           // objects[tempFolderName].frames[tempFolderName] = new Frame();
+            //objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
             utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName, globalVariables.saveToDisk);
@@ -2747,14 +2748,16 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, __dirname, globalVariables.debug);
 
                 } else if(req.body.name !== "" && req.body.frame !== ""){
-                  utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug);
-
                     var objectKey = utilities.readObject(objectLookup, req.body.name);
 
                     if(!objects[objectKey].frames[objectKey+ req.body.frame]) {
+
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, "local");
                         objects[objectKey].frames[objectKey+ req.body.frame] = new Frame();
                         objects[objectKey].frames[objectKey+ req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
+                    } else {
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug,objects[objectKey].frames[objectKey+ req.body.frame].location);
                     }
                 }
               //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2779,14 +2782,25 @@ function objectWebServer() {
 
 
                 // remove when frame is implemented
-                if (req.body.frame !== "") {
-                    var folderDelFrame = __dirname + '/objects/' + req.body.name+"/frames/"+req.body.frame;
+
+                var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+                if(!objects[objectKey]) return;
+
+                var frameName = req.body.frame;
+                var frameNameKey = req.body.frame;
+                if(req.body.frame in objects[objectKey].frames){
+                    frameName = objects[objectKey].frames[req.body.frame].name;
+                } else {
+                    frameNameKey = objectKey+req.body.frame;
+                }
+
+                if (frameName !== "") {
+                    var folderDelFrame = __dirname + '/objects/' + req.body.name+"/frames/"+frameName;
+
                     deleteFolderRecursive(folderDelFrame);
 
-                    var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
-
-                    if (objectKey !== null && req.body.frame !== null) {
-                        delete objects[objectKey].frames[req.body.frame];
+                    if (objectKey !== null && frameNameKey !== null) {
+                        delete objects[objectKey].frames[frameNameKey];
                     }
 
                     utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
@@ -2814,6 +2828,7 @@ function objectWebServer() {
                     res.send("ok");
                 }
             }
+            //delete end
         });
 
         var tmpFolderFile = "";
