@@ -223,8 +223,8 @@
             }
 
             var scaleFactor = getScreenScaleFactor();
-            var screenFrameWidth = (frame.width / scaleFactor);// * frame.screen.scale;
-            var screenFrameHeight = (frame.height / scaleFactor);// * frame.screen.scale;
+            var screenFrameWidth = (frame.width);// * frame.screen.scale;
+            var screenFrameHeight = (frame.height);// * frame.screen.scale;
 
             var addContainer = document.createElement('div');
             addContainer.id = "object" + frameKey;
@@ -457,7 +457,7 @@
 
                     if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
                         frame.ar.scale = msg.scale;
-                        frame.screen.scale = msg.scale;
+                        frame.screen.scale = msg.scale * 2;
                         var iframeId = "iframe" + msg.frame;
                         var iframe = document.querySelector('#'+iframeId);
                         if (iframe) {
@@ -473,7 +473,7 @@
             console.log('frameDataCallback', frame);
             var frameKey = getFrameKey(frame);
             frames[frameKey] = frame;
-            frame.screen.scale = frame.ar.scale;
+            frame.screen.scale = frame.ar.scale * 2;
 
         });
 
