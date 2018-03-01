@@ -798,7 +798,20 @@ realityServer.setActive = function(item){
 
 
 realityServer.toggleFullScreen = function (item) {
-    var thisScreen = document.body;
+
+    var thisIframe = document.getElementById("fullscreenIframe");
+
+    if(!thisIframe){
+        thisIframe = document.createElement('iframe');
+        thisIframe.style.width = "0px";
+        thisIframe.style.height = "0px";
+        thisIframe.style.border = "0px";
+        thisIframe.id = "fullscreenIframe";
+        thisIframe.src = "http://localhost:3034";
+        document.body.appendChild(thisIframe);
+    }
+
+    var thisScreen = thisIframe;
    // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
