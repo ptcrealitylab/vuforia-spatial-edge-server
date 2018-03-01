@@ -51,7 +51,7 @@ if (exports.enabled) {
                 "r": "",
                 "v": 0,
                 "t": 0,
-                "min": 10000,
+                "min": 0,
                 "max":0,
                 "value":0
             };
@@ -61,7 +61,7 @@ if (exports.enabled) {
                 "r": "",
                 "v": 0,
                 "t": 0,
-                "min": 10000,
+                "min": 0,
                 "max":0,
                 "value":0
             };
@@ -156,10 +156,9 @@ if (exports.enabled) {
 
                     if(this.kepwareInterfaces[thisID].name &&  (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)){
 
-
                         this.server.write(kepwareServerName, kepwareServerName+"1",
                             this.kepwareInterfaces[thisID].name,
-                            this.kepwareInterfaces[thisID].data.value, "f", "",
+                            this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.min,
                             this.kepwareInterfaces[thisID].data.max)
                     }
