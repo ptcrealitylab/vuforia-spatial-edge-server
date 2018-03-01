@@ -122,8 +122,8 @@ exports.createFolder = function (folderVar, dirnameO, debug) {
 
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug) {
-
+exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
+    if(location === "global") return;
     var folder = dirnameO + '/objects/' + folderVar + '/';
     var frames = dirnameO + '/objects/' + folderVar + '/frames/';
     var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';

@@ -249,10 +249,8 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
  **/
 
 exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
-
-    utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug);
-
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+
     cout("Add Frame to objectID: " + objectID);
 
     var frameUuid = objectID+frameName;
@@ -267,7 +265,11 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
             objects[objectID].name = objectName;
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
+
+                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location, "local");
                 objects[objectID].frames[frameUuid] = new Frame();
+            } else {
+                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location);
             }
 
             thisFrame = objects[objectID].frames[frameUuid];
@@ -362,8 +364,6 @@ exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
 
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
-    utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug);
-
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
     cout("AddIO objectID: " + objectID);
 
@@ -380,9 +380,11 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = objectName;
 
-
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame();
+                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, "local");
+            } else {
+                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location);
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty("nodes")) {
                 objects[objectID].frames[frameUuid].nodes = {};
