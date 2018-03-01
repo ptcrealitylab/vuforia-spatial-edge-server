@@ -32,6 +32,9 @@
             background-repeat: no-repeat;
             background-size: cover;
         }
+        .frame {
+            transform-origin: left top;
+        }
     </style>
 </head>
 <body>
@@ -223,8 +226,8 @@
             }
 
             var scaleFactor = getScreenScaleFactor();
-            var screenFrameWidth = (frame.width / scaleFactor);// * frame.screen.scale;
-            var screenFrameHeight = (frame.height / scaleFactor);// * frame.screen.scale;
+            var screenFrameWidth = (frame.width);// * frame.screen.scale;
+            var screenFrameHeight = (frame.height);// * frame.screen.scale;
 
             var addContainer = document.createElement('div');
             addContainer.id = "object" + frameKey;
@@ -417,10 +420,12 @@
         //     socket.emit('createFrame', frameData);
         // };
 
+        window.addEventListener("message", onInternalPostMessage, false);
+
         socket.on('screenObject', function(msg) {
-            console.log(msg);
+            // console.log(msg);
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
-            console.log(screenPos.x + ', ' + screenPos.y);
+            // console.log(screenPos.x + ', ' + screenPos.y);
 
             if (msg.touchState === 'touchstart') {
                 if (msg.object && msg.frame) {
@@ -457,7 +462,7 @@
 
                     if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
                         frame.ar.scale = msg.scale;
-                        frame.screen.scale = msg.scale;
+                        frame.screen.scale = msg.scale * 2;
                         var iframeId = "iframe" + msg.frame;
                         var iframe = document.querySelector('#'+iframeId);
                         if (iframe) {
@@ -473,11 +478,37 @@
             console.log('frameDataCallback', frame);
             var frameKey = getFrameKey(frame);
             frames[frameKey] = frame;
-            frame.screen.scale = frame.ar.scale;
+            frame.screen.scale = frame.ar.scale * 2;
 
         });
 
     };
+
+    function onInternalPostMessage(e) {
+        var msgContent = {};
+        if (e.data) {
+            if (typeof e.data === 'string') {
+                msgContent = JSON.parse(e.data);
+            } else {
+               return;
+            }
+        } else {
+            if (typeof e === 'string') {
+                msgContent = JSON.parse(e);
+            } else {
+                return;
+            }
+        }
+
+        console.log(msgContent);
+
+        if (msgContent.width && msgContent.height) {
+            console.log('got width and height', msgContent.width, msgContent.height);
+            var iFrame = document.getElementById('iframe' + msgContent.frame);
+            iFrame.style.width = msgContent.width + 'px';
+            iFrame.style.height = msgContent.height + 'px';
+        }
+    }
 
     function simulateMouseEvent(x,y,eventName) {
         mouseX = x;// * 2.0;
