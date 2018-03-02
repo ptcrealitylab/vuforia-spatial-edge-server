@@ -110,7 +110,6 @@
             //         thisFrame.height = 200;
             //     }
             // }
-
             // // filter out
             // for (var frameKey in frames) {
             //     if (!frames.hasOwnProperty(frameKey)) continue;
@@ -427,7 +426,10 @@
             var screenPos = getScreenPosFromARPos(msg.x, msg.y);
             // console.log(screenPos.x + ', ' + screenPos.y);
 
+            console.log(msg.touchState);
+
             if (msg.touchState === 'touchstart') {
+                console.log('touchstart');
                 if (msg.object && msg.frame) {
                     console.log('dont move frame!', msg.object, msg.frame);
 
@@ -440,7 +442,7 @@
                     // }
 
                 } else {
-                    simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
+                    // simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
                     simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
                 }
 
@@ -448,7 +450,8 @@
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
                 clickAvailable = true;
 
-            } else if (msg.touchState === null) {
+            } else if (msg.touchState === 'touchend') {
+                console.log('touchend');
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
 
             }
@@ -467,6 +470,7 @@
                         var iframe = document.querySelector('#'+iframeId);
                         if (iframe) {
                             iframe.style.transform = 'scale(' + frame.screen.scale + ')';
+                            currentlyDraggedPanel = iframe;
                         }
                     }
                 }
@@ -549,7 +553,7 @@
         var interactionState = getStates().NONE;
 
         function onMouseDown(e) {
-            console.log("mousedown", interactionState);
+            // console.log("mousedown", interactionState);
             interactionState = performAction(getActions().MOUSE_DOWN, interactionState);
         }
 
@@ -581,7 +585,7 @@
         }
 
         function onMouseUp(e) {
-            console.log("mouseup", interactionState);
+            // console.log("mouseup", interactionState);
             interactionState = performAction(getActions().MOUSE_UP, interactionState);
         }
 
@@ -692,6 +696,7 @@
                     clickedPanelContainer = clickedElement;
                     dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
                     dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
+
                 }
                 return (!!clickedPanelContainer);
             });
@@ -700,14 +705,21 @@
         function stopClick() {
             // console.log('clicked on frame');
             // console.log(clickedPanelContainer);
+            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
+            console.log('writeScreenObject null');
+            clickedPanelContainer = null;
+            currentlyDraggedPanel = null;
         }
 
         function startHoldOrDrag() {
-            if (!currentlyDraggedPanel && clickedPanelContainer) {
+
+            if (clickedPanelContainer) {
                 currentlyDraggedPanel = clickedPanelContainer;
 
-                // console.log('socket emit ', {objectKey: OBJECT_ID, frameKey: currentlyDraggedPanel.id, nodeKey: null});
+
                 socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
+                // console.log('socket emit ', {objectKey: OBJECT_ID, frameKey: currentlyDraggedPanel.id, nodeKey: null});
+               // socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
                 console.log('writeScreenObject');
 
                 clickedPanelContainer = null;
