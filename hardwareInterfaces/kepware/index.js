@@ -29,7 +29,7 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -159,7 +159,7 @@ if (exports.enabled) {
 
                         this.server.write(kepwareServerName, kepwareServerName+"1",
                             this.kepwareInterfaces[thisID].name,
-                            this.kepwareInterfaces[thisID].data.value, "f", "",
+                            this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.min,
                             this.kepwareInterfaces[thisID].data.max)
                     }
