@@ -47,37 +47,17 @@
     console.log(location.origin.split(":")[1].split("//")[1]);
     var SERVER_IP = location.origin.split(":")[1].split("//")[1]; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
-
-    // var OBJECT_NAME = 'frameScreen';
-    var OBJECT_ID = 'frameScreenkz1hpiyymp4c'; //'fullscreen8Revsel8rr67';
+    var OBJECT_ID = 'frameScreenkz1hpiyymp4c';
     var frames = {};
-
-    // var marker = document.querySelector('.paletteMarker');
     var socket = io();
 
-    var AR_MARKER_SIZE = 300.0;
-
     // constants
-    var defaultValue = 0.00;
+    var AR_MARKER_SIZE = 300.0;
 
     // variables for drag interface
     var currentlyDraggedPanel = null;
     var dragOffsetX = 0;
     var dragOffsetY = 0;
-
-    var mostRecentZ;
-    var startDragZ;
-    var DEFAULT_START_DRAG_Z = 500;
-
-    // variables for screen <-> AR transition
-    var arFrameState = {
-        flipThreshold: 300,
-        x: 0,
-        y: 0,
-        isInScreen: true
-    };
-
-    var clickAvailable = true;
 
     window.requestAnimFrame = function(){
         return (
@@ -92,101 +72,73 @@
         );
     }();
 
+    window.onload = function() {
+        initializeDragInterface();
+        reloadFrames();
+
+        window.addEventListener("message", onInternalPostMessage, false);
+
+        // callback for when the screenObject data structure is updated in the editor based on projected touch events
+        socket.on('screenObject', function(msg) {
+            var screenPos = getScreenPosFromARPos(msg.x, msg.y);
+            // console.log(msg);
+            // console.log(screenPos.x + ', ' + screenPos.y);
+            // console.log(msg.touchState);
+
+            if (msg.touchState === 'touchstart') {
+                console.log('touchstart');
+                simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
+
+            } else if (msg.touchState === 'touchmove') {
+                simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
+
+            } else if (msg.touchState === 'touchend') {
+                console.log('touchend');
+                simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
+
+            }
+
+            if (msg.object && msg.frame) {
+                // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
+                var frame = frames[msg.frame];
+                if (frame) {
+                    var oldVisualization = frame.visualization;
+                    frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
+
+                    if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
+                        frame.ar.scale = msg.scale;
+                        frame.screen.scale = msg.scale * 2;
+                        var iframeId = "iframe" + msg.frame;
+                        var iframe = document.querySelector('#'+iframeId);
+                        if (iframe) {
+                            iframe.style.transform = 'scale(' + frame.screen.scale + ')';
+                            currentlyDraggedPanel = iframe;
+                        }
+                    }
+                }
+            }
+
+        });
+
+        // callback for when new frames get created in AR --> we need to create a copy here too
+        socket.on('frameDataCallback', function(frame) {
+            console.log('frameDataCallback', frame);
+            var frameKey = getFrameKey(frame);
+            frames[frameKey] = frame;
+            frame.screen.scale = frame.ar.scale * 2;
+            // TODO: set screen position based on AR position??
+        });
+
+    };
+
     function reloadFrames() {
         console.log('reload frames');
         var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + OBJECT_ID;
         getData(OBJECT_ID, null, null, urlEndpoint, function (objectKey, frameKey, nodeKey, res) {
-            console.log('got them!');
             console.log(objectKey, frameKey, nodeKey, res);
             frames = res.frames;
-
-            // for (var frameKey in frames) {
-            //     if (!frames.hasOwnProperty(frameKey)) continue;
-            //     var thisFrame = frames[frameKey];
-            //     if (!thisFrame.hasOwnProperty('width')) {
-            //         thisFrame.width = 300;
-            //     }
-            //     if (!thisFrame.hasOwnProperty('height')) {
-            //         thisFrame.height = 200;
-            //     }
-            // }
-            // // filter out
-            // for (var frameKey in frames) {
-            //     if (!frames.hasOwnProperty(frameKey)) continue;
-            //     if (typeof frames[frameKey].type === 'undefined') {
-            //         delete frames[frameKey];
-            //     }
-            // }
-
             renderFrames();
         });
-    }
-
-    function getData(objectKey, frameKey, nodeKey, url, callback) {
-        if (!nodeKey) nodeKey = null;
-        if (!frameKey) frameKey = null;
-        var _this = this;
-        var req = new XMLHttpRequest();
-        try {
-            console.log('making GET request to ' + url);
-            req.open('GET', url, true);
-            // Just like regular ol' XHR
-            req.onreadystatechange = function () {
-                if (req.readyState === 4) {
-                    if (req.status === 200) {
-                        // JSON.parse(req.responseText) etc.
-                        if (req.responseText)
-                            callback(objectKey, frameKey, nodeKey, JSON.parse(req.responseText));
-                    } else {
-                        // Handle error case
-                        console.log("could not load content");
-                        _this.cout("could not load content");
-                    }
-                }
-            };
-            req.send();
-
-        }
-        catch (e) {
-            this.cout("could not connect to" + url);
-        }
-    }
-
-    /**
-     * POST data as json to url, calling callback with the
-     * JSON-encoded response data when finished
-     * @param {String} url
-     * @param {Object} body
-     * @param {Function<Error, Object>} callback
-     */
-    function postData (url, body, callback) {
-        var request = new XMLHttpRequest();
-        var params = JSON.stringify(body);
-        request.open('POST', url, true);
-        request.onreadystatechange = function () {
-            if (request.readyState !== 4) {
-                return;
-            }
-            if (!callback) {
-                return;
-            }
-
-            if (request.status === 200) {
-                try {
-                    callback(null, JSON.parse(request.responseText));
-                } catch (e) {
-                    callback({status: request.status, error: e, failure: true}, null);
-                }
-                return;
-            }
-
-            callback({status: request.status, failure: true}, null);
-        };
-
-        request.setRequestHeader("Content-type", "application/json");
-        //request.setRequestHeader("Content-length", params.length);
-        // request.setRequestHeader("Connection", "close");
-        request.send(params);
     }
 
     function renderFrames() {
@@ -321,6 +273,9 @@
         }
     }
 
+    /**
+     * Helper function for debugging which frames are in the screen.
+     */
     function getScreenFrames() {
         var screenFrames = [];
         for (var frameKey in frames) {
@@ -332,6 +287,9 @@
         return screenFrames;
     }
 
+    /**
+     * Helper function for debugging which frames are in AR.
+     */
     function getARFrames() {
         var arFrames = [];
         for (var frameKey in frames) {
@@ -365,129 +323,8 @@
     }
 
     /**
-     * Utility for getting scale factor between screen coordinates and AR marker coordinates.
-     * @return {number} scale factor. 1 means they are the same and 0.5 means marker in AR is half as big as marker on screen.
+     * Set the width and height of each iframe based on its contents, which it automatically posts
      */
-    function getScreenScaleFactor() {
-        var markerRect = getMarkerRect();
-        return AR_MARKER_SIZE / markerRect.height;
-    }
-
-    /**
-     * Utility for converting coordinates from AR space to screen space.
-     * @param {number} arX - x coordinate in AR space relative to center of marker.
-     * @param {number} arY - y coordinate in AR space relative to center of marker.
-     * @return {{x: number, y: number}}
-     */
-    function getScreenPosFromARPos(arX, arY) {
-        var markerRect = getMarkerRect();
-        var scaleFactor = getScreenScaleFactor();
-        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor);
-        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor);
-        return {
-            x: screenX,
-            y: screenY
-        };
-    }
-
-    /**
-     * Utility for converting coordinates from screen space to AR space.
-     * @param {number} screenX - x coordinate relative to upper left of screen.
-     * @param {number} screenY - y coordinate relative to upper left of screen.
-     * @return {{x: number, y: number}}
-     */
-    function getARPosFromScreenPos(screenX, screenY) {
-        var markerRect = getMarkerRect();
-        var scaleFactor = getScreenScaleFactor();
-        var arX = (screenX - (markerRect.x + markerRect.width/2)) * scaleFactor;
-        var arY = (screenY - (markerRect.y + markerRect.height/2)) * scaleFactor;
-        return {
-            x: arX,
-            y: arY
-        };
-    }
-
-    window.onload = function() {
-        initializeDragInterface();
-        reloadFrames();
-
-        // createButton.onclick = function(event) {
-        //     console.log('create frame');
-        //     var frameData = {
-        //         src: 'gauge'
-        //     };
-        //     socket.emit('createFrame', frameData);
-        // };
-
-        window.addEventListener("message", onInternalPostMessage, false);
-
-        socket.on('screenObject', function(msg) {
-            // console.log(msg);
-            var screenPos = getScreenPosFromARPos(msg.x, msg.y);
-            // console.log(screenPos.x + ', ' + screenPos.y);
-
-            console.log(msg.touchState);
-
-            if (msg.touchState === 'touchstart') {
-                console.log('touchstart');
-                if (msg.object && msg.frame) {
-                    console.log('dont move frame!', msg.object, msg.frame);
-
-                    // currentlyDraggedPanel = document.querySelector('#iframe' + msg.frame);
-                    // console.log('virtually set currentlyDraggedPanel to ', currentlyDraggedPanel);
-                    // if (currentlyDraggedPanel) {
-                    //     var frame = frames[currentlyDraggedPanel.dataset.frameKey];
-                    //     frame.screen.x = mouseX + dragOffsetX;
-                    //     frame.screen.y = mouseY + dragOffsetY;
-                    // }
-
-                } else {
-                    // simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
-                    simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
-                }
-
-            } else if (msg.touchState === 'touchmove') {
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
-                clickAvailable = true;
-
-            } else if (msg.touchState === 'touchend') {
-                console.log('touchend');
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
-
-            }
-
-            if (msg.object && msg.frame) {
-                // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
-                var frame = frames[msg.frame];
-                if (frame) {
-                    var oldVisualization = frame.visualization;
-                    frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
-
-                    if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
-                        frame.ar.scale = msg.scale;
-                        frame.screen.scale = msg.scale * 2;
-                        var iframeId = "iframe" + msg.frame;
-                        var iframe = document.querySelector('#'+iframeId);
-                        if (iframe) {
-                            iframe.style.transform = 'scale(' + frame.screen.scale + ')';
-                            currentlyDraggedPanel = iframe;
-                        }
-                    }
-                }
-            }
-
-        });
-
-        socket.on('frameDataCallback', function(frame) {
-            console.log('frameDataCallback', frame);
-            var frameKey = getFrameKey(frame);
-            frames[frameKey] = frame;
-            frame.screen.scale = frame.ar.scale * 2;
-
-        });
-
-    };
-
     function onInternalPostMessage(e) {
         var msgContent = {};
         if (e.data) {
@@ -530,10 +367,6 @@
         // el is null if x,y is outside window boundaries
         var el = document.elementFromPoint(x, y);
         if (el) {
-            if (el.tagName === 'BUTTON' && eventName === 'mousedown' && clickAvailable) {
-                el.click();
-                clickAvailable = false;
-            }
             el.dispatchEvent(ev);
         }
     }
@@ -764,6 +597,56 @@
         }
     }
 
+    // ... UTILITIES ... //
+
+    // ........ DOM manipulation ........ //
+
+    /**
+     * Utility for getting scale factor between screen coordinates and AR marker coordinates.
+     * @return {number} scale factor. 1 means they are the same and 0.5 means marker in AR is half as big as marker on screen.
+     */
+    function getScreenScaleFactor() {
+        var markerRect = getMarkerRect();
+        return AR_MARKER_SIZE / markerRect.height;
+    }
+
+    /**
+     * Utility for converting coordinates from AR space to screen space.
+     * @param {number} arX - x coordinate in AR space relative to center of marker.
+     * @param {number} arY - y coordinate in AR space relative to center of marker.
+     * @return {{x: number, y: number}}
+     */
+    function getScreenPosFromARPos(arX, arY) {
+        var markerRect = getMarkerRect();
+        var scaleFactor = getScreenScaleFactor();
+        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor);
+        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor);
+        return {
+            x: screenX,
+            y: screenY
+        };
+    }
+
+    /**
+     * Utility for converting coordinates from screen space to AR space.
+     * @param {number} screenX - x coordinate relative to upper left of screen.
+     * @param {number} screenY - y coordinate relative to upper left of screen.
+     * @return {{x: number, y: number}}
+     */
+    function getARPosFromScreenPos(screenX, screenY) {
+        var markerRect = getMarkerRect();
+        var scaleFactor = getScreenScaleFactor();
+        var arX = (screenX - (markerRect.x + markerRect.width/2)) * scaleFactor;
+        var arY = (screenY - (markerRect.y + markerRect.height/2)) * scaleFactor;
+        return {
+            x: arX,
+            y: arY
+        };
+    }
+
+    /**
+     * Given an x, y coordinate, returns a list of DOM elements intersecting that coordinate
+     */
     function getAllDivsUnderCoordinate(x, y) {
         var res = [];
         var previousDisplayTypes = [];
@@ -783,28 +666,84 @@
         return res;
     }
 
-    // ..... UTILITIES ..... //
+    // ........ Networking ........ //
 
-    function createPanelElements(type) {
-        var sidebarPanelClone = createSidebarPanel(type); //clickedPanelContainer.id
-        sidebarPanelClone.classList.add("region");
-        sidebarPanelClone.classList.add("smallText");
-        currentlyDraggedPanel = sidebarPanelClone;
-        startDragZ = mostRecentZ || DEFAULT_START_DRAG_Z;
-        currentlyDraggedPanel.style.position = "absolute";
-        document.getElementsByTagName('body')[0].appendChild(currentlyDraggedPanel);
-        sidebarPanelClone.classList.add("draggedPanel");
+    function getData(objectKey, frameKey, nodeKey, url, callback) {
+        if (!nodeKey) nodeKey = null;
+        if (!frameKey) frameKey = null;
+        var _this = this;
+        var req = new XMLHttpRequest();
+        try {
+            console.log('making GET request to ' + url);
+            req.open('GET', url, true);
+            // Just like regular ol' XHR
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    if (req.status === 200) {
+                        // JSON.parse(req.responseText) etc.
+                        if (req.responseText)
+                            callback(objectKey, frameKey, nodeKey, JSON.parse(req.responseText));
+                    } else {
+                        // Handle error case
+                        console.log("could not load content");
+                        _this.cout("could not load content");
+                    }
+                }
+            };
+            req.send();
+
+        }
+        catch (e) {
+            this.cout("could not connect to" + url);
+        }
     }
 
-    // copied from userinterface realityEditor.device.utilities.uuidTime
-    function uuidTime() {
-        var dateUuidTime = new Date();
-        var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
-        while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
-        return stampUuidTime;
+    /**
+     * POST data as json to url, calling callback with the
+     * JSON-encoded response data when finished
+     * @param {String} url
+     * @param {Object} body
+     * @param {Function<Error, Object>} callback
+     */
+    function postData (url, body, callback) {
+        var request = new XMLHttpRequest();
+        var params = JSON.stringify(body);
+        request.open('POST', url, true);
+        request.onreadystatechange = function () {
+            if (request.readyState !== 4) {
+                return;
+            }
+            if (!callback) {
+                return;
+            }
+
+            if (request.status === 200) {
+                try {
+                    callback(null, JSON.parse(request.responseText));
+                } catch (e) {
+                    callback({status: request.status, error: e, failure: true}, null);
+                }
+                return;
+            }
+
+            callback({status: request.status, failure: true}, null);
+        };
+
+        request.setRequestHeader("Content-type", "application/json");
+        //request.setRequestHeader("Content-length", params.length);
+        // request.setRequestHeader("Connection", "close");
+        request.send(params);
     }
 
+    // ........ FrameTouchSynthesizer ........ //
+
+    /**
+     * Given a cover and an iframe, synthesizes touch events to post into the iframe contents
+     * without losing context of the outside application
+     * @param cover
+     * @param iframe
+     * @constructor
+     */
     function FrameTouchSynthesizer(cover, iframe) {
         this.cover = cover;
         this.iframe = iframe;
