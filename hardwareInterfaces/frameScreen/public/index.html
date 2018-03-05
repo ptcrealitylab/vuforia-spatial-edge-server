@@ -89,33 +89,39 @@
                 console.log('touchstart');
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
 
-            } else if (msg.touchState === 'touchmove') {
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
-
-            } else if (msg.touchState === 'touchend') {
-                console.log('touchend');
-                simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
-
             }
 
             if (msg.object && msg.frame) {
-                // console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
+                console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
                 var frame = frames[msg.frame];
                 if (frame) {
                     var oldVisualization = frame.visualization;
                     frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
 
+                    var iframeId = "iframe" + msg.frame;
+                    var iframe = document.querySelector('#'+iframeId);
+                    if (iframe) {
+                        currentlyDraggedPanel = iframe;
+                    }
+
+                    // set scale of screen frame to match AR frame's size
                     if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
                         frame.ar.scale = msg.scale;
                         frame.screen.scale = msg.scale * 2;
-                        var iframeId = "iframe" + msg.frame;
-                        var iframe = document.querySelector('#'+iframeId);
                         if (iframe) {
                             iframe.style.transform = 'scale(' + frame.screen.scale + ')';
-                            currentlyDraggedPanel = iframe;
                         }
                     }
                 }
+            }
+
+            if (msg.touchState === 'touchmove') {
+                simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
+
+            } else if (msg.touchState === 'touchend') {
+                console.log('touchend');
+                simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
+                currentlyDraggedPanel = null;
             }
 
         });
@@ -373,42 +379,50 @@
 
     function initializeDragInterface() {
 
-        var timer;
-        var clickedPanelContainer = null;
+        var kStates = Object.freeze({
+            NONE: 0,
+            CLICK: 1,
+            DRAG: 2
+        });
+
+        var kActions = Object.freeze({
+            NONE: 0,
+            MOUSE_DOWN: 1,
+            MOUSE_MOVE: 2,
+            MOUSE_UP: 3,
+            MOUSE_CANCEL: 4
+        });
+
+        var kEvents = Object.freeze({
+            MOUSE_START_CLICK: 0,
+            MOUSE_STOP_CLICK: 1,
+            MOUSE_START_DRAG: 2,
+            MOUSE_STOP_DRAG: 3
+        });
 
         // add event listeners for mouse down, up, move, (cancel?)
-
         document.addEventListener('mousedown', onMouseDown);
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
-//        document.addEventListener('mouseout', onMouseUpdate, false);
+        // document.addEventListener('mouseout', onMouseUpdate, false);
 
-        var interactionState = getStates().NONE;
+        var interactionState = kStates.NONE;
 
         function onMouseDown(e) {
-            // console.log("mousedown", interactionState);
-            interactionState = performAction(getActions().MOUSE_DOWN, interactionState);
+            interactionState = performAction(kActions.MOUSE_DOWN, interactionState);
         }
 
         function onMouseMove(e) {
-            // console.log("mousemove", interactionState);
-
             // remote touch came from phone
             if (e.simulated) {
-                mouseX = e.screenX;// * 2.0;
-                mouseY = e.screenY;// * 2.0;
+                mouseX = e.screenX;
+                mouseY = e.screenY;
             } else {
                 mouseX = e.pageX;
                 mouseY = e.pageY;
             }
 
-            interactionState = performAction(getActions().MOUSE_MOVE, interactionState);
-
-            // console.log(currentlyDraggedPanel);
-            // if (currentlyDraggedPanel) {
-            //     currentlyDraggedPanel.style.top = mouseY + dragOffsetY + "px"; // + 20
-            //     currentlyDraggedPanel.style.left = mouseX + dragOffsetX + "px"; // + 20
-            // }
+            interactionState = performAction(kActions.MOUSE_MOVE, interactionState);
 
             if (currentlyDraggedPanel) {
                 var frame = frames[currentlyDraggedPanel.dataset.frameKey];
@@ -418,102 +432,53 @@
         }
 
         function onMouseUp(e) {
-            // console.log("mouseup", interactionState);
-            interactionState = performAction(getActions().MOUSE_UP, interactionState);
+            interactionState = performAction(kActions.MOUSE_UP, interactionState);
         }
 
         // maintain a state machine that triggers actions upon entering each state
 
-        function getStates() {
-            return {
-                NONE: 0,
-                CLICK: 1,
-                HOLD: 3,
-                DRAG: 5
-            };
-        }
-
-        function getActions() {
-            return {
-                NONE: 0,
-                MOUSE_DOWN: 1,
-                MOUSE_MOVE: 2,
-                MOUSE_UP: 3,
-                MOUSE_CANCEL: 4,
-                TIME_PASSED: 5
-            };
-        }
-
-        function getEvents() {
-            return {
-                MOUSE_START_CLICK: 0,
-                MOUSE_STOP_CLICK: 1,
-                MOUSE_START_HOLD: 2,
-                MOUSE_STOP_HOLD: 3,
-                MOUSE_START_DRAG: 4,
-                MOUSE_STOP_DRAG: 5
-            };
-        }
-
         function performAction(action, currentState) {
 
-            if (action === getActions().MOUSE_DOWN) {
-                if (currentState === getStates().NONE) {
-                    triggerEvent(getEvents().MOUSE_START_CLICK);
-                    return getStates().CLICK;
+            if (action === kActions.MOUSE_DOWN) {
+                if (currentState === kStates.NONE) {
+                    triggerEvent(kEvents.MOUSE_START_CLICK);
+                    return kStates.CLICK;
                 }
 
-            } else if (action === getActions().TIME_PASSED) {
-                if (currentState === getStates().CLICK) {
-                    triggerEvent(getEvents().MOUSE_START_HOLD);
-                    return getStates().HOLD;
+            } else if (action === kActions.MOUSE_MOVE) {
+                if (currentState === kStates.CLICK) {
+                    triggerEvent(kEvents.MOUSE_START_DRAG);
+                    return kStates.DRAG;
                 }
 
-            } else if (action === getActions().MOUSE_MOVE) {
-                if (currentState === getStates().CLICK || currentState === getStates().HOLD) {
-                    triggerEvent(getEvents().MOUSE_START_DRAG);
-                    return getStates().DRAG;
+            } else if (action === kActions.MOUSE_UP || action === kActions.MOUSE_CANCEL) {
+                if (currentState === kStates.CLICK) {
+                    triggerEvent(kEvents.MOUSE_STOP_CLICK)
+                } else if (currentState === kStates.DRAG) {
+                    triggerEvent(kEvents.MOUSE_STOP_DRAG);
                 }
-
-            } else if (action === getActions().MOUSE_UP || action === getActions().MOUSE_CANCEL) {
-                if (currentState === getStates().CLICK) {
-                    triggerEvent(getEvents().MOUSE_STOP_CLICK)
-                } else if (currentState === getStates().HOLD) {
-                    triggerEvent(getEvents().MOUSE_START_HOLD);
-                } else if (currentState === getStates().DRAG) {
-                    triggerEvent(getEvents().MOUSE_STOP_DRAG);
-                }
-
-                return getStates().NONE;
-
+                return kStates.NONE;
             }
+
             return currentState;
         }
 
         function triggerEvent(event) {
-            clearTimeout(timer);
             switch (event) {
-                case getEvents().MOUSE_START_CLICK:
+                case kEvents.MOUSE_START_CLICK:
                     startClick();
-                    timer = setTimeout(function(){
-                        interactionState = performAction(getActions().TIME_PASSED, interactionState);
-                    }, 1000);
                     break;
-                case getEvents().MOUSE_START_HOLD:
-                    startHoldOrDrag();
+                case kEvents.MOUSE_START_DRAG:
+                    startDrag();
                     break;
-                case getEvents().MOUSE_START_DRAG:
-                    startHoldOrDrag();
-                    break;
-                case getEvents().MOUSE_STOP_CLICK:
+                case kEvents.MOUSE_STOP_CLICK:
                     stopClick();
                     break;
-                case getEvents().MOUSE_STOP_HOLD:
-                case getEvents().MOUSE_STOP_DRAG:
-                    stopHoldOrDrag();
+                case kEvents.MOUSE_STOP_DRAG:
+                    stopDrag();
                     break;
                 default:
-                    console.log("shouldn't happen");
+                    console.warn("mouse event shouldn't happen");
             }
         }
 
@@ -522,58 +487,29 @@
         }
 
         function startClick() {
-            clickedPanelContainer = null;
             var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
             allDivsHere.some( function(clickedElement) {
                 if (isDraggableElement(clickedElement)) {
-                    clickedPanelContainer = clickedElement;
-                    dragOffsetX = clickedPanelContainer.getBoundingClientRect().x - mouseX;
-                    dragOffsetY = clickedPanelContainer.getBoundingClientRect().y - mouseY;
-
+                    currentlyDraggedPanel = clickedElement;
+                    dragOffsetX = currentlyDraggedPanel.getBoundingClientRect().x - mouseX;
+                    dragOffsetY = currentlyDraggedPanel.getBoundingClientRect().y - mouseY;
+                    socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
                 }
-                return (!!clickedPanelContainer);
+                return (!!currentlyDraggedPanel);
             });
         }
 
+        function startDrag() {
+            console.log('startDrag');
+        }
+
         function stopClick() {
-            // console.log('clicked on frame');
-            // console.log(clickedPanelContainer);
             socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
-            console.log('writeScreenObject null');
-            clickedPanelContainer = null;
+            console.log('writeScreenObject null (stopClick)');
             currentlyDraggedPanel = null;
         }
 
-        function startHoldOrDrag() {
-
-            if (clickedPanelContainer) {
-                currentlyDraggedPanel = clickedPanelContainer;
-
-
-                socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
-                // console.log('socket emit ', {objectKey: OBJECT_ID, frameKey: currentlyDraggedPanel.id, nodeKey: null});
-               // socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
-                console.log('writeScreenObject');
-
-                clickedPanelContainer = null;
-            }
-        }
-
-        function stopHoldOrDrag() {
-            // if (currentlyDraggedPanel) {
-            //     // get panel it's on top of
-            //     var allDivsHere = getAllDivsUnderCoordinate(mouseX, mouseY);
-            //     allDivsHere.forEach( function(element) {
-            //         if (element.classList.contains('region') &&  element.id.startsWith('panel_') && element.id !== 'panel_row0_col0') {
-            //             console.log('released on panel');
-            //             panelVisualizationTypes[element.id] = currentlyDraggedPanel.id;
-            //             setPanelDisplay(element, currentlyDraggedPanel.id);
-            //         }
-            //     });
-            //
-            //     document.getElementsByTagName('body')[0].removeChild(currentlyDraggedPanel);
-            //     currentlyDraggedPanel = null;
-            // }
+        function stopDrag() {
 
             // TODO: figure out a way to still update this data to persist state, without making action sender reload the associated AR object
             /*
@@ -589,10 +525,9 @@
             }
             */
 
-            currentlyDraggedPanel = null;
-
             socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
-            console.log('writeScreenObject null');
+            console.log('writeScreenObject null (stopDrag)');
+            currentlyDraggedPanel = null;
 
         }
     }
