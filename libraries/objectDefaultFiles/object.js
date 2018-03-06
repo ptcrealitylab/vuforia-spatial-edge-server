@@ -586,10 +586,10 @@ function RealityInterface() {
         this.ioObject = io.connect();
         this.oldValueList = {};
 
-        this.sendEealityEditorSubscribe = setInterval(function () {
+        this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
                 _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, protocol: realityObject.protocol}));
-                clearInterval(_this.sendEealityEditorSubscribe);
+                clearInterval(_this.sendRealityEditorSubscribe);
             }
         }, 10);
 
@@ -764,7 +764,6 @@ function RealityLogic() {
         this.oldValueList = {};
 
         this.addReadPublicDataListener = function (valueName, callback) {
-
             _this.ioObject.on("block", function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.publicData !== "undefined") {
@@ -777,7 +776,7 @@ function RealityLogic() {
 
 
 
-        this.sendEealityEditorSubscribe = setInterval(function () {
+        this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
                 _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify(
                     {
@@ -786,7 +785,7 @@ function RealityLogic() {
                         logic:realityObject.logic,
                         block: realityObject.block
                     }));
-                clearInterval(_this.sendEealityEditorSubscribe);
+                clearInterval(_this.sendRealityEditorSubscribe);
             }
         }, 10);
 
