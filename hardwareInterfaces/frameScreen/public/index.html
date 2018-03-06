@@ -8,11 +8,13 @@
         .screenFrame {
             display: inline;
             /*opacity: 1.0;*/
+            transform-origin: left top;
         }
 
         .arFrame {
             display: none;
             /*opacity: 0.1;*/
+            transform-origin: left top;
         }
         body, html {
             height: 100%;
@@ -56,8 +58,8 @@
 
     // variables for drag interface
     var currentlyDraggedPanel = null;
-    var dragOffsetX = 0;
-    var dragOffsetY = 0;
+    var dragOffsetX = null;
+    var dragOffsetY = null;
 
     window.requestAnimFrame = function(){
         return (
@@ -109,7 +111,15 @@
                         frame.ar.scale = msg.scale;
                         frame.screen.scale = msg.scale * 2;
                         if (iframe) {
-                            iframe.style.transform = 'scale(' + frame.screen.scale + ')';
+                            iframe.parentElement.style.transform = 'scale(' + frame.screen.scale + ')';
+
+                            if (msg.touchOffsetX) {
+                                dragOffsetX = -1 * msg.touchOffsetX;// + 200;// / getScreenScaleFactor();
+                            }
+                            if (msg.touchOffsetY) {
+                                dragOffsetY = -1 * msg.touchOffsetY;// + 200;// / getScreenScaleFactor();
+                            }
+                            console.log('received touchOffset', msg.touchOffsetX, msg.touchOffsetY);
                         }
                     }
                 }
@@ -122,6 +132,8 @@
                 console.log('touchend');
                 simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
                 currentlyDraggedPanel = null;
+                dragOffsetX = null;
+                dragOffsetY = null;
             }
 
         });
@@ -174,6 +186,8 @@
                 frame.height = 200;
             }
 
+            frame.screen.scale = frame.ar.scale * 2;
+
             // frame.screen.scale = frame.ar.scale;
             if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
                 // getScreenPosFromARPos(getScreenFrames()[2].ar.x, getScreenFrames()[2].ar.y)
@@ -196,6 +210,7 @@
             var screenPos = getScreenPosFromARPos(frame.screen.x, frame.screen.y);
             addContainer.style.left = screenPos.x + "px"; //frame.screen.x + "px";
             addContainer.style.top = screenPos.y + "px"; //frame.screen.y + "px";
+            addContainer.style.transform = 'scale(' + frame.screen.scale + ')';
 
             var addIframe = document.createElement('iframe');
             addIframe.id = iframeId;
@@ -203,7 +218,7 @@
             addIframe.frameBorder = 0;
             addIframe.style.width = (screenFrameWidth || 0) + "px";
             addIframe.style.height = (screenFrameHeight || 0) + "px";
-            addIframe.style.transform = 'scale(' + frame.screen.scale + ')';
+            // addIframe.style.transform = 'scale(' + frame.screen.scale + ')';
 
             addIframe.style.visibility = "visible";
             // addIframe.style.pointerEvents = 'none';
@@ -426,8 +441,8 @@
 
             if (currentlyDraggedPanel) {
                 var frame = frames[currentlyDraggedPanel.dataset.frameKey];
-                frame.screen.x = mouseX + dragOffsetX;
-                frame.screen.y = mouseY + dragOffsetY;
+                frame.screen.x = mouseX + (dragOffsetX || 0);
+                frame.screen.y = mouseY + (dragOffsetY || 0);
             }
         }
 
@@ -493,7 +508,7 @@
                     currentlyDraggedPanel = clickedElement;
                     dragOffsetX = currentlyDraggedPanel.getBoundingClientRect().x - mouseX;
                     dragOffsetY = currentlyDraggedPanel.getBoundingClientRect().y - mouseY;
-                    socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey});
+                    socket.emit('writeScreenObject', {objectKey: currentlyDraggedPanel.dataset.objectKey, frameKey: currentlyDraggedPanel.dataset.frameKey, nodeKey: currentlyDraggedPanel.dataset.nodeKey, touchOffsetX: dragOffsetX, touchOffsetY: dragOffsetY});
                 }
                 return (!!currentlyDraggedPanel);
             });
@@ -504,7 +519,7 @@
         }
 
         function stopClick() {
-            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
+            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null, touchOffsetX: 0, touchOffsetY: 0});
             console.log('writeScreenObject null (stopClick)');
             currentlyDraggedPanel = null;
         }
@@ -525,7 +540,7 @@
             }
             */
 
-            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null});
+            socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null, touchOffsetX: 0, touchOffsetY: 0});
             console.log('writeScreenObject null (stopDrag)');
             currentlyDraggedPanel = null;
 

@@ -645,7 +645,9 @@ function RealityInterface() {
                     screenObject: {
                         object: thisMsg.object,
                         frame: thisMsg.frame,
-                        node: thisMsg.node
+                        node: thisMsg.node,
+                        touchOffsetX: thisMsg.touchOffsetX,
+                        touchOffsetY: thisMsg.touchOffsetY
                     }
                 }), '*');
             });
