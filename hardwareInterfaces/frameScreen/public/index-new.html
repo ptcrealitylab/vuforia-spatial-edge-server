@@ -44,7 +44,6 @@
 <div class="bg"></div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="resources/pep.min.js"></script>
 
 <script>
     console.log(location.origin.split(":")[1].split("//")[1]);
@@ -242,7 +241,7 @@
             cover.style.top = 0;
             cover.style.left = 0;
             cover.style.position = 'absolute';
-            // frame.frameTouchSynthesizer = new FrameTouchSynthesizer(cover, addIframe);
+            frame.frameTouchSynthesizer = new FrameTouchSynthesizer(cover, addIframe);
 
             document.body.appendChild(addContainer);
             addContainer.appendChild(addIframe);
@@ -417,9 +416,9 @@
         });
 
         // add event listeners for mouse down, up, move, (cancel?)
-        document.addEventListener('pointerdown', onMouseDown);
-        document.addEventListener('pointermove', onMouseMove);
-        document.addEventListener('pointerup', onMouseUp);
+        document.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
         // document.addEventListener('mouseout', onMouseUpdate, false);
 
         var interactionState = kStates.NONE;
@@ -429,8 +428,14 @@
         }
 
         function onMouseMove(e) {
-            mouseX = e.screenX;
-            mouseY = e.screenY;
+            // remote touch came from phone
+            if (e.simulated) {
+                mouseX = e.screenX;
+                mouseY = e.screenY;
+            } else {
+                mouseX = e.pageX;
+                mouseY = e.pageY;
+            }
 
             interactionState = performAction(kActions.MOUSE_MOVE, interactionState);
 
@@ -700,7 +705,6 @@
         this.cover.addEventListener('pointercancel', this.onPointerEvent);
     }
 
-    /*
     FrameTouchSynthesizer.prototype.onPointerEvent = function(event) {
         event.stopPropagation();
 
@@ -753,7 +757,6 @@
         this.cover.removeEventListener('pointerup', this.onPointerEvent);
         this.cover.removeEventListener('pointercancel', this.onPointerEvent);
     };
-    */
 
 </script>
 
