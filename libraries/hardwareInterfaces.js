@@ -661,7 +661,7 @@ exports.screenObjectCall = function (data) {
     }
 };
 
-var screenObjectServerCallBackObject = function (x,y,z) {};
+var screenObjectServerCallBackObject = function (x,y,z,a,b) {};
 exports.screenObjectServerCallBack = function (callback) {
     screenObjectServerCallBackObject = callback;
 };
@@ -676,7 +676,7 @@ exports.addScreenObjectListener = function (objectName, callBack) {
     }
 };
 
-exports.writeScreenObjects = function (object, frame, node) {
+exports.writeScreenObjects = function (object, frame, node, touchOffsetX, touchOffsetY) {
     if(!object) object = null;
     if(!frame) frame = null;
     if(!node) node = null;
@@ -686,9 +686,7 @@ exports.writeScreenObjects = function (object, frame, node) {
     if(node && !node.includes(object)) node = object+frame+node;
     if(frame && !frame.includes(object)) frame = object+frame;
 
-    console.log('set screenObject to ', object, frame, node)
-
-    screenObjectServerCallBackObject(object, frame, node);
+    screenObjectServerCallBackObject(object, frame, node, touchOffsetX, touchOffsetY);
 };
 
 
