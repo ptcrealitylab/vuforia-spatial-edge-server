@@ -37,6 +37,7 @@ if (exports.enabled) {
 
         // relay messages from the AR interface to this app's frontend
 
+        /*
         socket.on('createFrame', function(msg) {
 
             // objectName, frameName, src, x, y, width, height
@@ -61,10 +62,11 @@ if (exports.enabled) {
             server.createFrame(objectName, frameName, src, x, y, width, height);
 
         });
+        */
 
         socket.on('writeScreenObject', function(msg) {
-            console.log('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey);
-            server.writeScreenObjects(msg.objectKey, msg.frameKey);
+            console.log('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey, msg.touchOffsetX, msg.touchOffsetY);
+            server.writeScreenObjects(msg.objectKey, msg.frameKey, msg.nodeKey, msg.touchOffsetX, msg.touchOffsetY);
         });
 
     });
