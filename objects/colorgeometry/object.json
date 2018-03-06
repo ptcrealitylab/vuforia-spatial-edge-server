@@ -1,9 +1,9 @@
 {
 	"objectId": "colorgeometryXb9kcsev0j3o",
 	"name": "colorgeometry",
-	"ip": "192.168.56.2",
+	"ip": "192.168.56.7",
 	"version": "3.0.0",
-	"deactivated": true,
+	"deactivated": false,
 	"protocol": "R2",
 	"tcs": "tui",
 	"visible": false,
@@ -11,20 +11,20 @@
 	"visibleEditing": false,
 	"memory": {},
 	"frames": {
-		"colorgeometryXb9kcsev0j3ozero": {
+		"colorgeometryXb9kcsev0j3oskyNewsisi4rikyb163": {
 			"objectId": "colorgeometryXb9kcsev0j3o",
-			"name": "zero",
+			"name": "skyNewsisi4rikyb163",
 			"visualization": "ar",
 			"ar": {
 				"x": 0,
 				"y": 0,
-				"scale": 1,
+				"scale": 0.5,
 				"matrix": []
 			},
 			"screen": {
 				"x": 0,
 				"y": 0,
-				"scale": 1
+				"scale": 0.5
 			},
 			"visible": false,
 			"visibleText": false,
@@ -32,8 +32,10 @@
 			"developer": true,
 			"links": {},
 			"nodes": {
-				"colorgeometryXb9kcsev0j3ozerohue": {
-					"name": "hue",
+				"colorgeometryXb9kcsev0j3oskyNewsisi4rikyb163play": {
+					"name": "play",
+					"objectId": "colorgeometryXb9kcsev0j3o",
+					"frameId": "colorgeometryXb9kcsev0j3oskyNewsisi4rikyb163",
 					"data": {
 						"value": 0,
 						"mode": "f",
@@ -42,108 +44,78 @@
 						"unitMax": 1
 					},
 					"x": 0,
-					"y": -2,
-					"scale": 1,
+					"y": 0,
+					"scale": 0.5,
 					"matrix": [],
 					"type": "node",
+					"src": "",
 					"stress": 0,
+					"lockPassword": null,
+					"lockType": null,
 					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"frameId": "colorgeometryXb9kcsev0j3ozero",
-					"objectId": "colorgeometryXb9kcsev0j3o"
-				},
-				"colorgeometryXb9kcsev0j3ozerosaturation": {
-					"name": "saturation",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": -100,
-					"y": 76,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"frameId": "colorgeometryXb9kcsev0j3ozero",
-					"objectId": "colorgeometryXb9kcsev0j3o"
-				},
-				"colorgeometryXb9kcsev0j3ozerolightness": {
-					"name": "lightness",
-					"data": {
-						"value": 0,
-						"mode": "f",
-						"unit": "",
-						"unitMin": 0,
-						"unitMax": 1
-					},
-					"x": 100,
-					"y": 76,
-					"scale": 1,
-					"matrix": [],
-					"type": "node",
-					"stress": 0,
-					"frameSizeX": 100,
-					"frameSizeY": 100,
-					"frameId": "colorgeometryXb9kcsev0j3ozero",
-					"objectId": "colorgeometryXb9kcsev0j3o"
+					"frameSizeY": 100
 				}
 			},
-			"location": "local",
-			"src": "editor"
+			"location": "global",
+			"src": "skyNews",
+			"uuid": "colorgeometryXb9kcsev0j3oskyNewsisi4rikyb163",
+			"type": "skyNews",
+			"width": "660",
+			"height": "430"
 		},
-		"colorgeometryXb9kcsev0j3oone": {
+		"colorgeometryXb9kcsev0j3oslidereDevseoanqmn": {
 			"objectId": "colorgeometryXb9kcsev0j3o",
-			"name": "one",
+			"name": "slidereDevseoanqmn",
 			"visualization": "ar",
 			"ar": {
 				"x": 0,
 				"y": 0,
-				"scale": 1,
+				"scale": 0.5,
 				"matrix": []
 			},
 			"screen": {
 				"x": 0,
 				"y": 0,
-				"scale": 1
+				"scale": 0.5
 			},
 			"visible": false,
 			"visibleText": false,
 			"visibleEditing": false,
 			"developer": true,
 			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor"
-		},
-		"colorgeometryXb9kcsev0j3otwo": {
-			"objectId": "colorgeometryXb9kcsev0j3o",
-			"name": "two",
-			"visualization": "ar",
-			"ar": {
-				"x": 0,
-				"y": 0,
-				"scale": 1,
-				"matrix": []
+			"nodes": {
+				"colorgeometryXb9kcsev0j3oslidereDevseoanqmnvalue": {
+					"name": "value",
+					"objectId": "colorgeometryXb9kcsev0j3o",
+					"frameId": "colorgeometryXb9kcsev0j3oslidereDevseoanqmn",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 0.5,
+					"matrix": [],
+					"type": "node",
+					"src": "",
+					"stress": 0,
+					"lockPassword": null,
+					"lockType": null,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
 			},
-			"screen": {
-				"x": 0,
-				"y": 0,
-				"scale": 1
-			},
-			"visible": false,
-			"visibleText": false,
-			"visibleEditing": false,
-			"developer": true,
-			"links": {},
-			"nodes": {},
-			"location": "local",
-			"src": "editor"
+			"location": "global",
+			"src": "slider",
+			"uuid": "colorgeometryXb9kcsev0j3oslidereDevseoanqmn",
+			"type": "slider",
+			"width": "206",
+			"height": "526"
 		}
 	},
-	"developer": true
+	"developer": true,
+	"zone": "ben"
 }

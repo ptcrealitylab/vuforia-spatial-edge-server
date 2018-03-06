@@ -3485,12 +3485,14 @@ function messagetoSend(msgContent, socketID) {
 }
 
 
-hardwareAPI.screenObjectServerCallBack(function(object, frame, node){
+hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffsetX, touchOffsetY){
     for (var thisEditor in realityEditorSocketArray) {
         io.sockets.connected[thisEditor].emit('/object/screenObject', JSON.stringify({
             object: object,
             frame: frame,
-            node: node
+            node: node,
+            touchOffsetX: touchOffsetX,
+            touchOffsetY: touchOffsetY
         }));
     }
 });
