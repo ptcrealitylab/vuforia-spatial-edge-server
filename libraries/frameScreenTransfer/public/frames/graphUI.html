@@ -179,7 +179,9 @@
 
         dataValue.textContent = scaleVal(properties.value).toPrecision(7).substring(0,8);
 
-        dataName.textContent = properties.unit;
+        if(properties.unit) {
+            dataName.textContent = properties.unit;
+        }
 
 
 
