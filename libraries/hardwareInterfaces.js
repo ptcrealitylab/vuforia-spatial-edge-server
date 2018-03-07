@@ -730,17 +730,17 @@ exports.connectCall = function (objectID, frameID, nodeID, data) {
             if (callBacks[c].hasOwnProperty('frames')) {
                 // prettyprintCallbacks[c] = callBacks[c].frames;
                 for (var f in callBacks[c].frames) {
-                    console.log(callBacks[c].frames[f].nodes);
+                   // console.log(callBacks[c].frames[f].nodes);
                 }
             }
         }
     }
     // console.log(prettyprintCallbacks);
-    console.log('\n');
+   // console.log('\n');
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+              //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
                     console.log("connection callback called");
@@ -777,11 +777,11 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
                 callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
             }
 
-            console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+          //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
 
             callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack = callBack;
 
-            console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
+            //console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
 
         }
     }

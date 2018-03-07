@@ -537,7 +537,8 @@ function Protocols() {
 
                                     this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
 
-                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
+                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData.data);
+                                   // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                                 }
                             }
                         }
@@ -548,7 +549,8 @@ function Protocols() {
                             for (var key in msgContent.data) {
                                 this.objectData.data[key] = msgContent.data[key];
                             }
-                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
+                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData.data);
+                           // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                         }
                     }
                 }
@@ -558,7 +560,7 @@ function Protocols() {
                     frame: msgContent.frame,
                     node: msgContent.node,
                     logic: msgContent.logic,
-                    data: this.objectData
+                    data: this.objectData.data
                 };
             }
             return null
