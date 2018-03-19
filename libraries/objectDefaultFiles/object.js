@@ -624,6 +624,7 @@ function RealityInterface() {
 
         this.addScreenObjectListener = function () {
             realityObject.messageCallBacks.screenObjectCall = function (msgContent) {
+                if(realityObject.visibility !== "visible") return;
                 if (typeof msgContent.screenObject !== "undefined") {
                     _this.ioObject.emit('/object/screenObject', JSON.stringify(msgContent.screenObject));
                 }
@@ -632,6 +633,7 @@ function RealityInterface() {
 
         this.addScreenObjectReadListener = function () {
             _this.ioObject.on("/object/screenObject", function (msg) {
+                if(realityObject.visibility !== "visible") return;
                 var thisMsg = JSON.parse(msg);
                 if (!thisMsg.object) thisMsg.object = null;
                 if (!thisMsg.frame) thisMsg.frame = null;

@@ -85,14 +85,13 @@ if (exports.enabled) {
                     this.server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
                     this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
                 }
+                this.interval = setInterval(this.start, kepwareServerRequestInterval);
 
 
 
             }.bind(this)).on('error', function (err) {
                 this.error();
             }.bind(this));
-
-            this.interval = setInterval(this.start, kepwareServerRequestInterval);
         }.bind(this);
 
        this.setReadList = function(object, frame, node, name, kepwareInterfaces){
@@ -171,27 +170,7 @@ if (exports.enabled) {
             }.bind(this));
         }.bind(this);
         this.error = function() {
-            console.log("cant find server: "+ kepwareServerIP);
+            console.log("cant find kepware server: \033[33m"+ kepwareServerName +"\033[0m with the IP: \033[33m"+ kepwareServerIP+"\033[0m");
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
-
-
-

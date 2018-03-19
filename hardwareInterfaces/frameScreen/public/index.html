@@ -47,6 +47,7 @@
 <script src="resources/pep.min.js"></script>
 
 <script>
+    var scaleARFactor = 1.5;
     console.log(location.origin.split(":")[1].split("//")[1]);
     var SERVER_IP = location.origin.split(":")[1].split("//")[1]; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
@@ -110,7 +111,7 @@
                     // set scale of screen frame to match AR frame's size
                     if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
                         frame.ar.scale = msg.scale;
-                        frame.screen.scale = msg.scale * 2;
+                        frame.screen.scale = msg.scale * scaleARFactor;
                         if (iframe) {
                             iframe.parentElement.style.transform = 'scale(' + frame.screen.scale + ')';
 
@@ -144,7 +145,7 @@
             console.log('frameDataCallback', frame);
             var frameKey = getFrameKey(frame);
             frames[frameKey] = frame;
-            frame.screen.scale = frame.ar.scale * 2;
+            frame.screen.scale = frame.ar.scale * scaleARFactor;
             // TODO: set screen position based on AR position??
         });
 
@@ -187,7 +188,7 @@
                 frame.height = 200;
             }
 
-            frame.screen.scale = frame.ar.scale * 2;
+            frame.screen.scale = frame.ar.scale * scaleARFactor;
 
             // frame.screen.scale = frame.ar.scale;
             if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
@@ -564,8 +565,8 @@
     function getScreenPosFromARPos(arX, arY) {
         var markerRect = getMarkerRect();
         var scaleFactor = getScreenScaleFactor();
-        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor);
-        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor);
+        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor)*(scaleARFactor/2);
+        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor)*(scaleARFactor/2);
         return {
             x: screenX,
             y: screenY
