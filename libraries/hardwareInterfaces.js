@@ -209,18 +209,34 @@ exports.reloadNodeUI = function (objectName) {
     writeObjectCallback(objectID);
 };
 
-exports.getAllNodes = function (objectName) {
+exports.getAllFrames = function (objectName) {
+    var objectID = utilities.readObject(objectLookup, objectName);
+    // var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    console.log(objectID);
+    // lookup object properties using name
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            var frames = objects[objectID].frames;
+            return frames;
+        }
+    }
 
-    // get object ID
+    return {};
+};
+
+exports.getAllNodes = function (objectName, frameName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var frameID = objectID + frameName;
 
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            // get all of its nodes
-            var nodes = objects[objectID].nodes;
-            // return node list
-            return nodes;
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                // get all of its nodes
+                var nodes = objects[objectID].frames[frameID].nodes;
+                // return node list
+                return nodes;
+            }
         }
     }
 
@@ -304,21 +320,27 @@ exports.createFrame = function (objectName, frameName, src, x, y, width, height)
         // }, 1000 * i);
     // }
 
-    this.runFrameUpdateCallbacks(thisFrame);
+    this.runFrameUpdateCallbacks(objectID, thisFrame);
 };
 
-exports.subscribeToFrameData = function (callback) {
+exports.subscribeToFrameData = function (objectName, callback) {
     console.log('subscribeToFrameData');
+    var objectID = utilities.readObject(objectLookup, objectName);
 
-    frameUpdateCallbacks.push(callback);
+    frameUpdateCallbacks.push({
+        objectID: objectID,
+        callback: callback
+    });
     // callback();
 };
 
-exports.runFrameUpdateCallbacks = function(thisFrame) {
-    console.log('runFrameUpdateCallbacks');
-    frameUpdateCallbacks.forEach(function(callback) {
-        console.log('found a callback');
-        callback(thisFrame);
+exports.runFrameUpdateCallbacks = function(objectKey, thisFrame) {
+    console.log('runFrameUpdateCallbacks for object ' + objectKey);
+    frameUpdateCallbacks.forEach(function(callbackObject) {
+        if (callbackObject.objectID === objectKey) {
+            console.log('found a callback');
+            callbackObject.callback(thisFrame);
+        }
     });
 };
 
@@ -666,8 +688,6 @@ exports.screenObjectServerCallBack = function (callback) {
     screenObjectServerCallBackObject = callback;
 };
 
-
-
 // TODO These are the two calls for the page
 exports.addScreenObjectListener = function (objectName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
@@ -689,6 +709,10 @@ exports.writeScreenObjects = function (object, frame, node, touchOffsetX, touchO
     screenObjectServerCallBackObject(object, frame, node, touchOffsetX, touchOffsetY);
 };
 
+exports.activateScreen = function (objectName, port) {
+    var objectID = utilities.readObject(objectLookup, objectName);
+    objects[objectID].screenPort = port;
+};
 
 exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);

@@ -2188,7 +2188,7 @@ function objectWebServer() {
         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-        hardwareAPI.runFrameUpdateCallbacks(newFrame);
+        hardwareAPI.runFrameUpdateCallbacks(objectKey, newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
     }
