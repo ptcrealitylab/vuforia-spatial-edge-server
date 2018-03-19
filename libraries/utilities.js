@@ -247,7 +247,10 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
             parseString(fs.readFileSync(xmlFile, "utf8"),
             function (err, result) {
                 for (var first in result) {
-                    resultXML = result[first].Tracking[0].ImageTarget[0].$.name;
+                    for(var secondFirst in result[first].Tracking[0]){
+                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                    break;
+                }
                     break;
                 }
             });

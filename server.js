@@ -1015,7 +1015,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
                         cout("error in beatSender");
-                        throw err;
+                        console.log(err);
+                        //throw err;
                     }
                     // client is not being closed, as the beat is send ongoing
                 });
