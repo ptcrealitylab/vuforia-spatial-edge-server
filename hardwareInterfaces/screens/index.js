@@ -95,6 +95,11 @@ if (exports.enabled) {
                 console.log(frames);
                 socket.emit('framesForScreen', frames);
             });
+
+            socket.on('getObjectName', function(msg) {
+                console.log('getObjectName', msg);
+                socket.emit('objectName', {objectName: objectName});
+            });
         });
     }
 
