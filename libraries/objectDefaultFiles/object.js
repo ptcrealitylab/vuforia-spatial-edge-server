@@ -523,7 +523,7 @@ function RealityInterface() {
             }
         }
         return true;
-    }
+    };
 
     this.getPositionX = function () {
         if (typeof realityObject.modelViewMatrix[12] !== "undefined") {

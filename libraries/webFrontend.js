@@ -62,6 +62,7 @@ console.log(objectInterfaceName);
         this.visualization = "AR";
         this.active = false;
         this.zone = "";
+        this.screenPort = "";
     };
 
     function Frame() {
@@ -121,6 +122,7 @@ console.log(objectInterfaceName);
                     newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
                     newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
                     newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
+                    newObject[thisObjectKey].screenPort = objects[thisObjectKey].screenPort;
                 }
             }
 
