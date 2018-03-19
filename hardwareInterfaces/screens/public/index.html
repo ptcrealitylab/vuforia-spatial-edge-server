@@ -24,7 +24,7 @@
 
         .bg {
             /* The image used */
-            background-image: url("resources/frameScreen.jpg");
+            /*background-image: url("resources/frameScreen.jpg");*/
 
             /* Full height */
             height: 100%;
@@ -51,6 +51,9 @@
     console.log(location.origin.split(":")[1].split("//")[1]);
     var SERVER_IP = location.origin.split(":")[1].split("//")[1]; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
     var SERVER_PORT = '8080';
+
+    // var thisObjectName = location.search.split('objectName')[1].split('=')[1];
+    // document.querySelector('.bg').style.backgroundImage = 'url("resources/'+thisObjectName+'.jpg")';
 
     var frames = {};
     var socket = io();
@@ -81,6 +84,12 @@
         initializeDragInterface();
 
         window.addEventListener("message", onInternalPostMessage, false);
+
+        socket.emit('getObjectName');
+        // callback to set background image based on objectName
+        socket.on('objectName', function(msg) {
+            document.querySelector('.bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+        });
 
         socket.emit('getFramesForScreen');
 
