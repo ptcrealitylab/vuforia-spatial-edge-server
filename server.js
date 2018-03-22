@@ -2163,7 +2163,7 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug);
+        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug, frame.location);
 
         var newFrame = new Frame();
         newFrame.objectId = frame.objectId;
@@ -2180,7 +2180,6 @@ function objectWebServer() {
         newFrame.nodes = frame.nodes;
         newFrame.location = frame.location;
         newFrame.src = frame.src;
-        newFrame.type = frame.type;
         newFrame.width = frame.width;
         newFrame.height = frame.height;
         object.frames[frameKey] = newFrame;

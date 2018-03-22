@@ -263,6 +263,7 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
     return {};
 };
 
+// TODO: deprecated, can probably be removed...
 exports.createFrame = function (objectName, frameName, src, x, y, width, height) {
     console.log('create ' + src + ' frame on server');
 
@@ -282,7 +283,7 @@ exports.createFrame = function (objectName, frameName, src, x, y, width, height)
             thisFrame.name = frameName;
             thisFrame.objectId = objectID;
             thisFrame.objectId = objectID;
-            thisFrame.type = src;
+            thisFrame.src = src;
 
             thisFrame.screen.x = x;
             thisFrame.screen.y = y;
@@ -302,7 +303,7 @@ exports.createFrame = function (objectName, frameName, src, x, y, width, height)
 
             if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
                 hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
-                hardwareObjects[objectName].frames[frameUuid].type = src;
+                hardwareObjects[objectName].frames[frameUuid].src = src;
             }
         }
     }
@@ -343,119 +344,6 @@ exports.runFrameUpdateCallbacks = function(objectKey, thisFrame) {
             callbackObject.callback(thisFrame);
         }
     });
-};
-
-/**
- * @desc addIO() a new IO point to the specified RealityInterface
- * @param {string} objectName The name of the RealityInterface
- *  * @param {string} frameName The name of the RealityInterface frame
- * @param {string} nodeName The name of the nodeName
- * @param {string} type The name of the data conversion type. If you don't have your own put in "default".
- **/
-
-exports.addFrame = function (objectName, frameName, type, x, y, width, height) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
-
-    cout("Add Frame to objectID: " + objectID);
-
-    var frameUuid = objectID+frameName;
-    var thisFrame = {};
-
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-
-        cout("I will save: " + objectName + " for frame "+ frameName);
-
-        if (objects.hasOwnProperty(objectID)) {
-            objects[objectID].developer = globalVariables.developer;
-            objects[objectID].name = objectName;
-
-            if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
-
-                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location, "local");
-                objects[objectID].frames[frameUuid] = new Frame();
-            } else {
-                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location);
-            }
-
-            thisFrame = objects[objectID].frames[frameUuid];
-            thisFrame.name = frameName;
-            thisFrame.objectId = objectID;
-            thisFrame.type = type;
-
-            thisFrame.screen.x = x;
-            thisFrame.screen.y = y;
-            thisFrame.ar.x = x;
-            thisFrame.ar.y = y;
-
-            // if (!width) width = 300;
-            // if (!height) height = 200;
-
-            thisFrame.frameSizeX = width;
-            thisFrame.frameSizeY = height;
-            thisFrame.width = width;
-            thisFrame.height = height;
-
-            // // TODO: add nodes specifically for each frame
-            // var newNodeID =
-            // if (!thisFrame.nodes.hasOwnProperty(nodeUuid)) {
-            //     var thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
-            //     thisObject.x = utilities.randomIntInc(0, 200) - 100;
-            //     thisObject.y = utilities.randomIntInc(0, 200) - 100;
-            //     thisObject.frameSizeX = 100;
-            //     thisObject.frameSizeY = 100;
-            // }
-            //
-            // var thisObj = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            // thisObj.name = nodeName;
-            // thisObj.text = undefined;
-            // thisObj.type = type;
-
-            if (!hardwareObjects.hasOwnProperty(objectName)) {
-                hardwareObjects[objectName] = new EmptyObject(objectName);
-            }
-
-            if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
-                hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
-                hardwareObjects[objectName].frames[frameUuid].type = type;
-            }
-        }
-    }
-
-    writeObjectCallback(objectID);
-
-    // utilities.writeObjectToFile(objects, objectID, __dirname);
-    // actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
-
-    var nodeName = 'value';
-    this.addNode(objectName, frameName, nodeName, 'node', {x: 0, y: 0});
-
-    console.log(JSON.stringify(thisFrame));
-
-    function compressFloat(num) {
-        return parseFloat(num.toFixed(3));
-    }
-
-    // single UDP packet can only contain 256 characters, so use fewer decimal places of precision,
-    // and omit frameID because it can be reconstructed from objectID + name
-    actionCallback({
-        addFrame: {
-            objectID: objectID,
-            // frameID: frameUuid,
-            name: thisFrame.name,
-            x: compressFloat(thisFrame.ar.x),
-            y: compressFloat(thisFrame.ar.y),
-            scale: compressFloat(thisFrame.ar.scale),
-            frameSizeX: compressFloat(thisFrame.frameSizeX),
-            frameSizeY: compressFloat(thisFrame.frameSizeY),
-            location: thisFrame.location,
-            src: thisFrame.src,
-            type: thisFrame.type,
-            nodeNames: ['value']
-        }
-    });
-
-    writeObjectCallback(objectID);
-
 };
 
 /**

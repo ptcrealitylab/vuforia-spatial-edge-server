@@ -1,0 +1,42 @@
+{
+	"objectId": "frameScreen2Hdf6f96xmzbu",
+	"name": "frameScreen2",
+	"ip": "192.168.56.8",
+	"version": "3.0.0",
+	"deactivated": false,
+	"protocol": "R2",
+	"tcs": "43mDrL",
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"memory": {},
+	"frames": {
+		"frameScreen2Hdf6f96xmzbudefault": {
+			"objectId": null,
+			"name": "default",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 1,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 1
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor"
+		}
+	},
+	"visualization": "screen",
+	"zone": "",
+	"developer": true
+}

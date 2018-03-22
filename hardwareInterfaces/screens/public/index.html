@@ -174,7 +174,8 @@
         for (var frameKey in frames) {
             if (!frames.hasOwnProperty(frameKey)) continue;
             var frame = frames[frameKey];
-            if (typeof frame.type === 'undefined') continue;
+            if (typeof frame.location === 'undefined') continue;
+            if (frame.location !== 'global') continue;
 
             addElement(frameKey, frame);
             drawTransformed(frameKey, frame);
@@ -232,7 +233,7 @@
 
             addIframe.style.visibility = "visible";
             // addIframe.style.pointerEvents = 'none';
-            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + frame.type + '.html';
+            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + frame.src + '.html';
             // addIframe.src = '/frames/' + frame.type + '.html';
             addIframe.dataset.nodeKey = null;
             addIframe.dataset.frameKey = frameKey;
