@@ -121,7 +121,7 @@ console.log(objectInterfaceName);
                     newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
                     newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
                     newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
-                    newObject[thisObjectKey].screenPort = hardwareAPI.getScreenPort(thisObjectKey); //objects[thisObjectKey].screenPort;
+                    newObject[thisObjectKey].screenPort = hardwareAPI.getScreenPort(thisObjectKey);
                 }
             }
 
