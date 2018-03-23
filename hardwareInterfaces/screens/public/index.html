@@ -23,8 +23,7 @@
         }
 
         .bg {
-            /* The image used */
-            /*background-image: url("resources/frameScreen.jpg");*/
+            /* The image used is set programmatically now to look for resources/[objectName].jpg */
 
             /* Full height */
             height: 100%;
@@ -48,12 +47,10 @@
 
 <script>
     var scaleARFactor = 1.5;
-    console.log(location.origin.split(":")[1].split("//")[1]);
-    var SERVER_IP = location.origin.split(":")[1].split("//")[1]; //'192.168.56.7'; //'10.0.0.245'; //'10.68.23.38';
-    var SERVER_PORT = '8080';
 
-    // var thisObjectName = location.search.split('objectName')[1].split('=')[1];
-    // document.querySelector('.bg').style.backgroundImage = 'url("resources/'+thisObjectName+'.jpg")';
+    // get the url of the reality server to load frames from and to post new frame positions
+    var SERVER_IP = location.origin.split(":")[1].split("//")[1];
+    var SERVER_PORT = '8080';
 
     var frames = {};
     var socket = io();
@@ -532,18 +529,16 @@
         function stopDrag() {
 
             // TODO: figure out a way to still update this data to persist state, without making action sender reload the associated AR object
-            /*
+
             if (currentlyDraggedPanel) {
                 // post new position to server
                 var content = frames[currentlyDraggedPanel.dataset.frameKey].screen;
+                content.ignoreActionSender = true; // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
 
                 urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + currentlyDraggedPanel.dataset.objectKey + "/frame/" + currentlyDraggedPanel.dataset.frameKey + "/node/" + currentlyDraggedPanel.dataset.nodeKey + "/size/";
-
-                // console.log('url endpoint = ' + urlEndpoint);
                 postData(urlEndpoint, content);
 
             }
-            */
 
             socket.emit('writeScreenObject', {objectKey: null, frameKey: null, nodeKey: null, touchOffsetX: 0, touchOffsetY: 0});
             console.log('writeScreenObject null (stopDrag)');
