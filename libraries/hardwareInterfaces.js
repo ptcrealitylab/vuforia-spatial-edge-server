@@ -333,7 +333,6 @@ exports.subscribeToFrameData = function (objectName, callback) {
         objectID: objectID,
         callback: callback
     });
-    // callback();
 };
 
 exports.runFrameUpdateCallbacks = function(objectKey, thisFrame) {
