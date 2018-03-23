@@ -799,8 +799,6 @@ realityServer.setActive = function(item){
 
 realityServer.toggleFullScreen = function (item) {
 
-    console.log(item);
-
     var thisIframe = document.getElementById("fullscreenIframe");
 
     if(!thisIframe){

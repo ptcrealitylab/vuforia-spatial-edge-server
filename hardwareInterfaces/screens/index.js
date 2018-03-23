@@ -68,7 +68,7 @@ if (exports.enabled) {
         // ioSockets[port] = io;
 
         http.listen(port, function() {
-            console.log('listening on *:' + port);
+            console.log('started screen for object ' + objectName + ' on port ' + port);
         });
 
         // TODO: make this port-specific
