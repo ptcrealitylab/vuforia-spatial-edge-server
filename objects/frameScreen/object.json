@@ -1,0 +1,163 @@
+{
+	"objectId": "frameScreenkz1hpiyymp4c",
+	"name": "frameScreen",
+	"ip": "192.168.56.8",
+	"version": "3.0.0",
+	"deactivated": false,
+	"protocol": "R2",
+	"tcs": "1ZebOf",
+	"visible": false,
+	"visibleText": false,
+	"visibleEditing": false,
+	"memory": {
+		"matrix": [
+			-0.9997000694274902,
+			-0.004870183765888214,
+			0.02400277368724346,
+			0,
+			-0.00480569526553154,
+			0.9999846816062927,
+			0.0027436763048172,
+			0,
+			-0.02401576936244965,
+			0.002627503126859665,
+			-0.9997081756591797,
+			0,
+			30.72633934020996,
+			-19.15866088867188,
+			1150.1005859375,
+			1
+		]
+	},
+	"frames": {
+		"frameScreenkz1hpiyymp4cdefault": {
+			"objectId": null,
+			"name": "default",
+			"visualization": "screen",
+			"ar": {
+				"x": 673.6497279349561,
+				"y": -413.9645936318944,
+				"scale": 0.5,
+				"matrix": []
+			},
+			"screen": {
+				"x": 1206.867660769917,
+				"y": -151.37531993560282,
+				"scale": 0.5
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {},
+			"location": "local",
+			"src": "editor"
+		},
+		"frameScreenkz1hpiyymp4cgraphUIwr7skk3r8qch": {
+			"objectId": "frameScreenkz1hpiyymp4c",
+			"name": "graphUIwr7skk3r8qch",
+			"visualization": "ar",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 0.5,
+				"matrix": []
+			},
+			"screen": {
+				"x": 0,
+				"y": 0,
+				"scale": 0.5
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"frameScreenkz1hpiyymp4cgraphUIwr7skk3r8qchvalue": {
+					"name": "value",
+					"objectId": "frameScreenkz1hpiyymp4c",
+					"frameId": "frameScreenkz1hpiyymp4cgraphUIwr7skk3r8qch",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 0.5,
+					"matrix": [],
+					"type": "node",
+					"src": "",
+					"stress": 0,
+					"lockPassword": null,
+					"lockType": null,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "global",
+			"src": "graphUI",
+			"uuid": "frameScreenkz1hpiyymp4cgraphUIwr7skk3r8qch",
+			"width": "690",
+			"height": "410"
+		},
+		"frameScreenkz1hpiyymp4cptcStockUIe72yvp7mo318": {
+			"objectId": "frameScreenkz1hpiyymp4c",
+			"name": "ptcStockUIe72yvp7mo318",
+			"visualization": "screen",
+			"ar": {
+				"x": 0,
+				"y": 0,
+				"scale": 0.5,
+				"matrix": []
+			},
+			"screen": {
+				"x": 286.0633575599413,
+				"y": 62.14223862656888,
+				"scale": 0.5
+			},
+			"visible": false,
+			"visibleText": false,
+			"visibleEditing": false,
+			"developer": true,
+			"links": {},
+			"nodes": {
+				"frameScreenkz1hpiyymp4cptcStockUIe72yvp7mo318": {
+					"name": "",
+					"objectId": "frameScreenkz1hpiyymp4c",
+					"frameId": "frameScreenkz1hpiyymp4cptcStockUIe72yvp7mo318",
+					"data": {
+						"value": 0,
+						"mode": "f",
+						"unit": "",
+						"unitMin": 0,
+						"unitMax": 1
+					},
+					"x": 0,
+					"y": 0,
+					"scale": 0.5,
+					"matrix": [],
+					"type": "node",
+					"src": "",
+					"stress": 0,
+					"lockPassword": null,
+					"lockType": null,
+					"frameSizeX": 100,
+					"frameSizeY": 100
+				}
+			},
+			"location": "global",
+			"src": "ptcStockUI",
+			"uuid": "frameScreenkz1hpiyymp4cptcStockUIe72yvp7mo318",
+			"width": "600",
+			"height": "500"
+		}
+	},
+	"visualization": "screen",
+	"zone": "",
+	"developer": true
+}
