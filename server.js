@@ -2453,7 +2453,9 @@ function objectWebServer() {
 
             if (didUpdate) {
                 utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
-                actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+                if (typeof body.ignoreActionSender === 'undefined') {
+                    actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+                }
                 updateStatus = "added object";
             }
 

@@ -19,14 +19,13 @@ if (exports.enabled) {
 
     var activeScreens = [];
 
-    function bindScreen(objectName, port) {
-        var screen = new Screen(objectName, port);
-        server.activateScreen(objectName, port);
-        activeScreens.push(screen);
-    }
-
+    // !!! TO ADD NEW SCREENS, JUST ADD A LINE WITH THE OBJECT NAME AND WHICH PORT YOU WANT IT TO BE SERVED ON !!! //
+    // Then make sure to add [objectName].jpg to the hardwareInterfaces/screens/public/resources/ directory
+    // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
+    // ----------------------------------------------------------------------------------------------------------- //
     bindScreen('frameScreen', 3100);
     bindScreen('frameScreen2', 3101);
+    // ----------------------------------------------------------------------------------------------------------- //
 
     var express = require('express');
     var app = express();
@@ -36,6 +35,12 @@ if (exports.enabled) {
     function Screen(objectName, port) {
         this.objectName = objectName;
         this.port = port;
+    }
+
+    function bindScreen(objectName, port) {
+        var screen = new Screen(objectName, port);
+        server.activateScreen(objectName, port);
+        activeScreens.push(screen);
     }
 
     // var httpServers = {};
