@@ -51,6 +51,7 @@
     // get the url of the reality server to load frames from and to post new frame positions
     var SERVER_IP = location.origin.split(":")[1].split("//")[1];
     var SERVER_PORT = '8080';
+    console.log('screen found Reality Server at address:   http://' + SERVER_IP + ':' + SERVER_PORT);
 
     var frames = {};
     var socket = io();
@@ -89,7 +90,6 @@
         });
 
         socket.emit('getFramesForScreen');
-
         // callback to load the frames from the server
         socket.on('framesForScreen', function(msg) {
             console.log('framesForScreen', msg);
@@ -528,10 +528,8 @@
 
         function stopDrag() {
 
-            // TODO: figure out a way to still update this data to persist state, without making action sender reload the associated AR object
-
+            // post new position to server when you stop moving a frame
             if (currentlyDraggedPanel) {
-                // post new position to server
                 var content = frames[currentlyDraggedPanel.dataset.frameKey].screen;
                 content.ignoreActionSender = true; // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
 
