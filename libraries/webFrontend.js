@@ -43,14 +43,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-
 var utilities = require(__dirname+'/utilities');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
 var pathUtilities = require('path');
 var readdirp = require('readdirp');
-
+var hardwareAPI = require(__dirname + '/hardwareInterfaces');
 
 exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
 {
@@ -62,6 +61,7 @@ console.log(objectInterfaceName);
         this.visualization = "AR";
         this.active = false;
         this.zone = "";
+        this.screenPort = "";
     };
 
     function Frame() {
@@ -121,6 +121,7 @@ console.log(objectInterfaceName);
                     newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
                     newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
                     newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
+                    newObject[thisObjectKey].screenPort = hardwareAPI.getScreenPort(thisObjectKey);
                 }
             }
 

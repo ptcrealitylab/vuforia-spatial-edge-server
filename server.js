@@ -2163,7 +2163,7 @@ function objectWebServer() {
             object.frames = {};
         }
 
-        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug);
+        utilities.createFrameFolder(object.name, frame.name, __dirname, globalVariables.debug, frame.location);
 
         var newFrame = new Frame();
         newFrame.objectId = frame.objectId;
@@ -2180,7 +2180,6 @@ function objectWebServer() {
         newFrame.nodes = frame.nodes;
         newFrame.location = frame.location;
         newFrame.src = frame.src;
-        newFrame.type = frame.type;
         newFrame.width = frame.width;
         newFrame.height = frame.height;
         object.frames[frameKey] = newFrame;
@@ -2188,7 +2187,7 @@ function objectWebServer() {
         utilities.writeObjectToFile(objects, objectKey, __dirname, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-        hardwareAPI.runFrameUpdateCallbacks(newFrame);
+        hardwareAPI.runFrameUpdateCallbacks(objectKey, newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
     }
@@ -2454,7 +2453,9 @@ function objectWebServer() {
 
             if (didUpdate) {
                 utilities.writeObjectToFile(objects, objectID, __dirname, globalVariables.saveToDisk);
-                actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+                if (typeof body.ignoreActionSender === 'undefined') {
+                    actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+                }
                 updateStatus = "added object";
             }
 
