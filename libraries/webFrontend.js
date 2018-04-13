@@ -44,12 +44,16 @@
  */
 
 var utilities = require(__dirname+'/utilities');
+var os = require('os');
+var path = require('path');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
 var pathUtilities = require('path');
 var readdirp = require('readdirp');
 var hardwareAPI = require(__dirname + '/hardwareInterfaces');
+
+var objectPath = path.join(path.join(os.homedir(), 'Documents'), 'reality-objects');
 
 exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
 {
@@ -71,7 +75,6 @@ console.log(objectInterfaceName);
     var newObject = {};
 
     var tempFiles = "";
-    var objectPath = dirnameO + "/objects";
     var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
         return fs.statSync(objectPath + '/' + file).isDirectory();
     });
@@ -97,7 +100,6 @@ console.log(objectInterfaceName);
         newObject[thisObjectKey] = new ThisObjects();
 
         // check if file is activated
-        var objectPath = dirnameO + "/objects";
 
             if(!fs.readdirSync(objectPath).filter(function (file) {return fs.statSync(objectPath + '/' + file).isDirectory();
                 })) return;
@@ -920,9 +922,7 @@ exports.uploadTargetContent = function (parm, dirname0, objectInterfaceName) {
 
         '';
 
-    var objectPath = dirname0 + "/objects/";
-
-    var objectPath2 = dirname0 + "/objects/" + parm;
+    var objectPath2 = objectPath2 + '/' + parm;
 
    var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
         return fs.statSync(objectPath + '/' + file).isDirectory();
@@ -1212,16 +1212,16 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
 
         '';
 
-    var objectPath = dirname0 + "/objects/"+ parm +"/frames/";
+    var framePath = objectPath + '/' + parm + '/frames/';
 
-    var objectPath2 = dirname0 + "/objects/" + parm +"/frames/"+frame;
+    var framePath2 = framePath + frame;
 
     // Import the module
 
 
 
-    var tempFiles = fs.readdirSync(objectPath).filter(function (file) {
-        return fs.statSync(objectPath + '/' + file).isDirectory();
+    var tempFiles = fs.readdirSync(framePath).filter(function (file) {
+        return fs.statSync(framePath + file).isDirectory();
     });
 
 
@@ -1262,9 +1262,9 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
         return results
     };
 
-    var listeliste = walk(objectPath2);
+    var listeliste = walk(framePath2);
 
-    //  var folderContent = walkSync(objectPath,fileList);
+    //  var folderContent = walkSync(framePath,fileList);
     var nameSpace = "";
 
 
@@ -1309,7 +1309,7 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
 
     for (var i = 0; i < listeliste.length; i++) {
 
-        var content = listeliste[i].replace(objectPath2 + '/', '').split("/");
+        var content = listeliste[i].replace(framePath2 + '/', '').split("/");
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
@@ -1420,9 +1420,9 @@ exports.uploadTargetContentFrame = function (parm, frame, dirname0, objectInterf
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(objectPath + parm + "/target/target.dat");
-    if (fs.existsSync(objectPath + parm + "/index.htm") || fs.existsSync(objectPath + '/' + parm + "/index.html")) {
-        if (fs.existsSync(objectPath + parm + "/target/target.dat") && fs.existsSync(objectPath + '/' + parm + "/target/target.xml") && fs.existsSync(objectPath + '/' + parm + "/target/target.jpg")) {
+    if (debug)console.log(framePath + parm + "/target/target.dat");
+    if (fs.existsSync(framePath + parm + "/index.htm") || fs.existsSync(framePath + '/' + parm + "/index.html")) {
+        if (fs.existsSync(framePath + parm + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + "/target/target.jpg")) {
             text += "btn-success";
         }
         else {
