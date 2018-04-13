@@ -1255,16 +1255,18 @@ function objectWebServer() {
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     webServer.use('/frames', express.static(__dirname + '/libraries/frameScreenTransfer/public/frames/'));
 
-    webServer.use("/obj/*/target/*", function (req, res, next) {
-        res.sendFile(req.params[0]+"/"+identityFolderName+"/target/"+req.params[1] , { root : objectsPath});
-    });
-
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
+        urlArray.splice(0,1);
+        urlArray.splice(0,1);
+        var newUrl = "";
+        for (var i = 0; i < urlArray.length; i++) {
+            newUrl += "/" + urlArray[i];
+        }
+        console.log(newUrl);
 
-
-        if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
+        if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
             var fileName = objectsPath + req.url;
 
             if (urlArray[urlArray.length-1] !== "index.html" && urlArray[urlArray.length-1] !== "index.htm") {
@@ -1287,7 +1289,7 @@ function objectWebServer() {
             html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
 
             var level = "";
-            for(var i = 2; i < urlArray.length; i++){
+            for(var i = 0; i < urlArray.length; i++){
                 level += "../";
             }
             var loadedHtml = cheerio.load(html);
@@ -1301,7 +1303,7 @@ function objectWebServer() {
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
-        else if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.json?$/))) {
+        else if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.json?$/))) {
 
             var fileName = objectsPath + req.url + identityFolderName + "/object.json";
 
@@ -1320,9 +1322,11 @@ function objectWebServer() {
             }
             res.json(json);
         }
-        else
-            next();
-    }, express.static(objectsPath + '/'));
+        else {
+          console.log(objectsPath);
+            res.sendFile(newUrl, {root: objectsPath});
+        }
+    });
 
     if (globalVariables.developer === true) {
         webServer.use("/libraries", express.static(__dirname + '/libraries/webInterface/'));
