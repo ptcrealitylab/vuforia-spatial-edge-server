@@ -51,6 +51,8 @@ var pathUtilities = require('path');
 var readdirp = require('readdirp');
 var hardwareAPI = require(__dirname + '/hardwareInterfaces');
 
+var identityFolderName = '.identity'; // TODO: get this from server.js
+
 exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
 {
 console.log(objectInterfaceName);
@@ -100,7 +102,7 @@ console.log(objectInterfaceName);
             if(!fs.readdirSync(objectsPath).filter(function (file) {return fs.statSync(objectsPath + '/' + file).isDirectory();
                 })) return;
 
-        if (fs.existsSync(objectsPath + '/' + objectKey + "/target/target.dat") && fs.existsSync(objectsPath + '/' + objectKey + "/target/target.xml") && fs.existsSync(objectsPath + '/' + objectKey + "/target/target.jpg"))
+        if (fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.jpg"))
         {
             console.log("file Exists "+ objectKey)
             newObject[thisObjectKey].initialized = true;
@@ -1120,9 +1122,9 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(objectsPath + parm + "/target/target.dat");
+    if (debug)console.log(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(objectsPath + parm + "/index.htm") || fs.existsSync(objectsPath + '/' + parm + "/index.html")) {
-        if (fs.existsSync(objectsPath + parm + "/target/target.dat") && fs.existsSync(objectsPath + '/' + parm + "/target/target.xml") && fs.existsSync(objectsPath + '/' + parm + "/target/target.jpg")) {
+        if (fs.existsSync(objectsPath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
         }
         else {
@@ -1208,7 +1210,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
         '';
 
-    var framePath = objectsPath + '/' + parm + '/frames/';
+    var framePath = objectsPath + '/' + parm + '/';
 
     var framePath2 = framePath + frame;
 
@@ -1416,9 +1418,9 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(framePath + parm + "/target/target.dat");
+    if (debug)console.log(framePath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(framePath + parm + "/index.htm") || fs.existsSync(framePath + '/' + parm + "/index.html")) {
-        if (fs.existsSync(framePath + parm + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + "/target/target.jpg")) {
+        if (fs.existsSync(framePath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
         }
         else {
