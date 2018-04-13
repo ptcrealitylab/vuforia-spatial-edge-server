@@ -133,6 +133,8 @@ if(!fs.existsSync(objectsPath)) {
     fs.mkdirSync(objectsPath);
 }
 
+var identityFolderName = '.identity';
+
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
 webServer.set('views', 'libraries/webInterface/views');
@@ -821,7 +823,7 @@ function loadObjects() {
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + "/object.json", "utf8"));
+                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + "/object.json", "utf8"));
                 objects[tempFolderName].ip = ip.address();
 
                 // this is for transforming old lists to new lists
@@ -1253,6 +1255,10 @@ function objectWebServer() {
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     webServer.use('/frames', express.static(__dirname + '/libraries/frameScreenTransfer/public/frames/'));
 
+    webServer.use("/obj/*/target/*", function (req, res, next) {
+        res.sendFile(req.params[0]+"/"+identityFolderName+"/target/"+req.params[1] , { root : objectsPath});
+    });
+
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
@@ -1297,7 +1303,7 @@ function objectWebServer() {
         }
         else if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.json?$/))) {
 
-            var fileName = objectsPath + req.url + "object.json";
+            var fileName = objectsPath + req.url + identityFolderName + "/object.json";
 
             if (!fs.existsSync(fileName)) {
                 next();
@@ -2105,7 +2111,7 @@ function objectWebServer() {
 
         var obj = objects[objectID];//.frames[frame];
 
-        var memoryDir = objectsPath + '/' + obj.name + '/memory/';
+        var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {
             fs.mkdirSync(memoryDir);
         }
@@ -2567,9 +2573,9 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
             console.log(req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
-            var objectPath = objectsPath + '/' + req.params.object +"/frames/"+req.params.frame;
+            var objectPath = objectsPath + '/' + req.params.object +"/" + req.params.frame;
             var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
-                item.path = item.path.replace(objectPath, "/obj");
+                item.path = item.path.replace(objectsPath, "/obj");
             });
             res.json(tree);
         });
@@ -2873,7 +2879,7 @@ function objectWebServer() {
                 }
 
                 if (frameName !== "") {
-                    var folderDelFrame = objectsPath + '/' + req.body.name+"/frames/"+frameName;
+                    var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
 
                     deleteFolderRecursive(folderDelFrame);
 
@@ -3071,8 +3077,8 @@ function objectWebServer() {
                         var fileExtension = getFileExtension(filename);
 
                         if (fileExtension === "jpg") {
-                            if (!fs.existsSync(folderD + "/target/")) {
-                                fs.mkdirSync(folderD + "/target/", "0766", function (err) {
+                            if (!fs.existsSync(folderD + '/' + identityFolderName + "/target/")) {
+                                fs.mkdirSync(folderD + '/' + identityFolderName + "/target/", "0766", function (err) {
                                     if (err) {
                                         cout(err);
                                         res.send("ERROR! Can't make the directory! \n");    // echo the result back
@@ -3080,7 +3086,7 @@ function objectWebServer() {
                                 });
                             }
 
-                            fs.renameSync(folderD + "/" + filename, folderD + "/target/target.jpg");
+                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target.jpg");
 
                             var objectName = req.params.id + utilities.uuidTime();
 
@@ -3091,7 +3097,7 @@ function objectWebServer() {
                                 '   </Tracking>\n' +
                                 '   </ARConfig>';
 
-                            var xmlOutFile = folderD + "/target/target.xml";
+                            var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
                             if (!fs.existsSync(xmlOutFile)) {
                                 fs.writeFile(xmlOutFile, documentcreate, function (err) {
                                     if (err) {
@@ -3102,7 +3108,7 @@ function objectWebServer() {
                                 });
                             }
 
-                            var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
+                            var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
 
                             var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
@@ -3111,9 +3117,9 @@ function objectWebServer() {
                                 var thisObject = objects[thisObjectId];
 
                                 var jpg = false;
-                                if(fs.existsSync(folderD + "/target/target.jpg")) jpg = true;
+                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
                                 var dat = false;
-                                if(fs.existsSync(folderD + "/target/target.dat") && fs.existsSync(folderD + "/target/target.xml")) dat = true;
+                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
 
 
                                 var sendObject = {
@@ -3159,21 +3165,21 @@ function objectWebServer() {
                                 });
 
                                 unzipper.on('extract', function (log) {
-                                    var folderFile = fs.readdirSync(folderD + "/target");
+                                    var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + "/target");
                                     var folderFileType;
 
                                     for (var i = 0; i < folderFile.length; i++) {
                                         cout(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
                                         if (folderFileType === "xml" || folderFileType === "dat") {
-                                            fs.renameSync(folderD + "/target/" + folderFile[i], folderD + "/target/target." + folderFileType);
+                                            fs.renameSync(folderD + '/' + identityFolderName + "/target/" + folderFile[i], folderD + '/' + identityFolderName + "/target/target." + folderFileType);
                                         }
                                     }
                                     fs.unlinkSync(folderD + "/" + filename);
 
                                     // evnetually create the object.
 
-                                    if (fs.existsSync(folderD + "/target/target.dat") && fs.existsSync(folderD + "/target/target.xml")) {
+                                    if (fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) {
 
                                         cout("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
@@ -3185,7 +3191,7 @@ function objectWebServer() {
                                         hardwareAPI.reset();
                                         cout("have initialized the modules");
 
-                                        var fileList = [folderD + "/target/target.jpg", folderD + "/target/target.xml", folderD + "/target/target.dat"];
+                                        var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
 
                                         var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
@@ -3202,9 +3208,9 @@ function objectWebServer() {
 
 
                                             var jpg = false;
-                                            if(fs.existsSync(folderD + "/target/target.jpg")) jpg = true;
+                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
                                             var dat = false;
-                                            if(fs.existsSync(folderD + "/target/target.dat") && fs.existsSync(folderD + "/target/target.xml")) dat = true;
+                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
 
 
                                             var sendObject = {
@@ -3232,7 +3238,7 @@ function objectWebServer() {
                                 });
 
                                 unzipper.extract({
-                                    path: folderD + "/target",
+                                    path: folderD + '/' + identityFolderName + "/target",
                                     filter: function (file) {
                                         return file.type !== "SymbolicLink";
                                     }
@@ -3283,7 +3289,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 cout("this should be the IP" + objectIDXML);
 
                 try {
-                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + "/object.json", "utf8"));
+                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + "/object.json", "utf8"));
                     objects[objectIDXML].ip = ip.address();
                     cout("testing: " + objects[objectIDXML].ip);
                 } catch (e) {
