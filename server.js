@@ -100,8 +100,12 @@ const netmask = "255.255.0.0"; // define the network scope from which this serve
 
 console.log(parseInt(version.replace(/\./g, "")));
 
+var os = require('os');
+var path = require('path');
+
 // All objects are stored in this folder:
-const objectPath = __dirname + "/objects";
+// Look for objects in the user Documents directory instead of __dirname+"/objects"
+var objectPath = path.join(path.join(os.homedir(), 'Documents'), 'reality-objects');
 // All visual UI representations for IO Points are stored in this folder:
 const nodePath = __dirname + "/libraries/nodes";
 // All visual UI representations for IO Points are stored in this folder:
@@ -123,6 +127,11 @@ var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
 var exphbs = require('express-handlebars'); // View Template library
 
+// create objects folder at objectPath if necessary
+if(!fs.existsSync(objectPath)) {
+    console.log('created objects directory at ' + objectPath);
+    fs.mkdirSync(objectPath);
+}
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -812,7 +821,7 @@ function loadObjects() {
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + objectFolderList[i] + "/object.json", "utf8"));
+                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectPath + '/' + objectFolderList[i] + "/object.json", "utf8"));
                 objects[tempFolderName].ip = ip.address();
 
                 // this is for transforming old lists to new lists
@@ -910,6 +919,10 @@ function exit() {
 }
 
 process.on('SIGINT', exit);
+
+if (process.pid) {
+    console.log('Reality Server server.js process is running with PID ' + process.pid);
+}
 
 /**********************************************************************************************************************
  ******************************************** Emitter/Client/Sender ***************************************************
@@ -1246,7 +1259,7 @@ function objectWebServer() {
 
 
         if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
-            var fileName = __dirname + "/objects" + req.url;
+            var fileName = objectPath + req.url;
 
             if (urlArray[urlArray.length-1] !== "index.html" && urlArray[urlArray.length-1] !== "index.htm") {
                 if (fs.existsSync(fileName + "index.html")) {
@@ -1284,7 +1297,7 @@ function objectWebServer() {
         }
         else if ((req.method === "GET" && urlArray[2] !== "nodes") && (req.url.slice(-1) === "/" || urlArray[3].match(/\.json?$/))) {
 
-            var fileName = __dirname + "/objects" + req.url + "object.json";
+            var fileName = objectPath + req.url + "object.json";
 
             if (!fs.existsSync(fileName)) {
                 next();
@@ -1303,7 +1316,7 @@ function objectWebServer() {
         }
         else
             next();
-    }, express.static(__dirname + '/objects/'));
+    }, express.static(objectPath + '/'));
 
     if (globalVariables.developer === true) {
         webServer.use("/libraries", express.static(__dirname + '/libraries/webInterface/'));
@@ -2092,7 +2105,7 @@ function objectWebServer() {
 
         var obj = objects[objectID];//.frames[frame];
 
-        var memoryDir = __dirname + '/objects/' + obj.name + '/memory/';
+        var memoryDir = objectPath + '/' + obj.name + '/memory/';
         if (!fs.existsSync(memoryDir)) {
             fs.mkdirSync(memoryDir);
         }
@@ -2554,9 +2567,9 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
             console.log(req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
-            var objectPath = __dirname + "/objects/" + req.params.object +"/frames/"+req.params.frame;
+            var objectPath = objectPath + '/' + req.params.object +"/frames/"+req.params.frame;
             var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
-                item.path = item.path.replace(__dirname+"/objects", "/obj");
+                item.path = item.path.replace(objectPath, "/obj");
             });
             res.json(tree);
         });
@@ -2575,7 +2588,7 @@ function objectWebServer() {
         webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
             // TODO insecure, requires sanitization of path
             console.log('PUT', req.path, req.body.content);
-            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) {
+            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectPath
                 if (err) {
                     throw err;
                 }
@@ -2602,6 +2615,11 @@ function objectWebServer() {
             res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ip.address(), serverPort));
         });
 
+        // restart the server from the web frontend to load
+
+        webServer.get('/restartServer/', function(req, res) {
+            exit();
+        });
 
         //  deactivated
 
@@ -2674,7 +2692,7 @@ function objectWebServer() {
 
             var zip = Archiver.create('zip', false);
             zip.pipe(res);
-            zip.directory(__dirname + "/objects/" + req.params[0], req.params[0] + "/");
+            zip.directory(objectPath + '/' + req.params[0], req.params[0] + "/");
             zip.finalize();
         });
 
@@ -2762,7 +2780,7 @@ function objectWebServer() {
 
         webServer.post(objectInterfaceFolder + "contentDelete/:id", function (req, res) {
             if (req.body.action === "delete") {
-                var folderDel = __dirname + '/objects/' + req.body.name;
+                var folderDel = objectPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
@@ -2855,7 +2873,7 @@ function objectWebServer() {
                 }
 
                 if (frameName !== "") {
-                    var folderDelFrame = __dirname + '/objects/' + req.body.name+"/frames/"+frameName;
+                    var folderDelFrame = objectPath + '/' + req.body.name+"/frames/"+frameName;
 
                     deleteFolderRecursive(folderDelFrame);
 
@@ -2868,7 +2886,7 @@ function objectWebServer() {
 
                 } else {
 
-                    var folderDel = __dirname + '/objects/' + req.body.name;
+                    var folderDel = objectPath + '/' + req.body.name;
                     deleteFolderRecursive(folderDel);
 
                     var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
@@ -2902,7 +2920,7 @@ function objectWebServer() {
                 cout("komm ich hier hin?");
 
                 var form = new formidable.IncomingForm({
-                    uploadDir: __dirname + '/objects',  // don't forget the __dirname here
+                    uploadDir: objectPath,  // don't forget the __dirname here
                     keepExtensions: true
                 });
 
@@ -2983,7 +3001,7 @@ function objectWebServer() {
                 tmpFolderFile = req.params.id;
 
                 if (req.body.action === "delete") {
-                    var folderDel = __dirname + '/objects/' + req.body.name;
+                    var folderDel = objectPath + '/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
                         if (fs.lstatSync(folderDel).isDirectory()) {
@@ -3021,7 +3039,7 @@ function objectWebServer() {
                 }
 
                 var form = new formidable.IncomingForm({
-                    uploadDir: __dirname + '/objects/' + req.params.id,  // don't forget the __dirname here
+                    uploadDir: objectPath + '/' + req.params.id,  // don't forget the __dirname here
                     keepExtensions: true
                 });
 
@@ -3248,7 +3266,7 @@ function objectWebServer() {
 function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
     cout("I can start");
 
-    var folder = __dirname + '/objects/' + folderVar + '/';
+    var folder = objectPath + '/' + folderVar + '/';
     cout(folder);
 
     if (fs.existsSync(folder)) {
@@ -3265,7 +3283,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 cout("this should be the IP" + objectIDXML);
 
                 try {
-                    objects[objectIDXML] = JSON.parse(fs.readFileSync(__dirname + "/objects/" + folderVar + "/object.json", "utf8"));
+                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectPath + '/' + folderVar + "/object.json", "utf8"));
                     objects[objectIDXML].ip = ip.address();
                     cout("testing: " + objects[objectIDXML].ip);
                 } catch (e) {

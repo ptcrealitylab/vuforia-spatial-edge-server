@@ -57,8 +57,11 @@
 
 var debug = false;
 var xml2js = require('xml2js');
+var os = require('os');
+var path = require('path');
 var fs = require('fs');
 
+var objectPath = path.join(path.join(os.homedir(), 'Documents'), 'reality-objects');
 
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -76,8 +79,8 @@ exports.readObject = function (objectLookup, folder) {
 
 exports.createFolder = function (folderVar, dirnameO, debug) {
 
-    var folder = dirnameO + '/objects/' + folderVar + '/';
-    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
+    var folder = objectPath + '/' + folderVar + '/';
+    var frames = objectPath + '/' + folderVar + '/frames/';
     //var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
     if (debug) console.log("Creating folder: " + folder);
 
@@ -124,9 +127,9 @@ exports.createFolder = function (folderVar, dirnameO, debug) {
 
 exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
     if(location === "global") return;
-    var folder = dirnameO + '/objects/' + folderVar + '/';
-    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
-    var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
+    var folder = objectPath + '/' + folderVar + '/';
+    var frames = folder + 'frames/';
+    var firstFrame = frames + frameVar + '/';
     if (debug) console.log("Creating frame folder: " + folder);
 
     if (!fs.existsSync(folder)) {
@@ -156,8 +159,8 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
             //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectPath + '/' + folderVar + "/frames/"+frameVar+"/index.html"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectPath + '/' + folderVar + "/frames/"+frameVar+"/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
@@ -195,7 +198,7 @@ exports.deleteFrameFolder = function(objectName, frameName, dirname0) {
     console.log('objectName: ' + objectName);
     console.log('frameName: ' + frameName);
 
-    var folderPath = dirname0 + '/objects/' + objectName + '/frames/' + frameName;
+    var folderPath = objectPath + '/' + objectName + '/frames/' + frameName;
     console.log('delete frame folder: ' + folderPath);
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
@@ -238,7 +241,7 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
         return "allTargetsPlaceholder000000000000";
     }
 
-    var xmlFile = dirnameO + '/objects/' + folderName + '/target/target.xml';
+    var xmlFile = objectPath + '/' + folderName + '/target/target.xml';
 
     if (fs.existsSync(xmlFile)) {
         var resultXML = "";
@@ -272,7 +275,7 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
 exports.writeObjectToFile = function (objects, object, dirnameO, writeToFile) {
     if (writeToFile) {
 console.log("start saving");
-    var outputFilename = dirnameO + '/objects/' + objects[object].name + '/object.json';
+    var outputFilename = objectPath + '/' + objects[object].name + '/object.json';
     fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
         if (err) {
             console.log(err);
