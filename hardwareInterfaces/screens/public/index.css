@@ -212,3 +212,41 @@ body {
     width: 400px;
     height: 200px;
 }
+
+.screenFrame {
+    display: inline;
+    /*opacity: 1.0;*/
+    transform-origin: left top;
+}
+
+.arFrame {
+    display: none;
+    /*opacity: 0.1;*/
+    transform-origin: left top;
+}
+body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.bg {
+    /* The image used is set programmatically now to look for resources/[objectName].jpg */
+
+    /* Full height */
+    height: 100%;
+
+    /* Center and scale the image nicely */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.frame {
+    transform-origin: left top;
+}
+
+.svgOverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+}

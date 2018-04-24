@@ -23,8 +23,8 @@ if (exports.enabled) {
     // Then make sure to add [objectName].jpg to the hardwareInterfaces/screens/public/resources/ directory
     // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
     // ----------------------------------------------------------------------------------------------------------- //
-    bindScreen('frameScreen', 3100);
-    bindScreen('frameScreen2', 3101);
+    bindScreen('screenOne', 3100);
+    // bindScreen('frameScreen2', 3101);
     // ----------------------------------------------------------------------------------------------------------- //
 
     var express = require('express');
