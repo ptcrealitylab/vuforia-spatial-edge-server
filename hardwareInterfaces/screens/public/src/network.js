@@ -86,8 +86,8 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
                     var iframe = document.querySelector('#iframe' + frameKey);
                     if (iframe) {
                         iframe.parentElement.style.transform = 'scale(' + frame.screen.scale + ')';
-                        editingState.touchOffset.x = (touchOffsetX) ? (-1 * touchOffsetX) : 0;
-                        editingState.touchOffset.y = (touchOffsetY) ? (-1 * touchOffsetY) : 0;
+                        editingState.touchOffset.x = (touchOffsetX) ? (-1 * touchOffsetX * frame.screen.scale) : 0;
+                        editingState.touchOffset.y = (touchOffsetY) ? (-1 * touchOffsetY * frame.screen.scale) : 0;
                         console.log('received scale, touchOffset', scale, touchOffsetX, touchOffsetY);
                     }
                 }
