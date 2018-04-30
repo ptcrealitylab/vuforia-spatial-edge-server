@@ -587,7 +587,7 @@ exports.addScreenObjectListener = function (objectName, callBack) {
 exports.writeScreenObjects = function (object, frame, node, touchOffsetX, touchOffsetY) {
     if(!object) object = null;
     if(!frame) frame = null;
-    if(!node) node = null;
+    if(!node || node === "null") node = null;
 
     var objectKey = utilities.readObject(objectLookup, object); //get globally unique object id
     if(objectKey) object = objectKey;

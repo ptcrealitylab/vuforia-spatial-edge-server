@@ -123,6 +123,9 @@ realityEditor.draw.drawTransformed = function(frameKey, frame) {
         frameContainerDom.classList.add('screenFrame');
         frameContainerDom.style.left = frame.screen.x + 'px';
         frameContainerDom.style.top = frame.screen.y + 'px';
+
+        frameContainerDom.style.transform = 'scale(' + frame.screen.scale + ')';
+
     } else {
         // frameContainerDom.style.display = 'none';
         frameContainerDom.classList.remove('screenFrame');
@@ -131,4 +134,61 @@ realityEditor.draw.drawTransformed = function(frameKey, frame) {
         frameContainerDom.style.left = arPos.x + 'px';
         frameContainerDom.style.top = arPos.y + 'px';
     }
+};
+
+// draw circles for scaling
+
+/**
+ * @desc
+ * @param context
+ * @param lineStartPoint
+ * @param lineEndPoint
+ * @param radius
+ **/
+
+realityEditor.draw.drawGreen = function(context, lineStartPoint, lineEndPoint, radius) {
+    context.beginPath();
+    context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
+    context.strokeStyle = "#7bff08";
+    context.lineWidth = 2;
+    context.setLineDash([7]);
+    context.stroke();
+    context.closePath();
+
+};
+
+/**
+ * @desc
+ * @param context
+ * @param lineStartPoint
+ * @param lineEndPoint
+ * @param radius
+ **/
+
+realityEditor.draw.drawRed = function(context, lineStartPoint, lineEndPoint, radius) {
+    context.beginPath();
+    context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
+    context.strokeStyle = "#ff036a";
+    context.lineWidth = 2;
+    context.setLineDash([7]);
+    context.stroke();
+    context.closePath();
+};
+
+/**
+ * @desc
+ * @param context
+ * @param lineStartPoint
+ * @param lineEndPoint
+ * @param radius
+ **/
+
+realityEditor.draw.drawBlue = function(context, lineStartPoint, lineEndPoint, radius) {
+    context.beginPath();
+    context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
+    context.strokeStyle = "#01fffd";
+    context.lineWidth = 2;
+    context.setLineDash([7]);
+    context.stroke();
+    context.closePath();
 };

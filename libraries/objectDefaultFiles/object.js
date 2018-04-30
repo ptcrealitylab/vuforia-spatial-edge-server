@@ -156,6 +156,10 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.node = msgContent.node;
         realityObject.frame = msgContent.frame;
         realityObject.object = msgContent.object;
+
+        if (realityObject.sendScreenObject) {
+            reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+        }
     }
     else if (typeof msgContent.logic !== "undefined") {
 
@@ -178,6 +182,10 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.frame = msgContent.frame;
         realityObject.object = msgContent.object;
         realityObject.publicData = msgContent.publicData;
+
+        if (realityObject.sendScreenObject) {
+            reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+        }
     }
 
     if (typeof msgContent.modelViewMatrix !== "undefined") {
@@ -447,13 +455,16 @@ function RealityInterface() {
 
     this.activateScreenObject = function() {
         realityObject.sendScreenObject = true;
-        parent.postMessage(JSON.stringify({
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object,
-            sendScreenObject : true
-        }), '*');
+
+        if (realityObject.object && realityObject.frame) {
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                sendScreenObject : true
+            }), '*');
+        }
     };
 
     /**

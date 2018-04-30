@@ -8,6 +8,8 @@ realityEditor.touchEvents.addTouchListeners = function() {
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {
 
+    isMouseDown = true; // set here in case we start moving programmatically
+
     editingState.objectKey = objectKey;
     editingState.frameKey = frameKey;
     editingState.nodeKey = nodeKey;
@@ -20,8 +22,16 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
 };
 
 realityEditor.touchEvents.onMouseDown = function(e) {
-    mouseX = e.screenX;
-    mouseY = e.screenY;
+
+    isMouseDown = true;
+
+    if (e.pointerType === 'mouse') { // hack to let us reposition things with the mouse too
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    } else {
+        mouseX = e.screenX;
+        mouseY = e.screenY;
+    }
 
     var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
     if (!clickedElement) {
@@ -53,8 +63,16 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 };
 
 realityEditor.touchEvents.onMouseMove = function(e) {
-    mouseX = e.screenX;
-    mouseY = e.screenY;
+
+    if (!isMouseDown) { return; } // only do these calculations if we're actually pressing down
+
+    if (e.pointerType === 'mouse') { // hack to let us reposition things with the mouse too
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+    } else {
+        mouseX = e.screenX;
+        mouseY = e.screenY;
+    }
 
     // cancel the touch hold timer if you move more than a negligible amount
     if (touchEditingTimer) {
@@ -87,6 +105,15 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 };
 
 realityEditor.touchEvents.onMouseUp = function(e) {
+
+    isMouseDown = false;
+
+    realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
+
     realityEditor.utilities.resetEditingState();
     realityEditor.utilities.clearTouchTimer();
+    initialScaleData = null;
+    globalCanvas.context.clearRect(0, 0, globalCanvas.canvas.width, globalCanvas.canvas.height);
+
+    // TODO: reset position within screen bounds or send to AR if outside of bounds
 };

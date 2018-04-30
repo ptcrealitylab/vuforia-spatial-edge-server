@@ -8,6 +8,7 @@
 <body>
 
 <div class="bg"></div>
+<canvas id="canvas"></canvas>
 
 <script src="src/index.js"></script>
 
@@ -34,6 +35,9 @@
     // constants
     var AR_MARKER_SIZE = 300.0;
 
+    // difference between touchscreen is mousemove events trigger regardless of whether clicking down (so need to keep track ourselves)
+    var isMouseDown = false;
+
     /**
      * @typedef {Object} EditingState
      * @desc All the necessary state about what's currently being repositioned. Everything else can be calculated from these.
@@ -51,12 +55,25 @@
         objectKey: null,
         frameKey: null,
         nodeKey: null,
-        touchOffset: null,
+        touchOffset: null
         // unconstrained: false,
         // unconstrainedOffset: null
     };
 
     var touchEditingTimer = null;
+
+    /**
+     * @typedef initialScaleData
+     * @property radius {number} how far apart in pixels the two touches are to begin with
+     * @property scale {number} the frame or node's initial scale value before the gesture, to use as a base multiplier
+     */
+    var initialScaleData = null;
+
+    var globalCanvas = {};
+    globalCanvas.canvas = document.getElementById('canvas');
+    globalCanvas.canvas.width = window.innerWidth;
+    globalCanvas.canvas.height = window.innerHeight;
+    globalCanvas.context = globalCanvas.canvas.getContext('2d');
 
     window.requestAnimFrame = function(){
         return (
@@ -149,6 +166,8 @@
         var el = document.elementFromPoint(x, y);
         if (el) {
             el.dispatchEvent(ev);
+        } else {
+            document.dispatchEvent(ev); // if you are outside the bounds, still try to move it
         }
     }
 
