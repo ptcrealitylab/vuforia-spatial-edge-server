@@ -241,11 +241,18 @@ body, html {
     background-repeat: no-repeat;
     background-size: cover;
 }
+
 .frame {
     transform-origin: left top;
 }
 
 .svgOverlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+#canvas {
     position: absolute;
     left: 0;
     top: 0;

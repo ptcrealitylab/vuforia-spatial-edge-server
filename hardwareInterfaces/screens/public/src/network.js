@@ -28,53 +28,26 @@ realityEditor.network.setupSocketListeners = function() {
         // console.log(screenPos.x + ', ' + screenPos.y);
         // console.log(msg.touchState);
 
+        realityEditor.network.updateFrameVisualization(msg.object, msg.frame, msg.isScreenVisible, msg.touchOffsetX, msg.touchOffsetY, msg.scale);
+
         if (msg.touchState === 'touchstart') {
             console.log('touchstart');
-            simulateMouseEvent(screenPos.x, screenPos.y, 'mousedown');
-
-        }
-
-        if (msg.object && msg.frame) {
-            console.log('set visibility: ' + msg.isScreenVisible + ' for object ' + msg.object + ', frame ' + msg.frame);
-            var frame = frames[msg.frame];
-            if (frame) {
-                var oldVisualization = frame.visualization;
-                frame.visualization = msg.isScreenVisible ? 'screen' : 'ar';
-
-                realityEditor.touchEvents.beginTouchEditing(msg.object, msg.frame, msg.node);
-
-                // set scale of screen frame to match AR frame's size
-                if (frame.visualization === 'screen' && oldVisualization === 'ar' && msg.scale !== frame.screen.scale) {
-                    frame.ar.scale = msg.scale;
-                    frame.screen.scale = msg.scale * scaleARFactor;
-
-                    var iframe = document.querySelector('#iframe' + msg.frame);
-                    if (iframe) {
-                        iframe.parentElement.style.transform = 'scale(' + frame.screen.scale + ')';
-
-                        if (msg.touchOffsetX) {
-                            // dragOffsetX = -1 * msg.touchOffsetX;// + 200;// / getScreenScaleFactor();
-                            editingState.touchOffset.x = -1 * msg.touchOffsetX;
-                        }
-                        if (msg.touchOffsetY) {
-                            // dragOffsetY = -1 * msg.touchOffsetY;// + 200;// / getScreenScaleFactor();
-                            editingState.touchOffset.y = -1 * msg.touchOffsetY;
-                        }
-                        console.log('received touchOffset', msg.touchOffsetX, msg.touchOffsetY);
-                    }
-                }
-            }
+            simulateMouseEvent(screenPos.x, screenPos.y, 'pointerdown');
         }
 
         if (msg.touchState === 'touchmove') {
-            simulateMouseEvent(screenPos.x, screenPos.y, 'mousemove');
+            simulateMouseEvent(screenPos.x, screenPos.y, 'pointermove');
+            if (msg.touches && msg.touches.length > 1 &&
+                typeof msg.touches[1].x === 'number' &&
+                typeof msg.touches[1].y === 'number') {
+                var outerTouchScreenPos = getScreenPosFromARPos(msg.touches[1].x, msg.touches[1].y);
+                realityEditor.utilities.scaleEditingVehicle(screenPos, outerTouchScreenPos);
+            }
 
         } else if (msg.touchState === 'touchend') {
             console.log('touchend');
-            simulateMouseEvent(screenPos.x, screenPos.y, 'mouseup');
-            currentlyDraggedPanel = null;
-            dragOffsetX = null;
-            dragOffsetY = null;
+            simulateMouseEvent(screenPos.x, screenPos.y, 'pointerup');
+            realityEditor.utilities.resetEditingState();
         }
 
     });
@@ -88,6 +61,43 @@ realityEditor.network.setupSocketListeners = function() {
         // TODO: set screen position based on AR position??
     });
 
+};
+
+realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, isScreenVisible, touchOffsetX, touchOffsetY, scale) {
+    if (objectKey && frameKey) {
+        console.log('set visibility: ' + isScreenVisible + ' for object ' + objectKey + ', frame ' + frameKey);
+        var frame = frames[frameKey];
+        if (frame) {
+            var oldVisualization = frame.visualization;
+            frame.visualization = isScreenVisible ? 'screen' : 'ar';
+
+            // additional setup for the frame when it first gets pushed into AR
+            if (frame.visualization === 'screen' && oldVisualization === 'ar') {
+
+                // show SVG overlay and being dragging around
+                realityEditor.touchEvents.beginTouchEditing(objectKey, frameKey, null);
+
+                // set scale of screen frame to match AR frame's size
+                // and set touchOffset to keep dragging from same point as in AR
+                if (scale !== frame.screen.scale) {
+                    frame.ar.scale = scale;
+                    frame.screen.scale = scale * scaleARFactor;
+
+                    var iframe = document.querySelector('#iframe' + frameKey);
+                    if (iframe) {
+                        iframe.parentElement.style.transform = 'scale(' + frame.screen.scale + ')';
+                        editingState.touchOffset.x = (touchOffsetX) ? (-1 * touchOffsetX) : 0;
+                        editingState.touchOffset.y = (touchOffsetY) ? (-1 * touchOffsetY) : 0;
+                        console.log('received scale, touchOffset', scale, touchOffsetX, touchOffsetY);
+                    }
+                }
+
+            } else if (frame.visualization === 'ar' && oldVisualization === 'screen') {
+                realityEditor.utilities.resetEditingState();
+            }
+
+        }
+    }
 };
 
 /**
@@ -214,4 +224,17 @@ realityEditor.network.postData = function(url, body, callback) {
     //request.setRequestHeader("Content-length", params.length);
     // request.setRequestHeader("Connection", "close");
     request.send(params);
+};
+
+realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey) {
+
+    if (!frames[frameKey]) return;
+    // post new position to server when you stop moving a frame
+    var content = frames[frameKey].screen;
+    content.scaleARFactor = scaleARFactor;
+    content.ignoreActionSender = true; // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
+    this.postData(urlEndpoint, content, function (response, error) {
+        console.log(response, error);
+    });
 };

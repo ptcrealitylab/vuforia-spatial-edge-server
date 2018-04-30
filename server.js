@@ -1258,16 +1258,35 @@ function objectWebServer() {
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
-        urlArray.splice(0,1);
-        urlArray.splice(0,1);
+        urlArray.splice(0, 1);
+        urlArray.splice(0, 1);
+        if(urlArray[1] === "frames") {
+            urlArray.splice(1, 1);
+        }
+
+        if((urlArray[urlArray.length-1] === "target.dat" || urlArray[urlArray.length-1] === "target.jpg"|| urlArray[urlArray.length-1] === "target.xml")
+            && urlArray[urlArray.length-2] === "target"){
+            urlArray[urlArray.length-2] = identityFolderName+"/target";
+        }
+
+        if ((urlArray[urlArray.length-1] === "memory.jpg" || urlArray[urlArray.length-1] === "memoryThumbnail.jpg")
+            && urlArray[urlArray.length-2] === "memory") {
+            urlArray[urlArray.length-2] = identityFolderName+"/memory";
+        }
+
         var newUrl = "";
-        for (var i = 0; i < urlArray.length; i++) {
-            newUrl += "/" + urlArray[i];
+        for(var i = 0; i< urlArray.length; i++){
+                newUrl += "/"+ urlArray[i];
+        }
+
+        if(newUrl.slice(-1) === "/"){
+            newUrl += "index.html";
+            urlArray.push("index.html");
         }
         console.log(newUrl);
 
         if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
-            var fileName = objectsPath + req.url;
+            var fileName = objectsPath + newUrl;
 
             if (urlArray[urlArray.length-1] !== "index.html" && urlArray[urlArray.length-1] !== "index.htm") {
                 if (fs.existsSync(fileName + "index.html")) {
@@ -1288,15 +1307,15 @@ function objectWebServer() {
             html = html.replace('<script src="objectIO.js"></script>', '');
             html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
 
-            var level = "";
+            var level = "../";
             for(var i = 0; i < urlArray.length; i++){
                 level += "../";
             }
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
 
-            var objectKey = utilities.readObject(objectLookup,urlArray[2]);
-            var frameKey = utilities.readObject(objectLookup,urlArray[2])+urlArray[4];
+            var objectKey = utilities.readObject(objectLookup,urlArray[0]);
+            var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
 
              scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
              scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
@@ -1323,7 +1342,7 @@ function objectWebServer() {
             res.json(json);
         }
         else {
-          console.log(objectsPath);
+           console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
     });
@@ -2446,11 +2465,15 @@ function objectWebServer() {
 
             console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
+            var alternateVisualization = null;
             // for frames, the position data is inside "ar" or "screen"
             if (activeVehicle.hasOwnProperty('visualization')) {
                 if (activeVehicle.visualization === "ar") {
                     activeVehicle = activeVehicle.ar;
                 } else if (activeVehicle.visualization === "screen") {
+                    if (typeof body.scale === "number" && typeof body.scaleARFactor === "number") {
+                        activeVehicle.ar.scale = body.scale / body.scaleARFactor;
+                    }
                     activeVehicle = activeVehicle.screen;
                 }
             }
@@ -2464,6 +2487,7 @@ function objectWebServer() {
                 activeVehicle.x = body.x;
                 activeVehicle.y = body.y;
                 activeVehicle.scale = body.scale;
+
                 // console.log(req.body);
                 // ask the devices to reload the objects
                 didUpdate = true;
@@ -2476,9 +2500,13 @@ function objectWebServer() {
 
             if (didUpdate) {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                if (typeof body.ignoreActionSender === 'undefined') {
-                    actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
-                }
+                actionSender({reloadFrame: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
+
+                // if (typeof body.ignoreActionSender === 'undefined') {
+                //     actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+                // } else {
+                //     actionSender({reloadVehicleScale: {object: objectID, frame: frameID, node: nodeID, visualization: activeVehicle.visualization, scale: body.scale}, lastEditor: body.lastEditor});
+                // }
                 updateStatus = "added object";
             }
 
@@ -2714,6 +2742,24 @@ function objectWebServer() {
             res.json(objects[req.params.objectID].frames[req.params.frameID].nodes[req.params.nodeID] || {});
         });
 
+        // sends json object for a specific reality frame. 1st * is the object name, 2nd * is the frame name
+        // ths is the most relevant for
+        // ****************************************************************************************************************
+        webServer.get('/object/*/frame/*/', function (req, res) {
+            //  cout("get 7");
+
+            var thisObject = objects[req.params[0]];
+            if (thisObject) {
+                var thisFrame = thisObject.frames[req.params[1]];
+                if (thisFrame) {
+                    res.status(200).json(thisFrame);
+                    return;
+                }
+            }
+
+            res.status(404).json({failure: true, error: 'Object: ' + req.params[0] + ', frame: ' + req.params[1] + ' not found'}).end();
+        });
+
         // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
@@ -2872,15 +2918,22 @@ function objectWebServer() {
                 // remove when frame is implemented
 
                 var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
-                if(!objects[objectKey]) return;
-
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
-                if(req.body.frame in objects[objectKey].frames){
-                    frameName = objects[objectKey].frames[req.body.frame].name;
-                } else {
-                    frameNameKey = objectKey+req.body.frame;
+                var pathKey = req.body.path;
+                if(objects[objectKey]) {
+                    if (req.body.frame in objects[objectKey].frames) {
+                        frameName = objects[objectKey].frames[req.body.frame].name;
+                    } else {
+                        frameNameKey = objectKey + req.body.frame;
+                    }
                 }
+
+                if(pathKey !== ""){
+                   fs.unlinkSync(objectsPath + pathKey.substring(4));
+                    res.send("ok");
+                    return;
+                };
 
                 if (frameName !== "") {
                     var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
@@ -2888,7 +2941,9 @@ function objectWebServer() {
                     deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
-                        delete objects[objectKey].frames[frameNameKey];
+                        if(objects[objectKey]) {
+                            delete objects[objectKey].frames[frameNameKey];
+                        }
                     }
 
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
@@ -2904,9 +2959,11 @@ function objectWebServer() {
                     if (tempFolderName2 !== null) {
 
                         // remove object from tree
-                        delete objects[tempFolderName2];
-                        delete knownObjects[tempFolderName2];
-                        delete objectLookup[req.body.name];
+                        if(objects[tempFolderName2]) {
+                            delete objects[tempFolderName2];
+                            delete knownObjects[tempFolderName2];
+                            delete objectLookup[req.body.name];
+                        }
 
                     }
 
@@ -3064,8 +3121,15 @@ function objectWebServer() {
                     //rename the incoming file to the file's name
                     if (req.headers.type === "targetUpload") {
                         file.path = form.uploadDir + "/" + file.name;
-                    } else {
-                        file.path = form.uploadDir + "/" + file.name;
+                    } else if(req.headers.type === "fileUpload") {
+                        console.log(form.uploadDir);
+                        console.log(req.headers.folder);
+
+                        if(typeof req.headers.folder !== "undefined"){
+                            file.path = form.uploadDir + "/" + req.headers.frame +"/"+ req.headers.folder +"/" +file.name;
+                        } else {
+                            file.path = form.uploadDir + "/" + req.headers.frame +"/"+ file.name;
+                        }
                     }
                 });
 

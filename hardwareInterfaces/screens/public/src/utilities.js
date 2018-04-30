@@ -1,5 +1,11 @@
 createNameSpace("realityEditor.utilities");
 
+realityEditor.utilities.getEditingVehicle = function() {
+    if (editingState.frameKey) {
+        return frames[editingState.frameKey];
+    }
+};
+
 realityEditor.utilities.getEditingElement = function() {
     if (editingState.frameKey) {
         return document.querySelector('#iframe'+editingState.frameKey);
@@ -82,4 +88,73 @@ realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey)
             y: newCoords.y
         }
     }), '*');
+};
+
+
+
+/**
+ * Scales the editing frame (if there is one currently) using the first two touches.
+ * The new scale starts at the initial scale and varies linearly with the changing touch radius.
+ * @param {Object.<x,y>} centerTouch the first touch event, where the scale is centered from
+ * @param {Object.<x,y>} outerTouch the other touch, where the scale extends to
+ */
+realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch) {
+
+    var activeVehicle = this.getEditingVehicle();
+    if (!activeVehicle) {
+        console.warn('no currently editing vehicle');
+        return;
+    }
+
+    if (!centerTouch || !outerTouch || !centerTouch.x || !centerTouch.y || !outerTouch.x || !outerTouch.y) {
+        console.warn('trying to scale vehicle using improperly formatted touches');
+        return;
+    }
+
+    var dx = centerTouch.x - outerTouch.x;
+    var dy = centerTouch.y - outerTouch.y;
+    var radius = Math.sqrt(dx * dx + dy * dy);
+
+    var positionData = activeVehicle.screen;
+
+    if (!initialScaleData) {
+        initialScaleData = {
+            radius: radius,
+            scale: positionData.scale
+        };
+        return;
+    }
+
+    // calculate the new scale based on the radius between the two touches
+    var newScale = initialScaleData.scale + (radius - initialScaleData.radius) / (300 / getScreenScaleFactor());
+    if (typeof newScale !== 'number') return;
+
+    // manually calculate positionData.x and y to keep centerTouch in the same place relative to the vehicle
+    // var frameContainerDom = document.querySelector('#object'+activeVehicle.uuid);
+    // if (frameContainerDom && editingState.touchOffset) {
+    //     var touchOffsetFromCenter = {
+    //         x: frameContainerDom.clientWidth/2 - editingState.touchOffset.x,
+    //         y: frameContainerDom.clientHeight/2 - editingState.touchOffset.y
+    //     };
+    //     var scaleDifference = Math.max(0.2, newScale) - positionData.scale;
+    //     positionData.x += touchOffsetFromCenter.x * scaleDifference;
+    //     positionData.y += touchOffsetFromCenter.y * scaleDifference;
+    // }
+
+    positionData.scale = Math.max(0.2, newScale); // 0.2 is the minimum scale allowed
+
+    // redraw circles to visualize the new scaling
+    globalCanvas.context.clearRect(0, 0, globalCanvas.canvas.width, globalCanvas.canvas.height);
+
+    // draw a blue circle visualizing the initial radius
+    var circleCenterCoordinates = [centerTouch.x, centerTouch.y];
+    var circleEdgeCoordinates = [outerTouch.x, outerTouch.y];
+    realityEditor.draw.drawBlue(globalCanvas.context, circleCenterCoordinates, circleEdgeCoordinates, initialScaleData.radius);
+
+    // draw a red or green circle visualizing the new radius
+    if (radius < initialScaleData.radius) {
+        realityEditor.draw.drawRed(globalCanvas.context, circleCenterCoordinates, circleEdgeCoordinates, radius);
+    } else {
+        realityEditor.draw.drawGreen(globalCanvas.context, circleCenterCoordinates, circleEdgeCoordinates, radius);
+    }
 };
