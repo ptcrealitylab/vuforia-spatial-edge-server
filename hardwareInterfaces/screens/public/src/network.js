@@ -23,6 +23,13 @@ realityEditor.network.setupSocketListeners = function() {
 
     // callback for when the screenObject data structure is updated in the editor based on projected touch events
     socket.on('screenObject', function(msg) {
+        multiTouchList = [];
+        if (msg.touches) {
+            multiTouchList = msg.touches.filter(function(touch) {
+                return (typeof touch.x === "number" && typeof touch.y === "number");
+            });
+        }
+
         var screenPos = getScreenPosFromARPos(msg.x, msg.y);
         // console.log(msg);
         // console.log(screenPos.x + ', ' + screenPos.y);
@@ -37,6 +44,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         if (msg.touchState === 'touchmove') {
             simulateMouseEvent(screenPos.x, screenPos.y, 'pointermove');
+
             if (msg.touches && msg.touches.length > 1 &&
                 typeof msg.touches[1].x === 'number' &&
                 typeof msg.touches[1].y === 'number') {
@@ -47,7 +55,7 @@ realityEditor.network.setupSocketListeners = function() {
         } else if (msg.touchState === 'touchend') {
             console.log('touchend');
             simulateMouseEvent(screenPos.x, screenPos.y, 'pointerup');
-            realityEditor.utilities.resetEditingState();
+            // realityEditor.utilities.resetEditingState();
         }
 
     });

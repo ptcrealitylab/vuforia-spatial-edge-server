@@ -106,12 +106,16 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
 realityEditor.touchEvents.onMouseUp = function(e) {
 
-    isMouseDown = false;
-
     realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
 
-    realityEditor.utilities.resetEditingState();
-    realityEditor.utilities.clearTouchTimer();
+    // only reset dragging if last touch
+    if (multiTouchList.length < 2) {
+        isMouseDown = false;
+        realityEditor.utilities.resetEditingState();
+        realityEditor.utilities.clearTouchTimer();
+    }
+
+    // reset scaling regardless
     initialScaleData = null;
     globalCanvas.context.clearRect(0, 0, globalCanvas.canvas.width, globalCanvas.canvas.height);
 
