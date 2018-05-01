@@ -66,7 +66,7 @@ var realityObject = {
     messageCallBacks: {},
     interface : "gui",
     version: 200,
-    moveDelay: 1000,
+    moveDelay: 400,
     eventObject : {
         version : null,
         object: null,
@@ -147,7 +147,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 sendMatrix: realityObject.sendMatrix,
                 sendAcceleration: realityObject.sendAcceleration,
                 fullScreen: realityObject.sendFullScreen,
-                stickiness: realityObject.sendSticky
+                stickiness: realityObject.sendSticky,
+                moveDelay: realityObject.moveDelay
             }
             )
             // this needs to contain the final interface source
@@ -583,7 +584,17 @@ function RealityInterface() {
     };
 
     this.setMoveDelay = function(delayInMilliseconds) {
-        realityObject.moveDelay = delayInMilliseconds
+        realityObject.moveDelay = delayInMilliseconds;
+
+        if (realityObject.object && realityObject.frame) {
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                moveDelay : delayInMilliseconds
+            }), '*');
+        }
     };
 
     this.getUnitValue = function (dataPackage){
