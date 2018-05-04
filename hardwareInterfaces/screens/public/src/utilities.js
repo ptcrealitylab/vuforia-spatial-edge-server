@@ -78,19 +78,33 @@ realityEditor.utilities.shouldPostEventsIntoIframe = function() {
  */
 realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey) {
     var iframe = document.getElementById('iframe' + (nodeKey || frameKey));
-    var newCoords = webkitConvertPointFromPageToNode(iframe, new WebKitPoint(event.pageX, event.pageY));
+    var newCoords = webkitConvertPointFromPageToNode(iframe, new WebKitPoint(mouseX, mouseY));
     iframe.contentWindow.postMessage(JSON.stringify({
         event: {
             type: event.type,
-            pointerId: event.pointerId,
-            pointerType: event.pointerType,
+            pointerId: event.pointerId || 1,
+            pointerType: event.pointerType || "touch",
             x: newCoords.x,
             y: newCoords.y
         }
     }), '*');
 };
 
+/**
+ * Show visual feedback about the current mouse position
+ */
+realityEditor.utilities.showTouchOverlay = function() {
+    touchOverlay.style.left = mouseX + 'px';
+    touchOverlay.style.top = mouseY + 'px';
+    touchOverlay.style.display = 'inline';
+};
 
+/**
+ * Hide visual feedback when the mouse is released
+ */
+realityEditor.utilities.hideTouchOverlay = function() {
+    touchOverlay.style.display = 'none';
+};
 
 /**
  * Scales the editing frame (if there is one currently) using the first two touches.
@@ -126,7 +140,7 @@ realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch) 
     }
 
     // calculate the new scale based on the radius between the two touches
-    var newScale = initialScaleData.scale + (radius - initialScaleData.radius) / (300 / getScreenScaleFactor());
+    var newScale = initialScaleData.scale + (radius - initialScaleData.radius) / (300 * windowToEditorRatio);
     if (typeof newScale !== 'number') return;
 
     // manually calculate positionData.x and y to keep centerTouch in the same place relative to the vehicle
