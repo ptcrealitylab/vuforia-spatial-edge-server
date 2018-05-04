@@ -33,6 +33,8 @@ realityEditor.touchEvents.onMouseDown = function(e) {
         mouseY = e.screenY;
     }
 
+    realityEditor.utilities.showTouchOverlay();
+
     var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
     if (!clickedElement) {
         return;
@@ -41,7 +43,7 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     // Post event into iframe
     if (realityEditor.utilities.shouldPostEventsIntoIframe()) {
-        realityEditor.utilities.postEventIntoIframe(event, editingKeys.frameKey, editingKeys.nodeKey);
+        realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
     }
 
     var moveDelay = 400;
@@ -74,6 +76,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
         mouseY = e.screenY;
     }
 
+    realityEditor.utilities.showTouchOverlay();
+
     // cancel the touch hold timer if you move more than a negligible amount
     if (touchEditingTimer) {
 
@@ -90,7 +94,7 @@ realityEditor.touchEvents.onMouseMove = function(e) {
         var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
         if (clickedElement) {
             var editingKeys = realityEditor.utilities.getKeysFromElement(clickedElement);
-            realityEditor.utilities.postEventIntoIframe(event, editingKeys.frameKey, editingKeys.nodeKey);
+            realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
         }
 
     } else {
@@ -108,11 +112,20 @@ realityEditor.touchEvents.onMouseUp = function(e) {
 
     realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
 
+    if (realityEditor.utilities.shouldPostEventsIntoIframe()) {
+        var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
+        if (clickedElement) {
+            var editingKeys = realityEditor.utilities.getKeysFromElement(clickedElement);
+            realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
+        }
+    }
+
     // only reset dragging if last touch
     if (multiTouchList.length < 2) {
         isMouseDown = false;
         realityEditor.utilities.resetEditingState();
         realityEditor.utilities.clearTouchTimer();
+        realityEditor.utilities.hideTouchOverlay();
     }
 
     // reset scaling regardless

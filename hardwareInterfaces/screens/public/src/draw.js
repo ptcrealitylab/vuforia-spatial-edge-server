@@ -138,6 +138,9 @@ realityEditor.draw.drawTransformed = function(frameKey, frame) {
 
 // draw circles for scaling
 
+var editorLineWidth = 2; // default for a iphone scaled screen
+var editorLineDash = 7;
+
 /**
  * @desc
  * @param context
@@ -150,8 +153,8 @@ realityEditor.draw.drawGreen = function(context, lineStartPoint, lineEndPoint, r
     context.beginPath();
     context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
     context.strokeStyle = "#7bff08";
-    context.lineWidth = 2;
-    context.setLineDash([7]);
+    context.lineWidth = editorLineWidth * windowToEditorRatio; // scale up by
+    context.setLineDash([editorLineDash * windowToEditorRatio]);
     context.stroke();
     context.closePath();
 
@@ -169,8 +172,8 @@ realityEditor.draw.drawRed = function(context, lineStartPoint, lineEndPoint, rad
     context.beginPath();
     context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
     context.strokeStyle = "#ff036a";
-    context.lineWidth = 2;
-    context.setLineDash([7]);
+    context.lineWidth = editorLineWidth * windowToEditorRatio;
+    context.setLineDash([editorLineDash * windowToEditorRatio]);
     context.stroke();
     context.closePath();
 };
@@ -187,8 +190,8 @@ realityEditor.draw.drawBlue = function(context, lineStartPoint, lineEndPoint, ra
     context.beginPath();
     context.arc(lineStartPoint[0], lineStartPoint[1], radius, 0, Math.PI * 2);
     context.strokeStyle = "#01fffd";
-    context.lineWidth = 2;
-    context.setLineDash([7]);
+    context.lineWidth = editorLineWidth * windowToEditorRatio;
+    context.setLineDash([editorLineDash * windowToEditorRatio]);
     context.stroke();
     context.closePath();
 };

@@ -9,6 +9,7 @@
 
 <div class="bg"></div>
 <canvas id="canvas"></canvas>
+<div id="touchOverlay"></div>
 
 <script src="src/index.js"></script>
 
@@ -34,6 +35,8 @@
 
     // constants
     var AR_MARKER_SIZE = 300.0;
+
+    var windowToEditorRatio = 1;
 
     // difference between touchscreen is mousemove events trigger regardless of whether clicking down (so need to keep track ourselves)
     var isMouseDown = false;
@@ -75,6 +78,8 @@
      */
     var initialScaleData = null;
 
+    var touchOverlay;
+
     var globalCanvas = {};
     globalCanvas.canvas = document.getElementById('canvas');
     globalCanvas.canvas.width = window.innerWidth;
@@ -95,6 +100,15 @@
     }();
 
     window.onload = function() {
+
+        windowToEditorRatio = Math.max(1, Math.round((window.innerWidth/568)));
+        touchOverlay = document.getElementById('touchOverlay');
+        touchOverlay.style.width = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.height = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.marginLeft = (-30 * windowToEditorRatio) + 'px';
+        touchOverlay.style.marginTop = (-30 * windowToEditorRatio) + 'px';
+        touchOverlay.style.borderRadius = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
 
         realityEditor.touchEvents.addTouchListeners();
 
