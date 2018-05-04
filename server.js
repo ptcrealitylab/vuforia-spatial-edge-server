@@ -560,7 +560,7 @@ function Protocols() {
                             for (var key in msgContent.data) {
                                 this.objectData.data[key] = msgContent.data[key];
                             }
-                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData.data);
+                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
                            // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                         }
                     }
@@ -2465,16 +2465,21 @@ function objectWebServer() {
 
             console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
-            var alternateVisualization = null;
+            // the reality editor will overwrite all properties from the new frame except these.
+            // useful to not overwrite AR position when sending pos or scale from screen.
+            var propertiesToIgnore = [];
+
             // for frames, the position data is inside "ar" or "screen"
             if (activeVehicle.hasOwnProperty('visualization')) {
                 if (activeVehicle.visualization === "ar") {
                     activeVehicle = activeVehicle.ar;
+                    propertiesToIgnore.push('screen');
                 } else if (activeVehicle.visualization === "screen") {
                     if (typeof body.scale === "number" && typeof body.scaleARFactor === "number") {
                         activeVehicle.ar.scale = body.scale / body.scaleARFactor;
                     }
                     activeVehicle = activeVehicle.screen;
+                    propertiesToIgnore.push('ar');
                 }
             }
 
@@ -2500,7 +2505,7 @@ function objectWebServer() {
 
             if (didUpdate) {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                actionSender({reloadFrame: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
+                actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore}, lastEditor: body.lastEditor});
 
                 // if (typeof body.ignoreActionSender === 'undefined') {
                 //     actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
