@@ -101,7 +101,14 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
                 }
 
             } else if (frame.visualization === 'ar' && oldVisualization === 'screen') {
+                // when sending frame to AR,
+
+                // post scale if necessary...
+                // realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
+
+                // reset editing state...
                 realityEditor.utilities.resetEditingState();
+
             }
 
         }
@@ -235,7 +242,7 @@ realityEditor.network.postData = function(url, body, callback) {
 };
 
 realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey) {
-
+    if (!objectKey || !frameKey) return;
     if (!frames[frameKey]) return;
     // post new position to server when you stop moving a frame
     var content = frames[frameKey].screen;

@@ -213,7 +213,7 @@
         container.addEventListener('pointerup', onPointerUp);
         container.addEventListener('pointercancel', onPointerUp);
     }
-    
+
     ready();
 
     var realityInterface = new RealityInterface();
@@ -223,7 +223,7 @@
         renderProperties();
     });
     realityInterface.addReadListener('valueY', function(e) {
-        properties.valueY = e.value.value;
+        properties.valueY = e.value;
         renderProperties();
     });
     

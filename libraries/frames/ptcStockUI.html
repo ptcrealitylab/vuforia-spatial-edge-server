@@ -52,6 +52,7 @@
 </body>
 
 <script>
+
     var _now = new Date(),
         _chart;
 
@@ -342,6 +343,45 @@
         });
     });
 
+    // make the existing mouseevents be triggered by programmatic pointerevents
+
+    document.addEventListener('pointerdown', function(e) {
+        if (e.pointerType !== 'mouse') { // don't get recursively triggered by the simulated mouse event
+            simulateMouseEvent(e.pageX, e.pageY, 'click');
+            simulateMouseEvent(e.pageX, e.pageY, 'mousedown');
+        }
+    });
+
+    document.addEventListener('pointermove', function(e) {
+        if (e.pointerType !== 'mouse') {
+            simulateMouseEvent(e.pageX, e.pageY, 'mousemove');
+        }
+    });
+
+    document.addEventListener('pointerup', function(e) {
+        if (e.pointerType !== 'mouse') {
+            simulateMouseEvent(e.pageX, e.pageY, 'mouseup');
+        }
+    });
+
+    function simulateMouseEvent(x,y,eventName) {
+        var ev = new MouseEvent(eventName, {
+            'view': window,
+            'bubbles': true,
+            'cancelable': true,
+            'screenX': x,
+            'screenY': y,
+            'pageX': x,
+            'pageY': y
+        });
+        ev.simulated = true;
+
+        // el is null if x,y is outside window boundaries
+        var el = document.elementFromPoint(x, y);
+        if (el) {
+            el.dispatchEvent(ev);
+        }
+    }
 
     var realityInterface = new RealityInterface();
     realityInterface.setMoveDelay(200);

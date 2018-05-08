@@ -62,6 +62,8 @@ var realityObject = {
     width: "100%",
     socketIoScript: {},
     socketIoRequest: {},
+    pointerEventsScript: {},
+    pointerEventsRequest: {},
     style: document.createElement('style'),
     messageCallBacks: {},
     interface : "gui",
@@ -95,20 +97,26 @@ realityObject.style.type = 'text/css';
 realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0;}';
 document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
-// Load socket.io.js synchronous so that it is available by the time the rest of the code is executed.
-realityObject.socketIoRequest = new XMLHttpRequest();
-realityObject.socketIoRequest.open('GET', "/socket.io/socket.io.js", false);
-realityObject.socketIoRequest.send();
+// Load socket.io.js and pep.min.js synchronous so that it is available by the time the rest of the code is executed.
+function loadScriptSync(url, requestObject, scriptObject) {
+    requestObject = new XMLHttpRequest();
+    requestObject.open('GET', url, false);
+    requestObject.send();
 
-//Only add script if fetch was successful
-if (realityObject.socketIoRequest.status === 200) {
-    realityObject.socketIoScript = document.createElement('script');
-    realityObject.socketIoScript.type = "text/javascript";
-    realityObject.socketIoScript.text = realityObject.socketIoRequest.responseText;
-    document.getElementsByTagName('head')[0].appendChild(realityObject.socketIoScript);
-} else {
-    console.log("Error XMLHttpRequest HTTP status: " + realityObject.socketIoRequest.status);
+    //Only add script if fetch was successful
+    if (requestObject.status === 200) {
+        scriptObject = document.createElement('script');
+        scriptObject.type = "text/javascript";
+        scriptObject.text = requestObject.responseText;
+        document.getElementsByTagName('head')[0].appendChild(scriptObject);
+    } else {
+        console.log("Error XMLHttpRequest HTTP status: " + requestObject.status);
+    }
 }
+
+loadScriptSync('/socket.io/socket.io.js', realityObject.socketIoRequest, realityObject.socketIoScript);
+loadScriptSync('/objectDefaultFiles/pep.min.js', realityObject.pointerEventsRequest, realityObject.pointerEventsScript);
+
 
 /**
  ************************************************************
@@ -1017,8 +1025,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('message', function (msg) {
         var msgContent = JSON.parse(msg.data);
-        if (msgContent.stopTouchEditing) {
-            sendTouchEvents = false;
+
+        // if (msgContent.stopTouchEditing) {
+        //     sendTouchEvents = false;
+        // }
+
+        if (msgContent.event && msgContent.event.pointerId) {
+            var eventData = msgContent.event;
+            var event = new PointerEvent(eventData.type, {
+                view: window,
+                bubbles: true,
+                cancelable: true
+            });
+            event.pointerId = eventData.pointerId;
+            event.pointerType = eventData.pointerType;
+            event.x = eventData.x;
+            event.y = eventData.y;
+            event.clientX = eventData.x;
+            event.clientY = eventData.y;
+            event.pageX = eventData.x;
+            event.pageY = eventData.y;
+            event.screenX = eventData.x;
+            event.screenY = eventData.y;
+
+            var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
+            elt.dispatchEvent(event);
         }
+
     });
 }, false);
