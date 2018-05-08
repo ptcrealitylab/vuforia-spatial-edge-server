@@ -1253,7 +1253,7 @@ function objectWebServer() {
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    webServer.use('/frames', express.static(__dirname + '/libraries/frameScreenTransfer/public/frames/'));
+    webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use("/obj", function (req, res, next) {
 
@@ -2479,7 +2479,7 @@ function objectWebServer() {
                         activeVehicle.ar.scale = body.scale / body.scaleARFactor;
                     }
                     activeVehicle = activeVehicle.screen;
-                    propertiesToIgnore.push('ar');
+                    propertiesToIgnore.push('ar.x', 'ar.y'); // TODO: decoding this is currently hard-coded in the editor, make generalized
                 }
             }
 
