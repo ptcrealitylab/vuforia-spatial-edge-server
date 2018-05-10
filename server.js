@@ -212,6 +212,9 @@ function Objects() {
     this.visualization = "ar";
 
     this.zone = "";
+
+    this.targetSize = null; // taken from target.xml. necessary to make the screens work correctly.
+
 }
 
 function Frame() {
@@ -717,7 +720,7 @@ for (var i = 0; i < blockFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, nodeTypeModules, blockModules, function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
+hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
 
     //these are the calls that come from the objects before they get processed by the object engine.
     // send the saved value before it is processed
@@ -2229,7 +2232,7 @@ function objectWebServer() {
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
 
         actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-        hardwareAPI.runFrameUpdateCallbacks(objectKey, newFrame);
+        hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
     }
@@ -2934,7 +2937,7 @@ function objectWebServer() {
                     }
                 }
 
-                if(pathKey !== ""){
+                if(pathKey && pathKey !== ""){
                    fs.unlinkSync(objectsPath + pathKey.substring(4));
                     res.send("ok");
                     return;
@@ -3351,6 +3354,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
     if (fs.existsSync(folder)) {
         cout("folder exists");
         var objectIDXML = utilities.getObjectIdFromTarget(folderVar, objectsPath);
+        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         cout("got ID: objectIDXML");
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
@@ -3358,6 +3362,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 objects[objectIDXML] = new Objects();
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
+                objects[objectIDXML].targetSize = objectSizeXML;
 
                 cout("this should be the IP" + objectIDXML);
 

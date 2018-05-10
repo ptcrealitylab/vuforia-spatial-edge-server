@@ -21,6 +21,29 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
 
 };
 
+realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
+    mouseX = x;// * 2.0;
+    mouseY = y;// * 2.0;
+
+    var ev = new MouseEvent(eventName, {
+        'view': window,
+        'bubbles': true,
+        'cancelable': true,
+        'screenX': x,
+        'screenY': y,
+        'touches': multiTouchList
+    });
+    ev.simulated = true;
+
+    // el is null if x,y is outside window boundaries
+    var el = document.elementFromPoint(x, y);
+    if (el) {
+        el.dispatchEvent(ev);
+    } else {
+        document.dispatchEvent(ev); // if you are outside the bounds, still try to move it
+    }
+}
+
 realityEditor.touchEvents.onMouseDown = function(e) {
 
     isMouseDown = true;
@@ -51,7 +74,18 @@ realityEditor.touchEvents.onMouseDown = function(e) {
     var timeoutFunction = setTimeout(function () {
 
         realityEditor.touchEvents.beginTouchEditing(editingKeys.objectKey, editingKeys.frameKey, editingKeys.nodeKey);
-        socket.emit('writeScreenObject', {objectKey: editingState.objectKey, frameKey: editingState.frameKey, nodeKey: editingState.nodeKey, touchOffsetX: editingState.touchOffset.x, touchOffsetY: editingState.touchOffset.y});
+
+        var editingFrame = realityEditor.utilities.getEditingVehicle();
+        var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
+        var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
+
+        socket.emit('writeScreenObject', {
+            objectKey: editingState.objectKey,
+            frameKey: editingState.frameKey,
+            nodeKey: editingState.nodeKey,
+            touchOffsetX: touchOffsetPercentX,
+            touchOffsetY: touchOffsetPercentY
+        });
 
     }, moveDelay);
 
@@ -101,8 +135,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
         if (editingState.frameKey) {
             var frame = frames[editingState.frameKey];
-            frame.screen.x = mouseX + (editingState.touchOffset.x || 0);
-            frame.screen.y = mouseY + (editingState.touchOffset.y || 0);
+            frame.screen.x = mouseX + (editingState.touchOffset.x);
+            frame.screen.y = mouseY + (editingState.touchOffset.y);
         }
 
     }

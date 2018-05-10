@@ -28,7 +28,7 @@ realityEditor.draw.addElement = function(frameKey, frame) {
             frame.height = 200;
         }
 
-        frame.screen.scale = frame.ar.scale * scaleARFactor;
+        frame.screen.scale = frame.ar.scale * scaleRatio; //scaleARFactor;
 
         // frame.screen.scale = frame.ar.scale;
         if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
@@ -38,7 +38,7 @@ realityEditor.draw.addElement = function(frameKey, frame) {
             frame.screen.y = screenPosConversion.y;
         }
 
-        var scaleFactor = getScreenScaleFactor();
+        // var scaleFactor = getScreenScaleFactor();
         var screenFrameWidth = (frame.width);// * frame.screen.scale;
         var screenFrameHeight = (frame.height);// * frame.screen.scale;
 
@@ -130,9 +130,6 @@ realityEditor.draw.drawTransformed = function(frameKey, frame) {
         // frameContainerDom.style.display = 'none';
         frameContainerDom.classList.remove('screenFrame');
         frameContainerDom.classList.add('arFrame');
-        var arPos = getARPosFromScreenPos(frame.screen.x, frame.screen.y);
-        frameContainerDom.style.left = arPos.x + 'px';
-        frameContainerDom.style.top = arPos.y + 'px';
     }
 };
 

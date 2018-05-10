@@ -45,7 +45,10 @@ realityEditor.utilities.resetEditingState = function() {
     editingState.objectKey = null;
     editingState.frameKey = null;
     editingState.nodeKey = null;
-    editingState.touchOffset = null;
+    editingState.touchOffset = {
+        x: 0,
+        y: 0
+    };
 };
 
 /**
@@ -171,4 +174,67 @@ realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch) 
     } else {
         realityEditor.draw.drawGreen(globalCanvas.context, circleCenterCoordinates, circleEdgeCoordinates, radius);
     }
+};
+
+/**
+ * Robust system for adding callbacks that run on window resize without losing performance.
+ * Example usage:
+ * realityEditor.utilities.optimizedResize.add(function() { console.log(window.innerWidth, window.innerHeight); })
+ * @type {{add}}
+ */
+realityEditor.utilities.optimizedResize = (function() {
+
+    var callbacks = [],
+        running = false;
+
+    // fired on resize event
+    function resize() {
+
+        if (!running) {
+            running = true;
+
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(runCallbacks);
+            } else {
+                setTimeout(runCallbacks, 66);
+            }
+        }
+
+    }
+
+    // run the actual callbacks
+    function runCallbacks() {
+
+        callbacks.forEach(function(callback) {
+            callback.callbackFunction.apply(null, callback.callbackArguments);
+        });
+
+        running = false;
+    }
+
+    // adds callback to loop
+    function addCallback(callback, arguments) {
+
+        arguments = arguments || [];
+
+        if (callback) {
+            callbacks.push({callbackFunction: callback, callbackArguments: arguments});
+        }
+
+    }
+
+    return {
+        // public method to add additional callback
+        add: function(callback) {
+            if (!callbacks.length) {
+                window.addEventListener('resize', resize);
+            }
+            addCallback(callback);
+        }
+    }
+}());
+
+realityEditor.utilities.calculateScaleFactor = function() {
+    scaleRatio = window.innerWidth / targetSize.width;
+    console.log(scaleRatio);
 };

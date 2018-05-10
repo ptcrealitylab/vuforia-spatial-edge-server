@@ -24,7 +24,8 @@ if (exports.enabled) {
     // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
     // ----------------------------------------------------------------------------------------------------------- //
     bindScreen('screenOne', 3100);
-    // bindScreen('frameScreen2', 3101);
+    bindScreen('secondScreen', 3101);
+    bindScreen('chipsScreen', 3102);
     // ----------------------------------------------------------------------------------------------------------- //
 
     var express = require('express');
@@ -82,8 +83,14 @@ if (exports.enabled) {
         });
 
         // TODO: make this port-specific
-        server.subscribeToFrameData(objectName, function(data) {
-            io.emit('frameDataCallback', data);
+        server.subscribeToNewFramesAdded(objectName, function(data) {
+            var msg = {
+                frame: data,
+                targetScreen: {
+                    object: objectName
+                }
+            };
+            io.emit('newFrameAdded', msg);
         });
 
         io.on('connection', function(socket) {
@@ -104,6 +111,12 @@ if (exports.enabled) {
             socket.on('getObjectName', function(msg) {
                 console.log('getObjectName', msg);
                 socket.emit('objectName', {objectName: objectName});
+            });
+
+            socket.on('getObjectTargetSize', function(msg) {
+                console.log('getObjectTargetSize', msg);
+                var targetSize = server.getMarkerSize(objectName);
+                socket.emit('objectTargetSize', {targetSize: targetSize});
             });
         });
     }

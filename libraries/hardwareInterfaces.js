@@ -26,6 +26,7 @@ var objects = {};
 var objectLookup;
 var globalVariables;
 var dirnameO;
+var objectsPath;
 var nodeTypeModules;
 var blockModules;
 var callback;
@@ -35,7 +36,7 @@ var writeObjectCallback;
 var hardwareObjects = {};
 var callBacks = new Objects();
 var screenObjectCallBacks = {};
-var frameUpdateCallbacks = [];
+var frameAddedCallbacks = [];
 var screenPortMap = {};
 var _this = this;
 
@@ -159,7 +160,7 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
 exports.clearObject = function (objectId, frameID) {
-    var objectID = utilities.getObjectIdFromTarget(objectId, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectId, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
@@ -173,7 +174,7 @@ exports.clearObject = function (objectId, frameID) {
 };
 
 exports.removeAllNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -189,7 +190,7 @@ exports.removeAllNodes = function (objectName, frameName) {
 };
 
 exports.removeNode = function (objectName, frameName, nodeName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
@@ -205,14 +206,14 @@ exports.removeNode = function (objectName, frameName, nodeName) {
 };
 
 exports.reloadNodeUI = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
 };
 
 exports.getAllFrames = function (objectName) {
     var objectID = utilities.readObject(objectLookup, objectName);
-    // var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    // var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     console.log(objectID);
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
@@ -226,7 +227,7 @@ exports.getAllFrames = function (objectName) {
 };
 
 exports.getAllNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
 
     // lookup object properties using name
@@ -245,7 +246,7 @@ exports.getAllNodes = function (objectName, frameName) {
 };
 
 exports.getAllLinksToNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
 
     // lookup object properties using name
@@ -263,81 +264,19 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
     return {};
 };
 
-// TODO: deprecated, can probably be removed...
-exports.createFrame = function (objectName, frameName, src, x, y, width, height) {
-    console.log('create ' + src + ' frame on server');
-
-    utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug);
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
-    var frameUuid = objectID + frameName;
-    var thisFrame = {};
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-        cout("I will save: " + objectName + " for frame "+ frameName);
-        if (objects.hasOwnProperty(objectID)) {
-            if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
-                objects[objectID].frames[frameUuid] = new Frame();
-            }
-
-            thisFrame = objects[objectID].frames[frameUuid];
-            thisFrame.uuid = frameUuid;
-            thisFrame.name = frameName;
-            thisFrame.objectId = objectID;
-            thisFrame.objectId = objectID;
-            thisFrame.src = src;
-
-            thisFrame.screen.x = x;
-            thisFrame.screen.y = y;
-            thisFrame.ar.x = x;
-            thisFrame.ar.y = y;
-
-            thisFrame.visualization = 'screen';
-
-            thisFrame.frameSizeX = width;
-            thisFrame.frameSizeY = height;
-            thisFrame.width = width;
-            thisFrame.height = height;
-
-            if (!hardwareObjects.hasOwnProperty(objectName)) {
-                hardwareObjects[objectName] = new EmptyObject(objectName);
-            }
-
-            if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
-                hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
-                hardwareObjects[objectName].frames[frameUuid].src = src;
-            }
-        }
-    }
-
-    writeObjectCallback(objectID);
-
-    var nodeName = 'value';
-    this.addNode(objectName, frameName, nodeName, 'node', { x: 0, y: 0 });
-
-    writeObjectCallback(objectID);
-
-    // for (var i = 0; i < 5; i++) {
-    //     setTimeout(function() {
-    actionCallback({reloadObject: {object: objectID, frame: frameUuid}});
-    // console.log("Send create heartbeat");
-        // }, 1000 * i);
-    // }
-
-    this.runFrameUpdateCallbacks(objectID, thisFrame);
-};
-
-exports.subscribeToFrameData = function (objectName, callback) {
-    console.log('subscribeToFrameData');
+exports.subscribeToNewFramesAdded = function (objectName, callback) {
+    console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
-    frameUpdateCallbacks.push({
+    frameAddedCallbacks.push({
         objectID: objectID,
         callback: callback
     });
 };
 
-exports.runFrameUpdateCallbacks = function(objectKey, thisFrame) {
-    console.log('runFrameUpdateCallbacks for object ' + objectKey);
-    frameUpdateCallbacks.forEach(function(callbackObject) {
+exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
+    console.log('runFrameAddedCallbacks for object ' + objectKey);
+    frameAddedCallbacks.forEach(function(callbackObject) {
         if (callbackObject.objectID === objectKey) {
             console.log('found a callback');
             callbackObject.callback(thisFrame);
@@ -356,7 +295,7 @@ exports.runFrameUpdateCallbacks = function(objectKey, thisFrame) {
 
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     cout("AddIO objectID: " + objectID);
 
     var nodeUuid = objectID+frameName+nodeName;
@@ -374,9 +313,9 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame();
-                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, "local");
+                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, "local");
             } else {
-                utilities.createFrameFolder(objectName, frameName, dirnameO, globalVariables.debug, objects[objectID].frames[frameUuid].location);
+                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty("nodes")) {
                 objects[objectID].frames[frameUuid].nodes = {};
@@ -427,7 +366,7 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
 };
 
 exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + frameName;
@@ -451,7 +390,7 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
 };
 
 exports.moveNode = function (objectName, frameName, nodeName, x, y) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
 
@@ -469,7 +408,7 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y) {
 };
 
 exports.activate = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
@@ -478,7 +417,7 @@ exports.activate = function (objectName) {
 };
 
 exports.deactivate = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, dirnameO);
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     console.log("--------- deactive---------")
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -492,7 +431,12 @@ exports.deactivate = function (objectName) {
 
 
 exports.getObjectIdFromObjectName = function (objectName) {
-    return utilities.getObjectIdFromTarget(objectName, dirnameO);
+    return utilities.getObjectIdFromTarget(objectName, objectsPath);
+};
+
+exports.getMarkerSize = function(objectName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    return objects[objectID].targetSize;
 };
 
 /**
@@ -520,11 +464,12 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, types, blocks, cb, objValue, globalActionCallback, writeCallback) {
+exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, cb, objValue, globalActionCallback, writeCallback) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
     dirnameO = dir;
+    objectsPath = objPath;
     nodeTypeModules = types;
     blockModules = blocks;
     callback = cb;
