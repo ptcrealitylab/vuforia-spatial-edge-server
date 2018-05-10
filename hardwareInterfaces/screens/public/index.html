@@ -23,7 +23,8 @@
 <script src="resources/pep.min.js"></script>
 
 <script>
-    var scaleARFactor = 1.5;
+    // var scaleARFactor = 1.5;
+    var scaleRatio = 1;
 
     // get the url of the reality server to load frames from and to post new frame positions
     var SERVER_IP = location.origin.split(":")[1].split("//")[1];
@@ -33,8 +34,8 @@
     var frames = {};
     var socket = io();
 
-    // constants
-    var AR_MARKER_SIZE = 300.0;
+    var objectName; // receive this from socket
+    var targetSize; // receive this from socket
 
     var windowToEditorRatio = 1;
 
@@ -58,11 +59,16 @@
         objectKey: null,
         frameKey: null,
         nodeKey: null,
-        touchOffset: null
+        touchOffset: {
+            x: 0,
+            y: 0
+        }
         // unconstrained: false,
         // unconstrainedOffset: null
     };
 
+    var mouseX = 0;
+    var mouseY = 0;
 
     /**
      * @type {List.<{x: number, y: number, type: string}>}
@@ -116,7 +122,14 @@
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 
+        // realityEditor.utilities.optimizedResize.add(function() {
+        //     console.log(window.innerWidth, window.innerHeight);
+        // });
+
+        realityEditor.utilities.optimizedResize.add(realityEditor.utilities.calculateScaleFactor);
+
         socket.emit('getObjectName');
+        socket.emit('getObjectTargetSize');
         socket.emit('getFramesForScreen');
     };
 
@@ -169,41 +182,9 @@
         return rect;
     }
 
-    function simulateMouseEvent(x,y,eventName,multiTouchList) {
-        mouseX = x;// * 2.0;
-        mouseY = y;// * 2.0;
-
-        var ev = new MouseEvent(eventName, {
-            'view': window,
-            'bubbles': true,
-            'cancelable': true,
-            'screenX': x,
-            'screenY': y,
-            'touches': multiTouchList
-        });
-        ev.simulated = true;
-
-        // el is null if x,y is outside window boundaries
-        var el = document.elementFromPoint(x, y);
-        if (el) {
-            el.dispatchEvent(ev);
-        } else {
-            document.dispatchEvent(ev); // if you are outside the bounds, still try to move it
-        }
-    }
-
     // ... UTILITIES ... //
 
     // ........ DOM manipulation ........ //
-
-    /**
-     * Utility for getting scale factor between screen coordinates and AR marker coordinates.
-     * @return {number} scale factor. 1 means they are the same and 0.5 means marker in AR is half as big as marker on screen.
-     */
-    function getScreenScaleFactor() {
-        var markerRect = getMarkerRect();
-        return AR_MARKER_SIZE / markerRect.height;
-    }
 
     /**
      * Utility for converting coordinates from AR space to screen space.
@@ -212,30 +193,45 @@
      * @return {{x: number, y: number}}
      */
     function getScreenPosFromARPos(arX, arY) {
-        var markerRect = getMarkerRect();
-        var scaleFactor = getScreenScaleFactor();
-        var screenX = (markerRect.x + markerRect.width/2) + (arX / scaleFactor)*(scaleARFactor/2);
-        var screenY = (markerRect.y + markerRect.height/2) + (arY / scaleFactor)*(scaleARFactor/2);
+        var screenCoords = {
+            origin: {
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: window.innerWidth,
+                height: window.innerHeight
+            }
+        };
+
+        var markerCoords = {
+            origin: {
+                x: targetSize.width/2,
+                y: targetSize.height/2
+            },
+            size: {
+                width: targetSize.width,
+                height: targetSize.height
+            }
+        };
+
+        var screenAspectRatio = screenCoords.size.width / screenCoords.size.height;
+        var markerAspectRatio = markerCoords.size.width / markerCoords.size.height;
+
+        var screenToMarkerRatio = screenAspectRatio / markerAspectRatio;
+        var aspectMultiplier = 1.0 / Math.min(screenToMarkerRatio, 1.0); // if screen is taller than it is wide, scale down the mapping
+
+        var arPointRelativeToUpperLeft = {
+            x: arX + markerCoords.origin.x - screenCoords.origin.x,
+            y: arY + markerCoords.origin.y - screenCoords.origin.y
+        };
+
+        var screenX = (arPointRelativeToUpperLeft.x) * (screenCoords.size.width / markerCoords.size.width) * (aspectMultiplier);
+        var screenY = (arPointRelativeToUpperLeft.y) * (screenCoords.size.width / markerCoords.size.width) * (aspectMultiplier); // use scaleRatio of width for y too because of stretch to fill screen
+
         return {
             x: screenX,
             y: screenY
-        };
-    }
-
-    /**
-     * Utility for converting coordinates from screen space to AR space.
-     * @param {number} screenX - x coordinate relative to upper left of screen.
-     * @param {number} screenY - y coordinate relative to upper left of screen.
-     * @return {{x: number, y: number}}
-     */
-    function getARPosFromScreenPos(screenX, screenY) {
-        var markerRect = getMarkerRect();
-        var scaleFactor = getScreenScaleFactor();
-        var arX = (screenX - (markerRect.x + markerRect.width/2)) * scaleFactor;
-        var arY = (screenY - (markerRect.y + markerRect.height/2)) * scaleFactor;
-        return {
-            x: arX,
-            y: arY
         };
     }
 

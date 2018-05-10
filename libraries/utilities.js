@@ -156,8 +156,8 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
             //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
+            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
+            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
@@ -251,6 +251,46 @@ exports.getObjectIdFromTarget = function (folderName, objectsPath) {
                         resultXML = result[first].Tracking[0][secondFirst][0].$.name;
                     break;
                 }
+                    break;
+                }
+            });
+
+        return resultXML;
+    } else {
+        return null;
+    }
+};
+
+/**
+ *
+ * @param folderName
+ * @param objectsPath
+ * @return {Array.<float>}
+ */
+exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
+
+    if(folderName === "allTargetsPlaceholder"){
+        return "allTargetsPlaceholder000000000000";
+    }
+
+    var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
+
+    if (fs.existsSync(xmlFile)) {
+        var resultXML = "";
+        xml2js.
+        Parser().
+        parseString(fs.readFileSync(xmlFile, "utf8"),
+            function (err, result) {
+                for (var first in result) {
+                    for(var secondFirst in result[first].Tracking[0]){
+                        var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                        var sizeIntArray = sizeString.split(' ').map(function(elt){return parseInt(elt);});
+                        resultXML = {
+                            width: sizeIntArray[0],
+                            height: sizeIntArray[1]
+                        };
+                        break;
+                    }
                     break;
                 }
             });
