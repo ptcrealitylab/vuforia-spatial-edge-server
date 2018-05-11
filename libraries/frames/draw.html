@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+    <title>Sketch Pad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0" />
+    <style type="text/css">
+        body {
+            margin:0px;
+            width:600px;
+            height:450px;
+            overflow:hidden;
+            font-family:Arial;
+            /* prevent text selection on ui */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            /* prevent scrolling in windows phone */
+            -ms-touch-action: none;
+            /* prevent selection highlight */
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            overflow: hidden;
+        }
+
+        .header, .footer{
+            position: absolute;
+            background-color: rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .footer {
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            height: 10px;
+        }
+        .navbtn {
+            z-index: 3;
+            cursor: pointer;
+            float:left;
+            height: 90px;
+            width: 90px;
+            font-weight: bold;
+            line-height: 50px;
+            font-size: 22px;
+            color: #eee;
+            border: solid 1px #111;
+            border-radius: 4px;
+            background-color: #404040;
+        }
+
+        #content{
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            overflow:hidden;
+            background-color:rgba(255,255,255,0.15);
+        }
+        #canvas{
+            cursor:crosshair ;
+            background-color:rgba(255,255,255,0);
+        }
+        .palette-case {
+            width:600px;
+            margin:auto;
+            text-align:center;
+        }
+        .palette-box {
+            float:left;
+            padding:2px 6px 2px 6px;
+        }
+        .palette {
+            border:0px;
+            height: 90px;
+            width:90px;
+        }
+        .red{
+            background-color:rgb(242,22,121);
+        }
+        .blue{
+            background-color:rgb(45,255,255);
+        }
+        .green{
+            background-color:rgb(41,253,47);
+        }
+        .white{
+            background-color:#fff;
+        }
+        .black{
+            background-color:#000;
+        }
+    </style>
+    <script type="text/javascript">
+
+        var ctx, color = "rgb(41,253,47)";
+
+        document.addEventListener( "DOMContentLoaded", function(){
+
+            // setup a new canvas for drawing wait for device init
+            setTimeout(function(){
+                newCanvas();
+            }, 1000);
+
+        }, false );
+
+        // function to setup a new canvas for drawing
+        function newCanvas(){
+            // setup canvas
+            ctx=document.getElementById("canvas").getContext("2d");
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 10;
+
+            // setup to trigger drawing on mouse or touch
+            // drawTouch();
+            // drawPointer();
+            drawPointerEvents();
+            
+            document.querySelector('#new').addEventListener('pointerdown', clearCanvas);
+            
+            document.querySelectorAll('.palette').forEach(function(palette){
+                palette.addEventListener('pointerdown', function() {
+                    selectColor(palette);
+                });
+            });
+
+        }
+        function clearCanvas(){
+            ctx = document.getElementById("canvas").getContext("2d");
+            ctx.clearRect(0, 0, 600, 600);
+        }
+
+        function selectColor(el){
+            for(var i=0;i<document.getElementsByClassName("palette").length;i++){
+                document.getElementsByClassName("palette")[i].style.borderColor = "#777";
+                document.getElementsByClassName("palette")[i].style.borderStyle = "solid";
+            }
+            el.style.borderColor = "rgba(255,255,255,0)";
+            el.style.borderStyle = "dashed";
+            color = window.getComputedStyle(el).backgroundColor;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+        }
+
+        // // prototype to	start drawing on touch using canvas moveTo and lineTo
+        var drawTouch = function() {
+            var start = function(e) {
+                ctx.beginPath();
+                x = e.changedTouches[0].pageX;
+                y = e.changedTouches[0].pageY-44;
+                ctx.moveTo(x,y);
+            };
+            var move = function(e) {
+                e.preventDefault();
+                x = e.changedTouches[0].pageX;
+                y = e.changedTouches[0].pageY-44;
+                ctx.lineTo(x,y);
+                ctx.stroke();
+            };
+            document.getElementById("canvas").addEventListener("touchstart", start, false);
+            document.getElementById("canvas").addEventListener("touchmove", move, false);
+        };
+
+        // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
+        var drawMSPointer = function() {
+            var start = function(e) {
+                e = e.originalEvent;
+                ctx.beginPath();
+                x = e.pageX;
+                y = e.pageY-44;
+                ctx.moveTo(x,y);
+            };
+            var move = function(e) {
+                e.preventDefault();
+                e = e.originalEvent;
+                x = e.pageX;
+                y = e.pageY-44;
+                ctx.lineTo(x,y);
+                ctx.stroke();
+            };
+            document.getElementById("canvas").addEventListener("MSPointerDown", start, false);
+            document.getElementById("canvas").addEventListener("MSPointerMove", move, false);
+        };
+
+        // prototype to	start drawing on mouse using canvas moveTo and lineTo
+        var drawPointerEvents = function() {
+            var clicked = 0;
+            var start = function(e) {
+                clicked = 1;
+                ctx.beginPath();
+                x = e.pageX;
+                y = e.pageY-44;
+                ctx.moveTo(x,y);
+            };
+            var move = function(e) {
+                if(clicked){
+                    x = e.pageX;
+                    y = e.pageY-44;
+                    ctx.lineTo(x,y);
+                    ctx.stroke();
+                }
+            };
+            var stop = function(e) {
+                clicked = 0;
+            };
+            document.getElementById("canvas").addEventListener("pointerdown", start, false);
+            document.getElementById("canvas").addEventListener("pointermove", move, false);
+            document.addEventListener("pointerup", stop, false);
+        };
+
+    </script>
+</head>
+<body style="width: 600px; height:500px;">
+    <div id="content" style="height: 600px; width: 600px"><canvas id="canvas" style="height: 600px; width: 600px" width="600px" height="500px"></canvas></div>
+        <div class="palette-case" style="top: 510px; position: fixed">
+            <a id="new" class="navbtn" onclick="clearCanvas()">New</a>
+            <div class="palette-box">
+                <div class="palette white" onclick="selectColor(this)"></div>
+            </div>
+            <div class="palette-box">
+                <div class="palette red" onclick="selectColor(this)"></div>
+            </div>
+            <div class="palette-box">
+                <div class="palette blue" onclick="selectColor(this)"></div>
+            </div>
+            <div class="palette-box">
+                <div class="palette green" onclick="selectColor(this)"></div>
+            </div>
+            <div style="clear:both"></div>
+        </div>
+<script>
+    var realityInterface = new RealityInterface();
+    realityInterface.setMoveDelay(500);
+</script>
+</body>
+</html>
