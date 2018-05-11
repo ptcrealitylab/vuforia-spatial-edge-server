@@ -238,3 +238,36 @@ realityEditor.utilities.calculateScaleFactor = function() {
     scaleRatio = window.innerWidth / targetSize.width;
     console.log(scaleRatio);
 };
+
+realityEditor.utilities.resetScreenFramePositions = function() {
+    console.log('reset screen frames\' positions');
+    getScreenFrames().forEach(function(frame, i) {
+        frame.screen.x = i * 50;
+        frame.screen.y = i * 50;
+        frame.screen.scale = 0.5 * scaleRatio;
+    });
+};
+
+realityEditor.utilities.resetFramesIfTripleTap = function() {
+    if (listenDoubleTap) {
+        if (listenTripleTap) {
+            realityEditor.utilities.resetScreenFramePositions();
+            clearTimeout(tripleTapTimer);
+            listenTripleTap = false;
+        } else {
+            console.log('listen for triple tap');
+            listenTripleTap = true;
+            tripleTapTimer = setTimeout(function() {
+                console.log('stop waiting triple tap');
+                listenTripleTap = false;
+            }, 300);
+        }
+    } else {
+        console.log('listen for double tap');
+        listenDoubleTap = true;
+        doubleTapTimer = setTimeout(function() {
+            console.log('stop waiting double tap');
+            listenDoubleTap = false;
+        }, 300);
+    }
+};

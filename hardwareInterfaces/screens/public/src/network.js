@@ -61,6 +61,9 @@ realityEditor.network.setupSocketListeners = function() {
 
         if (msg.touchState === 'touchstart') {
             console.log('touchstart');
+
+            realityEditor.utilities.resetFramesIfTripleTap();
+
             realityEditor.touchEvents.simulateMouseEvent(screenPos.x, screenPos.y, 'pointerdown');
         }
 
