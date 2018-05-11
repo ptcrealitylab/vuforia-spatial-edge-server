@@ -17,35 +17,36 @@ realityEditor.gui.ar.moveabilityOverlay.createSvg = function(svg){ // TODO: call
     }
     
     this.drawBox(svg, svg.namespaceURI, x, y);
-    this.drawNegativeSpace(svg, svg.namespaceURI, x, y, 0+","+0+","+0+","+0+","+0+","+0+","+0+","+0);
+    // this.drawNegativeSpace(svg, svg.namespaceURI, x, y, 0+","+0+","+0+","+0+","+0+","+0+","+0+","+0);
 };
+
 realityEditor.gui.ar.moveabilityOverlay.changeClipping = function(svg,points){
     svg.getElementById("lineID").setAttribute('points',points);
 };
 
-realityEditor.gui.ar.moveabilityOverlay.drawNegativeSpace = function(svg, svgNS, x,y, points){
-    if(!x) return;
-    var line = document.createElementNS(svgNS,'polyline');
-    line.setAttribute('points',points);
-
-    var defs = svg.appendChild(document.createElementNS(svgNS,'defs'));
-    var clipPath = defs.appendChild(document.createElementNS(svgNS,'clipPath'));
-    clipPath.id = "clippy";
-
-    var lineLement = clipPath.appendChild(line);
-    lineLement.id = "lineID";
-
-    var group = document.createElementNS(svgNS,'g');
-    group.setAttribute('stroke-width',x/400);
-    group.setAttribute('stroke','fff00');
-    group.setAttribute('fill','none');
-    group.setAttribute('clip-path',"url(#clippy)");
-
-    for(var i = 0; i<= x; i = i+10){
-        this.drawMultiLine(group,svgNS, i+","+0+","+i+","+y,100,x,y,"#ed1d7c");
-    }
-    svg.appendChild(group);
-};
+// realityEditor.gui.ar.moveabilityOverlay.drawNegativeSpace = function(svg, svgNS, x,y, points){
+//     if(!x) return;
+//     var line = document.createElementNS(svgNS,'polyline');
+//     line.setAttribute('points',points);
+//
+//     var defs = svg.appendChild(document.createElementNS(svgNS,'defs'));
+//     var clipPath = defs.appendChild(document.createElementNS(svgNS,'clipPath'));
+//     clipPath.id = "clippy";
+//
+//     var lineLement = clipPath.appendChild(line);
+//     lineLement.id = "lineID";
+//
+//     var group = document.createElementNS(svgNS,'g');
+//     group.setAttribute('stroke-width',x/400);
+//     group.setAttribute('stroke','fff00');
+//     group.setAttribute('fill','none');
+//     group.setAttribute('clip-path',"url(#clippy)");
+//
+//     for(var i = 0; i<= x; i = i+10){
+//         this.drawMultiLine(group,svgNS, i+","+0+","+i+","+y,100,x,y,"#ed1d7c");
+//     }
+//     svg.appendChild(group);
+// };
 
 
 realityEditor.gui.ar.moveabilityOverlay.drawBox = function(svg, svgNS, x,y){

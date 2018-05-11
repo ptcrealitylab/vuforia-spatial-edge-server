@@ -42,6 +42,11 @@
     // difference between touchscreen is mousemove events trigger regardless of whether clicking down (so need to keep track ourselves)
     var isMouseDown = false;
 
+    var listenDoubleTap = false;
+    var doubleTapTimer = null;
+    var listenTripleTap = false;
+    var tripleTapTimer = null;
+
     /**
      * @typedef {Object} EditingState
      * @desc All the necessary state about what's currently being repositioned. Everything else can be calculated from these.
