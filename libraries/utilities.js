@@ -284,7 +284,9 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
                 for (var first in result) {
                     for(var secondFirst in result[first].Tracking[0]){
                         var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                        var sizeIntArray = sizeString.split(' ').map(function(elt){return parseInt(elt);});
+                        var sizeIntArray = sizeString.split(' ').map(function(elt){
+                            return (parseFloat(elt) > 10) ? parseFloat(elt) : 1000 * parseFloat(elt); // detect meter or mm scale
+                        });
                         resultXML = {
                             width: sizeIntArray[0],
                             height: sizeIntArray[1]
