@@ -616,6 +616,11 @@ function RealityInterface() {
         this.ioObject = io.connect();
         this.oldValueList = {};
 
+        this.ioObject.on('reconnect', function() {
+            console.log('reconnect');
+            window.location.reload();
+        });
+
         this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
                 _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, protocol: realityObject.protocol}));

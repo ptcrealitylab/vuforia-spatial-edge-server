@@ -331,6 +331,11 @@ var sendTouchEvents = false;
         this.ioObject = io.connect(realityObject.socketIoUrl);
         this.oldNumberList = {};
 
+        this.ioObject.on('reconnect', function() {
+            console.log('reconnect');
+            window.location.reload();
+        });
+
         this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
                 self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
