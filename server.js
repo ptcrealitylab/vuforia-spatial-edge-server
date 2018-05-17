@@ -155,6 +155,7 @@ var cors = require('cors');             // Library for HTTP Cross-Origin-Resourc
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
+var sharp = require('sharp'); // Image resizing library
 
 // additional files containing project code
 
@@ -353,7 +354,7 @@ function Logic() {
 
     this.lastSettingBlock = "";
     // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
-    this.iconImage = null;
+    this.iconImage = 'auto';
     // nameInput are the names given for each IO.
     this.nameInput = ["", "", "", ""];
     // nameOutput are the names given for each IO
@@ -1264,7 +1265,7 @@ function objectWebServer() {
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
         if (!fs.existsSync(fileName)) {
-            next();
+            res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not custom saved yet
             return;
         }
         res.sendFile(fileName);
@@ -1371,6 +1372,79 @@ function objectWebServer() {
     webServer.use(cors());
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
+
+
+    // Utility functions for getting object, frame, and node in a safe way that reports errors for network requests
+
+    /**
+     * @param objectKey
+     * @param {Function} callback - (error: {failure: bool, error: string}, object)
+     */
+    function getObject(objectKey, callback) {
+
+        if (!objects.hasOwnProperty(objectKey)) {
+            callback({failure: true, error: 'Object ' + objectKey + ' not found'});
+            return;
+        }
+
+        var object = objects[objectKey];
+
+        callback(null, object);
+
+    }
+
+    /**
+     * @param objectKey
+     * @param frameKey
+     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+     */
+    function getFrame(objectKey, frameKey, callback) {
+
+        getObject(objectKey, function(error, object) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            if (!object.frames.hasOwnProperty(frameKey)) {
+                callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
+                return;
+            }
+
+            var frame = object.frames[frameKey];
+
+            callback(null, object, frame);
+
+        });
+
+    }
+
+    /**
+     * @param objectKey
+     * @param frameKey
+     * @param nodeKey
+     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+     */
+    function getNode(objectKey, frameKey, nodeKey, callback) {
+
+        getFrame(objectKey, frameKey, function(error, object, frame) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            if (!frame.nodes.hasOwnProperty(nodeKey)) {
+                callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+                return;
+            }
+
+            var node = frame.nodes[nodeKey];
+
+            callback(null, object, frame, node);
+
+        });
+
+    }
 
 
     /// logic node handling
@@ -1676,53 +1750,59 @@ function objectWebServer() {
 
 
     webServer.post('/logic/*/*/nodeSize/', function (req, res) {
-        console.log('routed by 3');
-        res.send(changeNodeSize(req.params[0], req.params[0], req.params[1], req.body));
+        changeNodeSize(req.params[0], req.params[0], req.params[1], req.body, function(statusCode, responseContents) {
+            res.status(statusCode).send(responseContents);
+        });
     });
 
     webServer.post('/object/*/frame/*/node/*/nodeSize/', function (req, res) {
-        console.log('routed by 4');
-        res.send(changeNodeSize(req.params[0], req.params[1], req.params[2], req.body));
+        changeNodeSize(req.params[0], req.params[1], req.params[2], req.body, function(statusCode, responseContents) {
+            res.status(statusCode).send(responseContents);
+        });
     });
 
-
-    function changeNodeSize(objectID, frameID, nodeID, body) {
+    function changeNodeSize(objectID, frameID, nodeID, body, callback) {
         // cout("post 2");
         var updateStatus = "nothing happened";
-        var thisObject = objectID;
-        var thisValue = nodeID;
 
-        cout("changing Size for :" + thisObject + " : " + thisValue);
+        cout("changing Size for :" + objectID + " : " + nodeID);
 
-        var tempObject = objects[thisObject].frames[frameID].nodes[thisValue];
+        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+            if (error) {
+                callback(404, error);
+                return;
+            }
 
+            var tempObject = node;
 
-        // check that the numbers are valid numbers..
-        if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
+            // check that the numbers are valid numbers..
+            if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
 
-            // if the object is equal the datapoint id, the item is actually the object it self.
+                // if the object is equal the datapoint id, the item is actually the object it self.
 
-            tempObject.x = body.x;
-            tempObject.y = body.y;
-            tempObject.scale = body.scale;
-            // console.log(req.body);
-            // ask the devices to reload the objects
-        }
+                tempObject.x = body.x;
+                tempObject.y = body.y;
+                tempObject.scale = body.scale;
+                // console.log(req.body);
+                // ask the devices to reload the objects
+            }
 
-        if (typeof body.matrix === "object") {
+            if (typeof body.matrix === "object") {
 
-            tempObject.matrix = body.matrix;
-        }
+                tempObject.matrix = body.matrix;
+            }
 
-        if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            //  actionSender({reloadObject: {object: thisObject}});
-            actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
-            updateStatus = "ok";
-        }
+                //  actionSender({reloadObject: {object: thisObject}});
+                actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+                updateStatus = "ok";
+            }
 
-        return updateStatus;
+            callback(200, updateStatus);
+        });
+
     }
 
 
@@ -1758,6 +1838,33 @@ function objectWebServer() {
         return blockList;
     }
 
+    // uploads a new name for a logic node (or could be used for any type of node)
+    // ****************************************************************************************************************
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/rename/', function (req, res) {
+
+        var objectID = req.params.objectID;
+        var frameID = req.params.frameID;
+        var nodeID = req.params.nodeID;
+
+        console.log('received name for', objectID, frameID, nodeID);
+
+        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+            if (error) {
+                res.status(404);
+                res.json(error).end();
+                return;
+            }
+
+            node.name = req.body.nodeName;
+
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+            res.status(200);
+            res.json({success: true}).end();
+        });
+
+    });
+
     // uploads a new iconImage for a logic block
     // ****************************************************************************************************************
     webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function(req, res) {
@@ -1768,85 +1875,88 @@ function objectWebServer() {
 
         console.log('received icon image for', objectID, frameID, nodeID);
 
-        if (!objects.hasOwnProperty(objectID)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectID + ' not found'}).end();
-            return;
-        }
-
-        var object = objects[objectID];
-
-        if (!object.frames.hasOwnProperty(frameID)) {
-            res.status(404);
-            res.json({failure: true, error: 'Frame ' + frameID + ' not found'}).end();
-            return;
-        }
-
-        var frame = object.frames[frameID];
-
-        if (!frame.nodes.hasOwnProperty(nodeID)) {
-            res.status(404);
-            res.json({failure: true, error: 'Node ' + nodeID + ' not found'}).end();
-            return;
-        }
-
-        var node = object.frames[frameID].nodes[nodeID];
-
-        var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
-        if (!fs.existsSync(iconDir)) {
-            fs.mkdirSync(iconDir);
-        }
-
-        var form = new formidable.IncomingForm({
-            uploadDir: iconDir,
-            keepExtensions: true,
-            accept: 'image/jpeg'
-        });
-
-        console.log('created form');
-
-        form.on('error', function (err) {
-            res.status(500);
-            res.send(err);
-            throw err;
-        });
-
-        form.on('fileBegin', function (name, file) {
-
-            console.log('fileBegin loading', name, file);
-
-            file.path = form.uploadDir + '/' + nodeID + '.jpg';;
-
-            // if (name === 'memoryThumbnailImage') {
-            //     file.path = form.uploadDir + '/memoryThumbnail.jpg';
-            // } else {
-            //     file.path = form.uploadDir + '/memory.jpg';
-            // }
-        });
-
-        console.log('about to parse');
-
-        form.parse(req, function (err, fields) {
-            // if (obj) {
-            //     obj.memory = JSON.parse(fields.memoryInfo);
-            //     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            //     actionSender({loadMemory: {object: objectID, ip: obj.ip}});
-            // }
-
-            if (node) {
-                node.iconImage = 'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+            if (error) {
+                res.status(404);
+                res.json(error).end();
+                return;
             }
 
-            console.log('successfully created icon image', err, fields);
+            var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
+            if (!fs.existsSync(iconDir)) {
+                fs.mkdirSync(iconDir);
+            }
 
-            res.status(200);
-            res.json({success: true}).end();
+            var form = new formidable.IncomingForm({
+                uploadDir: iconDir,
+                keepExtensions: true,
+                accept: 'image/jpeg'
+            });
+
+            console.log('created form');
+
+            form.on('error', function (err) {
+                res.status(500);
+                res.send(err);
+                throw err;
+            });
+
+            var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
+
+            if (fs.existsSync(rawFilepath)) {
+                console.log('deleted old raw file');
+                fs.unlinkSync(rawFilepath);
+            }
+
+            form.on('fileBegin', function (name, file) {
+                console.log('fileBegin loading', name, file);
+                file.path = rawFilepath;
+            });
+
+            console.log('about to parse');
+
+            form.parse(req, function (err, fields) {
+
+                console.log('successfully created icon image', err, fields);
+
+                var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
+                console.log('attempting to write file to ' + resizedFilepath);
+
+                if (fs.existsSync(resizedFilepath)) {
+                    console.log('deleted old resized file');
+                    fs.unlinkSync(resizedFilepath);
+                }
+
+                // copied fullsize file into resized image file as backup, in case resize operation fails
+                fs.copyFileSync(rawFilepath, resizedFilepath);
+
+                sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
+                    if (!err) {
+                        console.log('done resizing', info);
+
+                        if (node) {
+                            node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
+                            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                            actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+                        }
+
+                        res.status(200);
+                        res.json({success: true}).end();
+
+                    } else {
+                        console.log('error resizing', err);
+                        res.status(500);
+                        res.send(err);
+                        throw err;
+                    }
+                });
+
+            });
+
+            console.log('parse called');
+
         });
 
-        console.log('parse called');
 
     });
 
@@ -2533,13 +2643,15 @@ function objectWebServer() {
     if (globalVariables.developer === true) {
 
         webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
-            console.log('routed by 5');
-            res.send(changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body));
+            changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function(statusCode, responseContents) {
+                res.status(statusCode).send(responseContents);
+            });
         });
 
         webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
-            console.log('routed by 6');
-            res.send(changeSize(req.params.objectID, req.params.frameID, null, req.body));
+            changeSize(req.params.objectID, req.params.frameID, null, req.body, function(statusCode, responseContents) {
+                res.status(statusCode).send(responseContents);
+            });
         });
 
         // // TODO: ask Valentin what this route was used for?
@@ -2549,79 +2661,70 @@ function objectWebServer() {
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
 
-        function changeSize(objectID, frameID, nodeID, body) {
-
-            // cout("post 2");
-            var updateStatus = "nothing happened";
+        function changeSize(objectID, frameID, nodeID, body, callback) {
 
             cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
 
-            var activeVehicle = null;
+            getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+                if (error) {
+                    callback(404, error);
+                    return;
+                }
 
-            if (objects.hasOwnProperty(objectID)) {
-                if (frameID && objects[objectID].frames.hasOwnProperty(frameID)) {
-                    activeVehicle = objects[objectID].frames[frameID];
-                    if (nodeID && activeVehicle.nodes.hasOwnProperty(nodeID)) {
-                        activeVehicle = activeVehicle.nodes[nodeID];
+                var activeVehicle = node;
+
+                console.log('really changing size for ... ' + activeVehicle.uuid, body);
+
+                // cout("post 2");
+                var updateStatus = "nothing happened";
+
+                // the reality editor will overwrite all properties from the new frame except these.
+                // useful to not overwrite AR position when sending pos or scale from screen.
+                var propertiesToIgnore = [];
+
+                // for frames, the position data is inside "ar" or "screen"
+                if (activeVehicle.hasOwnProperty('visualization')) {
+                    if (activeVehicle.visualization === "ar") {
+                        activeVehicle = activeVehicle.ar;
+                        propertiesToIgnore.push('screen');
+                    } else if (activeVehicle.visualization === "screen") {
+                        if (typeof body.scale === "number" && typeof body.scaleARFactor === "number") {
+                            activeVehicle.ar.scale = body.scale / body.scaleARFactor;
+                        }
+                        activeVehicle = activeVehicle.screen;
+                        propertiesToIgnore.push('ar.x', 'ar.y'); // TODO: decoding this is currently hard-coded in the editor, make generalized
                     }
                 }
-            }
 
-            if (!activeVehicle) return updateStatus;
+                var didUpdate = false;
 
-            console.log('really changing size for ... ' + activeVehicle.uuid, body);
+                // check that the numbers are valid numbers..
+                if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
 
-            // the reality editor will overwrite all properties from the new frame except these.
-            // useful to not overwrite AR position when sending pos or scale from screen.
-            var propertiesToIgnore = [];
+                    // if the object is equal the datapoint id, the item is actually the object it self.
+                    activeVehicle.x = body.x;
+                    activeVehicle.y = body.y;
+                    activeVehicle.scale = body.scale;
 
-            // for frames, the position data is inside "ar" or "screen"
-            if (activeVehicle.hasOwnProperty('visualization')) {
-                if (activeVehicle.visualization === "ar") {
-                    activeVehicle = activeVehicle.ar;
-                    propertiesToIgnore.push('screen');
-                } else if (activeVehicle.visualization === "screen") {
-                    if (typeof body.scale === "number" && typeof body.scaleARFactor === "number") {
-                        activeVehicle.ar.scale = body.scale / body.scaleARFactor;
-                    }
-                    activeVehicle = activeVehicle.screen;
-                    propertiesToIgnore.push('ar.x', 'ar.y'); // TODO: decoding this is currently hard-coded in the editor, make generalized
+                    // console.log(req.body);
+                    // ask the devices to reload the objects
+                    didUpdate = true;
                 }
-            }
 
-            var didUpdate = false;
+                if (typeof body.matrix === "object" && activeVehicle.hasOwnProperty('matrix')) {
+                    activeVehicle.matrix = body.matrix;
+                    didUpdate = true;
+                }
 
-            // check that the numbers are valid numbers..
-            if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
+                if (didUpdate) {
+                    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                    actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore}, lastEditor: body.lastEditor});
+                    updateStatus = "added object";
+                }
 
-                // if the object is equal the datapoint id, the item is actually the object it self.
-                activeVehicle.x = body.x;
-                activeVehicle.y = body.y;
-                activeVehicle.scale = body.scale;
+                callback(200, updateStatus);
+            });
 
-                // console.log(req.body);
-                // ask the devices to reload the objects
-                didUpdate = true;
-            }
-
-            if (typeof body.matrix === "object" && activeVehicle.hasOwnProperty('matrix')) {
-                activeVehicle.matrix = body.matrix;
-                didUpdate = true;
-            }
-
-            if (didUpdate) {
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore}, lastEditor: body.lastEditor});
-
-                // if (typeof body.ignoreActionSender === 'undefined') {
-                //     actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
-                // } else {
-                //     actionSender({reloadVehicleScale: {object: objectID, frame: frameID, node: nodeID, visualization: activeVehicle.visualization, scale: body.scale}, lastEditor: body.lastEditor});
-                // }
-                updateStatus = "added object";
-            }
-
-            return updateStatus;
         }
 
         webServer.post('/object/*/frame/*/visualization/', function (req, res) {
