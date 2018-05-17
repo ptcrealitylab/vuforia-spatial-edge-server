@@ -1258,6 +1258,18 @@ function objectWebServer() {
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
+    webServer.use('/logicNodeIcon', function (req, res, next) {
+        var urlArray = req.originalUrl.split("/");
+        console.log(urlArray);
+        var objectName = urlArray[2];
+        var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
+        if (!fs.existsSync(fileName)) {
+            next();
+            return;
+        }
+        res.sendFile(fileName);
+    });
+
     webServer.use("/obj", function (req, res, next) {
 
         var urlArray = req.originalUrl.split("/");
@@ -1746,6 +1758,97 @@ function objectWebServer() {
         return blockList;
     }
 
+    // uploads a new iconImage for a logic block
+    // ****************************************************************************************************************
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function(req, res) {
+
+        var objectID = req.params.objectID;
+        var frameID = req.params.frameID;
+        var nodeID = req.params.nodeID;
+
+        console.log('received icon image for', objectID, frameID, nodeID);
+
+        if (!objects.hasOwnProperty(objectID)) {
+            res.status(404);
+            res.json({failure: true, error: 'Object ' + objectID + ' not found'}).end();
+            return;
+        }
+
+        var object = objects[objectID];
+
+        if (!object.frames.hasOwnProperty(frameID)) {
+            res.status(404);
+            res.json({failure: true, error: 'Frame ' + frameID + ' not found'}).end();
+            return;
+        }
+
+        var frame = object.frames[frameID];
+
+        if (!frame.nodes.hasOwnProperty(nodeID)) {
+            res.status(404);
+            res.json({failure: true, error: 'Node ' + nodeID + ' not found'}).end();
+            return;
+        }
+
+        var node = object.frames[frameID].nodes[nodeID];
+
+        var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
+        if (!fs.existsSync(iconDir)) {
+            fs.mkdirSync(iconDir);
+        }
+
+        var form = new formidable.IncomingForm({
+            uploadDir: iconDir,
+            keepExtensions: true,
+            accept: 'image/jpeg'
+        });
+
+        console.log('created form');
+
+        form.on('error', function (err) {
+            res.status(500);
+            res.send(err);
+            throw err;
+        });
+
+        form.on('fileBegin', function (name, file) {
+
+            console.log('fileBegin loading', name, file);
+
+            file.path = form.uploadDir + '/' + nodeID + '.jpg';;
+
+            // if (name === 'memoryThumbnailImage') {
+            //     file.path = form.uploadDir + '/memoryThumbnail.jpg';
+            // } else {
+            //     file.path = form.uploadDir + '/memory.jpg';
+            // }
+        });
+
+        console.log('about to parse');
+
+        form.parse(req, function (err, fields) {
+            // if (obj) {
+            //     obj.memory = JSON.parse(fields.memoryInfo);
+            //     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            //     actionSender({loadMemory: {object: objectID, ip: obj.ip}});
+            // }
+
+            if (node) {
+                node.iconImage = 'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
+
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+            }
+
+            console.log('successfully created icon image', err, fields);
+
+            res.status(200);
+            res.json({success: true}).end();
+        });
+
+        console.log('parse called');
+
+    });
 
     /**
      * Normal Links
