@@ -1446,6 +1446,36 @@ function objectWebServer() {
 
     }
 
+    /**
+     * Returns node if a nodeKey is provided, otherwise the frame
+     * @param objectKey
+     * @param frameKey
+     * @param nodeKey
+     * @param callback
+     */
+    function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
+
+        getFrame(objectKey, frameKey, function(error, object, frame) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            var node = null;
+
+            if (nodeKey && nodeKey !== 'null') {
+                if (!frame.nodes.hasOwnProperty(nodeKey)) {
+                    callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+                    return;
+                }
+                node = frame.nodes[nodeKey];
+            }
+
+            callback(null, object, frame, node);
+        });
+
+    }
+
 
     /// logic node handling
 
@@ -2665,13 +2695,15 @@ function objectWebServer() {
 
             cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
 
-            getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+            var activeVehicle = null;
+
+            getFrameOrNode(objectID, frameID, nodeID, function(error, object, frame, node) {
                 if (error) {
                     callback(404, error);
                     return;
                 }
 
-                var activeVehicle = node;
+                var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
                 console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
