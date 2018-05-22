@@ -42,7 +42,7 @@ realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouch
     } else {
         document.dispatchEvent(ev); // if you are outside the bounds, still try to move it
     }
-}
+};
 
 realityEditor.touchEvents.onMouseDown = function(e) {
 
