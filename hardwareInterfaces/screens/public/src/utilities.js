@@ -73,10 +73,17 @@ realityEditor.utilities.shouldPostEventsIntoIframe = function() {
     return !(editingVehicle || touchEditingTimer);
 };
 
-function convertPointFromPageToNode(elt, pageX, pageY) {
+/**
+ * Very simply polyfill for webkitConvertPointFromPageToNode - but only works for divs with no 3D transformation
+ * @param {HTMLElement} elt - the div whose coordinate space you are converting into
+ * @param {number} pageX
+ * @param {number} pageY
+ * @return {{x: number, y: number}} matching coordinates within the elt's frame of reference
+ */
+realityEditor.utilities.convertPointFromPageToNode = function(elt, pageX, pageY) {
     var eltRect = elt.getClientRects()[0];
-    var nodeX = (pageX - eltRect.x) / eltRect.width * parseFloat(elt.style.width);
-    var nodeY = (pageY - eltRect.y) / eltRect.height * parseFloat(elt.style.height);
+    var nodeX = (pageX - eltRect.left) / eltRect.width * parseFloat(elt.style.width);
+    var nodeY = (pageY - eltRect.top) / eltRect.height * parseFloat(elt.style.height);
     return {
         x: nodeX,
         y: nodeY
@@ -97,7 +104,7 @@ realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey)
     //     var newCoords = webkitConvertPointFromPageToNode(iframe, new WebKitPoint(mouseX, mouseY));
     // }
 
-    var newCoords = convertPointFromPageToNode(iframe, mouseX, mouseY);
+    var newCoords = this.convertPointFromPageToNode(iframe, mouseX, mouseY);
 
     iframe.contentWindow.postMessage(JSON.stringify({
         event: {

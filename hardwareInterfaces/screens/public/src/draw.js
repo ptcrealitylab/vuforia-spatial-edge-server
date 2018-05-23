@@ -104,7 +104,7 @@ realityEditor.draw.drawTransformed = function(frameKey, frame) {
     var frameContainerDom = document.querySelector('#object'+frameKey);
     if (frame.visualization === 'screen') {
         var svg = frameContainerDom.querySelector('#svg' + frameKey);
-        if (svg.children.length === 0) {
+        if (svg.childElementCount === 0) {
             var iFrame = frameContainerDom.querySelector('#iframe' + frameKey);
             console.log('retroactively creating the svg overlay');
             svg.style.width = iFrame.style.width;
