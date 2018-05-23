@@ -38,6 +38,8 @@ realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouch
         'touches': multiTouchList
     });
     ev.simulated = true;
+    ev.simulatedPageX = x;
+    ev.simulatedPageY = y;
 
     // el is null if x,y is outside window boundaries
     var el = document.elementFromPoint(x, y);
@@ -56,6 +58,10 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     mouseX = e.pageX;
     mouseY = e.pageY;
+    if (e.simulated) {
+        mouseX = e.simulatedPageX;
+        mouseY = e.simulatedPageY;
+    }
 
     realityEditor.utilities.showTouchOverlay();
 
@@ -107,6 +113,10 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
     mouseX = e.pageX;
     mouseY = e.pageY;
+    if (e.simulated) {
+        mouseX = e.simulatedPageX;
+        mouseY = e.simulatedPageY;
+    }
 
     realityEditor.utilities.showTouchOverlay();
 
