@@ -172,23 +172,6 @@
         return frame.uuid || frame.objectId + frame.name;
     }
 
-    function getMarkerRect() {
-        var windowWidth = window.innerWidth;
-        var windowHeight = window.innerHeight;
-
-        var markerWidth = 600;
-        var markerHeight = 600;
-
-        var rect = {
-            x: (windowWidth/2 - markerWidth/2),
-            y: (windowHeight/2 - markerHeight/2),
-            width: markerWidth,
-            height: markerHeight
-        };
-
-        return rect;
-    }
-
     // ... UTILITIES ... //
 
     // ........ DOM manipulation ........ //

@@ -156,8 +156,8 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
             //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
-            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
+            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
@@ -284,12 +284,12 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
                 for (var first in result) {
                     for(var secondFirst in result[first].Tracking[0]){
                         var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                        var sizeIntArray = sizeString.split(' ').map(function(elt){
-                            return (parseFloat(elt) > 10) ? parseFloat(elt) : 1000 * parseFloat(elt); // detect meter or mm scale
+                        var sizeFloatArray = sizeString.split(' ').map(function(elt){
+                            return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
                         });
                         resultXML = {
-                            width: sizeIntArray[0],
-                            height: sizeIntArray[1]
+                            width: sizeFloatArray[0],
+                            height: sizeFloatArray[1]
                         };
                         break;
                     }
@@ -299,7 +299,10 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
 
         return resultXML;
     } else {
-        return null;
+        return {
+            width: 0.3, // default width and height so it doesn't crash if there isn't a size in the xml
+            height: 0.3
+        };
     }
 };
 
