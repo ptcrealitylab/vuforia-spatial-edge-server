@@ -52,6 +52,22 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
+
+var generalProperties = {
+    name : "default",
+    privateData : {},
+    publicData : {},
+    type : "default"
+};
+
+exports.properties = generalProperties;
+
+exports.setup = function (object,frame, node, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
+
 var outputData = {};
 exports.render = function (objectID, frameID, linkID, inputData, callback) {
     var outputData = outputData;

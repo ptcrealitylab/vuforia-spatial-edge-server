@@ -262,6 +262,9 @@ function Frame() {
     this.location = "local";
     // source
     this.src = "editor";
+
+    this.privateData = {};
+    this.publicData = {};
 }
 
 
@@ -330,6 +333,10 @@ function Node() {
     //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
     // indicates how much calls per second is happening on this node
     this.stress = 0;
+
+    this.privateData = {};
+    this.publicData = {};
+
 }
 
 /**
@@ -3725,6 +3732,24 @@ function socketServer() {
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
+
+            var publicData = {};
+            var object = objects[msgContent.object];
+            if (object) {
+                var frame = object.frames[msgContent.frame];
+                if (frame) {
+                    for(key in frame.nodes){
+                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                        publicData[key] = frame.nodes[key].publicData;
+                    }
+                }
+            };
+
+            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                object: msgContent.object,
+                frame: msgContent.frame,
+                publicData: publicData
+            }));//       socket.emit('object', msgToSend);
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
@@ -3784,6 +3809,29 @@ function socketServer() {
         });
 // todo do this stuff tomorrrow
 
+
+
+        socket.on('object/publicData', function (_msg) {
+            var msg = JSON.parse(_msg);
+            // console.log(msg);
+            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined") {
+                if (msg.object in objects) {
+                    if (msg.frame in objects[msg.object].frames) {
+                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
+                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].publicData !== "undefined") {
+
+                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].publicData;
+
+                                    for (var key in msg.publicData) {
+                                        thisPublicData[key] = msg.publicData[key];
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
@@ -3813,11 +3861,11 @@ function socketServer() {
             if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
                     if (msg.frame in objects[msg.object].frames) {
-                        if (msg.logic in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData !== "undefined") {
+                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
+                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
+                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
 
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData;
+                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
 
                                     for (var key in msg.publicData) {
                                         thisPublicData[key] = msg.publicData[key];

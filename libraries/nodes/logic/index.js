@@ -59,6 +59,21 @@
 
  */
 
+var generalProperties = {
+    name : "logic",
+    privateData : {},
+    publicData : {},
+    type : "logic"
+};
+
+exports.properties = generalProperties;
+
+exports.setup = function (object,frame, node, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
+
 exports.render = function (objectID, frameID, linkID, inputData, callback) {
     var outputData = {};
     var key;
