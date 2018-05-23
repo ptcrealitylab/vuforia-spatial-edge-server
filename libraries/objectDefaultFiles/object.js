@@ -98,14 +98,11 @@ realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-cal
 document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
 // Load socket.io.js and pep.min.js synchronous so that it is available by the time the rest of the code is executed.
-function loadScriptSync(file, requestObject, scriptObject, object) {
+function loadScriptSync(url, requestObject, scriptObject) {
     requestObject = new XMLHttpRequest();
+    requestObject.open('GET', url, false);
+    requestObject.send();
 
-    script.addEventListener('load', function() {
-        var url = 'http://' + object.ip + ':8080';
-        requestObject.open('GET', url + file, false);
-        requestObject.send();
-    });
     //Only add script if fetch was successful
     if (requestObject.status === 200) {
         scriptObject = document.createElement('script');
@@ -116,6 +113,10 @@ function loadScriptSync(file, requestObject, scriptObject, object) {
         console.log("Error XMLHttpRequest HTTP status: " + requestObject.status);
     }
 }
+
+loadScriptSync('/socket.io/socket.io.js', realityObject.socketIoRequest, realityObject.socketIoScript);
+loadScriptSync('/objectDefaultFiles/pep.min.js', realityObject.pointerEventsRequest, realityObject.pointerEventsScript);
+
 
 /**
  ************************************************************
@@ -132,10 +133,6 @@ window.addEventListener("message", function (MSG) {
 }, false);
 
 realityObject.messageCallBacks.mainCall = function (msgContent) {
-    if (msgContent.objectData) {
-        loadScriptSync('/socket.io/socket.io.js', realityObject.socketIoRequest, realityObject.socketIoScript, msgContent.objectData);
-        loadScriptSync('/objectDefaultFiles/pep.min.js', realityObject.pointerEventsRequest, realityObject.pointerEventsScript, msgContent.objectData);
-    }
 
     // console.log("------------------------------");
     // console.log(msgContent);
@@ -914,7 +911,7 @@ function RealityLogic() {
 var HybridObject = RealityInterface;
 var HybridLogic = RealityLogic;
 
-document.addEventListener('load', function() {
+document.addEventListener('DOMContentLoaded', function() {
     var touchTimer = null;
     var sendTouchEvents = false;
     var startCoords = {
