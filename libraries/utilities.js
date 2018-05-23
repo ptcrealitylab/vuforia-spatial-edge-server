@@ -59,6 +59,7 @@ var debug = false;
 var xml2js = require('xml2js');
 var fs = require('fs');
 
+var identityFolderName = '.identity'; // TODO: get this from server.js
 
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -74,11 +75,10 @@ exports.readObject = function (objectLookup, folder) {
 
 
 
-exports.createFolder = function (folderVar, dirnameO, debug) {
+exports.createFolder = function (folderVar, objectsPath, debug) {
 
-    var folder = dirnameO + '/objects/' + folderVar + '/';
-    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
-    //var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
+    var folder = objectsPath + '/' + folderVar + '/';
+    var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
     if (debug) console.log("Creating folder: " + folder);
 
     if (!fs.existsSync(folder)) {
@@ -89,8 +89,8 @@ exports.createFolder = function (folderVar, dirnameO, debug) {
         });
     }
 
-        if (!fs.existsSync(frames)) {
-            fs.mkdirSync(frames, "0766", function (err) {
+        if (!fs.existsSync(identity)) {
+            fs.mkdirSync(identity, "0766", function (err) {
                 if (err) {
                     console.log(err);
                 }
@@ -122,11 +122,11 @@ exports.createFolder = function (folderVar, dirnameO, debug) {
 
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
+exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath, debug, location) {
     if(location === "global") return;
-    var folder = dirnameO + '/objects/' + folderVar + '/';
-    var frames = dirnameO + '/objects/' + folderVar + '/frames/';
-    var firstFrame = dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/';
+    var folder = objectsPath + '/' + folderVar + '/';
+    var identity = folder + identityFolderName + '/';
+    var firstFrame = folder + frameVar + '/';
     if (debug) console.log("Creating frame folder: " + folder);
 
     if (!fs.existsSync(folder)) {
@@ -137,8 +137,8 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
         });
     }
 
-    if (!fs.existsSync(frames)) {
-        fs.mkdirSync(frames, "0766", function (err) {
+    if (!fs.existsSync(identity)) {
+        fs.mkdirSync(identity, "0766", function (err) {
             if (err) {
                 console.log(err);
             }
@@ -156,8 +156,8 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
             //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
+            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
+            fs.createReadStream(__dirname + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
 
         } catch (e) {
             if (debug) console.log("Could not copy source files", e);
@@ -175,7 +175,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
  * @param frameKey
  * @param dirname0
  */
-exports.deleteFrameFolder = function(objectName, frameName, dirname0) {
+exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
 
     function deleteFolderRecursive(path) {
         console.log('deleteFolderRecursive');
@@ -195,7 +195,7 @@ exports.deleteFrameFolder = function(objectName, frameName, dirname0) {
     console.log('objectName: ' + objectName);
     console.log('frameName: ' + frameName);
 
-    var folderPath = dirname0 + '/objects/' + objectName + '/frames/' + frameName;
+    var folderPath = objectsPath + '/' + objectName + '/' + frameName;
     console.log('delete frame folder: ' + folderPath);
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
@@ -232,13 +232,13 @@ exports.uuidTime = function () {
     return stampUuidTime;
 };
 
-exports.getObjectIdFromTarget = function (folderName, dirnameO) {
+exports.getObjectIdFromTarget = function (folderName, objectsPath) {
 
     if(folderName === "allTargetsPlaceholder"){
         return "allTargetsPlaceholder000000000000";
     }
 
-    var xmlFile = dirnameO + '/objects/' + folderName + '/target/target.xml';
+    var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
 
     if (fs.existsSync(xmlFile)) {
         var resultXML = "";
@@ -247,7 +247,52 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
             parseString(fs.readFileSync(xmlFile, "utf8"),
             function (err, result) {
                 for (var first in result) {
-                    resultXML = result[first].Tracking[0].ImageTarget[0].$.name;
+                    for(var secondFirst in result[first].Tracking[0]){
+                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                    break;
+                }
+                    break;
+                }
+            });
+
+        return resultXML;
+    } else {
+        return null;
+    }
+};
+
+/**
+ *
+ * @param folderName
+ * @param objectsPath
+ * @return {Array.<float>}
+ */
+exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
+
+    if(folderName === "allTargetsPlaceholder"){
+        return "allTargetsPlaceholder000000000000";
+    }
+
+    var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
+
+    if (fs.existsSync(xmlFile)) {
+        var resultXML = "";
+        xml2js.
+        Parser().
+        parseString(fs.readFileSync(xmlFile, "utf8"),
+            function (err, result) {
+                for (var first in result) {
+                    for(var secondFirst in result[first].Tracking[0]){
+                        var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                        var sizeIntArray = sizeString.split(' ').map(function(elt){
+                            return (parseFloat(elt) > 10) ? parseFloat(elt) : 1000 * parseFloat(elt); // detect meter or mm scale
+                        });
+                        resultXML = {
+                            width: sizeIntArray[0],
+                            height: sizeIntArray[1]
+                        };
+                        break;
+                    }
                     break;
                 }
             });
@@ -266,10 +311,10 @@ exports.getObjectIdFromTarget = function (folderName, dirnameO) {
  * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides.
  * @param {string}   writeToFile  - Give permission to write to file.
  **/
-exports.writeObjectToFile = function (objects, object, dirnameO, writeToFile) {
+exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
 console.log("start saving");
-    var outputFilename = dirnameO + '/objects/' + objects[object].name + '/object.json';
+    var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
     fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
         if (err) {
             console.log(err);

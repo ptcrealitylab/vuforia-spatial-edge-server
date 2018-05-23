@@ -807,9 +807,11 @@ realityServer.toggleFullScreen = function (item) {
         thisIframe.style.height = "0px";
         thisIframe.style.border = "0px";
         thisIframe.id = "fullscreenIframe";
-        thisIframe.src = "http://localhost:3034";
         document.body.appendChild(thisIframe);
     }
+
+    var screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
+    thisIframe.src = "http://localhost:" + screenPort;
 
     var thisScreen = thisIframe;
    // if(item) thisScreen = item;
