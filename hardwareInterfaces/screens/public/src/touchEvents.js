@@ -4,6 +4,10 @@ realityEditor.touchEvents.addTouchListeners = function() {
     document.addEventListener('pointerdown', realityEditor.touchEvents.onMouseDown);
     document.addEventListener('pointermove', realityEditor.touchEvents.onMouseMove);
     document.addEventListener('pointerup', realityEditor.touchEvents.onMouseUp);
+
+    // document.addEventListener('touchmove', function(e) {
+    //     e.preventDefault(); // disable browser gesture defaults
+    // });
 };
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {
@@ -45,6 +49,8 @@ realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouch
 };
 
 realityEditor.touchEvents.onMouseDown = function(e) {
+
+    e.preventDefault();
 
     isMouseDown = true;
 
@@ -100,6 +106,8 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
 realityEditor.touchEvents.onMouseMove = function(e) {
 
+    e.preventDefault();
+
     if (!isMouseDown) { return; } // only do these calculations if we're actually pressing down
 
     if (e.pointerType === 'mouse') { // hack to let us reposition things with the mouse too
@@ -143,6 +151,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 };
 
 realityEditor.touchEvents.onMouseUp = function(e) {
+
+    e.preventDefault();
 
     realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
 

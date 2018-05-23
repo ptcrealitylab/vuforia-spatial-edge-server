@@ -2480,6 +2480,68 @@ function objectWebServer() {
         res.json({success: true, frameId: frameKey}).end();
     }
 
+    webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
+        var objectID = req.params.objectID;
+        var frameID = req.params.frameID;
+        console.log('making a copy of frame: ' + frameID);
+
+        getFrame(objectID, frameID, function(error, object, frame) {
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
+
+            if (frame.location !== 'global') {
+                console.warn('trying to clone a non-global frame... not allowed');
+                return;
+            }
+
+            // don't need to create a folder because we already ensured it is a global frame
+            // (otherwise we would need... utilities.createFrameFolder(object.name, frame.name, ... )
+
+            var newFrame = new Frame();
+            newFrame.objectId = frame.objectId;
+            newFrame.name = frame.src + utilities.uuidTime();
+            var newFrameKey = objectID + newFrame.name;
+            newFrame.uuid = newFrameKey;
+            newFrame.visualization = /*req.body.newVisualization ||*/ frame.visualization; // TODO: should we automatically move it to AR? or set to old
+            newFrame.ar = frame.ar;
+            newFrame.screen = frame.screen;
+            newFrame.visible = frame.visible;
+            newFrame.visibleText = frame.visibleText;
+            newFrame.visibleEditing = frame.visibleEditing;
+            newFrame.developer = frame.developer;
+            newFrame.links = frame.links;
+
+            newFrame.nodes = {}; // adjust node keys, etc, for copy
+            Object.keys(frame.nodes).forEach(function(oldNodeKey) {
+                var node = frame.nodes[oldNodeKey];
+                node.frameId = newFrameKey;
+                var newNodeKey = node.frameId + node.name;
+                node.uuid = newNodeKey;
+                newFrame.nodes[newNodeKey] = node;
+            });
+
+            newFrame.location = frame.location;
+            newFrame.src = frame.src;
+            newFrame.width = frame.width;
+            newFrame.height = frame.height;
+            object.frames[newFrameKey] = newFrame;
+
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+            // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
+            // actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
+            actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
+
+
+            hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
+
+            res.status(200).json({success: true, frameId: newFrameKey}).end();
+        });
+
+    });
+
     // Update an object's frame
     webServer.post('/object/*/frames/*/', function (req, res) {
         var objectId = req.params[0];

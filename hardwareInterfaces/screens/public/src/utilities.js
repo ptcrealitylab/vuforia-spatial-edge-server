@@ -73,6 +73,16 @@ realityEditor.utilities.shouldPostEventsIntoIframe = function() {
     return !(editingVehicle || touchEditingTimer);
 };
 
+function convertPointFromPageToNode(elt, pageX, pageY) {
+    var eltRect = elt.getClientRects()[0];
+    var nodeX = (pageX - eltRect.x) / eltRect.width * parseFloat(elt.style.width);
+    var nodeY = (pageY - eltRect.y) / eltRect.height * parseFloat(elt.style.height);
+    return {
+        x: nodeX,
+        y: nodeY
+    }
+};
+
 /**
  * Post a fake PointerEvent into the provided frame or node's iframe.
  * @param {PointerEvent} event
@@ -81,7 +91,14 @@ realityEditor.utilities.shouldPostEventsIntoIframe = function() {
  */
 realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey) {
     var iframe = document.getElementById('iframe' + (nodeKey || frameKey));
-    var newCoords = webkitConvertPointFromPageToNode(iframe, new WebKitPoint(mouseX, mouseY));
+
+    // Convert the mouse point into iframe coordinates using our polyfill or the default webkit function
+    // if (typeof webkitConvertPointFromPageToNode !== "undefined" && typeof WebKitPoint !== "undefined") {
+    //     var newCoords = webkitConvertPointFromPageToNode(iframe, new WebKitPoint(mouseX, mouseY));
+    // }
+
+    var newCoords = convertPointFromPageToNode(iframe, mouseX, mouseY);
+
     iframe.contentWindow.postMessage(JSON.stringify({
         event: {
             type: event.type,
