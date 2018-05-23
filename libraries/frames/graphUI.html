@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>graph</title>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.5);
+        }
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        #graph {
+            stroke: #00ff00;
+            fill: none;
+            stroke-width: 4;
+        }
+
+        .lines {
+            stroke-width: 2;
+            stroke:  rgba(51, 255, 255, 0.4);
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -6pt;
+            font-size: 45pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body>
+
+<svg id="container" width="690" height="410" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+
+
+
+    <rect id="backgroundFrame" x="0" y="0" width="687" height="330"rx="5" ry="5" />
+    <rect id="backgroundFrame" x="0" y="340" width="687" height="70"rx="5" ry="5" />
+    <text class="dataFont" id="dataValue" x="10" y="395">00.000</text>
+    <text class="dataFontMiddle" id="dataName" x="420" y="395"></text>
+
+    <text class="dataFontSmall" id="" x="653" y="320">1 sec</text>
+    <text class="dataFontSmall" id="" x="440" y="320">2 sec</text>
+    <text class="dataFontSmall" id="" x="225" y="320">3 sec</text>
+    <text class="dataFontSmall" id="" x="15" y="320">4 sec</text>
+
+    <svg x="10" y="10">
+
+        <rect id="frame" x="1" y="1" width="600" height="290"  rx="5" ry="5"/>
+        <line x1="300" y1="0" x2="300" y2="290" class="lines" stroke-width="1"/>
+        <line x1="150" y1="0" x2="150" y2="290" class="lines" stroke-width="1"/>
+        <line x1="450" y1="0" x2="450" y2="290" class="lines" stroke-width="1"/>
+
+        <line x1="0" y1="145" x2="600" y2="145" class="lines" stroke-width="1"/>
+        <line x1="0" y1="70" x2="600" y2="70" class="lines" stroke-width="1"/>
+        <line x1="0" y1="215" x2="600" y2="215" class="lines" stroke-width="1"/>
+        <line x1="0" y1="280" x2="600" y2="280" class="lines" stroke-width="1"/>
+        <line x1="0" y1="10" x2="600" y2="10" class="lines" stroke-width="1"/>
+
+
+
+        <svg x="610" y="0">
+            <text class="dataFontSmall" id="number4" x="0" y="17">0.0</text>
+            <text class="dataFontSmall" id="number3" x="0" y="76">0.0</text>
+            <text class="dataFontSmall" id="number2" x="0" y="151">0.0</text>
+            <text class="dataFontSmall" id="number1" x="0" y="221">0.0</text>
+            <text class="dataFontSmall" id="number0" x="0" y="286">0.0</text>
+        </svg>
+
+
+
+
+
+        <path id="graph"></path>
+    </svg>
+
+
+</svg>
+
+<script>
+    var dataValue = document.querySelector('#dataValue');
+    var dataName = document.querySelector('#dataName');
+    var graph = document.querySelector('#graph');
+    var numbers = [document.querySelector('#number0'),
+        document.querySelector('#number1'),
+        document.querySelector('#number2'),
+        document.querySelector('#number3'),
+        document.querySelector('#number4')
+    ];
+
+    var properties = {
+        value: 0,
+        valueOld :0,
+        unitMax :0,
+        unitMin :0,
+        unit: ""
+    };
+
+    var width = 600;
+    var height = 270;
+    var offset = 10;
+    var ticks = 150;
+    var time = 20;
+
+    //30
+    var min = 0.5;
+    var max = 0.5;
+
+    var data = [];
+    var isReady = false;
+    var currentValue;
+
+    for(var i = 0; i <= ticks; i++){
+        data.push(0.5);
+    }
+
+    function renderProperties() {
+        if (!isReady) {
+            return;
+        }
+        max = 0.0;
+        min = 1.0;
+        for (var i = 0; i < ticks; i++) {
+            if(data[i] <= min){
+                min = data[i];
+            }
+            if(data[i] >= max){
+                max = data[i];
+            }
+        }
+
+        var mi = properties.unitMin;
+        var ma = properties.unitMax;
+
+        numbers[0].textContent= scaleVal(min).toPrecision(4).substring(0,5);// properties.unitMin;
+        numbers[1].textContent= scaleVal(((max-min)/4)+min).toPrecision(4).substring(0,5);
+        numbers[2].textContent= scaleVal(((max-min)/2)+min).toPrecision(4).substring(0,5);
+        numbers[3].textContent= scaleVal(((max-min)/(4/3))+min).toPrecision(4).substring(0,5);
+        numbers[4].textContent= scaleVal(max).toPrecision(4).substring(0,5);
+
+        function scaleVal(number){
+            return (number * (properties.unitMax-properties.unitMin))+properties.unitMin;
+        }
+
+        dataValue.textContent = scaleVal(properties.value).toPrecision(7).substring(0,8);
+
+        if(properties.unit) {
+            dataName.textContent = properties.unit;
+        }
+
+
+
+        var path = ['M 0', height, 'L'];
+        for (var i = 0; i < ticks; i++) {
+            var x = i * width / (ticks - 1);
+            var value = 0;
+            if (i < data.length) {
+                value = 1/(max-min)*(data[i]-min);
+            }
+
+            if(!value) value = 0;
+            var y = (1 - value) * height;
+
+            if(y<=0)value = 0;
+            if(y>=1)value = 1;
+
+
+            path.push(x);
+            path.push(y+offset);
+        }
+        // path.push(width);
+        //path.push(height);
+        //path.push('Z');
+
+        graph.setAttribute('d', path.join(' '));
+    }
+
+    function ready() {
+        isReady = true;
+        renderProperties();
+    }
+
+    ready();
+
+    var interval = setInterval(function(){
+        data.push(properties.value);
+        data.shift();
+        renderProperties();
+    }, time);
+
+    var realityInterface = new RealityInterface();
+    realityInterface.addReadListener('value', function(e) {
+        properties.value = e.value;
+        properties.unit = e.unit;
+        properties.unitMax = e.unitMax;
+        properties.unitMin = e.unitMin;
+        // console.log(e);
+    });
+    realityInterface.setMoveDelay(10);
+    //  {value: 0.4565680618804775, mode: "f", unit: "volt", unitMin: 300, unitMax: 0}
+</script>
+<script src="resources/demonstration.js"></script>
+<script>
+    setupDemonstrationScripts(function() {
+        data.push(properties.value);
+        data.shift();
+        renderProperties();
+    });
+</script>
+</body>
+</html>

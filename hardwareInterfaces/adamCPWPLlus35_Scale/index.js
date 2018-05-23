@@ -33,7 +33,6 @@
  *             ╩ ╩ ┴ └─┘┴└─┴─┴┘  ╚═╝└─┘└┘└─┘└─┘ ┴ └─┘
  *
  * Created by Valentin on 10/22/14.
- * Modified by Carsten on 12/06/15.
  *
  * Copyright (c) 2015 Valentin Heun
  *
@@ -43,41 +42,55 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-
-/**
- * Set to true to enable the hardware interface
- **/
 exports.enabled = false;
 
 if (exports.enabled) {
-
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-    var request = require("request");
 
-    server.enableDeveloperUI(true);
+    const SerialPort = require('serialport');
+    const Readline = SerialPort.parsers.Readline;
+    var serialPort;
 
-    server.addNode("box", "arduino01", "red", "node");
-    server.addNode("box", "arduino01", "green", "node");
-    server.addNode("box", "arduino01", "blue", "node");
+    SerialPort.list().then(function(ports) {
+        for(var i = 0; i < ports.length; i++){
+console.log(ports[i]);
+            if(ports[i].manufacturer){
 
-    setInterval(getNewActions, 2000);
+                 if(ports[i].manufacturer.includes("FTDI")) {
+                     serialPort = new SerialPort(ports[i].comName, {
+                         baudRate: 9600
+                     });
+                     serialPort.on('error', function (err) {
+                         console.error("Serial port error", err);
+                     });
+                     serialServer(serialPort);
+                     break;
+                }
+            }
+        }
+    }).catch(function (err) {
+        // return err;  // code doesn't come here
+    });
 
-    function getNewActions() {
-        var options = { method: 'GET',
-            url: 'http://reality-editor-alexa.herokuapp.com/getNewActions',
-            headers: { 'cache-control': 'no-cache' }
-        };
+    function serialServer(serialPort) {
+        server.addNode("CPWPlus", "scale", "weight", "node");
 
-        request(options, function (error, response, body) {
-            if (error) throw new Error(error);
-            console.log(body);
+        const parser = serialPort.pipe(new Readline({ delimiter: '\r\n' }));
+        parser.on('data', function (data){
+            var values = data.split(" ");
 
-            var actions = JSON.parse(body);
-
-            actions.forEach(function(action) {
-                server.write("box", "arduino01", action.color.toLowerCase(), action.value);
-                console.log("Wrote value " + action.value + " to node " + action.color.toLowerCase());
+            values = values.filter(function(item) {
+                return item !== ""
             });
+
+            var max = 75.0;
+            var min = 0;
+
+            if(values[1]>=75.0) {
+                values[1] = 75.0;
+            }
+            values[1] = values[1]/max;
+            server.write('CPWPlus', "scale", 'weight', values[1], 'f', values[2], min, max);
         });
     }
 }

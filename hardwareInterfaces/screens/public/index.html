@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Frame Screen</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+
+<body touch-action="none">
+
+<div class="bg"></div>
+<canvas id="canvas"></canvas>
+<div id="touchOverlay"></div>
+
+<script src="src/index.js"></script>
+
+<script src="src/draw.js"></script>
+<script src="src/moveabilityOverlay.js"></script>
+<script src="src/network.js"></script>
+<script src="src/touchEvents.js"></script>
+<script src="src/utilities.js"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="resources/pep.min.js"></script>
+
+<script>
+    // var scaleARFactor = 1.5;
+    var scaleRatio = 1;
+
+    // get the url of the reality server to load frames from and to post new frame positions
+    var SERVER_IP = location.origin.split(":")[1].split("//")[1];
+    var SERVER_PORT = '8080';
+    console.log('screen found Reality Server at address:   http://' + SERVER_IP + ':' + SERVER_PORT);
+
+    var frames = {};
+    var socket = io();
+
+    var objectName; // receive this from socket
+    var targetSize; // receive this from socket
+
+    var windowToEditorRatio = 1;
+
+    // difference between touchscreen is mousemove events trigger regardless of whether clicking down (so need to keep track ourselves)
+    var isMouseDown = false;
+
+    var listenDoubleTap = false;
+    var doubleTapTimer = null;
+    var listenTripleTap = false;
+    var tripleTapTimer = null;
+
+    /**
+     * @typedef {Object} EditingState
+     * @desc All the necessary state about what's currently being repositioned. Everything else can be calculated from these.
+     * @property {string|null} objectKey
+     * @property {string|null} frameKey
+     * @property {string|null} nodeKey
+     * @property {{x: number, y: number}|null} touchOffset
+     * @property {boolean} unconstrained
+     */
+
+    /**
+     * @type {EditingState}
+     */
+    var editingState = {
+        objectKey: null,
+        frameKey: null,
+        nodeKey: null,
+        touchOffset: {
+            x: 0,
+            y: 0
+        }
+        // unconstrained: false,
+        // unconstrainedOffset: null
+    };
+
+    var mouseX = 0;
+    var mouseY = 0;
+
+    /**
+     * @type {List.<{x: number, y: number, type: string}>}
+     */
+    var multiTouchList = [];
+
+    var touchEditingTimer = null;
+
+    /**
+     * @typedef initialScaleData
+     * @property radius {number} how far apart in pixels the two touches are to begin with
+     * @property scale {number} the frame or node's initial scale value before the gesture, to use as a base multiplier
+     */
+    var initialScaleData = null;
+
+    var touchOverlay;
+
+    var globalCanvas = {};
+    globalCanvas.canvas = document.getElementById('canvas');
+    globalCanvas.canvas.width = window.innerWidth;
+    globalCanvas.canvas.height = window.innerHeight;
+    globalCanvas.context = globalCanvas.canvas.getContext('2d');
+
+    window.requestAnimFrame = function(){
+        return (
+            window.requestAnimationFrame       ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame    ||
+            window.oRequestAnimationFrame      ||
+            window.msRequestAnimationFrame     ||
+            function(/* function */ callback){
+                window.setTimeout(callback, 1000 / 60);
+            }
+        );
+    }();
+
+    window.onload = function() {
+
+        windowToEditorRatio = Math.max(1, Math.round((window.innerWidth/568)));
+        touchOverlay = document.getElementById('touchOverlay');
+        touchOverlay.style.width = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.height = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.marginLeft = (-30 * windowToEditorRatio) + 'px';
+        touchOverlay.style.marginTop = (-30 * windowToEditorRatio) + 'px';
+        touchOverlay.style.borderRadius = (60 * windowToEditorRatio) + 'px';
+        touchOverlay.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
+
+        realityEditor.touchEvents.addTouchListeners();
+
+        realityEditor.network.setupSocketListeners();
+
+        window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
+
+        // realityEditor.utilities.optimizedResize.add(function() {
+        //     console.log(window.innerWidth, window.innerHeight);
+        // });
+
+        realityEditor.utilities.optimizedResize.add(realityEditor.utilities.calculateScaleFactor);
+
+        socket.emit('getObjectName');
+        socket.emit('getObjectTargetSize');
+        socket.emit('getFramesForScreen');
+    };
+
+    /**
+     * Helper function for debugging which frames are in the screen.
+     */
+    function getScreenFrames() {
+        var screenFrames = [];
+        for (var frameKey in frames) {
+            if (!frames.hasOwnProperty(frameKey)) continue;
+            if (frames[frameKey].visualization === 'screen') {
+                screenFrames.push(frames[frameKey]);
+            }
+        }
+        return screenFrames;
+    }
+
+    /**
+     * Helper function for debugging which frames are in AR.
+     */
+    function getARFrames() {
+        var arFrames = [];
+        for (var frameKey in frames) {
+            if (!frames.hasOwnProperty(frameKey)) continue;
+            if (frames[frameKey].visualization === 'ar') {
+                arFrames.push(frames[frameKey]);
+            }
+        }
+        return arFrames;
+    }
+
+    function getFrameKey(frame) {
+        return frame.uuid || frame.objectId + frame.name;
+    }
+
+    function getMarkerRect() {
+        var windowWidth = window.innerWidth;
+        var windowHeight = window.innerHeight;
+
+        var markerWidth = 600;
+        var markerHeight = 600;
+
+        var rect = {
+            x: (windowWidth/2 - markerWidth/2),
+            y: (windowHeight/2 - markerHeight/2),
+            width: markerWidth,
+            height: markerHeight
+        };
+
+        return rect;
+    }
+
+    // ... UTILITIES ... //
+
+    // ........ DOM manipulation ........ //
+
+    /**
+     * Utility for converting coordinates from AR space to screen space.
+     * @param {number} arX - x coordinate in AR space relative to center of marker.
+     * @param {number} arY - y coordinate in AR space relative to center of marker.
+     * @return {{x: number, y: number}}
+     */
+    function getScreenPosFromARPos(arX, arY) {
+        var screenCoords = {
+            origin: {
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: window.innerWidth,
+                height: window.innerHeight
+            }
+        };
+
+        var markerCoords = {
+            origin: {
+                x: targetSize.width/2,
+                y: targetSize.height/2
+            },
+            size: {
+                width: targetSize.width,
+                height: targetSize.height
+            }
+        };
+
+        var screenAspectRatio = screenCoords.size.width / screenCoords.size.height;
+        var markerAspectRatio = markerCoords.size.width / markerCoords.size.height;
+
+        var screenToMarkerRatio = screenAspectRatio / markerAspectRatio;
+        var aspectMultiplier = 1.0 / Math.min(screenToMarkerRatio, 1.0); // if screen is taller than it is wide, scale down the mapping
+
+        var arPointRelativeToUpperLeft = {
+            x: arX + markerCoords.origin.x - screenCoords.origin.x,
+            y: arY + markerCoords.origin.y - screenCoords.origin.y
+        };
+
+        var screenX = (arPointRelativeToUpperLeft.x) * (screenCoords.size.width / markerCoords.size.width) * (aspectMultiplier);
+        var screenY = (arPointRelativeToUpperLeft.y) * (screenCoords.size.width / markerCoords.size.width) * (aspectMultiplier); // use scaleRatio of width for y too because of stretch to fill screen
+
+        return {
+            x: screenX,
+            y: screenY
+        };
+    }
+
+    /**
+     * Given an x, y coordinate, returns a list of DOM elements intersecting that coordinate
+     */
+    function getAllDivsUnderCoordinate(x, y) {
+        var res = [];
+        var previousDisplayTypes = [];
+
+        var ele = document.elementFromPoint(x,y);
+        while(ele && ele.tagName !== "BODY" && ele.tagName !== "HTML"){
+            res.push(ele);
+            previousDisplayTypes.push(ele.style.display);
+            ele.style.display = "none";
+            ele = document.elementFromPoint(x,y);
+        }
+
+        for(var i = 0; i < res.length; i++){
+            res[i].style.display = previousDisplayTypes[i];
+        }
+        // console.log(res);
+        return res;
+    }
+
+</script>
+
+</body>
+</html>
