@@ -213,8 +213,11 @@ function Objects() {
     this.visualization = "ar";
 
     this.zone = "";
-
-    this.targetSize = null; // taken from target.xml. necessary to make the screens work correctly.
+    // taken from target.xml. necessary to make the screens work correctly.
+    this.targetSize = {
+        x: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
+        y: 0.3
+    }
 
 }
 
@@ -262,6 +265,8 @@ function Frame() {
     this.location = "local";
     // source
     this.src = "editor";
+    // if true, cannot move the frame but copies are made from it when you pull into unconstrained
+    this.staticCopy = false;
 }
 
 
@@ -2504,7 +2509,7 @@ function objectWebServer() {
             newFrame.name = frame.src + utilities.uuidTime();
             var newFrameKey = objectID + newFrame.name;
             newFrame.uuid = newFrameKey;
-            newFrame.visualization = /*req.body.newVisualization ||*/ frame.visualization; // TODO: should we automatically move it to AR? or set to old
+            newFrame.visualization = frame.visualization;
             newFrame.ar = frame.ar;
             newFrame.screen = frame.screen;
             newFrame.visible = frame.visible;
@@ -2534,10 +2539,9 @@ function objectWebServer() {
             // actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
             actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
 
-
             hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
 
-            res.status(200).json({success: true, frameId: newFrameKey}).end();
+            res.status(200).json({success: true, frameId: newFrameKey, frame: newFrame}).end();
         });
 
     });
