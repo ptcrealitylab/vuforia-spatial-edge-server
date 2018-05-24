@@ -54,10 +54,10 @@
  **/
 
 var generalProperties = {
-    name : "default",
+    name : "node",
     privateData : {},
-    publicData : {},
-    type : "default"
+    publicData : {delayTime : 1000},
+    type : "node"
 };
 
 exports.properties = generalProperties;
@@ -67,18 +67,16 @@ exports.setup = function (object,frame, node, activeBlockProperties){
 
 };
 
+exports.render = function (object, frame, node, thisNode, callback) {
 
-var outputData = {};
-exports.render = function (objectID, frameID, linkID, inputData, callback) {
-    var outputData = outputData;
-    var key;
-        for (var key in inputData) {
-            outputData[key] = inputData[key];
-        }
+    var delayedValue = thisNode.data.value;
 
-    callback(objectID, frameID, linkID, outputData);
+    setTimeout(function() {
+        thisNode.processedData.value = delayedValue;
+        callback(object, frame, node, thisNode);
+    }, thisNode.publicData.delayTime);
+
 };
-
 /* // example for delay
  exports.render = function (objectID, linkID, inputData, callback) {
  var outputData = {};

@@ -54,10 +54,10 @@
  **/
 
 var generalProperties = {
-    name : "default",
+    name : "node",
     privateData : {},
-    publicData : {},
-    type : "default"
+    publicData : {max: 1, min: 0},
+    type : "node"
 };
 
 exports.properties = generalProperties;
@@ -67,18 +67,22 @@ exports.setup = function (object,frame, node, activeBlockProperties){
 
 };
 
+exports.render = function (object, frame, node, thisNode, callback) {
+console.log(thisNode.publicData);
+    for (var key in thisNode.data) {
+        if(key === "value"){
+            if (thisNode.data.value > thisNode.publicData.min && thisNode.data.value < thisNode.publicData.max) {
+                thisNode.processedData.value = 1.0;
 
-var outputData = {};
-exports.render = function (objectID, frameID, linkID, inputData, callback) {
-    var outputData = outputData;
-    var key;
-        for (var key in inputData) {
-            outputData[key] = inputData[key];
+            } else {
+                thisNode.processedData.value = 0.0;
+            };
+        } else {
+            thisNode.processedData[key] = thisNode.data[key];
         }
-
-    callback(objectID, frameID, linkID, outputData);
+    }
+    callback(object, frame, node, thisNode);
 };
-
 /* // example for delay
  exports.render = function (objectID, linkID, inputData, callback) {
  var outputData = {};
