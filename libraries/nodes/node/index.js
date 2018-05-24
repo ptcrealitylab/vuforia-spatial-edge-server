@@ -53,6 +53,20 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
+var generalProperties = {
+    name : "node",
+    privateData : {},
+    publicData : {default: 50},
+    type : "node"
+};
+
+exports.properties = generalProperties;
+
+exports.setup = function (object,frame, node, activeBlockProperties){
+// add code here that should be executed once.
+
+};
+
 exports.render = function (object, frame, node, thisNode, callback) {
     for (var key in thisNode.data) {
         thisNode.processedData[key] = thisNode.data[key];
