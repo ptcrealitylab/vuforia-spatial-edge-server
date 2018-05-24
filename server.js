@@ -2477,6 +2477,13 @@ function objectWebServer() {
         newFrame.src = frame.src;
         newFrame.width = frame.width;
         newFrame.height = frame.height;
+
+        for(key in newFrame.nodes){
+            newFrame.nodes[key].publicData = nodeTypeModules[newFrame.nodes[key].type].properties.publicData;
+        }
+
+        console.log(JSON.stringify(newFrame));
+
         object.frames[frameKey] = newFrame;
 
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
@@ -3740,7 +3747,14 @@ function socketServer() {
                 if (frame) {
                     for(key in frame.nodes){
                         if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[key] = frame.nodes[key].publicData;
+                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                        io.sockets.connected[socket.id].emit('object', JSON.stringify({
+                            object: msgContent.object,
+                            frame: msgContent.frame,
+                            node: key,
+                            data: objects[msgContent.object].frames[msgContent.frame].nodes[key].data
+                        }));//       socket.emit('object', msgToSend);
                     }
                 }
             };
@@ -3750,6 +3764,9 @@ function socketServer() {
                 frame: msgContent.frame,
                 publicData: publicData
             }));//       socket.emit('object', msgToSend);
+
+
+
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
