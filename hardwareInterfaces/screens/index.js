@@ -24,7 +24,7 @@ if (exports.enabled) {
     // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
     // ----------------------------------------------------------------------------------------------------------- //
     bindScreen('screenOne', 3100);
-    bindScreen('secondScreen', 3101);
+    bindScreen('stonesScreen', 3101);
     bindScreen('chipsScreen', 3102);
     // ----------------------------------------------------------------------------------------------------------- //
 
@@ -115,7 +115,12 @@ if (exports.enabled) {
 
             socket.on('getObjectTargetSize', function(msg) {
                 console.log('getObjectTargetSize', msg);
-                var targetSize = server.getMarkerSize(objectName);
+
+                var mmToMeterScale = 1000;
+                var targetSize = {
+                    width: server.getMarkerSize(objectName).width * mmToMeterScale,
+                    height: server.getMarkerSize(objectName).height * mmToMeterScale
+                };
                 socket.emit('objectTargetSize', {targetSize: targetSize});
             });
         });

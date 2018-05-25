@@ -19,25 +19,27 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
     editingState.nodeKey = nodeKey;
     var iFrame = realityEditor.utilities.getEditingElement();
     editingState.touchOffset = {
-        x: iFrame.getBoundingClientRect().x - mouseX,
-        y: iFrame.getBoundingClientRect().y - mouseY
+        x: iFrame.getBoundingClientRect().left - mouseX,
+        y: iFrame.getBoundingClientRect().top - mouseY
     };
 
 };
 
 realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
-    mouseX = x;// * 2.0;
-    mouseY = y;// * 2.0;
+    mouseX = x;
+    mouseY = y;
 
     var ev = new MouseEvent(eventName, {
         'view': window,
         'bubbles': true,
         'cancelable': true,
-        'screenX': x,
-        'screenY': y,
+        'pageX': x,
+        'pageY': y,
         'touches': multiTouchList
     });
     ev.simulated = true;
+    ev.simulatedPageX = x;
+    ev.simulatedPageY = y;
 
     // el is null if x,y is outside window boundaries
     var el = document.elementFromPoint(x, y);
@@ -54,12 +56,11 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     isMouseDown = true;
 
-    if (e.pointerType === 'mouse') { // hack to let us reposition things with the mouse too
-        mouseX = e.pageX;
-        mouseY = e.pageY;
-    } else {
-        mouseX = e.screenX;
-        mouseY = e.screenY;
+    mouseX = e.pageX;
+    mouseY = e.pageY;
+    if (e.simulated) {
+        mouseX = e.simulatedPageX;
+        mouseY = e.simulatedPageY;
     }
 
     realityEditor.utilities.showTouchOverlay();
@@ -110,12 +111,11 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
     if (!isMouseDown) { return; } // only do these calculations if we're actually pressing down
 
-    if (e.pointerType === 'mouse') { // hack to let us reposition things with the mouse too
-        mouseX = e.pageX;
-        mouseY = e.pageY;
-    } else {
-        mouseX = e.screenX;
-        mouseY = e.screenY;
+    mouseX = e.pageX;
+    mouseY = e.pageY;
+    if (e.simulated) {
+        mouseX = e.simulatedPageX;
+        mouseY = e.simulatedPageY;
     }
 
     realityEditor.utilities.showTouchOverlay();
