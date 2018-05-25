@@ -113,7 +113,7 @@
         
         activation.setAttribute('height', absY);
 
-        container.querySelectorAll('path.active').forEach(function(path) {
+        [].slice.call(container.querySelectorAll('path.active')).forEach(function(path) {
             path.classList.remove('active');
         });
 

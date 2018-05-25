@@ -213,8 +213,11 @@ function Objects() {
     this.visualization = "ar";
 
     this.zone = "";
-
-    this.targetSize = null; // taken from target.xml. necessary to make the screens work correctly.
+    // taken from target.xml. necessary to make the screens work correctly.
+    this.targetSize = {
+        x: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
+        y: 0.3
+    }
 
 }
 
@@ -265,6 +268,8 @@ function Frame() {
 
     this.privateData = {};
     this.publicData = {};
+    // if true, cannot move the frame but copies are made from it when you pull into unconstrained
+    this.staticCopy = false;
 }
 
 
@@ -333,10 +338,6 @@ function Node() {
     //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
     // indicates how much calls per second is happening on this node
     this.stress = 0;
-
-    this.privateData = {};
-    this.publicData = {};
-
 }
 
 /**
@@ -2477,13 +2478,6 @@ function objectWebServer() {
         newFrame.src = frame.src;
         newFrame.width = frame.width;
         newFrame.height = frame.height;
-
-        for(key in newFrame.nodes){
-            newFrame.nodes[key].publicData = nodeTypeModules[newFrame.nodes[key].type].properties.publicData;
-        }
-
-        console.log(JSON.stringify(newFrame));
-
         object.frames[frameKey] = newFrame;
 
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
@@ -2518,7 +2512,7 @@ function objectWebServer() {
             newFrame.name = frame.src + utilities.uuidTime();
             var newFrameKey = objectID + newFrame.name;
             newFrame.uuid = newFrameKey;
-            newFrame.visualization = /*req.body.newVisualization ||*/ frame.visualization; // TODO: should we automatically move it to AR? or set to old
+            newFrame.visualization = frame.visualization;
             newFrame.ar = frame.ar;
             newFrame.screen = frame.screen;
             newFrame.visible = frame.visible;
@@ -2548,10 +2542,9 @@ function objectWebServer() {
             // actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
             actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
 
-
             hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
 
-            res.status(200).json({success: true, frameId: newFrameKey}).end();
+            res.status(200).json({success: true, frameId: newFrameKey, frame: newFrame}).end();
         });
 
     });
@@ -3739,34 +3732,6 @@ function socketServer() {
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
-
-            var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    for(key in frame.nodes){
-                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
-
-                        io.sockets.connected[socket.id].emit('object', JSON.stringify({
-                            object: msgContent.object,
-                            frame: msgContent.frame,
-                            node: key,
-                            data: objects[msgContent.object].frames[msgContent.frame].nodes[key].data
-                        }));//       socket.emit('object', msgToSend);
-                    }
-                }
-            };
-
-            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
-                object: msgContent.object,
-                frame: msgContent.frame,
-                publicData: publicData
-            }));//       socket.emit('object', msgToSend);
-
-
-
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
@@ -3826,29 +3791,6 @@ function socketServer() {
         });
 // todo do this stuff tomorrrow
 
-
-
-        socket.on('object/publicData', function (_msg) {
-            var msg = JSON.parse(_msg);
-            // console.log(msg);
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].publicData !== "undefined") {
-
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].publicData;
-
-                                    for (var key in msg.publicData) {
-                                        thisPublicData[key] = msg.publicData[key];
-                                    }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
@@ -3878,11 +3820,11 @@ function socketServer() {
             if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
                 if (msg.object in objects) {
                     if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
+                        if (msg.logic in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
+                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks) {
+                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData !== "undefined") {
 
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
+                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.logic].blocks[msg.block].publicData;
 
                                     for (var key in msg.publicData) {
                                         thisPublicData[key] = msg.publicData[key];
