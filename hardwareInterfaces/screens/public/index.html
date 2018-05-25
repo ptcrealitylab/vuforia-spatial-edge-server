@@ -11,7 +11,8 @@
 
 <div class="bg"></div>
 <canvas id="canvas"></canvas>
-<div id="touchOverlay"></div>
+<div class="touchOverlay" id="touchOverlay"></div>
+<div class="touchOverlay" id="touchOverlaySecondFinger"></div>
 
 <script src="src/index.js"></script>
 
@@ -43,6 +44,10 @@
 
     // difference between touchscreen is mousemove events trigger regardless of whether clicking down (so need to keep track ourselves)
     var isMouseDown = false;
+
+    // for scaling frames using the touchscreen only
+    var firstMouseDown = null;
+    var secondMouseDown = null;
 
     var listenDoubleTap = false;
     var doubleTapTimer = null;
@@ -92,6 +97,7 @@
     var initialScaleData = null;
 
     var touchOverlay;
+    var touchOverlaySecondFinger;
 
     var globalCanvas = {};
     globalCanvas.canvas = document.getElementById('canvas');
@@ -116,12 +122,10 @@
 
         windowToEditorRatio = Math.max(1, Math.round((window.innerWidth/568)));
         touchOverlay = document.getElementById('touchOverlay');
-        touchOverlay.style.width = (60 * windowToEditorRatio) + 'px';
-        touchOverlay.style.height = (60 * windowToEditorRatio) + 'px';
-        touchOverlay.style.marginLeft = (-30 * windowToEditorRatio) + 'px';
-        touchOverlay.style.marginTop = (-30 * windowToEditorRatio) + 'px';
-        touchOverlay.style.borderRadius = (60 * windowToEditorRatio) + 'px';
-        touchOverlay.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
+        touchOverlaySecondFinger = document.getElementById('touchOverlaySecondFinger');
+
+        createTouchOverlay(touchOverlay);
+        createTouchOverlay(touchOverlaySecondFinger);
 
         realityEditor.touchEvents.addTouchListeners();
 
@@ -139,6 +143,16 @@
         socket.emit('getObjectTargetSize');
         socket.emit('getFramesForScreen');
     };
+
+    function createTouchOverlay(objectReference) {
+        // objectReference = document.getElementById('touchOverlay');
+        objectReference.style.width = (60 * windowToEditorRatio) + 'px';
+        objectReference.style.height = (60 * windowToEditorRatio) + 'px';
+        objectReference.style.marginLeft = (-30 * windowToEditorRatio) + 'px';
+        objectReference.style.marginTop = (-30 * windowToEditorRatio) + 'px';
+        objectReference.style.borderRadius = (60 * windowToEditorRatio) + 'px';
+        objectReference.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
+    }
 
     /**
      * Helper function for debugging which frames are in the screen.

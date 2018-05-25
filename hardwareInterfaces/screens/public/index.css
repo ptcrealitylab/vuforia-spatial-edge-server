@@ -273,7 +273,7 @@ body, html {
     top: 0;
 }
 
-#touchOverlay {
+.touchOverlay {
     position: absolute;
     display: none;
     box-sizing: border-box;
