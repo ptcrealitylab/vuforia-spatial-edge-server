@@ -2524,22 +2524,40 @@ function objectWebServer() {
             var newFrameKey = objectID + newFrame.name;
             newFrame.uuid = newFrameKey;
             newFrame.visualization = frame.visualization;
-            newFrame.ar = frame.ar;
-            newFrame.screen = frame.screen;
+            // deep clone ar by value, not reference, otherwise posting new position for one might affect the other
+            newFrame.ar = {
+                x: frame.ar.x,
+                y: frame.ar.y,
+                scale: frame.ar.scale,
+                matrix: frame.ar.matrix
+            };
+            // deep clone screen by value, not reference
+            newFrame.screen = {
+                x: frame.screen.x,
+                y: frame.screen.y,
+                scale: frame.screen.scale
+            };
             newFrame.visible = frame.visible;
             newFrame.visibleText = frame.visibleText;
             newFrame.visibleEditing = frame.visibleEditing;
             newFrame.developer = frame.developer;
             newFrame.links = frame.links;
 
+            // perform a deep clone of the nodes so it copies by value, not reference
             newFrame.nodes = {}; // adjust node keys, etc, for copy
-            Object.keys(frame.nodes).forEach(function(oldNodeKey) {
-                var node = frame.nodes[oldNodeKey];
-                node.frameId = newFrameKey;
-                var newNodeKey = node.frameId + node.name;
-                node.uuid = newNodeKey;
-                newFrame.nodes[newNodeKey] = node;
-            });
+            for (var oldNodeKey in frame.nodes) {
+                if (!frame.nodes.hasOwnProperty(oldNodeKey)) continue;
+                var newNode = new Node();
+                var oldNode = frame.nodes[oldNodeKey];
+                for (var propertyKey in oldNode) {
+                    if (!oldNode.hasOwnProperty(propertyKey)) continue;
+                    newNode[propertyKey] = oldNode[propertyKey];
+                }
+                newNode.frameId = newFrameKey;
+                var newNodeKey = newNode.frameId + newNode.name;
+                newNode.uuid = newNodeKey;
+                newFrame.nodes[newNodeKey] = newNode;
+            }
 
             newFrame.location = frame.location;
             newFrame.src = frame.src;
@@ -2785,7 +2803,7 @@ function objectWebServer() {
 
                 var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
-                console.log('really changing size for ... ' + activeVehicle.uuid, body);
+                // console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
                 // cout("post 2");
                 var updateStatus = "nothing happened";
@@ -3929,7 +3947,7 @@ function socketServer() {
 }
 
 function sendMessagetoEditors(msgContent) {
-
+    
     for (var thisEditor in realityEditorSocketArray) {
         if (msgContent.object === realityEditorSocketArray[thisEditor].object) {
             messagetoSend(msgContent, thisEditor);

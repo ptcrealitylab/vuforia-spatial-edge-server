@@ -9,6 +9,7 @@ var sendTouchEvents = false;
         node: '',
         frame: '',
         object: '',
+        publicData: {},
         modelViewMatrix: [],
         projectionMatrix: [],
         visibility: 'visible',
@@ -24,7 +25,7 @@ var sendTouchEvents = false;
         style: document.createElement('style'),
         messageCallBacks: {},
         version: 170,
-        moveDelay: 1000,
+        moveDelay: 400,
         eventObject : {
             version : null,
             object: null,
@@ -109,7 +110,8 @@ var sendTouchEvents = false;
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    moveDelay: realityObject.moveDelay
                 }
                 )
                 // this needs to contain the final interface source
@@ -187,6 +189,7 @@ var sendTouchEvents = false;
      */
 
     function RealityInterface() {
+        this.publicData = realityObject.publicData;
         this.pendingSends = [];
         this.pendingIos = [];
 
@@ -305,7 +308,17 @@ var sendTouchEvents = false;
         };
 
         this.setMoveDelay = function(delayInMilliseconds) {
-            realityObject.moveDelay = delayInMilliseconds
+            realityObject.moveDelay = delayInMilliseconds;
+
+            if (realityObject.object && realityObject.frame) {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    moveDelay : delayInMilliseconds
+                }), '*');
+            }
         };
 
         if (typeof io !== 'undefined') {
@@ -320,6 +333,10 @@ var sendTouchEvents = false;
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.addReadListener = makeIoStub('addReadListener');
+            this.readPublicData = makeIoStub('readPublicData');
+            this.addReadPublicDataListener = makeIoStub('addReadPublicDataListener');
+            this.writePublicData = makeIoStub('writePublicData');
+            this.writePrivateData = makeIoStub('writePrivateData');
         }
 
         realityInterfaces.push(this);
@@ -405,6 +422,71 @@ var sendTouchEvents = false;
                     }
                 }
             });
+        };
+
+        this.readPublicData = function (node, valueName, value) {
+            console.log(realityObject.publicData);
+            if (!value)  value = 0;
+
+            if(typeof realityObject.publicData[node] === "undefined") {
+                realityObject.publicData[node] = {};
+            }
+
+            if (typeof realityObject.publicData[node][valueName] === "undefined") {
+                realityObject.publicData[node][valueName] = value;
+                return value;
+            } else {
+                return realityObject.publicData[node][valueName];
+            }
+        };
+
+        this.addReadPublicDataListener = function (node, valueName, callback) {
+            self.ioObject.on("object/publicData", function (msg) {
+                var thisMsg = JSON.parse(msg);
+                if (typeof thisMsg.publicData === "undefined")  return;
+                    if(typeof thisMsg.publicData[node] === "undefined") return;
+                    if (typeof thisMsg.publicData[node][valueName] === "undefined") return;
+                        callback(thisMsg.publicData[node][valueName]);
+            });
+        };
+
+        this.writePublicData = function (node, valueName, value) {
+
+            if(typeof realityObject.publicData[node] === "undefined") {
+                realityObject.publicData[node] = {};
+            }
+
+            realityObject.publicData[node][valueName] = value;
+
+            this.ioObject.emit('object/publicData', JSON.stringify({
+                object: realityObject.object,
+                frame: realityObject.frame,
+                node: realityObject.frame + node,
+                publicData: realityObject.publicData[node]
+            }));
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    object: realityObject.object,
+                    frame: realityObject.frame,
+                    node: realityObject.frame + node,
+                    publicData: realityObject.publicData[node]
+                }
+            ), "*");
+        };
+
+        this.writePrivateData = function (node, valueName, value) {
+
+            var thisItem = {};
+            thisItem[valueName] = value;
+
+            this.ioObject.emit('object/privateData', JSON.stringify({
+                object: realityObject.object,
+                frame: realityObject.frame,
+                node: realityObject.frame + node,
+                privateData: thisItem
+            }));
         };
 
         console.log('socket.io is loaded and injected');
@@ -534,114 +616,19 @@ var sendTouchEvents = false;
         }
         this.pendingSends = [];
     };
-
-    var touchTimer = null;
-    // var sendTouchEvents = false;
-    var startCoords = {
-        x: 0,
-        y: 0
-    };
-    var touchMoveTolerance = 100;
-
-    function getTouchX(event) {
-        return event.changedTouches[0].screenX;
-    }
-
-    function getTouchY(event) {
-        return event.changedTouches[0].screenY;
-    }
-
-    function getScreenPosition(event) {
-        realityObject.eventObject.version = realityObject.version;
-        realityObject.eventObject.object = realityObject.object;
-        realityObject.eventObject.frame = realityObject.frame;
-        realityObject.eventObject.node = realityObject.node;
-        realityObject.eventObject.x = event.changedTouches[0].screenX;
-        realityObject.eventObject.y = event.changedTouches[0].screenY;
-        realityObject.eventObject.type = event.type;
-        return realityObject.eventObject;
-    }
-
-    function sendEventObject(event) {
-
-        parent.postMessage(JSON.stringify({
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object,
-            eventObject: getScreenPosition(event)
-        }), '*');
-    }
-
-    function sendTouchEvent(event) {
-        parent.postMessage(JSON.stringify({
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object,
-            touchEvent: {
-                type: event.type,
-                x: getTouchX(event),
-                y: getTouchY(event)
-            }
-        }), '*');
-    }
     
     window.onload = function() {
-        document.body.addEventListener('touchstart', function() {
-            sendEventObject(event);
-            if (touchTimer) {
-                return;
-            }
-
-            startCoords.x = getTouchX(event);
-            startCoords.y = getTouchY(event);
-
-            touchTimer = setTimeout(function() {
-                parent.postMessage(JSON.stringify({
-                    version: realityObject.version,
-                    node: realityObject.node,
-                    frame: realityObject.frame,
-                    object: realityObject.object,
-                    beginTouchEditing: true
-                }), '*');
-                sendTouchEvents = true;
-                touchTimer = null;
-            }, realityObject.moveDelay);
-        });
-
-        document.body.addEventListener('touchmove', function(event) {
-            sendEventObject(event);
-            if (sendTouchEvents) {
-                sendTouchEvent(event);
-            } else if (touchTimer) {
-                var dx = getTouchX(event) - startCoords.x;
-                var dy = getTouchY(event) - startCoords.y;
-                if (dx * dx + dy * dy > touchMoveTolerance) {
-                    clearTimeout(touchTimer);
-                    touchTimer = null;
-                }
-            }
-        });
-
-        document.body.addEventListener('touchend', function(event) {
-            sendEventObject(event);
-            if (sendTouchEvents) {
-                sendTouchEvent(event);
-            }
-            clearTimeout(touchTimer);
-            touchTimer = null;
-        });
 
         window.addEventListener('message', function (msg) {
-            if (msg.origin === "https://www.youtube.com") return; // TODO: make a more generalized solution for this...
+            // if (msg.origin === "https://www.youtube.com") return; // TODO: make a more generalized solution for this...
 
             var msgContent = JSON.parse(msg.data);
-            if (msgContent.stopTouchEditing) {
-                sendTouchEvents = false;
-            }
 
-            if (msgContent.event) {
+            // if (msgContent.stopTouchEditing) {
+            //     sendTouchEvents = false;
+            // }
+
+            if (msgContent.event && msgContent.event.pointerId) {
                 var eventData = msgContent.event;
                 var event = new PointerEvent(eventData.type, {
                     view: window,
@@ -658,7 +645,6 @@ var sendTouchEvents = false;
                     screenX: eventData.x,
                     screenY: eventData.y
                 });
-
                 var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
                 elt.dispatchEvent(event);
             }

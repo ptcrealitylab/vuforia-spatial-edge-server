@@ -15,34 +15,42 @@
 <script>
     var logic = new RealityLogic();
 
-    var number = document.getElementById('numbervalue');
+    document.addEventListener("DOMContentLoaded", function() {
 
+        var number = document.getElementById('numbervalue');
+        var slider = document.getElementById('slider');
 
-    // todo this needs to wait until the reality editor has sent the initial data.
-    var scaleValue = logic.readPublicData("scale", 1); // value and default if not existing (optional)
+        var defaultValue = 1.0;
 
-    writeNumber(scaleValue);
-    slider.value = scaleValue*100;
+        // todo this needs to wait until the reality editor has sent the initial data.
+        var scaleValue = logic.readPublicData("scale", defaultValue); // value and default if not existing (optional)
+        renderProperties();
 
-    slider.addEventListener("input", function () {
-        writeNumber(slider.value/100);
-        logic.writePublicData("scale",  slider.value/100);
-       // logic.writePrivateData("delayTime",  slider.value);
+        console.log('scale settings loaded with scaleValue = ' + scaleValue);
 
-    }, false);
+        slider.addEventListener("input", function () {
+            scaleValue = slider.value / 100;
+            renderProperties(true);
+            logic.writePublicData("scale",  scaleValue);
+            console.log('new scale value = ', scaleValue);
+        }, false);
 
-    logic.addReadPublicDataListener("scale",function (scaleValue){
+        logic.addReadPublicDataListener("scale", function (newValue){
+            document.getElementById('loading').style.display = "none";
+            document.getElementById('done').style.display = "inline";
+            scaleValue = newValue;
+            renderProperties();
+        });
 
-        document.getElementById('loading').style.display = "none";
-        document.getElementById('done').style.display = "inline";
+        function renderProperties(ignoreSlider) {
+            number.innerHTML = scaleValue + " X";
+            if (!ignoreSlider) {
+                slider.value = scaleValue * 100;
+            }
+        }
 
-        writeNumber(scaleValue*100);
-    slider.value = scaleValue*100;
     });
 
-    function writeNumber(value){
-            number.innerHTML =  value+" X";
-    }
 
 </script>
 </body>
