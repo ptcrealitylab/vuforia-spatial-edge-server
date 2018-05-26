@@ -4,10 +4,6 @@ realityEditor.touchEvents.addTouchListeners = function() {
     document.addEventListener('pointerdown', realityEditor.touchEvents.onMouseDown);
     document.addEventListener('pointermove', realityEditor.touchEvents.onMouseMove);
     document.addEventListener('pointerup', realityEditor.touchEvents.onMouseUp);
-
-    // document.addEventListener('touchmove', function(e) {
-    //     e.preventDefault(); // disable browser gesture defaults
-    // });
 };
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {
@@ -63,8 +59,6 @@ realityEditor.touchEvents.onMouseDown = function(e) {
     }
 
     if (!e.simulated) {
-        // realityEditor.utilities.hideTouchOverlay(1);
-        // realityEditor.utilities.hideTouchOverlay(2);
 
         if (isMouseDown) {
             secondMouseDown = {
@@ -84,9 +78,6 @@ realityEditor.touchEvents.onMouseDown = function(e) {
         }
     }
     isMouseDown = true;
-
-    console.log('onMouseDown... 1: ' + isMouseDown + ', 2: ' + secondMouseDown);
-    console.log(e);
 
     var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
     if (!clickedElement) {
@@ -207,8 +198,6 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
 realityEditor.touchEvents.onMouseUp = function(e) {
 
-    console.log('onMouseUp... 1: ' + isMouseDown + ', 2: ' + secondMouseDown);
-
     e.preventDefault();
 
     realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
@@ -220,8 +209,6 @@ realityEditor.touchEvents.onMouseUp = function(e) {
             realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
         }
     }
-
-    console.log('onMouseDown... 1: ' + isMouseDown + ', 2: ' + secondMouseDown);
 
     if (e.simulated) {
         // only reset dragging if last touch

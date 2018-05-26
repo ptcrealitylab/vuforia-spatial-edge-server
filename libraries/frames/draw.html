@@ -118,7 +118,7 @@
             
             document.querySelector('#new').addEventListener('pointerdown', clearCanvas);
             
-            document.querySelectorAll('.palette').forEach(function(palette){
+            [].slice.call(document.querySelectorAll('.palette')).forEach(function(palette){
                 palette.addEventListener('pointerdown', function() {
                     selectColor(palette);
                 });
@@ -186,16 +186,17 @@
         var drawPointerEvents = function() {
             var clicked = 0;
             var start = function(e) {
+                console.log(e);
                 clicked = 1;
                 ctx.beginPath();
-                x = e.pageX;
-                y = e.pageY-44;
+                x = e.clientX;
+                y = e.clientY-44;
                 ctx.moveTo(x,y);
             };
             var move = function(e) {
                 if(clicked){
-                    x = e.pageX;
-                    y = e.pageY-44;
+                    x = e.clientX;
+                    y = e.clientY-44;
                     ctx.lineTo(x,y);
                     ctx.stroke();
                 }

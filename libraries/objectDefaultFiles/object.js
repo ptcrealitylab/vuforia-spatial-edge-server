@@ -837,7 +837,7 @@ function RealityLogic() {
             this.ioObject.emit('block/publicData', JSON.stringify({
                 object: realityObject.object,
                 frame: realityObject.frame,
-                logic: realityObject.logic,
+                node: realityObject.logic,
                 block: realityObject.block,
                 publicData: realityObject.publicData
             }));
@@ -846,7 +846,7 @@ function RealityLogic() {
                 {
                     version: realityObject.version,
                     block: realityObject.block,
-                    logic: realityObject.logic,
+                    node: realityObject.logic,
                     object: realityObject.object,
                     frame: realityObject.frame,
                     publicData: realityObject.publicData

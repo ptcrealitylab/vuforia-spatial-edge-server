@@ -122,7 +122,6 @@ realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey)
  * @param {number|undefined} whichFinger - if 2 passed in, moves touchOverlaySecondFinger instead
  */
 realityEditor.utilities.showTouchOverlay = function(whichFinger) {
-    console.log(whichFinger);
     if (whichFinger && whichFinger === 2) {
         touchOverlaySecondFinger.style.left = secondMouseDown.x + 'px';
         touchOverlaySecondFinger.style.top = secondMouseDown.y + 'px';
