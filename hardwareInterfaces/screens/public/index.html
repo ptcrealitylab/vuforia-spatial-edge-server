@@ -240,6 +240,48 @@
     }
 
     /**
+     * Inverse of getScreenPosFromARPos
+     * @return {{x: number, y: number}}
+     */
+    function getARPosFromScreenPos(screenX, screenY) {
+        var screenCoords = {
+            origin: {
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: window.innerWidth,
+                height: window.innerHeight
+            }
+        };
+
+        var markerCoords = {
+            origin: {
+                x: targetSize.width/2,
+                y: targetSize.height/2
+            },
+            size: {
+                width: targetSize.width,
+                height: targetSize.height
+            }
+        };
+
+        var screenAspectRatio = screenCoords.size.width / screenCoords.size.height;
+        var markerAspectRatio = markerCoords.size.width / markerCoords.size.height;
+
+        var screenToMarkerRatio = screenAspectRatio / markerAspectRatio;
+        var aspectMultiplier = 1.0 / Math.min(screenToMarkerRatio, 1.0); // if screen is taller than it is wide, scale down the mapping
+
+        var arX = screenX * (markerCoords.size.width / (screenCoords.size.width * aspectMultiplier)) + screenCoords.origin.x - markerCoords.origin.x;
+        var arY = screenY * (markerCoords.size.width / (screenCoords.size.width * aspectMultiplier)) + screenCoords.origin.y - markerCoords.origin.y;
+
+        return {
+            x: arX,
+            y: arY
+        };
+    }
+
+    /**
      * Given an x, y coordinate, returns a list of DOM elements intersecting that coordinate
      */
     function getAllDivsUnderCoordinate(x, y) {

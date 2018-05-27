@@ -202,7 +202,7 @@ realityEditor.touchEvents.onMouseUp = function(e) {
 
     e.preventDefault();
 
-    realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey);
+    realityEditor.network.postPositionAndSize(editingState.objectKey, editingState.frameKey, editingState.nodeKey, e.simulated);
 
     if (realityEditor.utilities.shouldPostEventsIntoIframe()) {
         var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);

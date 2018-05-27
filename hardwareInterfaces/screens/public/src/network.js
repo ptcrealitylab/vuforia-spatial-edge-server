@@ -308,13 +308,27 @@ realityEditor.network.postData = function(url, body, callback) {
     request.send(params);
 };
 
-realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey) {
+realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey, wasTriggeredFromEditor) {
     if (!objectKey || !frameKey) return;
     if (!frames[frameKey]) return;
     // post new position to server when you stop moving a frame
-    var content = frames[frameKey].screen;
-    content.scaleARFactor = scaleRatio; //scaleARFactor;
-    content.ignoreActionSender = true; // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+    var content = {
+        x: frames[frameKey].screen.x,
+        y: frames[frameKey].screen.y,
+        scale: frames[frameKey].screen.scale,
+        scaleARFactor: scaleRatio,
+        ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+    };
+    if (wasTriggeredFromEditor) {
+        content.wasTriggeredFromEditor = true;
+    } else {
+        var iframeRect = document.getElementById('iframe' + frameKey).getClientRects()[0];
+        var frameCenterX = frames[frameKey].screen.x + iframeRect.width/2;
+        var frameCenterY = frames[frameKey].screen.y + iframeRect.height/2;
+        var arPosition = getARPosFromScreenPos(frameCenterX, frameCenterY);
+        content.arX = arPosition.x;
+        content.arY = arPosition.y;
+    }
     var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
     this.postData(urlEndpoint, content, function (response, error) {
         console.log(response, error);
