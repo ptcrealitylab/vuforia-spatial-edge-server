@@ -60,6 +60,8 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     if (!e.simulated) {
 
+        if (secondMouseDown) return; // we only work with the first two fingers on the screen
+
         if (isMouseDown) {
             secondMouseDown = {
                 x: mouseX,

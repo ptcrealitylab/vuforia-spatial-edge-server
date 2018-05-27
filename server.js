@@ -3947,7 +3947,7 @@ function socketServer() {
 }
 
 function sendMessagetoEditors(msgContent) {
-    
+
     for (var thisEditor in realityEditorSocketArray) {
         if (msgContent.object === realityEditorSocketArray[thisEditor].object) {
             messagetoSend(msgContent, thisEditor);
