@@ -155,7 +155,7 @@ var cors = require('cors');             // Library for HTTP Cross-Origin-Resourc
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
-var sharp = require('sharp'); // Image resizing library
+//var sharp = require('sharp'); // Image resizing library
 
 // additional files containing project code
 
@@ -1971,7 +1971,7 @@ function objectWebServer() {
 
                 // copied fullsize file into resized image file as backup, in case resize operation fails
                 fs.copyFileSync(rawFilepath, resizedFilepath);
-
+/*
                 sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
                     if (!err) {
                         console.log('done resizing', info);
@@ -1992,6 +1992,7 @@ function objectWebServer() {
                         throw err;
                     }
                 });
+                */
 
             });
 
