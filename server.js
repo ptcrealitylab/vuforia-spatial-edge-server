@@ -537,7 +537,7 @@ function Protocols() {
             if (!msgContent.object) return null;
             if (!msgContent.frame) return null;
             if (!msgContent.node) return null;
-            if (!msgContent.logic) msgContent.logic = false;
+            if (!msgContent.logic && msgContent.logic !== 0) msgContent.logic = false;
             if (!msgContent.data) return null;
 
             if (msgContent.object in objects) {
@@ -564,7 +564,7 @@ function Protocols() {
 
                                     this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
 
-                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData.data);
+                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
                                    // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                                 }
                             }
