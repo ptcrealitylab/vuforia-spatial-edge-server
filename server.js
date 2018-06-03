@@ -537,7 +537,7 @@ function Protocols() {
             if (!msgContent.object) return null;
             if (!msgContent.frame) return null;
             if (!msgContent.node) return null;
-            if (!msgContent.logic) msgContent.logic = false;
+            if (!msgContent.logic && msgContent.logic !== 0) msgContent.logic = false;
             if (!msgContent.data) return null;
 
             if (msgContent.object in objects) {
@@ -564,7 +564,7 @@ function Protocols() {
 
                                     this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
 
-                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData.data);
+                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
                                    // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                                 }
                             }
@@ -1368,9 +1368,13 @@ function objectWebServer() {
                 }
             }
             res.json(json);
-        }
-        else {
-           console.log("end: "+newUrl);
+        } else if ((req.method === "GET") && urlArray[urlArray.length-2].indexOf('/memory') > -1) {
+            if (!fs.existsSync(newUrl)) {
+                res.sendFile(__dirname + '/libraries/emptyMemory.png'); // default to blank image if no memory saved yet
+                return;
+            }
+        } else {
+            console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
     });
@@ -2524,22 +2528,40 @@ function objectWebServer() {
             var newFrameKey = objectID + newFrame.name;
             newFrame.uuid = newFrameKey;
             newFrame.visualization = frame.visualization;
-            newFrame.ar = frame.ar;
-            newFrame.screen = frame.screen;
+            // deep clone ar by value, not reference, otherwise posting new position for one might affect the other
+            newFrame.ar = {
+                x: frame.ar.x,
+                y: frame.ar.y,
+                scale: frame.ar.scale,
+                matrix: frame.ar.matrix
+            };
+            // deep clone screen by value, not reference
+            newFrame.screen = {
+                x: frame.screen.x,
+                y: frame.screen.y,
+                scale: frame.screen.scale
+            };
             newFrame.visible = frame.visible;
             newFrame.visibleText = frame.visibleText;
             newFrame.visibleEditing = frame.visibleEditing;
             newFrame.developer = frame.developer;
             newFrame.links = frame.links;
 
+            // perform a deep clone of the nodes so it copies by value, not reference
             newFrame.nodes = {}; // adjust node keys, etc, for copy
-            Object.keys(frame.nodes).forEach(function(oldNodeKey) {
-                var node = frame.nodes[oldNodeKey];
-                node.frameId = newFrameKey;
-                var newNodeKey = node.frameId + node.name;
-                node.uuid = newNodeKey;
-                newFrame.nodes[newNodeKey] = node;
-            });
+            for (var oldNodeKey in frame.nodes) {
+                if (!frame.nodes.hasOwnProperty(oldNodeKey)) continue;
+                var newNode = new Node();
+                var oldNode = frame.nodes[oldNodeKey];
+                for (var propertyKey in oldNode) {
+                    if (!oldNode.hasOwnProperty(propertyKey)) continue;
+                    newNode[propertyKey] = oldNode[propertyKey];
+                }
+                newNode.frameId = newFrameKey;
+                var newNodeKey = newNode.frameId + newNode.name;
+                newNode.uuid = newNodeKey;
+                newFrame.nodes[newNodeKey] = newNode;
+            }
 
             newFrame.location = frame.location;
             newFrame.src = frame.src;
@@ -2785,7 +2807,7 @@ function objectWebServer() {
 
                 var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
-                console.log('really changing size for ... ' + activeVehicle.uuid, body);
+                // console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
                 // cout("post 2");
                 var updateStatus = "nothing happened";
@@ -2818,6 +2840,11 @@ function objectWebServer() {
                     activeVehicle.y = body.y;
                     activeVehicle.scale = body.scale;
 
+                    if (typeof body.arX === "number" && typeof body.arY === "number") {
+                        frame.ar.x = body.arX;
+                        frame.ar.y = body.arY;
+                    }
+
                     // console.log(req.body);
                     // ask the devices to reload the objects
                     didUpdate = true;
@@ -2830,7 +2857,7 @@ function objectWebServer() {
 
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore}, lastEditor: body.lastEditor});
+                    actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
                     updateStatus = "added object";
                 }
 
@@ -2846,24 +2873,21 @@ function objectWebServer() {
 
         function changeVisualization(objectKey, frameKey, body, res) {
             var newVisualization = body.visualization;
-            // var newPosition = body.positionData;
+            var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
             var object = objects[objectKey];
             if (object) {
                 var frame = object.frames[frameKey];
                 if (frame) {
+                    if (oldVisualizationPositionData) {
+                        var oldVisualization = frame.visualization;
+                        frame[oldVisualization] = oldVisualizationPositionData;
+                    }
+
                     frame.visualization = newVisualization;
-                    // if (newPosition) {
-                    //     frame[newVisualization].x = newPosition.x;
-                    //     frame[newVisualization].y = newPosition.y;
-                    // }
+
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-                    // for (var i = 0; i < 5; i++) {
-                    //     setTimeout(function() {
-                    //         actionSender({reloadObject: {object: objectKey, frame: frameKey}});
-                    //         console.log("Send visualization heartbeat");
-                    //     }, 1000 * i);
-                    // }
+
                     res.status(200).json({success: true}).end();
                     return;
                 }
