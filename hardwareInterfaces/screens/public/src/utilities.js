@@ -119,18 +119,34 @@ realityEditor.utilities.postEventIntoIframe = function(event, frameKey, nodeKey)
 
 /**
  * Show visual feedback about the current mouse position
+ * @param {number|undefined} whichFinger - if 2 passed in, moves touchOverlaySecondFinger instead
  */
-realityEditor.utilities.showTouchOverlay = function() {
-    touchOverlay.style.left = mouseX + 'px';
-    touchOverlay.style.top = mouseY + 'px';
-    touchOverlay.style.display = 'inline';
+realityEditor.utilities.showTouchOverlay = function(whichFinger) {
+    if (whichFinger && whichFinger === 2) {
+        touchOverlaySecondFinger.style.left = secondMouseDown.x + 'px';
+        touchOverlaySecondFinger.style.top = secondMouseDown.y + 'px';
+        touchOverlaySecondFinger.style.display = 'inline';
+    } else if (whichFinger && whichFinger === 1) {
+        touchOverlay.style.left = firstMouseDown.x + 'px';
+        touchOverlay.style.top = firstMouseDown.y + 'px';
+        touchOverlay.style.display = 'inline';
+    } else {
+        touchOverlay.style.left = mouseX + 'px';
+        touchOverlay.style.top = mouseY + 'px';
+        touchOverlay.style.display = 'inline';
+    }
 };
 
 /**
  * Hide visual feedback when the mouse is released
+ * @param {number|undefined} whichFinger - if 2 passed in, moves touchOverlaySecondFinger instead
  */
-realityEditor.utilities.hideTouchOverlay = function() {
-    touchOverlay.style.display = 'none';
+realityEditor.utilities.hideTouchOverlay = function(whichFinger) {
+    if (whichFinger && whichFinger === 2) {
+        touchOverlaySecondFinger.style.display = 'none';
+    } else {
+        touchOverlay.style.display = 'none';
+    }
 };
 
 /**
@@ -138,8 +154,12 @@ realityEditor.utilities.hideTouchOverlay = function() {
  * The new scale starts at the initial scale and varies linearly with the changing touch radius.
  * @param {Object.<x,y>} centerTouch the first touch event, where the scale is centered from
  * @param {Object.<x,y>} outerTouch the other touch, where the scale extends to
+ * @param {number|undefined} scaleSpeed - adjust how much it scales per distance pinched. defaults to 1.0 if omitted
  */
-realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch) {
+realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch, scaleSpeed) {
+    if (typeof scaleSpeed === 'undefined') scaleSpeed = 1.0;
+
+    console.log(centerTouch, outerTouch);
 
     var activeVehicle = this.getEditingVehicle();
     if (!activeVehicle) {
@@ -167,7 +187,7 @@ realityEditor.utilities.scaleEditingVehicle = function(centerTouch, outerTouch) 
     }
 
     // calculate the new scale based on the radius between the two touches
-    var newScale = initialScaleData.scale + (radius - initialScaleData.radius) / (300 * windowToEditorRatio);
+    var newScale = initialScaleData.scale + (radius - initialScaleData.radius) / (300 * windowToEditorRatio / scaleSpeed);
     if (typeof newScale !== 'number') return;
 
     // manually calculate positionData.x and y to keep centerTouch in the same place relative to the vehicle
