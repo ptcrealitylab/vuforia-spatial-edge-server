@@ -129,6 +129,8 @@
     var on = document.querySelector('#on');
     var offLetter = document.querySelector('#offLetter');
     var onLetter = document.querySelector('#onLetter');
+    var screenIsTouched = false;
+
 
     var properties = {
         value: 0,
@@ -140,7 +142,9 @@
 
     function execute(number){
         properties.value = number;
+        if(screenIsTouched === true) {
         realityInterface.write('value', number);
+        }
 
         if(number === 1){
             changeSize(off, 50,50,170,170);
@@ -161,28 +165,57 @@
 
     off.addEventListener("pointerdown",
         function (event) {
+            screenIsTouched = true;
             execute(0);
         }, false);
 
     on.addEventListener("pointerdown",
         function (event) {
+            screenIsTouched = true;
             execute(1);
         }, false);
 
     offLetter.addEventListener("pointerdown",
         function (event) {
+            screenIsTouched = true;
             execute(0);
         }, false);
 
     onLetter.addEventListener("pointerdown",
         function (event) {
+            screenIsTouched = true;
             execute(1);
         }, false);
 
 
+    // up
+
+    off.addEventListener("pointerup",
+        function (event) {
+            screenIsTouched = false;
+        }, false);
+
+    on.addEventListener("pointerup",
+        function (event) {
+            screenIsTouched = false;
+        }, false);
+
+    offLetter.addEventListener("pointerup",
+        function (event) {
+            screenIsTouched = false;
+        }, false);
+
+    onLetter.addEventListener("pointerup",
+        function (event) {
+            screenIsTouched = false;
+        }, false);
+
+
     realityInterface.addReadListener('value', function (e) {
+        if(screenIsTouched === false) {
         properties.value = e.value;
         execute(properties.value);
+        }
     });
 
     realityInterface.setMoveDelay(1000);

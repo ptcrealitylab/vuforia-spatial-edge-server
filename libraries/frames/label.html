@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>label</title>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 255, 255, 0.3);
+        }
+
+        .numberOutline {
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        .lines {
+            stroke-width: 2;
+            stroke: rgba(51, 255, 255, 0.4);
+        }
+
+        .green {
+            color: rgb(41,253,47);
+            border: 2px solid rgb(41,253,47);
+            background-color: rgba(41,253,47,0.05);
+        }
+
+        .red {
+            color: rgb(242,22,121);
+            border: 2px solid rgb(242,22,121);
+            background-color: rgba(242,22,121,0.05);
+        }
+
+        .blue {
+            color: rgb(45,255,255);
+            border: 2px solid rgb(45,255,255);
+            background-color: rgba(45,255,255,0.05);
+            
+        }
+
+        .purple {
+            color: rgb(210,113,255);
+            border: 2px solid rgb(210,113,255);
+            background-color: rgba(210,113,255,0.05);
+        }
+
+        .yellow {
+            color: rgb(255,255,45);
+            border: 2px solid rgb(255,255,45);
+            background-color: rgba(255,255,45,0.05);
+        }
+        .clickAble:hover {
+            opacity: 0.75;
+            cursor: pointer;
+        }
+        .textfield{
+            /* border: 2px solid white;
+             -moz-appearance: textfield;
+             -webkit-appearance: textfield;
+           */
+            cursor: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 12pt;
+        }
+        .button {
+            padding: 0px;
+            margin: 0px;
+            width: 500px;
+            height: 100px;
+            line-height: 100px;
+            text-align: center;
+            vertical-align: middle;
+            margin-top: 1px;
+            margin-left: -100px;
+            display: inline-block;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 500%;
+            letter-spacing: -6pt;
+            transform: scaleX(0.7);
+            font-stretch: condensed;
+        }
+
+        .one {
+            width: 700px;
+        }
+
+        .inputText {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            user-select: auto;
+            cursor: auto;
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -6pt;
+            font-size: 32pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body>
+<div id="text" class=' button blue one clickAble' contenteditable  style="cursor: pointer">edit label
+</div>
+<script>
+    
+    var realityInterface = new RealityInterface();
+    var text = document.querySelector('#text');
+    
+    var textLength = text.innerText.length;
+    console.log(textLength);
+    
+    text.style.fontSize = (500/textLength)+"pt";
+
+    text.addEventListener("pointerdown", function (){
+        if(text.innerText === "edit label") {this.innerText="";}
+     
+    }, false);
+    
+    
+    
+    text.addEventListener("keyup", function(){
+
+        var textLength = text.innerText.length;
+        
+       var fontSize = (((textLength*7)+500)/(textLength));
+     if(fontSize>45) fontSize = 45; 
+        text.style.fontSize = (fontSize)+"pt";
+
+        var boxHeight = fontSize*3;
+        if (boxHeight> 100) boxHeight = 100;
+        text.style.height = boxHeight+"px";
+        text.style.lineHeight = boxHeight+"px";
+
+        realityInterface.writePublicData("storage", "data",  text.innerText);
+        
+    }, false);
+    
+   // var outlineMinShadow = document.querySelector('#outlineMinShadow');
+  //  var outlineMaxShadow = document.querySelector('#outlineMaxShadow');
+
+  /*  realityInterface.addReadPublicDataListener('storage', "data", function (e) {
+
+        drawing = e;
+
+        var text = document.querySelector('#text');
+        text.innerText = e;
+        var textLength = text.innerText.length;
+
+        var fontSize = (((textLength*7)+500)/(textLength));
+        if(fontSize>45) fontSize = 45;
+        text.style.fontSize = (fontSize)+"pt";
+
+        var boxHeight = fontSize*3;
+        if (boxHeight> 100) boxHeight = 100;
+        text.style.height = boxHeight+"px";
+        text.style.lineHeight = boxHeight+"px";
+        
+        
+        // document.querySelector('#show').style.visibility = "visible";
+    });*/
+    
+    
+    realityInterface.setMoveDelay(500);
+    //  {value: 0.4565680618804775, mode: "f", unit: "volt", unitMin: 300, unitMax: 0}
+</script>
+</body>
+</html>
