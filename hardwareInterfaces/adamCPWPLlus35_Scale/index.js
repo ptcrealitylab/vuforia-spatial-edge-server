@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @preserve
  *
  *                                     .,,,;;,'''..
@@ -42,7 +42,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-exports.enabled = false;
+exports.enabled = true
 
 if (exports.enabled) {
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
@@ -83,11 +83,11 @@ console.log(ports[i]);
                 return item !== ""
             });
 
-            var max = 75.0;
+            var max = 35.0;
             var min = 0;
 
-            if(values[1]>=75.0) {
-                values[1] = 75.0;
+            if(values[1]>=35.0) {
+                values[1] = 35.0;
             }
             values[1] = values[1]/max;
             server.write('CPWPlus', "scale", 'weight', values[1], 'f', values[2], min, max);
