@@ -157,8 +157,8 @@
             var start = function(e) {
                 if(!imageContent) imageContent = [];
                 clicked = 1;
-                var x = e.pageX;
-                var y = e.pageY-44;
+                var x = e.clientX;
+                var y = e.clientY-44;
                 moveTo(x,y,color, ctx);
                 imageContent.push({c : color, x : x, y : y});
             };
@@ -166,8 +166,8 @@
           
                 if(clicked){
                     if(!imageContent) imageContent = [];
-                    x = e.pageX;
-                    y = e.pageY-44;
+                    x = e.clientX;
+                    y = e.clientY-44;
                     lineTo(x,y, ctx);
                     imageContent.push({x : x, y : y});
                 }
