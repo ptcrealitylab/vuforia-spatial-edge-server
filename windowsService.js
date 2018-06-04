@@ -15,7 +15,7 @@ var svc = new Service({
     script: require('path').join(__dirname,'server.js'),
     env: {
         name: "HOME",
-        value: process.env["USERPROFILE"] // service is now able to access the user who created its' home directory
+        value: process.env["admin"] // service is now able to access the user who created its' home directory
     }
 });
 
