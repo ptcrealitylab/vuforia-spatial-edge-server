@@ -68,12 +68,10 @@ exports.setup = function (object,frame, node, activeBlockProperties){
 };
 
 exports.render = function (object, frame, node, thisNode, callback) {
-console.log(thisNode.publicData);
     for (var key in thisNode.data) {
         if(key === "value"){
             if (thisNode.data.value > thisNode.publicData.min && thisNode.data.value < thisNode.publicData.max) {
                 thisNode.processedData.value = 1.0;
-
             } else {
                 thisNode.processedData.value = 0.0;
             };
