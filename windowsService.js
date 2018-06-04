@@ -3,7 +3,7 @@ var Service = require('node-windows').Service;
 // Create a new service object
 var svc = new Service({
     name:'Reality Server',
-    description: 'This will run the Reality Server forever',
+    description: 'Real-Time service for Reality Editor',
     script: require('path').join(__dirname,'runServerForever.js')
 });
 
