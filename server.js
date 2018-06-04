@@ -2488,7 +2488,7 @@ function objectWebServer() {
         newFrame.height = frame.height;
 
         for(key in newFrame.nodes){
-            newFrame.nodes[key].publicData = nodeTypeModules[newFrame.nodes[key].type].properties.publicData;
+            newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
         }
 
         console.log(JSON.stringify(newFrame));
