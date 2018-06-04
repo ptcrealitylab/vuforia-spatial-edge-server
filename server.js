@@ -1368,11 +1368,9 @@ function objectWebServer() {
                 }
             }
             res.json(json);
-        } else if ((req.method === "GET") && urlArray[urlArray.length-2].indexOf('/memory') > -1) {
-            if (!fs.existsSync(newUrl)) {
-                res.sendFile(__dirname + '/libraries/emptyMemory.png'); // default to blank image if no memory saved yet
-                return;
-            }
+        } else if ((req.method === "GET") && urlArray[urlArray.length-2].indexOf('/memory') > -1 && !fs.existsSync(objectsPath + newUrl)) {
+            res.sendFile(__dirname + '/libraries/emptyMemory.png'); // default to blank image if no memory saved yet
+            return;
         } else {
             console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
@@ -2488,7 +2486,12 @@ function objectWebServer() {
         newFrame.height = frame.height;
 
         for(key in newFrame.nodes){
-            newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            if(!frame.publicData) {
+                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            } else if(Object.keys(frame.publicData).length <= 0) {
+                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            }
+
         }
 
         console.log(JSON.stringify(newFrame));
