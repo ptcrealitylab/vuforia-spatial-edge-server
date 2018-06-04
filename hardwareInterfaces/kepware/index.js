@@ -97,7 +97,7 @@ if (exports.enabled) {
        this.setReadList = function(object, frame, node, name, kepwareInterfaces){
 
             this.server.addReadListener(object,frame, name, function (data) {
-                console.log(object);
+             
                 kepwareInterfaces[node].data.value = data.value;
 
                 var args = {
