@@ -1368,10 +1368,10 @@ function objectWebServer() {
                 }
             }
             res.json(json);
-        } else if ((req.method === "GET") && urlArray[urlArray.length-2].indexOf('/memory') > -1 && !fs.existsSync(objectsPath + newUrl)) {
+        } /* else if ((req.method === "GET") && urlArray[urlArray.length-2].indexOf('/memory') > -1 && !fs.existsSync(objectsPath + newUrl)) {
             res.sendFile(__dirname + '/libraries/emptyMemory.png'); // default to blank image if no memory saved yet
             return;
-        } else {
+        } */ else {
             console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
