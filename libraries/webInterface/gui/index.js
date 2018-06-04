@@ -811,7 +811,7 @@ realityServer.toggleFullScreen = function (item) {
     }
 
     var screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
-    thisIframe.src = "http://localhost:" + screenPort;
+    thisIframe.src = "http://"+realityServer.states.ipAdress+":" + screenPort;
 
     var thisScreen = thisIframe;
    // if(item) thisScreen = item;
