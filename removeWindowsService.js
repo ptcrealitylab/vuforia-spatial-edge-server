@@ -4,7 +4,11 @@ var Service = require('node-windows').Service;
 var svc = new Service({
     name:'Reality Server',
     description: 'Real-Time service for Reality Editor',
-    script: require('path').join(__dirname,'runServerForever.js')
+    script: require('path').join(__dirname,'server.js'),
+    env: {
+        name: "HOME",
+        value: process.env["admin"] // service is now able to access the user who created its' home directory
+    }
 });
 
 // Listen for the "uninstall" event so we know when it's done.
