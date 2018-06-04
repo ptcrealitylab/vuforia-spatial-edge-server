@@ -2488,7 +2488,12 @@ function objectWebServer() {
         newFrame.height = frame.height;
 
         for(key in newFrame.nodes){
-            newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            if(!frame.publicData) {
+                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            } else if(Object.keys(frame.publicData).length <= 0) {
+                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            }
+
         }
 
         console.log(JSON.stringify(newFrame));
