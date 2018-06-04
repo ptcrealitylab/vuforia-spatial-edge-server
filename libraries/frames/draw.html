@@ -23,18 +23,7 @@
             -webkit-tap-highlight-color: rgba(0,0,0,0);
             overflow: hidden;
         }
-
-        .header, .footer{
-            position: absolute;
-            background-color: rgba(0,0,0,0.6);
-            text-align: center;
-        }
-        .footer {
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            height: 10px;
-        }
+        
         .navbtn {
             z-index: 3;
             cursor: pointer;
@@ -87,129 +76,8 @@
         .white{
             background-color:#fff;
         }
-        .black{
-            background-color:#000;
-        }
     </style>
-    <script type="text/javascript">
-
-        var ctx, color = "rgb(41,253,47)";
-
-        document.addEventListener( "DOMContentLoaded", function(){
-
-            // setup a new canvas for drawing wait for device init
-            setTimeout(function(){
-                newCanvas();
-            }, 1000);
-
-        }, false );
-
-        // function to setup a new canvas for drawing
-        function newCanvas(){
-            // setup canvas
-            ctx=document.getElementById("canvas").getContext("2d");
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 10;
-
-            // setup to trigger drawing on mouse or touch
-            // drawTouch();
-            // drawPointer();
-            drawPointerEvents();
-            
-            document.querySelector('#new').addEventListener('pointerdown', clearCanvas);
-            
-            [].slice.call(document.querySelectorAll('.palette')).forEach(function(palette){
-                palette.addEventListener('pointerdown', function() {
-                    selectColor(palette);
-                });
-            });
-
-        }
-        function clearCanvas(){
-            ctx = document.getElementById("canvas").getContext("2d");
-            ctx.clearRect(0, 0, 600, 600);
-        }
-
-        function selectColor(el){
-            for(var i=0;i<document.getElementsByClassName("palette").length;i++){
-                document.getElementsByClassName("palette")[i].style.borderColor = "#777";
-                document.getElementsByClassName("palette")[i].style.borderStyle = "solid";
-            }
-            el.style.borderColor = "rgba(255,255,255,0)";
-            el.style.borderStyle = "dashed";
-            color = window.getComputedStyle(el).backgroundColor;
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-        }
-
-        // // prototype to	start drawing on touch using canvas moveTo and lineTo
-        var drawTouch = function() {
-            var start = function(e) {
-                ctx.beginPath();
-                x = e.changedTouches[0].pageX;
-                y = e.changedTouches[0].pageY-44;
-                ctx.moveTo(x,y);
-            };
-            var move = function(e) {
-                e.preventDefault();
-                x = e.changedTouches[0].pageX;
-                y = e.changedTouches[0].pageY-44;
-                ctx.lineTo(x,y);
-                ctx.stroke();
-            };
-            document.getElementById("canvas").addEventListener("touchstart", start, false);
-            document.getElementById("canvas").addEventListener("touchmove", move, false);
-        };
-
-        // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
-        var drawMSPointer = function() {
-            var start = function(e) {
-                e = e.originalEvent;
-                ctx.beginPath();
-                x = e.pageX;
-                y = e.pageY-44;
-                ctx.moveTo(x,y);
-            };
-            var move = function(e) {
-                e.preventDefault();
-                e = e.originalEvent;
-                x = e.pageX;
-                y = e.pageY-44;
-                ctx.lineTo(x,y);
-                ctx.stroke();
-            };
-            document.getElementById("canvas").addEventListener("MSPointerDown", start, false);
-            document.getElementById("canvas").addEventListener("MSPointerMove", move, false);
-        };
-
-        // prototype to	start drawing on mouse using canvas moveTo and lineTo
-        var drawPointerEvents = function() {
-            var clicked = 0;
-            var start = function(e) {
-                console.log(e);
-                clicked = 1;
-                ctx.beginPath();
-                x = e.clientX;
-                y = e.clientY-44;
-                ctx.moveTo(x,y);
-            };
-            var move = function(e) {
-                if(clicked){
-                    x = e.clientX;
-                    y = e.clientY-44;
-                    ctx.lineTo(x,y);
-                    ctx.stroke();
-                }
-            };
-            var stop = function(e) {
-                clicked = 0;
-            };
-            document.getElementById("canvas").addEventListener("pointerdown", start, false);
-            document.getElementById("canvas").addEventListener("pointermove", move, false);
-            document.addEventListener("pointerup", stop, false);
-        };
-
-    </script>
+  
 </head>
 <body style="width: 600px; height:500px;">
     <div id="content" style="height: 600px; width: 600px"><canvas id="canvas" style="height: 600px; width: 600px" width="600px" height="500px"></canvas></div>
@@ -229,9 +97,121 @@
             </div>
             <div style="clear:both"></div>
         </div>
-<script>
-    var realityInterface = new RealityInterface();
-    realityInterface.setMoveDelay(500);
-</script>
+
+
+    <script type="text/javascript">
+
+        var realityInterface = new RealityInterface();
+        realityInterface.setMoveDelay(500);
+
+
+        var imageContent = [];
+        var color = "rgb(41,253,47)";
+
+        var ctx = document.getElementById("canvas").getContext("2d");
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 10;
+
+        document.addEventListener( "DOMContentLoaded", function(){
+            
+            setTimeout(function(){
+                newCanvas();
+            }, 100);
+
+        }, false );
+        
+        function newCanvas(){
+            drawPointerEvents();
+
+            document.querySelector('#new').addEventListener('pointerdown', clearCanvas);
+
+            document.querySelectorAll('.palette').forEach(function(palette){
+                palette.addEventListener('pointerdown', function() {
+                    selectColor(palette);
+                });
+            });
+
+        }
+        function clearCanvas(){
+            ctx = document.getElementById("canvas").getContext("2d");
+            ctx.clearRect(0, 0, 600, 600);
+            imageContent = [];
+            realityInterface.writePublicData("storage", "data",  imageContent);
+        }
+
+        function selectColor(el){
+            for(var i=0;i<document.getElementsByClassName("palette").length;i++){
+                document.getElementsByClassName("palette")[i].style.borderColor = "#777";
+                document.getElementsByClassName("palette")[i].style.borderStyle = "solid";
+            }
+            el.style.borderColor = "rgba(255,255,255,0)";
+            el.style.borderStyle = "dashed";
+            color = window.getComputedStyle(el).backgroundColor;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+        }
+        
+        // prototype to	start drawing on mouse using canvas moveTo and lineTo
+        var drawPointerEvents = function() {
+            var clicked = 0;
+            var start = function(e) {
+                if(!imageContent) imageContent = [];
+                clicked = 1;
+                var x = e.pageX;
+                var y = e.pageY-44;
+                moveTo(x,y,color, ctx);
+                imageContent.push({c : color, x : x, y : y});
+            };
+            var move = function(e) {
+          
+                if(clicked){
+                    if(!imageContent) imageContent = [];
+                    x = e.pageX;
+                    y = e.pageY-44;
+                    lineTo(x,y, ctx);
+                    imageContent.push({x : x, y : y});
+                }
+           
+            };
+            var stop = function(e) {
+                clicked = 0;
+                realityInterface.writePublicData("storage", "data",  imageContent);
+            };
+            document.getElementById("canvas").addEventListener("pointerdown", start, false);
+            document.getElementById("canvas").addEventListener("pointermove", move, false);
+            document.addEventListener("pointerup", stop, false);
+        };
+
+        function moveTo(x,y,c, ctx){
+                ctx.strokeStyle = c;
+            ctx.beginPath();
+            ctx.moveTo(x,y);
+        }
+
+        function lineTo(x,y, ctx){
+            ctx.lineTo(x,y);
+            ctx.stroke();
+        }
+
+
+        realityInterface.addReadPublicDataListener('storage', "data", function (e) {
+            var ctx = document.getElementById("canvas").getContext("2d");
+            ctx.lineWidth = 10;
+            
+            if(Array.isArray(e)) {
+                imageContent = e;
+            }
+          for(var i =0; i<e.length; i++){
+              var point = e[i];
+              if("c" in point){
+                  moveTo(point.x, point.y, point.c, ctx);
+              } else {
+                  lineTo(point.x, point.y, ctx);
+              }
+          }
+           // document.querySelector('#show').style.visibility = "visible";
+        });
+        
+    </script>
 </body>
 </html>
