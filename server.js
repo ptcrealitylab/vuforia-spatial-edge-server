@@ -92,7 +92,7 @@ const beatPort = 52316;            // this is the port for UDP broadcasting so t
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const version = "3.0.0";           // the version of this server
+const version = "3.1.0";           // the version of this server
 const protocol = "R2";           // the version of this server
 const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
