@@ -73,7 +73,7 @@ console.log(ports[i]);
     });
 
     function serialServer(serialPort) {
-        server.addNode("CPWPlus", "scale", "weight", "node");
+        server.addNode("kepwareBox", "kepwareBox1", "weight", "node");
 
         const parser = serialPort.pipe(new Readline({ delimiter: '\r\n' }));
         parser.on('data', function (data){
@@ -90,7 +90,7 @@ console.log(ports[i]);
                 values[1] = 35.0;
             }
             values[1] = values[1]/max;
-            server.write('CPWPlus', "scale", 'weight', values[1], 'f', values[2], min, max);
+            server.write('kepwareBox', "kepwareBox1", 'weight', values[1], 'f', values[2], min, max);
         });
     }
 }
