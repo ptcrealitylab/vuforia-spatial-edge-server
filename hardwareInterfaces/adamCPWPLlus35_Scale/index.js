@@ -56,7 +56,7 @@ if (exports.enabled) {
 console.log(ports[i]);
             if(ports[i].manufacturer){
 
-                 if(ports[i].manufacturer.includes("FTDI")) {
+                 if(ports[i].manufacturer.includes("Prolific")) {
                      serialPort = new SerialPort(ports[i].comName, {
                          baudRate: 9600
                      });
