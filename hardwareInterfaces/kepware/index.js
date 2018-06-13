@@ -137,7 +137,7 @@ if (exports.enabled) {
                         else  {this.kepwareInterfaces[thisID].data.v = 0;};
                     }
                     if(isNaN(this.kepwareInterfaces[thisID].data.v)){
-                        console.log( this.kepwareInterfaces[thisID].data.v);
+                       // console.log( this.kepwareInterfaces[thisID].data.v);
                         this.kepwareInterfaces[thisID].data.v = 0;
                     }
                     if(this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
