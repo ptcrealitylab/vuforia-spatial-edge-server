@@ -171,8 +171,8 @@
             }
         }
 
-        var mi = properties.unitMin;
-        var ma = properties.unitMax;
+        var min = 0;
+        var max = 1;
 
         numbers[0].textContent= scaleVal(min).toPrecision(4).substring(0,5);// properties.unitMin;
         numbers[1].textContent= scaleVal(((max-min)/4)+min).toPrecision(4).substring(0,5);
@@ -192,10 +192,9 @@
 
 
 
-        var path = ['M 0', height, 'L'];
+        var path = ['M 0', 144, 'L'];
 
-        path.push(0);
-        path.push(280);
+
 
         for (var i = 0; i < ticks; i++) {
             var x = i * width / (ticks - 1);
@@ -216,8 +215,11 @@
         }
 
         graph.setAttribute('d', path.join(' '));
-        path.push(0);
-        path.push(280);
+        path.push(600);
+        path.push(289);
+
+        path.push(3);
+        path.push(289);
         // path.push(width);
         //path.push(height);
         //path.push('Z');
