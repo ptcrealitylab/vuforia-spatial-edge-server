@@ -2366,6 +2366,76 @@ function objectWebServer() {
     };
 
 
+    // Update the publicData of a frame when it gets moved from one object to another
+    // ****************************************************************************************************************
+
+    /**
+     * Delete the publicData from every node in the frame
+     */
+    webServer.delete('/object/:objectID/frame/:frameID/publicData', function (req, res) {
+
+        // locate the containing frame in a safe way
+        getFrame(req.params.objectID, req.params.frameID, function(error, object, frame) {
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
+
+            // reset the publicData of each node
+            for (var nodeKey in frame.nodes) {
+                if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+                var node = frame.nodes[nodeKey];
+                if (node) {
+                    node.publicData = {};
+                }
+            }
+
+            // save state to object.json
+            utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
+
+            res.status(200);
+            res.json({success: true}).end();
+
+        });
+    });
+
+    /**
+     * Add each publicData from the body to the nodes with the same name specified in the publicData's keys
+     */
+    webServer.post('/object/:objectID/frame/:frameID/publicData', function (req, res) {
+
+        var publicData = req.body.publicData;
+
+        // locate the containing frame in a safe way
+        getFrame(req.params.objectID, req.params.frameID, function (error, object, frame) {
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
+
+            // the keys inside publicData are the names of the node that the data belongs to
+            for (var nodeName in publicData) {
+
+                // find the node with the same name
+                var nodeKey = req.params.frameID + nodeName;
+                if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+
+                var node = frame.nodes[nodeKey];
+                if (node) {
+                    // and set its public data to the correctly indexed data
+                    node.publicData = publicData[nodeName];
+                }
+            }
+
+            // save state to object.json
+            utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
+
+            res.status(200);
+            res.json({success: true}).end();
+        });
+    });
+
+
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
         memoryUpload(req.params.id, /*req.params.id,*/ req, res);
@@ -3870,6 +3940,9 @@ function socketServer() {
                     }
                 }
             }
+
+            utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+
         });
 
         socket.on('block/setup', function (_msg) {
