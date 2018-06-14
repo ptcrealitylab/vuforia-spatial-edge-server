@@ -25,6 +25,11 @@
             fill: none;
             stroke-width: 4;
         }
+        #graphBg {
+            stroke: none;
+            fill: rgba(00, 255, 00, 0.4);
+            stroke-width: 4;
+        }
 
         .lines {
             stroke-width: 2;
@@ -107,6 +112,7 @@
 
 
         <path id="graph"></path>
+        <path id="graphBg"></path>
     </svg>
 
 
@@ -116,6 +122,7 @@
     var dataValue = document.querySelector('#dataValue');
     var dataName = document.querySelector('#dataName');
     var graph = document.querySelector('#graph');
+    var graphBg = document.querySelector('#graphBg');
     var numbers = [document.querySelector('#number0'),
         document.querySelector('#number1'),
         document.querySelector('#number2'),
@@ -186,6 +193,10 @@
 
 
         var path = ['M 0', height, 'L'];
+
+        path.push(0);
+        path.push(280);
+
         for (var i = 0; i < ticks; i++) {
             var x = i * width / (ticks - 1);
             var value = 0;
@@ -203,11 +214,16 @@
             path.push(x);
             path.push(y+offset);
         }
+
+        graph.setAttribute('d', path.join(' '));
+        path.push(0);
+        path.push(280);
         // path.push(width);
         //path.push(height);
         //path.push('Z');
 
-        graph.setAttribute('d', path.join(' '));
+
+        graphBg.setAttribute('d', path.join(' '));
     }
 
     function ready() {
