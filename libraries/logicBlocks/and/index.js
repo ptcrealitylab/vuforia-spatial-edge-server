@@ -54,16 +54,16 @@
  **/
 
 var generalProperties = {
-    name : "splitter",
+    name : "and",
     blockSize : 2,
     privateData : {},
-    publicData : {toggle: true},
-    activeInputs : [true, false, false, false],
-    activeOutputs : [true, true, false, false],
+    publicData : {},
+    activeInputs : [true, true, false, false],
+    activeOutputs : [true, false, false, false],
     iconImage : "icon.png",
-    nameInput : ["in", "", "", ""],
-    nameOutput : ["digital out", "digital out", "", ""],
-    type : "splitter"
+    nameInput : ["A", "B", "", ""],
+    nameOutput : ["result", "", "", ""],
+    type : "and"
 };
 
 exports.properties = generalProperties;
@@ -72,26 +72,19 @@ exports.setup = function (object,logic, block, activeBlockProperties){
 // add code here that should be executed once.
 
 };
-
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
-    if (index === 0) {
-        if(thisBlock.data[0].value > 0.5 ){
-            if(thisBlock.publicData.toggle !== false) {
-                thisBlock.publicData.toggle = false;
-                thisBlock.processedData[0].value = 0;
-                thisBlock.processedData[1].value = 1;
-                return callback(object, frame, node, block, index, thisBlock);
-            }
-        } else {
-            if (thisBlock.publicData.toggle !== true) {
-                thisBlock.publicData.toggle = true;
-                thisBlock.processedData[0].value = 1;
-                thisBlock.processedData[1].value = 0;
-                return callback(object, frame, node, block, index, thisBlock);
-            }
-        }
+    for (var key in thisBlock.data[0]) {
+        thisBlock.processedData[0][key] = thisBlock.data[0][key];
     }
+
+    if ((thisBlock.data[0].value >= 0.5) && (thisBlock.data[1].value >= 0.5)) {
+        thisBlock.processedData[0].value = 1.0;
+    } else {
+        thisBlock.processedData[0].value = 0.0;
+    }
+
+    callback(object, frame, node, block, index, thisBlock);
 };
