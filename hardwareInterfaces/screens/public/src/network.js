@@ -179,6 +179,14 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
         }
     }
 
+    if (stateDidChange) {
+        var iframe = document.querySelector('#iframe' + frameKey);
+        if (iframe) {
+            var visibilityString = frame.visualization === 'screen' ? 'visible' : 'hidden';
+            iframe.contentWindow.postMessage(JSON.stringify({ visibility: visibilityString }), '*');
+        }
+    }
+
     return stateDidChange;
 };
 
@@ -208,6 +216,12 @@ realityEditor.network.onInternalPostMessage = function(e) {
         var iFrame = document.getElementById('iframe' + msgContent.frame);
         iFrame.style.width = msgContent.width + 'px';
         iFrame.style.height = msgContent.height + 'px';
+    }
+
+    if (typeof msgContent.socketReconnect !== 'undefined') {
+        setTimeout(function() {
+            window.location.reload();
+        }, 1000);
     }
 };
 
