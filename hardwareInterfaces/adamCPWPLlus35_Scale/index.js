@@ -83,11 +83,11 @@ console.log(ports[i]);
                 return item !== ""
             });
 
-            var max = 35.0;
+            var max = 25.0;
             var min = 0;
 
-            if(values[1]>=35.0) {
-                values[1] = 35.0;
+            if(values[1]>=25.0) {
+                values[1] = 25.0;
             }
             values[1] = values[1]/max;
             server.write('kepwareBox', "kepwareBox1", 'weight', values[1], 'f', values[2], min, max);
