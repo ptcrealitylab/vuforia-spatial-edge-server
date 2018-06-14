@@ -50,13 +50,19 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     e.preventDefault();
 
+    if (e.simulated && firstMouseDown) return; // don't start a simulated gesture if you are doing one already on the touchscreen
+    if (!e.simulated && isMouseDown && isCurrentGestureSimulated) return; // don't start touchscreen gesture if you are already simulating one
+
     mouseX = e.pageX;
     mouseY = e.pageY;
+
     if (e.simulated) {
         mouseX = e.simulatedPageX;
         mouseY = e.simulatedPageY;
         realityEditor.utilities.showTouchOverlay();
+        isCurrentGestureSimulated = true;
     }
+
 
     if (!e.simulated) {
 
@@ -78,6 +84,7 @@ realityEditor.touchEvents.onMouseDown = function(e) {
             };
             realityEditor.utilities.showTouchOverlay(1);
         }
+        isCurrentGestureSimulated = false;
     }
     isMouseDown = true;
 
@@ -127,13 +134,20 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
     if (!isMouseDown) { return; } // only do these calculations if we're actually pressing down
 
+    if (e.simulated && !isCurrentGestureSimulated) return;
+    if (!e.simulated && isCurrentGestureSimulated) return;
+
     mouseX = e.pageX;
     mouseY = e.pageY;
+
     if (e.simulated) {
         mouseX = e.simulatedPageX;
         mouseY = e.simulatedPageY;
         realityEditor.utilities.showTouchOverlay();
     } else {
+
+        if (!firstMouseDown) return; // ignore bug events that happen when mouse is on screen
+
         if (e.pointerId === firstMouseDown.pointerId) {
             firstMouseDown.x = mouseX;
             firstMouseDown.y = mouseY;
