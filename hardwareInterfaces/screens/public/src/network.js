@@ -217,6 +217,12 @@ realityEditor.network.onInternalPostMessage = function(e) {
         iFrame.style.width = msgContent.width + 'px';
         iFrame.style.height = msgContent.height + 'px';
     }
+
+    if (typeof msgContent.socketReconnect !== 'undefined') {
+        setTimeout(function() {
+            window.location.reload();
+        }, 1000);
+    }
 };
 
 realityEditor.network.onElementLoad = function(objectKey, frameKey) {

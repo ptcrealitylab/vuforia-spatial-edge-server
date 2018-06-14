@@ -358,6 +358,17 @@ var sendTouchEvents = false;
         this.ioObject.on('reconnect', function() {
             console.log('reconnect');
             window.location.reload();
+
+            // notify the containing application that a frame socket reconnected, for additional optional behavior (e.g. make the screen reload)
+            if (realityObject.object && realityObject.frame) {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    socketReconnect : true
+                }), '*');
+            }
         });
 
         this.sendRealityEditorSubscribe = setInterval(function () {
