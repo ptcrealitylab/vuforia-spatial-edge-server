@@ -208,6 +208,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     if (typeof msgContent.visibility !== "undefined") {
         realityObject.visibility = msgContent.visibility;
 
+        // TODO: implement public data subscription in the same way as in object-frames.js
+
         if(realityObject.visibility === "visible"){
             if (typeof realityObject.node !== "undefined") {
                 if(realityObject.sendSticky) {

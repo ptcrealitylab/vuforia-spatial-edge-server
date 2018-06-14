@@ -179,6 +179,14 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
         }
     }
 
+    if (stateDidChange) {
+        var iframe = document.querySelector('#iframe' + frameKey);
+        if (iframe) {
+            var visibilityString = frame.visualization === 'screen' ? 'visible' : 'hidden';
+            iframe.contentWindow.postMessage(JSON.stringify({ visibility: visibilityString }), '*');
+        }
+    }
+
     return stateDidChange;
 };
 
