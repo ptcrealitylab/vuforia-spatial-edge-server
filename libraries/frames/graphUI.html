@@ -25,6 +25,11 @@
             fill: none;
             stroke-width: 4;
         }
+        #graphBg {
+            stroke: none;
+            fill: rgba(00, 255, 00, 0.4);
+            stroke-width: 4;
+        }
 
         .lines {
             stroke-width: 2;
@@ -107,6 +112,7 @@
 
 
         <path id="graph"></path>
+        <path id="graphBg"></path>
     </svg>
 
 
@@ -116,6 +122,7 @@
     var dataValue = document.querySelector('#dataValue');
     var dataName = document.querySelector('#dataName');
     var graph = document.querySelector('#graph');
+    var graphBg = document.querySelector('#graphBg');
     var numbers = [document.querySelector('#number0'),
         document.querySelector('#number1'),
         document.querySelector('#number2'),
@@ -134,7 +141,7 @@
     var width = 600;
     var height = 270;
     var offset = 10;
-    var ticks = 400;
+    var ticks = 700;
     var time = 20;
 
     //30
@@ -164,8 +171,8 @@
             }
         }
 
-        var mi = properties.unitMin;
-        var ma = properties.unitMax;
+        var min = 0;
+        var max = 1;
 
         numbers[0].textContent= scaleVal(min).toPrecision(4).substring(0,5);// properties.unitMin;
         numbers[1].textContent= scaleVal(((max-min)/4)+min).toPrecision(4).substring(0,5);
@@ -185,7 +192,10 @@
 
 
 
-        var path = ['M 0', height, 'L'];
+        var path = ['M 0', 144, 'L'];
+
+
+
         for (var i = 0; i < ticks; i++) {
             var x = i * width / (ticks - 1);
             var value = 0;
@@ -203,11 +213,19 @@
             path.push(x);
             path.push(y+offset);
         }
+
+        graph.setAttribute('d', path.join(' '));
+        path.push(600);
+        path.push(289);
+
+        path.push(3);
+        path.push(289);
         // path.push(width);
         //path.push(height);
         //path.push('Z');
 
-        graph.setAttribute('d', path.join(' '));
+
+        graphBg.setAttribute('d', path.join(' '));
     }
 
     function ready() {
