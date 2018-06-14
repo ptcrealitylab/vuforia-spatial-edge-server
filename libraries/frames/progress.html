@@ -4,7 +4,7 @@
     <script src="resources/object-frames.js"></script>
     <script src="resources/pep.min.js"></script>
     <meta charset="UTF-8">
-    <title>graph</title>
+    <title>progress</title>
     <style>
         @font-face {
             font-family: 'Speculum';
@@ -101,7 +101,7 @@
 
     </style>
 </head>
-<body style="width: 510px; height: 540px">
+<body style="width: 275px; height: 415px">
 <!--
 <div id= "outlineMinShadow" style=" backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -115,34 +115,22 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
 -->
 <div id="show" style=" visibility: hidden">
 
-    <svg id="container" width="510" height="540" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
-        <svg x="20" y="455">
+    <svg id="container" width="275" height="415" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+        <svg x="20" y="330">
             <rect class="numberOutline redStroke" id="dataValueOutline" x="1" y="1" width="230" height="65" rx="0" ry="0"/>
             <text class="dataFont red" id="dataValue" x="20" y="46">00.000</text>
         </svg>
 
 
-        <svg x="20" y="145">
+        <svg x="20" y="20">
             <rect id="frame" x="1" y="1" width="230" height="297" rx="0" ry="0"/>
-            <line x1="0" y1="150" x2="227" y2="150" class="lines" stroke-width="1"/>
-            <line x1="0" y1="75" x2="227" y2="75" class="lines" stroke-width="1"/>
-            <line x1="0" y1="225" x2="227" y2="225" class="lines" stroke-width="1"/>
+            <line x1="0" y1="150" x2="230" y2="150" class="lines" stroke-width="1"/>
+            <line x1="0" y1="75" x2="230" y2="75" class="lines" stroke-width="1"/>
+            <line x1="0" y1="225" x2="230" y2="225" class="lines" stroke-width="1"/>
             <rect id="data" class="green" x="0" y="1" width="233" height="300" rx="0" ry="0"/>
 
-            <rect id="dataOverlayMax" class="overlay" x="0" y="1" width="233" height="150" rx="0" ry="0"/>
+            <rect id="dataOverlayMax" class="overlay" x="0" y="1" width="230" height="150" rx="0" ry="0"/>
         </svg>
-
-
-        <svg x="20" y="12" id="limiterMax">
-            <svg x="233" y="0">
-                <rect class="numberOutline yellowStroke" id="outlineMax" x="1" y="1" width="230" height="130" rx="0" ry="0"/>
-                <text class="dataFont yellow" id="valueMax" x="20" y="77">00.000</text>
-            </svg>  <svg x="0" y="65">
-            <polygon class="yellow" points="0 68 233 0 233 68 0 68"/>
-        </svg>
-        </svg>
-
-
     </svg>
 </div>
 
@@ -154,7 +142,6 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
     var dataValueOutline = document.querySelector('#dataValueOutline');
     var dataBar = document.querySelector('#data');
     var valueMax = document.querySelector('#valueMax');
-    var limiterMax = document.querySelector('#limiterMax');
     var screenIsTouched = false;
 
     // var outlineMinShadow = document.querySelector('#outlineMinShadow');
@@ -215,7 +202,6 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
             move = limits.max + 77;
         }
 
-        limiterMax.setAttribute('y', move - 65 + "px");
 
         // outlineMaxShadow.style.top =  move - 65 + "px";
 
@@ -223,27 +209,6 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
         valueMax.textContent = numberToText((sliderHeight - limits.currentMax) / sliderHeight);
         checkScope();
     }
-
-    limiterMax.addEventListener("pointermove",
-        function (event) {
-            screenIsTouched = true;
-            setMax(event.clientY);
-            realityInterface.writePublicData("in_out", "max",  1-limits.currentMax/sliderHeight);
-        }, false);
-
-
-    limiterMax.addEventListener("pointerdown",
-        function (event) {
-            screenIsTouched = true;
-            setMax(event.clientY);
-            realityInterface.writePublicData("in_out", "max",  1-limits.currentMax/sliderHeight);
-        }, false);
-
-
-    limiterMax.addEventListener("pointerup",
-        function (event) {
-            screenIsTouched = false;
-        }, false);
 
 
     function renderProperties() {
@@ -284,7 +249,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
     }, time);
 
 
-    realityInterface.addReadListener('in_out', function (e) {
+    realityInterface.addReadListener('value', function (e) {
 
         properties.value = e.value;
         if(e.unit) {
@@ -303,7 +268,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
     properties.unit = "";
 
 
-    realityInterface.addReadPublicDataListener('in_out', "max", function (e) {
+    realityInterface.addReadPublicDataListener('value', "max", function (e) {
         if(screenIsTouched === false) {
             limits.currentMax = ((1 - e) * 300) - 35;
             setMax(limits.currentMax + 112);
