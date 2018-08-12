@@ -4,6 +4,15 @@ realityEditor.touchEvents.addTouchListeners = function() {
     document.addEventListener('pointerdown', realityEditor.touchEvents.onMouseDown);
     document.addEventListener('pointermove', realityEditor.touchEvents.onMouseMove);
     document.addEventListener('pointerup', realityEditor.touchEvents.onMouseUp);
+
+    // fixme: problem - gesture somehow passes through if you drag first finger before placing second
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('gesturechange', function (e) {
+        e.preventDefault();
+    });
 };
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {
@@ -53,8 +62,8 @@ realityEditor.touchEvents.onMouseDown = function(e) {
     if (e.simulated && firstMouseDown) return; // don't start a simulated gesture if you are doing one already on the touchscreen
     if (!e.simulated && isMouseDown && isCurrentGestureSimulated) return; // don't start touchscreen gesture if you are already simulating one
 
-    mouseX = e.pageX;
-    mouseY = e.pageY;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
 
     if (e.simulated) {
         mouseX = e.simulatedPageX;
@@ -137,8 +146,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
     if (e.simulated && !isCurrentGestureSimulated) return;
     if (!e.simulated && isCurrentGestureSimulated) return;
 
-    mouseX = e.pageX;
-    mouseY = e.pageY;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
 
     if (e.simulated) {
         mouseX = e.simulatedPageX;

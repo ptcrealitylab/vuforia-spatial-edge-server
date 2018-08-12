@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Recording</title>
+    <script src="resources/object-frames.js"></script>
+    <script src="resources/pep.min.js"></script>
+    <style>
+        body {
+            width: 760px;
+            height: 460px;
+        }
+        #container {
+            width: 720px;
+            height: 415px;
+            border: 5px solid cyan;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .visible {
+            display: inline-block;
+        }
+
+        .spinner {
+            width: 70px;
+            text-align: center;
+        }
+
+        .spinner > div {
+            width: 18px;
+            height: 18px;
+            background-color: cyan;
+
+            border-radius: 100%;
+            display: inline-block;
+            -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+            animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+        }
+
+        .spinner .bounce1 {
+            -webkit-animation-delay: -0.32s;
+            animation-delay: -0.32s;
+        }
+
+        .spinner .bounce2 {
+            -webkit-animation-delay: -0.16s;
+            animation-delay: -0.16s;
+        }
+
+        @-webkit-keyframes sk-bouncedelay {
+            0%, 80%, 100% { -webkit-transform: scale(0) }
+            40% { -webkit-transform: scale(1.0) }
+        }
+
+        @keyframes sk-bouncedelay {
+            0%, 80%, 100% {
+                -webkit-transform: scale(0);
+                transform: scale(0);
+            } 40% {
+                  -webkit-transform: scale(1.0);
+                  transform: scale(1.0);
+              }
+        }
+    </style>
+</head>
+<body>
+    <!--<div style="width: 800px; height: 600px; background-color: #00edff">-->
+        <!--Video Recording Placeholder-->
+    <!--</div>-->
+    
+    <div id="container" touch-action="none">
+        <div>
+            <video id="recordedVideo" class="hidden" width="720" height="415" playsinline controls webkit-playsinline></video>
+            <div class="spinner visible">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!--<video id="recordedVideo" width="800" height="600" controls touch-action="none">-->
+        <!--<source src="resources/o92o90ssbhqw.mp4" type="video/mp4">-->
+        <!--Your browser does not support the video tag.-->
+    <!--</video>-->
+    
+    <script>
+        var videoUrl = '';
+        var realityInterface = new RealityInterface();
+        realityInterface.setMoveDelay(300);
+
+        var recordedVideo = document.getElementById('recordedVideo');
+        var spinner = document.querySelector('.spinner');
+        var source = document.createElement('source');
+        
+        console.log('video created');
+        source.setAttribute('src', videoUrl);
+        recordedVideo.appendChild(source);
+        recordedVideo.addEventListener('pointerup', onPointerUp);
+        recordedVideo.addEventListener('progress', function(e) {
+            console.log('progress', e);
+            recordedVideo.classList.remove('hidden');
+            recordedVideo.classList.add('visible');
+            spinner.classList.remove('visible');
+            spinner.classList.add('hidden');
+            clearInterval(interval);
+            window.requestAnimationFrame(loop);
+        });
+        // recordedVideo.addEventListener('loadstart', function(e) {
+        //     console.log('loadstart', e);
+        // });
+        // recordedVideo.addEventListener('progress', function(e) {
+        //     console.log('loadeddata', e);
+        // });
+        // recordedVideo.addEventListener('loadstart', function(e) {
+        //     console.log('canplay', e);
+        // });
+        // recordedVideo.addEventListener('canplaythrough', function(e) {
+        //     console.log('canplaythrough', e);
+        //     // recordedVideo.play();
+        // });
+
+        recordedVideo.addEventListener('ended', function(e) {
+            realityInterface.write('play', 0.0);
+        });
+
+        function onPointerUp(e) {
+            console.log('pointerup');
+            e.preventDefault();
+
+            if (recordedVideo.paused) {
+                recordedVideo.play({
+                    onplay: function() {
+                        console.log('Yay, playing');
+                    },
+                    onerror: function(errorCode, description) {
+                        // maybe failure happened _during_ playback, maybe it failed to start.
+                        // depends on what is passed to the function.
+                        // errorCode is currently based on W3 specs for HTML5 playback failures.
+                        // https://html.spec.whatwg.org/multipage/embedded-content.html#error-codes
+                        console.log(errorCode, description);
+                    }
+                });
+                realityInterface.write('play', 1.0);
+            } else {
+                recordedVideo.pause();
+                realityInterface.write('play', 0.0);
+            }
+        }
+
+        var attemptsLeft = 10;
+        realityInterface.addReadPublicDataListener('storage', 'data', function (e) {
+            if (typeof e !== 'string' || e.length === 0) {
+                console.log('cant load non-string data:', e);
+                return;
+            }
+            if (e === videoUrl) {
+                console.log('dont reload the same video');
+                return;
+            }
+            videoUrl = e;
+            
+            attemptsLeft = 10;
+            loadVideo();
+        });
+        
+        realityInterface.addReadListener('play', function(e) {
+            if (e.value > 0.5) {
+                if (recordedVideo.paused) {
+                    recordedVideo.play();
+                }
+            } else {
+                if (!recordedVideo.paused) {
+                    recordedVideo.pause();
+                }
+            }
+        });
+        
+        var lastProgess = 0;
+        function loop() {
+            if (!recordedVideo.paused) {
+                var thisProgress = recordedVideo.currentTime / recordedVideo.duration;
+                if (thisProgress !== lastProgess) {
+                    lastProgess = thisProgress;
+                    realityInterface.write('progress', thisProgress);
+                    console.log('new progress = ' + thisProgress);
+                }
+            }
+            window.requestAnimationFrame(loop);
+        }
+
+        realityInterface.addReadListener('progress', function(e) {
+
+            if (e.value === lastProgess) return;
+
+            if (recordedVideo.paused) {
+                recordedVideo.currentTime = e.value * recordedVideo.duration;
+            }
+        });
+
+        function loadVideo() {
+            attemptsLeft--;
+            if (attemptsLeft <= 0) {
+                console.log('no more attempts.. failed to load video');
+                // TODO: show error UI
+                return;
+            }
+            console.log('load video from url: ' + videoUrl);
+            
+            // recordedVideo.pause();
+            source.addEventListener('error', function(e) {
+                console.log('failed to load');
+                setTimeout(function() {
+                    loadVideo();
+                    console.log('trying again (' + attemptsLeft + ' attempts left)');
+                }, 3000);
+            });
+            source.setAttribute('src', videoUrl);
+            recordedVideo.load();
+        }
+
+        var numRepetitions = 10;
+        var interval = setInterval(function() {
+            numRepetitions--;
+            if (numRepetitions <= 0) {
+                clearInterval(interval);
+                return;
+            }
+            realityInterface.reloadPublicData();
+        }, 3000);
+
+    </script>
+</body>
+</html>

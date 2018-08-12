@@ -224,7 +224,7 @@
         var markerAspectRatio = markerCoords.size.width / markerCoords.size.height;
 
         var screenToMarkerRatio = screenAspectRatio / markerAspectRatio;
-        var aspectMultiplier = 1.0 / Math.min(screenToMarkerRatio, 1.0); // if screen is taller than it is wide, scale down the mapping
+        var aspectMultiplier = 1.0; //1.0 / Math.min(screenToMarkerRatio, 1.0); // if screen is taller than it is wide, scale down the mapping
 
         var arPointRelativeToUpperLeft = {
             x: arX + markerCoords.origin.x - screenCoords.origin.x,

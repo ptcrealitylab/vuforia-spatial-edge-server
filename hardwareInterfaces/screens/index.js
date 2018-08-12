@@ -11,7 +11,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -26,6 +26,7 @@ if (exports.enabled) {
     bindScreen('screenOne', 3100);
     bindScreen('stonesScreen', 3101);
     bindScreen('chipsScreen', 3102);
+    bindScreen('ipadScreen', 3103);
     // ----------------------------------------------------------------------------------------------------------- //
 
     var express = require('express');
