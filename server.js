@@ -2500,8 +2500,9 @@ function objectWebServer() {
                         var ipAddress = objects[objectKey].ip;
 
                         // converts filepath from local storage system to public server url
+                        // Mac / Unix / Windows compatible now
                         var endpoint = '/obj/' + rawFilepath
-                            .split('/')
+                            .split(/\\|\//)
                             .slice(5)
                             .filter(function(i){
                                 return i !== '.identity';
