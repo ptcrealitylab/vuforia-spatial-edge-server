@@ -208,6 +208,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     if (typeof msgContent.visibility !== "undefined") {
         realityObject.visibility = msgContent.visibility;
 
+        // TODO: implement public data subscription in the same way as in object-frames.js
+
         if(realityObject.visibility === "visible"){
             if (typeof realityObject.node !== "undefined") {
                 if(realityObject.sendSticky) {
@@ -619,6 +621,17 @@ function RealityInterface() {
         this.ioObject.on('reconnect', function() {
             console.log('reconnect');
             window.location.reload();
+
+            // notify the containing application that a frame socket reconnected, for additional optional behavior (e.g. make the screen reload)
+            if (realityObject.object && realityObject.frame) {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    socketReconnect : true
+                }), '*');
+            }
         });
 
         this.sendRealityEditorSubscribe = setInterval(function () {

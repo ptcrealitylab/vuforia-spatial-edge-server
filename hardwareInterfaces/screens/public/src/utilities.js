@@ -70,7 +70,7 @@ realityEditor.utilities.clearTouchTimer = function() {
  */
 realityEditor.utilities.shouldPostEventsIntoIframe = function() {
     var editingVehicle = this.getEditingElement();
-    return !(editingVehicle || touchEditingTimer);
+    return !(editingVehicle /*|| touchEditingTimer*/);
 };
 
 /**
