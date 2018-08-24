@@ -29,11 +29,11 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
-    kepware1 = new Kepware("192.168.56.100", "kepwareBox", "39320", 100);
+    kepware1 = new Kepware("10.10.10.10", "kepwareBox", "39320", 100);
    kepware1.setup();
 /*
   var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
@@ -148,19 +148,33 @@ if (exports.enabled) {
                     }
 
                     if( this.kepwareInterfaces[thisID].data.v !== 0) {
+                        if(this.kepwareInterfaces[thisID].name === "sensor") {
+                            if(this.kepwareInterfaces[thisID].data.v < 75) this.kepwareInterfaces[thisID].data.v = 75;
+                            if(this.kepwareInterfaces[thisID].data.v > 65535) this.kepwareInterfaces[thisID].data.v = 65535;
+
+                            this.kepwareInterfaces[thisID].data.value = Math.round(this.server.map(this.kepwareInterfaces[thisID].data.v, 75, 65535, 0, 1) * 1000) / 1000;
+                        } else {
                         this.kepwareInterfaces[thisID].data.value = Math.round(this.server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
+                        }
                     } else {
                         this.kepwareInterfaces[thisID].data.value= 0;
                     }
 
                     if(this.kepwareInterfaces[thisID].name &&  (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)){
 
-
+                        if(this.kepwareInterfaces[thisID].name === "sensor"){
+                            this.server.write(kepwareServerName, kepwareServerName+"1",
+                                this.kepwareInterfaces[thisID].name,
+                                this.kepwareInterfaces[thisID].data.value, "f", 'inch',
+                                0.0,
+                                11.5)
+                        } else {
                         this.server.write(kepwareServerName, kepwareServerName+"1",
                             this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.min,
                             this.kepwareInterfaces[thisID].data.max)
+                    }
                     }
 
                     this.kepwareInterfaces[thisID].dataOld.value = this.kepwareInterfaces[thisID].data.value;
