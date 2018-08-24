@@ -167,9 +167,9 @@ var webFrontend = require(__dirname + '/libraries/webFrontend');
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
 
-//var git = require(__dirname + '/libraries/gitInterface');
+var git = require(__dirname + '/libraries/gitInterface');
 
-//git.saveCommit("lego2", debug);
+//git.saveCommit("lego2", false);
 
 var util = require("util"); // node.js utility functionality
 var events = require("events"); // node.js events used for the socket events.
@@ -213,6 +213,8 @@ function Objects() {
     this.memory = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
+    // keep a memory of the last commit state of the frames.
+    this.framesHistory = {};
     // which visualization mode it should use right now ("ar" or "screen")
     this.visualization = "ar";
 
@@ -751,7 +753,7 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath
 
 
 }, Node, function (thisAction) {
-    actionSender(thisAction);
+    utilities.actionSender(thisAction);
 }, function(objectID) {
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 });
@@ -887,6 +889,7 @@ function loadObjects() {
         } else {
             cout(" object " + objectFolderList[i] + " has no marker yet");
         }
+        utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
 
     hardwareAPI.reset();
@@ -1092,30 +1095,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
  * @param {Object} action string of the action to be send to the system. this can be a jason object
  **/
 
-function actionSender(action) {
-    console.log(action);
 
-    var HOST = '255.255.255.255';
-    var message;
-
-    message = new Buffer(JSON.stringify({action: action}));
-
-    // creating the datagram
-    var client = dgram.createSocket('udp4');
-    client.bind(function () {
-        client.setBroadcast(true);
-        client.setTTL(timeToLive);
-        client.setMulticastTTL(timeToLive);
-    });
-    // send the datagram
-    client.send(message, 0, message.length, beatPort, HOST, function (err) {
-        if (err) {
-            throw err;
-        }
-        client.close();
-    });
-
-}
 
 /**********************************************************************************************************************
  ******************************************** Server Objects **********************************************************
@@ -1225,6 +1205,7 @@ var parseIpSpace = function (ip_string) {
 function objectWebServer() {
     thisIP = ip.address();
     // security implemented
+//console.log(objects);
 
     // check all sever requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
@@ -1519,7 +1500,7 @@ function objectWebServer() {
 
         delete objects[objectID].frames[frameID].nodes[nodeID].links[linkID];
         cout("deleted link: " + linkID);
-        actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+        utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
         return "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
     }
@@ -1557,7 +1538,7 @@ function objectWebServer() {
 
             if (!thisObject.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
-                actionSender({
+                utilities.actionSender({
                     reloadNode: {object: objectID, frame: frameID, node: nodeID},
                     lastEditor: body.lastEditor
                 });
@@ -1640,7 +1621,7 @@ function objectWebServer() {
             // }
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             updateStatus = "added";
             cout("added block: " + blockID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
@@ -1675,7 +1656,7 @@ function objectWebServer() {
             }
         }
 
-        actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
+        utilities.actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
         return "deleted: " + thisLinkId + " in blocks for object: " + objectID;
     }
@@ -1703,7 +1684,7 @@ function objectWebServer() {
             tempObject.y = body.y;
 
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             updateStatus = "ok";
         }
 
@@ -1751,7 +1732,7 @@ function objectWebServer() {
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             //	console.log(objects[req.params[0]].nodes[req.params[1]]);
-            actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
 
         }
         return updateStatus;
@@ -1789,7 +1770,7 @@ function objectWebServer() {
 
         console.log("deleted Object");
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-        actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+        utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
 
         return "deleted: " + nodeID + " in frame: " + frameID + " of object: " + objectID;
     }
@@ -1841,8 +1822,8 @@ function objectWebServer() {
             if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-                //  actionSender({reloadObject: {object: thisObject}});
-                actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+                //  utilities.actionSender({reloadObject: {object: thisObject}});
+                utilities.actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
                 updateStatus = "ok";
             }
 
@@ -1983,7 +1964,7 @@ function objectWebServer() {
                         if (node) {
                             node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
                             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                            actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+                            utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
                         }
 
                         res.status(200);
@@ -2080,7 +2061,7 @@ function objectWebServer() {
         cout("deleted link: " + linkKey);
         // cout(objects[req.params[0]].links);
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+        utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         var checkIfIpIsUsed = false;
         for (var objectCheckerKey in objects) {
@@ -2162,7 +2143,7 @@ function objectWebServer() {
                         /////
 
                         // call an action that asks all devices to reload their links, once the links are changed.
-                        actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
+                        utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
 
                     } else {
                         updateStatus = "found endless Loop";
@@ -2203,7 +2184,7 @@ function objectWebServer() {
         var obj = objects[objectKey].frames[frameKey];
         obj.nodes[nodeKey] = node;
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
+        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
 
         res.json({success: 'true'}).end();
     };
@@ -2239,7 +2220,7 @@ function objectWebServer() {
 
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
 
-                actionSender({reloadNode: {object: object, frame: frame, node: node}});
+                utilities.actionSender({reloadNode: {object: object, frame: frame, node: node}});
 
                 updateStatus = "added";
 
@@ -2279,7 +2260,7 @@ function objectWebServer() {
                 objects[object].frames[frame].nodes[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
 
-                actionSender({reloadNode: {object: object, frame:frame, node: node}});
+                utilities.actionSender({reloadNode: {object: object, frame:frame, node: node}});
 
                 updateStatus = "deleted";
             } else {
@@ -2321,7 +2302,7 @@ function objectWebServer() {
                 objects[object].frames[frame].links[link].lockType = newLockType;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
 
-                actionSender({reloadLink: {object: object}});
+                utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "added";
 
@@ -2359,7 +2340,7 @@ function objectWebServer() {
                 objects[object].frames[frame].links[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
 
-                actionSender({reloadLink: {object: object}});
+                utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "deleted";
             } else {
@@ -2440,6 +2421,25 @@ function objectWebServer() {
         });
     });
 
+    /**
+     *
+     *  HANDLE GIT Interface
+     *
+     */
+
+    webServer.post('/object/:id/saveCommit', function (req, res) {
+        git.saveCommit(req.params.id, objects, function(){
+            res.status(200);
+            res.json({success: true}).end();
+        });
+    });
+
+    webServer.post('/object/:id/resetToLastCommit', function (req, res) {
+        git.resetToLastCommit(req.params.id, objects, function(){
+            res.status(200);
+            res.json({success: true}).end();
+        });
+    });
 
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
@@ -2495,7 +2495,7 @@ function objectWebServer() {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                actionSender({loadMemory: {object: objectID, ip: obj.ip}});
+                utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
             }
 
             console.log('successfully created memory');
@@ -2572,7 +2572,7 @@ function objectWebServer() {
 
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
 
-        actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
         hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
 
         res.json({success: true, frameId: frameKey}).end();
@@ -2647,8 +2647,8 @@ function objectWebServer() {
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
-            // actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
-            actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
+            // utilities.actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
+            utilities.actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
 
             hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
 
@@ -2689,7 +2689,7 @@ function objectWebServer() {
 
         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
-        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+        utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
     });
@@ -2831,14 +2831,14 @@ function objectWebServer() {
 
             if (linkObjectHasChanged) {
                 utilities.writeObjectToFile(objects, linkObjectId, objectsPath, globalVariables.saveToDisk);
-                actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
+                utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
             }
         }
 
         // write changes to object.json
         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
-        actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+        utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
     });
@@ -2932,7 +2932,7 @@ function objectWebServer() {
 
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
+                    utilities.actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
                     updateStatus = "added object";
                 }
 
@@ -4017,7 +4017,7 @@ function socketServer() {
 
             if (socket.id in realityEditorBlockSocketArray) {
                 utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, objectsPath, globalVariables.saveToDisk);
-                actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
+                utilities.actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
                 delete realityEditorBlockSocketArray[socket.id];
                 console.log("Settings for " + socket.id + " has disconnected");
             }
