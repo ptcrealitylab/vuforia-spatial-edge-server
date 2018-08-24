@@ -15,7 +15,11 @@ var saveCommit = function (objectKey, objects, callback) {
        objects[objectKey].framesHistory = JSON.parse(JSON.stringify(objects[objectKey].frames));
        utilities.writeObjectToFile(objects, objectKey, homeDirectory, true);
 
-       git.checkIsRepo(function (){
+       git.checkIsRepo(function (err){
+           if(err) {
+               git.init();
+               return;
+           }
            git.commit("server identity commit for "+objectFolderName, [objectFolderName+identityFile], function(){
                console.log("commit for "+objectFolderName);
                utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
@@ -32,7 +36,11 @@ var resetToLastCommit = function (objectKey, objects, callback) {
     console.log("got here too");
     if(objectKey in objects) {
         var objectFolderName = objects[objectKey].name;
-        git.checkIsRepo(function () {
+        git.checkIsRepo(function (err) {
+            if(err) {
+                git.init();
+                return;
+            }
             git.checkout(objectFolderName + identityFile, function () {
                 console.log("reset for " + objectFolderName);
                 utilities.updateObject(objectFolderName, objects);
