@@ -47,19 +47,39 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
     var names = {};
+    var namesLego = {};
     var Wedo = require('WeDo2');
-    var wedo = new Wedo("lego");
+  //  var wedo = new Wedo("lego");
+
+    var wedo = new Wedo();
 
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
+   /* server.addAppReadListener (function (msg,arg){
+        console.log(msg,arg);
+    });
+    */
 
     var FRAME_NAME = "zero";
 
     server.enableDeveloperUI(true);
+
+    var namecount = 1;
+
+   /* wedo.on('ble', function (msg) {
+        setTimeout(function() {
+            server.sendToUI("wedoBLE",msg);
+        }, 500);
+
+
+    });
+    */
+
 
     wedo.on('connected', function (uuid) {
 
@@ -69,8 +89,20 @@ if (exports.enabled) {
 
         if (wedo.wedo[uuid]) {
             names[uuid] = {px1 : "port 1", px2 : "port 2"};
-            names[uuid].name = wedo.wedo[uuid].name;
+
+            if(!(uuid in namesLego)) {
+                namesLego[uuid] = "lego"+namecount;
+                namecount++;
+               // names[uuid].name = wedo.wedo[uuid].name;
+            }
+            names[uuid].name = namesLego[uuid];
+            wedo.wedo[uuid].name = names[uuid].name;
+
+          //  server.sendToUI("wedoOn",names[uuid].name);
+
+
             if(wedo.wedo[uuid].name) {
+                console.log("#####################"+wedo.wedo[uuid].name);
                 var thisWedo = wedo.wedo[uuid].name;
 
                 server.addNode(thisWedo, FRAME_NAME, "port 1", "node");
@@ -137,6 +169,8 @@ if (exports.enabled) {
         // remove all listeners when disconnected
 
         if (names[uuid].name) {
+
+           // server.sendToUI("wedoOff",names[uuid].name);
             server.deactivate( names[uuid].name);
 
                 server.renameNode(names[uuid].name, FRAME_NAME, "port 1", " ");
