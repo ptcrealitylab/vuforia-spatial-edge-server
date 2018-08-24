@@ -167,6 +167,10 @@ var webFrontend = require(__dirname + '/libraries/webFrontend');
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
 
+//var git = require(__dirname + '/libraries/gitInterface');
+
+//git.saveCommit("lego2", debug);
+
 var util = require("util"); // node.js utility functionality
 var events = require("events"); // node.js events used for the socket events.
 
