@@ -390,7 +390,7 @@ function RealityInterface() {
 
     this.setFullScreenOff = function () {
         realityObject.sendFullScreen = false;
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             realityObject.height = document.body.scrollHeight;
             realityObject.width = document.body.scrollWidth;
@@ -418,7 +418,7 @@ function RealityInterface() {
     this.setStickyFullScreenOn = function () {
         realityObject.sendFullScreen = "sticky";
         realityObject.sendSticky = true;
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             realityObject.height = "100%";
             realityObject.width = "100%";
@@ -446,7 +446,7 @@ function RealityInterface() {
     this.setStickinessOff = function () {
         console.log(realityObject.visibility);
    //if(realityObject.visibility === "hidden"){
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
             parent.postMessage(JSON.stringify(
                 {
                     version: realityObject.version,
