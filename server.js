@@ -3966,6 +3966,42 @@ function socketServer() {
 
         });
 
+        socket.on('/subscribe/realityEditorPublicData', function (msg) {
+            var msgContent = JSON.parse(msg);
+            var thisProtocol = "R1";
+
+            if (!msgContent.object) {
+                msgContent.object = msgContent.obj;
+                thisProtocol = "R0";
+            }
+
+            if (objects.hasOwnProperty(msgContent.object)) {
+                cout("reality editor subscription for object: " + msgContent.object);
+                cout("the latest socket has the ID: " + socket.id);
+
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                cout(realityEditorSocketArray);
+            }
+
+            var publicData = {};
+            var object = objects[msgContent.object];
+            if (object) {
+                var frame = object.frames[msgContent.frame];
+                if (frame) {
+                    for(key in frame.nodes){
+                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    }
+                }
+            }
+
+            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                object: msgContent.object,
+                frame: msgContent.frame,
+                publicData: publicData
+            }));//       socket.emit('object', msgToSend);
+        });
+
         socket.on('/subscribe/realityEditorBlock', function (msg) {
             var msgContent = JSON.parse(msg);
 
