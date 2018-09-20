@@ -619,6 +619,18 @@ function RealityInterface() {
         realityObject.touchDecider = callback;
     };
 
+    this.unregisterTouchDecider = function() {
+        realityObject.touchDecider = null;
+    };
+
+    this.addIsMovingListener = function(callback) {
+        realityObject.messageCallBacks.frameIsMovingCall = function (msgContent) {
+            if (typeof msgContent.frameIsMoving !== "undefined") {
+                callback(msgContent.frameIsMoving);
+            }
+        };
+    };
+
     if (typeof io !== "undefined") {
         var _this = this;
 
@@ -956,10 +968,11 @@ window.addEventListener('load', function() {
                 screenY: eventData.y
             });
 
+            // send unacceptedTouch message if this interface wants touches to pass through it
             if (realityObject.touchDecider) {
                 var touchAccepted = realityObject.touchDecider(eventData);
                 if (!touchAccepted) {
-                    console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
+                    // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
                     if (realityObject.object && realityObject.frame) {
 
                         parent.postMessage(JSON.stringify({
@@ -969,13 +982,22 @@ window.addEventListener('load', function() {
                             object: realityObject.object,
                             unacceptedTouch : eventData
                         }), '*');
-
+                        return;
                     }
                 }
             }
 
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
             elt.dispatchEvent(event);
+
+            // otherwise send acceptedTouch message to stop the touch propagation
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                acceptedTouch : eventData
+            }), '*');
         }
     });
 });
