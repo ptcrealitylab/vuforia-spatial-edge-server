@@ -37,6 +37,8 @@ var hardwareObjects = {};
 var callBacks = new Objects();
 var screenObjectCallBacks = {};
 var frameAddedCallbacks = [];
+var matrixStreamCallbacks = [];
+var udpMessageCallbacks = [];
 var screenPortMap = {};
 var _this = this;
 
@@ -281,6 +283,26 @@ exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
             console.log('found a callback');
             callbackObject.callback(thisFrame);
         }
+    });
+};
+
+exports.subscribeToMatrixStream = function(callback) {
+    matrixStreamCallbacks.push(callback);
+};
+
+exports.triggerMatrixCallbacks = function(visibleObjects) {
+    matrixStreamCallbacks.forEach(function(callback) {
+        callback(visibleObjects);
+    });
+};
+
+exports.subscribeToUDPMessages = function(callback) {
+    udpMessageCallbacks.push(callback);
+};
+
+exports.triggerUDPCallbacks = function(msgContent) {
+    udpMessageCallbacks.forEach(function(callback) {
+        callback(msgContent);
     });
 };
 

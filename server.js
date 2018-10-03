@@ -1111,6 +1111,8 @@ function actionSender(action) {
         client.close();
     });
 
+    hardwareAPI.triggerUDPCallbacks({action: action});
+
 }
 
 /**********************************************************************************************************************
@@ -1167,6 +1169,16 @@ function objectBeatServer() {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
+
+        if (typeof msgContent.matrixBroadcast !== "undefined") {
+            // if (Object.keys(msgContent.matrixBroadcast).length > 0) {
+                // console.log(msgContent.matrixBroadcast);
+                hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
+            // }
+        } else {
+            hardwareAPI.triggerUDPCallbacks(msgContent);
+        }
+
     });
 
     udpServer.on("listening", function () {
