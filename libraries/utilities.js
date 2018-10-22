@@ -58,8 +58,13 @@
 var debug = false;
 var xml2js = require('xml2js');
 var fs = require('fs');
+var ip = require("ip");       // get the device IP address library
+var dgram = require('dgram'); // UDP Broadcasting library
+var os = require('os');
+var path = require('path');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
+var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -232,7 +237,7 @@ exports.uuidTime = function () {
     return stampUuidTime;
 };
 
-exports.getObjectIdFromTarget = function (folderName, objectsPath) {
+var getObjectIdFromTarget = function (folderName, objectsPath) {
 
     if(folderName === "allTargetsPlaceholder"){
         return "allTargetsPlaceholder000000000000";
@@ -260,6 +265,7 @@ exports.getObjectIdFromTarget = function (folderName, objectsPath) {
         return null;
     }
 };
+exports.getObjectIdFromTarget = getObjectIdFromTarget;
 
 /**
  *
@@ -311,8 +317,8 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  *
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
- * @param {string}   dirnameO  - The base directory name in which an "objects" directory resides.
- * @param {string}   writeToFile  - Give permission to write to file.
+ * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
+ * @param {boolean}   writeToFile  - Give permission to write to file.
  **/
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
@@ -453,3 +459,114 @@ exports.genereateChecksums = function (objects,fileArray) {
         console.log("created Checksum: " + checksumText);
 return checksumText;
 };
+
+
+exports.updateObject = function(objectName, objects){
+    cout("update "+objectName);
+
+    var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
+        return fs.statSync(homedir + '/' + file).isDirectory();
+    });
+
+    try {
+        while (objectFolderList[0][0] === ".") {
+            objectFolderList.splice(0, 1);
+        }
+    } catch (e) {
+        cout("no hidden files");
+    }
+
+
+    for (var i = 0; i < objectFolderList.length; i++) {
+        if (objectFolderList[i] === objectName) {
+            var tempFolderName = getObjectIdFromTarget(objectFolderList[i], homedir);
+            cout("TempFolderName: " + tempFolderName);
+
+            if (tempFolderName !== null) {
+                // fill objects with objects named by the folders in objects
+
+                objects[tempFolderName].name = objectFolderList[i];
+
+                // try to read a saved previous state of the object
+                try {
+                    objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + "/object.json", "utf8"));
+                    objects[tempFolderName].ip = ip.address();
+
+                    // this is for transforming old lists to new lists
+                    if (typeof objects[tempFolderName].objectValues !== "undefined") {
+                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
+                        delete  objects[tempFolderName].objectValues;
+                    }
+                    if (typeof objects[tempFolderName].objectLinks !== "undefined") {
+                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
+                        delete  objects[tempFolderName].objectLinks;
+                    }
+
+
+                    if (typeof objects[tempFolderName].nodes !== "undefined") {
+                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
+                        delete  objects[tempFolderName].nodes;
+                    }
+                    if (typeof objects[tempFolderName].links !== "undefined") {
+                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
+                        delete  objects[tempFolderName].links;
+                    }
+
+
+                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
+
+                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
+                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
+                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                        }
+                    }
+
+                    cout("I found objects that I want to add");
+
+
+                } catch (e) {
+                    objects[tempFolderName].ip = ip.address();
+                    objects[tempFolderName].objectId = tempFolderName;
+                    cout("No saved data for: " + tempFolderName);
+                }
+
+            } else {
+                cout(" object " + objectFolderList[i] + " has no marker yet");
+            }
+            return tempFolderName;
+        }
+    }
+    return null;
+};
+
+exports.actionSender = function(action,timeToLive, beatport) {
+    if(!timeToLive) timeToLive = 2;
+    if(!beatport) beatport = 52316;
+    console.log(action);
+
+    var HOST = '255.255.255.255';
+    var message;
+
+    message = new Buffer(JSON.stringify({action: action}));
+
+    // creating the datagram
+    var client = dgram.createSocket('udp4');
+    client.bind(function () {
+        client.setBroadcast(true);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
+    });
+    // send the datagram
+    client.send(message, 0, message.length, beatport, HOST, function (err) {
+        if (err) {
+            throw err;
+        }
+        client.close();
+    });
+
+};
+
+
+function cout(msg) {
+    if (debug) console.log(msg);
+}
