@@ -30,7 +30,8 @@
  */
 //Enable this hardware interface
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-var thisHardwareInterface = __dirname.split("/").pop();
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
 var settings = server.loadHardwareInterface(thisHardwareInterface);
 
 exports.enabled = settings("enabled");
