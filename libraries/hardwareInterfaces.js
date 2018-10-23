@@ -37,6 +37,7 @@ var hardwareObjects = {};
 var callBacks = new Objects();
 var screenObjectCallBacks = {};
 var frameAddedCallbacks = [];
+var resetCallbacks = [];
 var screenPortMap = {};
 var _this = this;
 
@@ -280,6 +281,26 @@ exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
         if (callbackObject.objectID === objectKey) {
             console.log('found a callback');
             callbackObject.callback(thisFrame);
+        }
+    });
+};
+
+exports.subscribeToReset = function (objectName, callback) {
+    console.log('subscribeToNewFramesAdded');
+    var objectID = utilities.readObject(objectLookup, objectName);
+
+    resetCallbacks.push({
+        objectID: objectID,
+        callback: callback
+    });
+};
+
+exports.runResetCallbacks = function(objectKey) {
+    console.log('runResetCallbacks for object ' + objectKey);
+    resetCallbacks.forEach(function(callbackObject) {
+        if (callbackObject.objectID === objectKey) {
+            console.log('found a callback');
+            callbackObject.callback();
         }
     });
 };

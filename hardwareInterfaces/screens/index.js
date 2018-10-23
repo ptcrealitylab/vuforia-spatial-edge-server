@@ -97,6 +97,10 @@ if (exports.enabled) {
             io.emit('newFrameAdded', msg);
         });
 
+        server.subscribeToReset(objectName, function() {
+            io.emit('reloadScreen');
+        });
+
         io.on('connection', function(socket) {
             console.log('frame screen socket connected');
             // relay messages from the AR interface to this app's frontend
