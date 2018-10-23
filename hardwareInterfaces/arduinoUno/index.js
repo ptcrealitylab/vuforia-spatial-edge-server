@@ -43,7 +43,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-var thisHardwareInterface = __dirname.split("/").pop();
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
 var settings = server.loadHardwareInterface(thisHardwareInterface);
 
 exports.enabled = false;
