@@ -49,6 +49,8 @@
  **/
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var thisHardwareInterface = __dirname.split("/").pop();
+
+console.log("!!!!-------------",__dirname.split("/").pop());
 var settings = server.loadHardwareInterface(thisHardwareInterface);
 
 exports.enabled = false;
