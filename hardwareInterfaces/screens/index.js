@@ -11,7 +11,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -23,8 +23,6 @@ if (exports.enabled) {
     // Then make sure to add [objectName].jpg to the hardwareInterfaces/screens/public/resources/ directory
     // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
     // ----------------------------------------------------------------------------------------------------------- //
-    bindScreen('screenOne', 3100);
-    bindScreen('stonesScreen', 3101);
     bindScreen('chipsScreen', 3102);
     bindScreen('ipadScreen', 3103);
     // ----------------------------------------------------------------------------------------------------------- //
