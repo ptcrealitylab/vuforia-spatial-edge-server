@@ -2533,6 +2533,7 @@ function objectWebServer() {
         git.resetToLastCommit(req.params.id, objects, function(){
             res.status(200);
             res.json({success: true}).end();
+            hardwareAPI.runResetCallbacks(req.params.id);
         });
     });
 
