@@ -42,10 +42,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-exports.enabled = true
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var thisHardwareInterface = __dirname.split("/").pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
 
+exports.enabled = settings("enabled");
 if (exports.enabled) {
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
     const SerialPort = require('serialport');
     const Readline = SerialPort.parsers.Readline;
@@ -56,7 +58,7 @@ if (exports.enabled) {
 console.log(ports[i]);
             if(ports[i].manufacturer){
 
-                 if(ports[i].manufacturer.includes("Prolific")) {
+                 if(ports[i].manufacturer.includes(settings("serialID"))) {
                      serialPort = new SerialPort(ports[i].comName, {
                          baudRate: 9600
                      });
@@ -73,7 +75,7 @@ console.log(ports[i]);
     });
 
     function serialServer(serialPort) {
-        server.addNode("kepwareBox", "kepwareBox1", "weight", "node");
+        server.addNode(settings("object"), settings("frame"), settings("node"), settings("kind"));
 
         const parser = serialPort.pipe(new Readline({ delimiter: '\r\n' }));
         parser.on('data', function (data){
@@ -83,14 +85,14 @@ console.log(ports[i]);
                 return item !== ""
             });
 
-            var max = 25.0;
+            var max = settings("max");
             var min = 0;
 
-            if(values[1]>=25.0) {
-                values[1] = 25.0;
+            if(values[1]>=settings("max")) {
+                values[1] = settings("max");
             }
             values[1] = values[1]/max;
-            server.write('kepwareBox', "kepwareBox1", 'weight', values[1], 'f', values[2], min, max);
+            server.write(settings("object"), settings("frame"), settings("node"), values[1], 'f', values[2], min, max);
         });
     }
 }

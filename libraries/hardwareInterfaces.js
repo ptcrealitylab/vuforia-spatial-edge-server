@@ -700,6 +700,12 @@ exports.shutdown = function (){
     }
 };
 
+exports.loadHardwareInterface = function (hardwareInterfaceName){
+  return utilities.loadHardwareInterface(hardwareInterfaceName);
+};
+
+
+
 function cout(msg) {
     if (globalVariables.debug) console.log(msg);
 }

@@ -640,8 +640,7 @@
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen,
-                    stickiness: realityObject.sendSticky
+                    fullScreen: realityObject.sendFullScreen
                 }), '*');
             }
         };
@@ -684,8 +683,7 @@
                     sendMatrix: realityObject.sendMatrix,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
-                    fullscreenZPosition: realityObject.fullscreenZPosition,
-                    stickiness: realityObject.sendSticky
+                    fullscreenZPosition: realityObject.fullscreenZPosition
                 }), '*');
             }
         };

@@ -47,11 +47,14 @@
 /**
  * Set to true to enable the hardware interface
  **/
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var thisHardwareInterface = __dirname.split("/").pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
 // this needs to be true all the time otherwise the server crashes.
 
 if (exports.enabled) {
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     server.addNode("allTargetsPlaceholder", "this", "node");
 }

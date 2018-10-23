@@ -11,11 +11,13 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var thisHardwareInterface = __dirname.split("/").pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
+exports.enabled = settings("enabled");
 
 if (exports.enabled) {
-
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 
     var activeScreens = [];
 
@@ -23,8 +25,11 @@ if (exports.enabled) {
     // Then make sure to add [objectName].jpg to the hardwareInterfaces/screens/public/resources/ directory
     // And call activateScreenObject() from the index.html of a frame in that object to enable touch controls
     // ----------------------------------------------------------------------------------------------------------- //
-    bindScreen('chipsScreen', 3102);
-    bindScreen('ipadScreen', 3103);
+
+    for(var key in settings("screens")){
+        bindScreen(key, settings("screens")[key]);
+    }
+
     // ----------------------------------------------------------------------------------------------------------- //
 
     var express = require('express');
