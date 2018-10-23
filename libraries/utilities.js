@@ -62,10 +62,11 @@ var ip = require("ip");       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
+var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
-
+hardwareIdentity = homedir +"/.identity";
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
@@ -83,6 +84,7 @@ exports.readObject = function (objectLookup, folder) {
 exports.createFolder = function (folderVar, objectsPath, debug) {
 
     var folder = objectsPath + '/' + folderVar + '/';
+    var hardwareIdentity =   folder + ".identity/";
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
     if (debug) console.log("Creating folder: " + folder);
 
@@ -537,6 +539,61 @@ exports.updateObject = function(objectName, objects){
         }
     }
     return null;
+};
+
+exports.loadHardwareInterface = function(hardwareInterfaceName){
+
+    var hardwareFolder = hardwareIdentity +"/"+hardwareInterfaceName+"/";
+
+
+    if (!fs.existsSync(hardwareIdentity)) {
+        fs.mkdirSync(hardwareIdentity, "0766", function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    }
+
+    if (!fs.existsSync(hardwareFolder)) {
+        fs.mkdirSync(hardwareFolder, "0766", function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    }
+
+    if (!fs.existsSync(hardwareFolder + "settings.json")) {
+        fs.writeFile(hardwareFolder + "settings.json", "", function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("JSON created to " + hardwareFolder + "settings.json");
+            }
+        });
+    }
+
+    try {
+        var fileContents = fs.readFileSync(hardwareFolder + "settings.json", "utf8");
+        var fileContentsJson = JSON.parse(fileContents);
+        hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
+
+    } catch (e) {
+        cout("Could not Load: " + hardwareInterfaceName);
+        hardwareInterfaces[hardwareInterfaceName] = {};
+    }
+
+    this.read = function (settingsName, defaultvalue) {
+     if (typeof  hardwareInterfaces[hardwareInterfaceName][settingsName] === "undefined")
+        {
+            if (typeof defaultvalue !== "undefined")
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
+            else {
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
+            }
+        }
+        return hardwareInterfaces[hardwareInterfaceName][settingsName];
+    };
+    return this.read;
 };
 
 exports.actionSender = function(action,timeToLive, beatport) {

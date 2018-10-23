@@ -4,15 +4,6 @@ realityEditor.touchEvents.addTouchListeners = function() {
     document.addEventListener('pointerdown', realityEditor.touchEvents.onMouseDown);
     document.addEventListener('pointermove', realityEditor.touchEvents.onMouseMove);
     document.addEventListener('pointerup', realityEditor.touchEvents.onMouseUp);
-
-    // fixme: problem - gesture somehow passes through if you drag first finger before placing second
-    document.addEventListener('gesturestart', function (e) {
-        e.preventDefault();
-    });
-
-    document.addEventListener('gesturechange', function (e) {
-        e.preventDefault();
-    });
 };
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {

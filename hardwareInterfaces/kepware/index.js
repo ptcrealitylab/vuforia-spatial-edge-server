@@ -29,11 +29,14 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-exports.enabled = true;
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var thisHardwareInterface = __dirname.split("/").pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
+exports.enabled = settings("enabled");
 
 if (exports.enabled) {
-
-    kepware1 = new Kepware("10.10.10.20", "kepwareBox", "39320", 100);
+    kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"));
    kepware1.setup();
 /*
   var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
@@ -67,10 +70,10 @@ if (exports.enabled) {
             };
         };
         this.kepwareInterfaces ={};
-        this.server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
         this.Client = require('node-rest-client').Client;
         this.remoteDevice = new this.Client();
-        this.server.enableDeveloperUI(true);
+        server.enableDeveloperUI(true);
         this.kepwareAddress = "http://" + kepwareServerIP + ":" + kepwareServerPort + "/iotgateway/";
         this.setup = function () {
             this.thisID = {};
@@ -82,7 +85,7 @@ if (exports.enabled) {
                     this.kepwareInterfaces[this.thisID].name = this.thisID.substr(this.thisID.lastIndexOf('.') + 1);
 
                     console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
-                    this.server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
+                    server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
                     this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
                 }
                 this.interval = setInterval(this.start, kepwareServerRequestInterval);
@@ -96,7 +99,7 @@ if (exports.enabled) {
 
        this.setReadList = function(object, frame, node, name, kepwareInterfaces){
 
-            this.server.addReadListener(object,frame, name, function (data) {
+            server.addReadListener(object,frame, name, function (data) {
              
                 kepwareInterfaces[node].data.value = data.value;
 
@@ -137,7 +140,7 @@ if (exports.enabled) {
                         else  {this.kepwareInterfaces[thisID].data.v = 0;};
                     }
                     if(isNaN(this.kepwareInterfaces[thisID].data.v)){
-                       // console.log( this.kepwareInterfaces[thisID].data.v);
+                        console.log( this.kepwareInterfaces[thisID].data.v);
                         this.kepwareInterfaces[thisID].data.v = 0;
                     }
                     if(this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
@@ -148,19 +151,33 @@ if (exports.enabled) {
                     }
 
                     if( this.kepwareInterfaces[thisID].data.v !== 0) {
-                        this.kepwareInterfaces[thisID].data.value = Math.round(this.server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
+                        if(this.kepwareInterfaces[thisID].name === "sensor") {
+                            if(this.kepwareInterfaces[thisID].data.v < 75) this.kepwareInterfaces[thisID].data.v = 75;
+                            if(this.kepwareInterfaces[thisID].data.v > 65535) this.kepwareInterfaces[thisID].data.v = 65535;
+
+                            this.kepwareInterfaces[thisID].data.value = Math.round(server.map(this.kepwareInterfaces[thisID].data.v, 75, 65535, 0, 1) * 1000) / 1000;
+                        } else {
+                        this.kepwareInterfaces[thisID].data.value = Math.round(server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
+                        }
                     } else {
                         this.kepwareInterfaces[thisID].data.value= 0;
                     }
 
                     if(this.kepwareInterfaces[thisID].name &&  (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)){
 
-
-                        this.server.write(kepwareServerName, kepwareServerName+"1",
+                        if(this.kepwareInterfaces[thisID].name === "sensor"){
+                            server.write(kepwareServerName, kepwareServerName+"1",
+                                this.kepwareInterfaces[thisID].name,
+                                this.kepwareInterfaces[thisID].data.value, "f", 'inch',
+                                0.0,
+                                11.5)
+                        } else {
+                        server.write(kepwareServerName, kepwareServerName+"1",
                             this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
                             this.kepwareInterfaces[thisID].data.min,
                             this.kepwareInterfaces[thisID].data.max)
+                    }
                     }
 
                     this.kepwareInterfaces[thisID].dataOld.value = this.kepwareInterfaces[thisID].data.value;

@@ -27,6 +27,7 @@
     "node-watch": "^0.3.4",
     "readdirp": "^2.1.0",
     "request": "^2.*",
+    "safer-buffer": "^2.1.2",
     "serialport": "^6.0.4",
     "sharp": "^0.20.8",
     "simple-git": "^1.96.0",

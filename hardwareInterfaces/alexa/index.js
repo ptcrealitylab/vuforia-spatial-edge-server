@@ -47,11 +47,13 @@
 /**
  * Set to true to enable the hardware interface
  **/
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var thisHardwareInterface = __dirname.split("/").pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
 if (exports.enabled) {
-
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     var request = require("request");
 
     server.enableDeveloperUI(true);
