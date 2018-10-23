@@ -62,8 +62,8 @@ realityEditor.touchEvents.onMouseDown = function(e) {
     if (e.simulated && firstMouseDown) return; // don't start a simulated gesture if you are doing one already on the touchscreen
     if (!e.simulated && isMouseDown && isCurrentGestureSimulated) return; // don't start touchscreen gesture if you are already simulating one
 
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    mouseX = e.pageX;
+    mouseY = e.pageY;
 
     if (e.simulated) {
         mouseX = e.simulatedPageX;
@@ -146,8 +146,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
     if (e.simulated && !isCurrentGestureSimulated) return;
     if (!e.simulated && isCurrentGestureSimulated) return;
 
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    mouseX = e.pageX;
+    mouseY = e.pageY;
 
     if (e.simulated) {
         mouseX = e.simulatedPageX;

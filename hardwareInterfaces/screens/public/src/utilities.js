@@ -315,3 +315,7 @@ realityEditor.utilities.resetFramesIfTripleTap = function() {
         }, 300);
     }
 };
+
+realityEditor.utilities.isIPad = function () {
+    return window.navigator.userAgent.indexOf('iPad') > -1;
+};
