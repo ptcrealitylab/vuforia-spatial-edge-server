@@ -67,6 +67,11 @@ if (exports.enabled) {
     });
     */
 
+   /* server.addAppReadListener (function (msg,arg){
+        console.log(msg,arg);
+    });
+    */
+
     var FRAME_NAME = "zero";
 
     server.enableDeveloperUI(true);
@@ -171,6 +176,8 @@ if (exports.enabled) {
         // remove all listeners when disconnected
 
         if (names[uuid].name) {
+
+           // server.sendToUI("wedoOff",names[uuid].name);
             server.deactivate( names[uuid].name);
 
                 server.renameNode(names[uuid].name, FRAME_NAME, "port 1", " ");
