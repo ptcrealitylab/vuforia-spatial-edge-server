@@ -1198,6 +1198,7 @@ var parseIpSpace = function (ip_string) {
 function objectWebServer() {
     thisIP = ip.address();
     // security implemented
+//console.log(objects);
 
     // check all sever requests for being inside the netmask parameters.
     // the netmask is set to local networks only.

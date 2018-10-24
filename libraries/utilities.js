@@ -67,6 +67,7 @@ var hardwareInterfaces = {};
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 hardwareIdentity = homedir +"/.identity";
+
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
