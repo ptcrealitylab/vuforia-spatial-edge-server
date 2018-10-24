@@ -42,13 +42,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
 if (exports.enabled) {
     var _ = require('lodash');
     var serialport = require("serialport");
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-
 
     const serialBaudRate = 115200; // baud rate for connection to arudino
 

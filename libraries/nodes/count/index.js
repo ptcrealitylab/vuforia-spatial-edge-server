@@ -77,7 +77,6 @@ exports.render = function (object, frame, node, thisNode, callback) {
                 thisNode.publicData.lastTick = true;
                 thisNode.publicData.count++;
                 thisNode.processedData.value = 1.0;
-                console.log(thisNode.publicData.count);
                 thisNode.processedData.unitMax = thisNode.publicData.count;
                 thisNode.processedData.unitMin = 0;
                 callback(object, frame, node, thisNode);

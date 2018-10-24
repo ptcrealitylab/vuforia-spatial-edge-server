@@ -47,12 +47,15 @@
 /**
  * Set to true to enable the hardware interface
  **/
+
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
-
 if (exports.enabled) {
-	var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-
 
 	// call      obj.activateScreenObject(); in your webpage to active the channel
 

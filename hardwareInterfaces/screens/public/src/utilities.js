@@ -70,7 +70,7 @@ realityEditor.utilities.clearTouchTimer = function() {
  */
 realityEditor.utilities.shouldPostEventsIntoIframe = function() {
     var editingVehicle = this.getEditingElement();
-    return !(editingVehicle || touchEditingTimer);
+    return !(editingVehicle /*|| touchEditingTimer*/);
 };
 
 /**
@@ -314,4 +314,8 @@ realityEditor.utilities.resetFramesIfTripleTap = function() {
             listenDoubleTap = false;
         }, 300);
     }
+};
+
+realityEditor.utilities.isIPad = function () {
+    return window.navigator.userAgent.indexOf('iPad') > -1;
 };

@@ -33,7 +33,6 @@
  *             ╩ ╩ ┴ └─┘┴└─┴─┴┘  ╚═╝└─┘└┘└─┘└─┘ ┴ └─┘
  *
  * Created by Valentin on 10/22/14.
- * Modified by Carsten on 12/06/15.
  *
  * Copyright (c) 2015 Valentin Heun
  *
@@ -45,74 +44,53 @@
  */
 
 /**
- * Set to true to enable the hardware interface
+ * @desc prototype for a plugin. This prototype is called when a value should be changed.
+ * It defines how this value should be transformed before sending it to the destination.
+ * @param {object} objectID Origin object in which the related link is saved.
+ * @param {string} linkID the id of the link that is related to the call
+ * @param {object} inputData the data that needs to be processed
+ * @param {function} callback the function that is called for when the process is rendered.
+ * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-var path = require('path');
-var thisHardwareInterface = __dirname.split(path.sep).pop();
-var settings = server.loadHardwareInterface(thisHardwareInterface);
 
-exports.enabled = true;
+var generalProperties = {
+    name : "router",
+    blockSize : 2,
+    privateData : {},
+    publicData : {},
+    activeInputs : [true, true, false, false],
+    activeOutputs : [true, true, false, false],
+    iconImage : "icon.png",
+    nameInput : ["threshold", "trigger", "", ""],
+    nameOutput : ["out if", "out else", "", ""],
+    type : "router"
+};
 
-if (exports.enabled) {
+exports.properties = generalProperties;
 
-    server.enableDeveloperUI(true);
+exports.setup = function (object,logic, block, activeBlockProperties){
+// add code here that should be executed once.
 
-   // server.addNode("thisDemo", "zero", "distance", "node");
- //   server.addNode("thisDemo", "zero", "motor", "node");
+};
 
-  //  server.addNode("frameExperiements", "graph", "value", "node");
-   // server.addNode("frameExperiements", "graph", "out", "node");
+//var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
-   // server.addNode("frameExperiements", "youtube", "play", "node");
+var thresholdValue = 0;
 
+exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
 
+    if (index === 0) {
+        thresholdValue = thisBlock.data[0].value;
 
-
-   // server.addNode("thisDemo", "zero2", "distance", "node");
-   // server.addNode("thisDemo", "zero2", "motor", "node");
-
-  //  server.addNode("thatDemo", "zero", "distance", "node");
-  //  server.addNode("thatDemo", "zero", "motor", "node");
-
-var count = 0;
-   // server.write("thisDemo", "zero2", "distance", 0.5);
-  /* setInterval(function(){
-        server.write("frameExperiements", "graph", "out",  ((Math.random() * (0 - 100) + 100))/100, "f", "F", -20, 10);
-
-
-        /*count++;
-        if (count >= 100){
-            count = 0;
-        }*/
-   /* }, 10);*/
-
-
-
-/*
-    server.addNode("obj45", "one", "node");
-    server.addNode("obj45", "two", "node");
-    server.addNode("obj45", "three", "node");
-    server.addNode("obj45", "four", "node");
-    */
-
-    server.addEventListener("reset", function () {
-
-    });
-
-    server.addEventListener("shutdown", function () {
-
-    });
-
-    /*
-   setInterval(function () {
-
-        server.advertiseConnection("obj45","one");
-
-       setTimeout(function() {
-           server.advertiseConnection("obj47", "hans");
-       }, 4000);
-
-    }, 8000);*/
-
-}
+    } else if (index === 1) {
+        if (thresholdValue > 0.5) {
+            thisBlock.processedData[0].value = thisBlock.data[1].value;
+            thisBlock.processedData[1].value = 0;
+            return callback(object, frame, node, block, index, thisBlock);
+        } else {
+            thisBlock.processedData[0].value = 0;
+            thisBlock.processedData[1].value = thisBlock.data[1].value;
+            return callback(object, frame, node, block, index, thisBlock);
+        }
+    }
+};
