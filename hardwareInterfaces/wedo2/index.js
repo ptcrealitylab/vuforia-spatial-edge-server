@@ -47,10 +47,14 @@
 /**
  * Set to true to enable the hardware interface
  **/
-exports.enabled = true;
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
+exports.enabled = false;
 
 if (exports.enabled) {
-
     var names = {};
     var namesLego = {};
     var Wedo = require('WeDo2');
@@ -58,7 +62,12 @@ if (exports.enabled) {
 
     var wedo = new Wedo();
 
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+
+
+   /* server.addAppReadListener (function (msg,arg){
+        console.log(msg,arg);
+    });
+    */
 
    /* server.addAppReadListener (function (msg,arg){
         console.log(msg,arg);

@@ -221,8 +221,8 @@ function Objects() {
     this.zone = "";
     // taken from target.xml. necessary to make the screens work correctly.
     this.targetSize = {
-        x: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
-        y: 0.3
+        width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
+        height: 0.3
     }
 
 }
@@ -1090,13 +1090,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     }
 }
 
-/**
- * @desc sends out an action json object via udp. Actions are used to cause actions in all objects and devices within the network.
- * @param {Object} action string of the action to be send to the system. this can be a jason object
- **/
-
-
-
 /**********************************************************************************************************************
  ******************************************** Server Objects **********************************************************
  **********************************************************************************************************************/
@@ -1285,6 +1278,10 @@ function objectWebServer() {
         if ((urlArray[urlArray.length-1] === "memory.jpg" || urlArray[urlArray.length-1] === "memoryThumbnail.jpg")
             && urlArray[urlArray.length-2] === "memory") {
             urlArray[urlArray.length-2] = identityFolderName+"/memory";
+        }
+
+        if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
+            urlArray[urlArray.length-2] = identityFolderName+"/videos";
         }
 
         var newUrl = "";
@@ -2421,6 +2418,105 @@ function objectWebServer() {
         });
     });
 
+    webServer.post('/object/:id/video/:videoId', function (req, res) {
+        var objectKey = req.params.id;
+        var videoId = req.params.videoId;
+
+        getObject(objectKey, function(error, object) {
+
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
+
+            var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
+            if (!fs.existsSync(videoDir)) {
+                fs.mkdirSync(videoDir);
+            }
+
+            var form = new formidable.IncomingForm({
+                uploadDir: videoDir,
+                keepExtensions: true,
+                accept: 'video/mp4'
+            });
+
+            console.log('created form for video');
+
+            form.on('error', function (err) {
+                res.status(500).res.send(err);
+            });
+
+            var rawFilepath = form.uploadDir + '/' + videoId + '.mp4';
+
+            if (fs.existsSync(rawFilepath)) {
+                console.log('deleted old raw file');
+                fs.unlinkSync(rawFilepath);
+            }
+
+            form.on('fileBegin', function (name, file) {
+                console.log('fileBegin loading', name, file);
+                file.path = rawFilepath;
+            });
+
+            console.log('about to parse');
+
+            form.parse(req, function (err, fields) {
+
+                if (!err) {
+
+                    console.log('successfully created video file', err, fields);
+
+                    var frameType = 'videoRecording';
+                    var frameKey = objectKey + frameType + videoId;
+
+                    getFrame(objectKey, frameKey, function(error, object, frame) {
+                        if (error) {
+                            console.log('a frame with key ' + frameKey + ' does not exist (yet)');
+                            res.status(404).send(err);
+                            return;
+                        }
+
+                        var ipAddress = objects[objectKey].ip;
+
+                        // converts filepath from local storage system to public server url
+                        // Mac / Unix / Windows compatible now
+                        var endpoint = '/obj/' + rawFilepath
+                            .split(/\\|\//)
+                            .slice(5)
+                            .filter(function(i){
+                                return i !== '.identity';
+                            })
+                            .join('/');
+
+                        var formattedVideoPath = 'http://' + ipAddress + ':' + serverPort + endpoint;
+
+                        // update public data
+                        var nodeName = 'storage';
+                        var nodeUuid = frameKey + nodeName;
+
+                        frame.nodes[nodeUuid].publicData = {
+                            data: formattedVideoPath
+                        };
+
+                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+
+                        res.status(200).json({success: true}).end();
+                    });
+
+                } else {
+                    console.log('error parsing', err);
+                    res.status(500).res.send(err);
+                }
+
+            });
+
+            console.log('parse called');
+
+        });
+
+    });
+
+
     /**
      *
      *  HANDLE GIT Interface
@@ -2438,6 +2534,7 @@ function objectWebServer() {
         git.resetToLastCommit(req.params.id, objects, function(){
             res.status(200);
             res.json({success: true}).end();
+            hardwareAPI.runResetCallbacks(req.params.id);
         });
     });
 
@@ -3868,6 +3965,42 @@ function socketServer() {
                 publicData: publicData
             }));//       socket.emit('object', msgToSend);
 
+        });
+
+        socket.on('/subscribe/realityEditorPublicData', function (msg) {
+            var msgContent = JSON.parse(msg);
+            var thisProtocol = "R1";
+
+            if (!msgContent.object) {
+                msgContent.object = msgContent.obj;
+                thisProtocol = "R0";
+            }
+
+            if (objects.hasOwnProperty(msgContent.object)) {
+                cout("reality editor subscription for object: " + msgContent.object);
+                cout("the latest socket has the ID: " + socket.id);
+
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                cout(realityEditorSocketArray);
+            }
+
+            var publicData = {};
+            var object = objects[msgContent.object];
+            if (object) {
+                var frame = object.frames[msgContent.frame];
+                if (frame) {
+                    for(key in frame.nodes){
+                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    }
+                }
+            }
+
+            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                object: msgContent.object,
+                frame: msgContent.frame,
+                publicData: publicData
+            }));//       socket.emit('object', msgToSend);
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {

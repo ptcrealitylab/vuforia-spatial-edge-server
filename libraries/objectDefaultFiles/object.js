@@ -89,7 +89,8 @@ var realityObject = {
                 type:null
             }
         ]
-    }
+    },
+    touchDecider: null
 };
 
 // adding css styles nessasary for acurate 3D transformations.
@@ -279,8 +280,10 @@ function RealityInterface() {
      ************************************************************
      */
 
+    var numMatrixCallbacks = 0;
     this.addMatrixListener = function (callback) {
-        realityObject.messageCallBacks.matrixCall = function (msgContent) {
+        numMatrixCallbacks++;
+        realityObject.messageCallBacks['matrixCall'+numMatrixCallbacks] = function (msgContent) {
             if (typeof msgContent.modelViewMatrix !== "undefined") {
                 callback(msgContent.modelViewMatrix, realityObject.projectionMatrix);
             }
@@ -390,7 +393,7 @@ function RealityInterface() {
 
     this.setFullScreenOff = function () {
         realityObject.sendFullScreen = false;
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             realityObject.height = document.body.scrollHeight;
             realityObject.width = document.body.scrollWidth;
@@ -418,7 +421,7 @@ function RealityInterface() {
     this.setStickyFullScreenOn = function () {
         realityObject.sendFullScreen = "sticky";
         realityObject.sendSticky = true;
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
 
             realityObject.height = "100%";
             realityObject.width = "100%";
@@ -446,7 +449,7 @@ function RealityInterface() {
     this.setStickinessOff = function () {
         console.log(realityObject.visibility);
    //if(realityObject.visibility === "hidden"){
-        if (typeof realityObject.node !== "undefined") {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
             parent.postMessage(JSON.stringify(
                 {
                     version: realityObject.version,
@@ -610,6 +613,22 @@ function RealityInterface() {
     this.getUnitValue = function (dataPackage){
             return {value: (dataPackage.value * (dataPackage.unitMax-dataPackage.unitMin))+dataPackage.unitMin,
                 unit: dataPackage.unit};
+    };
+
+    this.registerTouchDecider = function(callback) {
+        realityObject.touchDecider = callback;
+    };
+
+    this.unregisterTouchDecider = function() {
+        realityObject.touchDecider = null;
+    };
+
+    this.addIsMovingListener = function(callback) {
+        realityObject.messageCallBacks.frameIsMovingCall = function (msgContent) {
+            if (typeof msgContent.frameIsMoving !== "undefined") {
+                callback(msgContent.frameIsMoving);
+            }
+        };
     };
 
     if (typeof io !== "undefined") {
@@ -924,151 +943,61 @@ function RealityLogic() {
 var HybridObject = RealityInterface;
 var HybridLogic = RealityLogic;
 
-document.addEventListener('DOMContentLoaded', function() {
-    var touchTimer = null;
-    var sendTouchEvents = false;
-    var startCoords = {
-        x: 0,
-        y: 0
-    };
-    var touchMoveTolerance = 100;
+window.addEventListener('load', function() {
 
-    function getTouchX(event) {
-        return event.changedTouches[0].screenX;
-    }
+    window.addEventListener('message', function (msg) {
 
-    function getTouchY(event) {
-        return event.changedTouches[0].screenY;
-    }
+        var msgContent = JSON.parse(msg.data);
 
-    function getScreenPosition(evt, type) {
-        realityObject.eventObject.version = realityObject.version;
-        realityObject.eventObject.object = realityObject.object;
-        realityObject.eventObject.frame = realityObject.frame;
-        realityObject.eventObject.node = realityObject.node;
+        if (msgContent.event && msgContent.event.pointerId) {
 
-        if (evt.touches.length >= 1) {
-            realityObject.eventObject.x = evt.touches[0].screenX;
-            realityObject.eventObject.y = evt.touches[0].screenY;
-            realityObject.eventObject.type = type;
-            realityObject.eventObject.touches[0].screenX = evt.touches[0].screenX;
-            realityObject.eventObject.touches[0].screenY = evt.touches[0].screenY;
-            realityObject.eventObject.touches[0].type = type;
-        }
-        if (evt.touches.length >= 2) {
-            realityObject.eventObject.touches[1].screenX = evt.touches[1].screenX;
-            realityObject.eventObject.touches[1].screenY = evt.touches[1].screenY;
-            realityObject.eventObject.touches[1].type = type;
-        } else {
-            realityObject.eventObject.touches[1] = null;
-        }
-        return realityObject.eventObject;
-    }
+            var eventData = msgContent.event;
+            var event = new PointerEvent(eventData.type, {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                pointerId: eventData.pointerId,
+                pointerType: eventData.pointerType,
+                x: eventData.x,
+                y: eventData.y,
+                clientX: eventData.x,
+                clientY: eventData.y,
+                pageX: eventData.x,
+                pageY: eventData.y,
+                screenX: eventData.x,
+                screenY: eventData.y
+            });
 
-    function sendEventObject(event, type) {
-        parent.postMessage(JSON.stringify({
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object,
-            eventObject: getScreenPosition(event, type)
-        }), '*');
-    }
+            // send unacceptedTouch message if this interface wants touches to pass through it
+            if (realityObject.touchDecider) {
+                var touchAccepted = realityObject.touchDecider(eventData);
+                if (!touchAccepted) {
+                    // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
+                    if (realityObject.object && realityObject.frame) {
 
-
-    function sendTouchEvent(event) {
-        parent.postMessage(JSON.stringify({
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object,
-            touchEvent: {
-                type: event.type,
-                x: getTouchX(event),
-                y: getTouchY(event)
+                        parent.postMessage(JSON.stringify({
+                            version: realityObject.version,
+                            node: realityObject.node,
+                            frame: realityObject.frame,
+                            object: realityObject.object,
+                            unacceptedTouch : eventData
+                        }), '*');
+                        return;
+                    }
+                }
             }
-        }), '*');
-    }
 
-    document.body.addEventListener('touchstart', function(event) {
-        sendEventObject(event, 'touchstart');
-        if (!realityObject.width) {
-            return;
-        }
+            var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
+            elt.dispatchEvent(event);
 
-        if (touchTimer) {
-            return;
-        }
-
-        startCoords.x = getTouchX(event);
-        startCoords.y = getTouchY(event);
-
-        touchTimer = setTimeout(function() {
+            // otherwise send acceptedTouch message to stop the touch propagation
             parent.postMessage(JSON.stringify({
                 version: realityObject.version,
                 node: realityObject.node,
                 frame: realityObject.frame,
                 object: realityObject.object,
-                beginTouchEditing: true
+                acceptedTouch : eventData
             }), '*');
-            sendTouchEvents = true;
-            touchTimer = null;
-        }, realityObject.moveDelay);
-    });
-
-
-    document.body.addEventListener('touchmove', function(event) {
-        sendEventObject(event, 'touchmove');
-
-        if (sendTouchEvents) {
-            sendTouchEvent(event);
-        } else if (touchTimer) {
-            var dx = getTouchX(event) - startCoords.x;
-            var dy = getTouchY(event) - startCoords.y;
-            if (dx * dx + dy * dy > touchMoveTolerance) {
-                clearTimeout(touchTimer);
-                touchTimer = null;
-            }
         }
     });
-
-    document.body.addEventListener('touchend', function(event) {
-        sendEventObject(event,'touchend');
-        if (sendTouchEvents) {
-            sendTouchEvent(event);
-        }
-        clearTimeout(touchTimer);
-        touchTimer = null;
-    });
-
-    window.addEventListener('message', function (msg) {
-        var msgContent = JSON.parse(msg.data);
-
-        // if (msgContent.stopTouchEditing) {
-        //     sendTouchEvents = false;
-        // }
-
-        if (msgContent.event && msgContent.event.pointerId) {
-            var eventData = msgContent.event;
-            var event = new PointerEvent(eventData.type, {
-                view: window,
-                bubbles: true,
-                cancelable: true
-            });
-            event.pointerId = eventData.pointerId;
-            event.pointerType = eventData.pointerType;
-            event.x = eventData.x;
-            event.y = eventData.y;
-            event.clientX = eventData.x;
-            event.clientY = eventData.y;
-            event.pageX = eventData.x;
-            event.pageY = eventData.y;
-            event.screenX = eventData.x;
-            event.screenY = eventData.y;
-
-            var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
-            elt.dispatchEvent(event);
-        }
-
-    });
-}, false);
+});

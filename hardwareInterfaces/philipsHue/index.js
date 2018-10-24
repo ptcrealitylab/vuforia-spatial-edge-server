@@ -29,6 +29,11 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
 if (exports.enabled) {
@@ -37,7 +42,6 @@ if (exports.enabled) {
     var fs = require('fs');
     var http = require('http');
     var _ = require('lodash');
-    var server = require('../../libraries/hardwareInterfaces');
     server.enableDeveloperUI(true);
 
 

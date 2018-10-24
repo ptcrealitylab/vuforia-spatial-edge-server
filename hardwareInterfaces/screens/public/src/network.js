@@ -105,6 +105,10 @@ realityEditor.network.setupSocketListeners = function() {
         // TODO: set screen position based on AR position??
     });
 
+    socket.on('reloadScreen', function(msg) {
+        window.location.reload();
+    });
+
 };
 
 /**

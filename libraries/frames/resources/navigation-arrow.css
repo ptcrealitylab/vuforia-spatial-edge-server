@@ -1,0 +1,28 @@
+#navigationArrow {
+    /*border-bottom-style: solid;*/
+    /*border-bottom-width: 0;*/
+    /*border-left-style: solid;*/
+    /*border-left-width: 0;*/
+    border-right-style: solid;
+    border-right-width: 4px;
+    border-top-style: solid;
+    border-top-width: 4px;
+    box-sizing: border-box;
+    /*color: rgb(170, 170, 170);*/
+    color: cyan;
+    display: inline-block;
+    font-family: sans-serif;
+    font-style: italic;
+    height: 20px;
+    line-height: 18px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+    /*position: relative;*/
+    text-align: center;
+    transform: matrix(0.7071067811865476, -0.7071067811865475, 0.7071067811865475, 0.7071067811865476, 0, 0);
+    vertical-align: middle;
+    width: 20px;
+    position: absolute;
+}

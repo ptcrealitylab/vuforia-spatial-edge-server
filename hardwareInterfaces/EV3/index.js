@@ -47,13 +47,17 @@
 /**
  * Set to true to enable the hardware interface
  **/
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var path = require('path');
+var thisHardwareInterface = __dirname.split(path.sep).pop();
+var settings = server.loadHardwareInterface(thisHardwareInterface);
+
 exports.enabled = false;
 
 if (exports.enabled) {
 
 
     var speed =0; // global variable for the speed of the robot.
-    var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     server.enableDeveloperUI(true);
     var stop_command_tilt = false;
     var stop_command_grip=false;
