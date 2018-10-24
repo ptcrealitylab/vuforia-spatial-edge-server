@@ -720,9 +720,9 @@ exports.shutdown = function (){
         callBacks.shutdownCallBacks[i]();
     }
 };
-
+var path = require('path');
 exports.loadHardwareInterface = function (hardwareInterfaceName){
-  return utilities.loadHardwareInterface(hardwareInterfaceName);
+    return utilities.loadHardwareInterface(hardwareInterfaceName.split(path.sep).pop());
 };
 
 
