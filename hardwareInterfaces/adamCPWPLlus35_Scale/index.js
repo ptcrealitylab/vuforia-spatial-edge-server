@@ -56,7 +56,6 @@ if (exports.enabled) {
 
     SerialPort.list().then(function(ports) {
         for(var i = 0; i < ports.length; i++){
-console.log(ports[i]);
             if(ports[i].manufacturer){
 
                  if(ports[i].manufacturer.includes(settings("serialID"))) {
