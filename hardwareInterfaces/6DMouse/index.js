@@ -56,49 +56,9 @@ if (exports.enabled) {
     sm = require("./3DConnexion.js");
 
     sm.spaceMice.onData = mouse => {
+        // translation
         console.log("translate",JSON.stringify(mouse.mice[0]["translate"]));
+        // rotation
         console.log("rotate",JSON.stringify(mouse.mice[0]["rotate"]));
     };
-
-
-
-
-    /*
-    var HID = require('node-hid');
-    var devices = HID.devices();
-    // get the 6D Device
-    var device = new HID.HID(1133,50726);
-
-
-    device.on("data", function(data) {
-       // console.log(data);
-        if(data[0]===1) {
-            console.log(data[0], data[1], data[2], data[3], data[4], data[5], data[6],data[7]);
-        }
-    });
-    */
-/*
-var gamepad = require("gamepad");
-
-// Initialize the library
-gamepad.init();
-
-// List the state of all currently attached devices
-for (var i = 0, l = gamepad.numDevices(); i < l; i++) {
-    console.log(i, gamepad.deviceAtIndex());
-}
-
-// Create a game loop and poll for events
-setInterval(gamepad.processEvents, 16);
-
-// Listen for move events on all gamepads
-gamepad.on("move", function (id, axis, value) {
-    console.log("move", {
-        id: id,
-        axis: axis,
-        value: value,
-    });
-
-});
-*/
 }
