@@ -35,7 +35,8 @@
             x: 0,
             y: 0,
             type: null},
-        touchDecider: null
+        touchDecider: null,
+        onload: null
     };
 
     // adding css styles nessasary for acurate 3D transformations.
@@ -128,6 +129,10 @@
             if (!alreadyLoaded) {
                 for (var i = 0; i < realityInterfaces.length; i++) {
                     realityInterfaces[i].injectPostMessage();
+                }
+
+                if (realityObject.onload) {
+                    realityObject.onload();
                 }
             }
         } else if (typeof msgContent.logic !== "undefined") {
@@ -374,6 +379,35 @@
                     object: realityObject.object,
                     moveDelay : delayInMilliseconds
                 }), '*');
+            }
+        };
+
+        /**
+         * Hides the frame itself and instead populates a background context within the editor with this frame's contents
+         */
+        this.sendToBackground = function() {
+            if (realityObject.sendFullScreen) {
+                if (realityObject.object && realityObject.frame) {
+                    parent.postMessage(JSON.stringify({
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        sendToBackground : true
+                    }), '*');
+                }
+            }
+        };
+
+        /**
+         * Adds an onload callback that will wait until this RealityInterfaces receives its object/frame data
+         * @param {function} callback
+         */
+        this.onRealityInterfaceLoaded = function(callback) {
+            if (realityObject.object && realityObject.frame) {
+                callback();
+            } else {
+                realityObject.onload = callback;
             }
         };
 
