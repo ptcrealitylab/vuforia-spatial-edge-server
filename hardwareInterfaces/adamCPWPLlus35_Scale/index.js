@@ -86,11 +86,11 @@ if (exports.enabled) {
             var max = settings("max");
             var min = 0;
 
-            if(values[1]>=settings("max")) {
-                values[1] = settings("max");
+            if(values[1]>=max) {
+                values[1] = max;
             }
             values[1] = values[1]/max;
-            server.write(settings("object"), settings("frame"), settings("node"), values[1], 'f', values[2], min, settings("max"));
+            server.write(settings("object"), settings("frame"), settings("node"), values[1], 'f', values[2], min, max);
         });
     }
 }
