@@ -90,7 +90,7 @@ if (exports.enabled) {
                 values[1] = settings("max");
             }
             values[1] = values[1]/max;
-            server.write(settings("object"), settings("frame"), settings("node"), values[1], 'f', values[2], min, max);
+            server.write(settings("object"), settings("frame"), settings("node"), values[1], 'f', values[2], min, settings("max"));
         });
     }
 }
