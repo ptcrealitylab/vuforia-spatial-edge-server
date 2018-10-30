@@ -575,7 +575,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
 
     try {
         var fileContents = fs.readFileSync(hardwareFolder + "settings.json", "utf8");
-        var fileContentsJson = JSON.parse(fileContents);
+        var fileContentsJson = fileContents;
         hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
 
     } catch (e) {
