@@ -683,6 +683,7 @@ var socketArray = {};     // all socket connections that are kept alive
 
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
+var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -1144,6 +1145,16 @@ function objectBeatServer() {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
+
+        if (typeof msgContent.matrixBroadcast !== "undefined") {
+            // if (Object.keys(msgContent.matrixBroadcast).length > 0) {
+                // console.log(msgContent.matrixBroadcast);
+                hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
+            // }
+        } else {
+            hardwareAPI.triggerUDPCallbacks(msgContent);
+        }
+
     });
 
     udpServer.on("listening", function () {
@@ -1198,7 +1209,6 @@ var parseIpSpace = function (ip_string) {
 function objectWebServer() {
     thisIP = ip.address();
     // security implemented
-//console.log(objects);
 
     // check all sever requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
@@ -4138,6 +4148,31 @@ function socketServer() {
 
         socket.on('/object/screenObject', function (msg) {
             hardwareAPI.screenObjectCall(JSON.parse(msg));
+        });
+
+        socket.on('/subscribe/realityEditorUpdates', function (msg) {
+            var msgContent = JSON.parse(msg);
+            realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
+            console.log('editor ' + msgContent.editorId + ' subscribed to updates');
+            console.log(realityEditorUpdateSocketArray);
+        });
+
+        socket.on('/update', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            for (var socketId in realityEditorUpdateSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    console.log('dont send updates to the editor that triggered it');
+                    continue;
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    thisSocket.emit('/update', JSON.stringify(msgContent));
+                }
+            }
+
         });
 
         socket.on('disconnect', function () {
