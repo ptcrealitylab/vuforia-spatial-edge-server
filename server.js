@@ -695,6 +695,9 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
+var worldObjectName = '_WORLD_OBJECT_';
+var worldObject;
+
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
@@ -763,7 +766,10 @@ cout("Done");
 cout("Loading Objects");
 // This function will load all the Objects
 loadObjects();
-cout("Done");
+cout("Done loading objects");
+
+loadWorldObject();
+cout("Done loading world object");
 
 startSystem();
 cout("started");
@@ -893,6 +899,78 @@ function loadObjects() {
     }
 
     hardwareAPI.reset();
+}
+
+/**
+ * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
+ * Create the json file if doesn't already exist
+ */
+function loadWorldObject() {
+
+    // create the file for it if necessary
+    var folder = objectsPath + '/.identity/' + worldObjectName + '/';
+    var identityPath = folder + identityFolderName + '/';
+    var jsonFilePath = identityPath + 'object.json';
+
+    // create objects folder at objectsPath if necessary
+    if(!fs.existsSync(folder)) {
+        console.log('created worldObject directory at ' + folder);
+        fs.mkdirSync(folder);
+    }
+
+    // create a /identity folder within it to hold the object.json data
+    if(!fs.existsSync(identityPath)) {
+        console.log('created worldObject identity at ' + identityPath);
+        fs.mkdirSync(identityPath);
+    }
+
+    // create a new world object
+    worldObject = new Objects();
+    worldObject.name = worldObjectName;
+    worldObject.objectId = worldObjectName +  utilities.uuidTime(); // create a new random id
+    worldObject.isWorldObject = true;
+
+    // try to read previously saved data to overwrite the default world object
+    try {
+        worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+        console.log('loaded world object for server: ' + ip.address());
+    } catch (e) {
+        console.log('No saved data for world object on server: ' + ip.address());
+    }
+
+    worldObject.ip = ip.address();
+
+    utilities.setWorldObject(worldObjectName, worldObject);
+
+    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+    //     delete objects[utilities.readObject(objectLookup, folderVar)];
+    // }
+    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
+    // objectLookup[folder] = {id: id};
+    // entering the obejct in to the lookup table
+    // ask the object to reinitialize
+    //serialPort.write("ok\n");
+    // todo send init to internal
+
+    hardwareAPI.reset();
+
+    // utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+    // write world object to file
+    // var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
+
+    if (globalVariables.saveToDisk) {
+
+        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('JSON saved to ' + jsonFilePath);
+            }
+        });
+    } else {
+        console.log('I am not allowed to save');
+    }
 }
 
 /**********************************************************************************************************************
@@ -1377,6 +1455,12 @@ function objectWebServer() {
     function getObject(objectKey, callback) {
 
         if (!objects.hasOwnProperty(objectKey)) {
+
+            if (objectKey.indexOf(worldObjectName) > -1) {
+                callback(null, worldObject);
+                return;
+            }
+
             callback({failure: true, error: 'Object ' + objectKey + ' not found'});
             return;
         }
@@ -2618,61 +2702,63 @@ function objectWebServer() {
 
         console.log('added new frame: ' + frameKey);
 
-        if (!objects.hasOwnProperty(objectKey)) {
-            res.status(404).json({ failure: true, error: 'Object ' + objectKey + ' not found' }).end();
-            return;
-        }
+        getObject(objectKey, function(error, object) {
 
-        var object = objects[objectKey];
-
-        if (!frame.src) {
-            res.status(500).json({ failure: true, error: 'frame must have src' }).end();
-            return;
-        }
-
-        if (!object.frames) {
-            object.frames = {};
-        }
-
-        utilities.createFrameFolder(object.name, frame.name, __dirname, objectsPath, globalVariables.debug, frame.location);
-
-        var newFrame = new Frame();
-        newFrame.objectId = frame.objectId;
-        newFrame.uuid = frameKey;
-        newFrame.name = frame.name;
-        newFrame.visualization = frame.visualization;
-        newFrame.ar = frame.ar;
-        newFrame.screen = frame.screen;
-        newFrame.visible = frame.visible;
-        newFrame.visibleText = frame.visibleText;
-        newFrame.visibleEditing = frame.visibleEditing;
-        newFrame.developer = frame.developer;
-        newFrame.links = frame.links;
-        newFrame.nodes = frame.nodes;
-        newFrame.location = frame.location;
-        newFrame.src = frame.src;
-        newFrame.width = frame.width;
-        newFrame.height = frame.height;
-
-        for(key in newFrame.nodes){
-            if(!frame.publicData) {
-                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-            } else if(Object.keys(frame.publicData).length <= 0) {
-                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            if (error) {
+                res.status(404).json(error).end();
+                return;
             }
 
-        }
+            if (!frame.src) {
+                res.status(500).json({ failure: true, error: 'frame must have src' }).end();
+                return;
+            }
 
-        console.log(JSON.stringify(newFrame));
+            if (!object.frames) {
+                object.frames = {};
+            }
 
-        object.frames[frameKey] = newFrame;
+            utilities.createFrameFolder(object.name, frame.name, __dirname, objectsPath, globalVariables.debug, frame.location);
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            var newFrame = new Frame();
+            newFrame.objectId = frame.objectId;
+            newFrame.uuid = frameKey;
+            newFrame.name = frame.name;
+            newFrame.visualization = frame.visualization;
+            newFrame.ar = frame.ar;
+            newFrame.screen = frame.screen;
+            newFrame.visible = frame.visible;
+            newFrame.visibleText = frame.visibleText;
+            newFrame.visibleEditing = frame.visibleEditing;
+            newFrame.developer = frame.developer;
+            newFrame.links = frame.links;
+            newFrame.nodes = frame.nodes;
+            newFrame.location = frame.location;
+            newFrame.src = frame.src;
+            newFrame.width = frame.width;
+            newFrame.height = frame.height;
 
-        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-        hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+            for(key in newFrame.nodes){
+                if(!frame.publicData) {
+                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                } else if(Object.keys(frame.publicData).length <= 0) {
+                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                }
 
-        res.json({success: true, frameId: frameKey}).end();
+            }
+
+            console.log(JSON.stringify(newFrame));
+
+            object.frames[frameKey] = newFrame;
+
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+
+            utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+            hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+
+            res.json({success: true, frameId: frameKey}).end();
+
+        });
     }
 
     webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
@@ -3291,6 +3377,19 @@ function objectWebServer() {
             console.log("----x---xx----xx--x-----");
             // console.log(objects[req.params[0]]);
             res.json(objects[req.params[0]]);
+        });
+
+        /**
+         * Gets the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         */
+        webServer.get('/worldObject/', function(req, res) {
+
+            if (typeof worldObject === 'undefined') {
+                worldObject = {};
+            }
+
+            res.json(worldObject);
+
         });
 
 
