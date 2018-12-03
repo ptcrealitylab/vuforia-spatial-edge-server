@@ -323,7 +323,7 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
 
 /**
  * Saves the RealityObject as "object.json"
- *
+ * (Writes the object state to permanent storage)
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
  * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
@@ -614,7 +614,13 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     return this.read;
 };
 
-exports.actionSender = function(action,timeToLive, beatport) {
+/**
+ * Broadcasts a JSON message over UDP
+ * @param {*} action - JSON object with no specified structure, contains the message to broadcast
+ * @param {number|undefined} timeToLive
+ * @param {number|undefined} beatport
+ */
+exports.actionSender = function(action, timeToLive, beatport) {
     if(!timeToLive) timeToLive = 2;
     if(!beatport) beatport = 52316;
     console.log(action);
@@ -641,7 +647,10 @@ exports.actionSender = function(action,timeToLive, beatport) {
 
 };
 
-
+/**
+ * Prints to the console, only if in debug mode
+ * @param {string} msg
+ */
 function cout(msg) {
     if (debug) console.log(msg);
 }
