@@ -2154,6 +2154,12 @@ function objectWebServer() {
         res.send(deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
+    /**
+     * Extracts a nicely structured set of data about the link
+     * @param {Link} fullEntry
+     * @param wasAdded
+     * @return {*}
+     */
     function getLinkData(fullEntry, wasAdded) {
         var linkAddedData = null;
 
@@ -2166,6 +2172,7 @@ function objectWebServer() {
             var linkFrameB = fullEntry["frameB"];
             var linkNodeA = fullEntry["nodeA"];
             var linkNodeB = fullEntry["nodeB"];
+
             var objectAName = fullEntry["namesA"][0];
             var objectBName = fullEntry["namesB"][0];
             var frameAName = fullEntry["namesA"][1];
@@ -2195,43 +2202,85 @@ function objectWebServer() {
         return linkAddedData;
     }
 
+    function forEachObject(callback) {
+        for (var objectKey in objects) {
+            if (!objects.hasOwnProperty(objectKey)) continue;
+            callback(objects[objectKey], objectKey);
+        }
+
+        if (worldObject) {
+            callback(worldObject);
+        }
+    }
+
+    function forEachFrameInObject(object, callback) {
+        for (var frameKey in object.frames) {
+            if (!object.frames.hasOwnProperty(frameKey)) continue;
+            callback(object.frames[frameKey], frameKey);
+        }
+    }
+
+    function forEachNodeInFrame(frame, callback) {
+        for (var nodeKey in frame.nodes) {
+            if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+            callback(frame.nodes[nodeKey], nodeKey);
+        }
+    }
+
+    /**
+     * Deletes a regular link from the frame it begins from.
+     * Also delete the websocket to this link's destination server IP if it was the last link from this server to that one.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {string} editorID
+     */
     function deleteLink(objectKey, frameKey, linkKey, editorID){
 
-        var fullEntry = objects[objectKey].frames[frameKey].links[linkKey]; // TODO: retrieve this in a safe way (everywhere)
-        var destinationIp = knownObjects[fullEntry.objectB];
+        var updateStatus = "nothing happened";
 
-        /////
-        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-        var linkAddedData = getLinkData(fullEntry, false);
-        if (linkAddedData) {
-            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-        }
-        /////
+        var foundFrame = getFrameFromKey(objectKey, frameKey);
 
-        delete objects[objectKey].frames[frameKey].links[linkKey];
+        if (foundFrame) {
 
-        cout("deleted link: " + linkKey);
-        // cout(objects[req.params[0]].links);
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+            var foundLink = foundFrame.links[linkKey];
+            var destinationIp = knownObjects[foundLink.objectB];
 
-        var checkIfIpIsUsed = false;
-        for (var objectCheckerKey in objects) {
-            for (var frameCheckerKey in objects[objectCheckerKey].frames) {
-                for (var linkCheckerKey in objects[objectCheckerKey].frames[frameCheckerKey].links) {
-                    if (objects[objectCheckerKey].frames[frameCheckerKey].links[linkCheckerKey].objectB === fullEntry.objectB) {
-                        checkIfIpIsUsed = true;
-                    }
-                }
+            // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+            var linkAddedData = getLinkData(fullEntry, false);
+            if (linkAddedData) {
+                hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+                hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
             }
+
+            delete foundFrame.links[linkKey];
+
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+
+            // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+            var checkIfIpIsUsed = false;
+            forEachObject(function(thisObject) {
+                forEachFrameInObject(thisObject, function(thisFrame) {
+                    for (var linkCheckerKey in thisFrame.links) {
+                        if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
+                            checkIfIpIsUsed = true;
+                        }
+                    }
+                });
+            });
+
+            // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+            if (foundLink.objectB !== foundLink.objectA && !checkIfIpIsUsed) {
+                delete socketArray[destinationIp];
+            }
+
+            cout("deleted link: " + linkKey);
+            updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
         }
 
-        if (fullEntry.objectB !== fullEntry.objectA && !checkIfIpIsUsed) {
-            // socketArray.splice(destinationIp, 1);
-            delete socketArray[destinationIp];
-        }
-        return "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
+        return updateStatus;
+
     }
 
     // todo links for programms as well
@@ -2248,67 +2297,59 @@ function objectWebServer() {
         res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
     });
 
+    /**
+     * Creates a link on the frame containing the node that the link starts from.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} linkID
+     * @param {Link} body
+     */
     function newLink(objectID, frameID, linkID, body) {
-        console.log("new link");
-        console.log("object: " + objectID);
-        console.log("frame: " + frameID);
-        console.log("link: " + linkID);
 
         var updateStatus = "nothing happened";
 
-        for (var objectKey in objects) {
-            console.log(objectKey);
-        }
+        var foundFrame = getFrameFromKey(objectID, frameID);
+        if (foundFrame) {
 
-        if (objects.hasOwnProperty(objectID)) {
+            console.log("found frame to add link to");
 
-            var thisObject = objects[objectID];
-            if (thisObject && thisObject.frames.hasOwnProperty(frameID)) {
-                var thisFrame = thisObject.frames[frameID];
-                if (thisFrame) {
+            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
+            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
+            body.loop = (body.objectA === body.objectB &&
+                body.frameA === body.frameB &&
+                body.nodeA === body.nodeB);
 
-                    console.log("found frame to add link to");
+            foundFrame.links[linkID] = body;
 
-                    // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
-                    // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-                    body.loop = (body.objectA === body.objectB &&
-                                 body.frameA === body.frameB &&
-                                 body.nodeA === body.nodeB);
+            if (!body.loop) {
+                cout("added link: " + linkID);
+                // write the object state to the permanent storage.
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-                    thisFrame.links[linkID] = body;
+                // check if there are new connections associated with the new link.
+                socketUpdater();
 
-                    if (!body.loop) {
-                        updateStatus = "added";
-                        cout("added link: " + linkID);
-                        // check if there are new connections associated with the new link.
-                        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                        // write the object state to the permanent storage.
-                        socketUpdater();
-
-                        /////
-                        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-                        var fullEntry = objects[objectID].frames[frameID].links[linkID]; // TODO: retrieve this in a safe way (everywhere)
-                        var linkAddedData = getLinkData(fullEntry, true);
-                        if (linkAddedData) {
-                            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-                            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-                        }
-                        /////
-
-                        // call an action that asks all devices to reload their links, once the links are changed.
-                        utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
-
-                    } else {
-                        updateStatus = "found endless Loop";
-                    }
-
+                // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+                var newLink = foundFrame.links[linkID];
+                var linkAddedData = getLinkData(newLink, true);
+                if (linkAddedData) {
+                    hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+                    hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
                 }
+
+                // call an action that asks all devices to reload their links, once the links are changed.
+                utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
+
+                updateStatus = "added";
+            } else {
+                updateStatus = "found endless Loop";
             }
+
         }
+
         return updateStatus;
     }
 
-    // todo change the rest of the code following this methods
     // Add a new node to an object linked to a frame
     webServer.post('/object/:objectKey/frame/:frameKey/node/:nodeKey/addNode', function (req, res) {
         addNodeToFrame(req.params.objectKey, req.params.frameKey, req.params.nodeKey, req, res);
@@ -2318,29 +2359,39 @@ function objectWebServer() {
         addNodeToFrame(req.params.objectKey, req.params.objectKey, req.params.nodeKey, req, res);
     });
 
+    /**
+     * Creates a node on the frame specified frame.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {*} req
+     * @param {*} res
+     * @todo don't pass in req and res, instead callback that triggers status code / err / res
+     */
     function addNodeToFrame(objectKey, frameKey, nodeKey, req, res){
 
-        var node = req.body;
+        var errorMessage = null;
 
-        if (!objects.hasOwnProperty(objectKey)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectKey + ' not found'}).end();
-            return;
+        var foundObject = getObjectFromKey(objectKey);
+        if (foundObject) {
+            var foundFrame = getFrameFromKey(objectKey, frameKey);
+            if (foundFrame) {
+                foundFrame.nodes[nodeKey] = req.body;
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
+            } else {
+                errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
+            }
+        } else {
+            errorMessage = 'Object ' + objectKey + ' not found';
         }
 
-        if (!objects[objectKey].frames.hasOwnProperty(frameKey)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectKey + ' frame '+frameKey+' not found'}).end();
-            return;
+        if (errorMessage) {
+            res.status(404).json({failure: true, error: errorMessage}).end();
+        } else {
+            res.status(200).json({success: 'true'}).end();
         }
-
-        var obj = objects[objectKey].frames[frameKey];
-        obj.nodes[nodeKey] = node;
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
-
-        res.json({success: 'true'}).end();
-    };
+    }
 
     // adding a new lock to an object. *1 is the object *2 is the datapoint id
     // ****************************************************************************************************************
@@ -2353,27 +2404,33 @@ function objectWebServer() {
         res.send(addNodeLock(req.params[0],  req.params[1],  req.params[2],  req.body));
     });
 
-    function addNodeLock (object, frame, node, body) {
+    /**
+     * Sets a lock password on the specified node.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {{lockPassword: string, lockType: string}} body
+     */
+    function addNodeLock (objectKey, frameKey, nodeKey, body) {
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
-
-            var previousLockPassword = objects[object].frames[frame].nodes[node].lockPassword;
-            var newLockPassword = body['lockPassword'];
-            var previousLockType = objects[object].frames[frame].nodes[node].lockType;
-            var newLockType = body['lockType'];
+        var foundNode = getNodeFromKey(objectKey, frameKey, nodeKey);
+        if (foundNode) {
+            var previousLockPassword = foundNode.lockPassword;
+            var newLockPassword = body.lockPassword;
+            var previousLockType = foundNode.lockType;
+            var newLockType = body.lockType;
 
             var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
                 (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
 
             if (isLockActionAllowed) {
-                objects[object].frames[frame].nodes[node].lockPassword = newLockPassword;
-                objects[object].frames[frame].nodes[node].lockType = newLockType;
+                foundNode.lockPassword = newLockPassword;
+                foundNode.lockType = newLockType;
 
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
-                utilities.actionSender({reloadNode: {object: object, frame: frame, node: node}});
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
                 updateStatus = "added";
 
@@ -2384,12 +2441,14 @@ function objectWebServer() {
                     updateStatus = "not authorized to add";
                 }
             }
+
         }
 
         return updateStatus;
-    };
+    }
 
     // delete a lock. *1 is the object *2 is the datapoint id *3 is the encrypted user id
+    // TODO: add robust security to the "password" field
     // ****************************************************************************************************************
     webServer.delete('/object/*/frame/*/node/*/password/*/deleteLock', function (req, res) {
         res.send(deleteNodeLock(req.params[0],  req.params[1],  req.params[2],  req.params[3]));
@@ -2399,29 +2458,34 @@ function objectWebServer() {
         res.send(deleteNodeLock(req.params[0],  req.params[0],  req.params[1],  req.params[2]));
     });
 
-    function deleteNodeLock(object, frame, node, password){
+    /**
+     * Removes the lock on the specified node if using the correct password.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {string} password
+     */
+    function deleteNodeLock(objectKey, frameKey, nodeKey, password) {
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
+        var foundNode = getNodeFromKey(objectKey, frameKey, nodeKey);
+        if (foundNode) {
+            if (password === foundNode.lockPassword || (globalVariables.debug && password === "DEBUG")) { // TODO: remove DEBUG mode
+                foundNode.lockPassword = null;
+                foundNode.lockType = null;
 
-            var previousLockPassword = objects[object].frames[frame].nodes[node].lockPassword;
-            var newLockPassword = password;
-
-            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
-                objects[object].frames[frame].nodes[node].lockPassword = null;
-                objects[object].frames[frame].nodes[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
-                utilities.actionSender({reloadNode: {object: object, frame:frame, node: node}});
+                utilities.actionSender({reloadNode: {object: objectKey, frame:frameKey, node: nodeKey}});
 
                 updateStatus = "deleted";
             } else {
                 updateStatus = "not authorized to delete"
             }
         }
+
         return updateStatus;
-    };
+    }
 
     // adding a new lock to an object link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
@@ -2433,28 +2497,33 @@ function objectWebServer() {
         res.send(addLinkLock(req.params[0],  req.params[1],  req.params[2], req.body));
     });
 
-    function addLinkLock(object, frame, link, body){
+    /**
+     * Sets a lock password on the specified link.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {{lockPassword: string, lockType: string}} body
+     */
+    function addLinkLock(objectKey, frameKey, linkKey, body){
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
+        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        if (foundFrame) {
+            var foundLink = foundFrame.links[linkKey];
 
-            if (!objects[object].frames.hasOwnProperty(frames)){
-                return "frame not found"
-            }
-
-            var previousLockPassword = objects[object].frames[frame].links[link].lockPassword;
-            var newLockPassword = body['lockPassword'];
-            var previousLockType = objects[object].frames[frame].links[link].lockType;
-            var newLockType = body['lockType'];
+            var previousLockPassword = foundLink.lockPassword;
+            var newLockPassword = body.lockPassword;
+            var previousLockType = foundLink.lockType;
+            var newLockType = body.lockType;
 
             var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
                 (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
 
             if (isLockActionAllowed) {
-                objects[object].frames[frame].links[link].lockPassword = newLockPassword;
-                objects[object].frames[frame].links[link].lockType = newLockType;
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+                foundLink.lockPassword = newLockPassword;
+                foundLink.lockType = newLockType;
 
+                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "added";
@@ -2467,8 +2536,9 @@ function objectWebServer() {
                 }
             }
         }
+
         return updateStatus;
-    };
+    }
 
     // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
     // ****************************************************************************************************************
@@ -2480,19 +2550,25 @@ function objectWebServer() {
         res.send(deleteLinkLock(req.params[0],req.params[1],req.params[2],req.params[3]));
     });
 
-    function deleteLinkLock(object, frame, node, password){
+    /**
+     * Removes the lock on the specified link if using the correct password.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {string} password
+     */
+    function deleteLinkLock(objectKey, frameKey, linkKey, password){
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
-            var previousLockPassword = objects[object].frames[frame].links[node].lockPassword;
-            var newLockPassword = password;
+        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        if (foundFrame) {
+            var foundLink = foundFrame.links[linkKey];
+            if (password === foundLink.lockPassword || password === "DEBUG") { // TODO: remove DEBUG mode
+                foundLink.lockPassword = null;
+                foundLink.lockType = null;
 
-            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
-                objects[object].frames[frame].links[node].lockPassword = null;
-                objects[object].frames[frame].links[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
                 utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "deleted";
@@ -2501,9 +2577,8 @@ function objectWebServer() {
             }
         }
 
-      return updateStatus;
-    };
-
+        return updateStatus;
+    }
 
     // Update the publicData of a frame when it gets moved from one object to another
     // ****************************************************************************************************************
@@ -2521,20 +2596,15 @@ function objectWebServer() {
             }
 
             // reset the publicData of each node
-            for (var nodeKey in frame.nodes) {
-                if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
-                var node = frame.nodes[nodeKey];
-                if (node) {
-                    node.publicData = {};
-                }
-            }
+            forEachNodeInFrame(frame, function(node) {
+                node.publicData = {};
+            });
 
             // save state to object.json
             utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
 
             res.status(200);
             res.json({success: true}).end();
-
         });
     });
 
@@ -2574,6 +2644,11 @@ function objectWebServer() {
         });
     });
 
+    /**
+     * Upload a video file to the object's metadata folder.
+     * The video is stored in a form, which can be parsed and written to the filesystem.
+     * @todo compress video
+     */
     webServer.post('/object/:id/video/:videoId', function (req, res) {
         var objectKey = req.params.id;
         var videoId = req.params.videoId;
@@ -2632,7 +2707,7 @@ function objectWebServer() {
                             return;
                         }
 
-                        var ipAddress = objects[objectKey].ip;
+                        var ipAddress = getObjectFromKey(objectKey).ip;
 
                         // converts filepath from local storage system to public server url
                         // Mac / Unix / Windows compatible now
@@ -2703,7 +2778,14 @@ function objectWebServer() {
     //     memoryUpload(req.params.id, req.params.frame, req, res);
     // });
 
-    function memoryUpload(objectID, /*frame,*/ req, res){
+    /**
+     * Upload an image file to the object's metadata folder.
+     * The image is stored in a form, which can be parsed and written to the filesystem.
+     * @param {string} objectID
+     * @param {*} req
+     * @param {*} res
+     */
+    function memoryUpload(objectID, req, res){
 
         if (!objects.hasOwnProperty(objectID)) {
             res.status(404);
@@ -2711,13 +2793,7 @@ function objectWebServer() {
             return;
         }
 
-        // if (!objects[objectID].frames.hasOwnProperty(frame)) {
-        //     res.status(404);
-        //     res.json({failure: true, error: 'Object ' + objId + ' frame '+frame+' not found'}).end();
-        //     return;
-        // }
-
-        var obj = objects[objectID];//.frames[frame];
+        var obj = getObjectFromKey(objectID);
 
         var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -2758,21 +2834,26 @@ function objectWebServer() {
         });
     }
 
-    // Create a frame for an object
+    // Create a frame for an object. Assigns it a new UUID.
     webServer.post('/object/*/frames/', function (req, res) {
         var frameId = 'frame' + utilities.uuidTime();
         addFrameToObject(req.params[0], frameId, req.body, res);
-
     });
 
+    // Create a frame for an object. Uses its existing UUID
     webServer.post('/object/*/addFrame/', function(req, res) {
         var frame = req.body;
         addFrameToObject(req.params[0], frame.uuid, frame, res);
     });
 
+    /**
+     * Adds a provided frame to the specified object
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {Frame} frame
+     * @param {*} res
+     */
     function addFrameToObject(objectKey, frameKey, frame, res) {
-
-        console.log('added new frame: ' + frameKey);
 
         getObject(objectKey, function(error, object) {
 
@@ -2816,16 +2897,14 @@ function objectWebServer() {
                 } else if(Object.keys(frame.publicData).length <= 0) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
-
             }
-
-            console.log(JSON.stringify(newFrame));
 
             object.frames[frameKey] = newFrame;
 
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+
+            // notifies any open screens that a new frame was added
             hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
 
             res.json({success: true, frameId: frameKey}).end();
@@ -2833,6 +2912,9 @@ function objectWebServer() {
         });
     }
 
+    /**
+     * Creates a copy of the frame (happens when you pull an instance from a staticCopy frame)
+     */
     webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
@@ -2912,125 +2994,52 @@ function objectWebServer() {
 
     });
 
-    // Update an object's frame
+    /**
+     * Update an object's frame
+     */
     webServer.post('/object/*/frames/*/', function (req, res) {
         var objectId = req.params[0];
         var frameId = req.params[1];
 
-        if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
-            return;
-        }
+        getObject(objectId, function(error, object) {
 
-        var object = objects[objectId];
-        var frame = req.body;
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
 
-        if (!frame.src) {
-            res.status(500).json({failure: true, error: 'frame must have src'}).end();
-            return;
-        }
+            var frame = req.body;
 
-        if (!object.frames) {
-            object.frames = {};
-        }
+            if (!frame.src) {
+                res.status(500).json({failure: true, error: 'frame must have src'}).end();
+                return;
+            }
 
-        if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(frame.src);
-        }
+            if (!object.frames) {
+                object.frames = {};
+            }
 
-        frame.loaded = false;
-        // Copy over all properties of frame
-        Object.assign(object.frames[frameId], frame);
+            if (!object.frames[frameId]) {
+                object.frames[frameId] = new Frame();
+            }
 
-        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+            frame.loaded = false;
+            // Copy over all properties of frame
+            Object.assign(object.frames[frameId], frame);
 
-        utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+            utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
-        res.json({success: true}).end();
-    });
+            utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
-    ///object/:objectId/frames/:frameId/sendToScreen
-    // webServer.post('/object/:objectId/frames/:frameId/sendToScreen', function (req, res) {
-    webServer.post('/screen/:objectId/frames/:frameId', function (req, res) {
+            res.json({success: true}).end();
 
-        var objectId = req.params.objectId;
-        var frameId = req.params.frameId;
-
-        console.log('send frame to screen: ' + objectId + ' :: ' + frameId);
-        console.log(req.body.x, req.body.y);
-
-        var object = objects[objectId];
-        var frame = object.frames[frameId];
-
-        frame.screen.x = req.body.x;
-        frame.screen.y = req.body.y;
-
-        console.log(object);
-
-        ////////////////////
-        // make a POST request to the framePalette hardwareInterface, which will create the frame on the screen
-
-        var SCREEN_PORT_MAP = {
-            'framePalette': 3032,
-            'framePalette2': 3033
-        };
-
-        var screenPort = SCREEN_PORT_MAP[object.name];
-
-        console.log('got object port: ', object.name, screenPort);
-
-        if (!screenPort) {
-            res.json({success: false}).end();
-            return;
-        }
-
-        // TODO: get 3032 port from req - needs to be stored in object or frame somewhere
-        var options = { method: 'POST',
-            url: 'http://' + object.ip + ':' + screenPort + '/frame',
-            headers:
-                {   'cache-control': 'no-cache',
-                    'content-type': 'application/json' },
-            body: frame,
-            json: true };
-
-        request(options, function (error, response, body) {
-            if (error) throw new Error(error);
-
-            console.log(body);
         });
 
-        // var options = {
-        //     "method": "POST",
-        //     "hostname": object.ip,
-        //     "port": "3032",
-        //     "path": "/frame",
-        //     "headers": {
-        //         "cache-control": "no-cache"
-        //     }
-        // };
-        //
-        // var request = http.request(options, function (response) {
-        //     var chunks = [];
-        //
-        //     response.on("data", function (chunk) {
-        //         chunks.push(chunk);
-        //     });
-        //
-        //     response.on("end", function () {
-        //         var body = Buffer.concat(chunks);
-        //         console.log(body.toString());
-        //     });
-        // });
-
-        // var body = JSON.stringify(frame);
-        // request.write(body); // JSON.stringify({ type: 'graph' }));
-        // request.end();
-        ////////////////////
-
-        res.json({success: true}).end();
     });
 
-    // delete a frame from an object
+    /**
+     * Delete a frame from an object
+     */
     webServer.delete('/object/:objectId/frames/:frameId/', function (req, res) {
 
         var objectId = req.params.objectId;
@@ -3039,7 +3048,7 @@ function objectWebServer() {
         console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
 
         // Delete frame
-        var object = objects[objectId];
+        var object = getObjectFromKey(objectId);
         if (!object) {
             res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
             return;
@@ -3059,7 +3068,7 @@ function objectWebServer() {
         // remove the frame directory from the object
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
-        // Delete frame's nodes
+        // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
         var deletedNodes = {};
         for (var nodeId in object.nodes) {
             var node = object.nodes[nodeId];
@@ -3070,11 +3079,10 @@ function objectWebServer() {
         }
 
         // Delete links involving frame's nodes
-        for (var linkObjectId in objects) {
-            var linkObject = objects[linkObjectId];
+        forEachObject(function(linkObject, linkObjectId) {
             var linkObjectHasChanged = false;
 
-            for (var linkId in linkObject.links) {
+            for (var linkId in linkObject.links) { // TODO: this isn't updated for frames either
                 var link = linkObject.links[linkId];
                 if (link.objectA === objectId || link.objectB === objectId) {
                     if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
@@ -3088,11 +3096,10 @@ function objectWebServer() {
                 utilities.writeObjectToFile(objects, linkObjectId, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
             }
-        }
+        });
 
         // write changes to object.json
         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
-
         utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
@@ -3102,6 +3109,7 @@ function objectWebServer() {
 
     // ****************************************************************************************************************
 
+    // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
 
         webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
@@ -3123,6 +3131,10 @@ function objectWebServer() {
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
 
+        /**
+         * Updates the x, y, scale, and/or matrix for the specified frame or node
+         * @todo this function is a mess, fix it up
+         */
         function changeSize(objectID, frameID, nodeID, body, callback) {
 
             cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
@@ -3146,6 +3158,7 @@ function objectWebServer() {
                 // useful to not overwrite AR position when sending pos or scale from screen.
                 var propertiesToIgnore = [];
 
+                // TODO: this is a hack to fix ar/screen synchronization, fix it
                 // for frames, the position data is inside "ar" or "screen"
                 if (activeVehicle.hasOwnProperty('visualization')) {
                     if (activeVehicle.visualization === "ar") {
@@ -3201,30 +3214,34 @@ function objectWebServer() {
             changeVisualization(req.params[0], req.params[1], req.body, res);
         });
 
+        /**
+         * Sets the visualization to
+         * @param objectKey
+         * @param frameKey
+         * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
+         * @param res
+         */
         function changeVisualization(objectKey, frameKey, body, res) {
             var newVisualization = body.visualization;
             var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
-            var object = objects[objectKey];
-            if (object) {
-                var frame = object.frames[frameKey];
-                if (frame) {
-                    if (oldVisualizationPositionData) {
-                        var oldVisualization = frame.visualization;
-                        frame[oldVisualization] = oldVisualizationPositionData;
-                    }
+            var frame = getFrameFromKey(objectKey, frameKey);
+            if (frame) {
 
-                    frame.visualization = newVisualization;
-
-                    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-
-                    res.status(200).json({success: true}).end();
-                    return;
+                // if changing from ar -> screen, optionally provide default values for ar.x, ar.y, so that it'll be there when you switch back
+                // if changing from screen -> ar, sets screen.x, screen.y, etc
+                if (oldVisualizationPositionData) {
+                    var oldVisualization = frame.visualization;
+                    frame[oldVisualization] = oldVisualizationPositionData;
                 }
+                frame.visualization = newVisualization;
+
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+
+                res.status(200).json({success: true}).end();
+            } else {
                 res.status(404).json({failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey}).end();
-                return;
             }
-            res.status(404).json({failure: true, error: 'object ' + objectKey + ' not found'}).end();
         }
     }
 
@@ -3342,8 +3359,9 @@ function objectWebServer() {
         //  deactivated
 
         webServer.get('/object/*/deactivate/', function (req, res) {
-            objects[req.params[0]].deactivated = true;
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObjectFromKey(objectID).deactivated = true;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
           //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -3351,12 +3369,9 @@ function objectWebServer() {
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
-            console.log("------------------");
-            console.log(objects);
-            console.log("------------------");
-            console.log(req.params[0]);
-            objects[req.params[0]].deactivated = false;
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObjectFromKey(objectID).deactivated = false;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
            // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -3365,52 +3380,58 @@ function objectWebServer() {
 
 
         webServer.get('/object/*/screen/', function (req, res) {
-            objects[req.params[0]].visualization = "screen";
-            console.log(req.params[0], "screen");
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObjectFromKey(objectID).visualization = "screen";
+            console.log(objectID, "screen");
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         webServer.get('/object/*/ar/', function (req, res) {
-            objects[req.params[0]].visualization = "ar";
-            console.log(req.params[0], "ar");
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObjectFromKey(objectID).visualization = "ar";
+            console.log(objectID, "ar");
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         webServer.get('/object/*/*/reset/', function (req, res) {
-            objects[req.params[0]].frames[req.params[1]].ar = {
+            var objectID = req.params[0];
+            var frameID = req.params[1];
+            var frame = getFrameFromKey(objectID, frameID);
+            frame.ar = {
                 x : 0,
                 y : 0,
                 scale : 1,
                 matrix : []
             };
             // position data for the screen visualization mode
-            objects[req.params[0]].frames[req.params[1]].screen = {
+            frame.screen = {
                 x : 0,
                 y : 0,
                 scale : 1,
                 matrix : []
             };
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         // request a zip-file with the object stored inside. *1 is the object
         // ****************************************************************************************************************
         webServer.get('/object/*/zipBackup/', function (req, res) {
+            var objectID = req.params[0];
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
-            //  cout("get 3");
+
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=' + req.params[0] + '.zip'
+                'Content-disposition': 'attachment; filename=' + objectID + '.zip'
             });
 
             var Archiver = require('archiver');
 
             var zip = Archiver.create('zip', false);
             zip.pipe(res);
-            zip.directory(objectsPath + '/' + req.params[0], req.params[0] + "/");
+            zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
         });
 
@@ -3418,37 +3439,36 @@ function objectWebServer() {
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
-            //  cout("get 7");
-            res.json(objects[req.params.objectID].frames[req.params.frameID].nodes[req.params.nodeID] || {});
+            var node = getNodeFromKey(req.params.objectID, req.params.frameID, req.params.nodeID);
+            res.json(node || {});
         });
 
         // sends json object for a specific reality frame. 1st * is the object name, 2nd * is the frame name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/frame/*/', function (req, res) {
-            //  cout("get 7");
+            var objectID = req.params[0];
+            var frameID = req.params[1];
 
-            var thisObject = objects[req.params[0]];
-            if (thisObject) {
-                var thisFrame = thisObject.frames[req.params[1]];
-                if (thisFrame) {
-                    res.status(200).json(thisFrame);
-                    return;
-                }
+            var thisFrame = getFrameFromKey(frameID);
+            if (thisFrame) {
+                res.status(200).json(thisFrame);
+                return;
             }
 
-            res.status(404).json({failure: true, error: 'Object: ' + req.params[0] + ', frame: ' + req.params[1] + ' not found'}).end();
+            res.status(404).json({failure: true, error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'}).end();
         });
 
         // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/', function (req, res) {
-            //  cout("get 7");
+            var objectID = req.params[0];
+            var object = getObjectFromKey(objectID);
 
             console.log("----x---xx----xx--x-----");
-            // console.log(objects[req.params[0]]);
-            res.json(objects[req.params[0]]);
+
+            res.json(object);
         });
 
         /**
@@ -3461,18 +3481,17 @@ function objectWebServer() {
             }
 
             res.json(worldObject);
-
         });
 
 
         // use allObjects for TCP/IP object discovery
         // ****************************************************************************************************************
-
+        // TODO: BEN - should this return world object too?
         webServer.get('/allObjects/', function (req, res) {
 
             var returnJSON = [];
 
-            for (var thisId in objects) {
+            for (var thisId in objects) { // TODO: possibly change to forEachObject(callback(objectID, object) { ... })
                 if (objects[thisId].deactivated) continue;
 
                 objects[thisId].version = version;
@@ -4086,7 +4105,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 /**
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
-
+// TODO: BEN - update for world object compatibility
 function socketServer() {
 
     io.on('connection', function (socket) {
@@ -4356,6 +4375,14 @@ function getObjectFromKey(objectKey) {
     return null;
 }
 
+// invokes callback(objectID, object) for each object (including world object)
+function forEachObject(callback) {
+    for (var objectID in objects) {
+        callback(objectID, objects[objectID]);
+    }
+    callback(worldObject.objectId, worldObject);
+}
+
 function doesFrameExist(objectKey, frameKey) {
     if (doesObjectExist(objectKey)) {
         var foundObject = getObjectFromKey(objectKey);
@@ -4463,11 +4490,11 @@ var engine = {
     // once data is processed it will determin where to send it.
     processLinks: function (object, frame, node, thisNode) {
 
-        var linkKey;
+        var thisFrame = getFrameFromKey(object, frame);
 
-        for (linkKey in this.objects[object].frames[frame].links) {
+        for (var linkKey in thisFrame.links) {
 
-            this.link = this.objects[object].frames[frame].links[linkKey];
+            this.link = thisFrame.links[linkKey];
 
             if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame ) {
                 if (!checkObjectActivation(this.link.objectB)) {
@@ -4475,19 +4502,16 @@ var engine = {
                 }
                 else {
 
-                    // console.log('testing...');
-                    // console.log(this.link);
-
-                    if(!(this.link.objectB in this.objects)) return;
-                    if(!(this.link.frameB in this.objects[this.link.objectB].frames)) return;
-                    if(!(this.link.nodeB in this.objects[this.link.objectB].frames[this.link.frameB].nodes)) return;
+                    if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
 
-                    this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
+                    this.internalObjectDestination = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
 
+                    // if this is a regular node, not a logic node, process normally
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                         this.computeProcessedData(thisNode, this.link, this.internalObjectDestination)
                     }
+                    // otherwise process as logic node by triggering its internal blocks connected to each input
                     else {
                         this.blockKey = "in" + this.link.logicB;
 
@@ -4688,7 +4712,7 @@ function socketSender(object, frame, link, data) {
  * @desc  Watches the connections to all objects that have stored links within the object.
  * If an object is disconnected, the object tries to reconnect on a regular basis.
  **/
-
+// TODO: implement new object lookup functions here
 function socketUpdater() {
     // cout(knownObjects);
     // delete unconnected connections
@@ -4788,6 +4812,9 @@ function cout(msg) {
 }
 
 function checkObjectActivation(id) {
+    // if (doesObjectExist(id)) {
+        // TODO: BEN implement this
+    // }
     if (id in objects) {
         return !objects[id].deactivated
     } else return false;
