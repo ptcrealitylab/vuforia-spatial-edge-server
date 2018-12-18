@@ -14,6 +14,14 @@
 <div class="touchOverlay" id="touchOverlay"></div>
 <div class="touchOverlay" id="touchOverlaySecondFinger"></div>
 
+<!--<div class="pocket">-->
+    <!--<div class="centerVertically" id="pocketScrollContainer">-->
+        <!--<div class="palette">-->
+        <!--</div>-->
+    <!--</div>-->
+    <!--<div id="pocketScrollBar"></div>-->
+<!--</div>-->
+
 <script src="src/index.js"></script>
 
 <script src="src/draw.js"></script>
@@ -21,6 +29,8 @@
 <script src="src/network.js"></script>
 <script src="src/touchEvents.js"></script>
 <script src="src/utilities.js"></script>
+<script src="src/pocketFrames.js"></script>
+<script src="src/pocket.js"></script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
@@ -131,6 +141,8 @@
         realityEditor.touchEvents.addTouchListeners();
 
         realityEditor.network.setupSocketListeners();
+
+        realityEditor.pocket.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 
