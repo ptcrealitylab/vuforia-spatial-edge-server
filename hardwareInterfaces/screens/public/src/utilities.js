@@ -319,3 +319,24 @@ realityEditor.utilities.resetFramesIfTripleTap = function() {
 realityEditor.utilities.isIPad = function () {
     return window.navigator.userAgent.indexOf('iPad') > -1;
 };
+
+/**
+ * Generates a random 12 character unique identifier using uppercase, lowercase, and numbers (e.g. "OXezc4urfwja")
+ * @return {string}
+ */
+realityEditor.utilities.uuidTime = function () {
+    var dateUuidTime = new Date();
+    var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+    while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return stampUuidTime;
+};
+
+/**
+ * Generates a random number between the two inputs, inclusive.
+ * @param {number} min - The minimum possible value.
+ * @param {number} max - The maximum possible value.
+ */
+realityEditor.utilities.randomIntInc = function (min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+};

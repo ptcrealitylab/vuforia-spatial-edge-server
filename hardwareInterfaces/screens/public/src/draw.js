@@ -49,7 +49,7 @@ realityEditor.draw.addElement = function(frameKey, frame) {
         // addContainer.style.display = "none";
         addContainer.style.border = 0;
         addContainer.style.position = 'absolute';
-        var screenPos = getScreenPosFromARPos(frame.screen.x, frame.screen.y);
+        var screenPos = getScreenPosFromARPos(frame.screen.x, frame.screen.y); // TODO: ben is this a bug? should be ar.x, ar.y
         addContainer.style.left = screenPos.x + "px"; //frame.screen.x + "px";
         addContainer.style.top = screenPos.y + "px"; //frame.screen.y + "px";
         addContainer.style.transform = 'scale(' + frame.screen.scale + ')';
@@ -83,7 +83,6 @@ realityEditor.draw.addElement = function(frameKey, frame) {
         cover.style.top = 0;
         cover.style.left = 0;
         cover.style.position = 'absolute';
-        // frame.frameTouchSynthesizer = new FrameTouchSynthesizer(cover, addIframe);
 
         var addSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         addSVG.id = "svg" + frameKey;

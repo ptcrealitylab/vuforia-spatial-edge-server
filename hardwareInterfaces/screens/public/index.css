@@ -315,6 +315,7 @@ body, html {
     height: 450px;
     border: 4px solid #01fffc;
     background-color: rgba(45,255,255,0.15);
+    z-index: 100;
 }
 
 .closed {
