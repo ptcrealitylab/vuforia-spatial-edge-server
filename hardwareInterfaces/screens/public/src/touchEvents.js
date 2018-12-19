@@ -16,6 +16,8 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
         x: iFrame.getBoundingClientRect().left - mouseX,
         y: iFrame.getBoundingClientRect().top - mouseY
     };
+
+    realityEditor.trash.showTrash();
 };
 
 realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
