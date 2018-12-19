@@ -23,7 +23,7 @@
 <!--</div>-->
 
 <script src="src/index.js"></script>
-
+<script src="src/constructors.js"></script>
 <script src="src/draw.js"></script>
 <script src="src/moveabilityOverlay.js"></script>
 <script src="src/network.js"></script>
@@ -165,6 +165,12 @@
         objectReference.style.marginTop = (-30 * windowToEditorRatio) + 'px';
         objectReference.style.borderRadius = (60 * windowToEditorRatio) + 'px';
         objectReference.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
+    }
+
+    function getObjectId() {
+        if (frames.length === 0) return null;
+        var anyFrameId = Object.keys(frames)[0];
+        return objectName + anyFrameId.split(objectName)[1].substring(0,12);
     }
 
     /**

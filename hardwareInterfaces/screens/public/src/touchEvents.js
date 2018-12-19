@@ -7,9 +7,7 @@ realityEditor.touchEvents.addTouchListeners = function() {
 };
 
 realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, nodeKey) {
-
     isMouseDown = true; // set here in case we start moving programmatically
-
     editingState.objectKey = objectKey;
     editingState.frameKey = frameKey;
     editingState.nodeKey = nodeKey;
@@ -18,7 +16,6 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
         x: iFrame.getBoundingClientRect().left - mouseX,
         y: iFrame.getBoundingClientRect().top - mouseY
     };
-
 };
 
 realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
