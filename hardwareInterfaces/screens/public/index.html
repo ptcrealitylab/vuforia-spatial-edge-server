@@ -31,6 +31,7 @@
 <script src="src/utilities.js"></script>
 <script src="src/pocketFrames.js"></script>
 <script src="src/pocket.js"></script>
+<script src="src/trash.js"></script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
@@ -143,6 +144,7 @@
         realityEditor.network.setupSocketListeners();
 
         realityEditor.pocket.initFeature();
+        realityEditor.trash.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 

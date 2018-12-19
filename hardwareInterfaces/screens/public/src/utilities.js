@@ -49,6 +49,8 @@ realityEditor.utilities.resetEditingState = function() {
         x: 0,
         y: 0
     };
+
+    realityEditor.trash.hideTrash();
 };
 
 /**

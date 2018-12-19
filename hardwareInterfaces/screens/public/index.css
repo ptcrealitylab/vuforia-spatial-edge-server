@@ -309,11 +309,11 @@ body, html {
 #pocket {
     display: inline;
     position: absolute;
-    left: 60px;
+    left: 70px;
     top: 0;
     width: 900px;
     height: 450px;
-    border: 4px solid #01fffc;
+    border: 3px solid #01fffc;
     background-color: rgba(45,255,255,0.15);
     z-index: 100;
 }
@@ -401,3 +401,13 @@ body, html {
 /*.pocketScrollBarSegmentActive {*/
     /*background-color: rgba(0,255,255,0.3);*/
 /*}*/
+
+#trashButton {
+    position: absolute;
+    left: 0;
+    top: 70px;
+    width: 60px;
+    height: 320px;
+    background-color: rgba(242,22,121,0.15);
+    z-index: 100;
+}

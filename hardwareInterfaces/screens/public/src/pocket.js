@@ -199,7 +199,8 @@ createNameSpace("realityEditor.pocket");
             if (typeof node.scaleFactor !== 'undefined') {
                 scaleFactor = node.scaleFactor;
             }
-            addedNode.scale = defaultScale * scaleFactor;
+            var defaultNodeScale = 0.5;
+            addedNode.scale = defaultNodeScale * scaleFactor;
 
         });
 
@@ -221,11 +222,11 @@ createNameSpace("realityEditor.pocket");
         realityEditor.touchEvents.beginTouchEditing(getObjectId(), frameID, null);
 
         // // send it to the server
-        realityEditor.network.postNewFrame = function(ip, objectKey, contents, callback) {
-            this.cout("I am adding a frame: " + ip);
-            contents.lastEditor = globalStates.tempUuid;
-            this.postData('http://' + ip + ':' + httpPort + '/object/' + objectKey + "/addFrame/", contents, callback);
-        };
+
+        realityEditor.network.postNewFrame(frame, function(error, response) {
+            console.log(error, response);
+        });
+
         // realityEditor.network.postNewLogicNode(closestObject.ip, closestObjectKey, closestFrameKey, logicKey, addedLogic);
         // realityEditor.network.postNewFrame(closestObject.ip, closestObjectKey, frame);
         // realityEditor.gui.pocket.setPocketFrame(frame, {pageX: evt.pageX, pageY: evt.pageY}, closestObjectKey);

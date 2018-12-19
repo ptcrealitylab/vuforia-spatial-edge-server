@@ -214,7 +214,7 @@ realityEditor.network.onInternalPostMessage = function(e) {
         }
     }
 
-    console.log(msgContent);
+    // console.log(msgContent);
 
     if (msgContent.width && msgContent.height) {
         console.log('got width and height', msgContent.width, msgContent.height);
@@ -327,6 +327,24 @@ realityEditor.network.postData = function(url, body, callback) {
     request.send(params);
 };
 
+realityEditor.network.deleteData = function (url, content) {
+    var request = new XMLHttpRequest();
+    request.open('DELETE', url, true);
+    var _this = this;
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) console.log("It deleted!");
+    };
+    request.setRequestHeader("Content-type", "application/json");
+    //request.setRequestHeader("Content-length", params.length);
+    // request.setRequestHeader("Connection", "close");
+    if (content) {
+        request.send(JSON.stringify(content));
+    } else {
+        request.send();
+    }
+    console.log("deleteData");
+};
+
 realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey, wasTriggeredFromEditor) {
     if (!objectKey || !frameKey) return;
     if (!frames[frameKey]) return;
@@ -349,7 +367,30 @@ realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKe
         content.arY = arPosition.y;
     }
     var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
-    this.postData(urlEndpoint, content, function (response, error) {
-        console.log(response, error);
+    this.postData(urlEndpoint, content, function (error, response) {
+        console.log(error, response);
     });
+};
+
+realityEditor.network.postNewFrame = function(contents, callback) {
+    console.log("I am adding a frame: " + contents);
+    // contents.lastEditor = globalStates.tempUuid;
+    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/addFrame/";
+    this.postData(urlEndpoint, contents, callback);
+};
+
+realityEditor.network.deleteFrameFromObject = function(frameKey) {
+    console.log("I am deleting a frame: " + frameKey);
+    // var frameToDelete = realityEditor.getFrame(objectKey, frameKey);
+    // if (frameToDelete) {
+    //     console.log('deleting ' + frameToDelete.location + ' frame', frameToDelete);
+    //     if (frameToDelete.location !== 'global') {
+    //         console.warn('WARNING: TRYING TO DELETE A LOCAL FRAME');
+    //         return;
+    //     }
+    // } else {
+    //     console.log('cant tell if local or global... frame has already been deleted on editor');
+    // }
+    // var contents = {lastEditor: globalStates.tempUuid};
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/frames/" + frameKey, {});
 };

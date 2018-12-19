@@ -99,6 +99,12 @@ realityEditor.draw.addElement = function(frameKey, frame) {
     }
 };
 
+realityEditor.draw.killElement = function(frameKey) {
+    var frameContainer = document.getElementById('object' + frameKey);
+    document.body.removeChild(frameContainer);
+    console.log('removed DOM elements for frame ' + frameKey);
+};
+
 realityEditor.draw.drawTransformed = function(frameKey, frame) {
     var frameContainerDom = document.querySelector('#object'+frameKey);
     if (frame.visualization === 'screen') {
