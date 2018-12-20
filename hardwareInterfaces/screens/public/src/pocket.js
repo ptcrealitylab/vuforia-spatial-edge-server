@@ -199,8 +199,8 @@ createNameSpace("realityEditor.pocket");
             if (typeof node.scaleFactor !== 'undefined') {
                 scaleFactor = node.scaleFactor;
             }
-            var defaultNodeScale = 0.5;
-            addedNode.scale = defaultNodeScale * scaleFactor;
+            // var defaultNodeScale = 0.5;
+            addedNode.scale = defaultScale * scaleFactor;
 
         });
 
