@@ -1329,7 +1329,7 @@ function objectWebServer() {
 
              scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
              scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
-            scriptNode += '<script> realityObject.serverIp = '+ip.address()+'</script>';
+            scriptNode += '<script> realityObject.serverIp = "'+ip.address()+'"</script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
