@@ -98,23 +98,28 @@ realityEditor.touchEvents.onMouseDown = function(e) {
         realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
     }
 
-    var moveDelay = 400;
+    var clickedVehicle = editingKeys.nodeKey ? (frames[editingKeys.frameKey].nodes[editingKeys.nodeKey]) : frames[editingKeys.frameKey]; // TODO: turn this into a safe, reusable utility function
+
+    var moveDelay = clickedVehicle.moveDelay || defaultMoveDelay;
     // after a certain amount of time, start editing this element
     var timeoutFunction = setTimeout(function () {
 
         realityEditor.touchEvents.beginTouchEditing(editingKeys.objectKey, editingKeys.frameKey, editingKeys.nodeKey);
 
-        var editingFrame = realityEditor.utilities.getEditingVehicle();
-        var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
-        var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
+        if (editingKeys.frameKey && !editingKeys.nodeKey) {
+            var editingFrame = realityEditor.utilities.getEditingVehicle();
+            var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
+            var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
 
-        socket.emit('writeScreenObject', {
-            objectKey: editingState.objectKey,
-            frameKey: editingState.frameKey,
-            nodeKey: editingState.nodeKey,
-            touchOffsetX: touchOffsetPercentX,
-            touchOffsetY: touchOffsetPercentY
-        });
+            socket.emit('writeScreenObject', {
+                objectKey: editingState.objectKey,
+                frameKey: editingState.frameKey,
+                nodeKey: editingState.nodeKey,
+                touchOffsetX: touchOffsetPercentX,
+                touchOffsetY: touchOffsetPercentY
+            });
+        }
+
 
     }, moveDelay);
 
@@ -180,22 +185,22 @@ realityEditor.touchEvents.onMouseMove = function(e) {
     } else {
 
         if (e.simulated) {
-            if (editingState.frameKey) {
-                var frame = frames[editingState.frameKey];
-                frame.screen.x = mouseX + (editingState.touchOffset.x);
-                frame.screen.y = mouseY + (editingState.touchOffset.y);
-            }
+
+            moveEditingVehicleToMousePos();
+
         } else {
             // if touched directly on screen, one finger gesture = drag, two fingers = scale
             if (firstMouseDown) {
                 if (e.pointerId === firstMouseDown.pointerId) {
 
                     // drag with one or two finger gesture, but make sure it sticks to the first mouse
-                    if (editingState.frameKey) {
-                        var frame = frames[editingState.frameKey];
-                        frame.screen.x = mouseX + (editingState.touchOffset.x);
-                        frame.screen.y = mouseY + (editingState.touchOffset.y);
-                    }
+                    moveEditingVehicleToMousePos();
+
+                    // if (editingState.frameKey) {
+                    //     var frame = frames[editingState.frameKey];
+                    //     frame.screen.x = mouseX + (editingState.touchOffset.x);
+                    //     frame.screen.y = mouseY + (editingState.touchOffset.y);
+                    // }
                 }
 
                 if (secondMouseDown) {
@@ -210,6 +215,20 @@ realityEditor.touchEvents.onMouseMove = function(e) {
 
     }
 };
+
+// TODO: move to appropriate module
+function moveEditingVehicleToMousePos() {
+    var editingVehicle = realityEditor.utilities.getEditingVehicle();
+    if (editingVehicle) {
+        if (!editingState.nodeKey) {
+            editingVehicle.screen.x = mouseX + (editingState.touchOffset.x);
+            editingVehicle.screen.y = mouseY + (editingState.touchOffset.y);
+        } else {
+            editingVehicle.x = mouseX + (editingState.touchOffset.x);
+            editingVehicle.y = mouseY + (editingState.touchOffset.y);
+        }
+    }
+}
 
 realityEditor.touchEvents.onMouseUp = function(e) {
 

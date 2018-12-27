@@ -7,7 +7,14 @@ var realityEditor = realityEditor || {
     network: {},
     draw: {},
     touchEvents: {},
-    utilities: {}
+    utilities: {},
+    frameRenderer: {},
+    nodeRenderer: {},
+    linkRenderer: {},
+    pocket: {},
+    trash: {},
+    modeToggle: {},
+    database: {}
 };
 
 /**

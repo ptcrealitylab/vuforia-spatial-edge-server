@@ -34,12 +34,20 @@
 <script src="src/trash.js"></script>
 <script src="src/modeToggle.js"></script>
 
+<script src="src/frameRenderer.js"></script>
+<script src="src/nodeRenderer.js"></script>
+<script src="src/linkRenderer.js"></script>
+
+<script src="src/database.js"></script>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
 
 <script>
     // var scaleARFactor = 1.5;
     var scaleRatio = 1;
+
+    var defaultMoveDelay = 400;
 
     // get the url of the reality server to load frames from and to post new frame positions
     var SERVER_IP = location.origin.split(":")[1].split("//")[1];
@@ -144,9 +152,15 @@
 
         realityEditor.network.setupSocketListeners();
 
+        realityEditor.database.initFeature();
+
         realityEditor.pocket.initFeature();
         realityEditor.trash.initFeature();
         realityEditor.modeToggle.initFeature();
+
+        realityEditor.frameRenderer.initFeature();
+        realityEditor.nodeRenderer.initFeature();
+        realityEditor.linkRenderer.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 

@@ -30,7 +30,7 @@ createNameSpace("realityEditor.trash");
     function deleteFrame(frameKey) {
 
         // remove it from the DOM
-        realityEditor.draw.killElement(frameKey);
+        realityEditor.frameRenderer.killElement(frameKey);
         // realityEditor.gui.ar.draw.removeFromEditedFramesList(this.editingState.frame);
 
         // // delete it from the server

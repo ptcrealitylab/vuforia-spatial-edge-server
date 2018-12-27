@@ -216,7 +216,7 @@ realityEditor.network.onInternalPostMessage = function(e) {
 
     // console.log(msgContent);
 
-    if (msgContent.width && msgContent.height) {
+    if (msgContent.width && msgContent.height && msgContent.frame) {
         console.log('got width and height', msgContent.width, msgContent.height);
         var iFrame = document.getElementById('iframe' + msgContent.frame);
         iFrame.style.width = msgContent.width + 'px';
@@ -228,10 +228,24 @@ realityEditor.network.onInternalPostMessage = function(e) {
             window.location.reload();
         }, 1000);
     }
+
+    if (typeof msgContent.moveDelay !== "undefined") {
+        var activeVehicle = frames[msgContent.frame];
+        if (activeVehicle) {
+            activeVehicle.moveDelay = msgContent.moveDelay;
+            console.log('move delay of ' + activeVehicle.name + ' is set to ' + activeVehicle.moveDelay);
+        }
+    }
 };
 
-realityEditor.network.onElementLoad = function(objectKey, frameKey) {
-    console.log('onElementLoad ' + objectKey + ' ' + frameKey);
+realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
+    console.log('onElementLoad ' + objectKey + ' ' + frameKey + ' ' + nodeKey);
+
+    if (nodeKey === "null") nodeKey = null;
+
+    var frame = frames[frameKey];
+    var nodes = (!!frame) ? frame.nodes : {};
+    var simpleNodes = realityEditor.utilities.getNodesJsonForIframes(nodes);
 
     var newStyle = {
         object: objectKey,
@@ -239,11 +253,14 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey) {
         objectData: {
             ip: SERVER_IP
         },
-        node: null,
-        nodes: null,
+        node: nodeKey,
+        nodes: simpleNodes,
         interface: null
     };
-    var thisIframe = document.querySelector("#iframe" + frameKey);
+
+    var activeKey = nodeKey || frameKey;
+
+    var thisIframe = document.querySelector("#iframe" + activeKey);
     thisIframe._loaded = true;
     thisIframe.contentWindow.postMessage(JSON.stringify(newStyle), '*');
     thisIframe.contentWindow.postMessage(JSON.stringify({
@@ -252,7 +269,6 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey) {
             height: parseInt(thisIframe.style.height)
         }
     }), '*');
-
 
     console.log("on_load");
 };
