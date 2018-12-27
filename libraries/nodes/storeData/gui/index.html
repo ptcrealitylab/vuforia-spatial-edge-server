@@ -25,21 +25,24 @@
 
         if (typeof msg.node !== "undefined" && typeof msg.object !== "undefined") {
             parent.postMessage(JSON.stringify(
-                    {
-                        version: 170,
-                        node: msg.node,
-                        object: msg.object,
-                        height: document.body.scrollHeight,
-                        width: document.body.scrollWidth,
-                        sendMatrix: false,
-                        fullScreen: false
-                    }
-                    )
-                    // this needs to contain the final interface source
-                    , "*");
+                {
+                    version: 170,
+                    node: msg.node,
+                    object: msg.object,
+                    height: document.body.scrollHeight,
+                    width: document.body.scrollWidth,
+                    sendMatrix: false,
+                    fullScreen: false
+                }
+                )
+                // this needs to contain the final interface source
+                , "*");
 
-            objects.node = msg.node;
-            objects.object = msg.object;
+            // TODO: what is this for?
+            if (typeof objects !== 'undefined') {
+                objects.node = msg.node;
+                objects.object = msg.object;
+            }
         }
     }, false);
 </script>
