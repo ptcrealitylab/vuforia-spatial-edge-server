@@ -37,9 +37,31 @@ createNameSpace("realityEditor.database");
         });
     }
 
+    function forEachLinkInFrame(frameKey, callback) {
+        if (!frames.hasOwnProperty(frameKey)) return;
+
+        var frame = frames[frameKey];
+        for (var linkKey in frame.links) {
+            if (!frame.links.hasOwnProperty(linkKey)) continue;
+            var link = frame.links[linkKey];
+
+            callback(linkKey, link);
+        }
+    }
+
+    function forEachLinkInAllFrames(callback) {
+        forEachFrame(function(frameKey, frame) {
+            forEachLinkInFrame(frameKey, function(linkKey, link) {
+                callback(frameKey, linkKey, link);
+            });
+        });
+    }
+
     exports.initFeature = initFeature;
     exports.forEachFrame = forEachFrame;
     exports.forEachNodeInFrame = forEachNodeInFrame;
     exports.forEachNodeInAllFrames = forEachNodeInAllFrames;
+    exports.forEachLinkInFrame = forEachLinkInFrame;
+    exports.forEachLinkInAllFrames = forEachLinkInAllFrames;
 
 })(realityEditor.database);

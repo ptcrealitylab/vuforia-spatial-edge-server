@@ -55,8 +55,10 @@ createNameSpace("realityEditor.nodeRenderer");
             nodeContainerDom.classList.remove('arFrame');
             nodeContainerDom.classList.add('screenFrame');
 
-            nodeContainerDom.style.left = (parentFrame.screen.x + node.x) + 'px';
-            nodeContainerDom.style.top = (parentFrame.screen.y + node.y) + 'px';
+            var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(frameKey);
+
+            nodeContainerDom.style.left = (parentFrameCenter.x + node.x - (node.width * node.scale * scaleRatio)/2) + 'px';
+            nodeContainerDom.style.top = (parentFrameCenter.y + node.y - (node.height * node.scale * scaleRatio)/2) + 'px';
 
             nodeContainerDom.style.transform = 'scale(' + node.scale * scaleRatio + ')';
 
@@ -66,7 +68,17 @@ createNameSpace("realityEditor.nodeRenderer");
         }
     }
 
+    function getNodeCenter(frameKey, nodeKey) {
+        var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(frameKey);
+        var node = frames[frameKey].nodes[nodeKey];
+        return {
+            x: parentFrameCenter.x + node.x, // + (node.width * node.scale * scaleRatio)/2,
+            y: parentFrameCenter.y + node.y // + (node.height * node.scale * scaleRatio)/2
+        }
+    }
+
     exports.initFeature = initFeature;
     exports.renderNodes = renderNodes;
+    exports.getNodeCenter = getNodeCenter;
 
 })(realityEditor.nodeRenderer);

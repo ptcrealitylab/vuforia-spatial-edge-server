@@ -100,6 +100,11 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     var clickedVehicle = editingKeys.nodeKey ? (frames[editingKeys.frameKey].nodes[editingKeys.nodeKey]) : frames[editingKeys.frameKey]; // TODO: turn this into a safe, reusable utility function
 
+    var defaultMoveDelay = defaultFrameMoveDelay;
+    if (editingKeys.nodeKey) {
+        defaultMoveDelay = defaultNodeMoveDelay;
+    }
+
     var moveDelay = clickedVehicle.moveDelay || defaultMoveDelay;
     // after a certain amount of time, start editing this element
     var timeoutFunction = setTimeout(function () {
@@ -210,7 +215,6 @@ realityEditor.touchEvents.onMouseMove = function(e) {
                 }
             }
 
-
         }
 
     }
@@ -224,8 +228,10 @@ function moveEditingVehicleToMousePos() {
             editingVehicle.screen.x = mouseX + (editingState.touchOffset.x);
             editingVehicle.screen.y = mouseY + (editingState.touchOffset.y);
         } else {
-            editingVehicle.x = mouseX + (editingState.touchOffset.x);
-            editingVehicle.y = mouseY + (editingState.touchOffset.y);
+            var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(editingState.frameKey);
+
+            editingVehicle.x = mouseX - parentFrameCenter.x + (editingVehicle.width * editingVehicle.scale * scaleRatio)/2 + (editingState.touchOffset.x);
+            editingVehicle.y = mouseY - parentFrameCenter.y + (editingVehicle.height * editingVehicle.scale * scaleRatio)/2 + (editingState.touchOffset.y);
         }
     }
 }

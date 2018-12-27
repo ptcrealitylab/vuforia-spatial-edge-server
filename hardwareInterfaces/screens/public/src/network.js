@@ -218,7 +218,8 @@ realityEditor.network.onInternalPostMessage = function(e) {
 
     if (msgContent.width && msgContent.height && msgContent.frame) {
         console.log('got width and height', msgContent.width, msgContent.height);
-        var iFrame = document.getElementById('iframe' + msgContent.frame);
+        var activeKey = msgContent.node || msgContent.frame;
+        var iFrame = document.getElementById('iframe' + activeKey);
         iFrame.style.width = msgContent.width + 'px';
         iFrame.style.height = msgContent.height + 'px';
     }
@@ -364,25 +365,47 @@ realityEditor.network.deleteData = function (url, content) {
 realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey, wasTriggeredFromEditor) {
     if (!objectKey || !frameKey) return;
     if (!frames[frameKey]) return;
+
+    var activeKey = nodeKey || frameKey;
+    var isFrame = activeKey === frameKey;
+
     // post new position to server when you stop moving a frame
-    var content = {
-        x: frames[frameKey].screen.x,
-        y: frames[frameKey].screen.y,
-        scale: frames[frameKey].screen.scale,
-        scaleARFactor: scaleRatio,
-        ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
-    };
+    var content;
+    if (isFrame) {
+        content = {
+            x: frames[frameKey].screen.x,
+            y: frames[frameKey].screen.y,
+            scale: frames[frameKey].screen.scale,
+            scaleARFactor: scaleRatio,
+            ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+        };
+    } else {
+        content = {
+            x: frames[frameKey].nodes[nodeKey].x,
+            y: frames[frameKey].nodes[nodeKey].y,
+            scale: frames[frameKey].nodes[nodeKey].scale,
+            ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+        };
+    }
+
     if (wasTriggeredFromEditor) {
         content.wasTriggeredFromEditor = true;
     } else {
-        var iframeRect = document.getElementById('iframe' + frameKey).getClientRects()[0];
-        var frameCenterX = frames[frameKey].screen.x + iframeRect.width/2;
-        var frameCenterY = frames[frameKey].screen.y + iframeRect.height/2;
-        var arPosition = getARPosFromScreenPos(frameCenterX, frameCenterY);
-        content.arX = arPosition.x;
-        content.arY = arPosition.y;
+        if (isFrame) {
+            var iframeRect = document.getElementById('iframe' + frameKey).getClientRects()[0];
+            var frameCenterX = frames[frameKey].screen.x + iframeRect.width/2;
+            var frameCenterY = frames[frameKey].screen.y + iframeRect.height/2;
+            var arPosition = getARPosFromScreenPos(frameCenterX, frameCenterY);
+            content.arX = arPosition.x;
+            content.arY = arPosition.y;
+        }
     }
-    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
+    var urlEndpoint;
+    if (isFrame) {
+        urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
+    } else {
+        urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/nodeSize/";
+    }
     this.postData(urlEndpoint, content, function (error, response) {
         console.log(error, response);
     });

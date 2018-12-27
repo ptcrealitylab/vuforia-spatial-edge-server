@@ -365,3 +365,30 @@ realityEditor.utilities.getNodesJsonForIframes = function(nodes) {
     }
     return simpleNodes;
 };
+
+/**
+ * Updates the timing object with the current timestamp and delta since last frame.
+ * @param {{delta: number, now: number, then: number}} timing - reference to the timing object to modify
+ */
+realityEditor.utilities.timeSynchronizer = function(timing) {
+    timing.now = Date.now();
+    timing.delta = (timing.now - timing.then) / 198;
+    timing.then = timing.now;
+};
+
+/**
+ * Rescales x from the original range (in_min, in_max) to the new range (out_min, out_max)
+ * @example map(5, 0, 10, 100, 200) would return 150, because 5 is halfway between 0 and 10, so it finds the number halfway between 100 and 200
+ *
+ * @param {number} x
+ * @param {number} in_min
+ * @param {number} in_max
+ * @param {number} out_min
+ * @param {number} out_max
+ * @return {number}
+ */
+realityEditor.utilities.map = function(x, in_min, in_max, out_min, out_max) {
+    if (x > in_max) x = in_max;
+    if (x < in_min) x = in_min;
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+};
