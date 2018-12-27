@@ -372,3 +372,14 @@ body, html {
 .toggleOff {
     background-color: transparent;
 }
+
+.ghostFrame {
+    opacity: 0.5;
+    /*display: inline;*/
+    /*visibility: visible;*/
+    pointer-events: none;
+}
+
+.hiddenNode {
+    display: none !important;
+}

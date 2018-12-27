@@ -2,13 +2,18 @@ createNameSpace("realityEditor.utilities");
 
 realityEditor.utilities.getEditingVehicle = function() {
     if (editingState.frameKey) {
+        if (editingState.nodeKey) {
+            return frames[editingState.frameKey].nodes[editingState.nodeKey];
+        }
         return frames[editingState.frameKey];
     }
 };
 
 realityEditor.utilities.getEditingElement = function() {
-    if (editingState.frameKey) {
-        return document.querySelector('#iframe'+editingState.frameKey);
+    if (editingState.nodeKey) {
+        return document.querySelector('#iframe' + editingState.nodeKey);
+    } else if (editingState.frameKey) {
+        return document.querySelector('#iframe' + editingState.frameKey);
     }
 };
 
@@ -341,4 +346,22 @@ realityEditor.utilities.uuidTime = function () {
  */
 realityEditor.utilities.randomIntInc = function (min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
+};
+
+// avoids serializing cyclic data structures by only including minimal information needed for node iframe
+// (keys such as grid and links sometimes contain cyclic references)
+realityEditor.utilities.getNodesJsonForIframes = function(nodes) {
+    var simpleNodes = {};
+    var keysToExclude = ["links", "blocks", "grid", "guiState"];
+    for (var node in nodes) {
+        if (!nodes.hasOwnProperty(node)) continue;
+        simpleNodes[node] = {};
+        for (var key in nodes[node]) {
+            if (!nodes[node].hasOwnProperty(key)) continue;
+            if (keysToExclude.indexOf(key) === -1) {
+                simpleNodes[node][key] = nodes[node][key];
+            }
+        }
+    }
+    return simpleNodes;
 };
