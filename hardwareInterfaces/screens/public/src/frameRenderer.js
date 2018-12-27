@@ -71,8 +71,17 @@ createNameSpace("realityEditor.frameRenderer");
         }
     }
 
+    function getFrameCenter(frameKey) {
+        var frame = frames[frameKey];
+        return {
+            x: frame.screen.x + (frame.width * frame.screen.scale)/2,
+            y: frame.screen.y + (frame.height * frame.screen.scale)/2
+        }
+    }
+
     exports.initFeature = initFeature;
     exports.renderFrames = renderFrames;
     exports.killElement = killElement;
+    exports.getFrameCenter = getFrameCenter;
 
 })(realityEditor.frameRenderer);

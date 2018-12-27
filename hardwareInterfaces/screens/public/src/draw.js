@@ -14,6 +14,7 @@ realityEditor.draw.renderFrames = function() {
 
     realityEditor.frameRenderer.renderFrames();
     realityEditor.nodeRenderer.renderNodes();
+    realityEditor.linkRenderer.renderLinks();
 
     requestAnimFrame(realityEditor.draw.renderFrames);
 };
