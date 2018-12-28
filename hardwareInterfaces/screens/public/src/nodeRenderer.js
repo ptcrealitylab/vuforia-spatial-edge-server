@@ -6,8 +6,6 @@ createNameSpace("realityEditor.nodeRenderer");
 
     function initFeature() {
 
-        guiState = realityEditor.modeToggle.getGuiState();
-
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
         });
@@ -70,7 +68,11 @@ createNameSpace("realityEditor.nodeRenderer");
 
     function getNodeCenter(frameKey, nodeKey) {
         var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(frameKey);
-        var node = frames[frameKey].nodes[nodeKey];
+        // var node = frames[frameKey].nodes[nodeKey];
+        var node = realityEditor.database.getNode(frameKey, nodeKey);
+        if (!node) {
+            console.log('cant find node for ' + frameKey + ', ' + nodeKey);
+        }
         return {
             x: parentFrameCenter.x + node.x, // + (node.width * node.scale * scaleRatio)/2,
             y: parentFrameCenter.y + node.y // + (node.height * node.scale * scaleRatio)/2

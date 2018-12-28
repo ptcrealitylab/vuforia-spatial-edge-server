@@ -6,6 +6,20 @@ createNameSpace("realityEditor.linkRenderer");
     var linkCanvasContext;
     var guiState;
     var timeCorrection = {delta: 0, now: 0, then: 0};
+    var incompleteLink = {ballAnimationCount: 0};
+
+    var storedIncompleteLink = {
+        startNodeKey: null,
+        endX: null,
+        endY: null
+    };
+
+    var storedCutLine = {
+        startX: null,
+        startY: null,
+        endX: null,
+        endY: null
+    };
 
     function initFeature() {
 
@@ -27,7 +41,7 @@ createNameSpace("realityEditor.linkRenderer");
         // globalCanvas.context.fill();
 
         // subscribe to the gui state so that we only render links in node view
-        guiState = realityEditor.modeToggle.getGuiState();
+
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
         });
@@ -44,7 +58,7 @@ createNameSpace("realityEditor.linkRenderer");
             globalCanvas.hasContent = false;
         }
 
-        console.log('render links');
+        // console.log('render links');
 
         realityEditor.database.forEachLinkInAllFrames(function(frameKey, linkKey, link) {
 
@@ -81,10 +95,79 @@ createNameSpace("realityEditor.linkRenderer");
             var linkWidth = 10;
             var linkColorCode = 4; // white
 
-            drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [nodeBCenter.x, nodeBCenter.y], linkWidth, linkWidth, link, timeCorrection,linkColorCode,linkColorCode);
+            drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [nodeBCenter.x, nodeBCenter.y], linkWidth, linkWidth, link, timeCorrection, linkColorCode, linkColorCode);
 
         });
 
+        if (storedIncompleteLink.startNodeKey) {
+            drawIncompleteLink(storedIncompleteLink.startNodeKey, storedIncompleteLink.endX, storedIncompleteLink.endY);
+        }
+
+        if (storedCutLine.startX && storedCutLine.endX) {
+            drawDotLine(globalCanvas.context, [storedCutLine.startX, storedCutLine.startY], [storedCutLine.endX, storedCutLine.endY]);
+        }
+
+    }
+
+    /**
+     * Stores the state of the link currently being drawn, so that it can be rendered each frame
+     * @param startNodeKey
+     * @param endX
+     * @param endY
+     */
+    function setIncompleteLink(startNodeKey, endX, endY) {
+        storedIncompleteLink.startNodeKey = startNodeKey;
+        storedIncompleteLink.endX = endX;
+        storedIncompleteLink.endY = endY;
+    }
+
+    /**
+     * Clears the state of the link being drawn so that it disappears
+     */
+    function resetIncompleteLink() {
+        storedIncompleteLink.startNodeKey = null;
+        storedIncompleteLink.endX = null;
+        storedIncompleteLink.endY = null;
+    }
+
+    /**
+     * Draws an animated link from a starting node to a specified x,y location
+     * @param {string} startNodeKey
+     * @param {number} endX
+     * @param {number} endY
+     */
+    function drawIncompleteLink(startNodeKey, endX, endY) {
+        var startKeys = realityEditor.utilities.getKeysFromKey(startNodeKey);
+        // var nodeA = frames[startKeys.frameKey].nodes[startKeys.nodeKey];
+        var nodeACenter = realityEditor.nodeRenderer.getNodeCenter(startKeys.frameKey, startKeys.nodeKey);
+        var linkWidth = 10;
+        var linkColorCode = 4; // white
+
+        drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [endX, endY], linkWidth, linkWidth, incompleteLink, timeCorrection,linkColorCode, linkColorCode);
+    }
+
+    /**
+     * Stores the state of the cutting line so that it can be rendered each frame
+     * @param {number} startX
+     * @param {number} startY
+     * @param {number} endX
+     * @param {number} endY
+     */
+    function setCutLine(startX, startY, endX, endY) {
+        storedCutLine.startX = startX;
+        storedCutLine.startY = startY;
+        storedCutLine.endX = endX;
+        storedCutLine.endY = endY;
+    }
+
+    /**
+     * Clears the state of the cutting line so that it disappears
+     */
+    function resetCutLine() {
+        storedCutLine.startX = null;
+        storedCutLine.startY = null;
+        storedCutLine.endX = null;
+        storedCutLine.endY = null;
     }
 
     /**
@@ -166,131 +249,27 @@ createNameSpace("realityEditor.linkRenderer");
     }
 
     /**
-     * Renders all links who start from a node on the given frame, drawn onto the provided HTML canvas context reference.
-     * @param {Frame} thisFrame
+     * Draws the dotted line used to cut links, between the start and end coordinates.
      * @param {CanvasRenderingContext2D} context
+     * @param {[number, number]} lineStartPoint
+     * @param {[number, number]} lineEndPoint
      */
-    function drawAllLines(thisFrame, context) {
-
-        // if (globalStates.editingMode || (realityEditor.device.editingState.node && realityEditor.device.currentScreenTouches.length > 1)) {
-        //     return;
-        // }
-
-        if(!thisFrame) return;
-        for (var linkKey in thisFrame.links) {
-            if (!thisFrame.links.hasOwnProperty(linkKey)) continue;
-
-            var link = thisFrame.links[linkKey];
-            var frameA = thisFrame;
-            var frameB = realityEditor.getFrame(link.objectB, link.frameB);
-            var objectA = realityEditor.getObject(link.objectA);
-            var objectB = realityEditor.getObject(link.objectB);
-            var nodeASize = 0;
-            var nodeBSize = 0;
-
-            if (isNaN(link.ballAnimationCount)) {
-                link.ballAnimationCount = 0;
-            }
-
-            if (!frameA || !frameB) {
-                continue; // should not be undefined
-            }
-
-            var nodeA = frameA.nodes[link.nodeA];
-            var nodeB = frameB.nodes[link.nodeB];
-
-            if (!nodeA || !nodeB) {
-                continue; // should not be undefined
-            }
-
-            // Don't draw off-screen lines
-            if (!frameB.objectVisible && !frameA.objectVisible) {
-                continue;
-            }
-
-            if (!frameB.objectVisible) {
-                if (objectB.memory && Object.keys(objectB.memory).length > 0) {
-                    var memoryPointer = realityEditor.gui.memory.getMemoryPointerWithId(link.objectB); // TODO: frameId or objectId?
-                    if (!memoryPointer) {
-                        memoryPointer = new realityEditor.gui.memory.MemoryPointer(link, false);
-                    }
-
-                    nodeB.screenX = memoryPointer.x;
-                    nodeB.screenY = memoryPointer.y;
-                    nodeB.screenZ = nodeA.screenZ;
-
-                    if (memoryPointer.memory.imageLoaded && memoryPointer.memory.image.naturalWidth === 0 && memoryPointer.memory.image.naturalHeight === 0) {
-                        nodeB.screenX = nodeA.screenX;
-                        nodeB.screenY = -10;
-                        delete objectB.memory;
-                    } else {
-                        memoryPointer.draw();
-                    }
-                } else {
-                    nodeB.screenX = nodeA.screenX;
-                    nodeB.screenY = -10;
-                    nodeB.screenZ = nodeA.screenZ;
-                }
-                nodeB.screenZ = nodeA.screenZ;
-                nodeB.screenLinearZ = nodeA.screenLinearZ;
-                nodeBSize = objectA.averageScale;
-            }
-
-            if (!frameA.objectVisible) {
-                if (objectA.memory && Object.keys(objectA.memory).length > 0) {
-                    var memoryPointer = realityEditor.gui.memory.getMemoryPointerWithId(link.objectA);
-                    if (!memoryPointer) {
-                        memoryPointer = new realityEditor.gui.memory.MemoryPointer(link, true);
-                    }
-
-                    nodeA.screenX = memoryPointer.x;
-                    nodeA.screenY = memoryPointer.y;
-
-                    if (memoryPointer.memory.imageLoaded && memoryPointer.memory.image.naturalWidth === 0 && memoryPointer.memory.image.naturalHeight === 0) {
-                        nodeA.screenX = nodeB.screenX;
-                        nodeB.screenY = -10;
-                        delete objectA.memory;
-                    } else {
-                        memoryPointer.draw();
-                    }
-                } else {
-                    nodeA.screenX = nodeB.screenX;
-                    nodeA.screenY = -10;
-                    nodeA.screenZ = nodeB.screenZ;
-                }
-                nodeA.screenZ = nodeB.screenZ;
-                nodeA.screenLinearZ = nodeB.screenLinearZ;
-                nodeASize = objectB.averageScale
-            }
-            if(!nodeASize) nodeASize = objectA.averageScale;
-            if(!nodeBSize) nodeBSize = objectB.averageScale;
-
-            // linearize a non linear zBuffer (see index.js)
-            var nodeAScreenZ =   nodeA.screenLinearZ*(nodeASize*1.5);
-            var nodeBScreenZ = nodeB.screenLinearZ*(nodeBSize*1.5);
-
-            var logicA;
-            if (link.logicA == null || link.logicA === false) {
-                logicA = 4;
-            } else {
-                logicA = link.logicA;
-            }
-
-            var logicB;
-            if (link.logicB == null || link.logicB === false) {
-                logicB = 4;
-            } else {
-                logicB = link.logicB;
-            }
-
-            this.drawLine(context, [nodeA.screenX, nodeA.screenY], [nodeB.screenX, nodeB.screenY], nodeAScreenZ, nodeBScreenZ, link, timeCorrection,logicA,logicB);
-        }
-        // context.fill();
-
-        globalCanvas.hasContent = true;
+    function drawDotLine(context, lineStartPoint, lineEndPoint) {
+        context.beginPath();
+        context.moveTo(lineStartPoint[0], lineStartPoint[1]);
+        context.lineTo(lineEndPoint[0], lineEndPoint[1]);
+        context.setLineDash([11]);
+        context.lineWidth = 4;
+        context.strokeStyle = "#ff019f";
+        context.stroke();
+        context.closePath();
     }
 
     exports.initFeature = initFeature;
     exports.renderLinks = renderLinks;
+    exports.setIncompleteLink = setIncompleteLink;
+    exports.resetIncompleteLink = resetIncompleteLink;
+    exports.setCutLine = setCutLine;
+    exports.resetCutLine = resetCutLine;
 
 })(realityEditor.linkRenderer);

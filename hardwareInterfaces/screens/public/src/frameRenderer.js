@@ -6,8 +6,6 @@ createNameSpace("realityEditor.frameRenderer");
 
     function initFeature() {
 
-        guiState = realityEditor.modeToggle.getGuiState();
-
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
         });

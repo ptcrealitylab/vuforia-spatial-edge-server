@@ -400,6 +400,7 @@ realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKe
             content.arY = arPosition.y;
         }
     }
+    content.lastEditor = tempUuid;
     var urlEndpoint;
     if (isFrame) {
         urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
@@ -413,7 +414,7 @@ realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKe
 
 realityEditor.network.postNewFrame = function(contents, callback) {
     console.log("I am adding a frame: " + contents);
-    // contents.lastEditor = globalStates.tempUuid;
+    contents.lastEditor = tempUuid;
     var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/addFrame/";
     this.postData(urlEndpoint, contents, callback);
 };
@@ -430,6 +431,19 @@ realityEditor.network.deleteFrameFromObject = function(frameKey) {
     // } else {
     //     console.log('cant tell if local or global... frame has already been deleted on editor');
     // }
-    // var contents = {lastEditor: globalStates.tempUuid};
-    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/frames/" + frameKey, {});
+    var contents = {lastEditor: tempUuid};
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/frames/" + frameKey, contents);
+};
+
+realityEditor.network.postNewLink = function (objectKey, frameKey, linkKey, thisLink) {
+    // generate action for all links to be reloaded after upload
+    thisLink.lastEditor = tempUuid;
+    // this.cout("sending Link");
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + '/addLink/', thisLink, function (err, response) {
+        console.log(response);
+    });
+};
+
+realityEditor.network.deleteLink = function (objectKey, frameKey, linkKey) {// generate action for all links to be reloaded after upload
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteLink/");
 };
