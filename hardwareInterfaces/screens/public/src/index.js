@@ -14,7 +14,8 @@ var realityEditor = realityEditor || {
     pocket: {},
     trash: {},
     modeToggle: {},
-    database: {}
+    database: {},
+    linkingByDrawing: {}
 };
 
 /**

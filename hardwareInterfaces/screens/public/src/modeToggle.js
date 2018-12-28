@@ -58,16 +58,17 @@ createNameSpace("realityEditor.modeToggle");
         });
     }
 
+    /**
+     * Subscribes to changes to the guiState ("node" vs "ui" view)
+     * Also triggers the callback one time immediately so that the subscriber gets the current value
+     * @param {Function<string>} callback
+     */
     function addGuiStateListener(callback) {
         guiStateListeners.push(callback);
-    }
-
-    function getGuiState() {
-        return guiState;
+        callback(guiState);
     }
 
     exports.initFeature = initFeature;
-    exports.getGuiState = getGuiState;
     exports.addGuiStateListener = addGuiStateListener;
 
 })(realityEditor.modeToggle);

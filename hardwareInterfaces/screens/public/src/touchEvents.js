@@ -1,5 +1,46 @@
 createNameSpace("realityEditor.touchEvents");
 
+/**
+ * A set of arrays of callbacks that other modules can register to be notified of touchEvents actions.
+ * Contains a property for each method name in touchEvents.js that can trigger events in other modules.
+ * The value of each property is an array containing pointers to the callback functions that should be
+ *  triggered when that function is called.
+ * @type {{beginTouchEditing: Array.<function>, onMouseDown: Array.<function>, onMouseMove: Array.<function>, onMouseUp: Array.<function>, }}
+ */
+realityEditor.touchEvents.callbacks = {
+    beginTouchEditing: [],
+    onMouseDown: [],
+    onMouseMove: [],
+    onMouseUp: []
+};
+
+/**
+ * Adds a callback function that will be invoked when the realityEditor.touchEvents.[functionName] is called
+ * @param {string} functionName
+ * @param {function} callback
+ */
+realityEditor.touchEvents.registerCallback = function(functionName, callback) {
+    if (typeof this.callbacks[functionName] === 'undefined') {
+        this.callbacks[functionName] = [];
+    }
+
+    this.callbacks[functionName].push(callback);
+};
+
+/**
+ * Utility for iterating calling all callbacks that other modules have registered for the given function
+ * @param {string} functionName
+ * @param {object|undefined} params
+ */
+realityEditor.touchEvents.triggerCallbacks = function(functionName, params) {
+    if (typeof this.callbacks[functionName] === 'undefined') return;
+
+    // iterates over all registered callbacks to trigger events in various modules
+    this.callbacks[functionName].forEach(function(callback) {
+        callback(params);
+    });
+};
+
 realityEditor.touchEvents.addTouchListeners = function() {
     document.addEventListener('pointerdown', realityEditor.touchEvents.onMouseDown);
     document.addEventListener('pointermove', realityEditor.touchEvents.onMouseMove);
@@ -18,6 +59,8 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
     };
 
     realityEditor.trash.showTrash();
+
+    realityEditor.touchEvents.triggerCallbacks('beginTouchEditing', {objectKey: objectKey, frameKey: frameKey, nodeKey: nodeKey});
 };
 
 realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
@@ -46,7 +89,6 @@ realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouch
 };
 
 realityEditor.touchEvents.onMouseDown = function(e) {
-
     e.preventDefault();
 
     if (e.simulated && firstMouseDown) return; // don't start a simulated gesture if you are doing one already on the touchscreen
@@ -61,7 +103,6 @@ realityEditor.touchEvents.onMouseDown = function(e) {
         realityEditor.utilities.showTouchOverlay();
         isCurrentGestureSimulated = true;
     }
-
 
     if (!e.simulated) {
 
@@ -88,53 +129,53 @@ realityEditor.touchEvents.onMouseDown = function(e) {
     isMouseDown = true;
 
     var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
-    if (!clickedElement) {
-        return;
-    }
-    var editingKeys = realityEditor.utilities.getKeysFromElement(clickedElement);
+    if (clickedElement) {
+        var editingKeys = realityEditor.utilities.getKeysFromElement(clickedElement);
 
-    // Post event into iframe
-    if (realityEditor.utilities.shouldPostEventsIntoIframe()) {
-        realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
-    }
-
-    var clickedVehicle = editingKeys.nodeKey ? (frames[editingKeys.frameKey].nodes[editingKeys.nodeKey]) : frames[editingKeys.frameKey]; // TODO: turn this into a safe, reusable utility function
-
-    var defaultMoveDelay = defaultFrameMoveDelay;
-    if (editingKeys.nodeKey) {
-        defaultMoveDelay = defaultNodeMoveDelay;
-    }
-
-    var moveDelay = clickedVehicle.moveDelay || defaultMoveDelay;
-    // after a certain amount of time, start editing this element
-    var timeoutFunction = setTimeout(function () {
-
-        realityEditor.touchEvents.beginTouchEditing(editingKeys.objectKey, editingKeys.frameKey, editingKeys.nodeKey);
-
-        if (editingKeys.frameKey && !editingKeys.nodeKey) {
-            var editingFrame = realityEditor.utilities.getEditingVehicle();
-            var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
-            var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
-
-            socket.emit('writeScreenObject', {
-                objectKey: editingState.objectKey,
-                frameKey: editingState.frameKey,
-                nodeKey: editingState.nodeKey,
-                touchOffsetX: touchOffsetPercentX,
-                touchOffsetY: touchOffsetPercentY
-            });
+        // Post event into iframe
+        if (realityEditor.utilities.shouldPostEventsIntoIframe()) {
+            realityEditor.utilities.postEventIntoIframe(e, editingKeys.frameKey, editingKeys.nodeKey);
         }
 
+        var clickedVehicle = editingKeys.nodeKey ? (frames[editingKeys.frameKey].nodes[editingKeys.nodeKey]) : frames[editingKeys.frameKey]; // TODO: turn this into a safe, reusable utility function
 
-    }, moveDelay);
+        var defaultMoveDelay = defaultFrameMoveDelay;
+        if (editingKeys.nodeKey) {
+            defaultMoveDelay = defaultNodeMoveDelay;
+        }
 
-    touchEditingTimer = {
-        startX: mouseX,
-        startY: mouseY,
-        moveTolerance: 100,
-        timeoutFunction: timeoutFunction
-    };
+        var moveDelay = clickedVehicle.moveDelay || defaultMoveDelay;
+        // after a certain amount of time, start editing this element
+        var timeoutFunction = setTimeout(function () {
 
+            realityEditor.touchEvents.beginTouchEditing(editingKeys.objectKey, editingKeys.frameKey, editingKeys.nodeKey);
+
+            if (editingKeys.frameKey && !editingKeys.nodeKey) {
+                var editingFrame = realityEditor.utilities.getEditingVehicle();
+                var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
+                var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
+
+                socket.emit('writeScreenObject', {
+                    objectKey: editingState.objectKey,
+                    frameKey: editingState.frameKey,
+                    nodeKey: editingState.nodeKey,
+                    touchOffsetX: touchOffsetPercentX,
+                    touchOffsetY: touchOffsetPercentY
+                });
+            }
+
+
+        }, moveDelay);
+
+        touchEditingTimer = {
+            startX: mouseX,
+            startY: mouseY,
+            moveTolerance: 100,
+            timeoutFunction: timeoutFunction
+        };
+    }
+
+    realityEditor.touchEvents.triggerCallbacks('onMouseDown', {event: e});
 };
 
 realityEditor.touchEvents.onMouseMove = function(e) {
@@ -218,6 +259,8 @@ realityEditor.touchEvents.onMouseMove = function(e) {
         }
 
     }
+
+    realityEditor.touchEvents.triggerCallbacks('onMouseMove', {event: e});
 };
 
 // TODO: move to appropriate module
@@ -291,4 +334,6 @@ realityEditor.touchEvents.onMouseUp = function(e) {
     globalCanvas.context.clearRect(0, 0, globalCanvas.canvas.width, globalCanvas.canvas.height);
 
     // TODO: reset position within screen bounds or send to AR if outside of bounds
+
+    realityEditor.touchEvents.triggerCallbacks('onMouseUp', {event: e});
 };
