@@ -1138,7 +1138,6 @@ function objectBeatServer() {
         var msgContent;
         // check if object ping
         msgContent = JSON.parse(msg);
-        console.log(msgContent);
 
         if (msgContent.id && msgContent.ip && !checkObjectActivation(msgContent.id) && !(msgContent.id in knownObjects)) {
 
