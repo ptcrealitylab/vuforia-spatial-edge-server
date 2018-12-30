@@ -97,6 +97,7 @@ const protocol = "R2";           // the version of this server
 const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
+const netInterface = "en0";
 
 console.log(parseInt(version.replace(/\./g, "")));
 
@@ -118,11 +119,19 @@ const objectInterfaceFolder = "/";
 /**********************************************************************************************************************
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
+const storage = require('node-persist');
+storage.initSync();
 
 var _ = require('lodash');    // JavaScript utility library
 var fs = require('fs');       // Filesystem library
 var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
+var ips = {activeInterface : "en0", interfaces : {}};
+if(storage.getItemSync('activeNetworkInterface') !== undefined){
+    console.log( storage.getItemSync('activeNetworkInterface'));
+    ips.activeInterface = storage.getItemSync('activeNetworkInterface');
+};
+
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
 var exphbs = require('express-handlebars'); // View Template library
@@ -134,6 +143,18 @@ if(!fs.existsSync(objectsPath)) {
 }
 
 var identityFolderName = '.identity';
+
+// find ips
+var ni = require('network-interfaces');
+var options = {ipVersion: 4};
+
+var interfaceNames = ni.getInterfaces(options);
+for(key in interfaceNames){
+    var tempIps = ni.toIps(interfaceNames[key], options);
+    for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
+    ips.interfaces[interfaceNames[key]] = tempIps[0];
+};
+console.log(ips);
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -193,7 +214,8 @@ function Objects() {
     this.name = "";
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    this.ip = ip.address();
+    //this.ip = ip.address();
+    this.ip = ips.interfaces[ips.activeInterface];
     // The version number of the Object.
     this.version = version;
 
@@ -846,7 +868,7 @@ function loadObjects() {
             // try to read a saved previous state of the object
             try {
                 objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + "/object.json", "utf8"));
-                objects[tempFolderName].ip = ip.address();
+                objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; // ip.address();
 
                 // this is for transforming old lists to new lists
                 if (typeof objects[tempFolderName].objectValues !== "undefined") {
@@ -881,7 +903,7 @@ function loadObjects() {
 
 
             } catch (e) {
-                objects[tempFolderName].ip = ip.address();
+                objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
                 cout("No saved data for: " + tempFolderName);
             }
@@ -988,7 +1010,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     // json string to be send
     var message = new Buffer(JSON.stringify({
         id: thisId,
-        ip: thisIp,
+        ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
@@ -998,7 +1020,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (globalVariables.debug) console.log("UDP broadcasting on port: " + PORT);
     if (globalVariables.debug) console.log("Sending beats... Content: " + JSON.stringify({
         id: thisId,
-        ip: thisIp,
+        ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
@@ -1007,7 +1029,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     cout("UDP broadcasting on port: " + PORT);
     cout("Sending beats... Content: " + JSON.stringify({
         id: thisId,
-        ip: thisIp,
+        ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
@@ -1032,7 +1054,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
-                    ip: thisIp,
+                    ip: ips.interfaces[ips.activeInterface],
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
@@ -1073,7 +1095,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
-                    ip: thisIp,
+                    ip: ips.interfaces[ips.activeInterface],
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
@@ -1100,7 +1122,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
  * @note if action "ping" is received, the object calls a heartbeat that is send one time.
  **/
 
-var thisIP = ip.address();
+var thisIP = ips.interfaces[ips.activeInterface]; //ip.address();
 
 function objectBeatServer() {
 
@@ -1116,6 +1138,7 @@ function objectBeatServer() {
         var msgContent;
         // check if object ping
         msgContent = JSON.parse(msg);
+        console.log(msgContent);
 
         if (msgContent.id && msgContent.ip && !checkObjectActivation(msgContent.id) && !(msgContent.id in knownObjects)) {
 
@@ -1196,7 +1219,7 @@ var parseIpSpace = function (ip_string) {
 };
 
 function objectWebServer() {
-    thisIP = ip.address();
+    thisIP = ips.interfaces[ips.activeInterface]; // ip.address();
     // security implemented
 //console.log(objects);
 
@@ -1245,6 +1268,7 @@ function objectWebServer() {
     }));
     webServer.use(bodyParser.json());
     // define a couple of static directory routs
+
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
@@ -1329,7 +1353,7 @@ function objectWebServer() {
 
              scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
              scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
-            scriptNode += '<script> realityObject.serverIp = '+ip.address()+'</script>';
+            scriptNode += '<script> realityObject.serverIp = '+ ips.interfaces[ips.activeInterface]; //ip.address()+'</script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
@@ -1702,6 +1726,9 @@ function objectWebServer() {
     webServer.post('/object/*/frame/*/node/*/addLogicNode/', function (req, res) {
         res.send(addLogicNode(req.params[0], req.params[1], req.params[2], req.body));
     });
+
+
+
 
     function addLogicNode(objectID, frameID, nodeID, body) {
         var updateStatus = "nothing happened";
@@ -3172,7 +3199,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ip.address(), serverPort));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort));
         });
 
         // restart the server from the web frontend to load
@@ -3181,7 +3208,15 @@ function objectWebServer() {
             exit();
         });
 
-        //  deactivated
+        webServer.get('/server/networkInterface/*/', function (req, res) {
+            console.log( req.params[0]);
+            ips.activeInterface = req.params[0];
+            res.json(ips);
+
+            storage.setItemSync('activeNetworkInterface',req.params[0]);
+            //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+            // res.redirect(req.get('referer'));
+        });
 
         webServer.get('/object/*/deactivate/', function (req, res) {
             objects[req.params[0]].deactivated = true;
@@ -3882,10 +3917,10 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 
                 try {
                     objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + "/object.json", "utf8"));
-                    objects[objectIDXML].ip = ip.address();
+                    objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
                     cout("testing: " + objects[objectIDXML].ip);
                 } catch (e) {
-                    objects[objectIDXML].ip = ip.address();
+                    objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
                     cout("testing: " + objects[objectIDXML].ip);
                     cout("No saved data for: " + objectIDXML);
                 }
