@@ -19,18 +19,48 @@ realityServer.initialize = function () {
     console.log(realityServer.states);
 
     document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
-        realityServer.states.ipAdress+":"+realityServer.states.serverPort;
+        realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
 
     this.update();
 
 };
 
 realityServer.update = function (thisItem2) {
+    document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
+        realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
+
     if(!thisItem2) thisItem2 = "";
 
     if(thisItem2 === "") {
         realityServer.domObjects.innerHTML = "";
-        this.domObjects.appendChild(this.templates[0].content.cloneNode(true));
+
+
+        var thisNode = this.templates["networkInterfaces"].content.cloneNode(true);
+
+        for(key in realityServer.states.ipAdress.interfaces) {
+            console.log(key);
+           var thisSubObject = this.templates["networkInterfacelets"].content.cloneNode(true);
+            thisSubObject.querySelector(".netInterface").innerText = key;
+
+            if(key === realityServer.states.ipAdress.activeInterface) {
+                realityServer.switchClass( thisSubObject.querySelector(".netInterface"), "yellow", "green");
+            } else {
+                realityServer.switchClass( thisSubObject.querySelector(".netInterface"), "green", "yellow");
+            }
+
+
+            thisSubObject.querySelector(".netInterface").addEventListener("click", realityServer.gotClick, false);
+
+            thisNode.getElementById("subNetInterface").appendChild(thisSubObject);
+        }
+
+
+
+        console.log(JSON.stringify(thisNode));
+
+        this.domObjects.appendChild(thisNode);
+
+        this.domObjects.appendChild(this.templates["start"].content.cloneNode(true));
         //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
         document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
 
@@ -290,6 +320,15 @@ realityServer.gotClick = function (event) {
      */
     if (buttonClassList.contains("name")) {
         window.location.href='/info/' + realityServer.objects[objectKey].name;
+    }
+
+    if (buttonClassList.contains("netInterface")) {
+        realityServer.sendRequest("/server/networkInterface/" + this.innerText, "GET", function (state) {
+            if (JSON.parse(state).activeInterface) {
+                realityServer.states.ipAdress = JSON.parse(state);
+            }
+            realityServer.update();
+        });
     }
 
     /**
@@ -811,7 +850,7 @@ realityServer.toggleFullScreen = function (item) {
     }
 
     var screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
-    thisIframe.src = "http://"+realityServer.states.ipAdress+":" + screenPort;
+    thisIframe.src = "http://"+realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":" + screenPort;
 
     var thisScreen = thisIframe;
    // if(item) thisScreen = item;

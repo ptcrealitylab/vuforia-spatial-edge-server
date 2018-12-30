@@ -16,6 +16,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         objectName = msg.objectName;
         document.querySelector('.bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+        document.title = msg.objectName;
     });
 
     // callback to set background image based on objectName
