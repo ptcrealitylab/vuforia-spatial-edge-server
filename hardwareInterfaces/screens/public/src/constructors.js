@@ -128,3 +128,100 @@ function Link() {
     this.lockPassword = null;
     this.lockType = null;
 }
+
+/**
+ * @desc Constructor used to define every logic node generated in the Object. It does not need to contain its own ID
+ * since the object is created within the nodes with the ID as object name.
+ **/
+
+function Logic() {
+    this.name = "";
+    // data for logic blocks. depending on the blockSize which one is used.
+    this.data = new Data();
+    // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
+    this.x = 0;
+    // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
+    this.y = 0;
+    // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
+    this.scale = 0.5;
+    // Unconstrained positioning in 3D space
+    this.matrix = [];
+
+    // Used internally from the reality editor to indicate if an object should be rendered or not.
+    this.visible = false;
+    // Used internally from the reality editor to indicate the editing status.
+    this.visibleEditing = false;
+
+    // if showLastSettingFirst is true then lastSetting is the name of the last block that was moved or set.
+    this.lastSetting = false;
+
+    this.lastSettingBlock = "";
+    // the iconImage is in png or jpg format and will be stored within the logicBlock folder. A reference is placed here.
+    this.iconImage = 'auto';
+    // nameInput are the names given for each IO.
+    this.nameInput = ["", "", "", ""];
+    // nameOutput are the names given for each IO
+    this.nameOutput = ["", "", "", ""];
+    // the array of possible connections within the logicBlock.
+    // if a block is set, a new Node instance is coppied in to the spot.
+    /*  this.block = [
+     [[null, 0], [null, 0], [null, 0], [null, 0]],
+     [[null, 0], [null, 0], [null, 0], [null, 0]],
+     [[null, 0], [null, 0], [null, 0], [null, 0]],
+     [[null, 0], [null, 0], [null, 0], [null, 0]]
+     ];*/
+
+    this.type = "logic";
+
+    this.links = {};
+    this.blocks = {};
+
+    this.guiState = new LogicGUIState();
+
+    this.lockPassword = null;
+    this.lockType = null;
+}
+
+/**
+ * @desc Constructor used to define temporary state for drawing the GUI of a Logic node's crafting board
+ **/
+
+function LogicGUIState() {
+    // lookup table for all the current dom elements for the UI of the blocks
+    this.blockDomElements = {};
+    // block link currently being drawn
+    this.tempLink = null;
+    // keeps track of which block/item are currently being interacted with
+    this.tappedContents = null;
+    // keeps track of whether the background has been hidden to show nodes
+    this.isCraftingBackgroundShown = true;
+    // when moving a block, traces outlines of incoming links and re-adds them
+    this.tempIncomingLinks = [];
+    // when moving a block, traces outlines of outgoing links and re-adds them
+    this.tempOutgoingLinks = [];
+    // endpoints of line used to cut links
+    this.cutLine = {
+        start: null,
+        end: null
+    };
+    // endpoints of visual-feedback line showing you the new link you are drawing
+    this.tempLine = {
+        start: null,
+        end: null,
+        color: null
+    };
+    // which block you tapped on in the block menu
+    this.menuSelectedBlock = null;
+    // block to add to crafting board when menu closes
+    this.menuBlockToAdd = null;
+    // touch interaction state in the menu
+    this.menuIsPointerDown = false;
+    // which menu tab is open
+    this.menuSelectedTab = 0;
+    // dom elements for the menu tab buttons
+    this.menuTabDivs = [];
+    // menuBlockData[i] stores an array of json data describing each block in the ith menu tab
+    this.menuBlockData = [ [], [], [], [], [] ]; //defaultBlockData(); //TODO: load cached blocks instead of empty
+    // dom elements for blocks in menu
+    this.menuBlockDivs = [];
+}

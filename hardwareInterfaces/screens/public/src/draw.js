@@ -1,7 +1,7 @@
 createNameSpace("realityEditor.draw");
 
-realityEditor.draw.renderFrames = function() {
-    // // console.log('renderFrames');
+realityEditor.draw.render = function() {
+    // // console.log('render');
     // for (var frameKey in frames) {
     //     if (!frames.hasOwnProperty(frameKey)) continue;
     //     var frame = frames[frameKey];
@@ -16,7 +16,7 @@ realityEditor.draw.renderFrames = function() {
     realityEditor.nodeRenderer.renderNodes();
     realityEditor.linkRenderer.renderLinks();
 
-    requestAnimFrame(realityEditor.draw.renderFrames);
+    requestAnimFrame(realityEditor.draw.render);
 };
 
 realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {

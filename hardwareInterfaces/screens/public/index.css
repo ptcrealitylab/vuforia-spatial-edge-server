@@ -306,6 +306,7 @@ body, html {
     width: 60px;
     height: 60px;
     background-color: rgba(45,255,255,0.15);
+    z-index: 100;
 }
 
 #pocket {
