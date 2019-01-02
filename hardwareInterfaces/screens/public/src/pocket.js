@@ -16,7 +16,7 @@ createNameSpace("realityEditor.pocket");
         pocketButton.id = 'pocketButton';
         document.body.appendChild(pocketButton);
 
-        pocketButton.addEventListener('pointerdown', togglePocketVisibility);
+        pocketButton.addEventListener('pointerup', togglePocketVisibility);
 
         pocket = document.createElement('div');
         pocket.id = 'pocket';
@@ -215,12 +215,12 @@ createNameSpace("realityEditor.pocket");
         // begin dragging it around immediately
         // first need to add the iframe
         // realityEditor.draw.addElement(frameID, null, frame);
-        realityEditor.draw.renderFrames();
+        realityEditor.draw.render();
 
         document.getElementById("object" + frameID).style.left = (event.clientX - width/2) + 'px';
         document.getElementById("object" + frameID).style.top = (event.clientY - height/2) + 'px';
         // realityEditor.draw.drawTransformed(frameID, frame);
-        realityEditor.draw.renderFrames();
+        realityEditor.draw.render();
 
         realityEditor.touchEvents.beginTouchEditing(getObjectId(), frameID, null);
 

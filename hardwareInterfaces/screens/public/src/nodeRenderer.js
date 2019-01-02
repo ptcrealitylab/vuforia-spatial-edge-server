@@ -79,8 +79,22 @@ createNameSpace("realityEditor.nodeRenderer");
         }
     }
 
+    function getNodeKeyFromTouchedElement(touchedElement) {
+        if (touchedElement.parentElement) {
+            if (touchedElement.parentElement.children.length > 0) {
+                var iframeElement = touchedElement.parentElement.children[0]; // TODO: make more robust
+                var nodeKey = iframeElement.dataset.nodeKey;
+                if (nodeKey && nodeKey !== "null") {
+                    return nodeKey;
+                }
+            }
+        }
+        return null;
+    }
+
     exports.initFeature = initFeature;
     exports.renderNodes = renderNodes;
     exports.getNodeCenter = getNodeCenter;
+    exports.getNodeKeyFromTouchedElement = getNodeKeyFromTouchedElement;
 
 })(realityEditor.nodeRenderer);

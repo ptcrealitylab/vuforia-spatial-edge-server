@@ -2,7 +2,8 @@ var realityEditor = realityEditor || {
     gui: {
         ar: {
             moveabilityOverlay: {}
-        }
+        },
+        crafting: {}
     },
     network: {},
     draw: {},
@@ -15,7 +16,8 @@ var realityEditor = realityEditor || {
     trash: {},
     modeToggle: {},
     database: {},
-    linkingByDrawing: {}
+    linkingByDrawing: {},
+    logicNodeInteractions: {}
 };
 
 /**

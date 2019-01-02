@@ -26,7 +26,7 @@ createNameSpace("realityEditor.trash");
         if (guiState !== 'node') return;
 
         if (params.event && params.event.target) {
-            var nodeKey = getNodeKeyFromTouchedElement(params.event.target);
+            var nodeKey = realityEditor.nodeRenderer.getNodeKeyFromTouchedElement(params.event.target);
             if (nodeKey) {
                 console.log('clicked down on node: ' + nodeKey);
                 selectedNode = nodeKey;
@@ -118,19 +118,6 @@ createNameSpace("realityEditor.trash");
         realityEditor.linkRenderer.resetIncompleteLink();
     }
 
-    function getNodeKeyFromTouchedElement(touchOverlay) {
-        if (touchOverlay.parentElement) {
-            if (touchOverlay.parentElement.children.length > 0) {
-                var iframeElement = touchOverlay.parentElement.children[0]; // TODO: make more robust
-                var nodeKey = iframeElement.dataset.nodeKey;
-                if (nodeKey && nodeKey !== "null") {
-                    return nodeKey;
-                }
-            }
-        }
-        return null;
-    }
-
     function resetCutLine() {
         cutLineStart = null;
         realityEditor.linkRenderer.resetCutLine();
@@ -139,8 +126,10 @@ createNameSpace("realityEditor.trash");
     function deleteIntersectingLinks(cutStartX, cutStartY, cutEndX, cutEndY) {
         realityEditor.database.forEachLinkInAllFrames(function(frameKey, linkKey, link) {
 
-            // var startNode = realityEditor.database.getNode(frameKey, link.nodeA);
-            // var endNode = realityEditor.database.getNode(frameKey, link.nodeB);
+            var startNode = realityEditor.database.getNode(frameKey, link.nodeA);
+            var endNode = realityEditor.database.getNode(frameKey, link.nodeB);
+
+            if (!startNode || !endNode) { return; } // TODO: make this work even if one of the nodes is on another object, using memory pointers etc
 
             var startNodeCenter = realityEditor.nodeRenderer.getNodeCenter(link.frameA, link.nodeA);
             var endNodeCenter = realityEditor.nodeRenderer.getNodeCenter(link.frameB, link.nodeB);

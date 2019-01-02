@@ -120,6 +120,97 @@ createNameSpace("realityEditor.database");
         realityEditor.network.deleteLink(keys.objectKey, keys.frameKey, linkKey);
     }
 
+    function createLogicNode(frameKey) {
+
+        var frame = getFrame(frameKey);
+
+        ////////
+
+        var addedLogic = new Logic();
+        //
+        // // if this is being created from a logic node memory, copy over most properties from the saved pocket logic node
+        // if (logicNodeMemory) {
+        //     var keysToCopyOver = ['blocks', 'iconImage', 'lastSetting', 'lastSettingBlock', 'links', 'lockPassword', 'lockType', 'name', 'nameInput', 'nameOutput'];
+        //     keysToCopyOver.forEach( function(key) {
+        //         addedLogic[key] = logicNodeMemory[key];
+        //     });
+        //
+        //     if (typeof logicNodeMemory.nodeMemoryCustomIconSrc !== 'undefined') {
+        //         addedLogic.nodeMemoryCustomIconSrc = logicNodeMemory.nodeMemoryCustomIconSrc;
+        //     }
+        //
+        // }
+        //
+        //
+        // // give new logic node a new unique identifier so each copy is stored separately
+        var logicKey = frameKey + realityEditor.utilities.uuidTime();
+        addedLogic.uuid = logicKey;
+
+        // var closestFrameKey = null;
+        // var closestObjectKey = null;
+        //
+        // // try to find the closest local AR frame to attach the logic node to
+        // var objectKeys = realityEditor.gui.ar.getClosestFrame(function(frame) {
+        //     return frame.visualization !== 'screen' && frame.location === 'local';
+        // });
+        //
+        // // if no local frames found, expand the search to include all frames
+        // if (!objectKeys[1]) {
+        //     objectKeys = realityEditor.gui.ar.getClosestFrame();
+        // }
+        //
+        // if (objectKeys[1] !== null) {
+        //     closestFrameKey = objectKeys[1];
+        //     closestObjectKey = objectKeys[0];
+        //     var closestObject = objects[closestObjectKey];
+        //     var closestFrame = closestObject.frames[closestFrameKey];
+        //
+            addedLogic.objectId = getObjectId();
+            addedLogic.frameId = frameKey;
+
+            addedLogic.x = 0;
+            addedLogic.y = 0;
+
+            var defaultScale = 0.125;
+            addedLogic.scale = defaultScale;
+        //     addedLogic.screenZ = 1000;
+        //     addedLogic.loaded = false;
+        //     addedLogic.matrix = [];
+        //
+        //     // make sure that logic nodes only stick to 2.0 server version
+        //     if(realityEditor.network.testVersion(closestObjectKey) > 165) {
+                console.log('created node with logic key ' + logicKey + ' and added to ' + frameKey);
+                frame.nodes[logicKey] = addedLogic;
+
+        //         // render it
+        //         var nodeUrl = "nodes/logic/index.html";
+        //
+        //         realityEditor.gui.ar.draw.addElement(nodeUrl, closestObjectKey, closestFrameKey, logicKey, 'logic', addedLogic);
+        //
+        //         var _thisNode = document.getElementById("iframe" + logicKey);
+        //         if (_thisNode && _thisNode._loaded) {
+        //             realityEditor.network.onElementLoad(closestObjectKey, logicKey);
+        //         }
+        //
+        //         // send it to the server
+        //         realityEditor.network.postNewLogicNode(closestObject.ip, closestObjectKey, closestFrameKey, logicKey, addedLogic);
+        //
+        //         realityEditor.gui.pocket.setPocketNode(addedLogic, {pageX: globalStates.pointerPosition[0], pageY: globalStates.pointerPosition[1]}, closestObjectKey, closestFrameKey);
+        //
+        //         console.log("successfully added logic from pocket to object (" + closestObject.name + ", " + closestFrame.name + ")");
+        //         return {
+        //             logicNode: addedLogic,
+        //             domElement: globalDOMCache[logicKey],
+        //             objectKey: closestObjectKey,
+        //             frameKey: closestFrameKey
+        //         };
+        //     }
+        // }
+
+        return addedLogic;
+
+    }
+
     exports.initFeature = initFeature;
 
     // TODO: implement queries, e.g. getFrame(frameKey), getNode(frameKey, nodeKey)
@@ -136,5 +227,7 @@ createNameSpace("realityEditor.database");
     // CRUD operators
     exports.createLink = createLink;
     exports.deleteLink = deleteLink;
+
+    exports.createLogicNode = createLogicNode;
 
 })(realityEditor.database);

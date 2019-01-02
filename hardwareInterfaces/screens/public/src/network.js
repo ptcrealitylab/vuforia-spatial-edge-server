@@ -34,7 +34,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         console.log('framesForScreen', msg);
         frames = msg;
-        realityEditor.draw.renderFrames();
+        realityEditor.draw.render();
     });
 
     // callback for when the screenObject data structure is updated in the editor based on projected touch events
@@ -447,3 +447,11 @@ realityEditor.network.postNewLink = function (objectKey, frameKey, linkKey, this
 realityEditor.network.deleteLink = function (objectKey, frameKey, linkKey) {// generate action for all links to be reloaded after upload
     this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteLink/");
 };
+
+// realityEditor.network.postNewLogicNode = function(objectKey, frameKey, nodeKey, logicNode, callback) {
+//     console.log("I am adding a logic node: " + contents);
+//     var simpleLogic = realityEditor.gui.crafting.utilities.convertLogicToServerFormat(logicNode);
+//     simpleLogic.lastEditor = globalStates.tempUuid;
+//     this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/addLogicNode/", simpleLogic, function () {
+//     });
+// };
