@@ -5,12 +5,16 @@
     <meta charset="UTF-8">
     <title>Frame Screen</title>
     <link rel="stylesheet" type="text/css" href="index.css">
+    <link rel="stylesheet" type="text/css" href="crafting.css">
 </head>
 
 <body touch-action="none">
 
 <div class="bg"></div>
 <canvas id="canvas"></canvas>
+
+<div class='craftingBoardBlur' id="craftingBoard"></div>
+
 <div class="touchOverlay" id="touchOverlay"></div>
 <div class="touchOverlay" id="touchOverlaySecondFinger"></div>
 
@@ -42,6 +46,17 @@
 <script src="src/database.js"></script>
 
 <script src="src/linkingByDrawing.js"></script>
+
+<script src="src/crafting/blockMenu.js"></script>
+<script src="src/crafting/eventHandlers.js"></script>
+<script src="src/crafting/eventHelper.js"></script>
+<script src="src/crafting/grid.js"></script>
+<script src="src/crafting/index.js"></script>
+<script src="src/crafting/utilities.js"></script>
+
+<script src="src/crafting/craftingBoardMenu.js"></script>
+
+<script src="src/crafting/screenAdapter.js"></script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
@@ -173,6 +188,8 @@
         realityEditor.linkRenderer.initFeature();
 
         realityEditor.linkingByDrawing.initFeature();
+
+        realityEditor.craftingBoardMenu.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 

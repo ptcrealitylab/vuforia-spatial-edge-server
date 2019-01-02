@@ -17,7 +17,8 @@ var realityEditor = realityEditor || {
     modeToggle: {},
     database: {},
     linkingByDrawing: {},
-    logicNodeInteractions: {}
+    logicNodeInteractions: {},
+    craftingBoardMenu: {}
 };
 
 /**

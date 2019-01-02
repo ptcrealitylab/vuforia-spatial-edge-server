@@ -61,6 +61,8 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
     realityEditor.trash.showTrash();
 
     realityEditor.touchEvents.triggerCallbacks('beginTouchEditing', {objectKey: objectKey, frameKey: frameKey, nodeKey: nodeKey});
+
+    console.log(editingState);
 };
 
 realityEditor.touchEvents.simulateMouseEvent = function(x,y,eventName,multiTouchList) {
