@@ -6,11 +6,18 @@ createNameSpace("realityEditor.logicNodeInteractions");
     var pocketButtonPressed = false;
     var selectedNode = null;
 
+    var touchDownLocation = {
+        x: 0,
+        y: 0
+    };
+    var touchMoveThreshold = 20;
+
+    var craftingBoardShown = null;
+
     /**
      * Initializes the DOM and touch event listeners for the pocket
      */
     function initFeature() {
-
 
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
@@ -19,14 +26,15 @@ createNameSpace("realityEditor.logicNodeInteractions");
         realityEditor.touchEvents.registerCallback('onMouseDown', onMouseDown);
         realityEditor.touchEvents.registerCallback('onMouseMove', onMouseMove);
         realityEditor.touchEvents.registerCallback('onMouseUp', onMouseUp);
+        realityEditor.touchEvents.registerCallback('beginTouchEditing', beginTouchEditing);
 
     }
 
     function onMouseDown(params) {
         if (guiState !== 'node') return;
 
-        console.log(params);
-
+        touchDownLocation.x = mouseX;
+        touchDownLocation.y = mouseY;
 
         if (params.event && params.event.target) {
 
@@ -64,7 +72,14 @@ createNameSpace("realityEditor.logicNodeInteractions");
     function onMouseMove(params) {
         if (guiState !== 'node') return;
 
-        selectedNode = null;
+        if (selectedNode) {
+            var distanceMoved = Math.sqrt((mouseX - touchDownLocation.x) * (mouseX - touchDownLocation.x) + (mouseY - touchDownLocation.y) * (mouseY - touchDownLocation.y));
+            console.log(distanceMoved);
+            if (distanceMoved > touchMoveThreshold) {
+                console.log('moved too far, dont count as tap');
+                selectedNode = null;
+            }
+        }
 
         if (pocketButtonPressed) {
             if (params.event && params.event.target) {
@@ -74,6 +89,15 @@ createNameSpace("realityEditor.logicNodeInteractions");
                     if (getScreenFrames().length > 0) {
                         var frameKey = getScreenFrames()[0].uuid; // TODO: in the future, add to the closest frame you drop it onto... maybe even highlight them to show which one it'll get dropped on...
                         var addedNode = realityEditor.database.createLogicNode(frameKey);
+
+                        var parentFrame = realityEditor.database.getFrame(frameKey);
+                        addedNode.x = mouseX - parentFrame.screen.x;
+                        addedNode.y = mouseY - parentFrame.screen.y;
+                        //
+                        //     x: event.clientX - (width/2),
+                        //     y: event.clientY - (height/2),
+                        //     scale: defaultScale
+                        // };
 
                         ////////
                         // begin dragging it around immediately
@@ -130,19 +154,52 @@ createNameSpace("realityEditor.logicNodeInteractions");
     function onMouseUp(params) {
         pocketButtonPressed = false;
 
-        if (selectedNode && !realityEditor.utilities.getEditingVehicle()) {
+        // console.log(selectedNode);
+
+        if (selectedNode) {
+            // var isNodeBeingMoved = realityEditor.nodeRenderer.getIsNodeMovementHighlighted(selectedNode);
+            // if (!isNodeBeingMoved) {
+                // cant just use !realityEditor.utilities.getEditingVehicle() because this happens after resetEditingState
             var keys = realityEditor.utilities.getKeysFromKey(selectedNode);
             var node = realityEditor.database.getNode(keys.frameKey, keys.nodeKey);
             if (node.type === 'logic') {
+
+                if (craftingBoardShown) {
+                    console.log('hide current board');
+                    realityEditor.gui.crafting.craftingBoardHide();
+                    if (craftingBoardShown === keys.nodeKey) {
+                        craftingBoardShown = null;
+                        return;
+                    }
+                }
+
                 console.log('open up crafting board for node', selectedNode);
 
-                // realityEditor.gui.crafting.craftingBoardVisible(keys.objectKey, keys.frameKey, keys.nodeKey);
+                realityEditor.gui.crafting.craftingBoardVisible(keys.objectKey, keys.frameKey, keys.nodeKey);
+                realityEditor.craftingBoardMenu.addButtons();
+                var nodeCenter = realityEditor.nodeRenderer.getNodeCenter(keys.frameKey, keys.nodeKey);
+
+                // position on top of logic node
+                var gridUpperLeft = {
+                    x: nodeCenter.x + 50,
+                    y: nodeCenter.y - 60
+                };
+                globalStates.currentLogic.grid.xMargin += gridUpperLeft.x;
+                globalStates.currentLogic.grid.yMargin += gridUpperLeft.y;
+                document.getElementById('craftingBoard').style.left = gridUpperLeft.x + 'px';
+                document.getElementById('craftingBoard').style.top = gridUpperLeft.y + 'px';
+
+                craftingBoardShown = keys.nodeKey;
 
             } else {
                 console.log('tapped on a regular node... dont open crafting');
             }
+            // }
         }
+        selectedNode = null;
+    }
 
+    function beginTouchEditing() {
         selectedNode = null;
     }
 

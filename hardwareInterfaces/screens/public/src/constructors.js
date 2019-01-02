@@ -79,22 +79,6 @@ function Node() {
     this.lockType = null;
 }
 
-function Data() {
-    // storing the numerical content send between nodes. Range is between 0 and 1.
-    this.value = 0;
-    // Defines the type of data send. At this point we have 3 active data modes and one future possibility.
-    // (f) defines floating point values between 0 and 1. This is the default value.
-    // (d) defines a digital value exactly 0 or 1.
-    // (+) defines a positive step with a floating point value for compatibility.
-    // (-) defines a negative step with a floating point value for compatibility.
-    this.mode = "f";
-    // string of the name for the unit used (for Example "C", "F", "cm"). Default is set to no unit.
-    this.unit = "";
-    // scale of the unit that is used. Usually the scale is between 0 and 1.
-    this.unitMin = 0;
-    this.unitMax = 1;
-}
-
 /**
  * @desc The Link constructor is used every time a new link is stored in the links object.
  * The link does not need to keep its own ID since it is created with the link ID as Obejct name.
@@ -225,3 +209,105 @@ function LogicGUIState() {
     // dom elements for blocks in menu
     this.menuBlockDivs = [];
 }
+
+/**
+ * @desc The Link constructor for Blocks is used every time a new logic Link is stored in the logic Node.
+ * The block link does not need to keep its own ID since it is created with the link ID as Object name.
+ **/
+
+function BlockLink() {
+    // origin block UUID
+    this.nodeA = null;
+    // item in that block
+    this.logicA = 0;
+    // destination block UUID
+    this.nodeB = null;
+    // item in that block
+    this.logicB = 0;
+    // check if the links are looped.
+    this.loop = false;
+    // Will be used to test if a link is still able to find its destination.
+    // It needs to be discussed what to do if a link is not able to find the destination and for what time span.
+    this.health = 0; // todo use this to test if link is still valid. If not able to send for some while, kill link.
+    // keeps track of the path from the start block to end block and how to draw it
+    this.route = null;
+    this.ballAnimationCount = 0;
+    this.globalId = null;
+}
+
+/**
+ * @desc Constructor used to define every block within the logicNode.
+ * The block does not need to keep its own ID since it is created with the link ID as Object name.
+ **/
+
+
+function Block() {
+    // name of the block
+    this.type = "";
+
+    this.x = null;
+    this.y = null;
+    // amount of elements the IO point is created of. Single IO nodes have the size 1.
+    this.blockSize = 1;
+    // the global / world wide id of the actual reference block design.
+    this.globalId = null;
+    // the checksum should be identical with the checksum for the persistent package files of the reference block design.
+    this.checksum = null; // checksum of the files for the program
+    // data for logic blocks. depending on the blockSize which one is used.
+    this.data = [new Data(), new Data(), new Data(), new Data()];
+    // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
+    // this would allow the the packages to be persistent. // todo discuss usability with Ben.
+    this.privateData = {};
+    this.publicData = {};
+
+    // IO for logic
+    // define how many inputs are active.
+    this.activeInputs = [true, false, false, false];
+    // define how many outputs are active.
+    this.activeOutputs = [true, false, false, false];
+    // define the names of each active IO
+    this.nameInput = ["", "", "", ""];
+    this.nameOutput = ["", "", "", ""];
+    // A specific icon for the node, png or jpg.
+    this.iconImage = null;
+    // Text within the node, if no icon is available.
+    this.name = "";
+    // indicates how much calls per second is happening on this block
+    this.stress = 0;
+
+    this.isTempBlock = false;
+    this.isPortBlock = false;
+}
+
+/**
+ * @desc Constructor used to define special blocks that are connecting the logic crafting with the outside system.
+ **/
+function EdgeBlock() {
+    // name of the block
+    this.name = "";
+    // data for logic blocks. depending on the blockSize which one is used.
+    this.data = [new Data(), new Data(), new Data(), new Data()];
+    // indicates how much calls per second is happening on this block
+    this.stress = 0;
+}
+
+/**
+ * @desc Definition for Values that are sent around.
+ **/
+
+function Data() {
+    // storing the numerical content send between nodes. Range is between 0 and 1.
+    this.value = 0;
+    // Defines the type of data send. At this point we have 3 active data modes and one future possibility.
+    // (f) defines floating point values between 0 and 1. This is the default value.
+    // (d) defines a digital value exactly 0 or 1.
+    // (+) defines a positive step with a floating point value for compatibility.
+    // (-) defines a negative step with a floating point value for compatibility.
+    this.mode = "f";
+    // string of the name for the unit used (for Example "C", "F", "cm"). Default is set to no unit.
+    this.unit = "";
+    // scale of the unit that is used. Usually the scale is between 0 and 1.
+    this.unitMin = 0;
+    this.unitMax = 1;
+}
+

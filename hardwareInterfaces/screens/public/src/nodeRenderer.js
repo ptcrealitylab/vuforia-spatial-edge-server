@@ -91,10 +91,17 @@ createNameSpace("realityEditor.nodeRenderer");
         }
         return null;
     }
+    //
+    // function getIsNodeMovementHighlighted(nodeKey) {
+    //     var nodeContainerDom = document.querySelector('#object' + nodeKey);
+    //     var svg = nodeContainerDom.querySelector('#svg' + nodeKey);
+    //     return svg.style.visibility !== 'hidden';
+    // }
 
     exports.initFeature = initFeature;
     exports.renderNodes = renderNodes;
     exports.getNodeCenter = getNodeCenter;
     exports.getNodeKeyFromTouchedElement = getNodeKeyFromTouchedElement;
+    // exports.getIsNodeMovementHighlighted = getIsNodeMovementHighlighted;
 
 })(realityEditor.nodeRenderer);

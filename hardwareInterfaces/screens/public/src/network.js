@@ -222,6 +222,10 @@ realityEditor.network.onInternalPostMessage = function(e) {
         var iFrame = document.getElementById('iframe' + activeKey);
         iFrame.style.width = msgContent.width + 'px';
         iFrame.style.height = msgContent.height + 'px';
+        var svg = document.getElementById('svg' + activeKey);
+        svg.style.width = msgContent.width + 'px';
+        svg.style.height = msgContent.height + 'px';
+        realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
     }
 
     if (typeof msgContent.socketReconnect !== 'undefined') {
@@ -303,7 +307,7 @@ realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, call
 
     }
     catch (e) {
-        this.cout("could not connect to" + url);
+        console.log("could not connect to" + url);
     }
 };
 
