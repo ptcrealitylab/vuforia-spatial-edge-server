@@ -316,7 +316,7 @@ realityEditor.gui.crafting.eventHelper.placeBlockInCell = function(contents, cel
 
         if (this.shouldUploadBlock(contents.block)) {
             var keys = this.getServerObjectLogicKeys(globalStates.currentLogic);
-            this.realityEditor.network.postNewBlockPosition(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, contents.block.globalId, {x: contents.block.x, y: contents.block.y});
+            this.realityEditor.network.postNewBlockPosition(keys.objectKey, keys.frameKey, keys.logicKey, contents.block.globalId, {x: contents.block.x, y: contents.block.y});
         }
 
         this.crafting.removeBlockDom(contents.block); // remove do so it can be re-rendered in the correct place

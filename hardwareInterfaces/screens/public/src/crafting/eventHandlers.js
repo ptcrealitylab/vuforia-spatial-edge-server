@@ -254,7 +254,7 @@ createNameSpace("realityEditor.gui.crafting.eventHandlers");
         } else if (touchState === TS_MOVE) {
 
             // remove entirely if dragged to menu
-            var isOverSidebar = (e.pageX > window.innerWidth - (menuBarWidth + 20));
+            var isOverSidebar = e.pageX > (globalStates.currentLogic.grid.xMargin + CRAFTING_GRID_WIDTH); //(e.pageX > window.innerWidth - (menuBarWidth + 20)); // ben change
             if (isOverSidebar) {
                 this.crafting.eventHelper.removeTappedContents(tappedContents);
             } else {

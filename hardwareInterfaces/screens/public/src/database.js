@@ -69,7 +69,7 @@ createNameSpace("realityEditor.database");
         return null;
     }
 
-    function createLink(startNodeKey, endNodeKey) {
+    function createLink(startNodeKey, endNodeKey, startLinkColorCode, endLinkColorCode) {
         var startKeys = realityEditor.utilities.getKeysFromKey(startNodeKey);
         var endKeys = realityEditor.utilities.getKeysFromKey(endNodeKey);
 
@@ -95,13 +95,15 @@ createNameSpace("realityEditor.database");
 
         // create link object locally
         var newLink = new Link();
-        newLink.logicSelector = 4;
+        // newLink.logicSelector = 4;
         newLink.nodeA = startKeys.nodeKey;
         newLink.nodeB = endKeys.nodeKey;
         newLink.frameA = startKeys.frameKey;
         newLink.frameB = endKeys.frameKey;
         newLink.objectA = startKeys.objectKey;
         newLink.objectB = endKeys.objectKey;
+        newLink.logicA = startLinkColorCode;
+        newLink.logicB = endLinkColorCode;
 
         var startFrame = getFrame(startKeys.frameKey);
         var linkKey = realityEditor.utilities.uuidTimeShort();
@@ -170,6 +172,9 @@ createNameSpace("realityEditor.database");
 
             addedLogic.x = 0;
             addedLogic.y = 0;
+
+            addedLogic.frameSizeX = 220;
+            addedLogic.frameSizeY = 220;
 
             var defaultScale = 0.125;
             addedLogic.scale = defaultScale;

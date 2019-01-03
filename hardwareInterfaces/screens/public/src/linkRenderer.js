@@ -93,14 +93,23 @@ createNameSpace("realityEditor.linkRenderer");
             var nodeACenter = realityEditor.nodeRenderer.getNodeCenter(frameKey, link.nodeA);
             var nodeBCenter = realityEditor.nodeRenderer.getNodeCenter(link.frameB, link.nodeB);
             var linkWidth = 10;
-            var linkColorCode = 4; // white
 
-            drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [nodeBCenter.x, nodeBCenter.y], linkWidth, linkWidth, link, timeCorrection, linkColorCode, linkColorCode);
+            var startColorCode = (typeof link.logicA === 'number') ? link.logicA  : 4; // white
+            var endColorCode = (typeof link.logicB === 'number') ? link.logicB  : 4;
+
+            var startOffset = realityEditor.nodeRenderer.getOffsetForPort(startColorCode);
+            var endOffset = realityEditor.nodeRenderer.getOffsetForPort(endColorCode);
+
+            drawLine(globalCanvas.context, [nodeACenter.x + startOffset.x, nodeACenter.y + startOffset.y], [nodeBCenter.x + endOffset.x, nodeBCenter.y + endOffset.y], linkWidth, linkWidth, link, timeCorrection, startColorCode, endColorCode);
 
         });
 
         if (storedIncompleteLink.startNodeKey) {
-            drawIncompleteLink(storedIncompleteLink.startNodeKey, storedIncompleteLink.endX, storedIncompleteLink.endY);
+
+            var startOffset = realityEditor.nodeRenderer.getOffsetForPort(storedIncompleteLink.colors.start);
+            var endOffset = realityEditor.nodeRenderer.getOffsetForPort(storedIncompleteLink.colors.end);
+
+            drawIncompleteLink(storedIncompleteLink.startNodeKey, storedIncompleteLink.endX + endOffset.x, storedIncompleteLink.endY + endOffset.y, storedIncompleteLink.colors);
         }
 
         if (storedCutLine.startX && storedCutLine.endX) {
@@ -114,11 +123,13 @@ createNameSpace("realityEditor.linkRenderer");
      * @param startNodeKey
      * @param endX
      * @param endY
+     * @param {{start: number|boolean, end: number|boolean}} colors
      */
-    function setIncompleteLink(startNodeKey, endX, endY) {
+    function setIncompleteLink(startNodeKey, endX, endY, colors) {
         storedIncompleteLink.startNodeKey = startNodeKey;
         storedIncompleteLink.endX = endX;
         storedIncompleteLink.endY = endY;
+        storedIncompleteLink.colors = colors;
     }
 
     /**
@@ -135,15 +146,17 @@ createNameSpace("realityEditor.linkRenderer");
      * @param {string} startNodeKey
      * @param {number} endX
      * @param {number} endY
+     * @param {{start: number|boolean, end: number|boolean}} colors
      */
-    function drawIncompleteLink(startNodeKey, endX, endY) {
+    function drawIncompleteLink(startNodeKey, endX, endY, colors) {
         var startKeys = realityEditor.utilities.getKeysFromKey(startNodeKey);
         // var nodeA = frames[startKeys.frameKey].nodes[startKeys.nodeKey];
         var nodeACenter = realityEditor.nodeRenderer.getNodeCenter(startKeys.frameKey, startKeys.nodeKey);
         var linkWidth = 10;
-        var linkColorCode = 4; // white
+        var startColorCode = (typeof colors.start === 'number') ? colors.start : 4; // white
+        var endColorCode = (typeof colors.end === 'number') ? colors.end : 4;
 
-        drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [endX, endY], linkWidth, linkWidth, incompleteLink, timeCorrection,linkColorCode, linkColorCode);
+        drawLine(globalCanvas.context, [nodeACenter.x, nodeACenter.y], [endX, endY], linkWidth, linkWidth, incompleteLink, timeCorrection, startColorCode, endColorCode);
     }
 
     /**
@@ -184,7 +197,7 @@ createNameSpace("realityEditor.linkRenderer");
      * @param {number|undefined} speed - optionally adjusts how quickly the animation moves
      */
     function drawLine(context, lineStartPoint, lineEndPoint, lineStartWeight, lineEndWeight, linkObject, timeCorrector, startColor, endColor, speed) {
-        if(!speed) speed = 1;
+        if(!speed) speed = 0.5; // todo: revert to 1, but fix
         var angle = Math.atan2((lineStartPoint[1] - lineEndPoint[1]), (lineStartPoint[0] - lineEndPoint[0]));
         var positionDelta = 0;
         var length1 = lineEndPoint[0] - lineStartPoint[0];

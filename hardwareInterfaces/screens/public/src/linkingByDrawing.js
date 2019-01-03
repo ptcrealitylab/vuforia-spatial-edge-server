@@ -5,6 +5,16 @@ createNameSpace("realityEditor.trash");
     var guiState;
     var selectedNode = null;
     var cutLineStart = null;
+    // var startNodeColor = null;
+    // var endNodeColor = null;
+
+    /**
+     * @type {{start: number|boolean, end: number|boolean}}
+     */
+    var linkColors = {
+        start: false,
+        end: false
+    };
 
     /**
      * Initializes the DOM and touch event listeners for the trash
@@ -30,6 +40,11 @@ createNameSpace("realityEditor.trash");
             if (nodeKey) {
                 console.log('clicked down on node: ' + nodeKey);
                 selectedNode = nodeKey;
+                linkColors = {
+                    start: false,
+                    end: false
+                };
+                realityEditor.nodeRenderer.enableLogicNodeHighlighting(true);
             } else {
                 // console.log(params);
 
@@ -54,30 +69,43 @@ createNameSpace("realityEditor.trash");
             var linkEndY = mouseY;
 
             // snap link to overlapping node if we mouse over a valid destination
-
+            // also set the colors ?
             var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
             var doesLinkAlreadyExist = false; // TODO: implement in reusable way, same as onMouseUp and/or database.createLink calculations
-            if (clickedElement && clickedElement !== selectedNode && !doesLinkAlreadyExist) {
+            if (clickedElement /*&& clickedElement.dataset.nodeKey !== selectedNode*/ && !doesLinkAlreadyExist) {
                 var endNodeCenter = realityEditor.nodeRenderer.getNodeCenter(clickedElement.dataset.frameKey, clickedElement.dataset.nodeKey);
                 linkEndX = endNodeCenter.x;
                 linkEndY = endNodeCenter.y;
+
+                // console.log('set rendering for node: ' + clickedElement.dataset.nodeKey);
+
+                var destinationNode = realityEditor.database.getNode(clickedElement.dataset.frameKey, clickedElement.dataset.nodeKey);
+
+                // if you mouse over a logic node, set color of link to color of port you go over
+                if (destinationNode.type === 'logic') {
+
+                    var colorCode = realityEditor.nodeRenderer.getSelectedPort(clickedElement.dataset.frameKey, clickedElement.dataset.nodeKey, mouseX, mouseY);
+                    console.log('get color for logic: ' + colorCode);
+
+                    if (clickedElement.dataset.nodeKey === selectedNode) {
+                        linkColors.start = colorCode;
+                    } else {
+                        linkColors.end = colorCode;
+                    }
+
+                } else {
+
+                    // if you mouse over a non-logic node, set color of link to white
+                    if (clickedElement.dataset.nodeKey === selectedNode) {
+                        linkColors.start = false;
+                    } else {
+                        linkColors.end = false;
+                    }
+                }
+
             }
 
-            realityEditor.linkRenderer.setIncompleteLink(selectedNode, linkEndX, linkEndY);
-
-            // // console.log(params);
-            // var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
-            // if (clickedElement) {
-            //     var newNodeKey = clickedElement.dataset.nodeKey;
-            //     if (newNodeKey !== selectedNode) {
-            //         console.log('dragged onto a new node');
-            //     }
-            // } else {
-            //     // start drawing link
-            //     console.log('draw link in progress');
-            //     // realityEditor.linkRenderer.drawIncompleteLink(selectedNode, mouseX, mouseY);
-            // }
-
+            realityEditor.linkRenderer.setIncompleteLink(selectedNode, linkEndX, linkEndY, linkColors);
         }
 
         if (cutLineStart) {
@@ -117,7 +145,7 @@ createNameSpace("realityEditor.trash");
 
     function createLink(startNodeKey, endNodeKey) {
         console.log('create new link from ' + startNodeKey + ' to ' + endNodeKey);
-        realityEditor.database.createLink(startNodeKey, endNodeKey);
+        realityEditor.database.createLink(startNodeKey, endNodeKey, linkColors.start, linkColors.end);
         stopCreatingLink();
     }
 
@@ -129,7 +157,10 @@ createNameSpace("realityEditor.trash");
 
     function stopCreatingLink() {
         selectedNode = null;
+        startNodeColor = null;
+        endNodeColor = null;
         realityEditor.linkRenderer.resetIncompleteLink();
+        realityEditor.nodeRenderer.enableLogicNodeHighlighting(false);
     }
 
     function resetCutLine() {

@@ -272,7 +272,7 @@ body, html {
     left: 0;
     top: 0;
     pointer-events: none;
-    z-index: 50;
+    /*z-index: 50;*/
 }
 
 .touchOverlay {
@@ -396,4 +396,46 @@ body, html {
     /*-webkit-transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);*/
     pointer-events: none;
     background-color: transparent;
+}
+
+@keyframes scaleIn {
+    0% {
+        visibility: visible;
+        -webkit-transform: scale(0);
+        opacity: 0;
+    }
+    100% {
+        -webkit-transform: scale(1.0);
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+@keyframes scaleOut {
+    0% {
+        -webkit-transform: scale(1.0);
+        visibility: visible;
+        opacity: 1;
+    }
+    100% {
+        -webkit-transform: scale(0);
+        visibility: hidden;
+        opacity: 0;
+    }
+}
+
+.scaleIn {
+    visibility: visible;
+    animation-name: scaleIn;
+    animation-duration: 100ms;
+    -webkit-animation-fill-mode: forwards; /* Chrome, Safari, Opera */
+    -webkit-animation-timing-function: ease-out;
+}
+
+.scaleOut {
+    visibility: hidden;
+    animation-name: scaleOut;
+    animation-duration: 100ms;
+    -webkit-animation-fill-mode: forwards;
+    -webkit-animation-timing-function: ease-in;
 }

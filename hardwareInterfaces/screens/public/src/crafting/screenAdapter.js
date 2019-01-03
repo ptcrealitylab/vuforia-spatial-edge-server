@@ -79,9 +79,6 @@ realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys = function(logic
     return keys;
 };
 
-realityEditor.network.postNewBlock = function(){console.log('stubbed out postNewBlock')};
-realityEditor.network.postNewBlockLink = function(){console.log('stubbed out postNewBlockLink')};
-
 // /**
 //  * Performs a search through all objects and frames in the system to find a logic node that matches this grid's logicID
 //  * @return {Logic|undefined}
@@ -183,11 +180,7 @@ realityEditor.gui.ar.draw.updateLogicNodeIcon = function() {console.log('stubbed
 
 realityEditor.device.utilities.uuidTime = realityEditor.utilities.uuidTime;
 
-realityEditor.network.deleteBlockFromObject = function() {console.log('stubbed out realityEditor.network.deleteBlockFromObject()')};
-realityEditor.network.deleteBlockLinkFromObject = function() {console.log('stubbed out realityEditor.network.deleteBlockLinkFromObject()')};
-realityEditor.network.postNewBlockPosition = function() {console.log('stubbed out realityEditor.network.postNewBlockPosition()')};
-
-realityEditor.gui.crafting.eventHelper.toggleDatacraftingExceptPort = function() {console.log('stubbed out toggleDatacraftingExceptPort to fix bug')};
+realityEditor.gui.crafting.eventHelper.toggleDatacraftingExceptPort = function() {/*console.log('stubbed out toggleDatacraftingExceptPort to fix bug')*/};
 
 globalStates.craftingMoveDelay = 400;
 
