@@ -547,3 +547,15 @@ realityEditor.utilities.calculateX = function (seg1, seg2) {
 realityEditor.utilities.calculateY = function (seg1, x) {
     return seg1[0] * x + seg1[1];
 };
+
+/**
+ * Calculates the cartesian distance between two points using the Pythagorean theorem
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @return {number}
+ */
+realityEditor.utilities.distance = function(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+};

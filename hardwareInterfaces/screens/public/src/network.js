@@ -226,6 +226,9 @@ realityEditor.network.onInternalPostMessage = function(e) {
         svg.style.width = msgContent.width + 'px';
         svg.style.height = msgContent.height + 'px';
         realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
+        // var cover = document.getElementById("cover" + activeKey);
+        // cover.style.width = msgContent.width + 'px';
+        // cover.style.height = msgContent.height + 'px';
     }
 
     if (typeof msgContent.socketReconnect !== 'undefined') {
@@ -452,10 +455,40 @@ realityEditor.network.deleteLink = function (objectKey, frameKey, linkKey) {// g
     this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteLink/");
 };
 
-// realityEditor.network.postNewLogicNode = function(objectKey, frameKey, nodeKey, logicNode, callback) {
-//     console.log("I am adding a logic node: " + contents);
-//     var simpleLogic = realityEditor.gui.crafting.utilities.convertLogicToServerFormat(logicNode);
-//     simpleLogic.lastEditor = globalStates.tempUuid;
-//     this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/addLogicNode/", simpleLogic, function () {
-//     });
-// };
+// ----- endpoints for crafting ----- //
+
+realityEditor.network.postNewLogicNode = function (objectKey, frameKey, nodeKey, logicNode) {
+    var simpleLogic = realityEditor.gui.crafting.utilities.convertLogicToServerFormat(logicNode);
+    simpleLogic.lastEditor = tempUuid;
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/addLogicNode/", simpleLogic);
+};
+
+realityEditor.network.postNewBlock = function (objectKey, frameKey, nodeKey, blockKey, block) {
+    // /logic/*/*/block/*/
+    block.lastEditor = tempUuid;
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/block/" + blockKey + "/addBlock/", block);
+};
+
+realityEditor.network.postNewBlockPosition = function (objectKey, frameKey, logicKey, blockKey, block) {
+    block.lastEditor = tempUuid;
+    if (typeof block.x === "number" && typeof block.y === "number") {
+        this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + logicKey + "/block/" + blockKey + "/blockPosition/", block);
+    }
+};
+
+realityEditor.network.postNewBlockLink = function (objectKey, frameKey, nodeKey, linkKey, thisLink) {
+    var linkMessage = this.realityEditor.gui.crafting.utilities.convertBlockLinkToServerFormat(thisLink);
+    linkMessage.lastEditor = tempUuid;
+    // /logic/*/*/link/*/
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/link/" + linkKey + "/addBlockLink/", linkMessage);
+};
+
+realityEditor.network.deleteBlockFromObject = function (objectKey, frameKey, nodeKey, blockKey) {
+    // /logic/*/*/block/*/
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/block/" + blockKey + "/editor/" + tempUuid + "/deleteBlock/");
+};
+
+realityEditor.network.deleteBlockLinkFromObject = function (objectKey, frameKey, nodeKey, linkKey) {
+    // /logic/*/*/link/*/
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteBlockLink/");
+};

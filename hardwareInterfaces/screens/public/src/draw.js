@@ -100,6 +100,7 @@ realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
 
         // add a cover object for touch event synthesizing
         var cover = document.createElement('div');
+        cover.id = "cover" + vehicleKey;
         cover.classList.add('main');
         cover.style.visibility = 'visible';
         cover.style.width = addIframe.style.width;

@@ -22,7 +22,13 @@ createNameSpace("realityEditor.trash");
         console.log('released on trash');
 
         if (editingState.objectKey && editingState.frameKey) {
-            deleteFrame(editingState.frameKey);
+            if (isVehicleDeletable(editingState.frameKey, editingState.nodeKey)) {
+                if (editingState.nodeKey) {
+                    deleteNode(editingState.frameKey, editingState.nodeKey);
+                } else {
+                    deleteFrame(editingState.frameKey);
+                }
+            }
         }
 
     }
@@ -31,26 +37,56 @@ createNameSpace("realityEditor.trash");
 
         // remove it from the DOM
         realityEditor.frameRenderer.killElement(frameKey);
-        // realityEditor.gui.ar.draw.removeFromEditedFramesList(this.editingState.frame);
 
-        // // delete it from the server
+        // delete it from the server
         realityEditor.network.deleteFrameFromObject(frameKey);
-        //
-        // globalStates.inTransitionObject = null;
-        // globalStates.inTransitionFrame = null;
 
         delete frames[frameKey];
 
-        console.log('fully deleted ' + frameKey);
+        realityEditor.utilities.resetEditingState();
 
+        console.log('fully deleted frame ' + frameKey);
+    }
+
+    function deleteNode(frameKey, nodeKey) {
+        // remove it from the DOM
+        realityEditor.frameRenderer.killElement(nodeKey);
+
+        // TODO: delete it from the server
+        // realityEditor.network.deleteFrameFromObject(frameKey);
+
+        var parentFrame = realityEditor.database.getFrame(frameKey);
+        delete parentFrame.nodes[nodeKey];
+
+        realityEditor.utilities.resetEditingState();
+
+        console.log('fully deleted node ' + nodeKey);
+    }
+
+    function isVehicleDeletable(frameKey, nodeKey) {
+        var isDeletable = false;
+        if (nodeKey) {
+            var node = realityEditor.database.getNode(editingState.frameKey, editingState.nodeKey);
+            if (node && node.type === 'logic') {
+                isDeletable = true;
+            }
+        } else {
+            var frame = realityEditor.database.getFrame(frameKey);
+            if (frame && frame.location === 'global') {
+                isDeletable = true;
+            }
+        }
+        return isDeletable;
     }
 
     function hideTrash() {
         trashButton.classList.add('closed');
     }
 
-    function showTrash() {
-        trashButton.classList.remove('closed');
+    function showTrash(frameKey, nodeKey) {
+        if (isVehicleDeletable(frameKey, nodeKey)) {
+            trashButton.classList.remove('closed');
+        }
     }
 
     exports.initFeature = initFeature;

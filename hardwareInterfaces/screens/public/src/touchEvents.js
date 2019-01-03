@@ -58,7 +58,7 @@ realityEditor.touchEvents.beginTouchEditing = function(objectKey, frameKey, node
         y: iFrame.getBoundingClientRect().top - mouseY
     };
 
-    realityEditor.trash.showTrash();
+    realityEditor.trash.showTrash(editingState.frameKey, editingState.nodeKey);
 
     realityEditor.touchEvents.triggerCallbacks('beginTouchEditing', {objectKey: objectKey, frameKey: frameKey, nodeKey: nodeKey});
 

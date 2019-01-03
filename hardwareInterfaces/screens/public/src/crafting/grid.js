@@ -1040,7 +1040,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
 
     function uploadLinkIfNecessary(blockLink, linkKey) {
         var keys = realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys(globalStates.currentLogic);
-        realityEditor.network.postNewBlockLink(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, linkKey, blockLink);
+        realityEditor.network.postNewBlockLink(keys.objectKey, keys.frameKey, keys.logicKey, linkKey, blockLink);
     }
 
     function blockWithID(globalID, logic) {
@@ -1074,7 +1074,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
 
         if (realityEditor.gui.crafting.eventHelper.shouldUploadBlock(block)) {
             var keys = realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys(globalStates.currentLogic);
-            realityEditor.network.postNewBlock(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, block.globalId, block);
+            realityEditor.network.postNewBlock(keys.objectKey, keys.frameKey, keys.logicKey, block.globalId, block);
         }
 
         return block;
@@ -1137,7 +1137,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
     function removeBlockLink(linkKey) {
         //if (realityEditor.gui.crafting.eventHelper.shouldUploadBlockLink(globalStates.currentLogic.links[linkKey])) {
             var keys = realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys(globalStates.currentLogic);
-            realityEditor.network.deleteBlockLinkFromObject(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, linkKey);
+            realityEditor.network.deleteBlockLinkFromObject(keys.objectKey, keys.frameKey, keys.logicKey, linkKey);
         //} else {
         //    deleteSurroundingBlockLinksFromServer(linkKey);
         //}
@@ -1152,7 +1152,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
         }
         if (realityEditor.gui.crafting.eventHelper.shouldUploadBlock(logic.blocks[blockID])) {
             var keys = realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys(logic);
-            realityEditor.network.deleteBlockFromObject(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, blockID);
+            realityEditor.network.deleteBlockFromObject(keys.objectKey, keys.frameKey, keys.logicKey, blockID);
         }
         delete logic.guiState.blockDomElements[blockID];
         delete logic.blocks[blockID];
@@ -1165,7 +1165,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
             if (link.nodeA === blockID || link.nodeB === blockID) {
                 //if (realityEditor.gui.crafting.eventHelper.shouldUploadBlockLink(link)) {
                     var keys = realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys(logic);
-                    realityEditor.network.deleteBlockLinkFromObject(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, linkKey);
+                    realityEditor.network.deleteBlockLinkFromObject(keys.objectKey, keys.frameKey, keys.logicKey, linkKey);
                 //} else {
                 //    deleteSurroundingBlockLinksFromServer(linkKey);
                 //}
@@ -1180,7 +1180,7 @@ createNameSpace("realityEditor.gui.crafting.grid");
         var surroundingLinks = getLinksSurroundingEdgeLink(edgeLink);
         if (surroundingLinks.length > 0) {
             surroundingLinks.forEach( function(link) {
-                realityEditor.network.deleteBlockLinkFromObject(keys.ip, keys.objectKey, keys.frameKey, keys.logicKey, edgeBlockLinkKey(link));
+                realityEditor.network.deleteBlockLinkFromObject(keys.objectKey, keys.frameKey, keys.logicKey, edgeBlockLinkKey(link));
             });
         }
     }

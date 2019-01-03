@@ -21,6 +21,9 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
+            if (guiState !== 'node') {
+                hideCurrentCraftingBoard();
+            }
         });
 
         realityEditor.touchEvents.registerCallback('onMouseDown', onMouseDown);
@@ -112,11 +115,8 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
                         realityEditor.touchEvents.beginTouchEditing(getObjectId(), frameKey, addedNode.uuid);
 
-                        // // send it to the server
-
-                        // realityEditor.network.postNewLogicNode(getObjectId(), frameKey, addedNode.uuid, addedNode, function(error, response) {
-                        //     console.log(error, response);
-                        // });
+                        // send it to the server
+                        realityEditor.network.postNewLogicNode(getObjectId(), frameKey, addedNode.uuid, addedNode);
 
                         ////////
 
@@ -126,28 +126,6 @@ createNameSpace("realityEditor.logicNodeInteractions");
                 }
             }
         }
-
-        // if (selectedNode) {
-        //     realityEditor.linkRenderer.setIncompleteLink(selectedNode, mouseX, mouseY);
-        //
-        //     // // console.log(params);
-        //     // var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
-        //     // if (clickedElement) {
-        //     //     var newNodeKey = clickedElement.dataset.nodeKey;
-        //     //     if (newNodeKey !== selectedNode) {
-        //     //         console.log('dragged onto a new node');
-        //     //     }
-        //     // } else {
-        //     //     // start drawing link
-        //     //     console.log('draw link in progress');
-        //     //     // realityEditor.linkRenderer.drawIncompleteLink(selectedNode, mouseX, mouseY);
-        //     // }
-        //
-        // }
-        //
-        // if (cutLineStart) {
-        //     realityEditor.linkRenderer.setCutLine(cutLineStart.x, cutLineStart.y, mouseX, mouseY);
-        // }
 
         // update grid xMargin for the open crafting board if there is one
         var editingVehicle = realityEditor.utilities.getEditingVehicle();
@@ -171,13 +149,10 @@ createNameSpace("realityEditor.logicNodeInteractions");
             var node = realityEditor.database.getNode(keys.frameKey, keys.nodeKey);
             if (node.type === 'logic') {
 
-                if (craftingBoardShown) {
-                    console.log('hide current board');
-                    realityEditor.gui.crafting.craftingBoardHide();
-                    if (craftingBoardShown === keys.nodeKey) {
-                        craftingBoardShown = null;
-                        return;
-                    }
+                var stopAfterHiding = (craftingBoardShown && craftingBoardShown === keys.nodeKey);
+                hideCurrentCraftingBoard();
+                if (stopAfterHiding) {
+                    return;
                 }
 
                 console.log('open up crafting board for node', selectedNode);
@@ -187,7 +162,7 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
                 positionCraftingBoardForNode(keys.frameKey, keys.nodeKey);
 
-                craftingBoardShown = keys.nodeKey;
+                setCraftingBoardShown(keys.nodeKey);
 
             } else {
                 console.log('tapped on a regular node... dont open crafting');
@@ -197,17 +172,34 @@ createNameSpace("realityEditor.logicNodeInteractions");
         selectedNode = null;
     }
 
+    function hideCurrentCraftingBoard() {
+        if (craftingBoardShown) {
+            console.log('hide current board');
+            realityEditor.gui.crafting.craftingBoardHide();
+            setCraftingBoardShown(null);
+        }
+    }
+
+    function setCraftingBoardShown(newValue) {
+        craftingBoardShown = newValue;
+
+        // disable node port colors from popping up if the crafting board is open // TODO: only disable when touch down within crafting board, but still let you program the rest of the application with new links to logic nodes
+        // TODO: maybe only enable highlighting if you are in the middle of drawing a link
+        // var shouldEnableLogicNodeHighlighting = (newValue === null);
+        // realityEditor.nodeRenderer.enableLogicNodeHighlighting(shouldEnableLogicNodeHighlighting);
+    }
+
     function positionCraftingBoardForNode(frameKey, nodeKey) {
         var nodeCenter = realityEditor.nodeRenderer.getNodeCenter(frameKey, nodeKey);
 
         // position on top of logic node
         var gridUpperLeft = {
-            x: nodeCenter.x + 50,
+            x: nodeCenter.x + 100,
             y: nodeCenter.y - 60
         };
 
         if (gridUpperLeft.x > window.innerWidth - (CRAFTING_GRID_WIDTH + menuBarWidth)) {
-            gridUpperLeft.x = nodeCenter.x - (CRAFTING_GRID_WIDTH + menuBarWidth) - 120;
+            gridUpperLeft.x = nodeCenter.x - (CRAFTING_GRID_WIDTH + menuBarWidth) - 100;
         }
 
         globalStates.currentLogic.grid.xMargin += gridUpperLeft.x;
