@@ -49,7 +49,21 @@ createNameSpace("realityEditor.trash");
         if (guiState !== 'node') return;
 
         if (selectedNode) {
-            realityEditor.linkRenderer.setIncompleteLink(selectedNode, mouseX, mouseY);
+
+            var linkEndX = mouseX;
+            var linkEndY = mouseY;
+
+            // snap link to overlapping node if we mouse over a valid destination
+
+            var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
+            var doesLinkAlreadyExist = false; // TODO: implement in reusable way, same as onMouseUp and/or database.createLink calculations
+            if (clickedElement && clickedElement !== selectedNode && !doesLinkAlreadyExist) {
+                var endNodeCenter = realityEditor.nodeRenderer.getNodeCenter(clickedElement.dataset.frameKey, clickedElement.dataset.nodeKey);
+                linkEndX = endNodeCenter.x;
+                linkEndY = endNodeCenter.y;
+            }
+
+            realityEditor.linkRenderer.setIncompleteLink(selectedNode, linkEndX, linkEndY);
 
             // // console.log(params);
             // var clickedElement = realityEditor.utilities.getClickedDraggableElement(mouseX, mouseY);
@@ -126,8 +140,8 @@ createNameSpace("realityEditor.trash");
     function deleteIntersectingLinks(cutStartX, cutStartY, cutEndX, cutEndY) {
         realityEditor.database.forEachLinkInAllFrames(function(frameKey, linkKey, link) {
 
-            var startNode = realityEditor.database.getNode(frameKey, link.nodeA);
-            var endNode = realityEditor.database.getNode(frameKey, link.nodeB);
+            var startNode = realityEditor.database.getNode(link.frameA, link.nodeA);
+            var endNode = realityEditor.database.getNode(link.frameB, link.nodeB);
 
             if (!startNode || !endNode) { return; } // TODO: make this work even if one of the nodes is on another object, using memory pointers etc
 

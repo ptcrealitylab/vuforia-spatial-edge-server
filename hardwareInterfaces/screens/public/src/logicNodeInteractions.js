@@ -91,8 +91,8 @@ createNameSpace("realityEditor.logicNodeInteractions");
                         var addedNode = realityEditor.database.createLogicNode(frameKey);
 
                         var parentFrame = realityEditor.database.getFrame(frameKey);
-                        addedNode.x = mouseX - parentFrame.screen.x;
-                        addedNode.y = mouseY - parentFrame.screen.y;
+                        addedNode.x = mouseX - parentFrame.screen.x - addedNode.width;
+                        addedNode.y = mouseY - parentFrame.screen.y - addedNode.height;
                         //
                         //     x: event.clientX - (width/2),
                         //     y: event.clientY - (height/2),
@@ -149,6 +149,13 @@ createNameSpace("realityEditor.logicNodeInteractions");
         //     realityEditor.linkRenderer.setCutLine(cutLineStart.x, cutLineStart.y, mouseX, mouseY);
         // }
 
+        // update grid xMargin for the open crafting board if there is one
+        var editingVehicle = realityEditor.utilities.getEditingVehicle();
+        if (craftingBoardShown && editingVehicle && editingVehicle.type === 'logic' && craftingBoardShown === editingVehicle.uuid) {
+            var keys = realityEditor.utilities.getKeysFromKey(editingVehicle.uuid);
+            positionCraftingBoardForNode(keys.frameKey, keys.nodeKey);
+        }
+
     }
 
     function onMouseUp(params) {
@@ -177,17 +184,8 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
                 realityEditor.gui.crafting.craftingBoardVisible(keys.objectKey, keys.frameKey, keys.nodeKey);
                 realityEditor.craftingBoardMenu.addButtons();
-                var nodeCenter = realityEditor.nodeRenderer.getNodeCenter(keys.frameKey, keys.nodeKey);
 
-                // position on top of logic node
-                var gridUpperLeft = {
-                    x: nodeCenter.x + 50,
-                    y: nodeCenter.y - 60
-                };
-                globalStates.currentLogic.grid.xMargin += gridUpperLeft.x;
-                globalStates.currentLogic.grid.yMargin += gridUpperLeft.y;
-                document.getElementById('craftingBoard').style.left = gridUpperLeft.x + 'px';
-                document.getElementById('craftingBoard').style.top = gridUpperLeft.y + 'px';
+                positionCraftingBoardForNode(keys.frameKey, keys.nodeKey);
 
                 craftingBoardShown = keys.nodeKey;
 
@@ -197,6 +195,25 @@ createNameSpace("realityEditor.logicNodeInteractions");
             // }
         }
         selectedNode = null;
+    }
+
+    function positionCraftingBoardForNode(frameKey, nodeKey) {
+        var nodeCenter = realityEditor.nodeRenderer.getNodeCenter(frameKey, nodeKey);
+
+        // position on top of logic node
+        var gridUpperLeft = {
+            x: nodeCenter.x + 50,
+            y: nodeCenter.y - 60
+        };
+
+        if (gridUpperLeft.x > window.innerWidth - (CRAFTING_GRID_WIDTH + menuBarWidth)) {
+            gridUpperLeft.x = nodeCenter.x - (CRAFTING_GRID_WIDTH + menuBarWidth) - 120;
+        }
+
+        globalStates.currentLogic.grid.xMargin += gridUpperLeft.x;
+        globalStates.currentLogic.grid.yMargin += gridUpperLeft.y;
+        document.getElementById('craftingBoard').style.left = gridUpperLeft.x + 'px';
+        document.getElementById('craftingBoard').style.top = gridUpperLeft.y + 'px';
     }
 
     function beginTouchEditing() {

@@ -562,12 +562,12 @@ realityEditor.gui.crafting.eventHelper.drawLinkLine = function(contents, endX, e
     var hsl = contents.cell.getColorHSL();
     var lineColor = 'hsl(' + hsl.h + ', '+ hsl.s +'%,'+ hsl.l +'%)';
     tempLine.start = {
-        x: startX,
-        y: startY
+        x: startX - grid.xMargin,
+        y: startY - grid.yMargin
     };
     tempLine.end = {
-        x: endX,
-        y: endY
+        x: endX - grid.xMargin,
+        y: endY - grid.yMargin
     };
     tempLine.color = lineColor;
 };
@@ -580,10 +580,17 @@ realityEditor.gui.crafting.eventHelper.resetLinkLine = function() {
 };
 
 realityEditor.gui.crafting.eventHelper.drawCutLine = function(start, end) {
+    var grid = globalStates.currentLogic.grid;
     var cutLine = globalStates.currentLogic.guiState.cutLine;
     // actual drawing happens in index.js loop, we just need to set endpoint here
-    cutLine.start = start;
-    cutLine.end = end;
+    cutLine.start = {
+        x: start.x - grid.xMargin,
+        y: start.y - grid.yMargin
+    };
+    cutLine.end = {
+        x: end.x - grid.xMargin,
+        y: end.y - grid.yMargin
+    };
 };
 
 realityEditor.gui.crafting.eventHelper.resetCutLine = function() {

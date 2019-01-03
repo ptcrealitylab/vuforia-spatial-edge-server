@@ -82,11 +82,11 @@ createNameSpace("realityEditor.database");
         // 2. check that nodes are different
         var areNodesEqual = startNodeKey === endNodeKey;
         // 3. check that link doesn't already exist
-        var doesLinkExist = false;
+        var doesLinkExist = false; // todo: implement
         // 4. check that symmetric link doesn't already exist
-        var doesSymmetricExist = false;
+        var doesSymmetricExist = false; // todo: implement
         // 5. check that link doesn't form a cycle at all
-        var doesFormCycle = false;
+        var doesFormCycle = false; // todo: implement
 
         if (doNodesNotExist || areNodesEqual || doesLinkExist || doesSymmetricExist || doesFormCycle) {
             console.log('failed to created link because of cycles, etc');

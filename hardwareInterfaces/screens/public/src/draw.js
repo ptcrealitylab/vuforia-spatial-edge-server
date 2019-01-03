@@ -15,6 +15,7 @@ realityEditor.draw.render = function() {
     realityEditor.frameRenderer.renderFrames();
     realityEditor.nodeRenderer.renderNodes();
     realityEditor.linkRenderer.renderLinks();
+    realityEditor.gui.crafting.redrawDataCrafting();
 
     requestAnimFrame(realityEditor.draw.render);
 };
@@ -219,4 +220,23 @@ realityEditor.draw.drawBlue = function(context, lineStartPoint, lineEndPoint, ra
     context.setLineDash([editorLineDash * windowToEditorRatio]);
     context.stroke();
     context.closePath();
+};
+
+/**
+ * Utility for drawing a line in the provided canvas context with the given coordinates, color, and width.
+ * @param {CanvasRenderingContext2D} context
+ * @param {number} startX
+ * @param {number} startY
+ * @param {number} endX
+ * @param {number} endY
+ * @param {string} color
+ * @param {number} width
+ */
+realityEditor.draw.drawSimpleLine = function(context, startX, startY, endX, endY, color, width) {
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.stroke();
 };

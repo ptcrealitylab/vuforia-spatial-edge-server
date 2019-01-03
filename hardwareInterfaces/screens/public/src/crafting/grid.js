@@ -329,8 +329,8 @@ createNameSpace("realityEditor.gui.crafting.grid");
         if (blockLink.route !== null) {
             var that = this;
             blockLink.route.cellLocations.forEach( function(location) {
-                var screenX = that.getColumnCenterX(location.col) + location.offsetX;
-                var screenY = that.getRowCenterY(location.row) + location.offsetY;
+                var screenX = that.getColumnCenterX(location.col) + location.offsetX - that.xMargin;
+                var screenY = that.getRowCenterY(location.row) + location.offsetY - that.yMargin;
                 points.push({
                     "screenX": screenX,
                     "screenY": screenY
