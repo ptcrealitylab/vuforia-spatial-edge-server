@@ -187,6 +187,14 @@ realityEditor.network.deleteBlockFromObject = function() {console.log('stubbed o
 realityEditor.network.deleteBlockLinkFromObject = function() {console.log('stubbed out realityEditor.network.deleteBlockLinkFromObject()')};
 realityEditor.network.postNewBlockPosition = function() {console.log('stubbed out realityEditor.network.postNewBlockPosition()')};
 
+realityEditor.gui.crafting.eventHelper.toggleDatacraftingExceptPort = function() {console.log('stubbed out toggleDatacraftingExceptPort to fix bug')};
 
+globalStates.craftingMoveDelay = 400;
 
-realityEditor.gui.crafting.eventHelper.toggleDatacraftingExceptPort = function() {console.log('stubbed out toggleDatacraftingExceptPort to fix bug')}
+realityEditor.gui.ar = realityEditor.gui.ar || {};
+realityEditor.gui.ar.lines = realityEditor.gui.ar.lines || {};
+realityEditor.gui.ar.lines.drawSimpleLine = realityEditor.draw.drawSimpleLine; //(ctx, tempLine.start.x, tempLine.start.y, tempLine.end.x, tempLine.end.y, tempLine.color, 3);
+realityEditor.gui.utilities = realityEditor.gui.utilities || {};
+realityEditor.gui.utilities.checkLineCross = realityEditor.utilities.checkLineCross.bind(realityEditor.utilities);
+
+var timeCorrection = {delta: 0, now: 0, then: 0};

@@ -331,8 +331,8 @@ realityEditor.gui.crafting.redrawDataCrafting = function() {
                 var col = linkData.nodeA.slice(-1) * 2;
                 startCell = grid.getCell(col, 0);
             }
-            var startX = grid.getCellCenterX(startCell);
-            var startY = grid.getCellCenterY(startCell);
+            var startX = grid.getCellCenterX(startCell) - globalStates.currentLogic.grid.xMargin;
+            var startY = grid.getCellCenterY(startCell) - globalStates.currentLogic.grid.yMargin;
 
             var xOffset =  0.5 * grid.blockColWidth + (grid.blockColWidth + grid.marginColWidth) * linkData.logicB;
             var endX = parseInt(domElement.style.left) + xOffset;
@@ -353,8 +353,8 @@ realityEditor.gui.crafting.redrawDataCrafting = function() {
                 var col = linkData.nodeB.slice(-1) * 2;
                 endCell = grid.getCell(col, 6);
             }
-            var endX = grid.getCellCenterX(endCell);
-            var endY = grid.getCellCenterY(endCell);
+            var endX = grid.getCellCenterX(endCell) - globalStates.currentLogic.grid.xMargin;
+            var endY = grid.getCellCenterY(endCell) - globalStates.currentLogic.grid.yMargin;
             var endColor = endCell.getColorHSL();
             var lineColor = 'hsl('+endColor.h+','+endColor.s+'%,'+endColor.l+'%)';
 
