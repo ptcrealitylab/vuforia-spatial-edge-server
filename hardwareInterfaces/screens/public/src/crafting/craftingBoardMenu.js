@@ -3,6 +3,7 @@ createNameSpace("realityEditor.craftingBoardMenu");
 (function(exports) {
 
     var blockMenuButton;
+    var blockTrashButton;
     var blockTabImages = [];
 
     /**
@@ -14,9 +15,16 @@ createNameSpace("realityEditor.craftingBoardMenu");
         blockMenuButton.src = 'resources/logicPocket.svg';
         blockMenuButton.id = 'blockMenuButton';
 
+        // create the pocket button
+        blockTrashButton = document.createElement('img');
+        blockTrashButton.src = 'resources/bigTrash.svg';
+        blockTrashButton.id = 'blockTrashButton';
+        blockTrashButton.classList.add('closed');
+
         addButtons();
 
         blockMenuButton.addEventListener('pointerup', toggleBlockMenu);
+        blockTrashButton.addEventListener('pointerup', releasedOnTrash);
 
         preload(blockTabImages,
             'resources/iconBlocks.png', 'resources/iconEvents.png', 'resources/iconSignals.png', 'resources/iconMath.png', 'resources/iconWeb.png'
@@ -33,6 +41,10 @@ createNameSpace("realityEditor.craftingBoardMenu");
         }
     }
 
+    function releasedOnTrash(event) {
+        console.log('released on trash');
+    }
+
     /**
      * preloads a set of images into an array
      * @param array
@@ -47,6 +59,7 @@ createNameSpace("realityEditor.craftingBoardMenu");
     function addButtons() {
         var craftingBoardContainer = document.getElementById('craftingBoard');
         craftingBoardContainer.appendChild(blockMenuButton);
+        craftingBoardContainer.appendChild(blockTrashButton);
     }
 
     exports.initFeature = initFeature;

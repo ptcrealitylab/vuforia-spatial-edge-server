@@ -22,8 +22,26 @@ realityEditor.cout = function() {
 // };
 
 realityEditor.gui.menus = {};
-realityEditor.gui.menus.on = function() {console.log('stubbed out menus.on()')};
-realityEditor.gui.menus.off = function() {console.log('stubbed out menus.off()')};
+realityEditor.gui.menus.on = function(buttonName) {
+    // console.log('stubbed out menus.on()')
+    var blockTrashButton = document.getElementById('blockTrashButton');
+    var blockMenuButton = document.getElementById('blockMenuButton');
+    if (!blockTrashButton || !blockMenuButton) return;
+    if (buttonName === 'bigTrash') {
+        document.getElementById('blockTrashButton').classList.remove('closed');
+        document.getElementById('blockMenuButton').classList.add('closed');
+    } else {
+        document.getElementById('blockTrashButton').classList.add('closed');
+        document.getElementById('blockMenuButton').classList.remove('closed');
+    }
+};
+realityEditor.gui.menus.off = function(buttonName) {
+    console.log('stubbed out menus.off()');
+    // if (buttonName === 'bigTrash') {
+    //     document.getElementById('blockTrashButton').classList.add('closed');
+    //     document.getElementById('blockMenuButton').classList.remove('closed');
+    // }
+};
 realityEditor.gui.menus.buttonOn = function() {console.log('stubbed out menus.buttonOn()')};
 realityEditor.gui.menus.buttonOff = function() {console.log('stubbed out menus.buttonOff()')};
 
@@ -51,6 +69,7 @@ var CRAFTING_GRID_HEIGHT = 320;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// overrides this function to return correct IP address and keys for the screen object/frame/node
 /**
  * Returns all identifiers necessary to make an API request for the provided logic object
  * @param logic - logic object
@@ -70,7 +89,7 @@ realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys = function(logic
 
     if (block) {
         for (var blockKey in logic.blocks){
-            if(logic.blocks[blockKey] === block) { // TODO: give each block an id property to avoid search
+            if(logic.blocks[blockKey] === block) {
                 keys.blockKey = blockKey;
             }
         }
@@ -78,23 +97,6 @@ realityEditor.gui.crafting.eventHelper.getServerObjectLogicKeys = function(logic
 
     return keys;
 };
-
-// /**
-//  * Performs a search through all objects and frames in the system to find a logic node that matches this grid's logicID
-//  * @return {Logic|undefined}
-//  */
-// Grid.prototype.parentLogic = function() {
-//
-//     realityEditor.database.forEachNodeInAllFrames(function(frameKey, nodeKey, node) {
-//         if (node.type === "logic") {
-//             if (node.uuid === this.logicID) {
-//                 return node;
-//             }
-//         }
-//     });
-//
-//     console.warn("ERROR: DIDN'T FIND LOGIC NODE FOR THIS GRID");
-// };
 
 // ----- Utilities for adding and removing events in a stable way ----- //
 
