@@ -29,10 +29,14 @@ realityEditor.gui.menus.on = function(buttonName) {
     if (!blockTrashButton || !blockMenuButton) return;
     if (buttonName === 'bigTrash') {
         document.getElementById('blockTrashButton').classList.remove('closed');
+        document.getElementById('backButton').classList.add('closed');
         document.getElementById('blockMenuButton').classList.add('closed');
+        document.getElementById('nodeSettingsButton').classList.add('closed');
     } else {
         document.getElementById('blockTrashButton').classList.add('closed');
+        document.getElementById('backButton').classList.remove('closed');
         document.getElementById('blockMenuButton').classList.remove('closed');
+        document.getElementById('nodeSettingsButton').classList.remove('closed');
     }
 };
 realityEditor.gui.menus.off = function(buttonName) {

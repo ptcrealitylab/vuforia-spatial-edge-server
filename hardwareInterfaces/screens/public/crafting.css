@@ -446,10 +446,35 @@ Logic Interface CSS
 Newly added for the screen adaptation
  */
 
+#backButton {
+    position: absolute;
+    width: 60px;
+    right: 0;
+    top: 0;
+    z-index: 100;
+}
+
 #blockMenuButton {
     position: absolute;
     width: 60px;
     right: 0;
     top: calc(50% - 30px);
+    z-index: 100;
+}
+
+#blockTrashButton {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 60px;
+    height: 320px;
+    background-color: rgba(242,22,121,0.15);
+}
+
+#nodeSettingsButton {
+    position: absolute;
+    width: 60px;
+    right: 0;
+    top: 195px;
     z-index: 100;
 }

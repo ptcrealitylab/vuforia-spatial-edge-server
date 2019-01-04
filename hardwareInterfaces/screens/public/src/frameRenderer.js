@@ -77,9 +77,27 @@ createNameSpace("realityEditor.frameRenderer");
         }
     }
 
+    function getClosestFrameToPoint(x, y) {
+
+        var closestFrame = null;
+        var closestDistance = Infinity;
+
+        realityEditor.database.forEachFrame(function(frameKey, frame) {
+            var center = getFrameCenter(frameKey);
+            var distance = realityEditor.utilities.distance(center.x, center.y, x, y);
+            if (distance < closestDistance) {
+                closestFrame = frame;
+                closestDistance = distance;
+            }
+        });
+
+        return closestFrame;
+    }
+
     exports.initFeature = initFeature;
     exports.renderFrames = renderFrames;
     exports.killElement = killElement;
     exports.getFrameCenter = getFrameCenter;
+    exports.getClosestFrameToPoint = getClosestFrameToPoint;
 
 })(realityEditor.frameRenderer);

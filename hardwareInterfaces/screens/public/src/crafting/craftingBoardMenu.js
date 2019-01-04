@@ -2,7 +2,9 @@ createNameSpace("realityEditor.craftingBoardMenu");
 
 (function(exports) {
 
+    var backButton;
     var blockMenuButton;
+    var nodeSettingsButton;
     var blockTrashButton;
     var blockTabImages = [];
 
@@ -11,11 +13,22 @@ createNameSpace("realityEditor.craftingBoardMenu");
      */
 
     function initFeature() {
+        // create the back button
+        backButton = document.createElement('img');
+        backButton.src = 'resources/back.svg';
+        backButton.id = 'backButton';
+
+        // create the block menu button
         blockMenuButton = document.createElement('img');
         blockMenuButton.src = 'resources/logicPocket.svg';
         blockMenuButton.id = 'blockMenuButton';
 
-        // create the pocket button
+        // create the node settings button
+        nodeSettingsButton = document.createElement('img');
+        nodeSettingsButton.src = 'resources/logicSetting.svg';
+        nodeSettingsButton.id = 'nodeSettingsButton';
+
+        // create the trash button, hidden
         blockTrashButton = document.createElement('img');
         blockTrashButton.src = 'resources/bigTrash.svg';
         blockTrashButton.id = 'blockTrashButton';
@@ -23,12 +36,18 @@ createNameSpace("realityEditor.craftingBoardMenu");
 
         addButtons();
 
+        backButton.addEventListener('pointerup', backButtonPressed);
         blockMenuButton.addEventListener('pointerup', toggleBlockMenu);
+        nodeSettingsButton.addEventListener('pointerup', nodeSettingsPressed);
         blockTrashButton.addEventListener('pointerup', releasedOnTrash);
 
         preload(blockTabImages,
             'resources/iconBlocks.png', 'resources/iconEvents.png', 'resources/iconSignals.png', 'resources/iconMath.png', 'resources/iconWeb.png'
         );
+    }
+
+    function backButtonPressed(event) {
+
     }
 
     function toggleBlockMenu(event) {
@@ -39,6 +58,10 @@ createNameSpace("realityEditor.craftingBoardMenu");
         } else {
             realityEditor.gui.crafting.blockMenuVisible();
         }
+    }
+
+    function nodeSettingsPressed(event) {
+
     }
 
     function releasedOnTrash(event) {
@@ -58,7 +81,9 @@ createNameSpace("realityEditor.craftingBoardMenu");
 
     function addButtons() {
         var craftingBoardContainer = document.getElementById('craftingBoard');
+        craftingBoardContainer.appendChild(backButton);
         craftingBoardContainer.appendChild(blockMenuButton);
+        craftingBoardContainer.appendChild(nodeSettingsButton);
         craftingBoardContainer.appendChild(blockTrashButton);
     }
 

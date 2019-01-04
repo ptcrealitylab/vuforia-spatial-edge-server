@@ -22,6 +22,7 @@ createNameSpace("realityEditor.logicNodeInteractions");
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
             if (guiState !== 'node') {
+                selectedNode = null;
                 hideCurrentCraftingBoard();
             }
         });
