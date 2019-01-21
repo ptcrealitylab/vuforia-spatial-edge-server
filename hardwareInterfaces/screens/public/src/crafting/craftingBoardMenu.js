@@ -7,6 +7,7 @@ createNameSpace("realityEditor.craftingBoardMenu");
     var nodeSettingsButton;
     var blockTrashButton;
     var blockTabImages = [];
+    var backButtonCallback = null;
 
     /**
      * Initializes the DOM and touch event listeners for the trash
@@ -47,21 +48,73 @@ createNameSpace("realityEditor.craftingBoardMenu");
     }
 
     function backButtonPressed(event) {
-
+        if (backButtonCallback) {
+            if (realityEditor.gui.crafting.eventHelper.areAnyMenusOpen()) {
+                // realityEditor.gui.crafting.blockMenuHide();
+                hideAllSubmenus();
+            } else {
+                backButtonCallback();
+            }
+        }
     }
 
     function toggleBlockMenu(event) {
         console.log('toggle block menu');
 
+        var menuWhichWasOpen = null;
         if (realityEditor.gui.crafting.eventHelper.areAnyMenusOpen()) {
-            realityEditor.gui.crafting.blockMenuHide();
-        } else {
+            menuWhichWasOpen = hideAllSubmenus();
+        }
+
+        if (menuWhichWasOpen !== 'blockMenu') {
             realityEditor.gui.crafting.blockMenuVisible();
         }
     }
 
+    function hideAllSubmenus() {
+        var whichMenuWasOpen = null;
+
+        var wasBlockSettingsOpen = realityEditor.gui.crafting.eventHelper.hideBlockSettings();
+        if (wasBlockSettingsOpen) {
+            whichMenuWasOpen = 'blockSettings';
+        } else {
+            var wasNodeSettingsOpen = realityEditor.gui.crafting.eventHelper.hideNodeSettings();
+            if (wasNodeSettingsOpen) {
+                whichMenuWasOpen = 'nodeSettings';
+            } else {
+                if (realityEditor.gui.crafting.eventHelper.areAnyMenusOpen()) {
+                    realityEditor.gui.crafting.blockMenuHide();
+                    whichMenuWasOpen = 'blockMenu';
+                }
+            }
+        }
+        return whichMenuWasOpen;
+    }
+
     function nodeSettingsPressed(event) {
 
+        var menuWhichWasOpen = null;
+        if (realityEditor.gui.crafting.eventHelper.areAnyMenusOpen()) {
+            menuWhichWasOpen = hideAllSubmenus();
+        }
+
+        if (menuWhichWasOpen !== 'nodeSettings') {
+            realityEditor.gui.crafting.eventHelper.openNodeSettings();
+        }
+
+        // console.log(" LOGIC SETTINGS PRESSED ");
+        // var wasBlockSettingsOpen = realityEditor.gui.crafting.eventHelper.hideBlockSettings();
+        // // realityEditor.gui.menus.off("crafting", ["logicSetting"]);
+        // if (!wasBlockSettingsOpen) {
+        //     var wasNodeSettingsOpen = realityEditor.gui.crafting.eventHelper.hideNodeSettings();
+        //     if (!wasNodeSettingsOpen) {
+        //         if (realityEditor.gui.crafting.eventHelper.areAnyMenusOpen()) {
+        //             realityEditor.gui.crafting.blockMenuHide();
+        //         }
+        //         console.log("Open Node Settings");
+        //         realityEditor.gui.crafting.eventHelper.openNodeSettings();
+        //     }
+        // }
     }
 
     function releasedOnTrash(event) {
@@ -87,8 +140,13 @@ createNameSpace("realityEditor.craftingBoardMenu");
         craftingBoardContainer.appendChild(blockTrashButton);
     }
 
+    function setBackButtonCallback(callback) {
+        backButtonCallback = callback;
+    }
+
     exports.initFeature = initFeature;
     exports.blockTabImages = blockTabImages;
     exports.addButtons = addButtons;
+    exports.setBackButtonCallback = setBackButtonCallback;
 
 })(realityEditor.craftingBoardMenu);

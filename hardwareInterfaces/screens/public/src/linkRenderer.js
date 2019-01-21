@@ -51,6 +51,7 @@ createNameSpace("realityEditor.linkRenderer");
         if (guiState !== 'node') return;
 
         realityEditor.utilities.timeSynchronizer(timeCorrection);
+        console.log(timeCorrection.delta);
 
         // erases anything on the background canvas
         if (globalCanvas.hasContent === true) {

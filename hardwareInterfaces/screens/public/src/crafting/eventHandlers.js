@@ -71,6 +71,8 @@ createNameSpace("realityEditor.gui.crafting.eventHandlers");
 
         // we can assume we are in TS_NONE
 
+        event.stopPropagation();
+
         var cell = this.crafting.eventHelper.getCellOverPointer(e.pageX, e.pageY);
         if (!cell) return; // tapped on menu
         var contents = this.crafting.eventHelper.getCellContents(cell);
