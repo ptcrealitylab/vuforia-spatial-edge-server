@@ -752,7 +752,7 @@ realityEditor.gui.crafting.eventHelper.openNodeSettings = function() {
     nodeSettingsContainer.style.transform = 'scale(' + scaleMultiplier + ')';
 
     // nodeSettingsContainer.setAttribute("onload", "realityEditor.gui.crafting.eventHandlers.onLoadBlock('" + keys.objectKey + "','" + keys.frameKey + "','" + keys.logicKey + "','" + keys.blockKey + "','" + JSON.stringify(block.publicData) + "')");
-    nodeSettingsContainer.src = 'src/gui/crafting/nodeSettings.html';
+    nodeSettingsContainer.src = 'src/crafting/nodeSettings.html'; //'src/gui/crafting/nodeSettings.html'; // ben change
     
     nodeSettingsContainer.onload = function() {
 
@@ -760,7 +760,7 @@ realityEditor.gui.crafting.eventHelper.openNodeSettings = function() {
 
         var logicNodeData = {
             
-            version: realityEditor.getObject(keys.objectKey).integerVersion,
+            version: 300, //realityEditor.getObject(keys.objectKey).integerVersion, // ben change
             ip: keys.ip,
             httpPort: SERVER_PORT,
             
@@ -768,7 +768,7 @@ realityEditor.gui.crafting.eventHelper.openNodeSettings = function() {
             frameKey: keys.frameKey,
             nodeKey: keys.logicKey,
             
-            objectName: realityEditor.getObject(keys.objectKey).name,
+            objectName: objectName, //realityEditor.getObject(keys.objectKey).name,
             logicName: logic.name,
             
             iconImageState: logic.iconImage,

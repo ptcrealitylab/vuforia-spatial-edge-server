@@ -160,6 +160,7 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
                 realityEditor.gui.crafting.craftingBoardVisible(keys.objectKey, keys.frameKey, keys.nodeKey);
                 realityEditor.craftingBoardMenu.addButtons();
+                realityEditor.craftingBoardMenu.setBackButtonCallback(hideCurrentCraftingBoard);
 
                 positionCraftingBoardForNode(keys.frameKey, keys.nodeKey);
 

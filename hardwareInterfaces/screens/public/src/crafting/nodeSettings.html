@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <link rel="stylesheet" type="text/css" href="../../../css/index.css">
+    <link rel="stylesheet" type="text/css" href="../../index.css">
+    <link rel="stylesheet" type="text/css" href="../../crafting.css">
     <style>
         * {
             -webkit-user-select: none;
@@ -13,8 +14,8 @@
             text-align: center;
             /*padding-top: 25px;*/
             line-height: 50px;
-            font-size: xx-large;
-            font-weight: 700;
+            /*font-size: xx-large;*/
+            /*font-weight: 700;*/
             color: #00ffff;
             background-color: transparent;
         }
@@ -70,7 +71,7 @@
             height: 35px;
             border-top-left-radius: 5px;
             border-bottom-left-radius: 5px;
-            width: 244px;
+            width: 249px;
             text-indent: 10px;
         }
         #saveNewNameButton {
@@ -82,7 +83,7 @@
             height: 45px;
             margin-left: -5px;
             font-size: 18px;
-            width: 165px;
+            width: 168px;
         }
         #newIconContainer {
             width: 435px;
@@ -131,7 +132,7 @@
             /*left: 65px;*/
             /*-webkit-border-radius: 5px;*/
             /*border-radius: 5px;*/
-            margin-left: 66%;
+            margin-left: 64.3%;
             width: 33.3%;
             border-bottom-right-radius: 5px;
             border-bottom-left-radius: 5px;
@@ -153,7 +154,7 @@
             left: 0;
             width: 100%;
             margin-top: -50px;
-            font-weight: normal;
+            /*font-weight: normal;*/
         }
 
         @keyframes showButton {
@@ -173,8 +174,8 @@
     
     <!-- Empty logic node image always shows. If there is a custom or auto icon, shows custom icon image, which is clipped by the outline -->
     <div id="iconContainerDiv">
-        <img id="logicNodeEmpty" src="../../../svg/logicNode.svg" width="100px" height="100px" />
-        <img id="customIconImage" src="../../../svg/menu/setting.svg" width="100px" height="100px" />
+        <img id="logicNodeEmpty" src="../../resources/logicNode.svg" width="100px" height="100px" />
+        <img id="customIconImage" src="../../resources/setting.svg" width="100px" height="100px" />
         <div id="logicNodeOutline"></div>
     </div>
     
@@ -362,7 +363,7 @@
     function useIconAuto() {
         // var autoSrc = 'png/_test_icon_image.png';
         customIconImage.style.display = 'none'; // force re-render
-        var autoSrc = logicNodeData.autoImagePath || '../../../png/emptyLogicIcon.png'; //'../../../svg/menu/setting.svg';
+        var autoSrc = logicNodeData.autoImagePath || '../../resources/emptyLogicIcon.png'; //'../../../svg/menu/setting.svg';
         customIconImage.src = autoSrc;// + '?' + new Date().getTime();
         setTimeout(function() {
             customIconImage.style.display = 'inline';
