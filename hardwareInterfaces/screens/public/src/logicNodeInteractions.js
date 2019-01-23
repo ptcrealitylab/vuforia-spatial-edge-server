@@ -4,7 +4,11 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
     var guiState;
     var pocketButtonPressed = false;
+
+    // which (if any) node was clicked down on
     var selectedNode = null;
+    // which (if any) crafting board is visible (set to its logic node's uuid)
+    var craftingBoardShown = null;
 
     var touchDownLocation = {
         x: 0,
@@ -12,7 +16,9 @@ createNameSpace("realityEditor.logicNodeInteractions");
     };
     var touchMoveThreshold = 20;
 
-    var craftingBoardShown = null;
+    // constant. if enabled, clicking anywhere outside crafting board will hide it.
+    // otherwise need to click on back button or the logic node to hide it.
+    var HIDE_CRAFTING_IF_CLICK_OUTSIDE = true;
 
     /**
      * Initializes the DOM and touch event listeners for the pocket
@@ -34,6 +40,26 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
     }
 
+    /**
+     * Utility function searches the parent elements to see if it is within the craftingBoard
+     * @param element
+     * @return {boolean}
+     */
+    function doesElementBelongToCraftingBoard(element) {
+        while(element && element.tagName !== "BODY" && element.tagName !== "HTML"){
+            if (element.id === 'craftingBoard') {
+                return true;
+            }
+            element = element.parentElement;
+        }
+        return false;
+    }
+
+    /**
+     * Keeps track if you you touch down on the pocket button, so that you can later create a logic node onMouseMove.
+     * Also, if  HIDE_CRAFTING_IF_CLICK_OUTSIDE is enabled, and you click outside of the logic node or its crafting board, hides the open crafting board.
+     * @param params
+     */
     function onMouseDown(params) {
         if (guiState !== 'node') return;
 
@@ -52,33 +78,30 @@ createNameSpace("realityEditor.logicNodeInteractions");
                 }
             }
 
-        //     var nodeKey = getNodeKeyFromTouchedElement(params.event.target);
-        //     if (nodeKey) {
-        //         console.log('clicked down on node: ' + nodeKey);
-        //         selectedNode = nodeKey;
-        //     } else {
-        //         // console.log(params);
-        //
-        //         // if touched down on background, start drawing a cut line
-        //         if (params.event.target.classList.contains('bg')) {
-        //             cutLineStart = {
-        //                 x: mouseX,
-        //                 y: mouseY
-        //             };
-        //         }
-        //
-        //     }
+            if (selectedNode === craftingBoardShown) {
+                console.log('interacting with open crafting board node... dont hide board yet');
+            } else {
+                if (HIDE_CRAFTING_IF_CLICK_OUTSIDE) {
+                    if (craftingBoardShown && !doesElementBelongToCraftingBoard(params.event.target)) {
+                        hideCurrentCraftingBoard();
+                    }
+                }
+            }
 
         }
 
     }
 
+    /**
+     * Creates a new logic node if dragging out from the pocket button.
+     * Also, if you drag more than threshold distance from a logic node, prevents it counting as a click in onMouseUp.
+     * @param params
+     */
     function onMouseMove(params) {
         if (guiState !== 'node') return;
 
         if (selectedNode) {
             var distanceMoved = Math.sqrt((mouseX - touchDownLocation.x) * (mouseX - touchDownLocation.x) + (mouseY - touchDownLocation.y) * (mouseY - touchDownLocation.y));
-            console.log(distanceMoved);
             if (distanceMoved > touchMoveThreshold) {
                 console.log('moved too far, dont count as tap');
                 selectedNode = null;
@@ -97,11 +120,6 @@ createNameSpace("realityEditor.logicNodeInteractions");
                         var parentFrame = realityEditor.database.getFrame(frameKey);
                         addedNode.x = mouseX - parentFrame.screen.x - addedNode.width;
                         addedNode.y = mouseY - parentFrame.screen.y - addedNode.height;
-                        //
-                        //     x: event.clientX - (width/2),
-                        //     y: event.clientY - (height/2),
-                        //     scale: defaultScale
-                        // };
 
                         ////////
                         // begin dragging it around immediately
@@ -118,7 +136,7 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
                         // send it to the server
                         realityEditor.network.postNewLogicNode(getObjectId(), frameKey, addedNode.uuid, addedNode);
-
+                        //
                         ////////
 
                     }
@@ -137,15 +155,15 @@ createNameSpace("realityEditor.logicNodeInteractions");
 
     }
 
+    /**
+     * If clicked on a logic node, opens its crafting board (or hides it if already open)
+     * @param params
+     */
     function onMouseUp(params) {
         pocketButtonPressed = false;
 
-        // console.log(selectedNode);
-
         if (selectedNode) {
-            // var isNodeBeingMoved = realityEditor.nodeRenderer.getIsNodeMovementHighlighted(selectedNode);
-            // if (!isNodeBeingMoved) {
-                // cant just use !realityEditor.utilities.getEditingVehicle() because this happens after resetEditingState
+            // cant just use !realityEditor.utilities.getEditingVehicle() because this happens after resetEditingState
             var keys = realityEditor.utilities.getKeysFromKey(selectedNode);
             var node = realityEditor.database.getNode(keys.frameKey, keys.nodeKey);
             if (node.type === 'logic') {
@@ -169,28 +187,36 @@ createNameSpace("realityEditor.logicNodeInteractions");
             } else {
                 console.log('tapped on a regular node... dont open crafting');
             }
-            // }
+
         }
+
         selectedNode = null;
     }
 
+    /**
+     * Utility function to safely hide the open crafting board and reset relevant state
+     */
     function hideCurrentCraftingBoard() {
         if (craftingBoardShown) {
-            console.log('hide current board');
             realityEditor.gui.crafting.craftingBoardHide();
             setCraftingBoardShown(null);
         }
     }
 
+    /**
+     * Utility function for toggling whether and which crafting board is shown
+     * @param {string|null} newValue - the uuid of the logic node whose crafting board you want to show (set to null if want to hide)
+     */
     function setCraftingBoardShown(newValue) {
         craftingBoardShown = newValue;
-
-        // disable node port colors from popping up if the crafting board is open // TODO: only disable when touch down within crafting board, but still let you program the rest of the application with new links to logic nodes
-        // TODO: maybe only enable highlighting if you are in the middle of drawing a link
-        // var shouldEnableLogicNodeHighlighting = (newValue === null);
-        // realityEditor.nodeRenderer.enableLogicNodeHighlighting(shouldEnableLogicNodeHighlighting);
     }
 
+    /**
+     * Moves the crafting board so its top left corner is located to the right of its logic node.
+     * If too close to right edge of screen, moves so its top right corner is to the left of the logic node instead.
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     */
     function positionCraftingBoardForNode(frameKey, nodeKey) {
         var nodeCenter = realityEditor.nodeRenderer.getNodeCenter(frameKey, nodeKey);
 
@@ -210,6 +236,10 @@ createNameSpace("realityEditor.logicNodeInteractions");
         document.getElementById('craftingBoard').style.top = gridUpperLeft.y + 'px';
     }
 
+    /**
+     * Callback triggered from touchEvents.beginTouchEditing
+     * When you start dragging a logic node around, reset state so you don't show its crafting board onMouseUp
+     */
     function beginTouchEditing() {
         selectedNode = null;
     }
