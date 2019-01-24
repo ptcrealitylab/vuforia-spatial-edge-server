@@ -2247,7 +2247,7 @@ function objectWebServer() {
             var destinationIp = knownObjects[foundLink.objectB];
 
             // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-            var linkAddedData = getLinkData(fullEntry, false);
+            var linkAddedData = getLinkData(foundLink, false);
             if (linkAddedData) {
                 hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
                 hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
@@ -4105,7 +4105,6 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 /**
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
-// TODO: BEN - update for world object compatibility
 function socketServer() {
 
     io.on('connection', function (socket) {
@@ -4131,21 +4130,19 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    for(key in frame.nodes){
-                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
 
-                        io.sockets.connected[socket.id].emit('object', JSON.stringify({
-                            object: msgContent.object,
-                            frame: msgContent.frame,
-                            node: key,
-                            data: objects[msgContent.object].frames[msgContent.frame].nodes[key].data
-                        }));//       socket.emit('object', msgToSend);
-                    }
+            var frame = getFrameFromKey(msgContent.object, msgContent.frame);
+            if (frame) {
+                for(key in frame.nodes){
+                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                    io.sockets.connected[socket.id].emit('object', JSON.stringify({
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        node: key,
+                        data: frame.nodes[key].data
+                    }));
                 }
             }
 
@@ -4153,7 +4150,7 @@ function socketServer() {
                 object: msgContent.object,
                 frame: msgContent.frame,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
 
         });
 
@@ -4166,7 +4163,7 @@ function socketServer() {
                 thisProtocol = "R0";
             }
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
@@ -4175,14 +4172,11 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    for(key in frame.nodes){
-                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
-                    }
+            var frame = getFrameFromKey(msgContent.object, msgContent.frame);
+            if (frame) {
+                for(key in frame.nodes){
+                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
                 }
             }
 
@@ -4190,13 +4184,13 @@ function socketServer() {
                 object: msgContent.object,
                 frame: msgContent.frame,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
             var msgContent = JSON.parse(msg);
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor block: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
@@ -4205,17 +4199,12 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    var node = frame.nodes[msgContent.logic];
-                    if (node) {
-                        var block = node.blocks[msgContent.block];
-                        if (block) {
-                            publicData = block.publicData;
-                        }
-                    }
+
+            var node = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+            if (node) {
+                var block = node.blocks[msgContent.block];
+                if (block) {
+                    publicData = block.publicData;
                 }
             }
 
@@ -4225,7 +4214,7 @@ function socketServer() {
                 node: msgContent.node,
                 block: msgContent.block,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
         });
 
 
@@ -4249,74 +4238,42 @@ function socketServer() {
 
         socket.on('object/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
-            // console.log(msg);
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].publicData !== "undefined") {
 
-                                var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].publicData;
-
-                                for (var key in msg.publicData) {
-                                    thisPublicData[key] = msg.publicData[key];
-                                }
-                            }
-                        }
-                    }
+            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            if (typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+                var thisPublicData = node.publicData;
+                for (var key in msg.publicData) {
+                    thisPublicData[key] = msg.publicData[key];
                 }
             }
-
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
-
         });
 
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
-
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
-                                    blockModules[thisPublicData.type].setup(msg.object, msg.frame, msg.node, msg.block, thisPublicData);
-
-                                }
-                            }
-                        }
-                    }
+            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            if (node) {
+                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                    var thisPublicData = node.blocks[msg.block].publicData;
+                    blockModules[thisPublicData.type].setup(msg.object, msg.frame, msg.node, msg.block, thisPublicData);
                 }
             }
-
         });
-
 
         socket.on('block/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
-            // console.log(msg);
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) {
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
 
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
-
-                                    for (var key in msg.publicData) {
-                                        thisPublicData[key] = msg.publicData[key];
-                                    }
-                                }
-                            }
-                        }
+            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            if (node) {
+                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                    var thisPublicData = node.blocks[msg.block].publicData;
+                    for (var key in msg.publicData) {
+                        thisPublicData[key] = msg.publicData[key];
                     }
                 }
             }
         });
-
 
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
@@ -4329,7 +4286,6 @@ function socketServer() {
         });
 
         socket.on('disconnect', function () {
-
 
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
@@ -4425,19 +4381,14 @@ function getNodeFromKey(objectKey, frameKey, nodeKey) {
 
 function messagetoSend(msgContent, socketID) {
 
-    if (doesObjectExist(msgContent.object)) {
-        var foundObject = getObjectFromKey(msgContent.object);
-        if (foundObject.frames.hasOwnProperty(msgContent.frame)) {
-            if (objects[msgContent.object].frames[msgContent.frame].nodes.hasOwnProperty(msgContent.node)) {
-
-                io.sockets.connected[socketID].emit('object', JSON.stringify({
-                    object: msgContent.object,
-                    frames: msgContent.frame,
-                    node: msgContent.node,
-                    data: objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].data
-                }));//       socket.emit('object', msgToSend);
-            }
-        }
+    var node = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+    if (node) {
+        io.sockets.connected[socketID].emit('object', JSON.stringify({
+            object: msgContent.object,
+            frames: msgContent.frame,
+            node: msgContent.node,
+            data: node.data
+        }));
     }
 }
 
@@ -4504,7 +4455,6 @@ var engine = {
 
                     if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
-
                     this.internalObjectDestination = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                     // if this is a regular node, not a logic node, process normally
@@ -4515,25 +4465,25 @@ var engine = {
                     else {
                         this.blockKey = "in" + this.link.logicB;
 
-                        if (this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB] && this.blockKey) {
-                            if (this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB].blocks) {
-                                this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB].blocks[this.blockKey];
+                        if (this.internalObjectDestination && this.blockKey) {
+                            if (this.internalObjectDestination.blocks) {
+                                this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
                                 for (var key in thisNode.processedData) {
                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
                                 }
 
-                                this.nextLogic = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
+                                this.nextLogic = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
                                 // this needs to be at the beginning;
-                                if (!this.nextLogic.routeBuffer)
+                                if (!this.nextLogic.routeBuffer) {
                                     this.nextLogic.routeBuffer = [0, 0, 0, 0];
+                                }
 
                                 this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
                                 this.blockTrigger(this.link.objectB, this.link.frameB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
                             }
                         }
                     }
-
                 }
             }
         }
@@ -4579,7 +4529,7 @@ var engine = {
             });
         }
     },
-// this is for after a logic block is processed.
+    // this is for after a logic block is processed.
     processBlockLinks: function (object, frame, node, block, index, thisBlock) {
 
         for (var i = 0; i < 4; i++) {
@@ -4596,21 +4546,19 @@ var engine = {
 
                 var linkKey;
 
-                var foundObject = this.objects[object] || worldObject;
+                var foundFrame = getFrameFromKey(object, frame);
 
                 if (this.router !== null) {
 
-                    for (linkKey in foundObject.frames[frame].links) {
-                        this.link = foundObject.frames[frame].links[linkKey];
+                    for (linkKey in foundFrame.links) {
+                        this.link = foundFrame.links[linkKey];
 
-                        if (this.link.nodeA === node &&
-                            this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
+                        if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
                             if (!(checkObjectActivation(this.link.objectB))) {
                                 socketSender(object, frame, linkKey, thisBlock.processedData[i]);
                             }
                             else {
-                                var destinationObject = this.objects[this.link.objectB] || worldObject;
-                                this.internalObjectDestination = destinationObject.frames[this.link.frameB].nodes[this.link.nodeB];
+                                this.internalObjectDestination = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                                 if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                                     this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination)
@@ -4620,23 +4568,20 @@ var engine = {
                     }
                 }
                 else {
-                    this.logic = foundObject.frames[frame].nodes[node];
+                    this.logic = getNodeFromKey(object, frame, node);
                     // process all links in the block
                     for (linkKey in this.logic.links) {
-                        if (this.logic.links[linkKey])
-                            if (this.logic.links[linkKey].nodeA === block) {
-                                if (this.logic.links[linkKey].logicA === i) {
+                        if (this.logic.links[linkKey] && this.logic.links[linkKey].nodeA === block && this.logic.links[linkKey].logicA === i) {
 
-                                    this.link = this.logic.links[linkKey];
+                            this.link = this.logic.links[linkKey];
 
-                                    this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
-                                    var key;
-                                    for (key in thisBlock.processedData[i]) {
-                                        this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
-                                    }
-                                    this.blockTrigger(object, frame, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
-                                }
+                            this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
+                            var key;
+                            for (key in thisBlock.processedData[i]) {
+                                this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
                             }
+                            this.blockTrigger(object, frame, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
+                        }
                     }
                 }
             }
@@ -4672,8 +4617,8 @@ var engine = {
  **/
 
 function socketSender(object, frame, link, data) {
-    var foundObject = objects[object] || worldObject;
-    var thisLink = foundObject.frames[frame].links[link];
+    var foundFrame = getFrameFromKey(object, frame);
+    var thisLink = foundFrame.links[link];
 
     var msg = "";
 
@@ -4681,7 +4626,7 @@ function socketSender(object, frame, link, data) {
         if (knownObjects[thisLink.objectB].protocol) {
             var thisProtocol = knownObjects[thisLink.objectB].protocol;
             if (thisProtocol in protocols) {
-                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB,thisLink.nodeB, thisLink.logicB, data);
+                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB, thisLink.nodeB, thisLink.logicB, data);
             }
             else {
                 msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
@@ -4722,38 +4667,36 @@ function socketUpdater() {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
-        for (objectKey in objects) {
-            for(frameKey in objects[objectKey].frames) {
-                for (nodeKey in objects[objectKey].frames[frameKey].links) {
-                    var thisSocket = knownObjects[objects[objectKey].frames[frameKey].links[nodeKey].objectB];
-
+        forEachObject(function(objectKey, object) {
+            for (var frameKey in object.frames) {
+                for (var linkKey in object.frames[frameKey].links) {
+                    var thisSocket = knownObjects[objects[objectKey].frames[frameKey].links[linkKey].objectB];
                     if (thisSocket === sockKey) {
                         socketIsUsed = true;
                     }
                 }
             }
-        }
+        });
         if (!socketArray[sockKey].io.connected || !socketIsUsed) {
-            // delete socketArray[sockKey];
+            // delete socketArray[sockKey]; // TODO: why is this removed? can it safely be added again?
         }
     }
-    for (objectKey in objects) {
-        for(frameKey in objects[objectKey].frames){
-        for (nodeKey in objects[objectKey].frames[frameKey].links) {
-            var thisLink = objects[objectKey].frames[frameKey].links[nodeKey];
 
-            if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
+    forEachObject(function(objectKey, object) {
+        for (var frameKey in object.frames) {
+            for (var linkKey in object.frames[frameKey].links) {
+                var thisLink = object.frames[frameKey].links[linkKey];
 
-                var thisIp = knownObjects[thisLink.objectB].ip;
-                //cout("this ip: "+ip);
-                if (!(thisIp in socketArray)) {
-                    // cout("shoudl not show up -----------");
-                    socketArray[thisIp] = new ObjectSockets(socketPort, thisIp);
+                if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
+                    var thisIp = knownObjects[thisLink.objectB].ip;
+                    if (!(thisIp in socketArray)) {
+                        // cout("shoudl not show up -----------");
+                        socketArray[thisIp] = new ObjectSockets(socketPort, thisIp);
+                    }
                 }
             }
         }
-        }
-    }
+    });
 
     socketIndicator();
 
@@ -4812,10 +4755,9 @@ function cout(msg) {
 }
 
 function checkObjectActivation(id) {
-    // if (doesObjectExist(id)) {
-        // TODO: BEN implement this
-    // }
-    if (id in objects) {
-        return !objects[id].deactivated
-    } else return false;
+    var object = getObjectFromKey(id);
+    if (object) {
+        return !object.deactivated;
+    }
+    return false;
 }
