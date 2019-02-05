@@ -872,11 +872,13 @@ function loadObjects() {
                 }
 
 
-                for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
+                if (objects[tempFolderName].frames[tempFolderName]) {
+                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
 
-                    if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
-                        var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                        objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
+                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
+                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                        }
                     }
                 }
 
