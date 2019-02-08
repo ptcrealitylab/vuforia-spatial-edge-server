@@ -1824,6 +1824,52 @@ function objectWebServer() {
         return updateStatus;
     }
 
+    // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/triggerBlock/', function (req, res) {
+        res.send(triggerBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
+    });
+
+    // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
+    webServer.post('/triggerBlock/:blockID', function (req, res) {
+
+        var foundBlock = false;
+        forEachObject(function(object, objectKey) {
+            forEachFrameInObject(object, function(frame, frameKey) {
+                forEachNodeInFrame(frame, function(node, nodeKey) {
+                    if (typeof node.blocks !== 'undefined') {
+                        var block = node.blocks[req.params.blockID];
+                        // keep iterating until you find a block with that ID
+                        if (block) {
+                            foundBlock = true;
+                            res.status(200).json(triggerBlock(objectKey, frameKey, nodeKey, req.params.blockID, req.body)).end();
+                        }
+                    }
+                });
+            });
+        });
+
+        if (!foundBlock) {
+            res.status(404).json({success: false, error: 'no block with ID ' + req.params.blockID + ' exists'}).end();
+        }
+
+    });
+
+    function triggerBlock(objectID, frameID, nodeID, blockID, body) {
+        console.log(objectID, frameID, nodeID, blockID, body);
+        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        if (foundNode) {
+            var block = foundNode.blocks[blockID];
+            console.log(block);
+            console.log('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
+
+            block.data[0].value = body.value;
+            engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
+        }
+
+        return {success: true, error: null};
+    }
+
     /**
      * Logic Nodes
      **/
@@ -2211,7 +2257,7 @@ function objectWebServer() {
         }
 
         if (worldObject) {
-            callback(worldObject);
+            callback(worldObject, worldObject.objectId);
         }
     }
 
