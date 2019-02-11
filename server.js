@@ -549,7 +549,7 @@ function Protocols() {
 
             if (doesObjectExist(msgContent.object)) {
 
-                var foundNode = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+                var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
                 if (foundNode) {
 
                     // if the node is a Logic Node, process the blocks/links inside of it
@@ -612,7 +612,7 @@ function Protocols() {
             if (!msgContent.node) return null;
             if (!msgContent.data) return null;
 
-            var foundNode = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+            var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
             if (foundNode) {
                 for (var key in foundNode.data) {
                     foundNode.data[key] = msgContent.data[key];
@@ -750,7 +750,7 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath
         node: nodeKey,
         data: data
     });
-    engine.trigger(objectKey, frameKey, nodeKey, getNodeFromKey(objectKey, frameKey, nodeKey));
+    engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
 
 }, Node, function (thisAction) {
     utilities.actionSender(thisAction);
@@ -1453,7 +1453,7 @@ function objectWebServer() {
      * @param objectKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object)
      */
-    function getObject(objectKey, callback) {
+    function getObjectAsync(objectKey, callback) {
 
         if (!objects.hasOwnProperty(objectKey)) {
 
@@ -1477,9 +1477,9 @@ function objectWebServer() {
      * @param frameKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
-    function getFrame(objectKey, frameKey, callback) {
+    function getFrameAsync(objectKey, frameKey, callback) {
 
-        getObject(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function(error, object) {
             if (error) {
                 callback(error);
                 return;
@@ -1504,9 +1504,9 @@ function objectWebServer() {
      * @param nodeKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
-    function getNode(objectKey, frameKey, nodeKey, callback) {
+    function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
 
-        getFrame(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1534,7 +1534,7 @@ function objectWebServer() {
      */
     function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
 
-        getFrame(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1579,7 +1579,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
             delete foundNode.links[linkID];
 
@@ -1621,7 +1621,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
 
             foundNode.links[linkID] = body;
@@ -1681,7 +1681,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
 
             var thisBlocks = foundNode.blocks;
@@ -1756,7 +1756,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
 
         if (foundNode) {
 
@@ -1803,7 +1803,7 @@ function objectWebServer() {
 
         cout("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
 
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
 
         if (foundNode) {
             var foundBlock = foundNode.blocks[blockID];
@@ -1857,7 +1857,7 @@ function objectWebServer() {
 
     function triggerBlock(objectID, frameID, nodeID, blockID, body) {
         console.log(objectID, frameID, nodeID, blockID, body);
-        var foundNode = getNodeFromKey(objectID, frameID, nodeID);
+        var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
             var block = foundNode.blocks[blockID];
             console.log(block);
@@ -1896,7 +1896,7 @@ function objectWebServer() {
     function addLogicNode(objectID, frameID, nodeID, body) {
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectID, frameID);
+        var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
 
             foundFrame.nodes[nodeID] = body;
@@ -1949,7 +1949,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectID, frameID);
+        var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
             delete foundFrame.nodes[nodeID];
             cout("deleted node: " + nodeID);
@@ -2001,7 +2001,7 @@ function objectWebServer() {
 
         cout("changing Size for :" + objectID + " : " + nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 callback(404, error);
                 return;
@@ -2076,7 +2076,7 @@ function objectWebServer() {
 
         console.log('received name for', objectID, frameID, nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -2103,7 +2103,7 @@ function objectWebServer() {
 
         console.log('received icon image for', objectID, frameID, nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -2287,7 +2287,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        var foundFrame = getFrame(objectKey, frameKey);
 
         if (foundFrame) {
 
@@ -2356,7 +2356,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectID, frameID);
+        var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
 
             console.log("found frame to add link to");
@@ -2420,9 +2420,9 @@ function objectWebServer() {
 
         var errorMessage = null;
 
-        var foundObject = getObjectFromKey(objectKey);
+        var foundObject = getObject(objectKey);
         if (foundObject) {
-            var foundFrame = getFrameFromKey(objectKey, frameKey);
+            var foundFrame = getFrame(objectKey, frameKey);
             if (foundFrame) {
                 foundFrame.nodes[nodeKey] = req.body;
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
@@ -2463,7 +2463,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectKey, frameKey, nodeKey);
+        var foundNode = getNode(objectKey, frameKey, nodeKey);
         if (foundNode) {
             var previousLockPassword = foundNode.lockPassword;
             var newLockPassword = body.lockPassword;
@@ -2517,7 +2517,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundNode = getNodeFromKey(objectKey, frameKey, nodeKey);
+        var foundNode = getNode(objectKey, frameKey, nodeKey);
         if (foundNode) {
             if (password === foundNode.lockPassword || (globalVariables.debug && password === "DEBUG")) { // TODO: remove DEBUG mode
                 foundNode.lockPassword = null;
@@ -2555,7 +2555,7 @@ function objectWebServer() {
     function addLinkLock(objectKey, frameKey, linkKey, body){
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
             var foundLink = foundFrame.links[linkKey];
 
@@ -2609,7 +2609,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
             var foundLink = foundFrame.links[linkKey];
             if (password === foundLink.lockPassword || password === "DEBUG") { // TODO: remove DEBUG mode
@@ -2637,7 +2637,7 @@ function objectWebServer() {
     webServer.delete('/object/:objectID/frame/:frameID/publicData', function (req, res) {
 
         // locate the containing frame in a safe way
-        getFrame(req.params.objectID, req.params.frameID, function(error, object, frame) {
+        getFrameAsync(req.params.objectID, req.params.frameID, function(error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -2664,7 +2664,7 @@ function objectWebServer() {
         var publicData = req.body.publicData;
 
         // locate the containing frame in a safe way
-        getFrame(req.params.objectID, req.params.frameID, function (error, object, frame) {
+        getFrameAsync(req.params.objectID, req.params.frameID, function (error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -2701,7 +2701,7 @@ function objectWebServer() {
         var objectKey = req.params.id;
         var videoId = req.params.videoId;
 
-        getObject(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function(error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -2748,14 +2748,14 @@ function objectWebServer() {
                     var frameType = 'videoRecording';
                     var frameKey = objectKey + frameType + videoId;
 
-                    getFrame(objectKey, frameKey, function(error, object, frame) {
+                    getFrameAsync(objectKey, frameKey, function(error, object, frame) {
                         if (error) {
                             console.log('a frame with key ' + frameKey + ' does not exist (yet)');
                             res.status(404).send(err);
                             return;
                         }
 
-                        var ipAddress = getObjectFromKey(objectKey).ip;
+                        var ipAddress = getObject(objectKey).ip;
 
                         // converts filepath from local storage system to public server url
                         // Mac / Unix / Windows compatible now
@@ -2841,7 +2841,7 @@ function objectWebServer() {
             return;
         }
 
-        var obj = getObjectFromKey(objectID);
+        var obj = getObject(objectID);
 
         var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -2903,7 +2903,7 @@ function objectWebServer() {
      */
     function addFrameToObject(objectKey, frameKey, frame, res) {
 
-        getObject(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function(error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -2968,7 +2968,7 @@ function objectWebServer() {
         var frameID = req.params.frameID;
         console.log('making a copy of frame: ' + frameID);
 
-        getFrame(objectID, frameID, function(error, object, frame) {
+        getFrameAsync(objectID, frameID, function(error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -3049,7 +3049,7 @@ function objectWebServer() {
         var objectId = req.params[0];
         var frameId = req.params[1];
 
-        getObject(objectId, function(error, object) {
+        getObjectAsync(objectId, function(error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -3096,7 +3096,7 @@ function objectWebServer() {
         console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
 
         // Delete frame
-        var object = getObjectFromKey(objectId);
+        var object = getObject(objectId);
         if (!object) {
             res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
             return;
@@ -3273,7 +3273,7 @@ function objectWebServer() {
             var newVisualization = body.visualization;
             var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
-            var frame = getFrameFromKey(objectKey, frameKey);
+            var frame = getFrame(objectKey, frameKey);
             if (frame) {
 
                 // if changing from ar -> screen, optionally provide default values for ar.x, ar.y, so that it'll be there when you switch back
@@ -3408,7 +3408,7 @@ function objectWebServer() {
 
         webServer.get('/object/*/deactivate/', function (req, res) {
             var objectID = req.params[0];
-            getObjectFromKey(objectID).deactivated = true;
+            getObject(objectID).deactivated = true;
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
@@ -3418,7 +3418,7 @@ function objectWebServer() {
 
         webServer.get('/object/*/activate/', function (req, res) {
             var objectID = req.params[0];
-            getObjectFromKey(objectID).deactivated = false;
+            getObject(objectID).deactivated = false;
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
@@ -3429,7 +3429,7 @@ function objectWebServer() {
 
         webServer.get('/object/*/screen/', function (req, res) {
             var objectID = req.params[0];
-            getObjectFromKey(objectID).visualization = "screen";
+            getObject(objectID).visualization = "screen";
             console.log(objectID, "screen");
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
@@ -3437,7 +3437,7 @@ function objectWebServer() {
 
         webServer.get('/object/*/ar/', function (req, res) {
             var objectID = req.params[0];
-            getObjectFromKey(objectID).visualization = "ar";
+            getObject(objectID).visualization = "ar";
             console.log(objectID, "ar");
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
@@ -3446,7 +3446,7 @@ function objectWebServer() {
         webServer.get('/object/*/*/reset/', function (req, res) {
             var objectID = req.params[0];
             var frameID = req.params[1];
-            var frame = getFrameFromKey(objectID, frameID);
+            var frame = getFrame(objectID, frameID);
             frame.ar = {
                 x : 0,
                 y : 0,
@@ -3487,7 +3487,7 @@ function objectWebServer() {
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
-            var node = getNodeFromKey(req.params.objectID, req.params.frameID, req.params.nodeID);
+            var node = getNode(req.params.objectID, req.params.frameID, req.params.nodeID);
             res.json(node || {});
         });
 
@@ -3498,7 +3498,7 @@ function objectWebServer() {
             var objectID = req.params[0];
             var frameID = req.params[1];
 
-            var thisFrame = getFrameFromKey(frameID);
+            var thisFrame = getFrame(frameID);
             if (thisFrame) {
                 res.status(200).json(thisFrame);
                 return;
@@ -3512,7 +3512,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get('/object/*/', function (req, res) {
             var objectID = req.params[0];
-            var object = getObjectFromKey(objectID);
+            var object = getObject(objectID);
 
             console.log("----x---xx----xx--x-----");
 
@@ -4179,7 +4179,7 @@ function socketServer() {
 
             var publicData = {};
 
-            var frame = getFrameFromKey(msgContent.object, msgContent.frame);
+            var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for(key in frame.nodes){
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
@@ -4220,7 +4220,7 @@ function socketServer() {
             }
 
             var publicData = {};
-            var frame = getFrameFromKey(msgContent.object, msgContent.frame);
+            var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for(key in frame.nodes){
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
@@ -4248,7 +4248,7 @@ function socketServer() {
 
             var publicData = {};
 
-            var node = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+            var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
             if (node) {
                 var block = node.blocks[msgContent.block];
                 if (block) {
@@ -4287,7 +4287,7 @@ function socketServer() {
         socket.on('object/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            var node = getNode(msg.object, msg.frame, msg.node);
             if (typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
                 var thisPublicData = node.publicData;
                 for (var key in msg.publicData) {
@@ -4300,7 +4300,7 @@ function socketServer() {
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
                     var thisPublicData = node.blocks[msg.block].publicData;
@@ -4312,7 +4312,7 @@ function socketServer() {
         socket.on('block/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
                     var thisPublicData = node.blocks[msg.block].publicData;
@@ -4372,7 +4372,7 @@ function doesObjectExist(objectKey) {
     return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
 }
 
-function getObjectFromKey(objectKey) {
+function getObject(objectKey) {
     if (doesObjectExist(objectKey)) {
         return objects[objectKey] || worldObject;
     }
@@ -4389,7 +4389,7 @@ function forEachObject(callback) {
 
 function doesFrameExist(objectKey, frameKey) {
     if (doesObjectExist(objectKey)) {
-        var foundObject = getObjectFromKey(objectKey);
+        var foundObject = getObject(objectKey);
         if (foundObject) {
             return foundObject.frames.hasOwnProperty(frameKey);
         }
@@ -4397,9 +4397,9 @@ function doesFrameExist(objectKey, frameKey) {
     return false;
 }
 
-function getFrameFromKey(objectKey, frameKey) {
+function getFrame(objectKey, frameKey) {
     if (doesFrameExist(objectKey, frameKey)) {
-        var foundObject = getObjectFromKey(objectKey);
+        var foundObject = getObject(objectKey);
         if (foundObject) {
             return foundObject.frames[frameKey];
         }
@@ -4409,7 +4409,7 @@ function getFrameFromKey(objectKey, frameKey) {
 
 function doesNodeExist(objectKey, frameKey, nodeKey) {
     if (doesFrameExist(objectKey, frameKey)) {
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
             return foundFrame.nodes.hasOwnProperty(nodeKey);
         }
@@ -4417,9 +4417,9 @@ function doesNodeExist(objectKey, frameKey, nodeKey) {
     return false;
 }
 
-function getNodeFromKey(objectKey, frameKey, nodeKey) {
+function getNode(objectKey, frameKey, nodeKey) {
     if (doesNodeExist(objectKey, frameKey, nodeKey)) {
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
             return foundFrame.nodes[nodeKey];
         }
@@ -4429,7 +4429,7 @@ function getNodeFromKey(objectKey, frameKey, nodeKey) {
 
 function messagetoSend(msgContent, socketID) {
 
-    var node = getNodeFromKey(msgContent.object, msgContent.frame, msgContent.node);
+    var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
     if (node) {
         io.sockets.connected[socketID].emit('object', JSON.stringify({
             object: msgContent.object,
@@ -4489,7 +4489,7 @@ var engine = {
     // once data is processed it will determin where to send it.
     processLinks: function (object, frame, node, thisNode) {
 
-        var thisFrame = getFrameFromKey(object, frame);
+        var thisFrame = getFrame(object, frame);
 
         for (var linkKey in thisFrame.links) {
 
@@ -4503,7 +4503,7 @@ var engine = {
 
                     if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
-                    this.internalObjectDestination = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
+                    this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                     // if this is a regular node, not a logic node, process normally
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
@@ -4521,7 +4521,7 @@ var engine = {
                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
                                 }
 
-                                this.nextLogic = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
+                                this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
                                 // this needs to be at the beginning;
                                 if (!this.nextLogic.routeBuffer) {
                                     this.nextLogic.routeBuffer = [0, 0, 0, 0];
@@ -4594,7 +4594,7 @@ var engine = {
 
                 var linkKey;
 
-                var foundFrame = getFrameFromKey(object, frame);
+                var foundFrame = getFrame(object, frame);
 
                 if (this.router !== null) {
 
@@ -4606,7 +4606,7 @@ var engine = {
                                 socketSender(object, frame, linkKey, thisBlock.processedData[i]);
                             }
                             else {
-                                this.internalObjectDestination = getNodeFromKey(this.link.objectB, this.link.frameB, this.link.nodeB);
+                                this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                                 if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                                     this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination)
@@ -4616,7 +4616,7 @@ var engine = {
                     }
                 }
                 else {
-                    this.logic = getNodeFromKey(object, frame, node);
+                    this.logic = getNode(object, frame, node);
                     // process all links in the block
                     for (linkKey in this.logic.links) {
                         if (this.logic.links[linkKey] && this.logic.links[linkKey].nodeA === block && this.logic.links[linkKey].logicA === i) {
@@ -4665,7 +4665,7 @@ var engine = {
  **/
 
 function socketSender(object, frame, link, data) {
-    var foundFrame = getFrameFromKey(object, frame);
+    var foundFrame = getFrame(object, frame);
     var thisLink = foundFrame.links[link];
 
     var msg = "";
@@ -4803,7 +4803,7 @@ function cout(msg) {
 }
 
 function checkObjectActivation(id) {
-    var object = getObjectFromKey(id);
+    var object = getObject(id);
     if (object) {
         return !object.deactivated;
     }
