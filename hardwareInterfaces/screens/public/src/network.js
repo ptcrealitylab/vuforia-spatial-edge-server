@@ -57,6 +57,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         // if pushed into screen, simulate touchmove immediately so that it appears in the correct position instead of at (0,0)
         if (stateDidChange && editingState.frameKey) {
+            isCurrentGestureSimulated = true;
             realityEditor.touchEvents.simulateMouseEvent(screenPos.x, screenPos.y, 'pointermove');
         }
 
