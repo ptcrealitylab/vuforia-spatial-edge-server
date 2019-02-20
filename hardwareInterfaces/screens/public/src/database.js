@@ -176,7 +176,7 @@ createNameSpace("realityEditor.database");
             addedLogic.frameSizeX = 220;
             addedLogic.frameSizeY = 220;
 
-            var defaultScale = 0.125;
+            var defaultScale = 0.25;
             addedLogic.scale = defaultScale;
         //     addedLogic.screenZ = 1000;
         //     addedLogic.loaded = false;

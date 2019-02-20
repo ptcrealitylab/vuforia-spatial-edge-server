@@ -277,6 +277,8 @@ createNameSpace("realityEditor.linkRenderer");
         context.strokeStyle = "#ff019f";
         context.stroke();
         context.closePath();
+
+        globalCanvas.hasContent = true;
     }
 
     exports.initFeature = initFeature;

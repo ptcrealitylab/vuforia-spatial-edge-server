@@ -142,7 +142,7 @@ createNameSpace("realityEditor.pocket");
         frame.visualization = 'screen';
         frame.ar.x = 0;
         frame.ar.y = 0;
-        var defaultScale = 0.125;
+        var defaultScale = 0.25;
         frame.ar.scale = defaultScale;
         frame.frameSizeX = width;
         frame.frameSizeY = height;
