@@ -1408,7 +1408,7 @@ function objectWebServer() {
 
              scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
              scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
-            scriptNode += '<script> realityObject.serverIp = '+ip.address()+'</script>';
+            scriptNode += '<script> realityObject.serverIp = "'+ip.address()+'"</script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
@@ -3162,13 +3162,13 @@ function objectWebServer() {
 
         webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
             changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function(statusCode, responseContents) {
-                res.status(statusCode).send(responseContents);
+                res.status(statusCode).send({status: responseContents});
             });
         });
 
         webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
             changeSize(req.params.objectID, req.params.frameID, null, req.body, function(statusCode, responseContents) {
-                res.status(statusCode).send(responseContents);
+                res.status(statusCode).send({status: responseContents});
             });
         });
 
@@ -3249,7 +3249,7 @@ function objectWebServer() {
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
-                    updateStatus = "added object";
+                    updateStatus = "updated position and/or scale";
                 }
 
                 callback(200, updateStatus);

@@ -43,6 +43,7 @@ if (exports.enabled) {
 
     function bindScreen(objectName, port) {
         var screen = new Screen(objectName, port);
+        console.log('activating screen for ' + objectName + ' on port ' + port);
         server.activateScreen(objectName, port);
         activeScreens.push(screen);
     }

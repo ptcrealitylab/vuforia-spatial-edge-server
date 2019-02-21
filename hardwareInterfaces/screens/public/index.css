@@ -271,6 +271,8 @@ body, html {
     position: absolute;
     left: 0;
     top: 0;
+    pointer-events: none;
+    /*z-index: 50;*/
 }
 
 .touchOverlay {
@@ -295,4 +297,145 @@ body, html {
     touch-action: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+}
+
+#pocketButton {
+    position: absolute;
+    left: 0;
+    top: 130px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(45,255,255,0.15);
+    z-index: 100;
+}
+
+#pocket {
+    display: inline;
+    position: absolute;
+    left: 65px;
+    top: 0;
+    width: 900px;
+    height: 450px;
+    border: 3px solid #01fffc;
+    background-color: rgba(45,255,255,0.15);
+    z-index: 100;
+}
+
+.closed {
+    display: none !important;
+}
+
+.element-template {      /* #overlay.overlayLogicNode */
+    display: inline-block;
+    margin: 20px;
+    padding: 0;
+    box-sizing: border-box;
+    border: 3px solid #00FFFF;
+    /*width: calc(20vw - 18px);*/
+    /*height: calc(20vw - 18px);*/
+    width: 180px;
+    height: 180px;
+    overflow: hidden;
+}
+
+.palette-element {
+    border: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+#trashButton {
+    position: absolute;
+    left: 0;
+    top: 195px;
+    width: 60px;
+    height: 320px;
+    background-color: rgba(242,22,121,0.15);
+    z-index: 100;
+}
+
+#modeToggleButton {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 60px;
+    /*height: 120px;*/
+    /*background-color: rgba(242,22,121,0.15);*/
+    z-index: 100;
+}
+
+.toggleButtonBackground {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(45,255,255,0.35);
+    z-index: 100;
+}
+
+.toggleOff {
+    background-color: transparent;
+}
+
+.ghostFrame {
+    opacity: 0.5;
+    /*display: inline;*/
+    /*visibility: visible;*/
+    pointer-events: none;
+}
+
+.hiddenNode {
+    display: none !important;
+}
+
+#linkCanvas {
+    visibility: visible;
+    /*-webkit-transform-style: preserve-3d;*/
+    margin: 0;
+    padding: 0;
+    z-index: -1;
+    /*-webkit-transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);*/
+    pointer-events: none;
+    background-color: transparent;
+}
+
+@keyframes scaleIn {
+    0% {
+        visibility: visible;
+        -webkit-transform: scale(0);
+        opacity: 0;
+    }
+    100% {
+        -webkit-transform: scale(1.0);
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+@keyframes scaleOut {
+    0% {
+        -webkit-transform: scale(1.0);
+        visibility: visible;
+        opacity: 1;
+    }
+    100% {
+        -webkit-transform: scale(0);
+        visibility: hidden;
+        opacity: 0;
+    }
+}
+
+.scaleIn {
+    visibility: visible;
+    animation-name: scaleIn;
+    animation-duration: 100ms;
+    -webkit-animation-fill-mode: forwards; /* Chrome, Safari, Opera */
+    -webkit-animation-timing-function: ease-out;
+}
+
+.scaleOut {
+    visibility: hidden;
+    animation-name: scaleOut;
+    animation-duration: 100ms;
+    -webkit-animation-fill-mode: forwards;
+    -webkit-animation-timing-function: ease-in;
 }
