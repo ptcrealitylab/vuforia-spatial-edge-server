@@ -1,58 +1,78 @@
 createNameSpace("realityEditor.draw");
 
-realityEditor.draw.renderFrames = function() {
-    // console.log('renderFrames');
-    for (var frameKey in frames) {
-        if (!frames.hasOwnProperty(frameKey)) continue;
-        var frame = frames[frameKey];
-        if (typeof frame.location === 'undefined') continue;
-        if (frame.location !== 'global') continue;
+realityEditor.draw.render = function() {
+    // // console.log('render');
+    // for (var frameKey in frames) {
+    //     if (!frames.hasOwnProperty(frameKey)) continue;
+    //     var frame = frames[frameKey];
+    //     if (typeof frame.location === 'undefined') continue;
+    //     if (frame.location !== 'global') continue;
+    //
+    //     realityEditor.draw.addElement(frameKey, frame);
+    //     realityEditor.draw.drawTransformed(frameKey, frame);
+    // }
 
-        realityEditor.draw.addElement(frameKey, frame);
-        realityEditor.draw.drawTransformed(frameKey, frame);
-    }
+    realityEditor.frameRenderer.renderFrames();
+    realityEditor.nodeRenderer.renderNodes();
+    realityEditor.linkRenderer.renderLinks();
+    realityEditor.gui.crafting.redrawDataCrafting();
 
-    requestAnimFrame(realityEditor.draw.renderFrames);
+    requestAnimFrame(realityEditor.draw.render);
 };
 
-realityEditor.draw.addElement = function(frameKey, frame) {
-    var iframeId = "iframe" + frameKey;
+realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
+
+    var vehicleKey = nodeKey || frameKey;
+    var isFrame = vehicleKey === frameKey;
+
+    var iframeId = "iframe" + vehicleKey;
     var iframeExists = document.querySelectorAll('#'+iframeId).length > 0;
 
     if (!iframeExists) {
 
-        if (!frame.hasOwnProperty('width')) {
-            frame.width = 300;
+        if (!vehicle.hasOwnProperty('width')) {
+            vehicle.width = vehicle.frameSizeX || 300;
         }
-        if (!frame.hasOwnProperty('height')) {
-            frame.height = 200;
+        if (!vehicle.hasOwnProperty('height')) {
+            vehicle.height = vehicle.frameSizeY || 200;
         }
 
-        frame.screen.scale = frame.ar.scale * scaleRatio; //scaleARFactor;
-
-        // frame.screen.scale = frame.ar.scale;
-        if (frame.screen.x === 0 && frame.screen.y === 0 && (frame.ar.x !== 0 || frame.ar.y !== 0)) {
-            // getScreenPosFromARPos(getScreenFrames()[2].ar.x, getScreenFrames()[2].ar.y)
-            var screenPosConversion = getScreenPosFromARPos(frame.ar.x, frame.ar.y);
-            frame.screen.x = screenPosConversion.x;
-            frame.screen.y = screenPosConversion.y;
+        if (isFrame) {
+            vehicle.screen.scale = vehicle.ar.scale * scaleRatio; //scaleARFactor;
+            // frame.screen.scale = frame.ar.scale;
+            if (vehicle.screen.x === 0 && vehicle.screen.y === 0 && (vehicle.ar.x !== 0 || vehicle.ar.y !== 0)) {
+                // getScreenPosFromARPos(getScreenFrames()[2].ar.x, getScreenFrames()[2].ar.y)
+                var screenPosConversion = getScreenPosFromARPos(vehicle.ar.x, vehicle.ar.y);
+                vehicle.screen.x = screenPosConversion.x;
+                vehicle.screen.y = screenPosConversion.y;
+            }
         }
 
         // var scaleFactor = getScreenScaleFactor();
-        var screenFrameWidth = (frame.width);// * frame.screen.scale;
-        var screenFrameHeight = (frame.height);// * frame.screen.scale;
+        var screenFrameWidth = (vehicle.width);// * frame.screen.scale;
+        var screenFrameHeight = (vehicle.height);// * frame.screen.scale;
 
         var addContainer = document.createElement('div');
-        addContainer.id = "object" + frameKey;
+        addContainer.id = "object" + vehicleKey;
         // addContainer.className = "main";
         addContainer.classList.add('main', 'arFrame');
         // addContainer.style.display = "none";
         addContainer.style.border = 0;
         addContainer.style.position = 'absolute';
-        var screenPos = getScreenPosFromARPos(frame.screen.x, frame.screen.y);
+
+        var screenPos;
+        if (isFrame) {
+            screenPos = getScreenPosFromARPos(vehicle.ar.x, vehicle.ar.y); // TODO: ben is this a bug? should be ar.x, ar.y
+        } else {
+            screenPos = {
+                x: vehicle.x,
+                y: vehicle.y
+            }
+        }
         addContainer.style.left = screenPos.x + "px"; //frame.screen.x + "px";
         addContainer.style.top = screenPos.y + "px"; //frame.screen.y + "px";
-        addContainer.style.transform = 'scale(' + frame.screen.scale + ')';
+        var vehicleScale = isFrame ? (vehicle.screen.scale) : (vehicle.scale * scaleRatio);
+        addContainer.style.transform = 'scale(' + vehicleScale + ')';
 
         var addIframe = document.createElement('iframe');
         addIframe.id = iframeId;
@@ -64,18 +84,23 @@ realityEditor.draw.addElement = function(frameKey, frame) {
 
         addIframe.style.visibility = "visible";
         // addIframe.style.pointerEvents = 'none';
-        addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + frame.src + '.html';
+        if (isFrame) {
+            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + vehicle.src + '.html';
+        } else {
+            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/nodes/' + vehicle.type + '/index.html';
+        }
         // addIframe.src = '/frames/' + frame.type + '.html';
-        addIframe.dataset.nodeKey = null;
+        addIframe.dataset.nodeKey = nodeKey || null;
         addIframe.dataset.frameKey = frameKey;
-        addIframe.dataset.objectKey = frame.objectId;
-        addIframe.setAttribute("onload", 'realityEditor.network.onElementLoad(\"' + frame.objectId + '\",\"' + frameKey + '\")');
+        addIframe.dataset.objectKey = vehicle.objectId;
+        addIframe.setAttribute("onload", 'realityEditor.network.onElementLoad(\"' + vehicle.objectId + '\", \"' + frameKey + '\", \"' + nodeKey + '\")');
         addIframe.setAttribute("sandbox", "allow-forms allow-pointer-lock allow-same-origin allow-scripts");
         document.body.appendChild(addIframe);
         addIframe.display = 'inline';
 
         // add a cover object for touch event synthesizing
         var cover = document.createElement('div');
+        cover.id = "cover" + vehicleKey;
         cover.classList.add('main');
         cover.style.visibility = 'visible';
         cover.style.width = addIframe.style.width;
@@ -83,10 +108,9 @@ realityEditor.draw.addElement = function(frameKey, frame) {
         cover.style.top = 0;
         cover.style.left = 0;
         cover.style.position = 'absolute';
-        // frame.frameTouchSynthesizer = new FrameTouchSynthesizer(cover, addIframe);
 
         var addSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        addSVG.id = "svg" + frameKey;
+        addSVG.id = "svg" + vehicleKey;
         addSVG.classList.add("svgOverlay");
         addSVG.style.width = "100%";
         addSVG.style.height = "100%";
@@ -100,38 +124,44 @@ realityEditor.draw.addElement = function(frameKey, frame) {
     }
 };
 
-realityEditor.draw.drawTransformed = function(frameKey, frame) {
-    var frameContainerDom = document.querySelector('#object'+frameKey);
-    if (frame.visualization === 'screen') {
-        var svg = frameContainerDom.querySelector('#svg' + frameKey);
-        if (svg.childElementCount === 0) {
-            var iFrame = frameContainerDom.querySelector('#iframe' + frameKey);
-            console.log('retroactively creating the svg overlay');
-            svg.style.width = iFrame.style.width;
-            svg.style.height = iFrame.style.height;
-            realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
-        }
-
-        if (editingState.frameKey === frameKey) {
-            svg.style.visibility = 'visible';
-        } else {
-            svg.style.visibility = 'hidden';
-        }
-
-        // frameContainerDom.style.display = 'inline';
-        frameContainerDom.classList.remove('arFrame');
-        frameContainerDom.classList.add('screenFrame');
-        frameContainerDom.style.left = frame.screen.x + 'px';
-        frameContainerDom.style.top = frame.screen.y + 'px';
-
-        frameContainerDom.style.transform = 'scale(' + frame.screen.scale + ')';
-
-    } else {
-        // frameContainerDom.style.display = 'none';
-        frameContainerDom.classList.remove('screenFrame');
-        frameContainerDom.classList.add('arFrame');
-    }
-};
+// realityEditor.draw.killElement = function(frameKey) {
+//     var frameContainer = document.getElementById('object' + frameKey);
+//     document.body.removeChild(frameContainer);
+//     console.log('removed DOM elements for frame ' + frameKey);
+// };
+//
+// realityEditor.draw.drawTransformed = function(frameKey, frame) {
+//     var frameContainerDom = document.querySelector('#object'+frameKey);
+//     if (frame.visualization === 'screen') {
+//         var svg = frameContainerDom.querySelector('#svg' + frameKey);
+//         if (svg.childElementCount === 0) {
+//             var iFrame = frameContainerDom.querySelector('#iframe' + frameKey);
+//             console.log('retroactively creating the svg overlay');
+//             svg.style.width = iFrame.style.width;
+//             svg.style.height = iFrame.style.height;
+//             realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
+//         }
+//
+//         if (editingState.frameKey === frameKey) {
+//             svg.style.visibility = 'visible';
+//         } else {
+//             svg.style.visibility = 'hidden';
+//         }
+//
+//         // frameContainerDom.style.display = 'inline';
+//         frameContainerDom.classList.remove('arFrame');
+//         frameContainerDom.classList.add('screenFrame');
+//         frameContainerDom.style.left = frame.screen.x + 'px';
+//         frameContainerDom.style.top = frame.screen.y + 'px';
+//
+//         frameContainerDom.style.transform = 'scale(' + frame.screen.scale + ')';
+//
+//     } else {
+//         // frameContainerDom.style.display = 'none';
+//         frameContainerDom.classList.remove('screenFrame');
+//         frameContainerDom.classList.add('arFrame');
+//     }
+// };
 
 // draw circles for scaling
 
@@ -191,4 +221,23 @@ realityEditor.draw.drawBlue = function(context, lineStartPoint, lineEndPoint, ra
     context.setLineDash([editorLineDash * windowToEditorRatio]);
     context.stroke();
     context.closePath();
+};
+
+/**
+ * Utility for drawing a line in the provided canvas context with the given coordinates, color, and width.
+ * @param {CanvasRenderingContext2D} context
+ * @param {number} startX
+ * @param {number} startY
+ * @param {number} endX
+ * @param {number} endY
+ * @param {string} color
+ * @param {number} width
+ */
+realityEditor.draw.drawSimpleLine = function(context, startX, startY, endX, endY, color, width) {
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.stroke();
 };

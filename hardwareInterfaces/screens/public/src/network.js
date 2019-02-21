@@ -16,6 +16,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         objectName = msg.objectName;
         document.querySelector('.bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+        document.title = msg.objectName;
     });
 
     // callback to set background image based on objectName
@@ -33,7 +34,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         console.log('framesForScreen', msg);
         frames = msg;
-        realityEditor.draw.renderFrames();
+        realityEditor.draw.render();
     });
 
     // callback for when the screenObject data structure is updated in the editor based on projected touch events
@@ -56,6 +57,7 @@ realityEditor.network.setupSocketListeners = function() {
 
         // if pushed into screen, simulate touchmove immediately so that it appears in the correct position instead of at (0,0)
         if (stateDidChange && editingState.frameKey) {
+            isCurrentGestureSimulated = true;
             realityEditor.touchEvents.simulateMouseEvent(screenPos.x, screenPos.y, 'pointermove');
         }
 
@@ -213,13 +215,21 @@ realityEditor.network.onInternalPostMessage = function(e) {
         }
     }
 
-    console.log(msgContent);
+    // console.log(msgContent);
 
-    if (msgContent.width && msgContent.height) {
+    if (msgContent.width && msgContent.height && msgContent.frame) {
         console.log('got width and height', msgContent.width, msgContent.height);
-        var iFrame = document.getElementById('iframe' + msgContent.frame);
+        var activeKey = msgContent.node || msgContent.frame;
+        var iFrame = document.getElementById('iframe' + activeKey);
         iFrame.style.width = msgContent.width + 'px';
         iFrame.style.height = msgContent.height + 'px';
+        var svg = document.getElementById('svg' + activeKey);
+        svg.style.width = msgContent.width + 'px';
+        svg.style.height = msgContent.height + 'px';
+        realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
+        // var cover = document.getElementById("cover" + activeKey);
+        // cover.style.width = msgContent.width + 'px';
+        // cover.style.height = msgContent.height + 'px';
     }
 
     if (typeof msgContent.socketReconnect !== 'undefined') {
@@ -227,10 +237,24 @@ realityEditor.network.onInternalPostMessage = function(e) {
             window.location.reload();
         }, 1000);
     }
+
+    if (typeof msgContent.moveDelay !== "undefined") {
+        var activeVehicle = frames[msgContent.frame];
+        if (activeVehicle) {
+            activeVehicle.moveDelay = msgContent.moveDelay;
+            console.log('move delay of ' + activeVehicle.name + ' is set to ' + activeVehicle.moveDelay);
+        }
+    }
 };
 
-realityEditor.network.onElementLoad = function(objectKey, frameKey) {
-    console.log('onElementLoad ' + objectKey + ' ' + frameKey);
+realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
+    console.log('onElementLoad ' + objectKey + ' ' + frameKey + ' ' + nodeKey);
+
+    if (nodeKey === "null") nodeKey = null;
+
+    var frame = frames[frameKey];
+    var nodes = (!!frame) ? frame.nodes : {};
+    var simpleNodes = realityEditor.utilities.getNodesJsonForIframes(nodes);
 
     var newStyle = {
         object: objectKey,
@@ -238,11 +262,14 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey) {
         objectData: {
             ip: SERVER_IP
         },
-        node: null,
-        nodes: null,
+        node: nodeKey,
+        nodes: simpleNodes,
         interface: null
     };
-    var thisIframe = document.querySelector("#iframe" + frameKey);
+
+    var activeKey = nodeKey || frameKey;
+
+    var thisIframe = document.querySelector("#iframe" + activeKey);
     thisIframe._loaded = true;
     thisIframe.contentWindow.postMessage(JSON.stringify(newStyle), '*');
     thisIframe.contentWindow.postMessage(JSON.stringify({
@@ -251,7 +278,6 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey) {
             height: parseInt(thisIframe.style.height)
         }
     }), '*');
-
 
     console.log("on_load");
 };
@@ -285,7 +311,7 @@ realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, call
 
     }
     catch (e) {
-        this.cout("could not connect to" + url);
+        console.log("could not connect to" + url);
     }
 };
 
@@ -326,29 +352,144 @@ realityEditor.network.postData = function(url, body, callback) {
     request.send(params);
 };
 
+realityEditor.network.deleteData = function (url, content) {
+    var request = new XMLHttpRequest();
+    request.open('DELETE', url, true);
+    var _this = this;
+    request.onreadystatechange = function () {
+        if (request.readyState === 4) console.log("It deleted!");
+    };
+    request.setRequestHeader("Content-type", "application/json");
+    //request.setRequestHeader("Content-length", params.length);
+    // request.setRequestHeader("Connection", "close");
+    if (content) {
+        request.send(JSON.stringify(content));
+    } else {
+        request.send();
+    }
+    console.log("deleteData");
+};
+
 realityEditor.network.postPositionAndSize = function(objectKey, frameKey, nodeKey, wasTriggeredFromEditor) {
     if (!objectKey || !frameKey) return;
     if (!frames[frameKey]) return;
+
+    var activeKey = nodeKey || frameKey;
+    var isFrame = activeKey === frameKey;
+
     // post new position to server when you stop moving a frame
-    var content = {
-        x: frames[frameKey].screen.x,
-        y: frames[frameKey].screen.y,
-        scale: frames[frameKey].screen.scale,
-        scaleARFactor: scaleRatio,
-        ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
-    };
+    var content;
+    if (isFrame) {
+        content = {
+            x: frames[frameKey].screen.x,
+            y: frames[frameKey].screen.y,
+            scale: frames[frameKey].screen.scale,
+            scaleARFactor: scaleRatio,
+            ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+        };
+    } else {
+        content = {
+            x: frames[frameKey].nodes[nodeKey].x,
+            y: frames[frameKey].nodes[nodeKey].y,
+            scale: frames[frameKey].nodes[nodeKey].scale,
+            ignoreActionSender: true // We update the position of the AR frames another way -> trying reload the entire object in the editor here messes up the positions
+        };
+    }
+
     if (wasTriggeredFromEditor) {
         content.wasTriggeredFromEditor = true;
     } else {
-        var iframeRect = document.getElementById('iframe' + frameKey).getClientRects()[0];
-        var frameCenterX = frames[frameKey].screen.x + iframeRect.width/2;
-        var frameCenterY = frames[frameKey].screen.y + iframeRect.height/2;
-        var arPosition = getARPosFromScreenPos(frameCenterX, frameCenterY);
-        content.arX = arPosition.x;
-        content.arY = arPosition.y;
+        if (isFrame) {
+            var iframeRect = document.getElementById('iframe' + frameKey).getClientRects()[0];
+            var frameCenterX = frames[frameKey].screen.x + iframeRect.width/2;
+            var frameCenterY = frames[frameKey].screen.y + iframeRect.height/2;
+            var arPosition = getARPosFromScreenPos(frameCenterX, frameCenterY);
+            content.arX = arPosition.x;
+            content.arY = arPosition.y;
+        }
     }
-    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
-    this.postData(urlEndpoint, content, function (response, error) {
-        console.log(response, error);
+    content.lastEditor = tempUuid;
+    var urlEndpoint;
+    if (isFrame) {
+        urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/size/";
+    } else {
+        urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/nodeSize/";
+    }
+    this.postData(urlEndpoint, content, function (error, response) {
+        console.log(error, response);
     });
+};
+
+realityEditor.network.postNewFrame = function(contents, callback) {
+    console.log("I am adding a frame: " + contents);
+    contents.lastEditor = tempUuid;
+    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/addFrame/";
+    this.postData(urlEndpoint, contents, callback);
+};
+
+realityEditor.network.deleteFrameFromObject = function(frameKey) {
+    console.log("I am deleting a frame: " + frameKey);
+    // var frameToDelete = realityEditor.getFrame(objectKey, frameKey);
+    // if (frameToDelete) {
+    //     console.log('deleting ' + frameToDelete.location + ' frame', frameToDelete);
+    //     if (frameToDelete.location !== 'global') {
+    //         console.warn('WARNING: TRYING TO DELETE A LOCAL FRAME');
+    //         return;
+    //     }
+    // } else {
+    //     console.log('cant tell if local or global... frame has already been deleted on editor');
+    // }
+    var contents = {lastEditor: tempUuid};
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + getObjectId() + "/frames/" + frameKey, contents);
+};
+
+realityEditor.network.postNewLink = function (objectKey, frameKey, linkKey, thisLink) {
+    // generate action for all links to be reloaded after upload
+    thisLink.lastEditor = tempUuid;
+    // this.cout("sending Link");
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + '/addLink/', thisLink, function (err, response) {
+        console.log(response);
+    });
+};
+
+realityEditor.network.deleteLink = function (objectKey, frameKey, linkKey) {// generate action for all links to be reloaded after upload
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteLink/");
+};
+
+// ----- endpoints for crafting ----- //
+
+realityEditor.network.postNewLogicNode = function (objectKey, frameKey, nodeKey, logicNode) {
+    var simpleLogic = realityEditor.gui.crafting.utilities.convertLogicToServerFormat(logicNode);
+    simpleLogic.lastEditor = tempUuid;
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/addLogicNode/", simpleLogic);
+};
+
+realityEditor.network.postNewBlock = function (objectKey, frameKey, nodeKey, blockKey, block) {
+    // /logic/*/*/block/*/
+    block.lastEditor = tempUuid;
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/block/" + blockKey + "/addBlock/", block);
+};
+
+realityEditor.network.postNewBlockPosition = function (objectKey, frameKey, logicKey, blockKey, block) {
+    block.lastEditor = tempUuid;
+    if (typeof block.x === "number" && typeof block.y === "number") {
+        this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + logicKey + "/block/" + blockKey + "/blockPosition/", block);
+    }
+};
+
+realityEditor.network.postNewBlockLink = function (objectKey, frameKey, nodeKey, linkKey, thisLink) {
+    var linkMessage = this.realityEditor.gui.crafting.utilities.convertBlockLinkToServerFormat(thisLink);
+    linkMessage.lastEditor = tempUuid;
+    // /logic/*/*/link/*/
+    this.postData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/link/" + linkKey + "/addBlockLink/", linkMessage);
+};
+
+realityEditor.network.deleteBlockFromObject = function (objectKey, frameKey, nodeKey, blockKey) {
+    // /logic/*/*/block/*/
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/block/" + blockKey + "/editor/" + tempUuid + "/deleteBlock/");
+};
+
+realityEditor.network.deleteBlockLinkFromObject = function (objectKey, frameKey, nodeKey, linkKey) {
+    // /logic/*/*/link/*/
+    this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteBlockLink/");
 };

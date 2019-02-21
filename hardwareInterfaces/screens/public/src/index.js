@@ -2,12 +2,23 @@ var realityEditor = realityEditor || {
     gui: {
         ar: {
             moveabilityOverlay: {}
-        }
+        },
+        crafting: {}
     },
     network: {},
     draw: {},
     touchEvents: {},
-    utilities: {}
+    utilities: {},
+    frameRenderer: {},
+    nodeRenderer: {},
+    linkRenderer: {},
+    pocket: {},
+    trash: {},
+    modeToggle: {},
+    database: {},
+    linkingByDrawing: {},
+    logicNodeInteractions: {},
+    craftingBoardMenu: {}
 };
 
 /**
