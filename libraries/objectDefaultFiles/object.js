@@ -90,7 +90,8 @@ var realityObject = {
             }
         ]
     },
-    touchDecider: null
+    touchDecider: null,
+    onload: null
 };
 
 // adding css styles nessasary for acurate 3D transformations.
@@ -163,9 +164,16 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
             // this needs to contain the final interface source
             , "*");
 
+        var alreadyLoaded = !!realityObject.node;
         realityObject.node = msgContent.node;
         realityObject.frame = msgContent.frame;
         realityObject.object = msgContent.object;
+
+        if (!alreadyLoaded) {
+            if (realityObject.onload) {
+                realityObject.onload();
+            }
+        }
 
         if (realityObject.sendScreenObject) {
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
@@ -629,6 +637,35 @@ function RealityInterface() {
                 callback(msgContent.frameIsMoving);
             }
         };
+    };
+
+    /**
+     * Hides the frame itself and instead populates a background context within the editor with this frame's contents
+     */
+    this.sendToBackground = function() {
+        if (realityObject.sendFullScreen) {
+            if (realityObject.object && realityObject.frame) {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    sendToBackground : true
+                }), '*');
+            }
+        }
+    };
+
+    /**
+     * Adds an onload callback that will wait until this RealityInterfaces receives its object/frame data
+     * @param {function} callback
+     */
+    this.onRealityInterfaceLoaded = function(callback) {
+        if (realityObject.object && realityObject.frame) {
+            callback();
+        } else {
+            realityObject.onload = callback;
+        }
     };
 
     if (typeof io !== "undefined") {
