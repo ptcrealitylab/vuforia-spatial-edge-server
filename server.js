@@ -4752,8 +4752,9 @@ function socketUpdater() {
         // check if the link is used somewhere. if it is not used delete it.
         forEachObject(function(objectKey, object) {
             for (var frameKey in object.frames) {
-                for (var linkKey in object.frames[frameKey].links) {
-                    var thisSocket = knownObjects[objects[objectKey].frames[frameKey].links[linkKey].objectB];
+                var frame = getFrame(objectKey, frameKey);
+                for (var linkKey in frame.links) {
+                    var thisSocket = knownObjects[frame.links[linkKey].objectB];
                     if (thisSocket === sockKey) {
                         socketIsUsed = true;
                     }
