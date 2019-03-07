@@ -7,47 +7,64 @@ var identityFile = '/.identity/object.json';
 var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 var git = require('simple-git')(homeDirectory);
 
-var saveCommit = function (objectKey, objects, callback) {
+var saveCommit = function (object, objects, callback) {
     console.log("got here");
    // Generating historic data for ghost images
-   if(objectKey in objects){
-      var objectFolderName = objects[objectKey].name;
-       objects[objectKey].framesHistory = JSON.parse(JSON.stringify(objects[objectKey].frames));
-       utilities.writeObjectToFile(objects, objectKey, homeDirectory, true);
+   if (object) {
+      var objectFolderName = object.name;
+       object.framesHistory = JSON.parse(JSON.stringify(object.frames));
 
-       git.checkIsRepo(function (err){
-           if(err) {
-               git.init();
-               return;
-           }
-           git.commit("server identity commit for "+objectFolderName, [objectFolderName+identityFile], function(){
-               console.log("commit for "+objectFolderName);
-               utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
-               callback();
-           })
-       });
+       // todo; replace with a try-catch ?
+       if (!object.isWorldObject) { // TODO: fully support world objects too
+           utilities.writeObjectToFile(objects, object.objectId, homeDirectory, true);
+
+           git.checkIsRepo(function (err){
+               if(err) {
+                   git.init();
+                   return;
+               }
+               git.commit("server identity commit for " + objectFolderName, [objectFolderName+identityFile], function(){
+                   console.log("commit for "+objectFolderName);
+                   utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
+                   callback();
+               })
+           });
+
+       } else {
+           // doesn't save world object changes to git, but still writes state to local framesHistory
+           utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
+           callback();
+       }
 
    }
 
-
 };
 
-var resetToLastCommit = function (objectKey, objects, callback) {
+var resetToLastCommit = function (object, objects, callback) {
     console.log("got here too");
-    if(objectKey in objects) {
-        var objectFolderName = objects[objectKey].name;
-        git.checkIsRepo(function (err) {
-            if(err) {
-                git.init();
-                return;
-            }
-            git.checkout(objectFolderName + identityFile, function () {
-                console.log("reset for " + objectFolderName);
-                utilities.updateObject(objectFolderName, objects);
-                utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
-                callback();
-            })
-        });
+    if (object) {
+
+        if (!object.isWorldObject) { // TODO: fully support world objects too
+            var objectFolderName = object.name;
+            git.checkIsRepo(function (err) {
+                if(err) {
+                    git.init();
+                    return;
+                }
+                git.checkout(objectFolderName + identityFile, function () {
+                    console.log("reset for " + objectFolderName);
+                    utilities.updateObject(objectFolderName, objects);
+                    utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
+                    callback();
+                })
+            });
+        } else {
+            // doesn't save world object changes to git, but still performs a simple reset to local framesHistory state
+            object.frames = JSON.parse(JSON.stringify(object.framesHistory));
+            utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
+            callback();
+        }
+
     }
 };
 

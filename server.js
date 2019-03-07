@@ -276,6 +276,10 @@ function Frame() {
     this.publicData = {};
     // if true, cannot move the frame but copies are made from it when you pull into unconstrained
     this.staticCopy = false;
+    // the maximum distance (in meters) to the camera within which it will be rendered
+    this.distanceScale = 1.0;
+    // Indicates what group the frame belongs to; null if none
+    this.groupID = null;
 }
 
 
@@ -2813,18 +2817,24 @@ function objectWebServer() {
      */
 
     webServer.post('/object/:id/saveCommit', function (req, res) {
-        git.saveCommit(req.params.id, objects, function(){
-            res.status(200);
-            res.json({success: true}).end();
-        });
+        var object = getObject(req.params.id);
+        if (object) {
+            git.saveCommit(object, objects, function() {
+                res.status(200);
+                res.json({success: true}).end();
+            });
+        }
     });
 
     webServer.post('/object/:id/resetToLastCommit', function (req, res) {
-        git.resetToLastCommit(req.params.id, objects, function(){
-            res.status(200);
-            res.json({success: true}).end();
-            hardwareAPI.runResetCallbacks(req.params.id);
-        });
+        var object = getObject(req.params.id);
+        if (object) {
+            git.resetToLastCommit(object, objects, function() {
+                res.status(200);
+                res.json({success: true}).end();
+                hardwareAPI.runResetCallbacks(req.params.id);
+            });
+        }
     });
 
     // Handler of new memory uploads
@@ -3161,6 +3171,25 @@ function objectWebServer() {
         utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
+    });
+
+    // sets the groupID of the specified frame
+    webServer.post('/object/:objectID/frame/:frameID/group/', function(req, res) {
+
+        var frame = getFrame(req.params.objectID, req.params.frameID);
+        if (frame) {
+            var newGroupID = req.body.group;
+            if (newGroupID !== frame.groupID) {
+                frame.groupID = newGroupID;
+                utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadFrame: {object: req.params.objectID, frame: req.params.frameID}, lastEditor: req.body.lastEditor});
+                res.status(200).json({success: true}).end();
+                return;
+            }
+        }
+
+        res.status(404).json({success: false, error: 'Couldn\'t find frame ' + req.params.frameID + ' to set groupID'});
+
     });
 
     // changing the size and position of an item. *1 is the object *2 is the datapoint id
