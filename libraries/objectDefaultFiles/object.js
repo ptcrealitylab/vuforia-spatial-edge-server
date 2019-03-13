@@ -50,9 +50,22 @@ var realityObject = {
     block: "",
     publicData: {},
     modelViewMatrix: [],
+    matrices:{
+     modelView : [],
+     projection : [],
+     groundPlane : [],
+     devicePose : [],
+     allObjects : {},
+    },
     projectionMatrix: [],
     visibility: "visible",
     sendMatrix: false,
+    sendMatrices: {
+        modelView : false,
+        devicePose : false,
+        groundPlane : false,
+        allObjects : false
+    },
     sendAcceleration: false,
     sendFullScreen: false,
     sendScreenObject : false,
@@ -154,6 +167,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 height: realityObject.height,
                 width: realityObject.width,
                 sendMatrix: realityObject.sendMatrix,
+                sendMatrices: realityObject.sendMatrices,
                 sendAcceleration: realityObject.sendAcceleration,
                 fullScreen: realityObject.sendFullScreen,
                 stickiness: realityObject.sendSticky,
@@ -199,12 +213,27 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     }
 
     if (typeof msgContent.modelViewMatrix !== "undefined") {
-        realityObject.modelViewMatrix = msgContent.modelViewMatrix;
+        realityObject.matrices.modelView = msgContent.modelViewMatrix;
+    }
+    if (typeof msgContent.projectionMatrix !== "undefined") {
+        realityObject.matrices.projection = msgContent.projectionMatrix;
     }
 
-    if (typeof msgContent.projectionMatrix !== "undefined") {
-        realityObject.projectionMatrix = msgContent.projectionMatrix;
+    if (typeof msgContent.matrices !== "undefined") {
+        if (typeof msgContent.matrices.allObjects !== "undefined") {
+            realityObject.matrices.allObjects = msgContent.matrices.allObjects;
+        }
+
+        if (typeof msgContent.matrices.devicePose !== "undefined") {
+            realityObject.matrices.devicePose = msgContent.matrices.devicePose;
+        }
+
+        if (typeof msgContent.matrices.groundPlane !== "undefined") {
+            realityObject.matrices.groundPlane = msgContent.matrices.groundPlane;
+        }
     }
+
+
 
     if (typeof msgContent.visibility !== "undefined") {
         realityObject.visibility = msgContent.visibility;
@@ -280,17 +309,61 @@ function RealityInterface() {
      ************************************************************
      */
 
-    var numMatrixCallbacks = 0;
+    var callBackCounter = {
+        numMatrixCallbacks : 0,
+        numAllMatricesCallbacks :0,
+        numWorldMatrixCallbacks :0,
+        numGroundPlaneMatrixCallbacks :0
+    };
+
     this.addMatrixListener = function (callback) {
-        numMatrixCallbacks++;
-        realityObject.messageCallBacks['matrixCall'+numMatrixCallbacks] = function (msgContent) {
+        this.subscribeToMatrix();
+        callBackCounter.numMatrixCallbacks++;
+        realityObject.messageCallBacks['matrixCall'+callBackCounter.numMatrixCallbacks] = function (msgContent) {
             if (typeof msgContent.modelViewMatrix !== "undefined") {
-                callback(msgContent.modelViewMatrix, realityObject.projectionMatrix);
+                callback(msgContent.modelViewMatrix, realityObject.matrices.projection);
+            }
+        }
+    };
+
+    this.addAllObjectMatricesListener = function (callback) {
+        this.subscribeToAllMatrices();
+        callBackCounter.numAllMatricesCallbacks++;
+        realityObject.messageCallBacks['allMatricesCall'+callBackCounter.numAllMatricesCallbacks] = function (msgContent) {
+            if (typeof msgContent.matrices !== "undefined") {
+                if (typeof msgContent.matrices.allObjects !== "undefined") {
+                    callback(msgContent.matrices.allObjects, realityObject.matrices.projection);
+                }
+            }
+        }
+    };
+
+    this.addDevicePoseMatrixListener = function (callback) {
+        this.subscribeToDevicePoseMatrix();
+        callBackCounter.numWorldMatrixCallbacks++;
+        realityObject.messageCallBacks['worldMatrixCall'+callBackCounter.numWorldMatrixCallbacks] = function (msgContent) {
+            if (typeof msgContent.matrices !== "undefined") {
+                if (typeof msgContent.matrices.devicePose !== "undefined") {
+                    callback(msgContent.matrices.devicePose, realityObject.matrices.projection);
+                }
+            }
+        }
+    };
+
+    this.addGroundPlaneMatrixListener = function (callback) {
+        this.subscribeToGroundPlaneMatrix();
+        callBackCounter.numGroundPlaneMatrixCallbacks++;
+        realityObject.messageCallBacks['groundPlaneMatrixCall'+callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
+            if (typeof msgContent.matrices !== "undefined") {
+                if (typeof msgContent.matrices.groundPlane !== "undefined") {
+                    callback(msgContent.matrices.groundPlane, realityObject.matrices.projection);
+                }
             }
         }
     };
 
     this.addAccelerationListener = function (callback) {
+        this.subscribeToAcceleration();
         console.log("got this");
         realityObject.messageCallBacks.AccelerationCall = function (msgContent) {
             if (typeof msgContent.acceleration !== "undefined") {
@@ -306,16 +379,8 @@ function RealityInterface() {
     // subscriptions
     this.subscribeToMatrix = function () {
         realityObject.sendMatrix = true;
+        realityObject.sendMatrices.modelView = true;
         if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
-
-            /*
-            if (realityObject.sendFullScreen === false) {
-                console.log("test",document.body.scrollHeight);
-               if(document.body.scrollHeight)
-                realityObject.height = document.body.scrollHeight;
-                if(document.body.scrollWidth)
-                realityObject.width = document.body.scrollWidth;
-            }*/
 
             parent.postMessage(JSON.stringify(
                 {
@@ -326,6 +391,71 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), "*");
+        }
+    };
+
+
+    this.subscribeToDevicePoseMatrix = function () {
+        realityObject.sendMatrices.devicePose = true;
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), "*");
+        }
+    };
+
+    this.subscribeToAllMatrices = function () {
+        realityObject.sendMatrices.allObjects = true;
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), "*");
+        }
+    };
+
+    this.subscribeToGroundPlaneMatrix = function () {
+        realityObject.sendMatrices.groundPlane = true;
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -346,6 +476,7 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -379,6 +510,7 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     fullscreenZPosition: realityObject.fullscreenZPosition,
@@ -407,6 +539,7 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -435,6 +568,7 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -459,6 +593,7 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: false
@@ -551,8 +686,8 @@ function RealityInterface() {
     };
 
     this.getPositionX = function () {
-        if (typeof realityObject.modelViewMatrix[12] !== "undefined") {
-            return realityObject.modelViewMatrix[12];
+        if (typeof realityObject.matrices.modelView[12] !== "undefined") {
+            return realityObject.matrices.modelView[12];
         } else return undefined;
     };
 
@@ -561,8 +696,8 @@ function RealityInterface() {
      */
 
     this.getPositionY = function () {
-        if (typeof realityObject.modelViewMatrix[13] !== "undefined") {
-            return realityObject.modelViewMatrix[13];
+        if (typeof realityObject.matrices.modelView[13] !== "undefined") {
+            return realityObject.matrices.modelView[13];
         } else return undefined;
     };
 
@@ -571,8 +706,8 @@ function RealityInterface() {
      */
 
     this.getPositionZ = function () {
-        if (typeof realityObject.modelViewMatrix[14] !== "undefined") {
-            return realityObject.modelViewMatrix[14];
+        if (typeof realityObject.matrices.modelView[14] !== "undefined") {
+            return realityObject.matrices.modelView[14];
         } else return undefined;
     };
 
@@ -581,8 +716,8 @@ function RealityInterface() {
      */
 
     this.getProjectionMatrix = function () {
-        if (typeof realityObject.projectionMatrix !== "undefined") {
-            return realityObject.projectionMatrix;
+        if (typeof realityObject.matrices.projection !== "undefined") {
+            return realityObject.matrices.projection;
         } else return undefined;
     };
 
@@ -591,8 +726,26 @@ function RealityInterface() {
      */
 
     this.getModelViewMatrix = function () {
-        if (typeof realityObject.modelViewMatrix !== "undefined") {
-            return realityObject.modelViewMatrix;
+        if (typeof realityObject.matrices.modelView !== "undefined") {
+            return realityObject.matrices.modelView;
+        } else return undefined;
+    };
+
+    this.getGroundPlaneMatrix = function () {
+        if (typeof realityObject.matrices.groundPlane !== "undefined") {
+            return realityObject.matrices.groundPlane;
+        } else return undefined;
+    };
+
+    this.getDevicePoseMatrix = function () {
+        if (typeof realityObject.matrices.devicePose !== "undefined") {
+            return realityObject.matrices.devicePose;
+        } else return undefined;
+    };
+
+    this.getAllObjectMatrices = function () {
+        if (typeof realityObject.matrices.allObjects !== "undefined") {
+            return realityObject.matrices.allObjects;
         } else return undefined;
     };
 
