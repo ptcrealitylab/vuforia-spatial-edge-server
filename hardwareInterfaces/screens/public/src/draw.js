@@ -15,6 +15,7 @@ realityEditor.draw.render = function() {
     realityEditor.frameRenderer.renderFrames();
     realityEditor.nodeRenderer.renderNodes();
     realityEditor.linkRenderer.renderLinks();
+    realityEditor.groupRenderer.renderGroups();
     realityEditor.gui.crafting.redrawDataCrafting();
 
     requestAnimFrame(realityEditor.draw.render);

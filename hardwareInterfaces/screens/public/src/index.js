@@ -12,13 +12,16 @@ var realityEditor = realityEditor || {
     frameRenderer: {},
     nodeRenderer: {},
     linkRenderer: {},
+    groupRenderer: {},
     pocket: {},
     trash: {},
     modeToggle: {},
     database: {},
     linkingByDrawing: {},
+    groupingByDrawing: {},
     logicNodeInteractions: {},
-    craftingBoardMenu: {}
+    craftingBoardMenu: {},
+    moduleCallbacks: {}
 };
 
 /**
