@@ -19,6 +19,7 @@ var realityEditor = realityEditor || {
     database: {},
     linkingByDrawing: {},
     groupingByDrawing: {},
+    groupBehavior: {},
     logicNodeInteractions: {},
     craftingBoardMenu: {},
     moduleCallbacks: {}

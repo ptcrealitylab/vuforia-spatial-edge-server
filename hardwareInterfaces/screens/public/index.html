@@ -48,6 +48,7 @@
 <script src="src/trash.js"></script>
 <script src="src/modeToggle.js"></script>
 <script src="src/logicNodeInteractions.js"></script>
+<script src="src/groupBehavior.js"></script>
 
 <script src="src/frameRenderer.js"></script>
 <script src="src/nodeRenderer.js"></script>
@@ -206,6 +207,7 @@
         realityEditor.craftingBoardMenu.initFeature();
 
         realityEditor.groupingByDrawing.initFeature();
+        realityEditor.groupBehavior.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 

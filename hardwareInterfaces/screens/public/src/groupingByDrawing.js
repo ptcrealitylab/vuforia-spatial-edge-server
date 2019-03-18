@@ -349,44 +349,6 @@ createNameSpace("realityEditor.groupingByDrawing");
     }
 
     /**
-     * Iterator over all frames in the same group as the activeVehicle
-     * NOTE: Currently performs the callback for the activeVehicle too //TODO: give the option to exclude it?
-     * @param {Frame} activeVehicle
-     * @param {function} callback
-     * @param {boolean} excludeActive - if true, doesn't trigger the callback for the activeVehicle, only for its co-members
-     */
-    function forEachGroupedFrame(activeVehicle, callback, excludeActive) {
-        if (activeVehicle && activeVehicle.groupID) {
-            var groupMembers = getGroupMembers(activeVehicle.groupID);
-            groupMembers.forEach(function(member) {
-                var frame = realityEditor.getFrame(member.object, member.frame);
-                if (frame) {
-                    if (excludeActive && frame.uuid === activeVehicle.uuid) { return; }
-                    callback(frame);
-                } else {
-                    realityEditor.database.groupStruct[groupID].delete(member.frame); // group restruct
-                }
-            });
-        }
-    }
-
-    /**
-     * gets all members in a group with object and frame keys
-     * @param {string} groupID
-     * @returns {Array.<{object: <string>, frame: <string>}>}
-     */
-    function getGroupMembers(groupID) {
-        if (!(groupID in realityEditor.database.groupStruct)) return;
-        var members = [];
-        for (var frameKey of realityEditor.database.groupStruct[groupID]) {
-            var frame = realityEditor.database.getFrame(frameKey);
-            var member = {object: frame.objectId, frame: frameKey};
-            members.push(member);
-        }
-        return members;
-    }
-
-    /**
      * Should be called whenever a new frame is loaded into the system,
      * to populate the global groupStruct with any groupID information it contains
      * @param {string} frameKey
