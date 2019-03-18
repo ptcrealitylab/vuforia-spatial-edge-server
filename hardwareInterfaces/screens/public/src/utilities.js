@@ -1,5 +1,9 @@
 createNameSpace("realityEditor.utilities");
 
+// also automatically creates a registerCallback function on this module
+realityEditor.utilities.registerCallback = {};
+realityEditor.utilities.callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.utilities');
+
 realityEditor.utilities.getEditingVehicle = function() {
     if (editingState.frameKey) {
         if (editingState.nodeKey) {
@@ -47,6 +51,10 @@ realityEditor.utilities.isDraggableElement = function(clickedElement) {
 };
 
 realityEditor.utilities.resetEditingState = function() {
+
+    // gets triggered before state gets reset, so that subscribed modules can respond based on what is about to be reset
+    this.callbackHandler.triggerCallbacks('resetEditingState');
+
     editingState.objectKey = null;
     editingState.frameKey = null;
     editingState.nodeKey = null;

@@ -272,6 +272,10 @@ function moveEditingVehicleToMousePos() {
         if (!editingState.nodeKey) {
             editingVehicle.screen.x = mouseX + (editingState.touchOffset.x);
             editingVehicle.screen.y = mouseY + (editingState.touchOffset.y);
+
+            // also move group objects too
+            realityEditor.groupBehavior.moveGroupedVehiclesIfNeeded(editingVehicle, mouseX, mouseY);
+
         } else {
             var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(editingState.frameKey);
 
