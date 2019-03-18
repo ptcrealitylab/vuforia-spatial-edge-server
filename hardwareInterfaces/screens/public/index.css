@@ -245,7 +245,7 @@ body, html {
     overflow: hidden;
 }
 
-.bg {
+#bg {
     /* The image used is set programmatically now to look for resources/[objectName].jpg */
 
     /* Full height */

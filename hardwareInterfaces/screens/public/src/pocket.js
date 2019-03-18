@@ -5,6 +5,9 @@ createNameSpace("realityEditor.pocket");
     var isPocketOpen = false;
     var pocket;
 
+    // also automatically creates a registerCallback function on this module
+    var callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.pocket');
+
     /**
      * Initializes the DOM and touch event listeners for the pocket
      */
@@ -28,7 +31,6 @@ createNameSpace("realityEditor.pocket");
 
     /**
      * Open or closes the pocket when the button is clicked
-     * @param event
      */
     function togglePocketVisibility() {
         // console.log('down');
@@ -234,8 +236,11 @@ createNameSpace("realityEditor.pocket");
         // realityEditor.network.postNewFrame(closestObject.ip, closestObjectKey, frame);
         // realityEditor.gui.pocket.setPocketFrame(frame, {pageX: evt.pageX, pageY: evt.pageY}, closestObjectKey);
 
+        callbackHandler.triggerCallbacks('newFrameAdded', {frameKey: frameID, frame: frame});
+
     }
 
     exports.initFeature = initFeature;
+    exports.callbackHandler = callbackHandler;
 
 })(realityEditor.pocket);

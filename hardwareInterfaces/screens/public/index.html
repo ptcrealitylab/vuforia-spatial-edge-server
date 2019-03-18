@@ -10,8 +10,16 @@
 
 <body touch-action="none">
 
-<div class="bg"></div>
+<div id="bg" class="background"></div>
 <canvas id="canvas"></canvas>
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" style="width: 100vw; height: 100vh; top: 0; left: 0; position:absolute; -webkit-user-select: none; -webkit-touch-callout: none;">
+    <polyline id="lasso" stroke-width="5" stroke-linejoin="round" stroke-dasharray="10 4"></polyline>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" id="groupSVG" class="background" style="width: 100vw; height: 100vh; top: 0; left: 0; position:absolute; -webkit-user-select: none; -webkit-touch-callout: none;">
+</svg>
 
 <div class='craftingBoardBlur' id="craftingBoard"></div>
 
@@ -28,6 +36,8 @@
 
 <script src="src/index.js"></script>
 <script src="src/constructors.js"></script>
+<script src="src/moduleCallbacks.js"></script>
+
 <script src="src/draw.js"></script>
 <script src="src/moveabilityOverlay.js"></script>
 <script src="src/network.js"></script>
@@ -42,10 +52,12 @@
 <script src="src/frameRenderer.js"></script>
 <script src="src/nodeRenderer.js"></script>
 <script src="src/linkRenderer.js"></script>
+<script src="src/groupRenderer.js"></script>
 
 <script src="src/database.js"></script>
 
 <script src="src/linkingByDrawing.js"></script>
+<script src="src/groupingByDrawing.js"></script>
 
 <script src="src/crafting/blockMenu.js"></script>
 <script src="src/crafting/eventHandlers.js"></script>
@@ -60,6 +72,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
+<script src="resources/hull.js"></script>
 
 <script>
     // var scaleARFactor = 1.5;
@@ -186,10 +199,13 @@
         realityEditor.frameRenderer.initFeature();
         realityEditor.nodeRenderer.initFeature();
         realityEditor.linkRenderer.initFeature();
+        realityEditor.groupRenderer.initFeature();
 
         realityEditor.linkingByDrawing.initFeature();
 
         realityEditor.craftingBoardMenu.initFeature();
+
+        realityEditor.groupingByDrawing.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 

@@ -1,4 +1,4 @@
-createNameSpace("realityEditor.trash");
+createNameSpace("realityEditor.linkingByDrawing");
 
 (function(exports) {
 
@@ -49,7 +49,7 @@ createNameSpace("realityEditor.trash");
                 // console.log(params);
 
                 // if touched down on background, start drawing a cut line
-                if (params.event.target.classList.contains('bg')) {
+                if (params.event.target.classList.contains('background')) {
                     cutLineStart = {
                         x: mouseX,
                         y: mouseY

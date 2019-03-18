@@ -2,6 +2,12 @@ createNameSpace("realityEditor.database");
 
 (function(exports) {
 
+    // reconstructs the grouping structure on the UI side
+    /**
+     * @type {Object.<string, Set.<string>>}
+     */
+    var groupStruct = {};
+
     function initFeature() {
 
     }
@@ -217,6 +223,8 @@ createNameSpace("realityEditor.database");
     }
 
     exports.initFeature = initFeature;
+
+    exports.groupStruct = groupStruct;
 
     // TODO: implement queries, e.g. getFrame(frameKey), getNode(frameKey, nodeKey)
     exports.getFrame = getFrame;

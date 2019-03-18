@@ -1,5 +1,9 @@
 createNameSpace("realityEditor.network");
 
+// also automatically creates a registerCallback function on this module
+realityEditor.network.registerCallback = {};
+realityEditor.network.callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.network');
+
 /**
  * Parse each message from socket.io and perform the appropriate action
  * Messages include:
@@ -15,7 +19,7 @@ realityEditor.network.setupSocketListeners = function() {
         if (!realityEditor.network.isMessageForMe(msg)) return;
 
         objectName = msg.objectName;
-        document.querySelector('.bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+        document.querySelector('#bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
         document.title = msg.objectName;
     });
 
@@ -34,6 +38,9 @@ realityEditor.network.setupSocketListeners = function() {
 
         console.log('framesForScreen', msg);
         frames = msg;
+
+        realityEditor.network.callbackHandler.triggerCallbacks('framesForScreen', {frames: frames});
+
         realityEditor.draw.render();
     });
 
@@ -105,6 +112,9 @@ realityEditor.network.setupSocketListeners = function() {
         frames[frameKey] = frame;
         frame.screen.scale = frame.ar.scale * scaleRatio; //scaleARFactor;
         // TODO: set screen position based on AR position??
+
+        realityEditor.network.callbackHandler.triggerCallbacks('newFrameAdded', {frameKey: frameKey, frame: frame});
+
     });
 
     socket.on('reloadScreen', function(msg) {

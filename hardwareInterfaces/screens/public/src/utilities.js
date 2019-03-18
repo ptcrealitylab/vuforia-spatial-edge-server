@@ -559,3 +559,32 @@ realityEditor.utilities.calculateY = function (seg1, x) {
 realityEditor.utilities.distance = function(x1, y1, x2, y2) {
     return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 };
+
+/**
+ * Returns whether or not the given point is inside the polygon formed by the given vertices.
+ * @param {Array.<number>} point - [x,y]
+ * @param {Array.<Array.<number>>} vertices - [[x0, y0], [x1, y1], ... ]
+ * @return {boolean}
+ */
+realityEditor.utilities.insidePoly = function(point, vertices) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    // Copyright (c) 2016 James Halliday
+    // The MIT License (MIT)
+
+    var x = point[0], y = point[1];
+
+    if(x <=0 || y <= 0) return false;
+
+    var inside = false;
+    for (var i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+        var xi = vertices[i][0], yi = vertices[i][1];
+        var xj = vertices[j][0], yj = vertices[j][1];
+
+        var intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+};
