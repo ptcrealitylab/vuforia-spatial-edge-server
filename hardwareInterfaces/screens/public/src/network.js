@@ -503,3 +503,22 @@ realityEditor.network.deleteBlockLinkFromObject = function (objectKey, frameKey,
     // /logic/*/*/link/*/
     this.deleteData('http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/node/" + nodeKey + "/link/" + linkKey + "/editor/" + tempUuid + "/deleteBlockLink/");
 };
+
+/**
+ * update groupIds for changed frames
+ * @param objectKey
+ * @param frameKey
+ * @param newGroupID {string|null} either groupId or null for none
+ * TODO: work in progress
+ */
+realityEditor.network.updateGroupings = function(objectKey, frameKey, newGroupID) {
+    var urlEndpoint = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/object/' + objectKey + "/frame/" + frameKey + "/group/";
+    var content = {
+        group: newGroupID,
+        lastEditor: tempUuid
+    };
+    this.postData(urlEndpoint, content, function (err, response) {
+        console.log('set group to ' + newGroupID + ' on server');
+        console.log(err, response);
+    })
+};
