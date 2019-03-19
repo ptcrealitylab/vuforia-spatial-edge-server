@@ -296,7 +296,7 @@ createNameSpace("realityEditor.groupingByDrawing");
             }
 
             // TODO: send to server
-            // TODO: realityEditor.network.updateGroupings(object.ip, objectKey, frameKey, null);
+            realityEditor.network.updateGroupings(objectKey, frameKey, null);
 
         }
     }
@@ -324,7 +324,7 @@ createNameSpace("realityEditor.groupingByDrawing");
             realityEditor.database.groupStruct[newGroup] = new Set([frameKey]);
         }
         // TODO: send to server
-        // TODO: realityEditor.network.updateGroupings(object.ip, objectKey, frameKey, newGroup);
+        realityEditor.network.updateGroupings(objectKey, frameKey, newGroup);
     }
 
     /**

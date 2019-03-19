@@ -439,3 +439,12 @@ body, html {
     -webkit-animation-fill-mode: forwards;
     -webkit-animation-timing-function: ease-in;
 }
+
+.groupLassoFadeOut {
+    opacity:1;
+
+    animation-name: fadeOut;
+    animation-duration: 300ms;
+    -webkit-animation-fill-mode: forwards;
+    -webkit-animation-timing-function: ease-out;
+}
