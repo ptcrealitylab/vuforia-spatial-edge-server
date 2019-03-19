@@ -83,7 +83,7 @@ createNameSpace("realityEditor.groupingByDrawing");
                     var svg = document.getElementById("groupSVG");
                     //TODO: start drawing
                     console.log('start lasso');
-                    startLasso(params.event.pageX, params.event.pageY);
+                    startLasso(mouseX, mouseY); // global object mouseX,mouseY always has the right info (simulated or not)
                 }
             }
         }
@@ -93,7 +93,7 @@ createNameSpace("realityEditor.groupingByDrawing");
         if (guiState !== 'ui') return;
 
         if (selectingState.active) {
-            continueLasso(params.event.pageX, params.event.pageY);
+            continueLasso(mouseX, mouseY);
         }
 
         // TODO: also move group objects too
