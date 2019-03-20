@@ -22,17 +22,6 @@ createNameSpace("realityEditor.groupingByDrawing");
     var isDoubleTap = false;
 
     /**
-     * @type: {Object|null} First tap target
-     */
-    var tapTarget = null;
-
-    /**
-     * @typedef {Object} DoubleTapTimer
-     * @type {DoubleTapTimer}
-     */
-    var doubleTapTimer = null;
-
-    /**
      * @type {{active: Boolean, object: Array.<string>, frame: Array.<string>}}
      * object and frame currently not in use
      */
@@ -43,9 +32,8 @@ createNameSpace("realityEditor.groupingByDrawing");
     };
 
     /**
-     * Initializes the DOM and touch event listeners for the trash
+     * Registers listeners to all other modules this depends on
      */
-
     function initFeature() {
 
         // add DOM elements for group
@@ -60,8 +48,13 @@ createNameSpace("realityEditor.groupingByDrawing");
         realityEditor.network.registerCallback('newFrameAdded', onNewFrameAdded);
         realityEditor.network.registerCallback('framesForScreen', onFramesForScreen);
         realityEditor.pocket.registerCallback('newFrameAdded', onNewFrameAdded);
+        // realityEditor.trash.registerCallback('frameDeleted', onFrameDeleted);
     }
 
+    /**
+     * When the user double taps on the background, start drawing a grouping lasso
+     * @param {{event: PointerEvent}} params - real or synthetic touch event
+     */
     function onMouseDown(params) {
         if (guiState !== 'ui') return;
 
@@ -89,33 +82,22 @@ createNameSpace("realityEditor.groupingByDrawing");
         }
     }
 
+    /**
+     * Update the lasso with new points as the user moves
+     * @param {{event: PointerEvent}} params - real or synthetic touch event
+     */
     function onMouseMove(params) {
         if (guiState !== 'ui') return;
 
         if (selectingState.active) {
             continueLasso(mouseX, mouseY);
         }
-
-        // TODO: also move group objects too
-        // // also move group objects too
-        // if (activeVehicle.groupID !== null) {
-        //     let groupMembers = realityEditor.gui.ar.grouping.getGroupMembers(activeVehicle.groupID);
-        //     for (let member of groupMembers) {
-        //         let frame = realityEditor.getFrame(member.object, member.frame);
-        //         realityEditor.gui.ar.grouping.moveGroupVehicleToScreenCoordinate(frame, event.touches[0].pageX, event.touches[0].pageY);
-        //     }
-        // }
-
-        // var activeVehicle = realityEditor.device.getEditingVehicle();
-        // var isSingleTouch = params.event.touches.length === 1;
-        //
-        // if (activeVehicle && isSingleTouch) {
-        //     // also move group objects too
-        //     moveGroupedVehiclesIfNeeded(activeVehicle, params.event.pageX, params.event.pageY);
-        // }
-
     }
 
+    /**
+     * Close the lasso and create a group of its frame contents on mouse up
+     * @param {{event: PointerEvent}} params - real or synthetic touch event
+     */
     function onMouseUp(params) {
         console.log('grouping.js: onDocumentMultiTouchEnd', params);
 
@@ -132,12 +114,20 @@ createNameSpace("realityEditor.groupingByDrawing");
         console.log('onDocumentMultiTouchEnd', params, activeVehicle);
     }
 
+    /**
+     * When the web app first loads all the frames, iterate over all of them and add them to the group struct
+     * @param {{frames: object.<string, Frame>}} params
+     */
     function onFramesForScreen(params) {
         for (var frameKey in params.frames) {
             reconstructGroupStruct(frameKey, realityEditor.database.getFrame(frameKey));
         }
     }
 
+    /**
+     * When a new frame is loaded (from the screen pocket, or added via an AR client), reconstruct its group data
+     * @param {{frameKey: string, frame: Frame}} params
+     */
     function onNewFrameAdded(params) {
         reconstructGroupStruct(params.frameKey, params.frame);
     }
@@ -268,7 +258,6 @@ createNameSpace("realityEditor.groupingByDrawing");
             }
         }
 
-        // drawGroupHulls();
     }
 
     /**
@@ -276,6 +265,7 @@ createNameSpace("realityEditor.groupingByDrawing");
      * also deals with groups of size 1 and clears them
      * @param {string} frameKey
      * @param {string} objectKey
+     * @todo: reverse order of parameters to be consistent with other functions
      */
     function removeFromGroup(frameKey, objectKey) {
         var frame = realityEditor.database.getFrame(frameKey);
@@ -372,5 +362,6 @@ createNameSpace("realityEditor.groupingByDrawing");
     }
 
     exports.initFeature = initFeature;
+    exports.removeFromGroup = removeFromGroup; // TODO: try to avoid this dependency
 
 })(realityEditor.groupingByDrawing);

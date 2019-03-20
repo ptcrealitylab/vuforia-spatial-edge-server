@@ -11,7 +11,19 @@ createNameSpace("realityEditor.groupBehavior");
         });
 
         realityEditor.utilities.registerCallback('resetEditingState', resetGroupEditingState);
+        realityEditor.trash.registerCallback('frameDeleted', onFrameDeleted);
 
+    }
+
+    /**
+     * Remove the frame from its group when it gets deleted
+     * @param {{objectKey: string, frameKey: string}} params
+     */
+    function onFrameDeleted(params) {
+        resetGroupEditingState(params);
+        if (params.objectKey && params.frameKey) {
+            realityEditor.groupingByDrawing.removeFromGroup(params.frameKey, params.objectKey);
+        }
     }
 
     /**
