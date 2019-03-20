@@ -2,6 +2,10 @@ createNameSpace("realityEditor.trash");
 
 (function(exports) {
 
+    // also automatically creates a registerCallback function on this module
+    exports.registerCallback = {};
+    var callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.trash');
+
     /**
      * Initializes the DOM and touch event listeners for the trash
      */
@@ -40,6 +44,9 @@ createNameSpace("realityEditor.trash");
 
         // delete it from the server
         realityEditor.network.deleteFrameFromObject(frameKey);
+
+        // trigger any side effects before deleting completely
+        callbackHandler.triggerCallbacks('frameDeleted', {objectKey: editingState.objectKey, frameKey: frameKey});
 
         delete frames[frameKey];
 
