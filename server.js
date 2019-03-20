@@ -3537,7 +3537,7 @@ function objectWebServer() {
             var objectID = req.params[0];
             var frameID = req.params[1];
 
-            var thisFrame = getFrame(frameID);
+            var thisFrame = getFrame(objectID, frameID);
             if (thisFrame) {
                 res.status(200).json(thisFrame);
                 return;
@@ -4327,7 +4327,7 @@ function socketServer() {
             var msg = JSON.parse(_msg);
 
             var node = getNode(msg.object, msg.frame, msg.node);
-            if (typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+            if (node && msg && typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
                 var thisPublicData = node.publicData;
                 for (var key in msg.publicData) {
                     thisPublicData[key] = msg.publicData[key];
