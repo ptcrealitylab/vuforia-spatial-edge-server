@@ -10,9 +10,22 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
+        matrices:{
+            modelView : [],
+            projection : [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1], // in case it doesn't get set, use identity as placeholder
+            groundPlane : [],
+            devicePose : [],
+            allObjects : {}
+        },
         projectionMatrix: [],
         visibility: 'visible',
         sendMatrix: false,
+        sendMatrices: {
+            modelView : false,
+            devicePose : false,
+            groundPlane : false,
+            allObjects : false
+        },
         sendAcceleration: false,
         sendFullScreen: false,
         fullscreenZPosition: 0,
@@ -36,6 +49,7 @@
             y: 0,
             type: null},
         touchDecider: null,
+        touchDeciderRegistered: false,
         onload: null
     };
 
@@ -112,6 +126,7 @@
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices: realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky,
@@ -160,10 +175,24 @@
 
         if (typeof msgContent.modelViewMatrix !== 'undefined') {
             realityObject.modelViewMatrix = msgContent.modelViewMatrix;
+            realityObject.matrices.modelView = msgContent.modelViewMatrix;
         }
 
         if (typeof msgContent.projectionMatrix !== 'undefined') {
             realityObject.projectionMatrix = msgContent.projectionMatrix;
+            realityObject.matrices.projection = msgContent.projectionMatrix;
+        }
+
+        if (typeof msgContent.allObjects !== "undefined") {
+            realityObject.matrices.allObjects = msgContent.allObjects;
+        }
+
+        if (typeof msgContent.devicePose !== "undefined") {
+            realityObject.matrices.devicePose = msgContent.devicePose;
+        }
+
+        if (typeof msgContent.groundPlaneMatrix !== "undefined") {
+            realityObject.matrices.groundPlane = msgContent.groundPlaneMatrix;
         }
 
         if (typeof msgContent.visibility !== 'undefined') {
@@ -244,17 +273,73 @@
             };
         };
 
-        var numMatrixCallbacks = 0;
-        this.addMatrixListener = function(callback) {
-            numMatrixCallbacks++;
-            realityObject.messageCallBacks['matrixCall'+numMatrixCallbacks] = function (msgContent) {
-                if (typeof msgContent.modelViewMatrix !== 'undefined') {
-                    callback(msgContent.modelViewMatrix, realityObject.projectionMatrix);
+        // ensures each callback has a unique name
+        var callBackCounter = {
+            numMatrixCallbacks : 0,
+            numAllMatricesCallbacks :0,
+            numWorldMatrixCallbacks :0,
+            numGroundPlaneMatrixCallbacks :0
+        };
+        this.addMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.modelView) {
+                this.subscribeToMatrix();
+            }
+            callBackCounter.numMatrixCallbacks++;
+            realityObject.messageCallBacks['matrixCall' + callBackCounter.numMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.modelViewMatrix !== "undefined") {
+                    callback(msgContent.modelViewMatrix, realityObject.matrices.projection);
+                }
+            }.bind(this);
+        };
+
+        this.addAllObjectMatricesListener = function (callback) {
+            if (!realityObject.sendMatrices.allObjects) {
+                this.subscribeToAllMatrices();
+            }
+            callBackCounter.numAllMatricesCallbacks++;
+            realityObject.messageCallBacks['allMatricesCall'+callBackCounter.numAllMatricesCallbacks] = function (msgContent) {
+                if (typeof msgContent.allObjects !== "undefined") {
+                    callback(msgContent.allObjects, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        this.addDevicePoseMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.devicePose) {
+                this.subscribeToDevicePoseMatrix();
+            }
+            callBackCounter.numWorldMatrixCallbacks++;
+            realityObject.messageCallBacks['worldMatrixCall'+callBackCounter.numWorldMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.devicePose !== "undefined") {
+                    callback(msgContent.devicePose, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        this.addGroundPlaneMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.groundPlane) {
+                this.subscribeToGroundPlaneMatrix();
+            }
+            callBackCounter.numGroundPlaneMatrixCallbacks++;
+            realityObject.messageCallBacks['groundPlaneMatrixCall'+callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.groundPlaneMatrix !== "undefined") {
+                    callback(msgContent.groundPlaneMatrix, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        var numScreenPositionCallbacks = 0;
+        this.addScreenPositionListener = function(callback) {
+            numScreenPositionCallbacks++;
+            realityObject.messageCallBacks['screenPositionCall'+numScreenPositionCallbacks] = function (msgContent) {
+                if (typeof msgContent.frameScreenPosition !== 'undefined') {
+                    callback(msgContent.frameScreenPosition);
                 }
             };
         };
 
         this.addAccelerationListener = function (callback) {
+            this.subscribeToAcceleration();
             realityObject.messageCallBacks.AccelerationCall = function (msgContent) {
                 if (typeof msgContent.acceleration !== 'undefined') {
                     callback(msgContent.acceleration);
@@ -307,8 +392,8 @@
          */
 
         this.getPositionX = function () {
-            if (typeof realityObject.modelViewMatrix[12] !== "undefined") {
-                return realityObject.modelViewMatrix[12];
+            if (typeof realityObject.matrices.modelView[12] !== "undefined") {
+                return realityObject.matrices.modelView[12];
             } else return undefined;
         };
 
@@ -317,8 +402,8 @@
          */
 
         this.getPositionY = function () {
-            if (typeof realityObject.modelViewMatrix[13] !== "undefined") {
-                return realityObject.modelViewMatrix[13];
+            if (typeof realityObject.matrices.modelView[13] !== "undefined") {
+                return realityObject.matrices.modelView[13];
             } else return undefined;
         };
 
@@ -327,8 +412,8 @@
          */
 
         this.getPositionZ = function () {
-            if (typeof realityObject.modelViewMatrix[14] !== "undefined") {
-                return realityObject.modelViewMatrix[14];
+            if (typeof realityObject.matrices.modelView[14] !== "undefined") {
+                return realityObject.matrices.modelView[14];
             } else return undefined;
         };
 
@@ -337,7 +422,9 @@
          */
 
         this.getProjectionMatrix = function () {
-            return realityObject.projectionMatrix;
+            if (typeof realityObject.matrices.projection !== "undefined") {
+                return realityObject.matrices.projection;
+            } else return undefined;
         };
 
         /**
@@ -345,19 +432,43 @@
          */
 
         this.getModelViewMatrix = function () {
-            return realityObject.modelViewMatrix;
+            if (typeof realityObject.matrices.modelView !== "undefined") {
+                return realityObject.matrices.modelView;
+            } else return undefined;
+        };
+
+        this.getGroundPlaneMatrix = function () {
+            if (typeof realityObject.matrices.groundPlane !== "undefined") {
+                return realityObject.matrices.groundPlane;
+            } else return undefined;
+        };
+
+        this.getDevicePoseMatrix = function () {
+            if (typeof realityObject.matrices.devicePose !== "undefined") {
+                return realityObject.matrices.devicePose;
+            } else return undefined;
+        };
+
+        this.getAllObjectMatrices = function () {
+            if (typeof realityObject.matrices.allObjects !== "undefined") {
+                return realityObject.matrices.allObjects;
+            } else return undefined;
         };
 
         this.registerTouchDecider = function(callback) {
             realityObject.touchDecider = callback;
+            realityObject.touchDeciderRegistered = true;
         };
 
         this.unregisterTouchDecider = function() {
-            realityObject.touchDecider = null;
+            // realityObject.touchDecider = null; // touchDecider is passed by reference, so this alters the function definition
+            realityObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
         };
 
+        var numMovingCallbacks = 0;
         this.addIsMovingListener = function(callback) {
-            realityObject.messageCallBacks.frameIsMovingCall = function (msgContent) {
+            numMovingCallbacks++;
+            realityObject.messageCallBacks['frameIsMovingCall'+numMovingCallbacks] = function (msgContent) {
                 if (typeof msgContent.frameIsMoving !== "undefined") {
                     callback(msgContent.frameIsMoving);
                 }
@@ -551,7 +662,7 @@
                 if (typeof thisMsg.publicData[node][valueName] === "undefined") return;
 
                 var isUnset =   (typeof realityObject.publicData[node] === "undefined") ||
-                    (typeof realityObject.publicData[node][valueName] === "undefined");
+                                (typeof realityObject.publicData[node][valueName] === "undefined");
 
                 // only trigger the callback if there is new public data, otherwise infinite loop possible
                 if (isUnset || JSON.stringify(thisMsg.publicData[node][valueName]) !== JSON.stringify(realityObject.publicData[node][valueName])) {
@@ -620,7 +731,7 @@
             // reload public data when it becomes visible
             for (var i = 0; i < realityInterfaces.length; i++) {
                 if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
-                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame})); //TODO: change to subscribe/realityEditorPublicData ??
                 }
             }
         };
@@ -658,6 +769,7 @@
         // subscriptions
         this.subscribeToMatrix = function() {
             realityObject.sendMatrix = true;
+            realityObject.sendMatrices.modelView = true;
             if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
 
                 if (realityObject.sendFullScreen === false) {
@@ -673,9 +785,76 @@
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
                 }), '*');
+            }
+        };
+
+        this.subscribeToDevicePoseMatrix = function () {
+            realityObject.sendMatrices.devicePose = true;
+
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+
+            }
+        };
+
+        this.subscribeToAllMatrices = function () {
+            realityObject.sendMatrices.allObjects = true;
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+            }
+        };
+
+        this.subscribeToGroundPlaneMatrix = function () {
+            realityObject.sendMatrices.groundPlane = true;
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
             }
         };
 
@@ -690,6 +869,7 @@
                 height: realityObject.height,
                 width: realityObject.width,
                 sendMatrix: realityObject.sendMatrix,
+                sendMatrices : realityObject.sendMatrices,
                 sendAcceleration: realityObject.sendAcceleration,
                 stickiness: realityObject.sendSticky,
                 fullScreen: realityObject.sendFullScreen
@@ -715,9 +895,11 @@
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
-                    fullscreenZPosition: realityObject.fullscreenZPosition
+                    fullscreenZPosition: realityObject.fullscreenZPosition,
+                    stickiness: realityObject.sendSticky
                 }), '*');
             }
         };
@@ -741,6 +923,7 @@
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -769,6 +952,7 @@
                         height: realityObject.height,
                         width: realityObject.width,
                         sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
                         sendAcceleration: realityObject.sendAcceleration,
                         fullScreen: realityObject.sendFullScreen,
                         stickiness: realityObject.sendSticky
@@ -793,6 +977,7 @@
                         height: realityObject.height,
                         width: realityObject.width,
                         sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
                         sendAcceleration: realityObject.sendAcceleration,
                         fullScreen: realityObject.sendFullScreen,
                         stickiness: false
@@ -846,6 +1031,11 @@
 
             var msgContent = JSON.parse(msg.data);
 
+            if (msgContent.reloadPublicData) {
+                console.log('frame reload public data from post message');
+                realityInterface.reloadPublicData();
+            }
+
             if (msgContent.event && msgContent.event.pointerId) {
                 var eventData = msgContent.event;
                 var event = new PointerEvent(eventData.type, {
@@ -865,7 +1055,7 @@
                 });
 
                 // send unacceptedTouch message if this interface wants touches to pass through it
-                if (realityObject.touchDecider) {
+                if (realityObject.touchDeciderRegistered) {
                     var touchAccepted = realityObject.touchDecider(eventData);
                     if (!touchAccepted) {
                         // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
@@ -898,8 +1088,14 @@
         });
     };
 
+    function isDesktop() {
+        return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
+    }
+
     exports.realityObject = realityObject;
     exports.RealityInterface = RealityInterface;
     exports.HybridObject = RealityInterface;
 
-}(window));
+    exports.isDesktop = isDesktop;
+
+})(window);
