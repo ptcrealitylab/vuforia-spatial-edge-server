@@ -917,6 +917,27 @@ function loadObjects() {
     hardwareAPI.reset();
 }
 
+
+var executeSetups = function () {
+
+    for (objectKey in objects) {
+        for (frameKey in objects[objectKey].frames) {
+            var thisFrame = objects[objectKey].frames[frameKey];
+            for (nodeKey in thisFrame.nodes) {
+                for (blockKey in thisFrame.nodes[nodeKey].blocks) {
+                    var thisBlock = objects[objectKey].frames[frameKey].nodes[nodeKey].blocks[blockKey];
+                    blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
+                        function (object, frame, node, block, index, thisBlock) {
+                            engine.processBlockLinks(object, frame, node, block, index, thisBlock);
+                        })
+                }
+            }
+        }
+    }
+};
+executeSetups();
+
+
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
  **********************************************************************************************************************/
@@ -926,6 +947,9 @@ function loadObjects() {
  **/
 
 function startSystem() {
+
+
+
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (var key in objects) {
@@ -1364,6 +1388,8 @@ function objectWebServer() {
                 next();
                 return;
             }
+
+
 
             var json = JSON.parse(fs.readFileSync(fileName, "utf8"));
 
@@ -4120,25 +4146,17 @@ function socketServer() {
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
-
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
-                                    blockModules[thisPublicData.type].setup(msg.object, msg.frame, msg.node, msg.block, thisPublicData);
-
-                                }
-                            }
-                        }
-                    }
+            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            if (node) {
+                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                    var thisBlock = node.blocks[msg.block];
+                    blockModules[thisBlock.type].setup(msg.object, msg.frame, msg.node, msg.block, thisBlock,
+                        function(object, frame, node, block, index, thisBlock){
+                            engine.processBlockLinks(object, frame, node, block, index, thisBlock);
+                        });
                 }
             }
-
         });
-
 
         socket.on('block/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
@@ -4235,6 +4253,71 @@ hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffset
         }));
     }
 });
+
+
+/////////
+// UTILITY FUNCTIONS FOR SAFELY GETTING OBJECTS, FRAMES, AND NODES
+/////////
+
+function doesObjectExist(objectKey) {
+    return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
+}
+
+function getObjectFromKey(objectKey) {
+    if (doesObjectExist(objectKey)) {
+        return objects[objectKey] || worldObject;
+    }
+    return null;
+}
+
+// invokes callback(objectID, object) for each object (including world object)
+function forEachObject(callback) {
+    for (var objectID in objects) {
+        callback(objectID, objects[objectID]);
+    }
+    callback(worldObject.objectId, worldObject);
+}
+
+function doesFrameExist(objectKey, frameKey) {
+    if (doesObjectExist(objectKey)) {
+        var foundObject = getObjectFromKey(objectKey);
+        if (foundObject) {
+            return foundObject.frames.hasOwnProperty(frameKey);
+        }
+    }
+    return false;
+}
+
+function getFrameFromKey(objectKey, frameKey) {
+    if (doesFrameExist(objectKey, frameKey)) {
+        var foundObject = getObjectFromKey(objectKey);
+        if (foundObject) {
+            return foundObject.frames[frameKey];
+        }
+    }
+    return null;
+}
+
+function doesNodeExist(objectKey, frameKey, nodeKey) {
+    if (doesFrameExist(objectKey, frameKey)) {
+        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes.hasOwnProperty(nodeKey);
+        }
+    }
+    return false;
+}
+
+function getNodeFromKey(objectKey, frameKey, nodeKey) {
+    if (doesNodeExist(objectKey, frameKey, nodeKey)) {
+        var foundFrame = getFrameFromKey(objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes[nodeKey];
+        }
+    }
+    return null;
+}
+
 
 /**********************************************************************************************************************
  ******************************************** Engine ******************************************************************

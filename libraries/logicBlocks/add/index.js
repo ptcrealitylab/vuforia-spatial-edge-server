@@ -68,9 +68,10 @@ var generalProperties = {
 
 exports.properties = generalProperties;
 
-exports.setup = function (object,logic, block, activeBlockProperties){
+exports.setup = function (object,frame, node, block, thisBlock, callback){
 // add code here that should be executed once.
-
+   // var publicData thisBlock.publicData;
+   // callback(object, frame, node, block, index, thisBlock);
 };
 //var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
 
