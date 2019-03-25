@@ -32,6 +32,7 @@ var blockModules;
 var callback;
 var Node;
 var actionCallback;
+var publicDataCallBack;
 var writeObjectCallback;
 var hardwareObjects = {};
 var callBacks = new Objects();
@@ -151,6 +152,26 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
                 thisData.unitMax = unitMax;
                 //callback is objectEngine in server.js. Notify data has changed.
                 callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
+            }
+        }
+    }
+};
+
+exports.writePublicData = function (objectName, frameName, nodeName, data) {
+    var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
+    var nodeUuid = objectKey+frameName+nodeName;
+    var frameUuid = objectKey+frameName;
+    //console.log(objectLookup);
+//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
+    if (objects.hasOwnProperty(objectKey)) {
+        if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
+            if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].publicData;
+               for(key in data){
+                   thisData[key] = data[key];
+               }
+                //callback is objectEngine in server.js. Notify data has changed.
+                  publicDataCallBack(objectKey, frameUuid, nodeUuid);
             }
         }
     }
@@ -485,7 +506,7 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, cb, objValue, globalActionCallback, writeCallback) {
+exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, cb, objValue, globalActionCallback, writeCallback, callbacks) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
@@ -497,6 +518,7 @@ exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, bloc
     Node = objValue;
     actionCallback = globalActionCallback;
     writeObjectCallback = writeCallback;
+    publicDataCallBack = callbacks.publicData;
 };
 
 exports.reset = function (){
@@ -597,6 +619,38 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                 }
 
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
+
+            }
+        }
+    }
+};
+
+
+exports.addPublicDataListener = function (objectName, frameName, nodeName, callBack) {
+    var objectID = utilities.readObject(objectLookup, objectName);
+    var nodeID = objectID+frameName+nodeName;
+    var frameID = objectID+frameName;
+
+    cout("Add publicData listener for objectID: " + objectID);
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+
+                if (!callBacks.hasOwnProperty(objectID)) {
+                    callBacks[objectID] = new EmptyObject(objectID);
+                }
+
+                if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
+                    callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
+                }
+
+                if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                }
+
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack = callBack;
 
             }
         }
