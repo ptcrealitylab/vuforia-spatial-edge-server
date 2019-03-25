@@ -5,34 +5,89 @@
     <meta charset="UTF-8">
     <title>Frame Screen</title>
     <link rel="stylesheet" type="text/css" href="index.css">
+    <link rel="stylesheet" type="text/css" href="crafting.css">
 </head>
 
 <body touch-action="none">
 
-<div class="bg"></div>
+<div id="bg" class="background"></div>
 <canvas id="canvas"></canvas>
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" style="width: 100vw; height: 100vh; top: 0; left: 0; position:absolute; -webkit-user-select: none; -webkit-touch-callout: none;">
+    <polyline id="lasso" stroke-width="5" stroke-linejoin="round" stroke-dasharray="10 4"></polyline>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" id="groupSVG" class="background" style="width: 100vw; height: 100vh; top: 0; left: 0; position:absolute; -webkit-user-select: none; -webkit-touch-callout: none;">
+</svg>
+
+<div class='craftingBoardBlur' id="craftingBoard"></div>
+
 <div class="touchOverlay" id="touchOverlay"></div>
 <div class="touchOverlay" id="touchOverlaySecondFinger"></div>
 
+<!--<div class="pocket">-->
+    <!--<div class="centerVertically" id="pocketScrollContainer">-->
+        <!--<div class="palette">-->
+        <!--</div>-->
+    <!--</div>-->
+    <!--<div id="pocketScrollBar"></div>-->
+<!--</div>-->
+
 <script src="src/index.js"></script>
+<script src="src/constructors.js"></script>
+<script src="src/moduleCallbacks.js"></script>
 
 <script src="src/draw.js"></script>
 <script src="src/moveabilityOverlay.js"></script>
 <script src="src/network.js"></script>
 <script src="src/touchEvents.js"></script>
 <script src="src/utilities.js"></script>
+<script src="src/pocketFrames.js"></script>
+<script src="src/pocket.js"></script>
+<script src="src/trash.js"></script>
+<script src="src/modeToggle.js"></script>
+<script src="src/logicNodeInteractions.js"></script>
+<script src="src/groupBehavior.js"></script>
+
+<script src="src/frameRenderer.js"></script>
+<script src="src/nodeRenderer.js"></script>
+<script src="src/linkRenderer.js"></script>
+<script src="src/groupRenderer.js"></script>
+
+<script src="src/database.js"></script>
+
+<script src="src/linkingByDrawing.js"></script>
+<script src="src/groupingByDrawing.js"></script>
+
+<script src="src/crafting/blockMenu.js"></script>
+<script src="src/crafting/eventHandlers.js"></script>
+<script src="src/crafting/eventHelper.js"></script>
+<script src="src/crafting/grid.js"></script>
+<script src="src/crafting/index.js"></script>
+<script src="src/crafting/utilities.js"></script>
+
+<script src="src/crafting/craftingBoardMenu.js"></script>
+
+<script src="src/crafting/screenAdapter.js"></script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
+<script src="resources/hull.js"></script>
 
 <script>
     // var scaleARFactor = 1.5;
     var scaleRatio = 1;
 
+    var defaultFrameMoveDelay = 400;
+    var defaultNodeMoveDelay = 1200;
+
     // get the url of the reality server to load frames from and to post new frame positions
     var SERVER_IP = location.origin.split(":")[1].split("//")[1];
     var SERVER_PORT = '8080';
     console.log('screen found Reality Server at address:   http://' + SERVER_IP + ':' + SERVER_PORT);
+
+    var tempUuid;
 
     var frames = {};
     var socket = io();
@@ -121,6 +176,8 @@
 
     window.onload = function() {
 
+        tempUuid = realityEditor.utilities.uuidTimeShort();
+
         windowToEditorRatio = Math.max(1, Math.round((window.innerWidth/568)));
         touchOverlay = document.getElementById('touchOverlay');
         touchOverlaySecondFinger = document.getElementById('touchOverlaySecondFinger');
@@ -131,6 +188,26 @@
         realityEditor.touchEvents.addTouchListeners();
 
         realityEditor.network.setupSocketListeners();
+
+        realityEditor.database.initFeature();
+
+        realityEditor.pocket.initFeature();
+        realityEditor.trash.initFeature();
+        realityEditor.modeToggle.initFeature();
+
+        realityEditor.logicNodeInteractions.initFeature();
+
+        realityEditor.frameRenderer.initFeature();
+        realityEditor.nodeRenderer.initFeature();
+        realityEditor.linkRenderer.initFeature();
+        realityEditor.groupRenderer.initFeature();
+
+        realityEditor.linkingByDrawing.initFeature();
+
+        realityEditor.craftingBoardMenu.initFeature();
+
+        realityEditor.groupingByDrawing.initFeature();
+        realityEditor.groupBehavior.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 
@@ -153,6 +230,12 @@
         objectReference.style.marginTop = (-30 * windowToEditorRatio) + 'px';
         objectReference.style.borderRadius = (60 * windowToEditorRatio) + 'px';
         objectReference.style.border = (4 * windowToEditorRatio) + 'px solid #01fffc';
+    }
+
+    function getObjectId() {
+        if (frames.length === 0) return null;
+        var anyFrameId = Object.keys(frames)[0];
+        return objectName + anyFrameId.split(objectName)[1].substring(0,12);
     }
 
     /**
@@ -296,13 +379,16 @@
         var ele = document.elementFromPoint(x,y);
         while(ele && ele.tagName !== "BODY" && ele.tagName !== "HTML"){
             res.push(ele);
-            previousDisplayTypes.push(ele.style.display);
-            ele.style.display = "none";
+            // previousDisplayTypes.push(ele.style.display);
+            // ele.style.display = "none";
+            previousDisplayTypes.push(ele.style.pointerEvents);
+            ele.style.pointerEvents = "none";
             ele = document.elementFromPoint(x,y);
         }
 
         for(var i = 0; i < res.length; i++){
-            res[i].style.display = previousDisplayTypes[i];
+            // res[i].style.display = previousDisplayTypes[i];
+            res[i].style.pointerEvents = previousDisplayTypes[i];
         }
         // console.log(res);
         return res;

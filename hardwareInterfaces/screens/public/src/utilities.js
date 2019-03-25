@@ -1,14 +1,23 @@
 createNameSpace("realityEditor.utilities");
 
+// also automatically creates a registerCallback function on this module
+realityEditor.utilities.registerCallback = {};
+realityEditor.utilities.callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.utilities');
+
 realityEditor.utilities.getEditingVehicle = function() {
     if (editingState.frameKey) {
+        if (editingState.nodeKey) {
+            return frames[editingState.frameKey].nodes[editingState.nodeKey];
+        }
         return frames[editingState.frameKey];
     }
 };
 
 realityEditor.utilities.getEditingElement = function() {
-    if (editingState.frameKey) {
-        return document.querySelector('#iframe'+editingState.frameKey);
+    if (editingState.nodeKey) {
+        return document.querySelector('#iframe' + editingState.nodeKey);
+    } else if (editingState.frameKey) {
+        return document.querySelector('#iframe' + editingState.frameKey);
     }
 };
 
@@ -42,6 +51,10 @@ realityEditor.utilities.isDraggableElement = function(clickedElement) {
 };
 
 realityEditor.utilities.resetEditingState = function() {
+
+    // gets triggered before state gets reset, so that subscribed modules can respond based on what is about to be reset
+    this.callbackHandler.triggerCallbacks('resetEditingState');
+
     editingState.objectKey = null;
     editingState.frameKey = null;
     editingState.nodeKey = null;
@@ -49,6 +62,10 @@ realityEditor.utilities.resetEditingState = function() {
         x: 0,
         y: 0
     };
+
+    realityEditor.trash.hideTrash();
+
+    console.log(editingState);
 };
 
 /**
@@ -318,4 +335,264 @@ realityEditor.utilities.resetFramesIfTripleTap = function() {
 
 realityEditor.utilities.isIPad = function () {
     return window.navigator.userAgent.indexOf('iPad') > -1;
+};
+
+/**
+ * Generates a random 12 character unique identifier using uppercase, lowercase, and numbers (e.g. "OXezc4urfwja")
+ * @return {string}
+ */
+realityEditor.utilities.uuidTime = function () {
+    var dateUuidTime = new Date();
+    var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+    while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return stampUuidTime;
+};
+
+/**
+ * Generates a random 8 character unique identifier using uppercase, lowercase, and numbers (e.g. "jzY3y338")
+ * @return {string}
+ */
+realityEditor.utilities.uuidTimeShort = function () {
+    var dateUuidTime = new Date();
+    var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var stampUuidTime = parseInt("" + dateUuidTime.getMilliseconds() + dateUuidTime.getMinutes() + dateUuidTime.getHours() + dateUuidTime.getDay()).toString(36);
+    while (stampUuidTime.length < 8) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return stampUuidTime;
+};
+
+/**
+ * Generates a random number between the two inputs, inclusive.
+ * @param {number} min - The minimum possible value.
+ * @param {number} max - The maximum possible value.
+ */
+realityEditor.utilities.randomIntInc = function (min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+};
+
+// avoids serializing cyclic data structures by only including minimal information needed for node iframe
+// (keys such as grid and links sometimes contain cyclic references)
+realityEditor.utilities.getNodesJsonForIframes = function(nodes) {
+    var simpleNodes = {};
+    var keysToExclude = ["links", "blocks", "grid", "guiState"];
+    for (var node in nodes) {
+        if (!nodes.hasOwnProperty(node)) continue;
+        simpleNodes[node] = {};
+        for (var key in nodes[node]) {
+            if (!nodes[node].hasOwnProperty(key)) continue;
+            if (keysToExclude.indexOf(key) === -1) {
+                simpleNodes[node][key] = nodes[node][key];
+            }
+        }
+    }
+    return simpleNodes;
+};
+
+/**
+ * Updates the timing object with the current timestamp and delta since last frame.
+ * @param {{delta: number, now: number, then: number}} timing - reference to the timing object to modify
+ */
+realityEditor.utilities.timeSynchronizer = function(timing) {
+    timing.now = Date.now();
+    timing.delta = (timing.now - timing.then) / 198;
+    timing.then = timing.now;
+};
+
+/**
+ * Rescales x from the original range (in_min, in_max) to the new range (out_min, out_max)
+ * @example map(5, 0, 10, 100, 200) would return 150, because 5 is halfway between 0 and 10, so it finds the number halfway between 100 and 200
+ *
+ * @param {number} x
+ * @param {number} in_min
+ * @param {number} in_max
+ * @param {number} out_min
+ * @param {number} out_max
+ * @return {number}
+ */
+realityEditor.utilities.map = function(x, in_min, in_max, out_min, out_max) {
+    if (x > in_max) x = in_max;
+    if (x < in_min) x = in_min;
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+};
+
+/**
+ * unknownKey is an objectKey, frameKey, or nodeKey
+ * @param {string} unknownKey
+ * @return {{objectKey: string|null, frameKey: string|null, nodeKey: string|null}}
+ */
+realityEditor.utilities.getKeysFromKey = function(unknownKey) {
+    var keys = {
+        objectKey: null,
+        frameKey: null,
+        nodeKey: null
+    };
+
+    if (unknownKey.indexOf(getObjectId()) > -1) {
+        keys.objectKey = getObjectId();
+        realityEditor.database.forEachFrame(function(frameKey) {
+            if (unknownKey.indexOf(frameKey) > -1) {
+                keys.frameKey = frameKey;
+                realityEditor.database.forEachNodeInFrame(frameKey, function(nodeKey) {
+                    if (unknownKey.indexOf(nodeKey) > -1) {
+                        keys.nodeKey = nodeKey;
+                    }
+                });
+            }
+        });
+    }
+
+    return keys;
+};
+
+/**
+ * Checks if the line (x11,y11) -> (x12,y12) intersects with the line (x21,y21) -> (x22,y22)
+ * @param {number} x11
+ * @param {number} y11
+ * @param {number} x12
+ * @param {number} y12
+ * @param {number} x21
+ * @param {number} y21
+ * @param {number} x22
+ * @param {number} y22
+ * @param {number} w - width of canvas
+ * @param {number} h - height of canvas (ignores intersections outside of canvas
+ * @return {boolean}
+ */
+realityEditor.utilities.checkLineCross = function(x11, y11, x12, y12, x21, y21, x22, y22, w, h) {
+    var l1 = this.lineEq(x11, y11, x12, y12),
+        l2 = this.lineEq(x21, y21, x22, y22);
+
+    var interX = this.calculateX(l1, l2); //calculate the intersection X value
+    if (interX > w || interX < 0) {
+        return false; //false if intersection of lines is output of canvas
+    }
+    var interY = this.calculateY(l1, interX);
+    // cout("interX, interY",interX, interY);
+
+    if (!interY || !interX) {
+        return false;
+    }
+    if (interY > h || interY < 0) {
+        return false; //false if intersection of lines is output of canvas
+    }
+    //  cout("point on line --- checking on segment now");
+    return (this.checkBetween(x11, x12, interX) && this.checkBetween(y11, y12, interY)
+        && this.checkBetween(x21, x22, interX) && this.checkBetween(y21, y22, interY));
+};
+
+/**
+ * Given two end points of the segment and some other point p,
+ * return true if p is between the two segment points.
+ * (utility that helps with e.g. checking if two lines cross)
+ * @param {number} e1
+ * @param {number} e2
+ * @param {number} p
+ * @return {boolean}
+ */
+realityEditor.utilities.checkBetween = function (e1, e2, p) {
+    var marg2 = 2;
+
+    if (e1 - marg2 <= p && p <= e2 + marg2) {
+        return true;
+    }
+    if (e2 - marg2 <= p && p <= e1 + marg2) {
+        return true;
+    }
+
+    return false;
+};
+
+/**
+ * function for calculating the line equation given the endpoints of a line.
+ * returns [m, b], where this corresponds to y = mx + b
+ * y = [(y1-y2)/(x1-x2), -(y1-y2)/(x1-x2)*x1 + y1]
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @return {Array.<number>} - length 2 array. first entry is m (slope), seconds is b (y-intercept)
+ */
+realityEditor.utilities.lineEq = function (x1, y1, x2, y2) {
+    var m = this.slopeCalc(x1, y1, x2, y2);
+    // if(m == 'vertical'){
+    //     return ['vertical', 'vertical'];
+    // }
+    return [m, -1 * m * x1 + y1];
+};
+
+/**
+ * Calculates the slope of the line defined by the provided endpoints (x1,y1) -> (x2,y2)
+ * slope has to be multiplied by -1 because the y-axis value increases we we go down
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @return {number}
+ */
+realityEditor.utilities.slopeCalc = function (x1, y1, x2, y2) {
+    if ((x1 - x2) === 0) {
+        return 9999; //handle cases when slope is infinity
+    }
+    return (y1 - y2) / (x1 - x2);
+};
+
+/**
+ * calculate the intersection x value given two line segment
+ * @param {Array.<number>} seg1 - [slope of line 1, y-intercept of line 1]
+ * @param {Array.<number>} seg2 - [slope of line 2, y-intercept of line 2]
+ * @return {number} - the x value of their intersection
+ */
+realityEditor.utilities.calculateX = function (seg1, seg2) {
+    return (seg2[1] - seg1[1]) / (seg1[0] - seg2[0]);
+};
+
+/**
+ * calculate y given x and the line equation
+ * @param {Array.<number>} seg1 - [slope of line 1, y-intercept of line 1]
+ * @param {number} x
+ * @return {number} - returns (y = mx + b)
+ */
+realityEditor.utilities.calculateY = function (seg1, x) {
+    return seg1[0] * x + seg1[1];
+};
+
+/**
+ * Calculates the cartesian distance between two points using the Pythagorean theorem
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @return {number}
+ */
+realityEditor.utilities.distance = function(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+};
+
+/**
+ * Returns whether or not the given point is inside the polygon formed by the given vertices.
+ * @param {Array.<number>} point - [x,y]
+ * @param {Array.<Array.<number>>} vertices - [[x0, y0], [x1, y1], ... ]
+ * @return {boolean}
+ */
+realityEditor.utilities.insidePoly = function(point, vertices) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    // Copyright (c) 2016 James Halliday
+    // The MIT License (MIT)
+
+    var x = point[0], y = point[1];
+
+    if(x <=0 || y <= 0) return false;
+
+    var inside = false;
+    for (var i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+        var xi = vertices[i][0], yi = vertices[i][1];
+        var xj = vertices[j][0], yj = vertices[j][1];
+
+        var intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
 };

@@ -39,6 +39,8 @@ var callBacks = new Objects();
 var screenObjectCallBacks = {};
 var frameAddedCallbacks = [];
 var resetCallbacks = [];
+var matrixStreamCallbacks = [];
+var udpMessageCallbacks = [];
 var screenPortMap = {};
 var _this = this;
 
@@ -323,6 +325,26 @@ exports.runResetCallbacks = function(objectKey) {
             console.log('found a callback');
             callbackObject.callback();
         }
+    });
+};
+
+exports.subscribeToMatrixStream = function(callback) {
+    matrixStreamCallbacks.push(callback);
+};
+
+exports.triggerMatrixCallbacks = function(visibleObjects) {
+    matrixStreamCallbacks.forEach(function(callback) {
+        callback(visibleObjects);
+    });
+};
+
+exports.subscribeToUDPMessages = function(callback) {
+    udpMessageCallbacks.push(callback);
+};
+
+exports.triggerUDPCallbacks = function(msgContent) {
+    udpMessageCallbacks.forEach(function(callback) {
+        callback(msgContent);
     });
 };
 

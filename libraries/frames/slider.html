@@ -75,7 +75,7 @@
 
     function onPointerMove(e) {
         e.preventDefault();
-        if (!pointers[e.pointerId] || sendTouchEvents) {
+        if (!pointers[e.pointerId]) {
             return;
         }
         var rect = container.getBoundingClientRect();

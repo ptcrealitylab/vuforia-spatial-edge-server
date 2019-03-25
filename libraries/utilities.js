@@ -68,6 +68,14 @@ var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 hardwareIdentity = homedir +"/.identity";
 
+var worldObjectName;
+var worldObject;
+
+exports.setWorldObject = function(name, reference) {
+    worldObjectName = name;
+    worldObject = reference;
+};
+
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
@@ -79,8 +87,6 @@ exports.readObject = function (objectLookup, folder) {
         return null;
     }
 };
-
-
 
 exports.createFolder = function (folderVar, objectsPath, debug) {
 
@@ -317,7 +323,7 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
 
 /**
  * Saves the RealityObject as "object.json"
- *
+ * (Writes the object state to permanent storage)
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
  * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
@@ -325,15 +331,26 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  **/
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
-console.log("start saving");
-    var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-    fs.writeFile(outputFilename, JSON.stringify(objects[object], null, '\t'), function (err) {
-        if (err) {
-            console.log(err);
+        console.log("start saving");
+
+        var objectData;
+        var outputFilename;
+
+        if (object.indexOf(worldObjectName) > -1) {
+            outputFilename = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + 'object.json';
+            objectData = worldObject;
         } else {
-           console.log("JSON saved to " + outputFilename);
+            outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
+            objectData = objects[object];
         }
-    });
+
+        fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("JSON saved to " + outputFilename);
+            }
+        });
     } else {
         console.log("I am not allowed to save");
     }
@@ -597,7 +614,13 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     return this.read;
 };
 
-exports.actionSender = function(action,timeToLive, beatport) {
+/**
+ * Broadcasts a JSON message over UDP
+ * @param {*} action - JSON object with no specified structure, contains the message to broadcast
+ * @param {number|undefined} timeToLive
+ * @param {number|undefined} beatport
+ */
+exports.actionSender = function(action, timeToLive, beatport) {
     if(!timeToLive) timeToLive = 2;
     if(!beatport) beatport = 52316;
     console.log(action);
@@ -624,7 +647,10 @@ exports.actionSender = function(action,timeToLive, beatport) {
 
 };
 
-
+/**
+ * Prints to the console, only if in debug mode
+ * @param {string} msg
+ */
 function cout(msg) {
     if (debug) console.log(msg);
 }
