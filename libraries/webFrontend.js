@@ -77,14 +77,13 @@ console.log(objectInterfaceName);
         return fs.statSync(objectsPath + '/' + file).isDirectory();
     });
     // remove hidden directories
-    if (typeof tempFiles[0] !== "undefined") {
-        while (tempFiles[0][0] === ".") {
-            tempFiles.splice(0, 1);
+    if (tempFiles.length > 0) {
+        if (typeof tempFiles[0] !== "undefined") {
+            while (tempFiles[0][0] === ".") {
+                tempFiles.splice(0, 1);
+            }
         }
     }
-
-
-
 
     tempFiles.forEach(function(objectKey) {
         var thisObjectKey = objectKey;

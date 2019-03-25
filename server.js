@@ -73,7 +73,8 @@
 var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
-    saveToDisk : true // allow system to save to file system// debug messages to console
+    saveToDisk : true, // allow system to save to file system// debug messages to console
+    worldObject : false
 };
 
 // ports used to define the server behaviour
@@ -298,6 +299,10 @@ function Frame() {
     this.publicData = {};
     // if true, cannot move the frame but copies are made from it when you pull into unconstrained
     this.staticCopy = false;
+    // the maximum distance (in meters) to the camera within which it will be rendered
+    this.distanceScale = 1.0;
+    // Indicates what group the frame belongs to; null if none
+    this.groupID = null;
 }
 
 
@@ -559,6 +564,7 @@ function Protocols() {
         send: function (object, frame, node, logic, data) {
             return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data})
         },
+        // process the data received by a node
         receive: function (message) {
             if (!message) return null;
             var msgContent = JSON.parse(message);
@@ -568,45 +574,43 @@ function Protocols() {
             if (!msgContent.logic && msgContent.logic !== 0) msgContent.logic = false;
             if (!msgContent.data) return null;
 
-            if (msgContent.object in objects) {
-                if (msgContent.frame in objects[msgContent.object].frames) {
-                    if (msgContent.node in objects[msgContent.object].frames[msgContent.frame].nodes) {
+            if (doesObjectExist(msgContent.object)) {
 
-                        if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
-                            this.blockString = "in" + msgContent.logic;
-                            if (objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks) {
-                                if (this.blockString in objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks) {
+                var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
+                if (foundNode) {
 
+                    // if the node is a Logic Node, process the blocks/links inside of it
+                    if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
+                        this.blockString = "in" + msgContent.logic;
+                        if (foundNode.blocks) {
+                            if (this.blockString in foundNode.blocks) {
+                                this.objectData = foundNode.blocks[this.blockString];
 
-                                    this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].blocks[this.blockString];
-
-                                    for (var key in msgContent.data) {
-                                        this.objectData.data[0][key] = msgContent.data[key];
-                                    }
-
-                                    this.buffer = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
-
-                                    // this needs to be at the beginning;
-                                    if (!this.buffer.routeBuffer)
-                                        this.buffer.routeBuffer = [0, 0, 0, 0];
-
-                                    this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
-
-                                    engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
-                                   // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
+                                for (var key in msgContent.data) {
+                                    this.objectData.data[0][key] = msgContent.data[key];
                                 }
+
+                                this.buffer = foundNode;
+
+                                // this needs to be at the beginning;
+                                if (!this.buffer.routeBuffer)
+                                    this.buffer.routeBuffer = [0, 0, 0, 0];
+
+                                this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
+
+                                engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
+                                // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                             }
                         }
 
-                        else {
-                            this.objectData = objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node];
+                    } else { // otherwise this is a regular node so just continue to send the data to any linked nodes
+                        this.objectData = foundNode;
 
-                            for (var key in msgContent.data) {
-                                this.objectData.data[key] = msgContent.data[key];
-                            }
-                            engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
-                           // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
+                        for (var key in msgContent.data) {
+                            this.objectData.data[key] = msgContent.data[key];
                         }
+                        engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
+                        // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                     }
                 }
 
@@ -617,8 +621,11 @@ function Protocols() {
                     logic: msgContent.logic,
                     data: this.objectData.data
                 };
+
             }
-            return null
+
+            // return null if we can't even find the object it belongs to
+            return null;
         }
     };
     this.R1 = {
@@ -632,25 +639,21 @@ function Protocols() {
             if (!msgContent.node) return null;
             if (!msgContent.data) return null;
 
-            if (msgContent.object in objects) {
-                if (msgContent.node in objects[msgContent.object].nodes) {
-
-                    var objectData = objects[msgContent.object].frames[msgContent.object].nodes[msgContent.node];
-
-                    for (var key in msgContent.data) {
-                        objectData.data[key] = msgContent.data[key];
-                    }
-
-                    engine.trigger(msgContent.object, msgContent.object, msgContent.node, objectData);
-
-                    return {object: msgContent.object, node: msgContent.node, data: objectData};
+            var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
+            if (foundNode) {
+                for (var key in foundNode.data) {
+                    foundNode.data[key] = msgContent.data[key];
                 }
-
+                engine.trigger(msgContent.object, msgContent.object, msgContent.node, foundNode);
+                return {object: msgContent.object, node: msgContent.node, data: foundNode};
             }
 
-            return null
+            return null;
         }
     };
+    /**
+     * @deprecated - the old protocol hasn't been tested in a long time, might not work
+     */
     this.R0 = {
         send: function (object, node, data) {
             return JSON.stringify({obj: object, pos: node, value: data.value, mode: data.mode})
@@ -705,6 +708,7 @@ var socketArray = {};     // all socket connections that are kept alive
 
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
+var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -716,6 +720,9 @@ var sockets = {
     connectedOld: 0, // used internally to react only on updates
     notConnectedOld: 0 // used internally to react only on updates
 };
+
+var worldObjectName = '_WORLD_OBJECT_';
+var worldObject;
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -760,6 +767,13 @@ for (var i = 0; i < blockFolderList.length; i++) {
 
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
+
+var hardwareAPICallbacks = {
+    publicData : function (){
+
+
+    }
+};
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
 
@@ -771,21 +785,25 @@ hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath
         node: nodeKey,
         data: data
     });
-    engine.trigger(objectKey, frameKey, nodeKey, objects[objectKey].frames[frameKey].nodes[nodeKey]);
-
+    engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
 
 }, Node, function (thisAction) {
     utilities.actionSender(thisAction);
 }, function(objectID) {
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-});
+},
+    hardwareAPICallbacks);
 
 cout("Done");
 
 cout("Loading Objects");
 // This function will load all the Objects
 loadObjects();
-cout("Done");
+cout("Done loading objects");
+if(globalVariables.worldObject) {
+    loadWorldObject();
+}
+cout("Done loading world object");
 
 startSystem();
 cout("started");
@@ -891,11 +909,13 @@ function loadObjects() {
                 }
 
 
-                for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
+                if (objects[tempFolderName].frames[tempFolderName]) {
+                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
 
-                    if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
-                        var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                        objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
+                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
+                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                        }
                     }
                 }
 
@@ -937,6 +957,78 @@ var executeSetups = function () {
 };
 executeSetups();
 
+
+/**
+ * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
+ * Create the json file if doesn't already exist
+ */
+function loadWorldObject() {
+
+    // create the file for it if necessary
+    var folder = objectsPath + '/.identity/' + worldObjectName + '/';
+    var identityPath = folder + identityFolderName + '/';
+    var jsonFilePath = identityPath + 'object.json';
+
+    // create objects folder at objectsPath if necessary
+    if(!fs.existsSync(folder)) {
+        console.log('created worldObject directory at ' + folder);
+        fs.mkdirSync(folder);
+    }
+
+    // create a /identity folder within it to hold the object.json data
+    if(!fs.existsSync(identityPath)) {
+        console.log('created worldObject identity at ' + identityPath);
+        fs.mkdirSync(identityPath);
+    }
+
+    // create a new world object
+    worldObject = new Objects();
+    worldObject.name = worldObjectName;
+    worldObject.objectId = worldObjectName +  utilities.uuidTime(); // create a new random id
+    worldObject.isWorldObject = true;
+
+    // try to read previously saved data to overwrite the default world object
+    try {
+        worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+        console.log('loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+    } catch (e) {
+        console.log('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+    }
+
+    worldObject.ip = ips.interfaces[ips.activeInterface];
+
+    utilities.setWorldObject(worldObjectName, worldObject);
+
+    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+    //     delete objects[utilities.readObject(objectLookup, folderVar)];
+    // }
+    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
+    // objectLookup[folder] = {id: id};
+    // entering the obejct in to the lookup table
+    // ask the object to reinitialize
+    //serialPort.write("ok\n");
+    // todo send init to internal
+
+    hardwareAPI.reset();
+
+    // utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+    // write world object to file
+    // var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
+
+    if (globalVariables.saveToDisk) {
+
+        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('JSON saved to ' + jsonFilePath);
+            }
+        });
+    } else {
+        console.log('I am not allowed to save');
+    }
+}
 
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
@@ -1190,6 +1282,16 @@ function objectBeatServer() {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
+
+        if (typeof msgContent.matrixBroadcast !== "undefined") {
+            // if (Object.keys(msgContent.matrixBroadcast).length > 0) {
+                // console.log(msgContent.matrixBroadcast);
+                hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
+            // }
+        } else {
+            hardwareAPI.triggerUDPCallbacks(msgContent);
+        }
+
     });
 
     udpServer.on("listening", function () {
@@ -1244,7 +1346,6 @@ var parseIpSpace = function (ip_string) {
 function objectWebServer() {
     thisIP = ips.interfaces[ips.activeInterface]; // ip.address();
     // security implemented
-//console.log(objects);
 
     // check all sever requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
@@ -1342,6 +1443,8 @@ function objectWebServer() {
         }
         console.log(newUrl);
 
+        // TODO: ben - may need to update objectsPath if the object is a world object
+
         if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
             var fileName = objectsPath + newUrl;
 
@@ -1374,8 +1477,8 @@ function objectWebServer() {
             var objectKey = utilities.readObject(objectLookup,urlArray[0]);
             var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
 
-             scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
-             scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
+            scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
+            scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
             scriptNode += '<script> realityObject.serverIp = '+ ips.interfaces[ips.activeInterface]; //ip.address()+'</script>';
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
@@ -1423,9 +1526,16 @@ function objectWebServer() {
      * @param objectKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object)
      */
-    function getObject(objectKey, callback) {
+    function getObjectAsync(objectKey, callback) {
 
         if (!objects.hasOwnProperty(objectKey)) {
+            if(globalVariables.worldObject) {
+                if (objectKey.indexOf(worldObjectName) > -1) {
+                    callback(null, worldObject);
+                    return;
+                }
+            }
+
             callback({failure: true, error: 'Object ' + objectKey + ' not found'});
             return;
         }
@@ -1441,9 +1551,9 @@ function objectWebServer() {
      * @param frameKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
-    function getFrame(objectKey, frameKey, callback) {
+    function getFrameAsync(objectKey, frameKey, callback) {
 
-        getObject(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function(error, object) {
             if (error) {
                 callback(error);
                 return;
@@ -1468,9 +1578,9 @@ function objectWebServer() {
      * @param nodeKey
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
-    function getNode(objectKey, frameKey, nodeKey, callback) {
+    function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
 
-        getFrame(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1498,7 +1608,7 @@ function objectWebServer() {
      */
     function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
 
-        getFrame(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1541,14 +1651,21 @@ function objectWebServer() {
 
     function deleteLogicLink(objectID, frameID, nodeID, linkID, lastEditor) {
 
-        var fullEntry = objects[objectID].frames[frameID].nodes[nodeID].links[linkID];
-        var destinationIp = knownObjects[fullEntry.objectB];
+        var updateStatus = "nothing happened";
 
-        delete objects[objectID].frames[frameID].nodes[nodeID].links[linkID];
-        cout("deleted link: " + linkID);
-        utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-        return "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
+        var foundNode = getNode(objectID, frameID, nodeID);
+        if (foundNode) {
+            delete foundNode.links[linkID];
+
+            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+            cout("deleted link: " + linkID);
+            updateStatus = "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
+        }
+
+        return updateStatus;
+
     }
 
 
@@ -1564,40 +1681,51 @@ function objectWebServer() {
         res.send(addLogicLink(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
     });
 
+    /**
+     * Adds a new link with the provided linkID to the specified node.
+     * Doesn't add it if it detects an infinite loop.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {string} linkID
+     * @param {Link} body
+     * @return {string}
+     */
     function addLogicLink(objectID, frameID, nodeID, linkID, body) {
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(objectID)) {
+        var foundNode = getNode(objectID, frameID, nodeID);
+        if (foundNode) {
 
-            objects[objectID].frames[frameID].nodes[nodeID].links[linkID] = body;
+            foundNode.links[linkID] = body;
+            var thisLink = foundNode.links[linkID];
 
-            var thisObject = objects[objectID].frames[frameID].nodes[nodeID].links[linkID];
-
-            thisObject.loop = false;
-
+            thisLink.loop = false;
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisObject.nodeA === thisObject.nodeB && thisObject.logicA === thisObject.logicB) {
-                thisObject.loop = true;
+            if (thisLink.nodeA === thisLink.nodeB && thisLink.logicA === thisLink.logicB) {
+                thisLink.loop = true;
             }
 
-            if (!thisObject.loop) {
+            if (!thisLink.loop) {
                 // call an action that asks all devices to reload their links, once the links are changed.
                 utilities.actionSender({
                     reloadNode: {object: objectID, frame: frameID, node: nodeID},
                     lastEditor: body.lastEditor
                 });
-                updateStatus = "added";
-                cout("added link: " + linkID);
                 // check if there are new connections associated with the new link.
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+                cout("added link: " + linkID);
+                updateStatus = "added";
             } else {
                 updateStatus = "found endless Loop";
             }
-            return updateStatus;
         }
+
+        return updateStatus;
     }
 
     /**
@@ -1614,18 +1742,24 @@ function objectWebServer() {
         res.send(addNewBlock(req.params[0], req.params[0], req.params[1], req.params[2], req.body));
     });
 
+    /**
+     * Adds a new block with the provided blockID to the specified node.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {string} blockID
+     * @param {Block} body
+     * @return {string}
+     */
     function addNewBlock(objectID, frameID, nodeID, blockID, body) {
-
-        console.log("where is this object");
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(objectID)) {
+        var foundNode = getNode(objectID, frameID, nodeID);
+        if (foundNode) {
 
-            var thisBlocks = objects[objectID].frames[frameID].nodes[nodeID].blocks;
-
+            var thisBlocks = foundNode.blocks;
             thisBlocks[blockID] = new Block();
-
 
             // todo activate when system is working to increase security
             /* var thisMessage = req.body;
@@ -1662,17 +1796,15 @@ function objectWebServer() {
                 thisBlocks[blockID].type = thisBlocks[blockID].name;
             }
 
-            // for (var k in  objects[objectID].frames[frameID].nodes[nodeID].blocks) {
-            //     console.log("k");
-            // }
-
             // call an action that asks all devices to reload their links, once the links are changed.
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
-            updateStatus = "added";
-            cout("added block: " + blockID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            return updateStatus;
+
+            cout("added block: " + blockID);
+            updateStatus = "added";
         }
+
+        return updateStatus;
     }
 
     // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
@@ -1684,59 +1816,133 @@ function objectWebServer() {
     //     res.send(deleteBlock(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
     // });
 
+    /**
+     * Deletes a block with the provided blockID from the the specified node.
+     * Also deletes any links connected to that block.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {string} blockID
+     * @param {string} lastEditor
+     * @return {string}
+     */
     function deleteBlock(objectID, frameID, nodeID, blockID, lastEditor) {
-        var thisLinkId = blockID;
-        console.log(objectID, frameID, nodeID, blockID, lastEditor);
-        console.log(objects[objectID].frames[frameID]);
-        var fullEntry = objects[objectID].frames[frameID].nodes[nodeID].blocks[thisLinkId];
-        var destinationIp = knownObjects[fullEntry.objectB];
 
-        delete objects[objectID].frames[frameID].nodes[nodeID].blocks[thisLinkId];
-        cout("deleted block: " + thisLinkId);
+        var updateStatus = "nothing happened";
 
-        var thisLinks = objects[objectID].frames[frameID].nodes[nodeID].links;
-        // Make sure that no links are connected to deleted objects
-        for (var linkCheckerKey in thisLinks) {
-            if (thisLinks[linkCheckerKey].nodeA === thisLinkId || thisLinks[linkCheckerKey].nodeB === thisLinkId) {
-                delete objects[objectID].frames[frameID].nodes[nodeID].links[linkCheckerKey];
+        var foundNode = getNode(objectID, frameID, nodeID);
+
+        if (foundNode) {
+
+            delete foundNode.blocks[blockID];
+            cout("deleted block: " + blockID);
+
+            var thisLinks = foundNode.links;
+            // Make sure that no links are connected to deleted blocks
+            for (var linkCheckerKey in thisLinks) {
+                if (!thisLinks.hasOwnProperty(linkCheckerKey)) continue;
+                if (thisLinks[linkCheckerKey].nodeA === blockID || thisLinks[linkCheckerKey].nodeB === blockID) { // TODO: do we need to check blockLinks?
+                    delete foundNode.links[linkCheckerKey];
+                }
             }
+
+            utilities.actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            updateStatus = "deleted: " + blockID + " in blocks for object: " + objectID;
         }
 
-        utilities.actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-        return "deleted: " + thisLinkId + " in blocks for object: " + objectID;
+        return updateStatus;
     }
-
 
     webServer.post('/logic/*/*/blockPosition/*/', function (req, res) {
         res.send(postBlockPosition(req.params[0], req.params[0], req.params[1], req.params[2], req.body));
     });
+
     webServer.post('/object/*/frame/*/node/*/block/*/blockPosition/', function (req, res) {
         res.send(postBlockPosition(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
     });
 
+    /**
+     * Sets a new grid position for the specified block
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {string} blockID
+     * @param {{x: number, y: number, lastEditor: string}} body
+     * @return {string}
+     */
     function postBlockPosition(objectID, frameID, nodeID, blockID, body) {
 
         var updateStatus = "nothing happened";
 
         cout("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
 
-        var tempObject = objects[objectID].frames[frameID].nodes[nodeID].blocks[blockID];
+        var foundNode = getNode(objectID, frameID, nodeID);
 
-        // check that the numbers are valid numbers..
-        if (typeof body.x === "number" && typeof body.y === "number") {
+        if (foundNode) {
+            var foundBlock = foundNode.blocks[blockID];
+            if (foundBlock) {
+                // check that the numbers are valid numbers..
+                if (typeof body.x === "number" && typeof body.y === "number") {
 
-            tempObject.x = body.x;
-            tempObject.y = body.y;
+                    foundBlock.x = body.x;
+                    foundBlock.y = body.y;
 
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
-            updateStatus = "ok";
+                    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                    utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+                    updateStatus = "ok";
+                }
+            }
         }
 
         return updateStatus;
     }
 
+    // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
+    // ****************************************************************************************************************
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/triggerBlock/', function (req, res) {
+        res.send(triggerBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
+    });
+
+    // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
+    webServer.post('/triggerBlock/:blockID', function (req, res) {
+
+        var foundBlock = false;
+        forEachObject(function(object, objectKey) {
+            forEachFrameInObject(object, function(frame, frameKey) {
+                forEachNodeInFrame(frame, function(node, nodeKey) {
+                    if (typeof node.blocks !== 'undefined') {
+                        var block = node.blocks[req.params.blockID];
+                        // keep iterating until you find a block with that ID
+                        if (block) {
+                            foundBlock = true;
+                            res.status(200).json(triggerBlock(objectKey, frameKey, nodeKey, req.params.blockID, req.body)).end();
+                        }
+                    }
+                });
+            });
+        });
+
+        if (!foundBlock) {
+            res.status(404).json({success: false, error: 'no block with ID ' + req.params.blockID + ' exists'}).end();
+        }
+
+    });
+
+    function triggerBlock(objectID, frameID, nodeID, blockID, body) {
+        console.log(objectID, frameID, nodeID, blockID, body);
+        var foundNode = getNode(objectID, frameID, nodeID);
+        if (foundNode) {
+            var block = foundNode.blocks[blockID];
+            console.log(block);
+            console.log('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
+
+            block.data[0].value = body.value;
+            engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
+        }
+
+        return {success: true, error: null};
+    }
 
     /**
      * Logic Nodes
@@ -1752,38 +1958,46 @@ function objectWebServer() {
         res.send(addLogicNode(req.params[0], req.params[1], req.params[2], req.body));
     });
 
-
-
-
+    /**
+     * Adds the Logic Node contained in the body to the specified frame.
+     * Creates some state (edge blocks) necessary for the server data processing that doesn't exist in the client.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {Node} body
+     * @return {string}
+     */
     function addLogicNode(objectID, frameID, nodeID, body) {
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(objectID)) {
+        var foundFrame = getFrame(objectID, frameID);
+        if (foundFrame) {
 
-            objects[objectID].frames[frameID].nodes[nodeID] = body;
+            foundFrame.nodes[nodeID] = body;
+            var newNode = foundFrame.nodes[nodeID];
 
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["in0"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["in1"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["in2"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["in3"] = new EdgeBlock();
+            // edge blocks are used to transition data between node links going into the red/yellow/green/blue ports...
+            // ...and the corresponding blocks / block links within the crafting board
+            newNode.blocks["in0"] = new EdgeBlock();
+            newNode.blocks["in1"] = new EdgeBlock();
+            newNode.blocks["in2"] = new EdgeBlock();
+            newNode.blocks["in3"] = new EdgeBlock();
 
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["out0"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["out1"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["out2"] = new EdgeBlock();
-            objects[objectID].frames[frameID].nodes[nodeID].blocks["out3"] = new EdgeBlock();
-            console.log("added tons of nodes ----------");
+            newNode.blocks["out0"] = new EdgeBlock();
+            newNode.blocks["out1"] = new EdgeBlock();
+            newNode.blocks["out2"] = new EdgeBlock();
+            newNode.blocks["out3"] = new EdgeBlock();
 
-            objects[objectID].frames[frameID].nodes[nodeID].type = "logic";
+            newNode.type = "logic";
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            updateStatus = "added";
-            cout("added logic node: " + nodeID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            //	console.log(objects[req.params[0]].nodes[req.params[1]]);
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
 
+            cout("added logic node: " + nodeID);
+            updateStatus = "added";
         }
+
         return updateStatus;
     }
 
@@ -1797,33 +2011,43 @@ function objectWebServer() {
         res.send(deleteLogicNode(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
+    /**
+     * Deletes the specified Logic Node.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {string} lastEditor
+     * @return {string}
+     */
     function deleteLogicNode(objectID, frameID, nodeID, lastEditor) {
-        var fullEntry = objects[objectID].frames[frameID].nodes[nodeID];
 
-        delete objects[objectID].frames[frameID].nodes[nodeID];
-        cout("deleted node: " + nodeID);
+        var updateStatus = "nothing happened";
 
+        var foundFrame = getFrame(objectID, frameID);
+        if (foundFrame) {
+            delete foundFrame.nodes[nodeID];
+            cout("deleted node: " + nodeID);
 
-        //todo check all links as well in object
+            //todo check all links as well in object
+            // Make sure that no links are connected to deleted objects
+            /*  for (var subCheckerKey in  objects[req.params[0]].links) {
 
-        // Make sure that no links are connected to deleted objects
-        /*  for (var subCheckerKey in  objects[req.params[0]].links) {
+                  if (objects[req.params[0]].links[subCheckerKey].nodeA === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectA === req.params[0]) {
+                      delete objects[req.params[0]].links[subCheckerKey];
+                  }
+                  if (objects[req.params[0]].links[subCheckerKey].nodeB === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectB === req.params[0]) {
+                      delete objects[req.params[0]].links[subCheckerKey];
+                  }
+              }*/
 
-              if (objects[req.params[0]].links[subCheckerKey].nodeA === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectA === req.params[0]) {
-                  delete objects[req.params[0]].links[subCheckerKey];
-              }
-              if (objects[req.params[0]].links[subCheckerKey].nodeB === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectB === req.params[0]) {
-                  delete objects[req.params[0]].links[subCheckerKey];
-              }
-          }*/
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
 
-        console.log("deleted Object");
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+            updateStatus = "deleted: " + nodeID + " in frame: " + frameID + " of object: " + objectID;
+        }
 
-        return "deleted: " + nodeID + " in frame: " + frameID + " of object: " + objectID;
+        return updateStatus;
     }
-
 
     webServer.post('/logic/*/*/nodeSize/', function (req, res) {
         changeNodeSize(req.params[0], req.params[0], req.params[1], req.body, function(statusCode, responseContents) {
@@ -1837,43 +2061,43 @@ function objectWebServer() {
         });
     });
 
+    /**
+     * Updates the position and size of a specified node.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} nodeID
+     * @param {{x: number|undefined, y: number|undefined, scale: number|undefined, matrix: Array.<number>|undefined}} body
+     * @param {function} callback
+     */
     function changeNodeSize(objectID, frameID, nodeID, body, callback) {
-        // cout("post 2");
+
         var updateStatus = "nothing happened";
 
         cout("changing Size for :" + objectID + " : " + nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 callback(404, error);
                 return;
             }
 
-            var tempObject = node;
-
             // check that the numbers are valid numbers..
             if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
-
-                // if the object is equal the datapoint id, the item is actually the object it self.
-
-                tempObject.x = body.x;
-                tempObject.y = body.y;
-                tempObject.scale = body.scale;
-                // console.log(req.body);
-                // ask the devices to reload the objects
+                node.x = body.x;
+                node.y = body.y;
+                node.scale = body.scale;
+                updateStatus = "ok";
             }
 
             if (typeof body.matrix === "object") {
-
-                tempObject.matrix = body.matrix;
+                node.matrix = body.matrix;
+                updateStatus = "ok";
             }
 
-            if ((typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") || (typeof body.matrix === "object" )) {
+            // if anything updated, write to disk and broadcast updates to editors
+            if (updateStatus === "ok") {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-                //  utilities.actionSender({reloadObject: {object: thisObject}});
                 utilities.actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
-                updateStatus = "ok";
             }
 
             callback(200, updateStatus);
@@ -1890,20 +2114,22 @@ function objectWebServer() {
         res.json(getLogicBlockList())
     });
 
+    /**
+     * Utility function that traverses all the blockModules and creates a new entry for each.
+     * @return {Object.<string, Block>}
+     */
     function getLogicBlockList() {
 
-        console.log("list");
-
-        //  cout("get 7");
         var blockList = {};
+
         // Create a objects list with all IO-Points code.
         for (var i = 0; i < blockFolderList.length; i++) {
 
-            // make sure that each block contains always all keys.
+            // make sure that each block contains all default property keys.
             blockList[blockFolderList[i]] = new Block();
 
+            // overwrite the properties of that block with those stored in the matching blockModule
             var thisBlock = blockModules[blockFolderList[i]].properties;
-
             for (var key in thisBlock) {
                 blockList[blockFolderList[i]][key] = thisBlock[key];
             }
@@ -1924,7 +2150,7 @@ function objectWebServer() {
 
         console.log('received name for', objectID, frameID, nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -1951,7 +2177,7 @@ function objectWebServer() {
 
         console.log('received icon image for', objectID, frameID, nodeID);
 
-        getNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -2050,6 +2276,12 @@ function objectWebServer() {
         res.send(deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
+    /**
+     * Extracts a nicely structured set of data about the link
+     * @param {Link} fullEntry
+     * @param wasAdded
+     * @return {*}
+     */
     function getLinkData(fullEntry, wasAdded) {
         var linkAddedData = null;
 
@@ -2062,6 +2294,7 @@ function objectWebServer() {
             var linkFrameB = fullEntry["frameB"];
             var linkNodeA = fullEntry["nodeA"];
             var linkNodeB = fullEntry["nodeB"];
+
             var objectAName = fullEntry["namesA"][0];
             var objectBName = fullEntry["namesB"][0];
             var frameAName = fullEntry["namesA"][1];
@@ -2091,43 +2324,85 @@ function objectWebServer() {
         return linkAddedData;
     }
 
+    function forEachObject(callback) {
+        for (var objectKey in objects) {
+            if (!objects.hasOwnProperty(objectKey)) continue;
+            callback(objects[objectKey], objectKey);
+        }
+
+        if (worldObject) {
+            callback(worldObject, worldObject.objectId);
+        }
+    }
+
+    function forEachFrameInObject(object, callback) {
+        for (var frameKey in object.frames) {
+            if (!object.frames.hasOwnProperty(frameKey)) continue;
+            callback(object.frames[frameKey], frameKey);
+        }
+    }
+
+    function forEachNodeInFrame(frame, callback) {
+        for (var nodeKey in frame.nodes) {
+            if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+            callback(frame.nodes[nodeKey], nodeKey);
+        }
+    }
+
+    /**
+     * Deletes a regular link from the frame it begins from.
+     * Also delete the websocket to this link's destination server IP if it was the last link from this server to that one.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {string} editorID
+     */
     function deleteLink(objectKey, frameKey, linkKey, editorID){
 
-        var fullEntry = objects[objectKey].frames[frameKey].links[linkKey]; // TODO: retrieve this in a safe way (everywhere)
-        var destinationIp = knownObjects[fullEntry.objectB];
+        var updateStatus = "nothing happened";
 
-        /////
-        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-        var linkAddedData = getLinkData(fullEntry, false);
-        if (linkAddedData) {
-            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-        }
-        /////
+        var foundFrame = getFrame(objectKey, frameKey);
 
-        delete objects[objectKey].frames[frameKey].links[linkKey];
+        if (foundFrame) {
 
-        cout("deleted link: " + linkKey);
-        // cout(objects[req.params[0]].links);
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+            var foundLink = foundFrame.links[linkKey];
+            var destinationIp = knownObjects[foundLink.objectB];
 
-        var checkIfIpIsUsed = false;
-        for (var objectCheckerKey in objects) {
-            for (var frameCheckerKey in objects[objectCheckerKey].frames) {
-                for (var linkCheckerKey in objects[objectCheckerKey].frames[frameCheckerKey].links) {
-                    if (objects[objectCheckerKey].frames[frameCheckerKey].links[linkCheckerKey].objectB === fullEntry.objectB) {
-                        checkIfIpIsUsed = true;
-                    }
-                }
+            // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+            var linkAddedData = getLinkData(foundLink, false);
+            if (linkAddedData) {
+                hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+                hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
             }
+
+            delete foundFrame.links[linkKey];
+
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+
+            // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+            var checkIfIpIsUsed = false;
+            forEachObject(function(thisObject) {
+                forEachFrameInObject(thisObject, function(thisFrame) {
+                    for (var linkCheckerKey in thisFrame.links) {
+                        if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
+                            checkIfIpIsUsed = true;
+                        }
+                    }
+                });
+            });
+
+            // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+            if (foundLink.objectB !== foundLink.objectA && !checkIfIpIsUsed) {
+                delete socketArray[destinationIp];
+            }
+
+            cout("deleted link: " + linkKey);
+            updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
         }
 
-        if (fullEntry.objectB !== fullEntry.objectA && !checkIfIpIsUsed) {
-            // socketArray.splice(destinationIp, 1);
-            delete socketArray[destinationIp];
-        }
-        return "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
+        return updateStatus;
+
     }
 
     // todo links for programms as well
@@ -2144,67 +2419,59 @@ function objectWebServer() {
         res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
     });
 
+    /**
+     * Creates a link on the frame containing the node that the link starts from.
+     * @param {string} objectID
+     * @param {string} frameID
+     * @param {string} linkID
+     * @param {Link} body
+     */
     function newLink(objectID, frameID, linkID, body) {
-        console.log("new link");
-        console.log("object: " + objectID);
-        console.log("frame: " + frameID);
-        console.log("link: " + linkID);
 
         var updateStatus = "nothing happened";
 
-        for (var objectKey in objects) {
-            console.log(objectKey);
-        }
+        var foundFrame = getFrame(objectID, frameID);
+        if (foundFrame) {
 
-        if (objects.hasOwnProperty(objectID)) {
+            console.log("found frame to add link to");
 
-            var thisObject = objects[objectID];
-            if (thisObject && thisObject.frames.hasOwnProperty(frameID)) {
-                var thisFrame = thisObject.frames[frameID];
-                if (thisFrame) {
+            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
+            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
+            body.loop = (body.objectA === body.objectB &&
+                body.frameA === body.frameB &&
+                body.nodeA === body.nodeB);
 
-                    console.log("found frame to add link to");
+            foundFrame.links[linkID] = body;
 
-                    // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
-                    // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-                    body.loop = (body.objectA === body.objectB &&
-                                 body.frameA === body.frameB &&
-                                 body.nodeA === body.nodeB);
+            if (!body.loop) {
+                cout("added link: " + linkID);
+                // write the object state to the permanent storage.
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-                    thisFrame.links[linkID] = body;
+                // check if there are new connections associated with the new link.
+                socketUpdater();
 
-                    if (!body.loop) {
-                        updateStatus = "added";
-                        cout("added link: " + linkID);
-                        // check if there are new connections associated with the new link.
-                        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                        // write the object state to the permanent storage.
-                        socketUpdater();
-
-                        /////
-                        // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-                        var fullEntry = objects[objectID].frames[frameID].links[linkID]; // TODO: retrieve this in a safe way (everywhere)
-                        var linkAddedData = getLinkData(fullEntry, true);
-                        if (linkAddedData) {
-                            hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-                            hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-                        }
-                        /////
-
-                        // call an action that asks all devices to reload their links, once the links are changed.
-                        utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
-
-                    } else {
-                        updateStatus = "found endless Loop";
-                    }
-
+                // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
+                var newLink = foundFrame.links[linkID];
+                var linkAddedData = getLinkData(newLink, true);
+                if (linkAddedData) {
+                    hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
+                    hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
                 }
+
+                // call an action that asks all devices to reload their links, once the links are changed.
+                utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
+
+                updateStatus = "added";
+            } else {
+                updateStatus = "found endless Loop";
             }
+
         }
+
         return updateStatus;
     }
 
-    // todo change the rest of the code following this methods
     // Add a new node to an object linked to a frame
     webServer.post('/object/:objectKey/frame/:frameKey/node/:nodeKey/addNode', function (req, res) {
         addNodeToFrame(req.params.objectKey, req.params.frameKey, req.params.nodeKey, req, res);
@@ -2214,29 +2481,39 @@ function objectWebServer() {
         addNodeToFrame(req.params.objectKey, req.params.objectKey, req.params.nodeKey, req, res);
     });
 
+    /**
+     * Creates a node on the frame specified frame.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {*} req
+     * @param {*} res
+     * @todo don't pass in req and res, instead callback that triggers status code / err / res
+     */
     function addNodeToFrame(objectKey, frameKey, nodeKey, req, res){
 
-        var node = req.body;
+        var errorMessage = null;
 
-        if (!objects.hasOwnProperty(objectKey)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectKey + ' not found'}).end();
-            return;
+        var foundObject = getObject(objectKey);
+        if (foundObject) {
+            var foundFrame = getFrame(objectKey, frameKey);
+            if (foundFrame) {
+                foundFrame.nodes[nodeKey] = req.body;
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
+            } else {
+                errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
+            }
+        } else {
+            errorMessage = 'Object ' + objectKey + ' not found';
         }
 
-        if (!objects[objectKey].frames.hasOwnProperty(frameKey)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectKey + ' frame '+frameKey+' not found'}).end();
-            return;
+        if (errorMessage) {
+            res.status(404).json({failure: true, error: errorMessage}).end();
+        } else {
+            res.status(200).json({success: 'true'}).end();
         }
-
-        var obj = objects[objectKey].frames[frameKey];
-        obj.nodes[nodeKey] = node;
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
-
-        res.json({success: 'true'}).end();
-    };
+    }
 
     // adding a new lock to an object. *1 is the object *2 is the datapoint id
     // ****************************************************************************************************************
@@ -2249,27 +2526,33 @@ function objectWebServer() {
         res.send(addNodeLock(req.params[0],  req.params[1],  req.params[2],  req.body));
     });
 
-    function addNodeLock (object, frame, node, body) {
+    /**
+     * Sets a lock password on the specified node.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {{lockPassword: string, lockType: string}} body
+     */
+    function addNodeLock (objectKey, frameKey, nodeKey, body) {
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
-
-            var previousLockPassword = objects[object].frames[frame].nodes[node].lockPassword;
-            var newLockPassword = body['lockPassword'];
-            var previousLockType = objects[object].frames[frame].nodes[node].lockType;
-            var newLockType = body['lockType'];
+        var foundNode = getNode(objectKey, frameKey, nodeKey);
+        if (foundNode) {
+            var previousLockPassword = foundNode.lockPassword;
+            var newLockPassword = body.lockPassword;
+            var previousLockType = foundNode.lockType;
+            var newLockType = body.lockType;
 
             var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
                 (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
 
             if (isLockActionAllowed) {
-                objects[object].frames[frame].nodes[node].lockPassword = newLockPassword;
-                objects[object].frames[frame].nodes[node].lockType = newLockType;
+                foundNode.lockPassword = newLockPassword;
+                foundNode.lockType = newLockType;
 
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
-                utilities.actionSender({reloadNode: {object: object, frame: frame, node: node}});
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
                 updateStatus = "added";
 
@@ -2280,12 +2563,14 @@ function objectWebServer() {
                     updateStatus = "not authorized to add";
                 }
             }
+
         }
 
         return updateStatus;
-    };
+    }
 
     // delete a lock. *1 is the object *2 is the datapoint id *3 is the encrypted user id
+    // TODO: add robust security to the "password" field
     // ****************************************************************************************************************
     webServer.delete('/object/*/frame/*/node/*/password/*/deleteLock', function (req, res) {
         res.send(deleteNodeLock(req.params[0],  req.params[1],  req.params[2],  req.params[3]));
@@ -2295,29 +2580,34 @@ function objectWebServer() {
         res.send(deleteNodeLock(req.params[0],  req.params[0],  req.params[1],  req.params[2]));
     });
 
-    function deleteNodeLock(object, frame, node, password){
+    /**
+     * Removes the lock on the specified node if using the correct password.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} nodeKey
+     * @param {string} password
+     */
+    function deleteNodeLock(objectKey, frameKey, nodeKey, password) {
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
+        var foundNode = getNode(objectKey, frameKey, nodeKey);
+        if (foundNode) {
+            if (password === foundNode.lockPassword || (globalVariables.debug && password === "DEBUG")) { // TODO: remove DEBUG mode
+                foundNode.lockPassword = null;
+                foundNode.lockType = null;
 
-            var previousLockPassword = objects[object].frames[frame].nodes[node].lockPassword;
-            var newLockPassword = password;
-
-            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
-                objects[object].frames[frame].nodes[node].lockPassword = null;
-                objects[object].frames[frame].nodes[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
-                utilities.actionSender({reloadNode: {object: object, frame:frame, node: node}});
+                utilities.actionSender({reloadNode: {object: objectKey, frame:frameKey, node: nodeKey}});
 
                 updateStatus = "deleted";
             } else {
                 updateStatus = "not authorized to delete"
             }
         }
+
         return updateStatus;
-    };
+    }
 
     // adding a new lock to an object link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
@@ -2329,28 +2619,33 @@ function objectWebServer() {
         res.send(addLinkLock(req.params[0],  req.params[1],  req.params[2], req.body));
     });
 
-    function addLinkLock(object, frame, link, body){
+    /**
+     * Sets a lock password on the specified link.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {{lockPassword: string, lockType: string}} body
+     */
+    function addLinkLock(objectKey, frameKey, linkKey, body){
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
+        var foundFrame = getFrame(objectKey, frameKey);
+        if (foundFrame) {
+            var foundLink = foundFrame.links[linkKey];
 
-            if (!objects[object].frames.hasOwnProperty(frames)){
-                return "frame not found"
-            }
-
-            var previousLockPassword = objects[object].frames[frame].links[link].lockPassword;
-            var newLockPassword = body['lockPassword'];
-            var previousLockType = objects[object].frames[frame].links[link].lockType;
-            var newLockType = body['lockType'];
+            var previousLockPassword = foundLink.lockPassword;
+            var newLockPassword = body.lockPassword;
+            var previousLockType = foundLink.lockType;
+            var newLockType = body.lockType;
 
             var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
                 (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
 
             if (isLockActionAllowed) {
-                objects[object].frames[frame].links[link].lockPassword = newLockPassword;
-                objects[object].frames[frame].links[link].lockType = newLockType;
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+                foundLink.lockPassword = newLockPassword;
+                foundLink.lockType = newLockType;
 
+                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "added";
@@ -2363,8 +2658,9 @@ function objectWebServer() {
                 }
             }
         }
+
         return updateStatus;
-    };
+    }
 
     // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
     // ****************************************************************************************************************
@@ -2376,19 +2672,25 @@ function objectWebServer() {
         res.send(deleteLinkLock(req.params[0],req.params[1],req.params[2],req.params[3]));
     });
 
-    function deleteLinkLock(object, frame, node, password){
+    /**
+     * Removes the lock on the specified link if using the correct password.
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {string} linkKey
+     * @param {string} password
+     */
+    function deleteLinkLock(objectKey, frameKey, linkKey, password){
 
         var updateStatus = "nothing happened";
 
-        if (objects.hasOwnProperty(object)) {
-            var previousLockPassword = objects[object].frames[frame].links[node].lockPassword;
-            var newLockPassword = password;
+        var foundFrame = getFrame(objectKey, frameKey);
+        if (foundFrame) {
+            var foundLink = foundFrame.links[linkKey];
+            if (password === foundLink.lockPassword || password === "DEBUG") { // TODO: remove DEBUG mode
+                foundLink.lockPassword = null;
+                foundLink.lockType = null;
 
-            if (newLockPassword === previousLockPassword || newLockPassword === "DEBUG") { // TODO: remove DEBUG mode
-                objects[object].frames[frame].links[node].lockPassword = null;
-                objects[object].frames[frame].links[node].lockType = null;
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-
                 utilities.actionSender({reloadLink: {object: object}});
 
                 updateStatus = "deleted";
@@ -2397,9 +2699,8 @@ function objectWebServer() {
             }
         }
 
-      return updateStatus;
-    };
-
+        return updateStatus;
+    }
 
     // Update the publicData of a frame when it gets moved from one object to another
     // ****************************************************************************************************************
@@ -2410,27 +2711,22 @@ function objectWebServer() {
     webServer.delete('/object/:objectID/frame/:frameID/publicData', function (req, res) {
 
         // locate the containing frame in a safe way
-        getFrame(req.params.objectID, req.params.frameID, function(error, object, frame) {
+        getFrameAsync(req.params.objectID, req.params.frameID, function(error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
             }
 
             // reset the publicData of each node
-            for (var nodeKey in frame.nodes) {
-                if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
-                var node = frame.nodes[nodeKey];
-                if (node) {
-                    node.publicData = {};
-                }
-            }
+            forEachNodeInFrame(frame, function(node) {
+                node.publicData = {};
+            });
 
             // save state to object.json
             utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
 
             res.status(200);
             res.json({success: true}).end();
-
         });
     });
 
@@ -2442,7 +2738,7 @@ function objectWebServer() {
         var publicData = req.body.publicData;
 
         // locate the containing frame in a safe way
-        getFrame(req.params.objectID, req.params.frameID, function (error, object, frame) {
+        getFrameAsync(req.params.objectID, req.params.frameID, function (error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -2470,11 +2766,16 @@ function objectWebServer() {
         });
     });
 
+    /**
+     * Upload a video file to the object's metadata folder.
+     * The video is stored in a form, which can be parsed and written to the filesystem.
+     * @todo compress video
+     */
     webServer.post('/object/:id/video/:videoId', function (req, res) {
         var objectKey = req.params.id;
         var videoId = req.params.videoId;
 
-        getObject(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function(error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -2521,14 +2822,14 @@ function objectWebServer() {
                     var frameType = 'videoRecording';
                     var frameKey = objectKey + frameType + videoId;
 
-                    getFrame(objectKey, frameKey, function(error, object, frame) {
+                    getFrameAsync(objectKey, frameKey, function(error, object, frame) {
                         if (error) {
                             console.log('a frame with key ' + frameKey + ' does not exist (yet)');
                             res.status(404).send(err);
                             return;
                         }
 
-                        var ipAddress = objects[objectKey].ip;
+                        var ipAddress = getObject(objectKey).ip;
 
                         // converts filepath from local storage system to public server url
                         // Mac / Unix / Windows compatible now
@@ -2576,18 +2877,24 @@ function objectWebServer() {
      */
 
     webServer.post('/object/:id/saveCommit', function (req, res) {
-        git.saveCommit(req.params.id, objects, function(){
-            res.status(200);
-            res.json({success: true}).end();
-        });
+        var object = getObject(req.params.id);
+        if (object) {
+            git.saveCommit(object, objects, function() {
+                res.status(200);
+                res.json({success: true}).end();
+            });
+        }
     });
 
     webServer.post('/object/:id/resetToLastCommit', function (req, res) {
-        git.resetToLastCommit(req.params.id, objects, function(){
-            res.status(200);
-            res.json({success: true}).end();
-            hardwareAPI.runResetCallbacks(req.params.id);
-        });
+        var object = getObject(req.params.id);
+        if (object) {
+            git.resetToLastCommit(object, objects, function() {
+                res.status(200);
+                res.json({success: true}).end();
+                hardwareAPI.runResetCallbacks(req.params.id);
+            });
+        }
     });
 
     // Handler of new memory uploads
@@ -2599,7 +2906,14 @@ function objectWebServer() {
     //     memoryUpload(req.params.id, req.params.frame, req, res);
     // });
 
-    function memoryUpload(objectID, /*frame,*/ req, res){
+    /**
+     * Upload an image file to the object's metadata folder.
+     * The image is stored in a form, which can be parsed and written to the filesystem.
+     * @param {string} objectID
+     * @param {*} req
+     * @param {*} res
+     */
+    function memoryUpload(objectID, req, res){
 
         if (!objects.hasOwnProperty(objectID)) {
             res.status(404);
@@ -2607,13 +2921,7 @@ function objectWebServer() {
             return;
         }
 
-        // if (!objects[objectID].frames.hasOwnProperty(frame)) {
-        //     res.status(404);
-        //     res.json({failure: true, error: 'Object ' + objId + ' frame '+frame+' not found'}).end();
-        //     return;
-        // }
-
-        var obj = objects[objectID];//.frames[frame];
+        var obj = getObject(objectID);
 
         var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -2654,85 +2962,93 @@ function objectWebServer() {
         });
     }
 
-    // Create a frame for an object
+    // Create a frame for an object. Assigns it a new UUID.
     webServer.post('/object/*/frames/', function (req, res) {
         var frameId = 'frame' + utilities.uuidTime();
         addFrameToObject(req.params[0], frameId, req.body, res);
-
     });
 
+    // Create a frame for an object. Uses its existing UUID
     webServer.post('/object/*/addFrame/', function(req, res) {
         var frame = req.body;
         addFrameToObject(req.params[0], frame.uuid, frame, res);
     });
 
+    /**
+     * Adds a provided frame to the specified object
+     * @param {string} objectKey
+     * @param {string} frameKey
+     * @param {Frame} frame
+     * @param {*} res
+     */
     function addFrameToObject(objectKey, frameKey, frame, res) {
 
-        console.log('added new frame: ' + frameKey);
+        getObjectAsync(objectKey, function(error, object) {
 
-        if (!objects.hasOwnProperty(objectKey)) {
-            res.status(404).json({ failure: true, error: 'Object ' + objectKey + ' not found' }).end();
-            return;
-        }
-
-        var object = objects[objectKey];
-
-        if (!frame.src) {
-            res.status(500).json({ failure: true, error: 'frame must have src' }).end();
-            return;
-        }
-
-        if (!object.frames) {
-            object.frames = {};
-        }
-
-        utilities.createFrameFolder(object.name, frame.name, __dirname, objectsPath, globalVariables.debug, frame.location);
-
-        var newFrame = new Frame();
-        newFrame.objectId = frame.objectId;
-        newFrame.uuid = frameKey;
-        newFrame.name = frame.name;
-        newFrame.visualization = frame.visualization;
-        newFrame.ar = frame.ar;
-        newFrame.screen = frame.screen;
-        newFrame.visible = frame.visible;
-        newFrame.visibleText = frame.visibleText;
-        newFrame.visibleEditing = frame.visibleEditing;
-        newFrame.developer = frame.developer;
-        newFrame.links = frame.links;
-        newFrame.nodes = frame.nodes;
-        newFrame.location = frame.location;
-        newFrame.src = frame.src;
-        newFrame.width = frame.width;
-        newFrame.height = frame.height;
-
-        for(key in newFrame.nodes){
-            if(!frame.publicData) {
-                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-            } else if(Object.keys(frame.publicData).length <= 0) {
-                newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+            if (error) {
+                res.status(404).json(error).end();
+                return;
             }
 
-        }
+            if (!frame.src) {
+                res.status(500).json({ failure: true, error: 'frame must have src' }).end();
+                return;
+            }
 
-        console.log(JSON.stringify(newFrame));
+            if (!object.frames) {
+                object.frames = {};
+            }
 
-        object.frames[frameKey] = newFrame;
+            utilities.createFrameFolder(object.name, frame.name, __dirname, objectsPath, globalVariables.debug, frame.location);
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            var newFrame = new Frame();
+            newFrame.objectId = frame.objectId;
+            newFrame.uuid = frameKey;
+            newFrame.name = frame.name;
+            newFrame.visualization = frame.visualization;
+            newFrame.ar = frame.ar;
+            newFrame.screen = frame.screen;
+            newFrame.visible = frame.visible;
+            newFrame.visibleText = frame.visibleText;
+            newFrame.visibleEditing = frame.visibleEditing;
+            newFrame.developer = frame.developer;
+            newFrame.links = frame.links;
+            newFrame.nodes = frame.nodes;
+            newFrame.location = frame.location;
+            newFrame.src = frame.src;
+            newFrame.width = frame.width;
+            newFrame.height = frame.height;
 
-        utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-        hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+            for(key in newFrame.nodes){
+                if(!frame.publicData) {
+                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                } else if(Object.keys(frame.publicData).length <= 0) {
+                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                }
+            }
 
-        res.json({success: true, frameId: frameKey}).end();
+            object.frames[frameKey] = newFrame;
+
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+
+            // notifies any open screens that a new frame was added
+            hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+
+            res.json({success: true, frameId: frameKey}).end();
+
+        });
     }
 
+    /**
+     * Creates a copy of the frame (happens when you pull an instance from a staticCopy frame)
+     */
     webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
         console.log('making a copy of frame: ' + frameID);
 
-        getFrame(objectID, frameID, function(error, object, frame) {
+        getFrameAsync(objectID, frameID, function(error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -2806,125 +3122,52 @@ function objectWebServer() {
 
     });
 
-    // Update an object's frame
+    /**
+     * Update an object's frame
+     */
     webServer.post('/object/*/frames/*/', function (req, res) {
         var objectId = req.params[0];
         var frameId = req.params[1];
 
-        if (!objects.hasOwnProperty(objectId)) {
-            res.status(404).json({failure: true, error: 'Object ' + objectId + ' not found'}).end();
-            return;
-        }
+        getObjectAsync(objectId, function(error, object) {
 
-        var object = objects[objectId];
-        var frame = req.body;
+            if (error) {
+                res.status(404).json(error).end();
+                return;
+            }
 
-        if (!frame.src) {
-            res.status(500).json({failure: true, error: 'frame must have src'}).end();
-            return;
-        }
+            var frame = req.body;
 
-        if (!object.frames) {
-            object.frames = {};
-        }
+            if (!frame.src) {
+                res.status(500).json({failure: true, error: 'frame must have src'}).end();
+                return;
+            }
 
-        if (!object.frames[frameId]) {
-            object.frames[frameId] = new ObjectFrame(frame.src);
-        }
+            if (!object.frames) {
+                object.frames = {};
+            }
 
-        frame.loaded = false;
-        // Copy over all properties of frame
-        Object.assign(object.frames[frameId], frame);
+            if (!object.frames[frameId]) {
+                object.frames[frameId] = new Frame();
+            }
 
-        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+            frame.loaded = false;
+            // Copy over all properties of frame
+            Object.assign(object.frames[frameId], frame);
 
-        utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
+            utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
-        res.json({success: true}).end();
-    });
+            utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
-    ///object/:objectId/frames/:frameId/sendToScreen
-    // webServer.post('/object/:objectId/frames/:frameId/sendToScreen', function (req, res) {
-    webServer.post('/screen/:objectId/frames/:frameId', function (req, res) {
+            res.json({success: true}).end();
 
-        var objectId = req.params.objectId;
-        var frameId = req.params.frameId;
-
-        console.log('send frame to screen: ' + objectId + ' :: ' + frameId);
-        console.log(req.body.x, req.body.y);
-
-        var object = objects[objectId];
-        var frame = object.frames[frameId];
-
-        frame.screen.x = req.body.x;
-        frame.screen.y = req.body.y;
-
-        console.log(object);
-
-        ////////////////////
-        // make a POST request to the framePalette hardwareInterface, which will create the frame on the screen
-
-        var SCREEN_PORT_MAP = {
-            'framePalette': 3032,
-            'framePalette2': 3033
-        };
-
-        var screenPort = SCREEN_PORT_MAP[object.name];
-
-        console.log('got object port: ', object.name, screenPort);
-
-        if (!screenPort) {
-            res.json({success: false}).end();
-            return;
-        }
-
-        // TODO: get 3032 port from req - needs to be stored in object or frame somewhere
-        var options = { method: 'POST',
-            url: 'http://' + object.ip + ':' + screenPort + '/frame',
-            headers:
-                {   'cache-control': 'no-cache',
-                    'content-type': 'application/json' },
-            body: frame,
-            json: true };
-
-        request(options, function (error, response, body) {
-            if (error) throw new Error(error);
-
-            console.log(body);
         });
 
-        // var options = {
-        //     "method": "POST",
-        //     "hostname": object.ip,
-        //     "port": "3032",
-        //     "path": "/frame",
-        //     "headers": {
-        //         "cache-control": "no-cache"
-        //     }
-        // };
-        //
-        // var request = http.request(options, function (response) {
-        //     var chunks = [];
-        //
-        //     response.on("data", function (chunk) {
-        //         chunks.push(chunk);
-        //     });
-        //
-        //     response.on("end", function () {
-        //         var body = Buffer.concat(chunks);
-        //         console.log(body.toString());
-        //     });
-        // });
-
-        // var body = JSON.stringify(frame);
-        // request.write(body); // JSON.stringify({ type: 'graph' }));
-        // request.end();
-        ////////////////////
-
-        res.json({success: true}).end();
     });
 
-    // delete a frame from an object
+    /**
+     * Delete a frame from an object
+     */
     webServer.delete('/object/:objectId/frames/:frameId/', function (req, res) {
 
         var objectId = req.params.objectId;
@@ -2933,7 +3176,7 @@ function objectWebServer() {
         console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
 
         // Delete frame
-        var object = objects[objectId];
+        var object = getObject(objectId);
         if (!object) {
             res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
             return;
@@ -2953,7 +3196,7 @@ function objectWebServer() {
         // remove the frame directory from the object
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
-        // Delete frame's nodes
+        // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
         var deletedNodes = {};
         for (var nodeId in object.nodes) {
             var node = object.nodes[nodeId];
@@ -2964,11 +3207,10 @@ function objectWebServer() {
         }
 
         // Delete links involving frame's nodes
-        for (var linkObjectId in objects) {
-            var linkObject = objects[linkObjectId];
+        forEachObject(function(linkObject, linkObjectId) {
             var linkObjectHasChanged = false;
 
-            for (var linkId in linkObject.links) {
+            for (var linkId in linkObject.links) { // TODO: this isn't updated for frames either
                 var link = linkObject.links[linkId];
                 if (link.objectA === objectId || link.objectB === objectId) {
                     if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
@@ -2982,31 +3224,50 @@ function objectWebServer() {
                 utilities.writeObjectToFile(objects, linkObjectId, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
             }
-        }
+        });
 
         // write changes to object.json
         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
-
         utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
 
         res.json({success: true}).end();
+    });
+
+    // sets the groupID of the specified frame
+    webServer.post('/object/:objectID/frame/:frameID/group/', function(req, res) {
+
+        var frame = getFrame(req.params.objectID, req.params.frameID);
+        if (frame) {
+            var newGroupID = req.body.group;
+            if (newGroupID !== frame.groupID) {
+                frame.groupID = newGroupID;
+                utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
+                utilities.actionSender({reloadFrame: {object: req.params.objectID, frame: req.params.frameID}, lastEditor: req.body.lastEditor});
+                res.status(200).json({success: true}).end();
+                return;
+            }
+        }
+
+        res.status(404).json({success: false, error: 'Couldn\'t find frame ' + req.params.frameID + ' to set groupID'});
+
     });
 
     // changing the size and position of an item. *1 is the object *2 is the datapoint id
 
     // ****************************************************************************************************************
 
+    // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
 
         webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
             changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function(statusCode, responseContents) {
-                res.status(statusCode).send(responseContents);
+                res.status(statusCode).send({status: responseContents});
             });
         });
 
         webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
             changeSize(req.params.objectID, req.params.frameID, null, req.body, function(statusCode, responseContents) {
-                res.status(statusCode).send(responseContents);
+                res.status(statusCode).send({status: responseContents});
             });
         });
 
@@ -3017,6 +3278,10 @@ function objectWebServer() {
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
 
+        /**
+         * Updates the x, y, scale, and/or matrix for the specified frame or node
+         * @todo this function is a mess, fix it up
+         */
         function changeSize(objectID, frameID, nodeID, body, callback) {
 
             cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
@@ -3040,6 +3305,7 @@ function objectWebServer() {
                 // useful to not overwrite AR position when sending pos or scale from screen.
                 var propertiesToIgnore = [];
 
+                // TODO: this is a hack to fix ar/screen synchronization, fix it
                 // for frames, the position data is inside "ar" or "screen"
                 if (activeVehicle.hasOwnProperty('visualization')) {
                     if (activeVehicle.visualization === "ar") {
@@ -3082,7 +3348,7 @@ function objectWebServer() {
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
-                    updateStatus = "added object";
+                    updateStatus = "updated position and/or scale";
                 }
 
                 callback(200, updateStatus);
@@ -3095,30 +3361,34 @@ function objectWebServer() {
             changeVisualization(req.params[0], req.params[1], req.body, res);
         });
 
+        /**
+         * Sets the visualization to
+         * @param objectKey
+         * @param frameKey
+         * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
+         * @param res
+         */
         function changeVisualization(objectKey, frameKey, body, res) {
             var newVisualization = body.visualization;
             var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
-            var object = objects[objectKey];
-            if (object) {
-                var frame = object.frames[frameKey];
-                if (frame) {
-                    if (oldVisualizationPositionData) {
-                        var oldVisualization = frame.visualization;
-                        frame[oldVisualization] = oldVisualizationPositionData;
-                    }
+            var frame = getFrame(objectKey, frameKey);
+            if (frame) {
 
-                    frame.visualization = newVisualization;
-
-                    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-
-                    res.status(200).json({success: true}).end();
-                    return;
+                // if changing from ar -> screen, optionally provide default values for ar.x, ar.y, so that it'll be there when you switch back
+                // if changing from screen -> ar, sets screen.x, screen.y, etc
+                if (oldVisualizationPositionData) {
+                    var oldVisualization = frame.visualization;
+                    frame[oldVisualization] = oldVisualizationPositionData;
                 }
+                frame.visualization = newVisualization;
+
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+
+                res.status(200).json({success: true}).end();
+            } else {
                 res.status(404).json({failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey}).end();
-                return;
             }
-            res.status(404).json({failure: true, error: 'object ' + objectKey + ' not found'}).end();
         }
     }
 
@@ -3244,8 +3514,9 @@ function objectWebServer() {
         });
 
         webServer.get('/object/*/deactivate/', function (req, res) {
-            objects[req.params[0]].deactivated = true;
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObject(objectID).deactivated = true;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
           //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -3253,12 +3524,9 @@ function objectWebServer() {
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
-            console.log("------------------");
-            console.log(objects);
-            console.log("------------------");
-            console.log(req.params[0]);
-            objects[req.params[0]].deactivated = false;
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObject(objectID).deactivated = false;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             res.send("ok");
            // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -3267,52 +3535,58 @@ function objectWebServer() {
 
 
         webServer.get('/object/*/screen/', function (req, res) {
-            objects[req.params[0]].visualization = "screen";
-            console.log(req.params[0], "screen");
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObject(objectID).visualization = "screen";
+            console.log(objectID, "screen");
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         webServer.get('/object/*/ar/', function (req, res) {
-            objects[req.params[0]].visualization = "ar";
-            console.log(req.params[0], "ar");
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            var objectID = req.params[0];
+            getObject(objectID).visualization = "ar";
+            console.log(objectID, "ar");
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         webServer.get('/object/*/*/reset/', function (req, res) {
-            objects[req.params[0]].frames[req.params[1]].ar = {
+            var objectID = req.params[0];
+            var frameID = req.params[1];
+            var frame = getFrame(objectID, frameID);
+            frame.ar = {
                 x : 0,
                 y : 0,
                 scale : 1,
                 matrix : []
             };
             // position data for the screen visualization mode
-            objects[req.params[0]].frames[req.params[1]].screen = {
+            frame.screen = {
                 x : 0,
                 y : 0,
                 scale : 1,
                 matrix : []
             };
-            utilities.writeObjectToFile(objects, req.params[0], objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
 
         // request a zip-file with the object stored inside. *1 is the object
         // ****************************************************************************************************************
         webServer.get('/object/*/zipBackup/', function (req, res) {
+            var objectID = req.params[0];
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
-            //  cout("get 3");
+
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=' + req.params[0] + '.zip'
+                'Content-disposition': 'attachment; filename=' + objectID + '.zip'
             });
 
             var Archiver = require('archiver');
 
             var zip = Archiver.create('zip', false);
             zip.pipe(res);
-            zip.directory(objectsPath + '/' + req.params[0], req.params[0] + "/");
+            zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
         });
 
@@ -3320,48 +3594,59 @@ function objectWebServer() {
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
-            //  cout("get 7");
-            res.json(objects[req.params.objectID].frames[req.params.frameID].nodes[req.params.nodeID] || {});
+            var node = getNode(req.params.objectID, req.params.frameID, req.params.nodeID);
+            res.json(node || {});
         });
 
         // sends json object for a specific reality frame. 1st * is the object name, 2nd * is the frame name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/frame/*/', function (req, res) {
-            //  cout("get 7");
+            var objectID = req.params[0];
+            var frameID = req.params[1];
 
-            var thisObject = objects[req.params[0]];
-            if (thisObject) {
-                var thisFrame = thisObject.frames[req.params[1]];
-                if (thisFrame) {
-                    res.status(200).json(thisFrame);
-                    return;
-                }
+            var thisFrame = getFrame(objectID, frameID);
+            if (thisFrame) {
+                res.status(200).json(thisFrame);
+                return;
             }
 
-            res.status(404).json({failure: true, error: 'Object: ' + req.params[0] + ', frame: ' + req.params[1] + ' not found'}).end();
+            res.status(404).json({failure: true, error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'}).end();
         });
 
         // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
         webServer.get('/object/*/', function (req, res) {
-            //  cout("get 7");
+            var objectID = req.params[0];
+            var object = getObject(objectID);
 
             console.log("----x---xx----xx--x-----");
-            // console.log(objects[req.params[0]]);
-            res.json(objects[req.params[0]]);
+
+            res.json(object);
+        });
+
+        /**
+         * Gets the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         */
+        webServer.get('/worldObject/', function(req, res) {
+
+            if (typeof worldObject === 'undefined') {
+                worldObject = {};
+            }
+
+            res.json(worldObject);
         });
 
 
         // use allObjects for TCP/IP object discovery
         // ****************************************************************************************************************
-
+        // TODO: BEN - should this return world object too?
         webServer.get('/allObjects/', function (req, res) {
 
             var returnJSON = [];
 
-            for (var thisId in objects) {
+            for (var thisId in objects) { // TODO: possibly change to forEachObject(callback(objectID, object) { ... })
                 if (objects[thisId].deactivated) continue;
 
                 objects[thisId].version = version;
@@ -3975,7 +4260,6 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 /**
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
-
 function socketServer() {
 
     io.on('connection', function (socket) {
@@ -4001,21 +4285,19 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    for(key in frame.nodes){
-                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
 
-                        io.sockets.connected[socket.id].emit('object', JSON.stringify({
-                            object: msgContent.object,
-                            frame: msgContent.frame,
-                            node: key,
-                            data: objects[msgContent.object].frames[msgContent.frame].nodes[key].data
-                        }));//       socket.emit('object', msgToSend);
-                    }
+            var frame = getFrame(msgContent.object, msgContent.frame);
+            if (frame) {
+                for(key in frame.nodes){
+                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                    io.sockets.connected[socket.id].emit('object', JSON.stringify({
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        node: key,
+                        data: frame.nodes[key].data
+                    }));
                 }
             }
 
@@ -4023,7 +4305,7 @@ function socketServer() {
                 object: msgContent.object,
                 frame: msgContent.frame,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
 
         });
 
@@ -4036,7 +4318,7 @@ function socketServer() {
                 thisProtocol = "R0";
             }
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
@@ -4045,14 +4327,11 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    for(key in frame.nodes){
-                        if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                        publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
-                    }
+            var frame = getFrame(msgContent.object, msgContent.frame);
+            if (frame) {
+                for(key in frame.nodes){
+                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
                 }
             }
 
@@ -4060,13 +4339,13 @@ function socketServer() {
                 object: msgContent.object,
                 frame: msgContent.frame,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
             var msgContent = JSON.parse(msg);
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor block: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
@@ -4075,17 +4354,12 @@ function socketServer() {
             }
 
             var publicData = {};
-            var object = objects[msgContent.object];
-            if (object) {
-                var frame = object.frames[msgContent.frame];
-                if (frame) {
-                    var node = frame.nodes[msgContent.logic];
-                    if (node) {
-                        var block = node.blocks[msgContent.block];
-                        if (block) {
-                            publicData = block.publicData;
-                        }
-                    }
+
+            var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
+            if (node) {
+                var block = node.blocks[msgContent.block];
+                if (block) {
+                    publicData = block.publicData;
                 }
             }
 
@@ -4095,7 +4369,7 @@ function socketServer() {
                 node: msgContent.node,
                 block: msgContent.block,
                 publicData: publicData
-            }));//       socket.emit('object', msgToSend);
+            }));
         });
 
 
@@ -4104,8 +4378,6 @@ function socketServer() {
             if (msgContent === null) {
                 msgContent = protocols["R0"].receive(msg);
             }
-
-
 
             if (msgContent !== null) {
                 hardwareAPI.readCall(msgContent.object, msgContent.frame, msgContent.node, msgContent.data);
@@ -4121,32 +4393,21 @@ function socketServer() {
 
         socket.on('object/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
-            // console.log(msg);
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) { //TODO: msg.logic or msg.node ??
-                            if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].publicData !== "undefined") {
 
-                                var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].publicData;
-
-                                for (var key in msg.publicData) {
-                                    thisPublicData[key] = msg.publicData[key];
-                                }
-                            }
-                        }
-                    }
+            var node = getNode(msg.object, msg.frame, msg.node);
+            if (node && msg && typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+                var thisPublicData = node.publicData;
+                for (var key in msg.publicData) {
+                    thisPublicData[key] = msg.publicData[key];
                 }
             }
-
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
-
         });
 
         socket.on('block/setup', function (_msg) {
             var msg = JSON.parse(_msg);
 
-            var node = getNodeFromKey(msg.object, msg.frame, msg.node);
+            var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
                     var thisBlock = node.blocks[msg.block];
@@ -4160,27 +4421,17 @@ function socketServer() {
 
         socket.on('block/publicData', function (_msg) {
             var msg = JSON.parse(_msg);
-            // console.log(msg);
-            if (typeof msg.object !== "undefined" && typeof  msg.frame !== "undefined" && typeof  msg.node !== "undefined" && typeof  msg.block !== "undefined") {
-                if (msg.object in objects) {
-                    if (msg.frame in objects[msg.object].frames) {
-                        if (msg.node in objects[msg.object].frames[msg.frame].nodes) {
-                            if (msg.block in objects[msg.object].frames[msg.frame].nodes[msg.node].blocks) {
-                                if (typeof objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData !== "undefined") {
 
-                                    var thisPublicData = objects[msg.object].frames[msg.frame].nodes[msg.node].blocks[msg.block].publicData;
-
-                                    for (var key in msg.publicData) {
-                                        thisPublicData[key] = msg.publicData[key];
-                                    }
-                                }
-                            }
-                        }
+            var node = getNode(msg.object, msg.frame, msg.node);
+            if (node) {
+                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                    var thisPublicData = node.blocks[msg.block].publicData;
+                    for (var key in msg.publicData) {
+                        thisPublicData[key] = msg.publicData[key];
                     }
                 }
             }
         });
-
 
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
@@ -4192,8 +4443,32 @@ function socketServer() {
             hardwareAPI.screenObjectCall(JSON.parse(msg));
         });
 
-        socket.on('disconnect', function () {
+        socket.on('/subscribe/realityEditorUpdates', function (msg) {
+            var msgContent = JSON.parse(msg);
+            realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
+            console.log('editor ' + msgContent.editorId + ' subscribed to updates');
+            console.log(realityEditorUpdateSocketArray);
+        });
 
+        socket.on('/update', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            for (var socketId in realityEditorUpdateSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    console.log('dont send updates to the editor that triggered it');
+                    continue;
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    thisSocket.emit('/update', JSON.stringify(msgContent));
+                }
+            }
+
+        });
+
+        socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
@@ -4224,20 +4499,87 @@ function sendMessagetoEditors(msgContent) {
     }
 }
 
+/////////
+// UTILITY FUNCTIONS FOR SAFELY GETTING OBJECTS, FRAMES, AND NODES
+/////////
+
+function doesObjectExist(objectKey) {
+    if(globalVariables.worldObject)
+    return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
+    else
+        return objects.hasOwnProperty(objectKey);
+}
+
+function getObject(objectKey) {
+    if (doesObjectExist(objectKey)) {
+        if(globalVariables.worldObject)
+        return objects[objectKey] || worldObject;
+        else
+            return objects[objectKey];
+    }
+    return null;
+}
+
+// invokes callback(objectID, object) for each object (including world object)
+function forEachObject(callback) {
+    for (var objectID in objects) {
+        callback(objectID, objects[objectID]);
+    }
+    if(globalVariables.worldObject) {
+        callback(worldObject.objectId, worldObject);
+    }
+}
+
+function doesFrameExist(objectKey, frameKey) {
+    if (doesObjectExist(objectKey)) {
+        var foundObject = getObject(objectKey);
+        if (foundObject) {
+            return foundObject.frames.hasOwnProperty(frameKey);
+        }
+    }
+    return false;
+}
+
+function getFrame(objectKey, frameKey) {
+    if (doesFrameExist(objectKey, frameKey)) {
+        var foundObject = getObject(objectKey);
+        if (foundObject) {
+            return foundObject.frames[frameKey];
+        }
+    }
+    return null;
+}
+
+function doesNodeExist(objectKey, frameKey, nodeKey) {
+    if (doesFrameExist(objectKey, frameKey)) {
+        var foundFrame = getFrame(objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes.hasOwnProperty(nodeKey);
+        }
+    }
+    return false;
+}
+
+function getNode(objectKey, frameKey, nodeKey) {
+    if (doesNodeExist(objectKey, frameKey, nodeKey)) {
+        var foundFrame = getFrame(objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes[nodeKey];
+        }
+    }
+    return null;
+}
+
 function messagetoSend(msgContent, socketID) {
 
-    if (objects.hasOwnProperty(msgContent.object)) {
-        if (objects[msgContent.object].frames.hasOwnProperty(msgContent.frame)) {
-            if (objects[msgContent.object].frames[msgContent.frame].nodes.hasOwnProperty(msgContent.node)) {
-
-                io.sockets.connected[socketID].emit('object', JSON.stringify({
-                    object: msgContent.object,
-                    frames: msgContent.frame,
-                    node: msgContent.node,
-                    data: objects[msgContent.object].frames[msgContent.frame].nodes[msgContent.node].data
-                }));//       socket.emit('object', msgToSend);
-            }
-        }
+    var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
+    if (node) {
+        io.sockets.connected[socketID].emit('object', JSON.stringify({
+            object: msgContent.object,
+            frames: msgContent.frame,
+            node: msgContent.node,
+            data: node.data
+        }));
     }
 }
 
@@ -4253,71 +4595,6 @@ hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffset
         }));
     }
 });
-
-
-/////////
-// UTILITY FUNCTIONS FOR SAFELY GETTING OBJECTS, FRAMES, AND NODES
-/////////
-
-function doesObjectExist(objectKey) {
-    return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
-}
-
-function getObjectFromKey(objectKey) {
-    if (doesObjectExist(objectKey)) {
-        return objects[objectKey] || worldObject;
-    }
-    return null;
-}
-
-// invokes callback(objectID, object) for each object (including world object)
-function forEachObject(callback) {
-    for (var objectID in objects) {
-        callback(objectID, objects[objectID]);
-    }
-    callback(worldObject.objectId, worldObject);
-}
-
-function doesFrameExist(objectKey, frameKey) {
-    if (doesObjectExist(objectKey)) {
-        var foundObject = getObjectFromKey(objectKey);
-        if (foundObject) {
-            return foundObject.frames.hasOwnProperty(frameKey);
-        }
-    }
-    return false;
-}
-
-function getFrameFromKey(objectKey, frameKey) {
-    if (doesFrameExist(objectKey, frameKey)) {
-        var foundObject = getObjectFromKey(objectKey);
-        if (foundObject) {
-            return foundObject.frames[frameKey];
-        }
-    }
-    return null;
-}
-
-function doesNodeExist(objectKey, frameKey, nodeKey) {
-    if (doesFrameExist(objectKey, frameKey)) {
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
-        if (foundFrame) {
-            return foundFrame.nodes.hasOwnProperty(nodeKey);
-        }
-    }
-    return false;
-}
-
-function getNodeFromKey(objectKey, frameKey, nodeKey) {
-    if (doesNodeExist(objectKey, frameKey, nodeKey)) {
-        var foundFrame = getFrameFromKey(objectKey, frameKey);
-        if (foundFrame) {
-            return foundFrame.nodes[nodeKey];
-        }
-    }
-    return null;
-}
-
 
 /**********************************************************************************************************************
  ******************************************** Engine ******************************************************************
@@ -4355,11 +4632,11 @@ var engine = {
     // once data is processed it will determin where to send it.
     processLinks: function (object, frame, node, thisNode) {
 
-        var linkKey;
+        var thisFrame = getFrame(object, frame);
 
-        for (linkKey in this.objects[object].frames[frame].links) {
+        for (var linkKey in thisFrame.links) {
 
-            this.link = this.objects[object].frames[frame].links[linkKey];
+            this.link = thisFrame.links[linkKey];
 
             if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame ) {
                 if (!checkObjectActivation(this.link.objectB)) {
@@ -4367,41 +4644,37 @@ var engine = {
                 }
                 else {
 
-                    // console.log('testing...');
-                    // console.log(this.link);
+                    if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
-                    if(!(this.link.objectB in this.objects)) return;
-                    if(!(this.link.frameB in this.objects[this.link.objectB].frames)) return;
-                    if(!(this.link.nodeB in this.objects[this.link.objectB].frames[this.link.frameB].nodes)) return;
+                    this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
 
-
-                    this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
-
+                    // if this is a regular node, not a logic node, process normally
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                         this.computeProcessedData(thisNode, this.link, this.internalObjectDestination)
                     }
+                    // otherwise process as logic node by triggering its internal blocks connected to each input
                     else {
                         this.blockKey = "in" + this.link.logicB;
 
-                        if (this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB] && this.blockKey) {
-                            if (this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB].blocks) {
-                                this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB].blocks[this.blockKey];
+                        if (this.internalObjectDestination && this.blockKey) {
+                            if (this.internalObjectDestination.blocks) {
+                                this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
                                 for (var key in thisNode.processedData) {
                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
                                 }
 
-                                this.nextLogic = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
+                                this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
                                 // this needs to be at the beginning;
-                                if (!this.nextLogic.routeBuffer)
+                                if (!this.nextLogic.routeBuffer) {
                                     this.nextLogic.routeBuffer = [0, 0, 0, 0];
+                                }
 
                                 this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
                                 this.blockTrigger(this.link.objectB, this.link.frameB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
                             }
                         }
                     }
-
                 }
             }
         }
@@ -4447,7 +4720,7 @@ var engine = {
             });
         }
     },
-// this is for after a logic block is processed.
+    // this is for after a logic block is processed.
     processBlockLinks: function (object, frame, node, block, index, thisBlock) {
 
         for (var i = 0; i < 4; i++) {
@@ -4464,18 +4737,19 @@ var engine = {
 
                 var linkKey;
 
+                var foundFrame = getFrame(object, frame);
+
                 if (this.router !== null) {
 
-                    for (linkKey in this.objects[object].frames[frame].links) {
-                        this.link = this.objects[object].frames[frame].links[linkKey];
+                    for (linkKey in foundFrame.links) {
+                        this.link = foundFrame.links[linkKey];
 
-                        if (this.link.nodeA === node &&
-                            this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
+                        if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
                             if (!(checkObjectActivation(this.link.objectB))) {
                                 socketSender(object, frame, linkKey, thisBlock.processedData[i]);
                             }
                             else {
-                                this.internalObjectDestination = this.objects[this.link.objectB].frames[this.link.frameB].nodes[this.link.nodeB];
+                                this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                                 if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                                     this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination)
@@ -4485,23 +4759,20 @@ var engine = {
                     }
                 }
                 else {
-                    this.logic = this.objects[object].frames[frame].nodes[node];
+                    this.logic = getNode(object, frame, node);
                     // process all links in the block
                     for (linkKey in this.logic.links) {
-                        if (this.logic.links[linkKey])
-                            if (this.logic.links[linkKey].nodeA === block) {
-                                if (this.logic.links[linkKey].logicA === i) {
+                        if (this.logic.links[linkKey] && this.logic.links[linkKey].nodeA === block && this.logic.links[linkKey].logicA === i) {
 
-                                    this.link = this.logic.links[linkKey];
+                            this.link = this.logic.links[linkKey];
 
-                                    this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
-                                    var key;
-                                    for (key in thisBlock.processedData[i]) {
-                                        this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
-                                    }
-                                    this.blockTrigger(object, frame, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
-                                }
+                            this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
+                            var key;
+                            for (key in thisBlock.processedData[i]) {
+                                this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
                             }
+                            this.blockTrigger(object, frame, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
+                        }
                     }
                 }
             }
@@ -4537,7 +4808,8 @@ var engine = {
  **/
 
 function socketSender(object, frame, link, data) {
-    var thisLink = objects[object].frames[frame].links[link];
+    var foundFrame = getFrame(object, frame);
+    var thisLink = foundFrame.links[link];
 
     var msg = "";
 
@@ -4545,7 +4817,7 @@ function socketSender(object, frame, link, data) {
         if (knownObjects[thisLink.objectB].protocol) {
             var thisProtocol = knownObjects[thisLink.objectB].protocol;
             if (thisProtocol in protocols) {
-                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB,thisLink.nodeB, thisLink.logicB, data);
+                msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB, thisLink.nodeB, thisLink.logicB, data);
             }
             else {
                 msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
@@ -4576,7 +4848,7 @@ function socketSender(object, frame, link, data) {
  * @desc  Watches the connections to all objects that have stored links within the object.
  * If an object is disconnected, the object tries to reconnect on a regular basis.
  **/
-
+// TODO: implement new object lookup functions here
 function socketUpdater() {
     // cout(knownObjects);
     // delete unconnected connections
@@ -4586,38 +4858,37 @@ function socketUpdater() {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
-        for (objectKey in objects) {
-            for(frameKey in objects[objectKey].frames) {
-                for (nodeKey in objects[objectKey].frames[frameKey].links) {
-                    var thisSocket = knownObjects[objects[objectKey].frames[frameKey].links[nodeKey].objectB];
-
+        forEachObject(function(objectKey, object) {
+            for (var frameKey in object.frames) {
+                var frame = getFrame(objectKey, frameKey);
+                for (var linkKey in frame.links) {
+                    var thisSocket = knownObjects[frame.links[linkKey].objectB];
                     if (thisSocket === sockKey) {
                         socketIsUsed = true;
                     }
                 }
             }
-        }
+        });
         if (!socketArray[sockKey].io.connected || !socketIsUsed) {
-            // delete socketArray[sockKey];
+            // delete socketArray[sockKey]; // TODO: why is this removed? can it safely be added again?
         }
     }
-    for (objectKey in objects) {
-        for(frameKey in objects[objectKey].frames){
-        for (nodeKey in objects[objectKey].frames[frameKey].links) {
-            var thisLink = objects[objectKey].frames[frameKey].links[nodeKey];
 
-            if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
+    forEachObject(function(objectKey, object) {
+        for (var frameKey in object.frames) {
+            for (var linkKey in object.frames[frameKey].links) {
+                var thisLink = object.frames[frameKey].links[linkKey];
 
-                var thisIp = knownObjects[thisLink.objectB].ip;
-                //cout("this ip: "+ip);
-                if (!(thisIp in socketArray)) {
-                    // cout("shoudl not show up -----------");
-                    socketArray[thisIp] = new ObjectSockets(socketPort, thisIp);
+                if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
+                    var thisIp = knownObjects[thisLink.objectB].ip;
+                    if (!(thisIp in socketArray)) {
+                        // cout("shoudl not show up -----------");
+                        socketArray[thisIp] = new ObjectSockets(socketPort, thisIp);
+                    }
                 }
             }
         }
-        }
-    }
+    });
 
     socketIndicator();
 
@@ -4676,7 +4947,9 @@ function cout(msg) {
 }
 
 function checkObjectActivation(id) {
-    if (id in objects) {
-        return !objects[id].deactivated
-    } else return false;
+    var object = getObject(id);
+    if (object) {
+        return !object.deactivated;
+    }
+    return false;
 }
