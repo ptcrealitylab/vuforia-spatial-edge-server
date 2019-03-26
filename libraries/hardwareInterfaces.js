@@ -159,7 +159,7 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
     }
 };
 
-exports.writePublicData = function (objectName, frameName, nodeName, data) {
+exports.writePublicData = function (objectName, frameName, nodeName, dataObject, data) {
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     var nodeUuid = objectKey+frameName+nodeName;
     var frameUuid = objectKey+frameName;
@@ -169,9 +169,7 @@ exports.writePublicData = function (objectName, frameName, nodeName, data) {
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
             if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
                 var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].publicData;
-               for(key in data){
-                   thisData[key] = data[key];
-               }
+                thisData[dataObject] = data;
                 //callback is objectEngine in server.js. Notify data has changed.
                   publicDataCallBack(objectKey, frameUuid, nodeUuid);
             }
@@ -528,7 +526,7 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, cb, objValue, globalActionCallback, writeCallback, callbacks) {
+exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
     objects = objExp;
     objectLookup = objLookup;
     globalVariables = glblVars;
@@ -536,11 +534,12 @@ exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, bloc
     objectsPath = objPath;
     nodeTypeModules = types;
     blockModules = blocks;
-    callback = cb;
     Node = objValue;
-    actionCallback = globalActionCallback;
-    writeObjectCallback = writeCallback;
     publicDataCallBack = callbacks.publicData;
+    actionCallback = callbacks.actions;
+    callback = callbacks.data;
+    writeObjectCallback = callbacks.write;
+
 };
 
 exports.reset = function (){
@@ -569,7 +568,24 @@ exports.readCall = function (objectID, frameID, nodeID, data) {
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
+                if (callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("callBack")) {
+                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
+                }
+            }
+        }
+    }
+};
+
+exports.readPublicDataCall = function (objectID, frameID, nodeID,data) {
+    if (callBacks.hasOwnProperty(objectID)) {
+        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
+            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                if(callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("publicCallBack")){
+                    var thisCB = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack;
+                    if(data.hasOwnProperty(thisCB.dataObject)) {
+                        thisCB.cb(data[thisCB.dataObject]);
+                    }
+                }
             }
         }
     }
@@ -648,7 +664,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
 };
 
 
-exports.addPublicDataListener = function (objectName, frameName, nodeName, callBack) {
+exports.addPublicDataListener = function (objectName, frameName, nodeName, dataObject, callBack) {
     var objectID = utilities.readObject(objectLookup, objectName);
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
@@ -672,7 +688,7 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, callB
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
-                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack = callBack;
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack = {cb:callBack,dataObject:dataObject};
 
             }
         }

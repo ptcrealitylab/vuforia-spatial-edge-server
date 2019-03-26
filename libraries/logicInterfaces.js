@@ -26,7 +26,7 @@ this.globalId = null;
 // the checksum should be identical with the checksum for the persistent package files of the reference block design.
 this.checksum = null; // checksum of the files for the program
 // data for logic blocks. depending on the blockSize which one is used.
-this.item = [new Data(), new Data(), new Data(), new Data()];
+this.item = [new server.constructors.Data(), new server.constructors.Data(), new server.constructors.Data(), new server.constructors.Data()];
 // experimental. This are objects for data storage. Maybe it makes sense to store data in the general object
 // this would allow the the packages to be persistent. // todo discuss usability with Ben.
 this.privateData = {};

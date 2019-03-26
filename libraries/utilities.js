@@ -331,7 +331,7 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  **/
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
-        console.log("start saving");
+       // console.log("start saving");
 
         var objectData;
         var outputFilename;
