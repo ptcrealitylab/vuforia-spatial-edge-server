@@ -42,11 +42,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-(function(exports) {
 
-    if (typeof exports.realityObject !== 'undefined') {
-        return;
-    }
 
     var realityObject = {
         node: '',
@@ -54,6 +50,7 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
+    serverIp:"127.0.0,1",
         matrices:{
             modelView : [],
             projection : [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1], // in case it doesn't get set, use identity as placeholder
@@ -699,22 +696,27 @@
 
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on("object/publicData", function (msg) {
+
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.publicData === "undefined")  return;
-                if (typeof thisMsg.publicData[node] === "undefined") return;
-                if (typeof thisMsg.publicData[node][valueName] === "undefined") return;
+                if (thisMsg.node !== realityObject.frame+node) return;
+                if (typeof thisMsg.publicData[valueName] === "undefined") return;
 
-                var isUnset =   (typeof realityObject.publicData[node] === "undefined") ||
-                                (typeof realityObject.publicData[node][valueName] === "undefined");
+                if(typeof realityObject.publicData[node] === "undefined") {
+                    realityObject.publicData[node] = {};
+                }
+
+                if(typeof realityObject.publicData[node][valueName] === "undefined") {
+                    realityObject.publicData[node][valueName]  = {};
+                }
+
 
                 // only trigger the callback if there is new public data, otherwise infinite loop possible
-                if (isUnset || JSON.stringify(thisMsg.publicData[node][valueName]) !== JSON.stringify(realityObject.publicData[node][valueName])) {
+                // todo this is a very time consuming calculation
+                if (JSON.stringify(thisMsg.publicData[valueName]) !== JSON.stringify(realityObject.publicData[node][valueName])) {
 
-                    if(typeof realityObject.publicData[node] === "undefined") {
-                        realityObject.publicData[node] = {};
-                    }
-                    realityObject.publicData[node][valueName] = thisMsg.publicData[node][valueName];
+                    realityObject.publicData[node][valueName] = thisMsg.publicData[valueName];
 
                     parent.postMessage(JSON.stringify(
                         {
@@ -726,7 +728,7 @@
                         }
                     ), "*");
 
-                    callback(thisMsg.publicData[node][valueName]);
+                    callback(thisMsg.publicData[valueName]);
                 }
 
             });
@@ -1055,7 +1057,6 @@
                     {
                         version: realityObject.version,
                         node: realityObject.node,
-                    frame: realityObject.frame,
                         frame: realityObject.frame,
                         object: realityObject.object,
                         videoRecording: false
@@ -1137,10 +1138,4 @@
         return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
     }
 
-    exports.realityObject = realityObject;
-    exports.RealityInterface = RealityInterface;
-    exports.HybridObject = RealityInterface;
-
-    exports.isDesktop = isDesktop;
-
-})(window);
+  var HybridObject = RealityInterface;

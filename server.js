@@ -70,6 +70,8 @@
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
 
+    var server = {};
+
 var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
@@ -768,31 +770,31 @@ for (var i = 0; i < blockFolderList.length; i++) {
 cout("Initialize System: ");
 cout("Loading Hardware interfaces");
 
+
 var hardwareAPICallbacks = {
-    publicData : function (){
-
-
+    publicData : function (objectKey, frameKey, nodeKey){
+       socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
+    },
+    actions : function(thisAction){
+        utilities.actionSender(thisAction);
+    },
+    data : function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules){
+            //these are the calls that come from the objects before they get processed by the object engine.
+            // send the saved value before it is processed
+            sendMessagetoEditors({
+                object: objectKey,
+                frame: frameKey,
+                node: nodeKey,
+                data: data
+            });
+            engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
+    },
+    write : function (objectID){
+        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
-
-    //these are the calls that come from the objects before they get processed by the object engine.
-    // send the saved value before it is processed
-    sendMessagetoEditors({
-        object: objectKey,
-        frame: frameKey,
-        node: nodeKey,
-        data: data
-    });
-    engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
-
-}, Node, function (thisAction) {
-    utilities.actionSender(thisAction);
-}, function(objectID) {
-    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-},
-    hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 cout("Done");
 
@@ -1477,9 +1479,9 @@ function objectWebServer() {
             var objectKey = utilities.readObject(objectLookup,urlArray[0]);
             var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
 
-            scriptNode += '<script> realityObject.object = "'+objectKey+'";</script>';
-            scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>';
-            scriptNode += '<script> realityObject.serverIp = '+ ips.interfaces[ips.activeInterface]; //ip.address()+'</script>';
+            scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
+            scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
+            scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         }
@@ -4260,9 +4262,31 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 /**
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
+
+socketHandler = {};
+
+socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey) {
+    var node = getNode(objectKey, frameKey, nodeKey);
+    if (node) {
+        for (var thisEditor in realityEditorSocketArray) {
+            if (objectKey === realityEditorSocketArray[thisEditor].object) {
+                io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
+                    object: objectKey,
+                    frames: frameKey,
+                    node: nodeKey,
+                    publicData: node.publicData
+                }));
+
+            }
+        }
+    }
+}
+
+
 function socketServer() {
 
     io.on('connection', function (socket) {
+        socketHandler.socket = socket;
 
         console.log('connected to socket ' + socket.id);
 
@@ -4290,7 +4314,9 @@ function socketServer() {
             if (frame) {
                 for(key in frame.nodes){
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    //todo Public data is owned by nodes not frames. A frame can have multiple nodes
+                    // it is more efficiant to call individual public data per node.
+                    //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
 
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,
@@ -4298,14 +4324,17 @@ function socketServer() {
                         node: key,
                         data: frame.nodes[key].data
                     }));
+
+                    io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        node: key,
+                        publicData: publicData
+                    }));
                 }
             }
 
-            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
-                object: msgContent.object,
-                frame: msgContent.frame,
-                publicData: publicData
-            }));
+          
 
         });
 
@@ -4331,15 +4360,20 @@ function socketServer() {
             if (frame) {
                 for(key in frame.nodes){
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
-                    publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    //todo Public data is owned by nodes not frames. A frame can have multiple nodes
+                    // it is more efficiant to call individual public data per node.
+                    //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                    io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        node : key,
+                        publicData: publicData
+                    }));
                 }
             }
 
-            io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
-                object: msgContent.object,
-                frame: msgContent.frame,
-                publicData: publicData
-            }));
+        
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
@@ -4363,6 +4397,7 @@ function socketServer() {
                 }
             }
 
+            // todo for each
             io.sockets.connected[socket.id].emit('block', JSON.stringify({
                 object: msgContent.object,
                 frame: msgContent.frame,
@@ -4401,6 +4436,7 @@ function socketServer() {
                     thisPublicData[key] = msg.publicData[key];
                 }
             }
+            hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
         });
 
@@ -4447,6 +4483,7 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
             realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
             console.log('editor ' + msgContent.editorId + ' subscribed to updates');
+            console.log("WTF");
             console.log(realityEditorUpdateSocketArray);
         });
 
@@ -4455,7 +4492,7 @@ function socketServer() {
 
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
-                    console.log('dont send updates to the editor that triggered it');
+                  //  console.log('dont send updates to the editor that triggered it');
                     continue;
                 }
 

@@ -56,6 +56,27 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
+    server.addNode("stoneTest", "test2", "testNode", "storeData");
+
+    server.addNode("stoneTest", "test2", "testNode", "storeData");
+
+    server.addPublicDataListener("stoneTest", "test2", "testNode","testData",function (data){
+        console.log(data);
+    });
+
+    var b = false;
+
+    setInterval(function(){
+        if(b === false) {
+            b = true;
+            server.writePublicData("stoneTest", "test2", "testNode", "testData","server20");
+        } else {
+            b = false;
+            server.writePublicData("stoneTest", "test2", "testNode", "testData","server30");
+        }
+    }, 1000);
+
+
    // server.addNode("thisDemo", "zero", "distance", "node");
  //   server.addNode("thisDemo", "zero", "motor", "node");
 
