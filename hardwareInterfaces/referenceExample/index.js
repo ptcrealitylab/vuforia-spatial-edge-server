@@ -56,10 +56,9 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
+    //  server.addNode(<object>, <frame>, <node>, <objectType>);
     server.addNode("stoneTest", "test2", "testNode", "storeData");
-
-    server.addNode("stoneTest", "test2", "testNode", "storeData");
-
+    //  server.addPublicDataListener(<object>, <frame>, <node>, <dataObjectName>, <Callback);
     server.addPublicDataListener("stoneTest", "test2", "testNode","testData",function (data){
         console.log(data);
     });
@@ -69,6 +68,7 @@ if (exports.enabled) {
     setInterval(function(){
         if(b === false) {
             b = true;
+            //  server.writePublicData(<object>, <frame>, <node>, <dataObjectName>, <Message>);
             server.writePublicData("stoneTest", "test2", "testNode", "testData","server20");
         } else {
             b = false;
