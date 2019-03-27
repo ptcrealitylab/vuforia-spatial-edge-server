@@ -42,7 +42,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-
+(function(exports) {
+    if (typeof exports.realityObject !== 'undefined') {
+        return;
+    }
 
     var realityObject = {
         node: '',
@@ -1138,4 +1141,10 @@
         return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
     }
 
-  var HybridObject = RealityInterface;
+    exports.realityObject = realityObject;
+    exports.RealityInterface = RealityInterface;
+    exports.HybridObject = RealityInterface;
+
+    exports.isDesktop = isDesktop;
+
+})(window);
