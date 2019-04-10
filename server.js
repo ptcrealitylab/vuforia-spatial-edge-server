@@ -236,6 +236,7 @@ function Objects() {
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
     // This data can be used for interacting with objects for when they are not visible.
     this.memory = {};
+    this.memoryCameraMatrix = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
     // keep a memory of the last commit state of the frames.
@@ -1475,6 +1476,7 @@ function objectWebServer() {
             }
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
+            scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
 
             var objectKey = utilities.readObject(objectLookup,urlArray[0]);
             var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
@@ -2953,6 +2955,8 @@ function objectWebServer() {
         form.parse(req, function (err, fields) {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
+                obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
+
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
             }
