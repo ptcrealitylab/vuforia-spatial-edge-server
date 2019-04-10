@@ -580,11 +580,13 @@ exports.readPublicDataCall = function (objectID, frameID, nodeID,data) {
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                if(callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("publicCallBack")){
-                    var thisCB = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack;
-                    if(data.hasOwnProperty(thisCB.dataObject)) {
-                        thisCB.cb(data[thisCB.dataObject]);
-                    }
+                if(callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("publicCallBacks")){
+                    var allCallbacks = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks;
+                    allCallbacks.forEach(function(thisCB) {
+                        if(data.hasOwnProperty(thisCB.dataObject)) {
+                            thisCB.cb(data[thisCB.dataObject]);
+                        }
+                    });
                 }
             }
         }
@@ -688,8 +690,11 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
-                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack = {cb:callBack,dataObject:dataObject};
+                if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks === 'undefined') {
+                    callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
+                }
 
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push( {cb:callBack, dataObject:dataObject} );
             }
         }
     }
