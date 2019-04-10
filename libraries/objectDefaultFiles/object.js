@@ -1101,7 +1101,11 @@
 
             if (msgContent.reloadPublicData) {
                 console.log('frame reload public data from post message');
-                realityInterface.reloadPublicData();
+
+                for (var i = 0; i < realityInterfaces.length; i++) {
+                    var realityInterface = realityInterfaces[i];
+                    realityInterface.reloadPublicData();
+                }
             }
 
             if (msgContent.event && msgContent.event.pointerId) {
