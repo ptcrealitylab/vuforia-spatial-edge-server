@@ -56,25 +56,65 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    //  server.addNode(<object>, <frame>, <node>, <objectType>);
-    server.addNode("stoneTest", "test2", "testNode", "storeData");
-    //  server.addPublicDataListener(<object>, <frame>, <node>, <dataObjectName>, <Callback);
+  /*
     server.addPublicDataListener("stoneTest", "test2", "testNode","testData",function (data){
         console.log(data);
-    });
+    });*/
 
-    var b = false;
+
+  // Experiments
+    var b = 0;
 
     setInterval(function(){
-        if(b === false) {
-            b = true;
+        if(b === 0) {
+            b = 1;
+            server.addNode("stoneTest", "markerPose", "testNode", "node");
+            // Call move Node after you have created it.
+            // <node>, <frame>, <Node>, x, y, scale, matrix
+            server.moveNode("stoneTest", "markerPose", "testNode", 0,0,0.3,[
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+            // call pushUpdatesToDevice(<object everytime> you want the updates to be drawn);
+            server.pushUpdatesToDevices("stoneTest");
+        } else if(b === 1) {
+            b = 2;
             //  server.writePublicData(<object>, <frame>, <node>, <dataObjectName>, <Message>);
-            server.writePublicData("stoneTest", "test2", "testNode", "testData","server20");
-        } else {
-            b = false;
-            server.writePublicData("stoneTest", "test2", "testNode", "testData","server30");
+           // server.writePublicData("stoneTest", "test2", "testNode", "testData","server20");
+            // <node>, <frame>, <Node>, x, y, scale, matrix
+            server.moveNode("stoneTest", "markerPose", "testNode", 0,0,0.3,[
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                -100, 0, 0, 1
+            ]);
+
+            server.pushUpdatesToDevices("stoneTest");
+
+        } else if(b=== 2){
+            b = 3;
+
+            server.moveNode("stoneTest", "markerPose", "testNode", 0,0,0.3,[
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                100, 0, 0, 1
+            ]);
+            server.pushUpdatesToDevices("stoneTest");
+
+          //  server.writePublicData("stoneTest", "test2", "testNode", "testData","server30");
+        } else if(b===3){
+            server.renameNode("stoneTest", "markerPose", "testNode", "AAAAAAA");
+            server.pushUpdatesToDevices("stoneTest");
+            b = 4;
+        }else if(b===4){
+            server.removeNode("stoneTest", "markerPose", "testNode");
+            server.pushUpdatesToDevices("stoneTest");
+            b = 0;
         }
-    }, 1000);
+    }, 2000);
 
 
    // server.addNode("thisDemo", "zero", "distance", "node");
