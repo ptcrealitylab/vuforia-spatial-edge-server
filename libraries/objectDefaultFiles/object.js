@@ -702,15 +702,30 @@
 
                 var thisMsg = JSON.parse(msg);
 
-                if (typeof thisMsg.publicData === "undefined")  return;
-                if (thisMsg.node !== realityObject.frame+node) return;
-                if (typeof thisMsg.publicData[valueName] === "undefined") return;
+                console.log("------------------   thisMsg: ", thisMsg);
+
+                if (typeof thisMsg.publicData === "undefined"){
+                    console.log("------------------   Entire public data UNDEFINED!");
+                    return;
+                } 
+
+                if (thisMsg.node !== realityObject.frame+node){
+                    console.log("------------------   realityObject.frame+node ??!", realityObject.frame+node);
+                    return;
+                } 
+
+                if (typeof thisMsg.publicData[valueName] === "undefined"){
+                    console.log("------------------   UNDEFINED!");
+                    return;
+                } 
 
                 if(typeof realityObject.publicData[node] === "undefined") {
+                    console.log("------------------   Create empty publicData!");
                     realityObject.publicData[node] = {};
                 }
 
                 if(typeof realityObject.publicData[node][valueName] === "undefined") {
+                    console.log("------------------   Create empty value!");
                     realityObject.publicData[node][valueName]  = {};
                 }
 
@@ -718,6 +733,8 @@
                 // only trigger the callback if there is new public data, otherwise infinite loop possible
                 // todo this is a very time consuming calculation
                 if (JSON.stringify(thisMsg.publicData[valueName]) !== JSON.stringify(realityObject.publicData[node][valueName])) {
+
+                    console.log("------------------   There is new public data!");
 
                     realityObject.publicData[node][valueName] = thisMsg.publicData[valueName];
 

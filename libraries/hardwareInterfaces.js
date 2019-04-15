@@ -160,18 +160,36 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
 };
 
 exports.writePublicData = function (objectName, frameName, nodeName, dataObject, data) {
+    
+    //console.log("---------------------------------- Objects: ", objects);
+
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     var nodeUuid = objectKey+frameName+nodeName;
     var frameUuid = objectKey+frameName;
     //console.log(objectLookup);
-//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
+    //console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
+
+    
+    //console.log("---------------------------------- Object key: ", objectKey);
+
     if (objects.hasOwnProperty(objectKey)) {
+        
+        console.log("**** Objects has objectkey");
+
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
+
+            console.log("**** Frame found in object", frameUuid);
+            
             if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+
+                console.log("**** Node found in frame", nodeUuid);
+
                 var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].publicData;
                 thisData[dataObject] = data;
                 //callback is objectEngine in server.js. Notify data has changed.
-                  publicDataCallBack(objectKey, frameUuid, nodeUuid);
+                publicDataCallBack(objectKey, frameUuid, nodeUuid);
+
+                console.log("this data: ", thisData);
             }
         }
     }
@@ -577,14 +595,27 @@ exports.readCall = function (objectID, frameID, nodeID, data) {
 };
 
 exports.readPublicDataCall = function (objectID, frameID, nodeID,data) {
+
+    console.log("READ PUBLIC DATA CALL");
+
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                if(callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("publicCallBack")){
-                    var thisCB = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack;
-                    if(data.hasOwnProperty(thisCB.dataObject)) {
-                        thisCB.cb(data[thisCB.dataObject]);
-                    }
+                if(callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("publicCallBacks")){
+                    var allCallbacks = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks;
+
+                    //console.log("All Callbacks: ", allCallbacks);
+
+                    allCallbacks.forEach(function(thisCB) {
+
+
+                        if(data.hasOwnProperty(thisCB.dataObject)) {
+
+                            console.log("READ PUBLIC DATA CALL: ", thisCB.dataObject);
+
+                            thisCB.cb(data[thisCB.dataObject]);
+                        }
+                    });
                 }
             }
         }
@@ -665,18 +696,29 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
 
 
 exports.addPublicDataListener = function (objectName, frameName, nodeName, dataObject, callBack) {
+
     var objectID = utilities.readObject(objectLookup, objectName);
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
     cout("Add publicData listener for objectID: " + objectID);
 
+    //console.log("##### Add publicData listener for objectID: " + objectID);
+
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
+
+            //console.log("##### objects have objectid " + objectID);
+
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
 
+                //console.log("##### object has frame " + frameID);
+
                 if (!callBacks.hasOwnProperty(objectID)) {
+
+                    //console.log("##### callbacks: " + objectID);
+
                     callBacks[objectID] = new EmptyObject(objectID);
                 }
 
@@ -688,7 +730,16 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
-                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBack = {cb:callBack,dataObject:dataObject};
+                if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks === 'undefined') {
+
+                    //console.log("UNDEFINED!");
+
+                    callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
+                }
+                
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push({cb:callBack, dataObject:dataObject});
+
+                //console.log("##### callbacks: ", callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks);
 
             }
         }
