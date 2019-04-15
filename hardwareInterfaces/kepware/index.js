@@ -32,7 +32,8 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
-exports.enabled = settings("enabled");
+//exports.enabled = settings("enabled");
+exports.enabled = false;
 
 if (exports.enabled) {
     kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"));
