@@ -160,36 +160,18 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
 };
 
 exports.writePublicData = function (objectName, frameName, nodeName, dataObject, data) {
-    
-    //console.log("---------------------------------- Objects: ", objects);
-
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     var nodeUuid = objectKey+frameName+nodeName;
     var frameUuid = objectKey+frameName;
     //console.log(objectLookup);
-    //console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
-
-    
-    //console.log("---------------------------------- Object key: ", objectKey);
-
+//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
     if (objects.hasOwnProperty(objectKey)) {
-        
-        console.log("**** Objects has objectkey");
-
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
-
-            console.log("**** Frame found in object", frameUuid);
-            
             if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-
-                console.log("**** Node found in frame", nodeUuid);
-
                 var thisData = objects[objectKey].frames[frameUuid].nodes[nodeUuid].publicData;
                 thisData[dataObject] = data;
                 //callback is objectEngine in server.js. Notify data has changed.
-                publicDataCallBack(objectKey, frameUuid, nodeUuid);
-
-                console.log("this data: ", thisData);
+                  publicDataCallBack(objectKey, frameUuid, nodeUuid);
             }
         }
     }
@@ -223,22 +205,6 @@ exports.removeAllNodes = function (objectName, frameName) {
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
-                }
-            }
-        }
-    }
-};
-
-exports.removeNode = function (objectName, frameName, nodeName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
-    var nodeID = objectID + frameName + nodeName;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-        if (objects.hasOwnProperty(objectID)) {
-            if (objects[objectID].hasOwnProperty(frameID)) {
-                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                    console.log("deleting node " + thisNode);
-                    delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
         }
@@ -376,7 +342,7 @@ exports.triggerUDPCallbacks = function(msgContent) {
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    cout("AddIO objectID: " + objectID);
+ //   cout("AddIO objectID: " + objectID);
 
     var nodeUuid = objectID+frameName+nodeName;
     var frameUuid = objectID+frameName;
@@ -384,9 +350,6 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
     //objID = nodeName + objectID;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-
-        cout("I will save: " + objectName + " and " + nodeName + " for frame " + frameName);
-
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = objectName;
@@ -414,6 +377,8 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
                 if (position) {
                     if (position.x !== undefined) thisObject.x = position.x;
                     if (position.y !== undefined) thisObject.y = position.y;
+                    if (position.matrix !== undefined) thisObject.matrix = position.matrix;
+                    if (position.scale !== undefined) thisObject.scale = position.scale;
                 }
                 thisObject.frameSizeX = 100;
                 thisObject.frameSizeY = 100;
@@ -425,7 +390,7 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.objectId = objectID;
             thisObject.text = undefined;
             thisObject.type = type;
-
+            console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
             //console.log('set new node name to ' + thisObject.name);
             //console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
 
@@ -469,7 +434,13 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     objectID = undefined;
 };
 
-exports.moveNode = function (objectName, frameName, nodeName, x, y) {
+exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix) {
+    var thisMatrix = null;
+    var thisScale = null;
+    if (matrix !== undefined) thisMatrix = matrix;
+    if (scale !== undefined) thisScale = scale;
+
+
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
@@ -480,11 +451,39 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     objects[objectID].frames[frameID].nodes[nodeID].x = x;
                     objects[objectID].frames[frameID].nodes[nodeID].y = y;
+                    if(thisMatrix) {
+                        objects[objectID].frames[frameID].nodes[nodeID].matrix = thisMatrix;
+                    }
+                    if(thisScale){
+                        objects[objectID].frames[frameID].nodes[nodeID].scale = thisScale;
+                    }
                     console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
                 }
             }
         }
     }
+};
+
+exports.removeNode = function (objectName, frameName, nodeName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var frameID = objectID + frameName;
+    var nodeID = objectID + frameName + nodeName;
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    console.log("deleted node " + nodeName);
+                    delete objects[objectID].frames[frameID].nodes[nodeID];
+                }
+            }
+        }
+    }
+};
+
+
+exports.pushUpdatesToDevices = function(object){
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    actionCallback({reloadObject: {object: objectID}});
 };
 
 exports.activate = function (objectName) {
@@ -696,29 +695,18 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
 
 
 exports.addPublicDataListener = function (objectName, frameName, nodeName, dataObject, callBack) {
-
     var objectID = utilities.readObject(objectLookup, objectName);
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
     cout("Add publicData listener for objectID: " + objectID);
 
-    //console.log("##### Add publicData listener for objectID: " + objectID);
-
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
-
-            //console.log("##### objects have objectid " + objectID);
-
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
 
-                //console.log("##### object has frame " + frameID);
-
                 if (!callBacks.hasOwnProperty(objectID)) {
-
-                    //console.log("##### callbacks: " + objectID);
-
                     callBacks[objectID] = new EmptyObject(objectID);
                 }
 
@@ -736,7 +724,7 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
 
                     callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
                 }
-                
+
                 callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push({cb:callBack, dataObject:dataObject});
 
                 //console.log("##### callbacks: ", callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks);
