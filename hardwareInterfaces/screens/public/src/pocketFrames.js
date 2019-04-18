@@ -192,15 +192,26 @@ var realityElements = [
             {name: 'value', type: "node"}
         ]
     },
+    // {
+    //     name: 'slider-2d',
+    //     width: 526,
+    //     height: 526,
+    //     nodes: [
+    //         {name: 'valueX', type: "node"},
+    //         {name: 'valueY', type: "node"}
+    //     ]
+    // },
     {
-        name: 'slider-2d',
-        width: 526,
-        height: 526,
+        name: 'memoryFrame',
+        width: 568,
+        height: 320,
         nodes: [
-            {name: 'valueX', type: "node"},
-            {name: 'valueY', type: "node"}
+            // {name: 'hue', type: "node"},
+            // {name: 'saturation', type: "node"},
+            // {name: 'lightness', type: "node"}
+            {name: 'storage', type: "storeData", publicData: {memoryInformation: 'test12345'}}
         ]
-    },
+    }
     // {
     //     name: 'pushMe',
     //     width: 600,

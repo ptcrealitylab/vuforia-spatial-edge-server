@@ -195,6 +195,11 @@
                     realityObject.onload();
                 }
             }
+
+            if (realityObject.sendScreenObject) {
+                reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+            }
+
         } else if (typeof msgContent.logic !== "undefined") {
 
 
@@ -216,6 +221,10 @@
             realityObject.frame = msgContent.frame;
             realityObject.object = msgContent.object;
             realityObject.publicData = msgContent.publicData;
+
+            if (realityObject.sendScreenObject) {
+                reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+            }
         }
 
         if (typeof msgContent.modelViewMatrix !== 'undefined') {
@@ -390,6 +399,24 @@
                     callback(msgContent.acceleration);
                 }
             };
+        };
+
+        /**
+         ************************************************************
+         */
+
+        this.activateScreenObject = function() {
+            realityObject.sendScreenObject = true;
+
+            if (realityObject.object && realityObject.frame) {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    sendScreenObject : true
+                }), '*');
+            }
         };
 
         /**

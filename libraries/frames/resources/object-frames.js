@@ -85,6 +85,7 @@
     // function for resizing the windows.
 
     window.addEventListener('message', function (MSG) {
+        // if (typeof MSG !== "string") { return; }
         var msgContent = JSON.parse(MSG.data);
         for (var key in realityObject.messageCallBacks) {
             realityObject.messageCallBacks[key](msgContent);
@@ -1028,6 +1029,8 @@
     window.onload = function() {
 
         window.addEventListener('message', function (msg) {
+
+            // if (typeof msg !== "string") { return; }
 
             var msgContent = JSON.parse(msg.data);
 

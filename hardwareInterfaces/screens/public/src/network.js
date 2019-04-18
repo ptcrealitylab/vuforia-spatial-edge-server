@@ -5,6 +5,25 @@ realityEditor.network.registerCallback = {};
 realityEditor.network.callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.network');
 
 /**
+ * Broadcasts the JSON message over UDP
+ * @param {object} message
+ */
+realityEditor.network.sendUDPMessage = function(message) {
+    console.log('send UDP message', message);
+    socket.emit('/nativeAPI/sendUDPMessage', message);
+};
+
+/**
+ * Send the message to the hardware interface index.js via a socket
+ * @param {string} socketName
+ * @param {object} message
+ */
+realityEditor.network.sendSocketMessage = function(socketName, message) {
+    console.log('send socket message with name ' + socketName, message);
+    socket.emit(socketName, message);
+};
+
+/**
  * Parse each message from socket.io and perform the appropriate action
  * Messages include:
  * objectName
@@ -119,6 +138,12 @@ realityEditor.network.setupSocketListeners = function() {
 
     socket.on('reloadScreen', function(msg) {
         window.location.reload();
+    });
+
+    socket.on('allObjects', function(msg) {
+        if (!realityEditor.network.isMessageForMe(msg)) return;
+
+        realityEditor.network.callbackHandler.triggerCallbacks('allObjects', msg);
     });
 
 };
@@ -288,6 +313,18 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
             height: parseInt(thisIframe.style.height)
         }
     }), '*');
+
+    if (frame.src === 'memoryFrame') {
+        console.log('CREATING MEMORY FRAME... INITIALIZE WITH CORRECT PUBLIC DATA');
+        thisIframe.contentWindow.postMessage(JSON.stringify({
+            memoryInformation: {
+                objectId: objectKey,
+                ipAddress: 'http://localhost:8080',
+                modelViewMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+                projectionMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
+            }
+        }), '*')
+    }
 
     console.log("on_load");
 };

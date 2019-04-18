@@ -217,6 +217,10 @@ exports.reloadNodeUI = function (objectName) {
     writeObjectCallback(objectID);
 };
 
+exports.getAllObjects = function () {
+    return objects;
+};
+
 exports.getAllFrames = function (objectName) {
     var objectID = utilities.readObject(objectLookup, objectName);
     // var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
