@@ -204,6 +204,11 @@ createNameSpace("realityEditor.pocket");
             // var defaultNodeScale = 0.5;
             addedNode.scale = defaultScale * scaleFactor;
 
+            // {name: 'storage', type: 'storeData', publicData: {data: videoPath}}
+            if (typeof node.publicData !== 'undefined') {
+                addedNode.publicData = node.publicData;
+            }
+
         });
 
         //     // set the eventObject so that the frame can interact with screens as soon as you add it
