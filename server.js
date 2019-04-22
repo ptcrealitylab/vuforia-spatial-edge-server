@@ -3026,10 +3026,15 @@ function objectWebServer() {
             newFrame.height = frame.height;
 
             for(key in newFrame.nodes){
-                if(!frame.publicData) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-                } else if(Object.keys(frame.publicData).length <= 0) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // if(!frame.publicData) {
+                //     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // } else if(Object.keys(frame.publicData).length <= 0) {
+                //     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // }
+
+                // sets initial public data if any values are predefined
+                for (var publicDataKey in frame.nodes[key].publicData) {
+                    newFrame.nodes[key].publicData[publicDataKey] = frame.nodes[key].publicData[publicDataKey];
                 }
             }
 
@@ -4284,7 +4289,7 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
             }
         }
     }
-}
+};
 
 
 function socketServer() {
@@ -4320,7 +4325,10 @@ function socketServer() {
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
-                    //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                    var nodeName = frame.nodes[key].name;
+                    publicData[nodeName] = frame.nodes[key].publicData;
 
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,

@@ -30,62 +30,63 @@
         width: 320
     };
 
-    var objects = {
-        stoneTestrmix4u3rq5ve: loadObject()
-    };
+    var objects = {};
 
-    var rotateX = [
-        1, 0, 0, 0,
-        0, -1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    ];
+    // var objects = {
+    //     stoneTestrmix4u3rq5ve: loadObject()
+    // };
 
-    var correctFinalMatrix = 'matrix3d(1142.2231042876606, 50.32578190734703, -0.321185792723156, -0.32054406350801395, -40.74027157031397, 1156.0583867544315, 0.0944623948221826, 0.09427365895695178, -185.87539875815094, 54.325118634052416, -1.9767189113411823, -1.9727694269484346, -16161.616737392527, -3551.742106967751, 1167.067291186871, 1025.110953637076)';
+    // var rotateX = [
+    //     1, 0, 0, 0,
+    //     0, -1, 0, 0,
+    //     0, 0, 1, 0,
+    //     0, 0, 0, 1
+    // ];
+
+    // var correctFinalMatrix = 'matrix3d(1142.2231042876606, 50.32578190734703, -0.321185792723156, -0.32054406350801395, -40.74027157031397, 1156.0583867544315, 0.0944623948221826, 0.09427365895695178, -185.87539875815094, 54.325118634052416, -1.9767189113411823, -1.9727694269484346, -16161.616737392527, -3551.742106967751, 1167.067291186871, 1025.110953637076)';
 
     var realityInterface = new RealityInterface();
+
+    // var waitingForMemory = true;
+
+    var memoryInformation = null;
 
     realityInterface.onRealityInterfaceLoaded(function() {
         console.log('memory frame loaded for realityObject', realityObject);
 
-        realityInterface.addReadPublicDataListener('storage', 'memoryInformation', function(msg) {
-            console.log('---- MEMORY FRAME RECEIVED PUBLIC DATA ----', msg);
+        realityInterface.addReadPublicDataListener('storage', 'memoryInformation', function(msgContents) {
+            // console.log('---- MEMORY FRAME RECEIVED PUBLIC DATA ----', msg);
+
+            if (!memoryInformation) {
+
+                if (typeof msgContents === 'string') {
+                    msgContents = JSON.parse(msgContents);
+                }
+
+                memoryInformation = msgContents;
+
+                // if (typeof memoryInformation !== 'undefined') {
+                    console.log('---- memory frame received memoryInformation ----', memoryInformation);
+
+                    // waitingForMemory = false;
+
+                    getData('http://' + memoryInformation.objectIP + ':' + httpPort + '/object/' + memoryInformation.objectID, function (object) {
+
+                        // renderOnce(objects.stoneTestrmix4u3rq5ve);
+                        console.log('downloaded object', object);
+                        objects[memoryInformation.objectID] = object;
+
+                        var memoryUrl = 'http://' + memoryInformation.objectIP + ':' + httpPort + '/obj/' + object.name + '/memory/memoryThumbnail.jpg';
+                        document.getElementById('memoryBackground').src = memoryUrl;
+
+                        renderOnce(object);
+
+                    });
+                // }
+
+            }
+
         });
-
-    });
-
-    var waitingForMemory = true;
-    window.addEventListener('message', function(msg) {
-        console.log('---- memory frame received msg ----', msg);
-
-        if (waitingForMemory) {
-
-            var msgContents = msg.data;
-            if (typeof msgContents === 'string') {
-                msgContents = JSON.parse(msgContents);
-            }
-
-            if (typeof msgContents.memoryInformation !== 'undefined') {
-                console.log('---- memory frame received memoryInformation ----', msgContents.memoryInformation);
-
-                waitingForMemory = false;
-
-                getData(msgContents.memoryInformation.ipAddress + '/object/' + msgContents.memoryInformation.objectId, function (msg) {
-
-                    // renderOnce(objects.stoneTestrmix4u3rq5ve);
-                    console.log('downloaded object', msg);
-                    objects[realityObject.object] = msg;
-                    // renderOnce(msg);
-
-                    var memoryUrl = 'http://' + msg.ip + ':8080/obj/' + msg.name + '/memory/memoryThumbnail.jpg';
-                    // var memoryUrl = msgContents.memoryInformation.ipAddress + '/obj/' + msg.name + '/memory/memoryThumbnail'
-
-                    document.getElementById('memoryBackground').src = memoryUrl;
-
-                });
-            }
-
-        }
 
     });
 

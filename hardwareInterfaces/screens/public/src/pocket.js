@@ -151,6 +151,10 @@ createNameSpace("realityEditor.pocket");
         frame.location = 'global';
         frame.src = name;
 
+        // if (frame.src === 'memoryFrame') {
+        //     frame.publicData =
+        // }
+
         // set other properties
         frame.width = frame.frameSizeX;
         frame.height = frame.frameSizeY;

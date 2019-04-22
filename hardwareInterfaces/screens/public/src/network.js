@@ -315,7 +315,7 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
     }), '*');
 
     if (frame.src === 'memoryFrame') {
-        console.log('CREATING MEMORY FRAME... INITIALIZE WITH CORRECT PUBLIC DATA');
+        // console.log('CREATING MEMORY FRAME... INITIALIZE WITH CORRECT PUBLIC DATA');
         thisIframe.contentWindow.postMessage(JSON.stringify({
             memoryInformation: {
                 objectId: objectKey,
@@ -326,7 +326,7 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
         }), '*')
     }
 
-    console.log("on_load");
+    // console.log("on_load");
 };
 
 /**
