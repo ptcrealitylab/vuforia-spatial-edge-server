@@ -38,6 +38,8 @@ createNameSpace("realityEditor.objectDiscovery");
         serverListDomElement.style.top = '20px';
 
         startObjectDiscovery();
+
+        realityEditor.touchEvents.registerCallback('onMouseUp', onMouseUp);
     }
 
     function startObjectDiscovery() {
@@ -120,10 +122,41 @@ createNameSpace("realityEditor.objectDiscovery");
         var objectRowDomElement = createDiv(null, 'objectRow', null, serverContainer.domElement);
         createDiv(null, 'objectName', thisObject.name, objectRowDomElement);
         var memoryToggle = createDiv(null, 'memoryToggle', null, objectRowDomElement);
-        createDiv('hideMemory'+objectKey, 'toggleLabel', 'Hide', memoryToggle);
-        createDiv('showMemory'+objectKey, 'toggleLabel', 'Show', memoryToggle);
+        var showMemoryButton = createDiv('hideMemory'+objectKey, 'toggleLabel', 'Hide', memoryToggle);
+        showMemoryButton.setAttribute('objectID', objectKey);
+        showMemoryButton.addEventListener('pointerup', showMemory);
+        var hideMemoryButton = createDiv('showMemory'+objectKey, 'toggleLabel', 'Show', memoryToggle);
+        hideMemoryButton.setAttribute('objectID', objectKey);
+        hideMemoryButton.addEventListener('pointerup', hideMemory);
     }
 
+    function onMouseUp(params) {
+        var event = params.event;
+    }
+
+    /**
+     * @param {PointerEvent} event
+     */
+    function showMemory(event) {
+        console.log('show: ' + event.target.getAttribute('objectID'));
+    }
+
+    /**
+     * @param {PointerEvent} event
+     */
+    function hideMemory(event) {
+        console.log('hide ' + event.target.getAttribute('objectID'));
+    }
+
+    /**
+     * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
+     * Any parameter can be omitted (pass in null) to ignore those effects
+     * @param {string|null} id
+     * @param {string|Array.<string>|null} classList
+     * @param {string|null} innerHTML
+     * @param {HTMLElement|null} parentToAddTo
+     * @return {HTMLDivElement}
+     */
     function createDiv(id, classList, innerHTML, parentToAddTo) {
         var div = document.createElement('div');
         if (id) {
