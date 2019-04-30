@@ -58,10 +58,8 @@ if (exports.enabled) {
     const authorization = "Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==";
     
     let moveToCoordinateGUID = "";
-
     let dataStatus = {};
-
-    this.missionMoveToGUID = "";
+    let pathData = [];
 
     //console.log("Request Status...");
     requestStatus();
@@ -70,11 +68,8 @@ if (exports.enabled) {
     requestMissions();
 
     //console.log("Adding Node KineticAR");
-    server.addNode("MIR", "kineticAR", "kineticNode1", "storeData");     // Node for the data path
-    server.addNode("MIR", "kineticAR", "kineticNode2", "storeData");     // Node for the data path
-
-    //server.writePublicData("MIR", "kineticAR", "kineticNode", "MIRStatus", "hola");
-
+    server.addNode("MIR", "kineticAR", "kineticNode1", "storeData");     // Node for the data path. Request status listener
+    server.addNode("MIR", "kineticAR", "kineticNode2", "storeData");     // Node for the data path. Send Status
     
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode1","requestMIRStatus",function (data){
 
@@ -85,7 +80,7 @@ if (exports.enabled) {
             restRequest('/status')
             .then(
                 () => {
-                    server.writePublicData("MIR", "kineticAR", "kineticNode2", "MIRStatus", dataStatus)
+                    server.writePublicData("MIR", "kineticAR", "kineticNode1", "MIRStatus", dataStatus)
                 });
         }
         
@@ -103,7 +98,20 @@ if (exports.enabled) {
                         {"input_name":"orientation","value":0}]
         }*/
 
-        const dataObjs = [];
+        // TRYING TO CREATE A NODE
+        server.addNode("MIR", "kineticAR", "checkpoint", "node");
+        // Call move Node after you have created it.
+        // <node>, <frame>, <Node>, x, y, scale, matrix
+        server.moveNode("MIR", "kineticAR", "checkpoint", 0,0,0.3,[
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]);
+        // call pushUpdatesToDevice(<object everytime> you want the updates to be drawn);
+        server.pushUpdatesToDevices("MIR");
+
+        
         for(var i = 0; i < data.path.length; i++) {
         
             let obj = data.path[i];
@@ -119,31 +127,34 @@ if (exports.enabled) {
                 {"input_name":"orientation","value": orientation_value}]
             };
         
-            dataObjs.push(dataObj);
+            pathData.push(dataObj);
         
         }
-        
-        function next(i) {
-           if(i >= dataObjs.length) {
-               return;
-           }
-        
-           const dataObj = dataObjs[i];
-           //console.log("   -   -   -   New mission: ", dataObj);
-        
-           newAddress = restAddress + "/mission_queue";
-        
-        
-           postData(newAddress, dataObj)
-           //.then(res => console.log(res)) // JSON-string from `response.json()` call
-           .then(() => next(i+1))
-           .catch(error => console.error(error));
-        }
-        
-        next(0);
 
+        //followPath();
 
     });
+
+    function followPath(){
+        function next(i) {
+            if(i >= pathData.length) {
+                return;
+            }
+         
+            const dataObj = pathData[i];
+            //console.log("   -   -   -   New mission: ", dataObj);
+         
+            newAddress = restAddress + "/mission_queue";
+         
+         
+            postData(newAddress, dataObj)
+            //.then(res => console.log(res)) // JSON-string from `response.json()` call
+            .then(() => next(i+1))
+            .catch(error => console.error(error));
+         }
+         
+         next(0);
+    }
     
     function requestStatus(){ restRequest('/status'); }
     function requestMissions(){ restRequest('/missions'); }
