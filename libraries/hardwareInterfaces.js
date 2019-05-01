@@ -480,6 +480,23 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
+exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var frameID = objectID + frameName;
+    var nodeID = objectID + frameName + nodeName;
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+
+                    objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
+                    console.log("attached node " + nodeName + " to ground plane");
+                }
+            }
+        }
+    }
+};
 
 exports.pushUpdatesToDevices = function(object){
     var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
