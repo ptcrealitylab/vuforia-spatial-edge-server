@@ -146,6 +146,12 @@ realityEditor.network.setupSocketListeners = function() {
         realityEditor.network.callbackHandler.triggerCallbacks('allObjects', msg);
     });
 
+    socket.on('allObjectsOnOtherServers', function(msg) {
+        if (!realityEditor.network.isMessageForMe(msg)) return;
+
+        realityEditor.network.callbackHandler.triggerCallbacks('allObjectsOnOtherServers', msg);
+    });
+
 };
 
 /**
@@ -232,6 +238,24 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
 };
 
 /**
+ * @type {Array.<{messageName: string, callback: function}>}
+ */
+realityEditor.network.postMessageHandlers = [];
+
+/**
+ * Creates an extendable method for other modules to register callbacks that will be triggered
+ * from onInternalPostMessage events, without creating circular dependencies
+ * @param {string} messageName
+ * @param {function} callback
+ */
+realityEditor.network.addPostMessageHandler = function(messageName, callback) {
+    this.postMessageHandlers.push({
+        messageName: messageName,
+        callback: callback
+    });
+};
+
+/**
  * Set the width and height of each iframe based on its contents, which it automatically posts
  */
 realityEditor.network.onInternalPostMessage = function(e) {
@@ -250,21 +274,30 @@ realityEditor.network.onInternalPostMessage = function(e) {
         }
     }
 
+    // iterates over all registered postMessageHandlers to trigger events in various modules
+    realityEditor.network.postMessageHandlers.forEach(function(messageHandler) {
+        if (typeof msgContent[messageHandler.messageName] !== 'undefined') {
+            messageHandler.callback(msgContent[messageHandler.messageName], msgContent);
+        }
+    });
+
     // console.log(msgContent);
 
     if (msgContent.width && msgContent.height && msgContent.frame) {
         console.log('got width and height', msgContent.width, msgContent.height);
         var activeKey = msgContent.node || msgContent.frame;
         var iFrame = document.getElementById('iframe' + activeKey);
-        iFrame.style.width = msgContent.width + 'px';
-        iFrame.style.height = msgContent.height + 'px';
-        var svg = document.getElementById('svg' + activeKey);
-        svg.style.width = msgContent.width + 'px';
-        svg.style.height = msgContent.height + 'px';
-        realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
-        // var cover = document.getElementById("cover" + activeKey);
-        // cover.style.width = msgContent.width + 'px';
-        // cover.style.height = msgContent.height + 'px';
+        if (iFrame) {
+            iFrame.style.width = msgContent.width + 'px';
+            iFrame.style.height = msgContent.height + 'px';
+            var svg = document.getElementById('svg' + activeKey);
+            svg.style.width = msgContent.width + 'px';
+            svg.style.height = msgContent.height + 'px';
+            realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
+            // var cover = document.getElementById("cover" + activeKey);
+            // cover.style.width = msgContent.width + 'px';
+            // cover.style.height = msgContent.height + 'px';
+        }
     }
 
     if (typeof msgContent.socketReconnect !== 'undefined') {
@@ -326,15 +359,15 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
         }), '*')
     }
 
+    realityEditor.network.callbackHandler.triggerCallbacks('onElementLoad', {objectKey: objectKey, frameKey: frameKey, nodeKey: nodeKey});
+
     // console.log("on_load");
 };
 
 /**
  * Helper function to perform a GET request
  */
-realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, callback) {
-    if (!nodeKey) nodeKey = null;
-    if (!frameKey) frameKey = null;
+realityEditor.network.getData = function(url, callback) {
     var _this = this;
     var req = new XMLHttpRequest();
     try {
@@ -346,11 +379,11 @@ realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, call
                 if (req.status === 200) {
                     // JSON.parse(req.responseText) etc.
                     if (req.responseText)
-                        callback(objectKey, frameKey, nodeKey, JSON.parse(req.responseText));
+                        callback(JSON.parse(req.responseText));
                 } else {
                     // Handle error case
                     console.log("could not load content");
-                    _this.cout("could not load content");
+                    // _this.cout("could not load content");
                 }
             }
         };

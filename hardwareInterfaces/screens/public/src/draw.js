@@ -61,6 +61,10 @@ realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
         addContainer.style.border = 0;
         addContainer.style.position = 'absolute';
 
+        if (vehicle.src === 'memoryFrame') {
+            addContainer.classList.add('visibleMemoryFrame');
+        }
+
         var screenPos;
         if (isFrame) {
             screenPos = getScreenPosFromARPos(vehicle.ar.x, vehicle.ar.y); // TODO: ben is this a bug? should be ar.x, ar.y

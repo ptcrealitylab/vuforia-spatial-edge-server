@@ -296,8 +296,10 @@ realityEditor.utilities.optimizedResize = (function() {
 }());
 
 realityEditor.utilities.calculateScaleFactor = function() {
-    scaleRatio = window.innerWidth / targetSize.width;
-    console.log(scaleRatio);
+    var defaultScaleRatio = 3.2107;
+    // scaleRatio = window.innerWidth / targetSize.width;
+    scaleRatio = defaultScaleRatio; // window.innerWidth / targetSize.width;
+    console.log('scaleRatio', scaleRatio);
 };
 
 realityEditor.utilities.resetScreenFramePositions = function() {
