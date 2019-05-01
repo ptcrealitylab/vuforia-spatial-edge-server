@@ -303,6 +303,7 @@
             this.injectPostMessage();
         } else {
             this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
+            this.sendResetNodes = makeSendStub('sendResetNodes');
             this.sendCreateNode = makeSendStub('sendCreateNode');
             this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
             this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
@@ -841,13 +842,29 @@
             }), '*');
         };
 
-        this.sendCreateNode = function (name) {
+        this.sendResetNodes = function () {
+            //removes all nodes from the frame
             parent.postMessage(JSON.stringify({
                 version: realityObject.version,
                 node: realityObject.node,
                 frame: realityObject.frame,
                 object: realityObject.object,
-                createNode: {name: name}
+                resetNodes: true
+            }), '*');
+        };
+
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane) {
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                createNode: {
+                    name: name,
+                    x: x,
+                    y: y,
+                    attachToGroundPlane: attachToGroundPlane
+                }
             }), '*');
         };
 
