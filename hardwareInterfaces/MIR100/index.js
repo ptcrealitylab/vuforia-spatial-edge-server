@@ -45,13 +45,16 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
+const fetch = require('node-fetch');
+const { WebsocketInterface } = require('./websocketInterface');
+
 exports.enabled = true;
 
 if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    const fetch = require('node-fetch');
+    const websocket = new WebSocketInterface();
 
     // MIR100 REST API INFO
     const restAddress = "http://mir.com/api/v2.0.0";
@@ -111,7 +114,7 @@ if (exports.enabled) {
         // call pushUpdatesToDevice(<object everytime> you want the updates to be drawn);
         server.pushUpdatesToDevices("MIR");
 
-        
+
         for(var i = 0; i < data.path.length; i++) {
         
             let obj = data.path[i];
@@ -202,8 +205,6 @@ if (exports.enabled) {
             
             console.log("   -   -   -   ROBOT POS: ", dataStatus);
         }
-        
-        
     }
 
     // Example GET method implementation:
