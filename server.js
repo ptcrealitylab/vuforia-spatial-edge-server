@@ -237,6 +237,7 @@ function Objects() {
     // This data can be used for interacting with objects for when they are not visible.
     this.memory = {};
     this.memoryCameraMatrix = {};
+    this.memoryProjectionMatrix = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
     // keep a memory of the last commit state of the frames.
@@ -795,7 +796,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, knownObjects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 cout("Done");
 
@@ -2956,6 +2957,7 @@ function objectWebServer() {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
                 obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
+                obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});

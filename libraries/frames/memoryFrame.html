@@ -13,6 +13,19 @@
             width: 568px;
             height: 320px;
         }
+
+        #memoryErrorMessage {
+            width: 568px;
+            height: 320px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: black;
+            text-align: center;
+            /*line-height: 320px;*/
+            font-size: 32px;
+            padding-top: 50px;
+        }
     </style>
 </head>
 <body>
@@ -31,6 +44,9 @@
     };
 
     var objects = {};
+    var thisObject = null;
+
+    var guiState = 'ui';
 
     // var objects = {
     //     stoneTestrmix4u3rq5ve: loadObject()
@@ -50,9 +66,56 @@
     // var waitingForMemory = true;
 
     var memoryInformation = null;
+    var errorMessage = null;
+
+    window.addEventListener('message', function(msg) {
+        // console.log('memory frame received message', msg);
+        if (typeof msg.data === 'string') {
+            var msgData = JSON.parse(msg.data);
+
+            if (typeof msgData.guiState !== 'undefined') {
+                console.log('new memory gui state = ' + msgData.guiState);
+                if (guiState !== msgData.guiState) {
+                    guiState = msgData.guiState;
+                    if (thisObject) {
+                        renderOnce(thisObject, guiState);
+                    }
+                }
+            }
+
+            // if (typeof msgData.getNodesAndLinks !== 'undefined') {
+            //     postNodesAndLinksToParent();
+            // }
+
+        }
+    });
+
+    function postNodesAndLinksToParent() {
+        var nodePositions = calculateNodePositions();
+        var links = getLinks();
+        parent.postMessage(JSON.stringify({
+            memoryMessage: {
+                objectID: thisObject.objectId,
+                nodes: nodePositions,
+                links: links
+            }
+        }), '*');
+    }
+
+    function createPseudonodeContainer(frame) {
+        if (frame.src !== 'memoryFrame') {
+            return; // don't need to do this for non- memory frames
+        }
+        var frameContainer = document.getElementById('object' + frame.uuid);
+        var pseudonodeContainer = createDiv(null, 'pseudonodeContainer', null, frameContainer);
+
+
+    }
 
     realityInterface.onRealityInterfaceLoaded(function() {
         console.log('memory frame loaded for realityObject', realityObject);
+
+        realityInterface.setMoveDelay(10);
 
         realityInterface.addReadPublicDataListener('storage', 'memoryInformation', function(msgContents) {
             // console.log('---- MEMORY FRAME RECEIVED PUBLIC DATA ----', msg);
@@ -65,6 +128,11 @@
 
                 memoryInformation = msgContents;
 
+                if (errorMessage) {
+                    errorMessage.parentElement.removeChild(errorMessage);
+                    errorMessage = null;
+                }
+
                 // if (typeof memoryInformation !== 'undefined') {
                     console.log('---- memory frame received memoryInformation ----', memoryInformation);
 
@@ -74,12 +142,35 @@
 
                         // renderOnce(objects.stoneTestrmix4u3rq5ve);
                         console.log('downloaded object', object);
-                        objects[memoryInformation.objectID] = object;
 
-                        var memoryUrl = 'http://' + memoryInformation.objectIP + ':' + httpPort + '/obj/' + object.name + '/memory/memoryThumbnail.jpg';
-                        document.getElementById('memoryBackground').src = memoryUrl;
+                        var isBackwardCompatibleMemory = typeof object.memory.matrix !== 'undefined';
 
-                        renderOnce(object);
+                        if ((isBackwardCompatibleMemory && Object.keys(object.memory.matrix).length === 16) ||
+                            !isBackwardCompatibleMemory && Object.keys(object.memory).length === 16) {
+
+                            console.log('successfully loaded memory for object ' + memoryInformation.objectID);
+
+                            thisObject = object;
+                            objects[memoryInformation.objectID] = object; // TODO: not actually necessary right now to use objects dictionary in this iframe
+
+                            var memoryUrl = 'http://' + memoryInformation.objectIP + ':' + httpPort + '/obj/' + object.name + '/memory/memoryThumbnail.jpg';
+                            document.getElementById('memoryBackground').src = memoryUrl;
+
+                            renderOnce(object, guiState);
+
+                        } else {
+                            // failed if can't find a 4x4 matrix in object.memory or object.memory.matrix
+
+                            console.log('failed loading memory for object ' + memoryInformation.objectID);
+
+                            memoryInformation = null; // reset so it can try to download again later
+
+                            errorMessage = document.createElement('div');
+                            errorMessage.id = 'memoryErrorMessage';
+                            errorMessage.innerHTML = 'Memory for object<br>' + object.name + '<br>doesn\'t exist.<br><br>Please create one and try again.';
+                            document.body.appendChild(errorMessage);
+
+                        }
 
                     });
                 // }
@@ -104,7 +195,7 @@
                     } else {
                         // Handle error case
                         console.log("could not load content");
-                        _this.cout("could not load content");
+                        // _this.cout("could not load content");
                     }
                 }
             };
@@ -115,11 +206,22 @@
         }
     }
 
-    function renderOnce(object) {
 
-        var visibleObjectMatrix = object.memory;
-        var correctedCameraMatrix = object.memoryCameraMatrix;
-        var projectionMatrix = getProjectionMatrix();
+    /**
+     * @param {Object} object
+     * @param {string} guiState
+     */
+    function renderOnce(object, guiState) {
+
+        var visibleObjectMatrix = object.memory || newIdentityMatrix();
+
+        // backwards compatibility with old memory structure
+        if (typeof object.memory.matrix !== 'undefined' && Object.keys(object.memory.matrix).length === 16) {
+            visibleObjectMatrix = object.memory.matrix;
+        }
+
+        var correctedCameraMatrix = object.memoryCameraMatrix || newIdentityMatrix();
+        var projectionMatrix = object.memoryProjectionMatrix || getProjectionMatrix(); //getProjectionMatrix();
 
         var activeObjectMatrix = [];
         var modelViewMatrix = [];
@@ -134,38 +236,153 @@
         for (var frameKey in object.frames) {
             var activeFrame = object.frames[frameKey];
 
-            // if a DOM element hasn't been added for this frame yet, add it and load the correct src into an iframe
-            var frameUrl = "http://" + object.ip + ":" + httpPort + "/obj/" + object.name + "/frames/" + activeFrame.name + "/";
+            // for now, don't recursively render memoryFrames
             if (activeFrame.src === 'memoryFrame') { continue; }
-            addElement(frameUrl, object.objectId, frameKey, null, 'ui', activeFrame);
 
-            console.log(globalDOMCache['object' + frameKey]);
+            if (guiState === 'ui') {
 
-            var positionData = activeFrame.ar;
-            var finalOffsetX = positionData.x;
-            var finalOffsetY = positionData.y;
-            var finalScale = positionData.scale;
+                // TODO: add some CSS to all 'nodexxxx' divs to hide them entirely
+                hideNodes();
+                unhideFrames();
 
-            var repositionMatrix = [
-                finalScale, 0, 0, 0,
-                0, finalScale, 0, 0,
-                0, 0, 1, 0,
-                finalOffsetX, finalOffsetY, 0, 1
-            ];
+                // if a DOM element hasn't been added for this frame yet, add it and load the correct src into an iframe
+                if (!globalDOMCache['object' + frameKey]) {
+                    var frameUrl = "http://" + object.ip + ":" + httpPort + "/obj/" + object.name + "/frames/" + activeFrame.name + "/";
+                    addElement(frameUrl, object.objectId, frameKey, null, 'ui', activeFrame);
+                }
 
-            if (!positionData.matrix || positionData.matrix.length !== 16) {
-                positionData.matrix = newIdentityMatrix();
+                console.log(globalDOMCache['object' + frameKey]);
+
+                var positionData = activeFrame.ar;
+                var finalOffsetX = positionData.x;
+                var finalOffsetY = positionData.y;
+                var finalScale = positionData.scale;
+
+                var repositionMatrix = [
+                    finalScale, 0, 0, 0,
+                    0, finalScale, 0, 0,
+                    0, 0, 1, 0,
+                    finalOffsetX, finalOffsetY, 0, 1
+                ];
+
+                if (!positionData.matrix || positionData.matrix.length !== 16) {
+                    positionData.matrix = newIdentityMatrix();
+                }
+
+                var framePositionMatrix = [];
+                var finalMatrix = [];
+                multiplyMatrix(positionData.matrix, modelViewProjectionMatrix, framePositionMatrix);
+                multiplyMatrix(repositionMatrix, framePositionMatrix, finalMatrix);
+
+                globalDOMCache['object' + frameKey].style.transform = 'matrix3d(' + finalMatrix.toString() + ')';
+
+            } else if (guiState === 'node') {
+
+                // TODO: add some CSS to all 'framexxxx' divs to make them semi-transparent
+                hideFrames();
+                unhideNodes();
+
+                for (var nodeKey in activeFrame.nodes) {
+
+                    var activeNode = activeFrame.nodes[nodeKey];
+
+                    // if a DOM element hasn't been added for this node yet, add it and load the correct src into an iframe
+                    if (!globalDOMCache['object' + nodeKey]) {
+
+                        var nodeUrl = "http://" + object.ip + ":" + httpPort + "/nodes/" + activeNode.type + "/index.html";
+                        addElement(nodeUrl, object.objectId, frameKey, nodeKey, activeNode.type, activeNode);
+                    }
+
+                    console.log(globalDOMCache['object' + nodeKey]);
+
+                    var positionData = activeFrame.ar;
+                    var finalOffsetX = positionData.x + activeNode.x;
+                    var finalOffsetY = positionData.y + activeNode.y;
+                    var finalScale = positionData.scale * activeNode.scale;
+
+                    var repositionMatrix = [
+                        finalScale, 0, 0, 0,
+                        0, finalScale, 0, 0,
+                        0, 0, 1, 0,
+                        finalOffsetX, finalOffsetY, 0, 1
+                    ];
+
+                    if (!positionData.matrix || positionData.matrix.length !== 16) {
+                        positionData.matrix = newIdentityMatrix();
+                    }
+
+                    var framePositionMatrix = [];
+                    var finalMatrix = [];
+                    multiplyMatrix(positionData.matrix, modelViewProjectionMatrix, framePositionMatrix);
+                    multiplyMatrix(repositionMatrix, framePositionMatrix, finalMatrix);
+
+                    globalDOMCache['object' + nodeKey].style.transform = 'matrix3d(' + finalMatrix.toString() + ')';
+
+                }
+
             }
-
-            var framePositionMatrix = [];
-            var finalMatrix = [];
-            multiplyMatrix(positionData.matrix, modelViewProjectionMatrix, framePositionMatrix);
-            multiplyMatrix(repositionMatrix, framePositionMatrix, finalMatrix);
-
-            globalDOMCache['object' + frameKey].style.transform = 'matrix3d(' + finalMatrix.toString() + ')';
 
         }
 
+        if (guiState === 'node') {
+            postNodesAndLinksToParent();
+        }
+
+    }
+
+    function calculateNodePositions() {
+        var positions = {};
+        var allNodeDivs = [].slice.call(document.getElementById('GUI').querySelectorAll('.nodeContainer'));
+        allNodeDivs.forEach(function(nodeContainerDiv) {
+            var rect = nodeContainerDiv.getClientRects()[0];
+            var centerPosition = {
+                x: rect.x + rect.width/2,
+                y: rect.y + rect.height/2
+            };
+            centerPosition.percentX = centerPosition.x / window.innerWidth;
+            centerPosition.percentY = centerPosition.y / window.innerHeight;
+            positions[nodeContainerDiv.id] = centerPosition;
+        });
+        return positions;
+    }
+
+    function getLinks() {
+        var allLinks = {};
+        for (var frameKey in thisObject.frames) {
+            var thisFrame = thisObject.frames[frameKey];
+            for (var linkKey in thisFrame.links) {
+                allLinks[linkKey] = thisFrame.links[linkKey];
+            }
+        }
+        return allLinks;
+    }
+
+    function hideFrames() {
+        var allFrameDivs = [].slice.call(document.getElementById('GUI').querySelectorAll('.frameContainer'));
+        allFrameDivs.forEach(function(frameContainerDiv) {
+            frameContainerDiv.classList.add('hiddenFrame');
+        });
+    }
+
+    function unhideFrames() {
+        var allFrameDivs = [].slice.call(document.getElementById('GUI').querySelectorAll('.frameContainer'));
+        allFrameDivs.forEach(function(frameContainerDiv) {
+            frameContainerDiv.classList.remove('hiddenFrame');
+        });
+    }
+
+    function hideNodes() {
+        var allNodeDivs = [].slice.call(document.getElementById('GUI').querySelectorAll('.nodeContainer'));
+        allNodeDivs.forEach(function(nodeContainerDiv) {
+            nodeContainerDiv.classList.add('hiddenNode');
+        });
+    }
+
+    function unhideNodes() {
+        var allNodeDivs = [].slice.call(document.getElementById('GUI').querySelectorAll('.nodeContainer'));
+        allNodeDivs.forEach(function(nodeContainerDiv) {
+            nodeContainerDiv.classList.remove('hiddenNode');
+        });
     }
 
     /**
@@ -213,7 +430,7 @@
             activeVehicle.visibleEditing = false;
 
             // determine if the frame should be loaded locally or from the server (by default thisUrl points to server)
-            if (isFrameElement && activeVehicle.location === 'global') {
+            if (/*isFrameElement &&*/ activeVehicle.location === 'global') {
                 // thisUrl = 'frames/' + activeVehicle.src + '.html'; // loads the frame locally from the /frames/ directory
                 if (isFrameElement) {
                     thisUrl = 'http://' + objects[objectKey].ip + ':' + httpPort + '/frames/' + activeVehicle.src + '.html';
@@ -225,7 +442,7 @@
             // Create DOM elements for everything associated with this frame/node
             var domElements = createSubElements(thisUrl, objectKey, frameKey, nodeKey, activeVehicle);
             var addContainer = domElements.addContainer;
-            addContainer.style.border = '5px solid red';
+            // addContainer.style.border = '5px solid red';
             var addIframe = domElements.addIframe;
             var addOverlay = domElements.addOverlay;
             var addSVG = domElements.addSVG;
@@ -288,11 +505,11 @@
         addContainer.className = "main";
         addContainer.style.width = globalStates.height + "px";
         addContainer.style.height = globalStates.width + "px";
-        // if (!!nodeKey) {
-        //     addContainer.classList.add('hiddenNodeContainer');
-        // } else {
-        //     addContainer.classList.add('hiddenFrameContainer');
-        // }
+        if (!!nodeKey) { // if this is a node
+            addContainer.classList.add('nodeContainer');
+        } else {
+            addContainer.classList.add('frameContainer');
+        }
         addContainer.style.border = 0;
         addContainer.classList.add('ignorePointerEvents'); // don't let invisible background from container intercept touches
 
@@ -353,6 +570,59 @@
         };
     };
 
+    /**
+     * Creates the DOM element for a Logic Node
+     * @param {Frame|Node} activeVehicle
+     * @param {string} activeKey
+     * @return {HTMLDivElement}
+     */
+    function createLogicElement(activeVehicle, activeKey) {
+        var size = 200;
+        var addLogic = document.createElement('div');
+        addLogic.id = "logic" + activeKey;
+        addLogic.className = "mainEditing";
+        addLogic.style.width = size + "px";
+        addLogic.style.height = size + "px";
+        addLogic.style.left = 0; //((activeVehicle.frameSizeX - size) / 2) + "px";
+        addLogic.style.top = 0; //((activeVehicle.frameSizeY - size) / 2) + "px";
+        addLogic.style.visibility = "hidden";
+
+        var svgContainer = document.createElementNS('http://www.w3.org/2000/svg', "svg");
+        svgContainer.setAttributeNS(null, "viewBox", "0 0 100 100");
+
+        var svgElement = [];
+        svgElement.push(document.createElementNS("http://www.w3.org/2000/svg", "path"));
+        svgElement[0].setAttributeNS(null, "fill", "#00ffff");
+        svgElement[0].setAttributeNS(null, "d", "M50,0V50H0V30A30,30,0,0,1,30,0Z");
+        svgElement.push(document.createElementNS("http://www.w3.org/2000/svg", "path"));
+        svgElement[1].setAttributeNS(null, "fill", "#00ff00");
+        svgElement[1].setAttributeNS(null, "d", "M100,30V50H50V0H70A30,30,0,0,1,100,30Z");
+        svgElement.push(document.createElementNS("http://www.w3.org/2000/svg", "path"));
+        svgElement[2].setAttributeNS(null, "fill", "#ffff00");
+        svgElement[2].setAttributeNS(null, "d", "M100,50V70a30,30,0,0,1-30,30H50V50Z");
+        svgElement.push(document.createElementNS("http://www.w3.org/2000/svg", "path"));
+        svgElement[3].setAttributeNS(null, "fill", "#ff007c");
+        svgElement[3].setAttributeNS(null, "d", "M50,50v50H30A30,30,0,0,1,0,70V50Z");
+
+        for (var i = 0; i < svgElement.length; i++) {
+            svgContainer.appendChild(svgElement[i]);
+            svgElement[i].number = i;
+            // svgElement[i].addEventListener('pointerenter', function () {
+            //     globalProgram.logicSelector = this.number;
+            //
+            //     if (globalProgram.nodeA === activeKey)
+            //         globalProgram.logicA = this.number;
+            //     else
+            //         globalProgram.logicB = this.number;
+            //
+            //     console.log(globalProgram.logicSelector);
+            // });
+            addLogic.appendChild(svgContainer);
+        }
+
+        return addLogic;
+    };
+
     function onElementLoad(objectKey, frameKey, nodeKey) {
         console.log('loaded', objectKey, frameKey, nodeKey);
 
@@ -361,6 +631,12 @@
         var activeKey = nodeKey || frameKey;
         globalDOMCache['iframe' + activeKey].style.visibility = 'visible';
         globalDOMCache[activeKey].style.visibility = 'visible';
+
+        if (nodeKey && guiState !== 'node') {
+            globalDOMCache['object' + nodeKey].classList.add('hiddenNode');
+        } else if (!nodeKey && guiState !== 'ui') {
+            globalDOMCache['object' + frameKey].classList.add('hiddenFrame');
+        }
 
         // realityEditor.gui.ar.draw.notLoading = false;
         //

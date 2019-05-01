@@ -383,6 +383,10 @@ body, html {
     pointer-events: none;
 }
 
+.visibleMemoryFrame {
+    opacity: 1.0 !important;
+}
+
 .hiddenNode {
     display: none !important;
 }

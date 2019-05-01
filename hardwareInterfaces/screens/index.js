@@ -142,6 +142,9 @@ if (exports.enabled) {
             socket.on('getAllObjects', function() {
                 var objects = server.getAllObjects();
                 socket.emit('allObjects', objects);
+
+                var objectsOnOtherServers = server.getKnownObjects();
+                socket.emit('allObjectsOnOtherServers', objectsOnOtherServers);
             })
         });
     }
