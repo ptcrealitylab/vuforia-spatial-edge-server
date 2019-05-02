@@ -18,6 +18,8 @@ realityEditor.draw.render = function() {
     realityEditor.groupRenderer.renderGroups();
     realityEditor.gui.crafting.redrawDataCrafting();
 
+    realityEditor.objectDiscovery.renderLinks();
+
     requestAnimFrame(realityEditor.draw.render);
 };
 
