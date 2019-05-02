@@ -102,16 +102,6 @@
         }), '*');
     }
 
-    function createPseudonodeContainer(frame) {
-        if (frame.src !== 'memoryFrame') {
-            return; // don't need to do this for non- memory frames
-        }
-        var frameContainer = document.getElementById('object' + frame.uuid);
-        var pseudonodeContainer = createDiv(null, 'pseudonodeContainer', null, frameContainer);
-
-
-    }
-
     realityInterface.onRealityInterfaceLoaded(function() {
         console.log('memory frame loaded for realityObject', realityObject);
 
@@ -341,7 +331,8 @@
             };
             centerPosition.percentX = centerPosition.x / window.innerWidth;
             centerPosition.percentY = centerPosition.y / window.innerHeight;
-            positions[nodeContainerDiv.id] = centerPosition;
+            var nodeKey = nodeContainerDiv.id.replace(/^(object)/,'');
+            positions[nodeKey] = centerPosition;
         });
         return positions;
     }
