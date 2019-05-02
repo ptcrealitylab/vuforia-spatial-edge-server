@@ -46,7 +46,7 @@ var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
 const fetch = require('node-fetch');
-const { WebsocketInterface } = require('./websocketInterface');
+const { WebSocketInterface } = require('./websocketInterface');
 
 exports.enabled = true;
 
@@ -54,14 +54,19 @@ if (exports.enabled) {
 
     server.enableDeveloperUI(true);
 
-    const websocket = new WebSocketInterface();
+    const hostIP = "10.88.133.66";
+    const port = 9090;
+
+    // MIR100 WEBSOCKET
+    const websocket = new WebSocketInterface(hostIP, port);
 
     // MIR100 REST API INFO
-    const restAddress = "http://mir.com/api/v2.0.0";
+    const restAddress = "http://" + hostIP + "/api/v2.0.0";
     const authorization = "Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==";
     
     let moveToCoordinateGUID = "";
-    let dataStatus = {};
+    let dataStatus = {};    // MIR STATUS
+    let arStatus = {};      // AR Status
     let pathData = [];
 
     //console.log("Request Status...");
@@ -70,10 +75,13 @@ if (exports.enabled) {
     //console.log("Request Missions...");
     requestMissions();
 
+    console.log(websocket.currentYaw());
+
     //console.log("Adding Node KineticAR");
     server.addNode("MIR", "kineticAR", "kineticNode1", "storeData");     // Node for the data path. Request status listener
-    server.addNode("MIR", "kineticAR", "kineticNode2", "storeData");     // Node for the data path. Send Status
-    
+    server.addNode("MIR", "kineticAR", "kineticNode2", "storeData");     // Node for the data path. Follow Checkpoints
+    server.addNode("MIR", "kineticAR", "kineticNode3", "storeData");     // Node for receiving AR status
+
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode1","requestMIRStatus",function (data){
 
         console.log("   -   -   -   Frame has requested MIR Status. Let's send it", data);
@@ -86,7 +94,6 @@ if (exports.enabled) {
                     server.writePublicData("MIR", "kineticAR", "kineticNode1", "MIRStatus", dataStatus)
                 });
         }
-        
     });
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode2","pathData",function (data){
@@ -94,26 +101,15 @@ if (exports.enabled) {
         console.log("   -   -   -   Play path now: ", data);
 
         // Time to play path
-        /*{
+
+        /* STRUCTURE:
+        {
             "mission_id":"aaaa",
             "parameters":[{"input_name":"positionX","value":0},
                         {"input_name":"positionY","value":0},
                         {"input_name":"orientation","value":0}]
-        }*/
-
-        // TRYING TO CREATE A NODE
-        server.addNode("MIR", "kineticAR", "checkpoint", "node");
-        // Call move Node after you have created it.
-        // <node>, <frame>, <Node>, x, y, scale, matrix
-        server.moveNode("MIR", "kineticAR", "checkpoint", 0,0,0.3,[
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        ]);
-        // call pushUpdatesToDevice(<object everytime> you want the updates to be drawn);
-        server.pushUpdatesToDevices("MIR");
-
+        }
+        */
 
         for(var i = 0; i < data.path.length; i++) {
         
@@ -124,7 +120,7 @@ if (exports.enabled) {
             const orientation_value = Number((parseFloat(obj.orientation)).toFixed(2));
         
             let dataObj = {
-                "mission_id":moveToCoordinateGUID,
+                "mission_id": moveToCoordinateGUID,
                 "parameters":[{"input_name":"positionX","value": positionX_value},
                 {"input_name":"positionY","value": positionY_value},
                 {"input_name":"orientation","value": orientation_value}]
@@ -134,8 +130,14 @@ if (exports.enabled) {
         
         }
 
-        //followPath();
+        followPath();
 
+    });
+
+    
+    server.addPublicDataListener("MIR", "kineticAR", "kineticNode3","ARstatus",function (data){
+        console.log(data);
+        arStatus = data;
     });
 
     function followPath(){
@@ -249,9 +251,10 @@ if (exports.enabled) {
             referrer: "no-referrer", // no-referrer, *client
             body: JSON.stringify(data), // body data type must match "Content-Type" header
         })
-        //.then(response => response.json()); // parses JSON response into native Javascript objects 
-        .then(response => response.text())          // convert to plain text
-        //.then(text => console.log(text))  // then log it out
+
+        //.then(response => response.json());   // parses JSON response into native Javascript objects 
+        .then(response => response.text())      // convert to plain text
+        //.then(text => console.log(text))      // then log it out
     }
 
     server.addEventListener("reset", function () {
@@ -261,5 +264,20 @@ if (exports.enabled) {
     server.addEventListener("shutdown", function () {
 
     });
+
+
+    // UPDATE FUNCTION
+
+    function updateEvery(i, time) {
+        setTimeout(() => {
+
+            //console.log('Current YAW:', websocket.currentYaw());
+            //console.log('Current Position:', websocket.currentRobotPosition);
+
+            updateEvery(++i, time);
+        }, time)
+    }
+    
+    updateEvery(0, 100);
     
 }

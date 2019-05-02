@@ -3,18 +3,19 @@ const WebSocket = require('ws');
 
 class WebSocketInterface {
 
-    constructor(){
+    constructor(hostIP, port){
 
-        const ws_host = "ws://192.168.12.20";
-        const ws_port = 9090;
-        const currentRobotAngle = {x:0, y:0, z:0, w:0};
-        const currentRobotPosition = {x:0, y:0};
+        const ws_host = "ws://" + hostIP;
+        const ws_port = port;
+        this._currentRobotAngle = {x:1, y:1, z:1, w:1};
+        this._currentRobotPosition = {x:1, y:1};
 
         console.log('WebSocket: trying to connect...');
-        this.ws = new WebSocket(ws_host + ':' + ws_port);
+        const ws = new WebSocket(ws_host + ':' + ws_port);
 
-        this.ws.on('open', function open() {
-            console.log('WebSocket: ready!');
+        ws.on('open', function open(event) {
+            
+            console.log('WebSocket: ready! ', event);
 
             console.log('WebSocket: subscribing to robot pose...');
 
@@ -23,20 +24,51 @@ class WebSocketInterface {
 
         });
 
+        const self = this;
+
         // Parse robot pose
-        this.ws.on('message', function incoming(data) {
-            
+        ws.on('message', function incoming(data) {
+
             const parsedData = JSON.parse(data);
 
-            currentRobotAngle['x'] = parsedData['msg']['orientation']['x'];
-            currentRobotAngle['y'] = parsedData['msg']['orientation']['y'];
-            currentRobotAngle['z'] = parsedData['msg']['orientation']['z'];
-            currentRobotAngle['w'] = parsedData['msg']['orientation']['w'];
-
-            currentRobotPosition['x'] = parsedData['msg']['position']['x'];
-            currentRobotPosition['y'] = parsedData['msg']['position']['y'];
+            self._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']), 
+                                        y:parseFloat(parsedData['msg']['orientation']['y']), 
+                                        z:parseFloat(parsedData['msg']['orientation']['z']), 
+                                        w:parseFloat(parsedData['msg']['orientation']['w'])};
+            
+            self._currentRobotPosition = {x:parseFloat(parsedData['msg']['position']['x']), 
+                                        y:parseFloat(parsedData['msg']['position']['y'])};
 
         });
+
+        ws.onerror = function(event) {
+            console.error("WebSocket error observed:", event);
+        };
+    }
+
+    get currentRobotAngle(){
+        return _currentRobotAngle;
+    }
+    set currentRobotAngle(currentAngle){
+        this._currentRobotAngle = currentAngle;
+    }
+
+    get currentRobotPosition(){
+        return this._currentRobotPosition;
+    }
+    set currentRobotPosition(currentPos){
+        this._currentRobotPosition = currentPos;
+    }
+
+    currentYaw(){
+
+        let yaw = 2 * Math.asin(this._currentRobotAngle.z);
+
+        if ((this._currentRobotAngle.w * this._currentRobotAngle.z) < 0.0){
+            yaw = -Math.abs(yaw);
+        }
+
+        return yaw * (180 / Math.PI);
     }
 }
 
