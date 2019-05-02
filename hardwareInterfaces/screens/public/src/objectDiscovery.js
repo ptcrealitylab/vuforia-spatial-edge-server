@@ -416,11 +416,11 @@ createNameSpace("realityEditor.objectDiscovery");
                 }).filter(function(node) {
                     return node.name === 'storage';
                 })[0];
-                console.log('found storage node', storageNode);
-                console.log(storageNode.publicData.memoryInformation);
+                // console.log('found storage node', storageNode);
+                // console.log(storageNode.publicData.memoryInformation);
                 if (typeof storageNode.publicData.memoryInformation !== 'undefined') {
                     var thisMemoryObjectID = storageNode.publicData.memoryInformation.objectID;
-                    console.log('thisMemoryObjectID', thisMemoryObjectID);
+                    // console.log('thisMemoryObjectID', thisMemoryObjectID);
                     if (thisMemoryObjectID === objectID) {
                         foundMemoryFrame = frame;
                     }
