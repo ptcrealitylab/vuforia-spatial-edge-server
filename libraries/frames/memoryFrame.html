@@ -629,61 +629,81 @@
             globalDOMCache['object' + frameKey].classList.add('hiddenFrame');
         }
 
+
         // realityEditor.gui.ar.draw.notLoading = false;
         //
         // if (nodeKey === "null") nodeKey = null;
-        //
-        // // cout("posting Msg");
-        // var version = 170;
-        // var object = realityEditor.getObject(objectKey);
-        // if (object) {
-        //     version = object.integerVersion;
-        // }
-        // var frame = realityEditor.getFrame(objectKey, frameKey);
-        // var nodes = (!!frame) ? frame.nodes : {};
-        //
-        // var oldStyle = {
-        //     obj: objectKey,
-        //     pos: nodeKey,
-        //     objectValues: (!!object) ? object.nodes : {},
-        //     interface: globalStates.interface
-        // };
-        //
-        // var simpleNodes = this.utilities.getNodesJsonForIframes(nodes);
-        //
-        // var newStyle = {
-        //     object: objectKey,
-        //     frame: frameKey,
-        //     objectData: {},
-        //     node: nodeKey,
-        //     nodes: simpleNodes,
-        //     interface: globalStates.interface
-        // };
-        //
-        // if (version < 170 && objectKey === nodeKey) {
-        //     newStyle = oldStyle;
-        // }
-        //
-        // if (object && object.ip) {
-        //     newStyle.objectData = {
-        //         ip: object.ip
-        //     };
-        // }
-        // var activeKey = nodeKey || frameKey;
-        //
+
+        // cout("posting Msg");
+        var version = 170;
+        var object = objects[objectKey];
+        var frame = null;
+        if (object) {
+            version = object.integerVersion;
+            frame = object.frames[frameKey];
+        }
+        var nodes = (!!frame) ? frame.nodes : {};
+
+        var oldStyle = {
+            obj: objectKey,
+            pos: nodeKey,
+            objectValues: (!!object) ? object.nodes : {},
+            interface: globalStates.interface
+        };
+
+        var simpleNodes = getNodesJsonForIframes(nodes);
+
+        var newStyle = {
+            object: objectKey,
+            frame: frameKey,
+            objectData: {},
+            node: nodeKey,
+            nodes: simpleNodes,
+            interface: null
+        };
+
+        if (version < 170 && objectKey === nodeKey) {
+            newStyle = oldStyle;
+        }
+
+        if (object && object.ip) {
+            newStyle.objectData = {
+                ip: object.ip
+            };
+        }
+        var activeKey = nodeKey || frameKey;
+
         // // if (globalDOMCache['svg' + activeKey]) {
         // //     realityEditor.gui.ar.moveabilityOverlay.createSvg(globalDOMCache['svg' + activeKey]);
         // // }
         //
-        // globalDOMCache["iframe" + activeKey]._loaded = true;
-        // globalDOMCache["iframe" + activeKey].contentWindow.postMessage(JSON.stringify(newStyle), '*');
-        //
+        globalDOMCache["iframe" + activeKey]._loaded = true;
+        globalDOMCache["iframe" + activeKey].contentWindow.postMessage(JSON.stringify(newStyle), '*');
+
         // if (nodeKey) {
         //     var node = realityEditor.getNode(objectKey, frameKey, nodeKey);
         //     if (node.type === 'logic') {
         //         realityEditor.gui.ar.draw.updateLogicNodeIcon(node);
         //     }
         // }
+    }
+
+    // avoids serializing cyclic data structures by only including minimal information needed for node iframe
+    // (keys such as grid and links sometimes contain cyclic references)
+     function getNodesJsonForIframes(nodes) {
+        var simpleNodes = {};
+        var keysToExclude = ["links", "blocks", "grid", "guiState"];
+        for (var node in nodes) {
+            if (!nodes.hasOwnProperty(node)) continue;
+            simpleNodes[node] = {};
+            for (var key in nodes[node]) {
+                if (!nodes[node].hasOwnProperty(key)) continue;
+                if (keysToExclude.indexOf(key) === -1) {
+                    simpleNodes[node][key] = nodes[node][key];
+                }
+            }
+        }
+        return simpleNodes;
     }
 
     function getProjectionMatrix() {
