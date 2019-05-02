@@ -480,6 +480,18 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
+exports.resetNodes = function (objectName, frameName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var frameID = objectID + frameName;
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                objects[objectID].frames[frameID].nodes = {};
+            }
+        }
+    }
+};
+
 exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
