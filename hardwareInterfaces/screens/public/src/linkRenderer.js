@@ -287,5 +287,6 @@ createNameSpace("realityEditor.linkRenderer");
     exports.resetIncompleteLink = resetIncompleteLink;
     exports.setCutLine = setCutLine;
     exports.resetCutLine = resetCutLine;
+    exports.drawLine = drawLine;
 
 })(realityEditor.linkRenderer);
