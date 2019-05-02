@@ -4,7 +4,6 @@ createNameSpace("realityEditor.objectDiscovery");
 
     var discoveredObjects = null;
     var discoveredObjectsOnOtherServers = {};
-
     var discoveredServers = {};
 
     // var objectDiscoveryTree = {
@@ -29,9 +28,7 @@ createNameSpace("realityEditor.objectDiscovery");
     // };
 
     var allLinks = {};
-
     var serverListDomElement = null;
-
     var guiState;
 
     function initFeature() {
@@ -103,10 +100,6 @@ createNameSpace("realityEditor.objectDiscovery");
         }
 
         allLinks[memoryObjectID] = msgContent.links;
-        // var links = msgContent.links;
-
-        // drawAllMemoryLinks(links);
-
     }
 
     function renderLinks() {
