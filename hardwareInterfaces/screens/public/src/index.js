@@ -23,7 +23,10 @@ var realityEditor = realityEditor || {
     logicNodeInteractions: {},
     craftingBoardMenu: {},
     moduleCallbacks: {},
-    objectDiscovery: {}
+    objectDiscovery: {},
+    memoryExplorer: {},
+    memoryNodeRenderer: {},
+    memoryLinkRenderer: {}
 };
 
 /**

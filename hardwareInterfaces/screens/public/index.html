@@ -73,6 +73,9 @@
 <script src="src/crafting/screenAdapter.js"></script>
 
 <script src="src/objectDiscovery.js"></script>
+<script src="src/memoryExplorer.js"></script>
+<script src="src/memoryNodeRenderer.js"></script>
+<script src="src/memoryLinkRenderer.js"></script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="resources/pep.min.js"></script>
@@ -213,6 +216,9 @@
         realityEditor.groupBehavior.initFeature();
 
         realityEditor.objectDiscovery.initFeature();
+        realityEditor.memoryExplorer.initFeature();
+        realityEditor.memoryNodeRenderer.initFeature();
+        realityEditor.memoryLinkRenderer.initFeature();
 
         window.addEventListener("message", realityEditor.network.onInternalPostMessage, false);
 
