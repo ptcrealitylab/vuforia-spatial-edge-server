@@ -127,7 +127,7 @@ function Frame() {
 exports.getIP = function () {
     var ip = require("ip");
     return ip.address();
-}
+};
 
 exports.write = function (objectName, frameName, nodeName, value, mode, unit, unitMin, unitMax) {
 
@@ -480,10 +480,39 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
+/**
+ * Removes all nodes from the specified frame
+ * (pushUpdatesToDevices needs to be called afterwards)
+ * @param {string} objectName
+ * @param {string} frameName
+ */
+exports.resetNodes = function (objectName, frameName) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var frameID = objectID + frameName;
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                objects[objectID].frames[frameID].nodes = {};
+            }
+        }
+    }
+};
+
+/**
+ * Changes the node's position to become relative to the ground plane origin instead of the frame
+ * Defaults to true if last parameter is excluded. Explicitly pass in false to de-attach from ground plane and go back to frame.
+ * (pushUpdatesToDevices needs to be called afterwards)
+ * @param {string} objectName
+ * @param {string} frameName
+ * @param {string} nodeName
+ * @param {bool} shouldAttachToGroundPlane
+ */
 exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
+
+    if (typeof shouldAttachToGroundPlane === 'undefined') { shouldAttachToGroundPlane = true; } // defaults to true
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {

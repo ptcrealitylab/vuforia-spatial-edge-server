@@ -305,6 +305,7 @@
             this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
             this.sendResetNodes = makeSendStub('sendResetNodes');
             this.sendCreateNode = makeSendStub('sendCreateNode');
+            this.sendMoveNode = makeSendStub('sendMoveNode');
             this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
             this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
             this.setFullScreenOn = makeSendStub('setFullScreenOn');
@@ -864,6 +865,20 @@
                     x: x,
                     y: y,
                     attachToGroundPlane: attachToGroundPlane
+                }
+            }), '*');
+        };
+
+        this.sendMoveNode = function (name, x, y) {
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                moveNode: {
+                    name: name,
+                    x: x,
+                    y: y
                 }
             }), '*');
         };
