@@ -75,73 +75,85 @@ realityServer.update = function (thisItem2) {
 
         if(!thisItem2 || thisItem2 === objectKey)  {
 
-            console.log(this.objects);
-        thisObject.dom = this.templates[1].content.cloneNode(true);
-        thisObject.dom.querySelector(".object").id = "object"+objectKey;
-        // check if items are active
-        if (thisObject.initialized && thisObject.active) {
-            realityServer.changeActiveState(thisObject.dom, true, objectKey);
+        console.log(this.objects);
+
+        if (thisObject.isWorldObject) {
+
+            thisObject.dom = this.templates[15].content.cloneNode(true); // world object template
+            thisObject.dom.querySelector(".worldObject").id = "object"+objectKey;
+            thisObject.dom.querySelector(".name").innerText = thisObject.name;
+            this.domObjects.appendChild(thisObject.dom);
+
         } else {
-            realityServer.changeActiveState(thisObject.dom, false, objectKey);
-        }
 
-        if (thisObject.initialized) {
-            realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
-        } else {
-            realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
-        }
+            thisObject.dom = this.templates[1].content.cloneNode(true);
+            thisObject.dom.querySelector(".object").id = "object" + objectKey;
+            // check if items are active
+            if (thisObject.initialized && thisObject.active) {
+                realityServer.changeActiveState(thisObject.dom, true, objectKey);
+            } else {
+                realityServer.changeActiveState(thisObject.dom, false, objectKey);
+            }
 
-        if (thisObject.active) {
-            realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
-            thisObject.dom.querySelector(".active").innerText = "On";
-        } else {
-            realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
-            thisObject.dom.querySelector(".active").innerText = "Off";
-        }
+            if (thisObject.initialized) {
+                realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
+            } else {
+                realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
+            }
 
-        thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
+            if (thisObject.active) {
+                realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
+                thisObject.dom.querySelector(".active").innerText = "On";
+            } else {
+                realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
+                thisObject.dom.querySelector(".active").innerText = "Off";
+            }
 
-        if(thisObject.zone === "" || !thisObject.zone){
-            thisObject.dom.querySelector(".zone").innerText = "Zone";
-        } else {
-            thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
-        }
+            thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
 
-        console.log(thisObject.visualization);
-        if(thisObject.visualization === "AR") thisObject.visualization = "ar";
-        if(thisObject.visualization === "ar"){
-            thisObject.dom.querySelector(".visualization").innerText = "AR";
-        } else if(thisObject.visualization === "screen") {
-            thisObject.dom.querySelector(".visualization").innerText = "Screen";
-            realityServer.switchClass(thisObject.dom.querySelector(".visualization"), "blue", "purple");
-            realityServer.switchClass(thisObject.dom.querySelector(".addFrame"), "blue", "purple");
-            realityServer.switchClass(thisObject.dom.querySelector(".download"), "blue", "purple");
+            if (thisObject.zone === "" || !thisObject.zone) {
+                thisObject.dom.querySelector(".zone").innerText = "Zone";
+            } else {
+                thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
+            }
 
-            thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
-        }
+            console.log(thisObject.visualization);
+            if (thisObject.visualization === "AR") thisObject.visualization = "ar";
+            if (thisObject.visualization === "ar") {
+                thisObject.dom.querySelector(".visualization").innerText = "AR";
+            } else if (thisObject.visualization === "screen") {
+                thisObject.dom.querySelector(".visualization").innerText = "Screen";
+                realityServer.switchClass(thisObject.dom.querySelector(".visualization"), "blue", "purple");
+                realityServer.switchClass(thisObject.dom.querySelector(".addFrame"), "blue", "purple");
+                realityServer.switchClass(thisObject.dom.querySelector(".download"), "blue", "purple");
 
-
-        thisObject.dom.querySelector(".name").innerText = thisObject.name;
-            if(!thisItem2)
-        this.domObjects.appendChild(thisObject.dom);
+                thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
+            }
 
 
-            if(thisItem2 === objectKey) {
+            thisObject.dom.querySelector(".name").innerText = thisObject.name;
+            if (!thisItem2)
+                this.domObjects.appendChild(thisObject.dom);
+
+
+            if (thisItem2 === objectKey) {
                 var thisItem = "object" + objectKey;
                 console.log(thisItem);
                 var thisDom = document.getElementById(thisItem);
                 console.log(thisDom);
-                 thisDom.before(thisObject.dom);
+                thisDom.before(thisObject.dom);
                 thisDom.remove();
             }
 
 
-        if(thisObject.visualization === "screen") {
-            var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
-            thisFullScreen.querySelector(".fullscreen").id = "fullscreen"+objectKey;
-            if(!thisItem2)
-                this.domObjects.appendChild(thisFullScreen);
-            document.getElementById("fullscreen"+objectKey).addEventListener("click", realityServer.gotClick, false);
+            if (thisObject.visualization === "screen") {
+                var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
+                thisFullScreen.querySelector(".fullscreen").id = "fullscreen" + objectKey;
+                if (!thisItem2)
+                    this.domObjects.appendChild(thisFullScreen);
+                document.getElementById("fullscreen" + objectKey).addEventListener("click", realityServer.gotClick, false);
+            }
+
         }
 
         for (var frameKey in this.objects[objectKey].frames) {

@@ -53,7 +53,7 @@ var hardwareAPI = require(__dirname + '/hardwareInterfaces');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort)
+exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort,worldObject)
 {
 console.log(objectInterfaceName);
     function ThisObjects() {
@@ -64,6 +64,7 @@ console.log(objectInterfaceName);
         this.active = false;
         this.zone = "";
         this.screenPort = "";
+        this.isWorldObject = false;
     };
 
     function Frame() {
@@ -130,6 +131,22 @@ console.log(objectInterfaceName);
 
 
     });
+
+    if (worldObject) {
+        var worldObjectEntry = new ThisObjects();
+        worldObjectEntry.name = worldObject.name;
+        worldObjectEntry.initialized = true;
+        worldObjectEntry.active = true;
+
+        worldObjectEntry.isWorldObject = true;
+
+        for (var frameKey in worldObject.frames) {
+            worldObjectEntry.frames[frameKey] = new Frame();
+            worldObjectEntry.frames[frameKey].name = worldObject.frames[frameKey].name;
+        }
+
+        newObject[worldObject.objectId] = worldObjectEntry;
+    }
 
     var html = fs.readFileSync(__dirname+"/webInterface/gui/index.html", 'utf8');
 
