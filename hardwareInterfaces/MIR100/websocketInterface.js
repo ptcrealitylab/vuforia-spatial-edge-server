@@ -29,6 +29,8 @@ class WebSocketInterface {
         // Parse robot pose
         ws.on('message', function incoming(data) {
 
+            //console.log(data);
+
             const parsedData = JSON.parse(data);
 
             self._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']), 

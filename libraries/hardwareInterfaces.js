@@ -127,7 +127,7 @@ function Frame() {
 exports.getIP = function () {
     var ip = require("ip");
     return ip.address();
-};
+}
 
 exports.write = function (objectName, frameName, nodeName, value, mode, unit, unitMin, unitMax) {
 
@@ -434,11 +434,13 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     objectID = undefined;
 };
 
-exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix) {
+exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix, loyalty) {
     var thisMatrix = null;
     var thisScale = null;
+    var thisLoyalty = null;
     if (matrix !== undefined) thisMatrix = matrix;
     if (scale !== undefined) thisScale = scale;
+    if (loyalty !== undefined) thisLoyalty = "object";
 
 
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
@@ -456,6 +458,10 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
                     }
                     if(thisScale){
                         objects[objectID].frames[frameID].nodes[nodeID].scale = thisScale;
+                    }
+                    if(thisLoyalty){
+                        objects[objectID].frames[frameID].nodes[nodeID].loyalty = thisLoyalty;
+                        objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = true;
                     }
                     console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
                 }
@@ -480,39 +486,10 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
-/**
- * Removes all nodes from the specified frame
- * (pushUpdatesToDevices needs to be called afterwards)
- * @param {string} objectName
- * @param {string} frameName
- */
-exports.resetNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
-        if (objects.hasOwnProperty(objectID)) {
-            if (objects[objectID].frames.hasOwnProperty(frameID)) {
-                objects[objectID].frames[frameID].nodes = {};
-            }
-        }
-    }
-};
-
-/**
- * Changes the node's position to become relative to the ground plane origin instead of the frame
- * Defaults to true if last parameter is excluded. Explicitly pass in false to de-attach from ground plane and go back to frame.
- * (pushUpdatesToDevices needs to be called afterwards)
- * @param {string} objectName
- * @param {string} frameName
- * @param {string} nodeName
- * @param {bool} shouldAttachToGroundPlane
- */
 exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
-
-    if (typeof shouldAttachToGroundPlane === 'undefined') { shouldAttachToGroundPlane = true; } // defaults to true
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -628,11 +605,26 @@ exports.reset = function (){
 };
 
 exports.readCall = function (objectID, frameID, nodeID, data) {
+
+    console.log("READ CALL");
+
     if (callBacks.hasOwnProperty(objectID)) {
+        console.log("READ CALL objectID");
+
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
+
+            console.log("READ CALL frameID");
+
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+
+                console.log("READ CALL nodeID");
+
                 if (callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("callBack")) {
+
+                    console.log("READ CALL callback", data);
                     callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
+
+
                 }
             }
         }
@@ -714,25 +706,32 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var frameID = objectID+frameName;
 
     cout("Add read listener for objectID: " + objectID);
+    console.log("Add read listener for objectID: " + objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
 
+                console.log("Has frame: " + frameID);
+
                 if (!callBacks.hasOwnProperty(objectID)) {
                     callBacks[objectID] = new EmptyObject(objectID);
+                    console.log("Empty");
                 }
 
                 if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
                     callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
+                    console.log("Empty frame");
                 }
 
                 if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                    console.log("Empty node");
                 }
 
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
+                console.log("Add callback: ", callBack);
 
             }
         }
