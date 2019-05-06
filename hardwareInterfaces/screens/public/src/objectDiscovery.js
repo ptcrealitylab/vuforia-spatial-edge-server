@@ -1,5 +1,12 @@
 createNameSpace("realityEditor.objectDiscovery");
 
+/**
+ * @fileOverview realityEditor.objectDiscovery.js
+ * Populates a data structure of servers and objects discovered on the local WiFi network
+ * Creates a menu of discovered objects that can be shown or hidden using a button.
+ * This data structure can be used by other modules, e.g. the memory explorer
+ */
+
 (function(exports) {
 
     var discoveredObjects = null;
@@ -27,9 +34,7 @@ createNameSpace("realityEditor.objectDiscovery");
     //     }]
     // };
 
-    var allLinks = {};
     var serverListDomElement = null;
-    var guiState;
 
     function initFeature() {
         realityEditor.network.registerCallback('allObjects', onAllObjects);
@@ -46,152 +51,6 @@ createNameSpace("realityEditor.objectDiscovery");
         realityEditor.touchEvents.registerCallback('onMouseUp', onMouseUp);
 
         realityEditor.network.registerCallback('onElementLoad', onElementLoad);
-
-        realityEditor.network.addPostMessageHandler('memoryMessage', handleMessageFromMemory);
-
-        realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
-            guiState = newGuiState;
-            injectGuiStateToMemories(newGuiState);
-        });
-    }
-
-    /**
-     * Handles messages posted into the window/iframe with structure {memoryMessage: msgContent}
-     * @param {Object} msgContent - JSON object passed into the memoryMessage property of the post message
-     */
-    function handleMessageFromMemory(msgContent) {
-        console.log('handleMessageFromMemory', msgContent);
-
-        var memoryObjectID = msgContent.objectID;
-        // find the frame that contains that memory
-        var memoryFrame = getMemoryShownForObject(memoryObjectID);
-
-        // get or create a container to monitor all the node positions within that memory and create invisible interact-able nodes on top
-        var memoryMonitor = getMemoryMonitor(memoryFrame);
-
-        var nodePositions = msgContent.nodes;
-
-        // remove all existing node divs before we create new ones
-        while (memoryMonitor.firstChild) {
-            memoryMonitor.firstChild.remove();
-        }
-
-        // populate with divs for each node inside the visible bounds of the memory frame
-        for (var nodeKey in nodePositions) {
-
-            var node = getNodeFromMemoryKeys(memoryObjectID, nodeKey);
-            if (!node || !(node.type === 'node' || node.type === 'logic')) { continue; } // only render visible node types. todo: refactor
-
-            var position = nodePositions[nodeKey];
-            var percentBuffer = 5; // how far beyond edge of memory frame can nodes be and still be interact-able
-            if (position.percentX > 0 - percentBuffer && position.percentX < 100 + percentBuffer &&
-                position.percentY > 0 - percentBuffer && position.percentY < 100 + percentBuffer) {
-
-                var nodePlaceholder = createDiv('placeholder' + nodeKey, 'nodePlaceholder', null, memoryMonitor);
-
-                var nodeSize = 50;
-                nodePlaceholder.style.width = nodeSize + 'px';
-                nodePlaceholder.style.height = nodeSize + 'px';
-
-                nodePlaceholder.style.left = (position.percentX * memoryFrame.width - nodeSize/2) + 'px';
-                nodePlaceholder.style.top = (position.percentY * memoryFrame.height - nodeSize/2) + 'px';
-
-            }
-        }
-
-        allLinks[memoryObjectID] = msgContent.links;
-    }
-
-    function renderLinks() {
-        if (guiState !== 'node') return;
-
-        for (var memoryObjectID in allLinks) {
-            var thisMemoryLinks = allLinks[memoryObjectID];
-            drawAllMemoryLinks(thisMemoryLinks);
-        }
-    }
-
-    function drawAllMemoryLinks(links) {
-        for (var linkKey in links) {
-            var link = links[linkKey];
-            // get start node div
-            var nodeDivA = document.getElementById('placeholder' + link.nodeA);
-            // get end node div
-            var nodeDivB = document.getElementById('placeholder' + link.nodeB);
-
-            if (nodeDivA && nodeDivB) {
-                console.log('found start and end node divs', nodeDivA, nodeDivB);
-
-                var nodeACenter = {
-                    x: nodeDivA.getClientRects()[0].x + nodeDivA.getClientRects()[0].width/2,
-                    y: nodeDivA.getClientRects()[0].y + nodeDivA.getClientRects()[0].height/2
-                };
-                var nodeBCenter = {
-                    x: nodeDivB.getClientRects()[0].x + nodeDivB.getClientRects()[0].width/2,
-                    y: nodeDivB.getClientRects()[0].y + nodeDivB.getClientRects()[0].height/2
-                };
-                var startOffset = {
-                    x: 0,
-                    y: 0
-                };
-                var endOffset = {
-                    x: 0,
-                    y: 0
-                };
-                var linkWidth = 5;
-                var startColorCode = (typeof link.logicA === 'number') ? link.logicA  : 4; // white
-                var endColorCode = (typeof link.logicB === 'number') ? link.logicB  : 4;
-                if (isNaN(link.ballAnimationCount)) {
-                    link.ballAnimationCount = 0;
-                }
-                realityEditor.linkRenderer.drawLine(globalCanvas.context, [nodeACenter.x + startOffset.x, nodeACenter.y + startOffset.y], [nodeBCenter.x + endOffset.x, nodeBCenter.y + endOffset.y], linkWidth, linkWidth, link, timeCorrection, startColorCode, endColorCode);
-
-            }
-        }
-    }
-
-    /**
-     * gets the node from the correct frame of the correct object using only its nodeKey and which memory it was in
-     * @param {string} memoryObjectID
-     * @param {string} nodeKey
-     */
-    function getNodeFromMemoryKeys(memoryObjectID, nodeKey) {
-        var frames = typeof discoveredObjects[memoryObjectID] !== 'undefined' ? discoveredObjects[memoryObjectID].frames : discoveredObjectsOnOtherServers[memoryObjectID].frames;
-        var matchingFrameKeys = Object.keys(frames).filter(function(frameKey){
-            return nodeKey.indexOf(frameKey) > -1;
-        });
-        if (matchingFrameKeys.length === 0) { return null; }
-        return frames[matchingFrameKeys[0]].nodes[nodeKey];
-    }
-
-    function getMemoryMonitor(frame) {
-        if (frame.src !== 'memoryFrame') {
-            return; // don't need to do this for non- memory frames
-        }
-        var monitorContainer = document.getElementById('monitor' + frame.uuid);
-        if (!monitorContainer) {
-            var frameContainer = document.getElementById('object' + frame.uuid);
-            monitorContainer = createDiv('monitor' + frame.uuid, 'monitorContainer', null, frameContainer);
-            monitorContainer.style.width = frame.width + 'px';
-            monitorContainer.style.height = frame.height + 'px';
-        }
-        return monitorContainer;
-    }
-
-    function injectGuiStateToMemories(newGuiState) {
-        var allMemoryFrames = Object.keys(frames).map(function(frameKey) {
-            return frames[frameKey];
-        }).filter(function(frame) {
-            return frame.visualization === 'screen' && frame.src === 'memoryFrame';
-        });
-
-        allMemoryFrames.forEach(function(memoryFrame) {
-            var iframe = document.getElementById('iframe' + memoryFrame.uuid);
-            iframe.contentWindow.postMessage(JSON.stringify({
-                guiState: newGuiState,
-                platform: 'desktop'
-            }), '*');
-        });
     }
 
     var pointerEventListeners = {};
@@ -206,12 +65,7 @@ createNameSpace("realityEditor.objectDiscovery");
     }
 
     function startObjectDiscovery() {
-        // send three action UDP pings to start object discovery
-        // for (var i = 0; i < 3; i++) {
-        //     setTimeout(function() {
-        //         realityEditor.network.sendUDPMessage({action: 'ping'});
-        //     }, 500 * i); // space out each message by 500ms
-        // }
+        // send message to server to start object discovery
         realityEditor.network.sendSocketMessage('getAllObjects', null);
     }
 
@@ -529,40 +383,9 @@ createNameSpace("realityEditor.objectDiscovery");
 
     }
 
-    /**
-     * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
-     * Any parameter can be omitted (pass in null) to ignore those effects
-     * @param {string|null} id
-     * @param {string|Array.<string>|null} classList
-     * @param {string|null} innerHTML
-     * @param {HTMLElement|null} parentToAddTo
-     * @return {HTMLDivElement}
-     */
-    function createDiv(id, classList, innerHTML, parentToAddTo) {
-        var div = document.createElement('div');
-        if (id) {
-            div.id = id;
-        }
-        if (classList) {
-            if (typeof classList === 'string') {
-                div.className = classList;
-            } else if (typeof classList === 'object') {
-                classList.forEach(function(className) {
-                    div.classList.add(className);
-                });
-            }
-        }
-        if (innerHTML) {
-            div.innerHTML = innerHTML;
-        }
-        if (parentToAddTo) {
-            parentToAddTo.appendChild(div);
-        }
-        return div;
-    }
-
     exports.initFeature = initFeature;
     exports.discoveredObjects = discoveredObjects;
+    exports.discoveredObjectsOnOtherServers = discoveredObjectsOnOtherServers;
     exports.renderLinks = renderLinks;
 
 })(realityEditor.objectDiscovery);
