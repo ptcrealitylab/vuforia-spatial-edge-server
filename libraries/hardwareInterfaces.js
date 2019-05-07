@@ -201,7 +201,7 @@ exports.removeAllNodes = function (objectName, frameName) {
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
-                console.log("object+frame exists");
+                //console.log("object+frame exists");
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
@@ -220,7 +220,7 @@ exports.reloadNodeUI = function (objectName) {
 exports.getAllFrames = function (objectName) {
     var objectID = utilities.readObject(objectLookup, objectName);
     // var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log(objectID);
+    //console.log(objectID);
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -271,7 +271,7 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
 };
 
 exports.subscribeToNewFramesAdded = function (objectName, callback) {
-    console.log('subscribeToNewFramesAdded');
+    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     frameAddedCallbacks.push({
@@ -291,7 +291,7 @@ exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
 };
 
 exports.subscribeToReset = function (objectName, callback) {
-    console.log('subscribeToNewFramesAdded');
+    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     resetCallbacks.push({
@@ -390,7 +390,7 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.objectId = objectID;
             thisObject.text = undefined;
             thisObject.type = type;
-            console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
+            //console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
             //console.log('set new node name to ' + thisObject.name);
             //console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
 
@@ -463,7 +463,7 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
                         objects[objectID].frames[frameID].nodes[nodeID].loyalty = thisLoyalty;
                         objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = true;
                     }
-                    console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
+                    //console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
                 }
             }
         }
@@ -478,7 +478,7 @@ exports.removeNode = function (objectName, frameName, nodeName) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                    console.log("deleted node " + nodeName);
+                    //console.log("deleted node " + nodeName);
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
@@ -497,7 +497,7 @@ exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, sho
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
 
                     objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
-                    console.log("attached node " + nodeName + " to ground plane");
+                    console.log("Attached node " + nodeName + " to ground plane");
                 }
             }
         }
@@ -520,7 +520,7 @@ exports.activate = function (objectName) {
 
 exports.deactivate = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log("--------- deactive---------")
+    console.log("--------- DEACTIVATE---------")
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
@@ -605,23 +605,12 @@ exports.reset = function (){
 };
 
 exports.readCall = function (objectID, frameID, nodeID, data) {
-
-    console.log("READ CALL");
-
     if (callBacks.hasOwnProperty(objectID)) {
-        console.log("READ CALL objectID");
 
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
-
-            console.log("READ CALL frameID");
-
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
 
-                console.log("READ CALL nodeID");
-
                 if (callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty("callBack")) {
-
-                    console.log("READ CALL callback", data);
                     callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
 
 
@@ -633,7 +622,7 @@ exports.readCall = function (objectID, frameID, nodeID, data) {
 
 exports.readPublicDataCall = function (objectID, frameID, nodeID,data) {
 
-    console.log("READ PUBLIC DATA CALL");
+    //console.log("READ PUBLIC DATA CALL");
 
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
@@ -648,7 +637,7 @@ exports.readPublicDataCall = function (objectID, frameID, nodeID,data) {
 
                         if(data.hasOwnProperty(thisCB.dataObject)) {
 
-                            console.log("READ PUBLIC DATA CALL: ", thisCB.dataObject);
+                            //console.log("READ PUBLIC DATA CALL: ", thisCB.dataObject);
 
                             thisCB.cb(data[thisCB.dataObject]);
                         }
@@ -706,32 +695,25 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var frameID = objectID+frameName;
 
     cout("Add read listener for objectID: " + objectID);
-    console.log("Add read listener for objectID: " + objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
 
-                console.log("Has frame: " + frameID);
-
                 if (!callBacks.hasOwnProperty(objectID)) {
                     callBacks[objectID] = new EmptyObject(objectID);
-                    console.log("Empty");
                 }
 
                 if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
                     callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
-                    console.log("Empty frame");
                 }
 
                 if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
-                    console.log("Empty node");
                 }
 
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
-                console.log("Add callback: ", callBack);
 
             }
         }
@@ -765,14 +747,11 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
 
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks === 'undefined') {
 
-                    //console.log("UNDEFINED!");
 
                     callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
                 }
 
                 callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push({cb:callBack, dataObject:dataObject});
-
-                //console.log("##### callbacks: ", callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks);
 
             }
         }
@@ -780,7 +759,7 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
 };
 
 exports.connectCall = function (objectID, frameID, nodeID, data) {
-    console.log('\ncallBacks...\n');
+    console.log('\nCallBacks...\n');
     // console.log(callBacks);
     // var prettyprintCallbacks = {};
     {
@@ -801,9 +780,9 @@ exports.connectCall = function (objectID, frameID, nodeID, data) {
               //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
-                    console.log("connection callback called");
+                    console.log("Connection callback called");
                 } else {
-                    console.log("no connection callback");
+                    console.log("No connection callback");
                 }
             }
         }

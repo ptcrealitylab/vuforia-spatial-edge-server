@@ -76,7 +76,7 @@ var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
     saveToDisk : true, // allow system to save to file system// debug messages to console
-    worldObject : false
+    worldObject : true
 };
 
 // ports used to define the server behaviour
@@ -102,7 +102,7 @@ const netmask = "255.255.0.0"; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 const netInterface = "en0";
 
-console.log(parseInt(version.replace(/\./g, "")));
+//console.log(parseInt(version.replace(/\./g, "")));
 
 var os = require('os');
 var path = require('path');
@@ -131,7 +131,7 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
 var ips = {activeInterface : "en0", interfaces : {}};
 if(storage.getItemSync('activeNetworkInterface') !== undefined){
-    console.log( storage.getItemSync('activeNetworkInterface'));
+    //console.log( storage.getItemSync('activeNetworkInterface'));
     ips.activeInterface = storage.getItemSync('activeNetworkInterface');
 };
 
@@ -157,7 +157,7 @@ for(key in interfaceNames){
     for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
     ips.interfaces[interfaceNames[key]] = tempIps[0];
 };
-console.log(ips);
+//console.log(ips);
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -993,7 +993,7 @@ function loadWorldObject() {
     // try to read previously saved data to overwrite the default world object
     try {
         worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        console.log('loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+        console.log('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
     } catch (e) {
         console.log('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
     }
@@ -1025,7 +1025,7 @@ function loadWorldObject() {
             if (err) {
                 console.log(err);
             } else {
-                console.log('JSON saved to ' + jsonFilePath);
+                //console.log('JSON saved to ' + jsonFilePath);
             }
         });
     } else {
@@ -1444,7 +1444,7 @@ function objectWebServer() {
             newUrl += "index.html";
             urlArray.push("index.html");
         }
-        console.log(newUrl);
+        //console.log(newUrl);
 
         // TODO: ben - may need to update objectsPath if the object is a world object
 
@@ -1508,7 +1508,7 @@ function objectWebServer() {
             }
             res.json(json);
         } else {
-            console.log("end: "+newUrl);
+            //console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
     });
@@ -4292,7 +4292,7 @@ function socketServer() {
     io.on('connection', function (socket) {
         socketHandler.socket = socket;
 
-        console.log('connected to socket ' + socket.id);
+        //console.log('connected to socket ' + socket.id);
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
@@ -4414,7 +4414,7 @@ function socketServer() {
 
         socket.on('object', function (msg) {
 
-            console.log("MSG: ", msg);
+            //console.log("MSG: ", msg);
 
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
