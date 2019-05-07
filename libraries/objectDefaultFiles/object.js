@@ -56,7 +56,7 @@
     serverIp:"127.0.0,1",
         matrices:{
             modelView : [],
-            projection : [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1], // in case it doesn't get set, use identity as placeholder
+            projection : [],
             groundPlane : [],
             devicePose : [],
             allObjects : {}
