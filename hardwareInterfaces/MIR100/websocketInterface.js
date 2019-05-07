@@ -10,14 +10,14 @@ class WebSocketInterface {
         this._currentRobotAngle = {x:1, y:1, z:1, w:1};
         this._currentRobotPosition = {x:1, y:1};
 
-        console.log('WebSocket: trying to connect...');
+        console.log('\nWebSocket: trying to connect...\n');
         const ws = new WebSocket(ws_host + ':' + ws_port);
 
         ws.on('open', function open(event) {
             
-            console.log('WebSocket: ready! ', event);
+            console.log('\nWebSocket open at: ', hostIP, port, '\n');
 
-            console.log('WebSocket: subscribing to robot pose...');
+            //console.log('WebSocket: subscribing to robot pose...');
 
             const s = '{"op":"subscribe","topic":"/robot_pose"}';
             ws.send(s);
