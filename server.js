@@ -672,10 +672,10 @@ function Protocols() {
             if (msgContent.obj in objects) {
                 if (msgContent.pos in objects[msgContent.obj].nodes) {
 
-                    var objectData = objects[msgContent.obj].frames[msgContent.object].nodes[msgContent.pos].data;
+                    var objectData = objects[msgContent.obj].frames[msgContent.object].nodes[msgContent.pos];
 
-                    objectData.value = msgContent.value;
-                    objectData.mode = msgContent.mode;
+                    objectData.data.value = msgContent.value;
+                    objectData.data.mode = msgContent.mode;
 
                     engine.trigger(msgContent.object, msgContent.object, msgContent.node, objectData);
 
@@ -788,7 +788,9 @@ var hardwareAPICallbacks = {
                 node: nodeKey,
                 data: data
             });
-            engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
+
+            hardwareAPI.readCall(objectKey, frameKey, nodeKey, objects[objectKey].frames[frameKey].nodes[nodeKey].data);
+            engine.trigger(objectKey, frameKey, nodeKey, objects[objectKey].frames[frameKey].nodes[nodeKey]);
     },
     write : function (objectID){
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
