@@ -21,7 +21,7 @@ createNameSpace("realityEditor.memoryNodeRenderer");
     function handleMessageFromMemory(msgContent) {
         var memoryObjectID = msgContent.objectID;
         // find the frame that contains that memory
-        var memoryFrame = getMemoryShownForObject(memoryObjectID);
+        var memoryFrame = realityEditor.memoryExplorer.getMemoryShownForObject(memoryObjectID);
 
         // get or create a container to monitor all the node positions within that memory and create invisible interact-able nodes on top
         var memoryMonitor = getMemoryMonitor(memoryFrame);
@@ -64,8 +64,8 @@ createNameSpace("realityEditor.memoryNodeRenderer");
      */
     function getNodeFromMemoryKeys(memoryObjectID, nodeKey) {
 
-        var discoveredObjects = realityEditor.objectDiscovery.discoveredObjects;
-        var discoveredObjectsOnOtherServers = realityEditor.objectDiscovery.discoveredObjectsOnOtherServers;
+        var discoveredObjects = realityEditor.objectDiscovery.getDiscoveredObjects();
+        var discoveredObjectsOnOtherServers = realityEditor.objectDiscovery.getDiscoveredObjectsOnOtherServers();
 
         var frames = typeof discoveredObjects[memoryObjectID] !== 'undefined' ? discoveredObjects[memoryObjectID].frames : discoveredObjectsOnOtherServers[memoryObjectID].frames;
         var matchingFrameKeys = Object.keys(frames).filter(function(frameKey){

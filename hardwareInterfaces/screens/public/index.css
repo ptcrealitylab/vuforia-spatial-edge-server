@@ -302,7 +302,7 @@ body, html {
 #pocketButton {
     position: absolute;
     left: 0;
-    top: 130px;
+    top: 195px;
     width: 60px;
     height: 60px;
     background-color: rgba(45,255,255,0.15);
@@ -347,7 +347,7 @@ body, html {
 #trashButton {
     position: absolute;
     left: 0;
-    top: 195px;
+    top: 260px;
     width: 60px;
     height: 320px;
     background-color: rgba(242,22,121,0.15);
@@ -376,6 +376,16 @@ body, html {
     background-color: transparent;
 }
 
+#memoryButton {
+    position: absolute;
+    left: 0;
+    top: 130px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(45,255,255,0.15);
+    z-index: 100;
+}
+
 .ghostFrame {
     opacity: 0.5;
     /*display: inline;*/
@@ -391,22 +401,6 @@ body, html {
 
 .hiddenNode {
     display: none !important;
-}
-
-.monitorContainer {
-    /*width: 100%;*/
-    /*height: 100%;*/
-    border: 2px solid red;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-.nodePlaceholder {
-    border: 2px solid red;
-    position: absolute;
-    width: 50px;
-    height: 50px;
 }
 
 #linkCanvas {

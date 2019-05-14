@@ -9,7 +9,7 @@ createNameSpace("realityEditor.objectDiscovery");
 
 (function(exports) {
 
-    var discoveredObjects = null;
+    var discoveredObjects = {};
     var discoveredObjectsOnOtherServers = {};
     var discoveredServers = {};
 
@@ -40,7 +40,7 @@ createNameSpace("realityEditor.objectDiscovery");
         realityEditor.network.registerCallback('allObjects', onAllObjects);
         realityEditor.network.registerCallback('allObjectsOnOtherServers', onAllObjectsOnOtherServers);
 
-        serverListDomElement = createDiv(null, null, null, document.body);
+        serverListDomElement = createDiv('serverListContainer', null, null, document.body);
         serverListDomElement.style.position = 'absolute';
         serverListDomElement.style.left = '80px';
         serverListDomElement.style.top = '20px';
@@ -179,7 +179,7 @@ createNameSpace("realityEditor.objectDiscovery");
         // hideMemoryButton.addEventListener('pointerup', hideMemory);
         addPointerEventListener(showMemoryButton, 'pointerup', showMemory);
 
-        if (!!getMemoryShownForObject(objectKey)) {
+        if (!!realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
             showMemoryButton.classList.add('toggleSelected');
         } else {
             hideMemoryButton.classList.add('toggleSelected');
@@ -233,7 +233,7 @@ createNameSpace("realityEditor.objectDiscovery");
                 var showMemoryButton = document.getElementById('showMemory' + objectKey);
                 var hideMemoryButton = document.getElementById('hideMemory' + objectKey);
 
-                if (!!getMemoryShownForObject(objectKey)) {
+                if (!!realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
                     showMemoryButton.classList.add('toggleSelected');
                     hideMemoryButton.classList.remove('toggleSelected');
                 } else {
@@ -246,39 +246,6 @@ createNameSpace("realityEditor.objectDiscovery");
     }
 
     /**
-     * Determine if an object's memory is shown or hidden by checking all the screen frames for a matching memoryFrame
-     * @param {string} objectID
-     */
-    function getMemoryShownForObject(objectID) {
-
-        var foundMemoryFrame = null;
-
-        realityEditor.database.forEachFrame(function(frameKey, frame) {
-            if (foundMemoryFrame) { return; } // exit loop if already found it
-
-            if (frame.visualization === 'screen' && frame.src === 'memoryFrame') {
-                // get the publicData of the storage node and check if its objectID matches this one
-                var storageNode = Object.keys(frame.nodes).map(function(nodeKey) {
-                    return frame.nodes[nodeKey];
-                }).filter(function(node) {
-                    return node.name === 'storage';
-                })[0];
-                // console.log('found storage node', storageNode);
-                // console.log(storageNode.publicData.memoryInformation);
-                if (typeof storageNode.publicData.memoryInformation !== 'undefined') {
-                    var thisMemoryObjectID = storageNode.publicData.memoryInformation.objectID;
-                    // console.log('thisMemoryObjectID', thisMemoryObjectID);
-                    if (thisMemoryObjectID === objectID) {
-                        foundMemoryFrame = frame;
-                    }
-                }
-            }
-        });
-
-        return foundMemoryFrame;
-    }
-
-    /**
      * @param {PointerEvent} event
      */
     function showMemory(event) {
@@ -287,7 +254,7 @@ createNameSpace("realityEditor.objectDiscovery");
 
         // console.log('isMemoryShownForObject ' + thisObjectID, isMemoryShownForObject(thisObjectID));
 
-        if (!!getMemoryShownForObject(thisObjectID)) {
+        if (!!realityEditor.memoryExplorer.getMemoryShownForObject(thisObjectID)) {
             console.log('already showing this memory, don\'t re-add it');
             return;
         }
@@ -361,7 +328,7 @@ createNameSpace("realityEditor.objectDiscovery");
 
         // console.log('isMemoryShownForObject ' + thisObjectID, isMemoryShownForObject(thisObjectID));
 
-        if (!getMemoryShownForObject(thisObjectID)) {
+        if (!realityEditor.memoryExplorer.getMemoryShownForObject(thisObjectID)) {
             console.log('not showing this memory, no need to hide it');
             return;
         }
@@ -369,7 +336,7 @@ createNameSpace("realityEditor.objectDiscovery");
         console.log('hide: ' + thisObjectID);
 
         // delete matching frame
-        var matchingMemoryFrame = getMemoryShownForObject(thisObjectID);
+        var matchingMemoryFrame = realityEditor.memoryExplorer.getMemoryShownForObject(thisObjectID);
         if (matchingMemoryFrame) {
             realityEditor.trash.deleteFrame(matchingMemoryFrame.uuid);
         }
@@ -383,9 +350,16 @@ createNameSpace("realityEditor.objectDiscovery");
 
     }
 
+    function getDiscoveredObjects() {
+        return discoveredObjects;
+    }
+
+    function getDiscoveredObjectsOnOtherServers() {
+        return discoveredObjectsOnOtherServers;
+    }
+
     exports.initFeature = initFeature;
-    exports.discoveredObjects = discoveredObjects;
-    exports.discoveredObjectsOnOtherServers = discoveredObjectsOnOtherServers;
-    exports.renderLinks = renderLinks;
+    exports.getDiscoveredObjects = getDiscoveredObjects;
+    exports.getDiscoveredObjectsOnOtherServers = getDiscoveredObjectsOnOtherServers;
 
 })(realityEditor.objectDiscovery);
