@@ -713,6 +713,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
+                console.log('Add read listener: ', callBack);
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
 
             }
