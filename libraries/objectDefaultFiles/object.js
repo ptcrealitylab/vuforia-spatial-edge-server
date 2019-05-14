@@ -248,6 +248,7 @@
             // reload public data when it becomes visible
             for (var i = 0; i < realityInterfaces.length; i++) {
                 if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+                    console.log("emit");
                     realityInterfaces[i].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
                 }
             }
@@ -618,7 +619,7 @@
 
     RealityInterface.prototype.injectIo = function() {
         var self = this;
-
+        console.log("new IO Connection");
         this.ioObject = io.connect(realityObject.socketIoUrl);
         this.oldNumberList = {};
 
@@ -640,6 +641,7 @@
 
         this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
+                console.log("emit");
                 self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
                 clearInterval(self.sendRealityEditorSubscribe);
             }
@@ -662,6 +664,7 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
+                console.log("emit");
                 this.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
                     frame: realityObject.frame,
@@ -677,6 +680,7 @@
          */
 
         this.readRequest = function (node) {
+            console.log("emit");
             this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.frame, node: realityObject.frame + node}));
         };
 
@@ -698,6 +702,7 @@
 
         this.addReadListener = function (node, callback) {
             self.ioObject.on('object', function (msg) {
+                console.log("on");
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === realityObject.frame + node) {
@@ -728,7 +733,7 @@
         // TODO: this function implementation is different in the server and the userinterface... standardize it
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on("object/publicData", function (msg) {
-
+                console.log("on");
                 var thisMsg = JSON.parse(msg);
 
                 console.log("------------------   thisMsg: ", thisMsg);
@@ -790,7 +795,7 @@
             }
 
             realityObject.publicData[node][valueName] = value;
-
+            console.log("emit");
             this.ioObject.emit('object/publicData', JSON.stringify({
                 object: realityObject.object,
                 frame: realityObject.frame,
@@ -813,7 +818,7 @@
 
             var thisItem = {};
             thisItem[valueName] = value;
-
+            console.log("emit");
             this.ioObject.emit('object/privateData', JSON.stringify({
                 object: realityObject.object,
                 frame: realityObject.frame,
@@ -826,6 +831,7 @@
             // reload public data when it becomes visible
             for (var i = 0; i < realityInterfaces.length; i++) {
                 if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+                    console.log("emit");
                     realityInterfaces[i].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame})); //TODO: change to subscribe/realityEditorPublicData ??
                 }
             }
