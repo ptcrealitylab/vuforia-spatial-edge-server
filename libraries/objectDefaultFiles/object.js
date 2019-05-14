@@ -115,10 +115,11 @@
         script.src = url + '/socket.io/socket.io.js';
 
         script.addEventListener('load', function() {
-            for (var i = 0; i < realityInterfaces.length; i++) {
-                var ho = realityInterfaces[i];
-                ho.injectIo();
-            }
+            var ho = realityInterfaces[0];
+            ho.injectIo();
+           /* for (var i = 0; i < realityInterfaces.length; i++) {
+
+            }*/
         });
 
         document.body.appendChild(script);
@@ -189,9 +190,10 @@
             realityObject.object = msgContent.object;
 
             if (!alreadyLoaded) {
-                for (var i = 0; i < realityInterfaces.length; i++) {
-                    realityInterfaces[i].injectPostMessage();
-                }
+                realityInterfaces[0].injectPostMessage();
+                /*for (var i = 0; i < realityInterfaces.length; i++) {
+
+                }*/
 
                 if (realityObject.onload) {
                     realityObject.onload();
@@ -246,12 +248,12 @@
             realityObject.visibility = msgContent.visibility;
 
             // reload public data when it becomes visible
-            for (var i = 0; i < realityInterfaces.length; i++) {
-                if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+         //   for (var i = 0; i < realityInterfaces.length; i++) {
+                if (typeof realityInterfaces[0].ioObject.emit !== 'undefined') {
                     console.log("emit");
-                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                    realityInterfaces[0].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
                 }
-            }
+           // }
 
             if(realityObject.visibility === "visible"){
                 if (typeof realityObject.node !== "undefined") {
@@ -614,7 +616,7 @@
             this.reloadPublicData = makeIoStub('reloadPublicData');
         }
 
-        realityInterfaces.push(this);
+        realityInterfaces[0] = this;
     }
 
     RealityInterface.prototype.injectIo = function() {
@@ -645,7 +647,7 @@
                 self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
                 clearInterval(self.sendRealityEditorSubscribe);
             }
-        }, 10);
+        }, 100);
 
         /**
          ************************************************************
@@ -829,12 +831,12 @@
 
         this.reloadPublicData = function() {
             // reload public data when it becomes visible
-            for (var i = 0; i < realityInterfaces.length; i++) {
-                if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+           // for (var i = 0; i < realityInterfaces.length; i++) {
+                if (typeof realityInterfaces[0].ioObject.emit !== 'undefined') {
                     console.log("emit");
-                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame})); //TODO: change to subscribe/realityEditorPublicData ??
+                    realityInterfaces[0].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame})); //TODO: change to subscribe/realityEditorPublicData ??
                 }
-            }
+         //   }
         };
 
         console.log('socket.io is loaded and injected');
@@ -1215,22 +1217,22 @@
             if (msgContent.reloadPublicData) {
                 console.log('frame reload public data from post message');
 
-                for (var i = 0; i < realityInterfaces.length; i++) {
-                    var realityInterface = realityInterfaces[i];
+              //  for (var i = 0; i < realityInterfaces.length; i++) {
+                    var realityInterface = realityInterfaces[0];
                     realityInterface.reloadPublicData();
-                }
+              //  }
             }
 
             if (msgContent.event && msgContent.event.pointerId) {
                 var eventData = msgContent.event; // looks like {type: "pointerdown", pointerId: 29887780, pointerType: "touch", x: 334, y: 213}
 
                 var doesUseSimplifiedPointerEvents = false;
-                for (var i = 0; i < realityInterfaces.length; i++) {
-                    var realityInterface = realityInterfaces[i];
+               // for (var i = 0; i < realityInterfaces.length; i++) {
+                    var realityInterface = realityInterfaces[0];
                     if (realityInterface.doesUseSimplifiedPointerEvents) {
                         doesUseSimplifiedPointerEvents = true;
                     }
-                }
+              //  }
 
                 var event;
                 if (!doesUseSimplifiedPointerEvents) {
@@ -1272,14 +1274,14 @@
 
                 // the method of sending the pointerevent into the frame depends on whether useSimplifiedPointerEvents was called
                 if (doesUseSimplifiedPointerEvents) {
-                    for (var i = 0; i < realityInterfaces.length; i++) {
-                        var realityInterface = realityInterfaces[i];
+                  //  for (var i = 0; i < realityInterfaces.length; i++) {
+                        var realityInterface = realityInterfaces[0];
                         if (typeof realityInterface.pointerEventListeners[eventData.type] !== 'undefined') {
                             realityInterface.pointerEventListeners[eventData.type].forEach(function(callback) {
                                 callback(eventData);
                             });
                         }
-                    }
+                   // }
                 } else {
                     var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
                     elt.dispatchEvent(event);
