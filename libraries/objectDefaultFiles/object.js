@@ -645,13 +645,19 @@
             }
         });
 
-        this.sendRealityEditorSubscribe = setInterval(function () {
-            if (realityObject.object) {
-                console.log("emit");
-                self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
-                clearInterval(self.sendRealityEditorSubscribe);
-            }
-        }, 100);
+        this.sendRealityEditorSubscribe = function () {
+            var timeoutFunction = function(){
+                if (realityObject.object) {
+                    console.log("emit sendRealityEditorSubscribe");
+                    self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                }
+            };
+            setTimeout(timeoutFunction, 10);
+            setTimeout(timeoutFunction, 50);
+            setTimeout(timeoutFunction, 100);
+            setTimeout(timeoutFunction, 1000);
+        };
+
 
         /**
          ************************************************************
