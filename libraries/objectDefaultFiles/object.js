@@ -106,6 +106,7 @@
 
     var realityInterfaces = [];
 
+    var isSocketLoadedAlready = false;
     function loadObjectSocketIo(object) {
         var script = document.createElement('script');
         script.type = 'text/javascript';
@@ -123,6 +124,7 @@
         });
 
         document.body.appendChild(script);
+        isSocketLoadedAlready = true;
     }
 
     /**
@@ -151,9 +153,11 @@
 
     realityObject.messageCallBacks.mainCall = function (msgContent) {
 
-        if (msgContent.objectData) {
-            if (!realityObject.node) {
-                loadObjectSocketIo(msgContent.objectData);
+        if (!isSocketLoadedAlready) {
+            if (msgContent.objectData) {
+                if (!realityObject.node) {
+                    loadObjectSocketIo(msgContent.objectData);
+                }
             }
         }
 
