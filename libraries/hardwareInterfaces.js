@@ -203,6 +203,7 @@ exports.removeAllNodes = function (objectName, frameName) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 //console.log("object+frame exists");
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
+                    deleteLinksToAndFromNode(objectID, frameID, nodeKey);
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
                 }
@@ -210,6 +211,121 @@ exports.removeAllNodes = function (objectName, frameName) {
         }
     }
 };
+
+var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
+    // delete links to and from the node
+
+    // loop over all nodes in all frames in all objects to see if they need to be deleted
+    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+        for (var otherFrameKey in objects[otherObjectKey].frames) {
+            var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+            for (var linkKey in thatFrameLinks) {
+                var thatLink = thatFrameLinks[linkKey];
+                if ( (thatLink.objectA === objectKey && thatLink.frameA === frameKey && thatLink.nodeA === nodeKey) ||
+                     (thatLink.objectB === objectKey && thatLink.frameB === frameKey && thatLink.nodeB === nodeKey) ) {
+
+                    // this link includes the node that we are deleting, delete the link too
+                    delete thatFrameLinks[linkKey];
+
+                    // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+
+                    // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+
+                    // maybe notify the clients to reload?? but might be unnecessary / redundant
+                }
+            }
+        }
+    }
+
+
+    // realityEditor.forEachFrameInAllObjects(function(objectKey, frameKey) {
+    //     var thisFrame = realityEditor.getFrame(objectKey, frameKey);
+    //     Object.keys(thisFrame.links).forEach(function(linkKey) {
+    //         var thisLink = thisFrame.links[linkKey];
+    //         if (((thisLink.objectA === target.objectId) && (thisLink.frameA === target.frameId) && (thisLink.nodeA === target.nodeId)) ||
+    //             ((thisLink.objectB === target.objectId) && (thisLink.frameB === target.frameId) && (thisLink.nodeB === target.nodeId))) {
+    //             delete thisFrame.links[linkKey];
+    //             realityEditor.network.deleteLinkFromObject(objects[objectKey].ip, objectKey, frameKey, linkKey);
+    //         }
+    //     });
+    // });
+};
+
+var deleteUnusedLinkSockets = function(linkBeingDeleted) {
+
+    var destinationIp = knownObjects[linkBeingDeleted.objectB];
+
+    // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+    var checkIfIpIsUsed = false;
+    forEachObject(function(thisObject) {
+        forEachFrameInObject(thisObject, function(thisFrame) {
+            for (var linkCheckerKey in thisFrame.links) {
+                if (thisFrame.links[linkCheckerKey].objectB === linkBeingDeleted.objectB) {
+                    checkIfIpIsUsed = true;
+                }
+            }
+        });
+    });
+
+    // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+    if (linkBeingDeleted.objectB !== linkBeingDeleted.objectA && !checkIfIpIsUsed) {
+        delete socketArray[destinationIp];
+    }
+
+    // for (var otherObjectKey in objects) { // TODO: loop over world objects too
+    //     for (var otherFrameKey in objects[otherObjectKey].frames) {
+    //         var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+    //         for (var linkKey in thatFrameLinks) {
+    //             var thatLink = thatFrameLinks[linkKey];
+    //
+    //         }
+    //     }
+    // }
+
+};
+//
+// function deleteLink(objectKey, frameKey, linkKey, editorID){
+//
+//     var updateStatus = "nothing happened";
+//
+//     var foundFrame = getFrame(objectKey, frameKey);
+//
+//     if (foundFrame) {
+//
+//         var foundLink = foundFrame.links[linkKey];
+//         var destinationIp = knownObjects[foundLink.objectB];
+//
+//         delete foundFrame.links[linkKey];
+//
+//         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+//         utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+//
+//         // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+//         var checkIfIpIsUsed = false;
+//         forEachObject(function(thisObject) {
+//             forEachFrameInObject(thisObject, function(thisFrame) {
+//                 for (var linkCheckerKey in thisFrame.links) {
+//                     if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
+//                         checkIfIpIsUsed = true;
+//                     }
+//                 }
+//             });
+//         });
+//
+//         // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+//         if (foundLink.objectB !== foundLink.objectA && !checkIfIpIsUsed) {
+//             delete socketArray[destinationIp];
+//         }
+//
+//         cout("deleted link: " + linkKey);
+//         updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
+//     }
+//
+//     return updateStatus;
+//
+// }
+
+
 
 exports.reloadNodeUI = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
