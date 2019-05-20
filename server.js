@@ -797,7 +797,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, worldObject, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 cout("Done");
 
@@ -951,10 +951,12 @@ var executeSetups = function () {
             for (nodeKey in thisFrame.nodes) {
                 for (blockKey in thisFrame.nodes[nodeKey].blocks) {
                     var thisBlock = objects[objectKey].frames[frameKey].nodes[nodeKey].blocks[blockKey];
-                    blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
-                        function (object, frame, node, block, index, thisBlock) {
-                            engine.processBlockLinks(object, frame, node, block, index, thisBlock);
-                        })
+                    if (blockModules[thisBlock.type]) {
+                        blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
+                            function (object, frame, node, block, index, thisBlock) {
+                                engine.processBlockLinks(object, frame, node, block, index, thisBlock);
+                            })
+                    }
                 }
             }
         }
@@ -2117,6 +2119,11 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
         console.log("get available logic blocks");
+
+        console.log('insert code here');
+
+        // hardwareAPI.removeAllNodes()
+
         res.json(getLogicBlockList())
     });
 
@@ -4310,7 +4317,7 @@ function socketServer() {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
 
@@ -4357,7 +4364,7 @@ function socketServer() {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
 
@@ -4539,7 +4546,7 @@ function socketServer() {
 function sendMessagetoEditors(msgContent) {
 
     for (var thisEditor in realityEditorSocketArray) {
-        if (msgContent.object === realityEditorSocketArray[thisEditor].object) {
+        if (msgContent.object === realityEditorSocketArray[thisEditor].object && msgContent.frame === realityEditorSocketArray[thisEditor].frame) {
             messagetoSend(msgContent, thisEditor);
         }
     }
