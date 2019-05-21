@@ -4313,7 +4313,7 @@ function socketServer() {
                 thisProtocol = "R0";
             }
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
@@ -4438,7 +4438,7 @@ function socketServer() {
                     frame: msgContent.frame,
                     node: msgContent.node,
                     data: msgContent.data
-                });
+                }, socket.id);
             }
         });
 
@@ -4543,9 +4543,14 @@ function socketServer() {
     cout('socket.io started');
 }
 
-function sendMessagetoEditors(msgContent) {
+function sendMessagetoEditors(msgContent, sourceSocketID) {
+
+    console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
 
     for (var thisEditor in realityEditorSocketArray) {
+        if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID) {
+            continue; // don't trigger the read listener of the socket that originally wrote the data
+        }
         if (msgContent.object === realityEditorSocketArray[thisEditor].object && msgContent.frame === realityEditorSocketArray[thisEditor].frame) {
             messagetoSend(msgContent, thisEditor);
         }
