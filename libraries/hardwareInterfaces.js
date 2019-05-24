@@ -24,6 +24,9 @@ var _ = require('lodash');
 //global variables, passed through from server.js
 var objects = {};
 var objectLookup;
+var knownObjects; // needed to check if sockets are still used when we delete links
+var socketArray; // needed to delete sockets when links are removed
+var worldObject;
 var globalVariables;
 var dirnameO;
 var objectsPath;
@@ -212,15 +215,18 @@ exports.removeAllNodes = function (objectName, frameName) {
     }
 };
 
+// delete links to and from the node, including deleting the socket if it isn't used anymore
 var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
-    // delete links to and from the node
 
     // loop over all nodes in all frames in all objects to see if they need to be deleted
     for (var otherObjectKey in objects) { // TODO: loop over world objects too
         for (var otherFrameKey in objects[otherObjectKey].frames) {
             var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
             for (var linkKey in thatFrameLinks) {
+
                 var thatLink = thatFrameLinks[linkKey];
+                var destinationIp = knownObjects[thatLink.objectB];
+
                 if ( (thatLink.objectA === objectKey && thatLink.frameA === frameKey && thatLink.nodeA === nodeKey) ||
                      (thatLink.objectB === objectKey && thatLink.frameB === frameKey && thatLink.nodeB === nodeKey) ) {
 
@@ -229,14 +235,28 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
 
                     // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
 
+                    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+                        for (var otherFrameKey in objects[otherObjectKey].frames) {
+                            var otherFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+                            for (var otherLinkKey in otherFrameLinks) {
+                                var otherLink = otherFrameLinks[otherLinkKey];
+                                if (otherLink.objectB === thatLink.objectB) {
+                                    checkIfIpIsUsed = true;
+                                }
+                            }
+                        }
+                    }
+
                     // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+                    if (thatLink.objectB !== thatLink.objectA && !checkIfIpIsUsed) {
+                        delete socketArray[destinationIp];
+                    }
 
                     // maybe notify the clients to reload?? but might be unnecessary / redundant
                 }
             }
         }
     }
-
 
     // realityEditor.forEachFrameInAllObjects(function(objectKey, frameKey) {
     //     var thisFrame = realityEditor.getFrame(objectKey, frameKey);
@@ -251,38 +271,38 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
     // });
 };
 
-var deleteUnusedLinkSockets = function(linkBeingDeleted) {
-
-    var destinationIp = knownObjects[linkBeingDeleted.objectB];
-
-    // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
-    var checkIfIpIsUsed = false;
-    forEachObject(function(thisObject) {
-        forEachFrameInObject(thisObject, function(thisFrame) {
-            for (var linkCheckerKey in thisFrame.links) {
-                if (thisFrame.links[linkCheckerKey].objectB === linkBeingDeleted.objectB) {
-                    checkIfIpIsUsed = true;
-                }
-            }
-        });
-    });
-
-    // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
-    if (linkBeingDeleted.objectB !== linkBeingDeleted.objectA && !checkIfIpIsUsed) {
-        delete socketArray[destinationIp];
-    }
-
-    // for (var otherObjectKey in objects) { // TODO: loop over world objects too
-    //     for (var otherFrameKey in objects[otherObjectKey].frames) {
-    //         var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
-    //         for (var linkKey in thatFrameLinks) {
-    //             var thatLink = thatFrameLinks[linkKey];
-    //
-    //         }
-    //     }
-    // }
-
-};
+// var deleteUnusedLinkSockets = function(linkBeingDeleted) {
+//
+//     var destinationIp = knownObjects[linkBeingDeleted.objectB];
+//
+//     // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+//     var checkIfIpIsUsed = false;
+//     forEachObject(function(thisObject) {
+//         forEachFrameInObject(thisObject, function(thisFrame) {
+//             for (var linkCheckerKey in thisFrame.links) {
+//                 if (thisFrame.links[linkCheckerKey].objectB === linkBeingDeleted.objectB) {
+//                     checkIfIpIsUsed = true;
+//                 }
+//             }
+//         });
+//     });
+//
+//     // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+//     if (linkBeingDeleted.objectB !== linkBeingDeleted.objectA && !checkIfIpIsUsed) {
+//         delete socketArray[destinationIp];
+//     }
+//
+//     // for (var otherObjectKey in objects) { // TODO: loop over world objects too
+//     //     for (var otherFrameKey in objects[otherObjectKey].frames) {
+//     //         var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+//     //         for (var linkKey in thatFrameLinks) {
+//     //             var thatLink = thatFrameLinks[linkKey];
+//     //
+//     //         }
+//     //     }
+//     // }
+//
+// };
 //
 // function deleteLink(objectKey, frameKey, linkKey, editorID){
 //
@@ -324,8 +344,6 @@ var deleteUnusedLinkSockets = function(linkBeingDeleted) {
 //     return updateStatus;
 //
 // }
-
-
 
 exports.reloadNodeUI = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
@@ -594,6 +612,7 @@ exports.removeNode = function (objectName, frameName, nodeName) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+                    deleteLinksToAndFromNode(objectID, frameID, nodeID);
                     //console.log("deleted node " + nodeName);
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
@@ -682,9 +701,12 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
+exports.setup = function (objExp, objLookup, knownObjs, socketArr, worldObj, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
     objects = objExp;
     objectLookup = objLookup;
+    knownObjects = knownObjs;
+    socketArray = socketArr;
+    worldObject = worldObj;
     globalVariables = glblVars;
     dirnameO = dir;
     objectsPath = objPath;
@@ -695,7 +717,6 @@ exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, bloc
     actionCallback = callbacks.actions;
     callback = callbacks.data;
     writeObjectCallback = callbacks.write;
-
 };
 
 exports.reset = function (){
