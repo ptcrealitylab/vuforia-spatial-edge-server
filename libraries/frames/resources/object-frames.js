@@ -659,7 +659,20 @@
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.publicData === "undefined")  return;
-                if (typeof thisMsg.publicData[node] === "undefined") return;
+                if (thisMsg.node !== realityObject.frame+node) return;
+                if (typeof thisMsg.publicData[node] === "undefined") {
+                    // convert format if possible, otherwise return
+                    if (typeof thisMsg.publicData[valueName] !== "undefined") {
+                        var publicDataKeys = Object.keys(thisMsg.publicData);
+                        thisMsg.publicData[node] = {};
+                        publicDataKeys.forEach(function(existingKey) {
+                            thisMsg.publicData[node][existingKey] = thisMsg.publicData[existingKey];
+                        });
+                        console.warn('converted incorrect publicData format in object/publicData listener');
+                    } else {
+                        return;
+                    }
+                }
                 if (typeof thisMsg.publicData[node][valueName] === "undefined") return;
 
                 var isUnset =   (typeof realityObject.publicData[node] === "undefined") ||
@@ -732,7 +745,7 @@
             // reload public data when it becomes visible
             for (var i = 0; i < realityInterfaces.length; i++) {
                 if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
-                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame})); //TODO: change to subscribe/realityEditorPublicData ??
+                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
                 }
             }
         };
