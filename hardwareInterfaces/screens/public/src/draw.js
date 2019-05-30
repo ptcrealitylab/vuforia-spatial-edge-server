@@ -17,6 +17,7 @@ realityEditor.draw.render = function() {
     realityEditor.linkRenderer.renderLinks();
     realityEditor.groupRenderer.renderGroups();
     realityEditor.gui.crafting.redrawDataCrafting();
+    realityEditor.memoryLinkRenderer.renderLinks();
 
     requestAnimFrame(realityEditor.draw.render);
 };
@@ -60,6 +61,10 @@ realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
         // addContainer.style.display = "none";
         addContainer.style.border = 0;
         addContainer.style.position = 'absolute';
+
+        if (vehicle.src === 'memoryFrame') {
+            addContainer.classList.add('visibleMemoryFrame');
+        }
 
         var screenPos;
         if (isFrame) {
