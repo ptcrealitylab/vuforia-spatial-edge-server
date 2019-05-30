@@ -44,14 +44,21 @@
  */
 
 /**
- * @desc prototype for a plugin. This prototype is called when a value should be changed.
- * It defines how this value should be transformed before sending it to the destination.
- * @param {object} objectID Origin object in which the related link is saved.
- * @param {string} linkID the id of the link that is related to the call
- * @param {object} inputData the data that needs to be processed
- * @param {function} callback the function that is called for when the process is rendered.
- * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
- **/
+ * @fileOverview
+ * IFTTT is a block that triggers custom events on "If This Then That"
+ * The event name and key can be generated on maker.ifttt.com and then set in this block's settings menu
+ * The request includes the block's current value in the body in the format: {value1: thisBlock.processedData[0].value}
+ *
+ * Defines a new logic block that will appear in the crafting menu
+ * Anytime data arrives at the block, the render function will be triggered.
+ * The input data value(s) will arrive in thisBlock.data
+ * After performing the block's behavior, write the output value(s) to thisBlock.processedData,
+ * And finally call the callback function to send the data to whatever this block is next linked to
+ *
+ * gui/icon.svg is the small menu icon for the block
+ * gui/label.svg is the full image on the block (for a block of blockSize=1 might be the same as icon.svg)
+ * gui/index.html is the optional settings menu that pops up when you tap on the block
+ */
 
 var request = require('request');
 
@@ -71,19 +78,18 @@ var generalProperties = {
     type : "IFTTT"
 };
 
-//endpointUrl : "http://192.168.1.12:8082/test",
-//https://maker.ifttt.com/trigger/{event}/with/key/d7KguEO4Vn2Xhut0sR0_JI
-
 exports.properties = generalProperties;
 
-exports.setup = function (object,frame, node, block, thisBlock, callback){
-// add code here that should be executed once.
-    // var publicData thisBlock.publicData;
-    // callback(object, frame, node, block, index, thisBlock);
-};
-
-//var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
-
+/**
+ * This defines how the value should be transformed before sending it to the destination
+ * @param {string} object - objectID (object/frame/node/block specifies the "street address" of this block)
+ * @param {string} frame - frameID
+ * @param {string} node - nodeID
+ * @param {string} block - blockID
+ * @param {number} index - the index of which input was just received. for example, a block with two inputs will have its render function called twice - once with index 0 and once with index 1. it is up to the implemented to decide whether to trigger the callback when either index is triggered, or only once all indices have received values, etc.
+ * @param {{data: Array.<number>, processedData: Array:<number>, ...}} thisBlock - reference to the full block data struct
+ * @param {function} callback - should be triggered with these arguments: (object, frame, node, block, index, thisBlock)
+ */
 exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
     // data flows through it like normal
@@ -97,25 +103,11 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
     if (index === 0) {
 
         var endpointUrl = "https://maker.ifttt.com/trigger/" + thisBlock.publicData.eventName + "/with/key/" + thisBlock.publicData.ifttt_key;
-        //var jsonBody = {value1: thisBlock.processedData[0].value};
 
         var requestBody = {value1: thisBlock.processedData[0].value};
-        //var requestBody = {"value1":"1"};
-        //var requestBody = { json: {value1: thisBlock.processedData[0].value} };
-
-        //request.post(
-        //    endpointUrl,
-        //    requestBody,
-        //    function (error, response, body) {
-        //        if (!error && response.statusCode == 200) {
-        //            console.log(body);
-        //        }
-        //    }
-        //);
 
         var options = {
             method: 'post',
-            //body: {},
             body: requestBody,
             json: true,
             url: endpointUrl
@@ -133,10 +125,16 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
             console.log('body: ', body);
         });
 
-
     }
 
-    //console.log(endpointUrl, requestBody);
-
     callback(object, frame, node, block, index, thisBlock);
+};
+
+/**
+ * @todo: not working yet
+ */
+exports.setup = function (object,frame, node, block, thisBlock, callback) {
+// add code here that should be executed once.
+    // var publicData thisBlock.publicData;
+    // callback(object, frame, node, block, index, thisBlock);
 };

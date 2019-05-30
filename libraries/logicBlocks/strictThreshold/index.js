@@ -45,7 +45,8 @@
 
 /**
  * @fileOverview
- * strictThreshold is a block that outputs a 1 if the input value is above 0.5, and doesn't output anything otherwise
+ * STRICT-THRESHOLD is a variation of the THRESHOLD block that doesn't output a zero if the value is below the threshold
+ * This block outputs a 1 if the input value is above 0.5, and doesn't output anything otherwise
  * The threshold (0.5) can be adjusted to a different value in the settings menu
  * Digital mode can also be turned off in the settings menu, and then it will output the input value instead of 1
  *
@@ -92,7 +93,7 @@ exports.properties = generalProperties;
  * @param {{data: Array.<number>, processedData: Array:<number>, ...}} thisBlock - reference to the full block data struct
  * @param {function} callback - should be triggered with these arguments: (object, frame, node, block, index, thisBlock)
  */
-exports.render = function (object, frame, node, block, index, thisBlock, callback)  {
+exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
     // Checks if the input value exceeds the threshold
 
@@ -125,7 +126,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
 /**
  * @todo: not working yet
  */
-exports.setup = function (object,frame, node, block, thisBlock, callback){
+exports.setup = function (object,frame, node, block, thisBlock, callback) {
 // add code here that should be executed once.
     // var publicData thisBlock.publicData;
     // callback(object, frame, node, block, index, thisBlock);

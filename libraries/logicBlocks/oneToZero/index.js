@@ -43,12 +43,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-
 /**
  * @fileOverview
- * strictThreshold is a block that outputs a 1 if the input value is above 0.5, and doesn't output anything otherwise
- * The threshold (0.5) can be adjusted to a different value in the settings menu
- * Digital mode can also be turned off in the settings menu, and then it will output the input value instead of 1
+ * ONE-TO-ZERO is a block that outputs a single 1 value whenever the previous value of the input was a 1, and then it becomes a 0
+ * This was designed for detecting when the MiR robot arrives at a checkpoint and triggering some action based on that
  *
  * Defines a new logic block that will appear in the crafting menu
  * Anytime data arrives at the block, the render function will be triggered.
@@ -123,7 +121,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
 /**
  * @todo: not working yet
  */
-exports.setup = function (object,frame, node, block, thisBlock, callback){
+exports.setup = function (object,frame, node, block, thisBlock, callback) {
 // add code here that should be executed once.
     // var publicData thisBlock.publicData;
     // callback(object, frame, node, block, index, thisBlock);
