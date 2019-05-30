@@ -60,15 +60,22 @@
  */
 
 var generalProperties = {
+    // display name underneath icon in block menu
     name : "splitter",
+    // set this to how wide the block should be - (the bigger of # inputs and # outputs)
     blockSize : 2,
     privateData : {},
+    // these properties are accessible to user modification via the block's settings menu (gui/index.html)
     publicData : {toggle: true},
+    // sets which input indices of the block can have links drawn to them
     activeInputs : [true, false, false, false],
+    // sets which output indices of the block can have links drawn from them
     activeOutputs : [true, true, false, false],
     iconImage : "icon.png",
+    // not currently used anywhere, but helpful for developer reference
     nameInput : ["in", "", "", ""],
     nameOutput : ["digital out", "digital out", "", ""],
+    // should match the folder name
     type : "splitter"
 };
 

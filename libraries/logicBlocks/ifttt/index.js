@@ -63,18 +63,25 @@
 var request = require('request');
 
 var generalProperties = {
+    // display name underneath icon in block menu
     name : "IFTTT",
+    // set this to how wide the block should be - (the bigger of # inputs and # outputs)
     blockSize : 1,
     privateData : {},
+    // these properties are accessible to user modification via the block's settings menu (gui/index.html)
     publicData : {
         eventName: "reality_editor_43bb26f9",
         ifttt_key: "cjizq-2cjLs9dasYKceqOB" //"d7KguEO4Vn2Xhut0sR0_JI"
     },
+    // sets which input indices of the block can have links drawn to them
     activeInputs : [true, false, false, false],
+    // sets which output indices of the block can have links drawn from them
     activeOutputs : [true, false, false, false],
     iconImage : "icon.png",
+    // not currently used anywhere, but helpful for developer reference
     nameInput : ["in", "", "", ""],
     nameOutput : ["out", "", "", ""],
+    // should match the folder name
     type : "IFTTT"
 };
 

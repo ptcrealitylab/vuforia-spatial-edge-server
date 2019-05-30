@@ -63,15 +63,22 @@
  */
 
 var generalProperties = {
+    // display name underneath icon in block menu
     name : "router",
+    // set this to how wide the block should be - (the bigger of # inputs and # outputs)
     blockSize : 2,
     privateData : {},
+    // these properties are accessible to user modification via the block's settings menu (gui/index.html)
     publicData : {},
+    // sets which input indices of the block can have links drawn to them
     activeInputs : [true, true, false, false],
+    // sets which output indices of the block can have links drawn from them
     activeOutputs : [true, true, false, false],
     iconImage : "icon.png",
+    // not currently used anywhere, but helpful for developer reference
     nameInput : ["threshold", "trigger", "", ""],
     nameOutput : ["out if", "out else", "", ""],
+    // should match the folder name
     type : "router"
 };
 
