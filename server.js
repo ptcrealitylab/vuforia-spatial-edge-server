@@ -4543,7 +4543,7 @@ function socketServer() {
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
 
-    console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
+    // console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
 
     for (var thisEditor in realityEditorSocketArray) {
         if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID) {

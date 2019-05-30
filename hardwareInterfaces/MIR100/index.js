@@ -53,7 +53,7 @@ const dist = require('vectors/dist')(2);
 const fetch = require('node-fetch');
 const { WebSocketInterface } = require('./websocketInterface');
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
