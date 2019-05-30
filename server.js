@@ -4343,7 +4343,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4382,7 +4382,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node : key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4444,7 +4444,10 @@ function socketServer() {
             var msg = JSON.parse(_msg);
 
             var node = getNode(msg.object, msg.frame, msg.node);
-            if (node && msg && typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+            if (node && msg && typeof msg.publicData !== "undefined") {
+                if (typeof node.publicData === "undefined") {
+                    node.publicData = {};
+                }
                 var thisPublicData = node.publicData;
                 for (var key in msg.publicData) {
                     thisPublicData[key] = msg.publicData[key];
