@@ -3504,7 +3504,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject));
         });
 
         // restart the server from the web frontend to load
@@ -3798,9 +3798,11 @@ function objectWebServer() {
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
                 var pathKey = req.body.path;
-                if(objects[objectKey]) {
-                    if (req.body.frame in objects[objectKey].frames) {
-                        frameName = objects[objectKey].frames[req.body.frame].name;
+
+                var thisObject = getObject(objectKey);
+                if (thisObject) {
+                    if (req.body.frame in thisObject.frames) {
+                        frameName = thisObject.frames[req.body.frame].name;
                     } else {
                         frameNameKey = objectKey + req.body.frame;
                     }
@@ -3813,17 +3815,23 @@ function objectWebServer() {
                 };
 
                 if (frameName !== "") {
+
                     var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
+                    if (thisObject.isWorldObject) {
+                        folderDelFrame = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + req.body.name + "/" + frameName;
+                    }
 
                     deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
-                        if(objects[objectKey]) {
-                            delete objects[objectKey].frames[frameNameKey];
+                        if(thisObject) {
+                            delete thisObject.frames[frameNameKey];
                         }
                     }
 
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
+
                     res.send("ok");
 
                 } else {
