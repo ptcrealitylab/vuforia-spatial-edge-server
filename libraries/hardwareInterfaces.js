@@ -23,6 +23,7 @@ var _ = require('lodash');
 
 //global variables, passed through from server.js
 var objects = {};
+var knownObjects = {};
 var objectLookup;
 var globalVariables;
 var dirnameO;
@@ -215,6 +216,14 @@ exports.reloadNodeUI = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
+};
+
+exports.getAllObjects = function () {
+    return objects;
+};
+
+exports.getKnownObjects = function () {
+    return knownObjects;
 };
 
 exports.getAllFrames = function (objectName) {
@@ -543,8 +552,9 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
+exports.setup = function (objExp, knownObjs, objLookup, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
     objects = objExp;
+    knownObjects = knownObjs;
     objectLookup = objLookup;
     globalVariables = glblVars;
     dirnameO = dir;

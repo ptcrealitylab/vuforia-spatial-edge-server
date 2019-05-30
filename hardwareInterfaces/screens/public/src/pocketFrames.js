@@ -192,15 +192,34 @@ var realityElements = [
             {name: 'value', type: "node"}
         ]
     },
+    // {
+    //     name: 'slider-2d',
+    //     width: 526,
+    //     height: 526,
+    //     nodes: [
+    //         {name: 'valueX', type: "node"},
+    //         {name: 'valueY', type: "node"}
+    //     ]
+    // },
     {
-        name: 'slider-2d',
-        width: 526,
-        height: 526,
+        name: 'memoryFrame',
+        width: 568,
+        height: 320,
         nodes: [
-            {name: 'valueX', type: "node"},
-            {name: 'valueY', type: "node"}
+            {
+                name: 'storage',
+                type: "storeData",
+                publicData: {
+                    memoryInformation: {
+                        projectionMatrix: [-1140.395936, 0, 0, 0, 0, -1140.3961199999999, 0, 0, 4.073024, -8.595468, 2.004004, 2, 0, 0, -4.004004, 0],
+                        modelViewMatrix: [-0.9880483095065227, -0.0728421900055229, -0.13585026435566017, 0, 0.05879001785290355, -0.9927616034709436, 0.1047322703881485, 0, 0.142495820465779, -0.09549354201547097, -0.985178377649512, 0, 64.7624112284307, -7.980369677572119, 664.8658928307367, 1],
+                        objectID: 'stoneTestrmix4u3rq5ve',
+                        objectIP: '10.10.10.109'
+                    }
+                }
+            }
         ]
-    },
+    }
     // {
     //     name: 'pushMe',
     //     width: 600,

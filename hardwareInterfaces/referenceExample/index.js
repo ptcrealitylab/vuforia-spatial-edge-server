@@ -50,7 +50,7 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 

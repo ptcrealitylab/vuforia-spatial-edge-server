@@ -5,6 +5,25 @@ realityEditor.network.registerCallback = {};
 realityEditor.network.callbackHandler = new realityEditor.moduleCallbacks.CallbackHandler('realityEditor.network');
 
 /**
+ * Broadcasts the JSON message over UDP
+ * @param {object} message
+ */
+realityEditor.network.sendUDPMessage = function(message) {
+    console.log('send UDP message', message);
+    socket.emit('/nativeAPI/sendUDPMessage', message);
+};
+
+/**
+ * Send the message to the hardware interface index.js via a socket
+ * @param {string} socketName
+ * @param {object} message
+ */
+realityEditor.network.sendSocketMessage = function(socketName, message) {
+    console.log('send socket message with name ' + socketName, message);
+    socket.emit(socketName, message);
+};
+
+/**
  * Parse each message from socket.io and perform the appropriate action
  * Messages include:
  * objectName
@@ -121,6 +140,18 @@ realityEditor.network.setupSocketListeners = function() {
         window.location.reload();
     });
 
+    socket.on('allObjects', function(msg) {
+        if (!realityEditor.network.isMessageForMe(msg)) return;
+
+        realityEditor.network.callbackHandler.triggerCallbacks('allObjects', msg);
+    });
+
+    socket.on('allObjectsOnOtherServers', function(msg) {
+        if (!realityEditor.network.isMessageForMe(msg)) return;
+
+        realityEditor.network.callbackHandler.triggerCallbacks('allObjectsOnOtherServers', msg);
+    });
+
 };
 
 /**
@@ -207,6 +238,24 @@ realityEditor.network.updateFrameVisualization = function(objectKey, frameKey, i
 };
 
 /**
+ * @type {Array.<{messageName: string, callback: function}>}
+ */
+realityEditor.network.postMessageHandlers = [];
+
+/**
+ * Creates an extendable method for other modules to register callbacks that will be triggered
+ * from onInternalPostMessage events, without creating circular dependencies
+ * @param {string} messageName
+ * @param {function} callback
+ */
+realityEditor.network.addPostMessageHandler = function(messageName, callback) {
+    this.postMessageHandlers.push({
+        messageName: messageName,
+        callback: callback
+    });
+};
+
+/**
  * Set the width and height of each iframe based on its contents, which it automatically posts
  */
 realityEditor.network.onInternalPostMessage = function(e) {
@@ -225,21 +274,30 @@ realityEditor.network.onInternalPostMessage = function(e) {
         }
     }
 
+    // iterates over all registered postMessageHandlers to trigger events in various modules
+    realityEditor.network.postMessageHandlers.forEach(function(messageHandler) {
+        if (typeof msgContent[messageHandler.messageName] !== 'undefined') {
+            messageHandler.callback(msgContent[messageHandler.messageName], msgContent);
+        }
+    });
+
     // console.log(msgContent);
 
     if (msgContent.width && msgContent.height && msgContent.frame) {
         console.log('got width and height', msgContent.width, msgContent.height);
         var activeKey = msgContent.node || msgContent.frame;
         var iFrame = document.getElementById('iframe' + activeKey);
-        iFrame.style.width = msgContent.width + 'px';
-        iFrame.style.height = msgContent.height + 'px';
-        var svg = document.getElementById('svg' + activeKey);
-        svg.style.width = msgContent.width + 'px';
-        svg.style.height = msgContent.height + 'px';
-        realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
-        // var cover = document.getElementById("cover" + activeKey);
-        // cover.style.width = msgContent.width + 'px';
-        // cover.style.height = msgContent.height + 'px';
+        if (iFrame) {
+            iFrame.style.width = msgContent.width + 'px';
+            iFrame.style.height = msgContent.height + 'px';
+            var svg = document.getElementById('svg' + activeKey);
+            svg.style.width = msgContent.width + 'px';
+            svg.style.height = msgContent.height + 'px';
+            realityEditor.gui.ar.moveabilityOverlay.createSvg(svg);
+            // var cover = document.getElementById("cover" + activeKey);
+            // cover.style.width = msgContent.width + 'px';
+            // cover.style.height = msgContent.height + 'px';
+        }
     }
 
     if (typeof msgContent.socketReconnect !== 'undefined') {
@@ -289,15 +347,27 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
         }
     }), '*');
 
-    console.log("on_load");
+    if (frame.src === 'memoryFrame') {
+        // console.log('CREATING MEMORY FRAME... INITIALIZE WITH CORRECT PUBLIC DATA');
+        thisIframe.contentWindow.postMessage(JSON.stringify({
+            memoryInformation: {
+                objectId: objectKey,
+                ipAddress: 'http://localhost:8080',
+                modelViewMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+                projectionMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
+            }
+        }), '*')
+    }
+
+    realityEditor.network.callbackHandler.triggerCallbacks('onElementLoad', {objectKey: objectKey, frameKey: frameKey, nodeKey: nodeKey});
+
+    // console.log("on_load");
 };
 
 /**
  * Helper function to perform a GET request
  */
-realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, callback) {
-    if (!nodeKey) nodeKey = null;
-    if (!frameKey) frameKey = null;
+realityEditor.network.getData = function(url, callback) {
     var _this = this;
     var req = new XMLHttpRequest();
     try {
@@ -309,11 +379,11 @@ realityEditor.network.getData = function(objectKey, frameKey, nodeKey, url, call
                 if (req.status === 200) {
                     // JSON.parse(req.responseText) etc.
                     if (req.responseText)
-                        callback(objectKey, frameKey, nodeKey, JSON.parse(req.responseText));
+                        callback(JSON.parse(req.responseText));
                 } else {
                     // Handle error case
                     console.log("could not load content");
-                    _this.cout("could not load content");
+                    // _this.cout("could not load content");
                 }
             }
         };

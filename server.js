@@ -237,6 +237,7 @@ function Objects() {
     // This data can be used for interacting with objects for when they are not visible.
     this.memory = {};
     this.memoryCameraMatrix = {};
+    this.memoryProjectionMatrix = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
     // keep a memory of the last commit state of the frames.
@@ -797,7 +798,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, knownObjects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 cout("Done");
 
@@ -2958,6 +2959,7 @@ function objectWebServer() {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
                 obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
+                obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
@@ -3028,10 +3030,15 @@ function objectWebServer() {
             newFrame.height = frame.height;
 
             for(key in newFrame.nodes){
-                if(!frame.publicData) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-                } else if(Object.keys(frame.publicData).length <= 0) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // if(!frame.publicData) {
+                //     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // } else if(Object.keys(frame.publicData).length <= 0) {
+                //     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
+                // }
+
+                // sets initial public data if any values are predefined
+                for (var publicDataKey in frame.nodes[key].publicData) {
+                    newFrame.nodes[key].publicData[publicDataKey] = frame.nodes[key].publicData[publicDataKey];
                 }
             }
 
@@ -4286,7 +4293,7 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
             }
         }
     }
-}
+};
 
 
 function socketServer() {
@@ -4322,7 +4329,10 @@ function socketServer() {
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
-                    //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+                    //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
+
+                    var nodeName = frame.nodes[key].name;
+                    publicData[nodeName] = frame.nodes[key].publicData;
 
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,
@@ -4335,7 +4345,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4374,7 +4384,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node : key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4436,7 +4446,10 @@ function socketServer() {
             var msg = JSON.parse(_msg);
 
             var node = getNode(msg.object, msg.frame, msg.node);
-            if (node && msg && typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+            if (node && msg && typeof msg.publicData !== "undefined") {
+                if (typeof node.publicData === "undefined") {
+                    node.publicData = {};
+                }
                 var thisPublicData = node.publicData;
                 for (var key in msg.publicData) {
                     thisPublicData[key] = msg.publicData[key];

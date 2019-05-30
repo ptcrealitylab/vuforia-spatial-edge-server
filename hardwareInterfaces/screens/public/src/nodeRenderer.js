@@ -6,6 +6,7 @@ createNameSpace("realityEditor.nodeRenderer");
     var isMouseDown = false;
     var LOGIC_COLOR_PICKER_THRESHOLD = 200;
     var isLogicNodeHighlightingEnabled = true;
+    var hiddenNodeTypes = ['storeData', 'invisible'];
 
     function initFeature() {
 
@@ -63,6 +64,9 @@ createNameSpace("realityEditor.nodeRenderer");
 
     function renderNodes() {
         realityEditor.database.forEachNodeInAllFrames(function(frameKey, nodeKey, node) {
+            // nodes of certain types are invisible and don't need to be rendered (e.g. storeData nodes)
+            if (hiddenNodeTypes.indexOf(node.type) > -1) { return; }
+
             addElement(frameKey, nodeKey, node);
             drawTransformed(frameKey, nodeKey, node);
         });
