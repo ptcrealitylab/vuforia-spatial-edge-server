@@ -83,6 +83,8 @@ exports.writeObject = function (objectLookup, folder, id) {
 exports.readObject = function (objectLookup, folder) {
     if (objectLookup.hasOwnProperty(folder)) {
         return objectLookup[folder].id;
+    } else if (folder.indexOf(worldObjectName) > -1) {
+        return worldObject.objectId;
     } else {
         return null;
     }
