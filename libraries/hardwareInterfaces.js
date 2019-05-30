@@ -23,8 +23,10 @@ var _ = require('lodash');
 
 //global variables, passed through from server.js
 var objects = {};
-var knownObjects = {};
 var objectLookup;
+var knownObjects; // needed to check if sockets are still used when we delete links
+var socketArray; // needed to delete sockets when links are removed
+var worldObject;
 var globalVariables;
 var dirnameO;
 var objectsPath;
@@ -202,8 +204,9 @@ exports.removeAllNodes = function (objectName, frameName) {
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
-                console.log("object+frame exists");
+                //console.log("object+frame exists");
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
+                    deleteLinksToAndFromNode(objectID, frameID, nodeKey);
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
                 }
@@ -211,6 +214,136 @@ exports.removeAllNodes = function (objectName, frameName) {
         }
     }
 };
+
+// delete links to and from the node, including deleting the socket if it isn't used anymore
+var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
+
+    // loop over all nodes in all frames in all objects to see if they need to be deleted
+    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+        for (var otherFrameKey in objects[otherObjectKey].frames) {
+            var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+            for (var linkKey in thatFrameLinks) {
+
+                var thatLink = thatFrameLinks[linkKey];
+                var destinationIp = knownObjects[thatLink.objectB];
+
+                if ( (thatLink.objectA === objectKey && thatLink.frameA === frameKey && thatLink.nodeA === nodeKey) ||
+                     (thatLink.objectB === objectKey && thatLink.frameB === frameKey && thatLink.nodeB === nodeKey) ) {
+
+                    // this link includes the node that we are deleting, delete the link too
+                    delete thatFrameLinks[linkKey];
+
+                    // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+
+                    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+                        for (var otherFrameKey in objects[otherObjectKey].frames) {
+                            var otherFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+                            for (var otherLinkKey in otherFrameLinks) {
+                                var otherLink = otherFrameLinks[otherLinkKey];
+                                if (otherLink.objectB === thatLink.objectB) {
+                                    checkIfIpIsUsed = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+                    if (thatLink.objectB !== thatLink.objectA && !checkIfIpIsUsed) {
+                        delete socketArray[destinationIp];
+                    }
+
+                    // maybe notify the clients to reload?? but might be unnecessary / redundant
+                }
+            }
+        }
+    }
+
+    // realityEditor.forEachFrameInAllObjects(function(objectKey, frameKey) {
+    //     var thisFrame = realityEditor.getFrame(objectKey, frameKey);
+    //     Object.keys(thisFrame.links).forEach(function(linkKey) {
+    //         var thisLink = thisFrame.links[linkKey];
+    //         if (((thisLink.objectA === target.objectId) && (thisLink.frameA === target.frameId) && (thisLink.nodeA === target.nodeId)) ||
+    //             ((thisLink.objectB === target.objectId) && (thisLink.frameB === target.frameId) && (thisLink.nodeB === target.nodeId))) {
+    //             delete thisFrame.links[linkKey];
+    //             realityEditor.network.deleteLinkFromObject(objects[objectKey].ip, objectKey, frameKey, linkKey);
+    //         }
+    //     });
+    // });
+};
+
+// var deleteUnusedLinkSockets = function(linkBeingDeleted) {
+//
+//     var destinationIp = knownObjects[linkBeingDeleted.objectB];
+//
+//     // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+//     var checkIfIpIsUsed = false;
+//     forEachObject(function(thisObject) {
+//         forEachFrameInObject(thisObject, function(thisFrame) {
+//             for (var linkCheckerKey in thisFrame.links) {
+//                 if (thisFrame.links[linkCheckerKey].objectB === linkBeingDeleted.objectB) {
+//                     checkIfIpIsUsed = true;
+//                 }
+//             }
+//         });
+//     });
+//
+//     // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+//     if (linkBeingDeleted.objectB !== linkBeingDeleted.objectA && !checkIfIpIsUsed) {
+//         delete socketArray[destinationIp];
+//     }
+//
+//     // for (var otherObjectKey in objects) { // TODO: loop over world objects too
+//     //     for (var otherFrameKey in objects[otherObjectKey].frames) {
+//     //         var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+//     //         for (var linkKey in thatFrameLinks) {
+//     //             var thatLink = thatFrameLinks[linkKey];
+//     //
+//     //         }
+//     //     }
+//     // }
+//
+// };
+//
+// function deleteLink(objectKey, frameKey, linkKey, editorID){
+//
+//     var updateStatus = "nothing happened";
+//
+//     var foundFrame = getFrame(objectKey, frameKey);
+//
+//     if (foundFrame) {
+//
+//         var foundLink = foundFrame.links[linkKey];
+//         var destinationIp = knownObjects[foundLink.objectB];
+//
+//         delete foundFrame.links[linkKey];
+//
+//         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+//         utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
+//
+//         // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
+//         var checkIfIpIsUsed = false;
+//         forEachObject(function(thisObject) {
+//             forEachFrameInObject(thisObject, function(thisFrame) {
+//                 for (var linkCheckerKey in thisFrame.links) {
+//                     if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
+//                         checkIfIpIsUsed = true;
+//                     }
+//                 }
+//             });
+//         });
+//
+//         // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
+//         if (foundLink.objectB !== foundLink.objectA && !checkIfIpIsUsed) {
+//             delete socketArray[destinationIp];
+//         }
+//
+//         cout("deleted link: " + linkKey);
+//         updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
+//     }
+//
+//     return updateStatus;
+//
+// }
 
 exports.reloadNodeUI = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
@@ -229,7 +362,7 @@ exports.getKnownObjects = function () {
 exports.getAllFrames = function (objectName) {
     var objectID = utilities.readObject(objectLookup, objectName);
     // var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log(objectID);
+    //console.log(objectID);
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -280,7 +413,7 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
 };
 
 exports.subscribeToNewFramesAdded = function (objectName, callback) {
-    console.log('subscribeToNewFramesAdded');
+    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     frameAddedCallbacks.push({
@@ -300,7 +433,7 @@ exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
 };
 
 exports.subscribeToReset = function (objectName, callback) {
-    console.log('subscribeToNewFramesAdded');
+    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     resetCallbacks.push({
@@ -399,7 +532,7 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.objectId = objectID;
             thisObject.text = undefined;
             thisObject.type = type;
-            console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
+            //console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
             //console.log('set new node name to ' + thisObject.name);
             //console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
 
@@ -443,11 +576,13 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     objectID = undefined;
 };
 
-exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix) {
+exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix, loyalty) {
     var thisMatrix = null;
     var thisScale = null;
+    var thisLoyalty = null;
     if (matrix !== undefined) thisMatrix = matrix;
     if (scale !== undefined) thisScale = scale;
+    if (loyalty !== undefined) thisLoyalty = "object";
 
 
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
@@ -466,7 +601,11 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
                     if(thisScale){
                         objects[objectID].frames[frameID].nodes[nodeID].scale = thisScale;
                     }
-                    console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
+                    if(thisLoyalty){
+                        objects[objectID].frames[frameID].nodes[nodeID].loyalty = thisLoyalty;
+                        objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = true;
+                    }
+                    //console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
                 }
             }
         }
@@ -481,7 +620,8 @@ exports.removeNode = function (objectName, frameName, nodeName) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                    console.log("deleted node " + nodeName);
+                    deleteLinksToAndFromNode(objectID, frameID, nodeID);
+                    //console.log("deleted node " + nodeName);
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
@@ -489,6 +629,23 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
+exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var frameID = objectID + frameName;
+    var nodeID = objectID + frameName + nodeName;
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameID)) {
+                if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
+
+                    objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
+                    console.log("Attached node " + nodeName + " to ground plane");
+                }
+            }
+        }
+    }
+};
 
 exports.pushUpdatesToDevices = function(object){
     var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
@@ -506,7 +663,7 @@ exports.activate = function (objectName) {
 
 exports.deactivate = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log("--------- deactive---------")
+    console.log("--------- DEACTIVATE---------")
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
@@ -552,10 +709,12 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, knownObjs, objLookup, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
+exports.setup = function (objExp, objLookup, knownObjs, socketArr, worldObj, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
     objects = objExp;
-    knownObjects = knownObjs;
     objectLookup = objLookup;
+    knownObjects = knownObjs;
+    socketArray = socketArr;
+    worldObject = worldObj;
     globalVariables = glblVars;
     dirnameO = dir;
     objectsPath = objPath;
@@ -566,7 +725,6 @@ exports.setup = function (objExp, knownObjs, objLookup, glblVars, dir, objPath, 
     actionCallback = callbacks.actions;
     callback = callbacks.data;
     writeObjectCallback = callbacks.write;
-
 };
 
 exports.reset = function (){
@@ -685,6 +843,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
+                console.log('Add read listener: ', callBack);
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
 
             }
@@ -721,14 +880,14 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
                     callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
                 }
 
-                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push( {cb:callBack, dataObject:dataObject} );
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push( {cb: callBack, dataObject: dataObject} );
             }
         }
     }
 };
 
 exports.connectCall = function (objectID, frameID, nodeID, data) {
-    console.log('\ncallBacks...\n');
+    console.log('\nCallBacks...\n');
     // console.log(callBacks);
     // var prettyprintCallbacks = {};
     {
@@ -749,9 +908,9 @@ exports.connectCall = function (objectID, frameID, nodeID, data) {
               //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
-                    console.log("connection callback called");
+                    console.log("Connection callback called");
                 } else {
-                    console.log("no connection callback");
+                    console.log("No connection callback");
                 }
             }
         }
