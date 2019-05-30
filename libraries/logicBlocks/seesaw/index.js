@@ -59,15 +59,22 @@
  */
 
 var generalProperties = {
+    // display name underneath icon in block menu
     name : "seesaw",
+    // set this to how wide the block should be - (the bigger of # inputs and # outputs)
     blockSize : 3,
     privateData : {},
+    // these properties are accessible to user modification via the block's settings menu (gui/index.html)
     publicData : {toggle: true},
+    // sets which input indices of the block can have links drawn to them
     activeInputs : [true, true, true, false],
+    // sets which output indices of the block can have links drawn from them
     activeOutputs : [true, true, true, false],
     iconImage : "icon.png",
+    // not currently used anywhere, but helpful for developer reference
     nameInput : ["in", "in", "in", ""],
     nameOutput : ["digital out", "digital out", "out", ""],
+    // should match the folder name
     type : "seesaw"
 };
 
