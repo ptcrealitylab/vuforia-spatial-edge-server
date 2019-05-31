@@ -67,6 +67,7 @@ var realityObject = {
         groundPlane : false,
         allObjects : false
     },
+    sendScreenPosition: false,
     sendAcceleration: false,
     sendFullScreen: false,
     sendScreenObject : false,
@@ -261,6 +262,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.visibility = msgContent.visibility;
 
         // TODO: implement public data subscription in the same way as in object-frames.js
+        // ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+
 
         if(realityObject.visibility === "visible"){
             if (typeof realityObject.node !== "undefined") {
@@ -274,6 +277,8 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                             height: realityObject.height,
                             width: realityObject.width,
                             sendMatrix: realityObject.sendMatrix,
+                            sendMatrices: realityObject.sendMatrices,
+                            sendScreenPosition: realityObject.sendScreenPosition,
                             sendAcceleration: realityObject.sendAcceleration,
                             fullScreen: realityObject.sendFullScreen,
                             stickiness: realityObject.sendSticky,
@@ -301,19 +306,55 @@ function RealityInterface() {
      */
 
     this.sendGlobalMessage = function (ohMSG) {
-        if (typeof realityObject.node !== "undefined") {
-            var msgg = JSON.stringify(
-                {
-                    version: realityObject.version,
-                    node: realityObject.node,
-                    frame: realityObject.frame,
-                    object: realityObject.object,
-                    globalMessage: ohMSG
-                });
-            window.parent.postMessage(msgg
-                , "*");
-        }
+        window.parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            globalMessage: ohMSG
+        }), "*");
     };
+
+    this.sendResetNodes = function () {
+        //removes all nodes from the frame
+        window.parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            resetNodes: true
+        }), '*');
+    };
+
+    this.sendCreateNode = function (name, x, y, attachToGroundPlane) {
+        window.parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            createNode: {
+                name: name,
+                x: x,
+                y: y,
+                attachToGroundPlane: attachToGroundPlane
+            }
+        }), '*');
+    };
+
+    this.sendMoveNode = function (name, x, y) {
+        window.parent.postMessage(JSON.stringify({
+            version: realityObject.version,
+            node: realityObject.node,
+            frame: realityObject.frame,
+            object: realityObject.object,
+            moveNode: {
+                name: name,
+                x: x,
+                y: y
+            }
+        }), '*');
+    };
+
 
     /**
      ************************************************************
@@ -334,11 +375,11 @@ function RealityInterface() {
 
     // ensures each callback has a unique name
     var callBackCounter = {
-            numMatrixCallbacks : 0,
-            numAllMatricesCallbacks :0,
-            numWorldMatrixCallbacks :0,
-            numGroundPlaneMatrixCallbacks :0
-        };
+        numMatrixCallbacks: 0,
+        numAllMatricesCallbacks: 0,
+        numWorldMatrixCallbacks: 0,
+        numGroundPlaneMatrixCallbacks: 0
+    };
     this.addMatrixListener = function (callback) {
         if (!realityObject.sendMatrices.modelView) {
             this.subscribeToMatrix();
@@ -389,6 +430,9 @@ function RealityInterface() {
 
     var numScreenPositionCallbacks = 0;
     this.addScreenPositionListener = function(callback) {
+        if (!realityObject.sendScreenPosition) {
+            this.subscribeToScreenPosition();
+        }
         numScreenPositionCallbacks++;
         realityObject.messageCallBacks['screenPositionCall'+numScreenPositionCallbacks] = function (msgContent) {
             if (typeof msgContent.frameScreenPosition !== 'undefined') {
@@ -431,11 +475,34 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
                     sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
                 }), "*");
+        }
+    };
+
+    this.subscribeToScreenPosition = function() {
+        realityObject.sendScreenPosition = true;
+        if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
+
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                height: realityObject.height,
+                width: realityObject.width,
+                sendMatrix: realityObject.sendMatrix,
+                sendMatrices : realityObject.sendMatrices,
+                sendScreenPosition: realityObject.sendScreenPosition,
+                sendAcceleration: realityObject.sendAcceleration,
+                fullScreen: realityObject.sendFullScreen,
+                stickiness: realityObject.sendSticky
+            }), '*');
         }
     };
 
@@ -453,7 +520,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
                     sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -475,7 +544,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
                     sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -496,7 +567,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
                     sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -517,6 +590,8 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -550,6 +625,8 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     fullscreenZPosition: realityObject.fullscreenZPosition,
@@ -578,6 +655,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -606,6 +686,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: realityObject.sendSticky
@@ -630,6 +713,9 @@ function RealityInterface() {
                     height: realityObject.height,
                     width: realityObject.width,
                     sendMatrix: realityObject.sendMatrix,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
                     sendAcceleration: realityObject.sendAcceleration,
                     fullScreen: realityObject.sendFullScreen,
                     stickiness: false
@@ -654,6 +740,42 @@ function RealityInterface() {
                 object: realityObject.object,
                 sendScreenObject : true
             }), '*');
+        }
+    };
+
+    /**
+     ************************************************************
+     */
+
+    this.startVideoRecording = function() {
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    videoRecording: true
+                }), "*");
+        }
+    };
+
+    this.stopVideoRecording = function(callback) {
+        realityObject.messageCallBacks.stopVideoRecording = function (msgContent) {
+            if (typeof msgContent.videoFilePath !== 'undefined') {
+                callback(msgContent.videoFilePath);
+            }
+        };
+
+        if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    videoRecording: false
+                }), "*");
         }
     };
 
@@ -838,8 +960,10 @@ function RealityInterface() {
 
     };
 
+    var numMovingCallbacks = 0;
     this.addIsMovingListener = function(callback) {
-        realityObject.messageCallBacks.frameIsMovingCall = function (msgContent) {
+        numMovingCallbacks++;
+        realityObject.messageCallBacks['frameIsMovingCall'+numMovingCallbacks] = function (msgContent) {
             if (typeof msgContent.frameIsMoving !== "undefined") {
                 callback(msgContent.frameIsMoving);
             }
@@ -897,12 +1021,18 @@ function RealityInterface() {
             }
         });
 
-        this.sendRealityEditorSubscribe = setInterval(function () {
-            if (realityObject.object) {
-                _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame, protocol: realityObject.protocol}));
-                clearInterval(_this.sendRealityEditorSubscribe);
-            }
-        }, 10);
+        this.sendRealityEditorSubscribe = function () {
+            var timeoutFunction = function(){
+                if (realityObject.object) {
+                    console.log("emit sendRealityEditorSubscribe");
+                    _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame, protocol: realityObject.protocol}));
+                }
+            };
+            setTimeout(timeoutFunction, 10);
+            setTimeout(timeoutFunction, 50);
+            setTimeout(timeoutFunction, 100);
+            setTimeout(timeoutFunction, 1000);
+        };
 
         /**
          ************************************************************
@@ -1186,8 +1316,6 @@ function RealityLogic() {
             });
         };
 
-
-
         this.sendRealityEditorSubscribe = setInterval(function () {
             if (realityObject.object) {
                 _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify(
@@ -1312,7 +1440,7 @@ window.addEventListener('load', function() {
             });
 
             // send unacceptedTouch message if this interface wants touches to pass through it
-            if (realityObject.touchDeciderRegistered) {
+            if (realityObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
                 var touchAccepted = realityObject.touchDecider(eventData);
                 if (!touchAccepted) {
                     // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
@@ -1334,13 +1462,15 @@ window.addEventListener('load', function() {
             elt.dispatchEvent(event);
 
             // otherwise send acceptedTouch message to stop the touch propagation
-            parent.postMessage(JSON.stringify({
-                version: realityObject.version,
-                node: realityObject.node,
-                frame: realityObject.frame,
-                object: realityObject.object,
-                acceptedTouch : eventData
-            }), '*');
+            if (eventData.type === 'pointerdown') {
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    acceptedTouch : eventData
+                }), '*');
+            }
         }
     });
 });
