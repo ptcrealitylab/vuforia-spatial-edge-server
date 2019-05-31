@@ -69,7 +69,10 @@
     // this will be initialized once the frame creates a new RealityInterface()
     var realityInterface = null;
 
-    // automatically injects the socket.io script into the page once the editor has posted frame info into the page
+    /**
+     * automatically injects the socket.io script into the page once the editor has posted frame info into the page
+     * @param {{ip: string}} object - data object containing the server IP of the object
+     */
     function loadObjectSocketIo(object) {
         var script = document.createElement('script');
         script.type = 'text/javascript';
@@ -83,6 +86,7 @@
                 // adds the API methods related to sending/receiving socket messages
                 realityInterface.injectSocketIoAPI();
 
+                // TODO: this should only happen if an API call was made to turn it on
                 // Connect this frame to the internet of screens.
                 realityInterface.iosObject = io.connect(iOSHost);
                 if(realityInterface.ioCallback !== undefined) {
@@ -94,7 +98,11 @@
         document.body.appendChild(script);
     }
 
-    // triggers all messageCallbacks functions
+    /**
+     * Triggers all messageCallbacks functions.
+     * realityObject.messageCallBacks.mainCall is the primary function always triggered by this, but additional
+     * messageCallbacks are added by calling the methods in realityInterface.injectMessageListenerAPI
+     */
     window.addEventListener('message', function (MSG) {
         // if (typeof MSG !== "string") { return; }
         var msgContent = JSON.parse(MSG.data);
@@ -103,7 +111,7 @@
         }
     }, false);
 
-    // TODO: not sure why this is here / if it ever gets used... DEBUG
+    // TODO: DEBUG what this really does and why it's needed
     function tryResend() {
         var windowMatches = window.location.search.match(/nodeKey=([^&]+)/);
         if (!windowMatches) {
@@ -114,6 +122,9 @@
     }
     tryResend();
 
+    /**
+     * Helper function that posts entire basic state of realityObject to parent
+     */
     function postAllDataToParent() {
         if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
             parent.postMessage(JSON.stringify(
@@ -136,31 +147,41 @@
         }
     }
 
+    /**
+     * Helper function that posts object/frame/node/version to parent along with whatever custom properties you want to send
+     * @param {object} additionalProperties - JSON object containing any additional key/value pairs to send
+     */
     function postDataToParent(additionalProperties) {
-        var dataToSend = {
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object
-        };
-        if (additionalProperties) {
-            for (var key in additionalProperties) {
-                dataToSend[key] = additionalProperties[key];
+        if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
+            var dataToSend = {
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object
+            };
+            if (additionalProperties) {
+                for (var key in additionalProperties) {
+                    dataToSend[key] = additionalProperties[key];
+                }
             }
+            parent.postMessage(JSON.stringify(dataToSend), '*');
         }
-        parent.postMessage(JSON.stringify(dataToSend), '*');
     }
 
-    // receives POST messages from parent to change realityObject state
+    /**
+     * receives POST messages from parent to change realityObject state
+     * @param {object} msgContent - JSON contents received by the iframe's contentWindow.postMessage listener
+     */
     realityObject.messageCallBacks.mainCall = function (msgContent) {
 
-        if (msgContent.objectData) {
+        // Adds the socket.io connection and adds the related API methods
+        if (msgContent.objectData) { // objectData contains the IP necessary to load the socket script
             if (!realityObject.frame) {
                 loadObjectSocketIo(msgContent.objectData);
             }
         }
 
-        // initialize frames
+        // initialize realityObject for frames and add additional API methods
         if (typeof msgContent.node !== 'undefined') {
 
             if (realityObject.sendFullScreen === false) {
@@ -169,25 +190,28 @@
             }
 
             var alreadyLoaded = !!realityObject.node;
+
             realityObject.node = msgContent.node;
             realityObject.frame = msgContent.frame;
             realityObject.object = msgContent.object;
 
+            // Post the default state of this frame to the parent application
             postAllDataToParent();
 
             if (!alreadyLoaded) {
                 if (realityInterface) {
-                    // adds the API methods related to sending POST messages to parent
-                    realityInterface.injectPostMessageAPI();
+                    // adds the API methods not reliant on the socket.io connection
+                    realityInterface.injectAllNonSocketAPIs();
                 }
 
                 // triggers the onRealityInterfaceLoaded function
                 if (realityObject.onload) {
                     realityObject.onload();
+                    realityObject.onload = null;
                 }
             }
 
-        // initialize logic block settings iframes
+        // initialize realityObject for logic block settings menus, which declare a new RealityLogic()
         } else if (typeof msgContent.logic !== "undefined") {
 
             parent.postMessage(JSON.stringify(
@@ -210,7 +234,9 @@
             realityObject.publicData = msgContent.publicData;
         }
 
-        // receives matrices that were subscribed to
+        // Add some additional message listeners which keep the realityObject updated with application state
+        // TODO: should these only be added when specific message listeners have been registered via the API?
+
         if (typeof msgContent.modelViewMatrix !== 'undefined') {
             realityObject.modelViewMatrix = msgContent.modelViewMatrix;
             realityObject.matrices.modelView = msgContent.modelViewMatrix;
@@ -238,8 +264,7 @@
             realityObject.visibility = msgContent.visibility;
 
             // reload public data when it becomes visible
-            // TODO: should this be triggered in the socketIo functions?
-            if (realityInterface) {
+            if (realityInterface && realityObject.ioObject) {
                 realityInterface.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
             }
 
@@ -258,9 +283,8 @@
             realityObject.interface = msgContent.interface
         }
 
-        // can be triggered by realtime system to refresh public data when editor received a message from another client
+        // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.reloadPublicData !== "undefined") {
-            console.log('frame reload public data from post message');
             realityInterface.reloadPublicData();
         }
 
@@ -322,274 +346,10 @@
         this.publicData = realityObject.publicData;
         this.pendingSends = [];
         this.pendingIos = [];
-        this.iosObject;
-        this.ioCallback;
+        this.iosObject = undefined;
+        this.ioCallback = undefined;
 
         var self = this;
-
-        /**
-         * If you call a Post Message API function before that API has been initialized, it will get queued up as a stub
-         * and executed as soon as that API is fully loaded
-         * @param {string} name - the name of the function that should be called
-         * @return {Function}
-         */
-        function makeSendStub(name) {
-            return function() {
-                self.pendingSends.push({name: name, args: arguments});
-            };
-        }
-
-        /**
-         * If you call a SocketIO API function before that API has been initialized, it will get queued up as a stub
-         * and executed as soon as that API is fully loaded
-         * @param {string} name - the name of the function that should be called
-         * @return {Function}
-         */
-        function makeIoStub(name) {
-            return function() {
-                self.pendingIos.push({name: name, args: arguments});
-            };
-        }
-
-        if (realityObject.object) {
-            this.injectPostMessageAPI();
-        } else {
-            this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
-            this.sendCreateNode = makeSendStub('sendCreateNode');
-            this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
-            this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
-            this.setFullScreenOn = makeSendStub('setFullScreenOn');
-            this.setFullScreenOff = makeSendStub('setFullScreenOff');
-        }
-
-        this.setIOCallback = function(callback) {
-            this.ioCallback = callback;
-        };
-
-        this.setIOSInterface = function(o) {
-            this.iosObject = o;
-        };
-
-        this.addGlobalMessageListener = function(callback) {
-            realityObject.messageCallBacks.globalMessageCall = function (msgContent) {
-                if (typeof msgContent.globalMessage !== 'undefined') {
-                    callback(msgContent.globalMessage);
-                }
-            };
-        };
-
-        // ensures each callback has a unique name
-        var callBackCounter = {
-            numMatrixCallbacks : 0,
-            numAllMatricesCallbacks :0,
-            numWorldMatrixCallbacks :0,
-            numGroundPlaneMatrixCallbacks :0
-        };
-        this.addMatrixListener = function (callback) {
-            if (!realityObject.sendMatrices.modelView) {
-                this.subscribeToMatrix();
-            }
-            callBackCounter.numMatrixCallbacks++;
-            realityObject.messageCallBacks['matrixCall' + callBackCounter.numMatrixCallbacks] = function (msgContent) {
-                if (typeof msgContent.modelViewMatrix !== "undefined") {
-                    callback(msgContent.modelViewMatrix, realityObject.matrices.projection);
-                }
-            }.bind(this);
-        };
-
-        this.addAllObjectMatricesListener = function (callback) {
-            if (!realityObject.sendMatrices.allObjects) {
-                this.subscribeToAllMatrices();
-            }
-            callBackCounter.numAllMatricesCallbacks++;
-            realityObject.messageCallBacks['allMatricesCall'+callBackCounter.numAllMatricesCallbacks] = function (msgContent) {
-                if (typeof msgContent.allObjects !== "undefined") {
-                    callback(msgContent.allObjects, realityObject.matrices.projection);
-                }
-            }
-        };
-
-        this.addDevicePoseMatrixListener = function (callback) {
-            if (!realityObject.sendMatrices.devicePose) {
-                this.subscribeToDevicePoseMatrix();
-            }
-            callBackCounter.numWorldMatrixCallbacks++;
-            realityObject.messageCallBacks['worldMatrixCall'+callBackCounter.numWorldMatrixCallbacks] = function (msgContent) {
-                if (typeof msgContent.devicePose !== "undefined") {
-                    callback(msgContent.devicePose, realityObject.matrices.projection);
-                }
-            }
-        };
-
-        this.addGroundPlaneMatrixListener = function (callback) {
-            if (!realityObject.sendMatrices.groundPlane) {
-                this.subscribeToGroundPlaneMatrix();
-            }
-            callBackCounter.numGroundPlaneMatrixCallbacks++;
-            realityObject.messageCallBacks['groundPlaneMatrixCall'+callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
-                if (typeof msgContent.groundPlaneMatrix !== "undefined") {
-                    callback(msgContent.groundPlaneMatrix, realityObject.matrices.projection);
-                }
-            }
-        };
-
-        var numScreenPositionCallbacks = 0;
-        this.addScreenPositionListener = function(callback) {
-            if (!realityObject.sendScreenPosition) {
-                this.subscribeToScreenPosition();
-            }
-            numScreenPositionCallbacks++;
-            realityObject.messageCallBacks['screenPositionCall'+numScreenPositionCallbacks] = function (msgContent) {
-                if (typeof msgContent.frameScreenPosition !== 'undefined') {
-                    callback(msgContent.frameScreenPosition);
-                }
-            };
-        };
-
-        this.addAccelerationListener = function (callback) {
-            this.subscribeToAcceleration();
-            realityObject.messageCallBacks.AccelerationCall = function (msgContent) {
-                if (typeof msgContent.acceleration !== 'undefined') {
-                    callback(msgContent.acceleration);
-                }
-            };
-        };
-
-        this.getVisibility = function () {
-            return realityObject.visibility;
-        };
-
-        this.addVisibilityListener = function (callback) {
-            realityObject.messageCallBacks.visibilityCall = function (msgContent) {
-                if (typeof msgContent.visibility !== 'undefined') {
-                    callback(msgContent.visibility);
-                }
-            };
-        };
-
-        this.getInterface = function () {
-            return realityObject.interface;
-        };
-
-        this.addInterfaceListener = function (callback) {
-            realityObject.messageCallBacks.interfaceCall = function (msgContent) {
-                if (typeof msgContent.interface !== "undefined") {
-                    callback(msgContent.interface);
-                }
-            };
-        };
-
-        this.getPositionX = function () {
-            if (typeof realityObject.matrices.modelView[12] !== "undefined") {
-                return realityObject.matrices.modelView[12];
-            } else return undefined;
-        };
-
-        this.getPositionY = function () {
-            if (typeof realityObject.matrices.modelView[13] !== "undefined") {
-                return realityObject.matrices.modelView[13];
-            } else return undefined;
-        };
-
-        this.getPositionZ = function () {
-            if (typeof realityObject.matrices.modelView[14] !== "undefined") {
-                return realityObject.matrices.modelView[14];
-            } else return undefined;
-        };
-
-        this.getProjectionMatrix = function () {
-            if (typeof realityObject.matrices.projection !== "undefined") {
-                return realityObject.matrices.projection;
-            } else return undefined;
-        };
-
-        this.getModelViewMatrix = function () {
-            if (typeof realityObject.matrices.modelView !== "undefined") {
-                return realityObject.matrices.modelView;
-            } else return undefined;
-        };
-
-        this.getGroundPlaneMatrix = function () {
-            if (typeof realityObject.matrices.groundPlane !== "undefined") {
-                return realityObject.matrices.groundPlane;
-            } else return undefined;
-        };
-
-        this.getDevicePoseMatrix = function () {
-            if (typeof realityObject.matrices.devicePose !== "undefined") {
-                return realityObject.matrices.devicePose;
-            } else return undefined;
-        };
-
-        this.getAllObjectMatrices = function () {
-            if (typeof realityObject.matrices.allObjects !== "undefined") {
-                return realityObject.matrices.allObjects;
-            } else return undefined;
-        };
-
-        this.registerTouchDecider = function(callback) {
-            realityObject.touchDecider = callback;
-            realityObject.touchDeciderRegistered = true;
-        };
-
-        this.unregisterTouchDecider = function() {
-            // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
-            realityObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
-        };
-
-        var numMovingCallbacks = 0;
-        this.addIsMovingListener = function(callback) {
-            numMovingCallbacks++;
-            realityObject.messageCallBacks['frameIsMovingCall'+numMovingCallbacks] = function (msgContent) {
-                if (typeof msgContent.frameIsMoving !== "undefined") {
-                    callback(msgContent.frameIsMoving);
-                }
-            };
-        };
-
-        /**
-         * sets how long you need to tap and hold on the frame in order to start moving it.
-         * @param {number} delayInMilliseconds - if value < 0, disables movement
-         */
-        this.setMoveDelay = function(delayInMilliseconds) {
-            realityObject.moveDelay = delayInMilliseconds;
-
-            if (realityObject.object && realityObject.frame) {
-                parent.postMessage(JSON.stringify({
-                    version: realityObject.version,
-                    node: realityObject.node,
-                    frame: realityObject.frame,
-                    object: realityObject.object,
-                    moveDelay : delayInMilliseconds
-                }), '*');
-            }
-        };
-
-        /**
-         * set the distance a frame is visible in space.
-         * @param {number} distance in meter
-         */
-        this.setVisibilityDistance = function(distance) {
-            realityObject.visibilityDistance = distance;
-
-            if (realityObject.object && realityObject.frame) {
-                parent.postMessage(JSON.stringify({
-                    version: realityObject.version,
-                    node: realityObject.node,
-                    frame: realityObject.frame,
-                    object: realityObject.object,
-                    visibilityDistance : distance
-                }), '*');
-            }
-        };
-
-        /**
-         * Stubbed here for backwards compatibility of API. In previous versions:
-         * Hides the frame itself and instead populates a background context within the editor with this frame's contents
-         */
-        this.sendToBackground = function() {
-            console.warn('The API function "sendToBackground" is no longer supported.');
-        };
 
         /**
          * Adds an onload callback that will wait until this RealityInterfaces receives its object/frame data
@@ -603,6 +363,7 @@
             }
         };
 
+        // Adds the API functions that allow a frame to send and receive socket messages (e.g. write and addReadListener)
         if (typeof io !== 'undefined') {
             this.injectSocketIoAPI();
         } else {
@@ -611,19 +372,92 @@
                     console.log('ioObject.on stub called, please don\'t');
                 }
             };
+            /**
+             * If you call a SocketIO API function before that API has been initialized, it will get queued up as a stub
+             * and executed as soon as that API is fully loaded
+             * @param {string} name - the name of the function that should be called
+             * @return {Function}
+             */
+            function makeIoStub(name) {
+                return function() {
+                    self.pendingIos.push({name: name, args: arguments});
+                };
+            }
+            // queue-up calls to function stubs that will get called for real when the socket is created
             this.write = makeIoStub('write');
-            this.read = makeIoStub('read');
-            this.readRequest = makeIoStub('readRequest');
             this.addReadListener = makeIoStub('addReadListener');
             this.readPublicData = makeIoStub('readPublicData');
             this.addReadPublicDataListener = makeIoStub('addReadPublicDataListener');
             this.writePublicData = makeIoStub('writePublicData');
-            this.writePrivateData = makeIoStub('writePrivateData');
             this.reloadPublicData = makeIoStub('reloadPublicData');
+            // deprecated or unimplemented APIs
+            this.read = makeIoStub('read');
+            this.readRequest = makeIoStub('readRequest');
+            this.writePrivateData = makeIoStub('writePrivateData');
+        }
+
+        if (realityObject.object) {
+            // Adds the additional API functions that aren't dependent on the socket
+            this.injectAllNonSocketAPIs();
+        } else {
+            /**
+             * If you call a Post Message API function before that API has been initialized, it will get queued up as a stub
+             * and executed as soon as that API is fully loaded
+             * @param {string} name - the name of the function that should be called
+             * @return {Function}
+             */
+            function makeSendStub(name) {
+                return function() {
+                    self.pendingSends.push({name: name, args: arguments});
+                };
+            }
+
+            /**
+             * Post Message APIs
+             */
+            {
+                this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
+                this.sendCreateNode = makeSendStub('sendCreateNode');
+                this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
+                this.subscribeToScreenPosition = makeSendStub('subscribeToScreenPosition');
+                this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
+                this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
+                this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
+                this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.setFullScreenOn = makeSendStub('setFullScreenOn');
+                this.setFullScreenOff = makeSendStub('setFullScreenOff');
+                this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
+                this.setStickinessOff = makeSendStub('setStickinessOff');
+                this.startVideoRecording = makeSendStub('startVideoRecording');
+                this.stopVideoRecording = makeSendStub('stopVideoRecording');
+                this.setMoveDelay = makeSendStub('setMoveDelay');
+                this.setVisibilityDistance = makeSendStub('setVisibilityDistance');
+                // deprecated methods
+                this.sendToBackground = makeSendStub('sendToBackground');
+            }
+
+            {
+
+            }
+
         }
 
         realityInterface = this;
     }
+
+    RealityInterface.prototype.injectAllNonSocketAPIs = function() {
+        // Adds the API functions that allow a frame to post messages to its parent (e.g. setFullScreenOn and subscribeToMatrix)
+        this.injectPostMessageAPI();
+
+        // Adds the API functions that allow a frame to add message listeners (e.g. addGlobalMessageListener and addMatrixListener)
+        this.injectMessageListenerAPI();
+
+        // Adds the API functions that only change or retrieve values from realityObject (e.g. getVisibility and registerTouchDecider)
+        this.injectSetterGetterAPI();
+
+        // Adds the custom API functions that allow a frame to connect to the Internet of Screens application
+        this.injectInternetOfScreensAPI();
+    };
 
     RealityInterface.prototype.injectSocketIoAPI = function() {
         var self = this;
@@ -657,7 +491,7 @@
             var timeoutFunction = function(){
                 if (realityObject.object) {
                     console.log("emit sendRealityEditorSubscribe");
-                    _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
+                    self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
                         object: realityObject.object,
                         frame: realityObject.frame,
                         protocol: realityObject.protocol
@@ -994,6 +828,36 @@
             });
         };
 
+        /**
+         * sets how long you need to tap and hold on the frame in order to start moving it.
+         * @param {number} delayInMilliseconds - if value < 0, disables movement
+         */
+        this.setMoveDelay = function(delayInMilliseconds) {
+            realityObject.moveDelay = delayInMilliseconds;
+            postDataToParent({
+                moveDelay : delayInMilliseconds
+            })
+        };
+
+        /**
+         * set the distance a frame is visible in space.
+         * @param {number} distance in meter
+         */
+        this.setVisibilityDistance = function(distance) {
+            realityObject.visibilityDistance = distance;
+            postDataToParent({
+                visibilityDistance : distance
+            });
+        };
+
+        /**
+         * Stubbed here for backwards compatibility of API. In previous versions:
+         * Hides the frame itself and instead populates a background context within the editor with this frame's contents
+         */
+        this.sendToBackground = function() {
+            console.warn('The API function "sendToBackground" is no longer supported.');
+        };
+
         for (var i = 0; i < this.pendingSends.length; i++) {
             var pendingSend = this.pendingSends[i];
             this[pendingSend.name].apply(this, pendingSend.args);
@@ -1002,6 +866,207 @@
 
         console.log('Post Message API is loaded and injected into the object.js API');
 
+    };
+
+    RealityInterface.prototype.injectInternetOfScreensAPI = function() {
+        /**
+         * Callback function for Internet of screens
+         * @param callback
+         */
+        this.setIOCallback = function(callback) {
+            this.ioCallback = callback;
+        };
+
+        /**
+         * Socket connection for internet of screens
+         * @param o
+         */
+        this.setIOSInterface = function(o) {
+            this.iosObject = o;
+        };
+    };
+
+    RealityInterface.prototype.injectMessageListenerAPI = function() {
+        // ensures each callback has a unique name
+        var callBackCounter = {
+            numMatrixCallbacks : 0,
+            numAllMatricesCallbacks :0,
+            numWorldMatrixCallbacks :0,
+            numGroundPlaneMatrixCallbacks :0
+        };
+
+        this.addGlobalMessageListener = function(callback) {
+            realityObject.messageCallBacks.globalMessageCall = function (msgContent) {
+                if (typeof msgContent.globalMessage !== 'undefined') {
+                    callback(msgContent.globalMessage);
+                }
+            };
+        };
+
+
+        this.addMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.modelView) {
+                this.subscribeToMatrix();
+            }
+            callBackCounter.numMatrixCallbacks++;
+            realityObject.messageCallBacks['matrixCall' + callBackCounter.numMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.modelViewMatrix !== "undefined") {
+                    callback(msgContent.modelViewMatrix, realityObject.matrices.projection);
+                }
+            }.bind(this);
+        };
+
+        this.addAllObjectMatricesListener = function (callback) {
+            if (!realityObject.sendMatrices.allObjects) {
+                this.subscribeToAllMatrices();
+            }
+            callBackCounter.numAllMatricesCallbacks++;
+            realityObject.messageCallBacks['allMatricesCall'+callBackCounter.numAllMatricesCallbacks] = function (msgContent) {
+                if (typeof msgContent.allObjects !== "undefined") {
+                    callback(msgContent.allObjects, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        this.addDevicePoseMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.devicePose) {
+                this.subscribeToDevicePoseMatrix();
+            }
+            callBackCounter.numWorldMatrixCallbacks++;
+            realityObject.messageCallBacks['worldMatrixCall'+callBackCounter.numWorldMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.devicePose !== "undefined") {
+                    callback(msgContent.devicePose, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        this.addGroundPlaneMatrixListener = function (callback) {
+            if (!realityObject.sendMatrices.groundPlane) {
+                this.subscribeToGroundPlaneMatrix();
+            }
+            callBackCounter.numGroundPlaneMatrixCallbacks++;
+            realityObject.messageCallBacks['groundPlaneMatrixCall'+callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.groundPlaneMatrix !== "undefined") {
+                    callback(msgContent.groundPlaneMatrix, realityObject.matrices.projection);
+                }
+            }
+        };
+
+        var numScreenPositionCallbacks = 0;
+        this.addScreenPositionListener = function(callback) {
+            if (!realityObject.sendScreenPosition) {
+                this.subscribeToScreenPosition();
+            }
+            numScreenPositionCallbacks++;
+            realityObject.messageCallBacks['screenPositionCall'+numScreenPositionCallbacks] = function (msgContent) {
+                if (typeof msgContent.frameScreenPosition !== 'undefined') {
+                    callback(msgContent.frameScreenPosition);
+                }
+            };
+        };
+
+        this.addAccelerationListener = function (callback) {
+            this.subscribeToAcceleration();
+            realityObject.messageCallBacks.AccelerationCall = function (msgContent) {
+                if (typeof msgContent.acceleration !== 'undefined') {
+                    callback(msgContent.acceleration);
+                }
+            };
+        };
+
+        this.addVisibilityListener = function (callback) {
+            realityObject.messageCallBacks.visibilityCall = function (msgContent) {
+                if (typeof msgContent.visibility !== 'undefined') {
+                    callback(msgContent.visibility);
+                }
+            };
+        };
+
+        this.addInterfaceListener = function (callback) {
+            realityObject.messageCallBacks.interfaceCall = function (msgContent) {
+                if (typeof msgContent.interface !== "undefined") {
+                    callback(msgContent.interface);
+                }
+            };
+        };
+
+        var numMovingCallbacks = 0;
+        this.addIsMovingListener = function(callback) {
+            numMovingCallbacks++;
+            realityObject.messageCallBacks['frameIsMovingCall'+numMovingCallbacks] = function (msgContent) {
+                if (typeof msgContent.frameIsMoving !== "undefined") {
+                    callback(msgContent.frameIsMoving);
+                }
+            };
+        };
+    };
+
+    RealityInterface.prototype.injectSetterGetterAPI = function() {
+        this.getVisibility = function () {
+            return realityObject.visibility;
+        };
+
+        this.getInterface = function () {
+            return realityObject.interface;
+        };
+
+        this.getPositionX = function () {
+            if (typeof realityObject.matrices.modelView[12] !== "undefined") {
+                return realityObject.matrices.modelView[12];
+            } else return undefined;
+        };
+
+        this.getPositionY = function () {
+            if (typeof realityObject.matrices.modelView[13] !== "undefined") {
+                return realityObject.matrices.modelView[13];
+            } else return undefined;
+        };
+
+        this.getPositionZ = function () {
+            if (typeof realityObject.matrices.modelView[14] !== "undefined") {
+                return realityObject.matrices.modelView[14];
+            } else return undefined;
+        };
+
+        this.getProjectionMatrix = function () {
+            if (typeof realityObject.matrices.projection !== "undefined") {
+                return realityObject.matrices.projection;
+            } else return undefined;
+        };
+
+        this.getModelViewMatrix = function () {
+            if (typeof realityObject.matrices.modelView !== "undefined") {
+                return realityObject.matrices.modelView;
+            } else return undefined;
+        };
+
+        this.getGroundPlaneMatrix = function () {
+            if (typeof realityObject.matrices.groundPlane !== "undefined") {
+                return realityObject.matrices.groundPlane;
+            } else return undefined;
+        };
+
+        this.getDevicePoseMatrix = function () {
+            if (typeof realityObject.matrices.devicePose !== "undefined") {
+                return realityObject.matrices.devicePose;
+            } else return undefined;
+        };
+
+        this.getAllObjectMatrices = function () {
+            if (typeof realityObject.matrices.allObjects !== "undefined") {
+                return realityObject.matrices.allObjects;
+            } else return undefined;
+        };
+
+        this.registerTouchDecider = function(callback) {
+            realityObject.touchDecider = callback;
+            realityObject.touchDeciderRegistered = true;
+        };
+
+        this.unregisterTouchDecider = function() {
+            // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
+            realityObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
+        };
     };
 
     function isDesktop() {
