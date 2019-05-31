@@ -339,7 +339,9 @@
 
     /**
      * Defines the RealityInterface object
-     * A reality interface provides a Post Message API and a SocketIO API
+     * A reality interface provides a SocketIO API, a Post Message API, and several other APIs
+     * All supported methods are listed in this constructor, but the implementation of most methods are separated
+     * into each category (socket, post message, listener, etc) in subsequent RealityInterface "inject__API" functions
      * @constructor
      */
     function RealityInterface() {
@@ -390,7 +392,7 @@
             this.addReadPublicDataListener = makeIoStub('addReadPublicDataListener');
             this.writePublicData = makeIoStub('writePublicData');
             this.reloadPublicData = makeIoStub('reloadPublicData');
-            // deprecated or unimplemented APIs
+            // deprecated or unimplemented methods
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
@@ -436,8 +438,46 @@
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
 
+            /**
+             * Message Listener APIs
+             */
             {
+                this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
+                this.addMatrixListener = makeSendStub('addMatrixListener');
+                this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
+                this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
+                this.addVisibilityListener = makeSendStub('addVisibilityListener');
+                this.addInterfaceListener = makeSendStub('addInterfaceListener');
+                this.addIsMovingListener = makeSendStub('addIsMovingListener');
+                // deprecated or unimplemented methods
+                this.addAccelerationListener = makeSendStub('addAccelerationListener');
+            }
 
+            /**
+             * Setter/Getter APIs
+             */
+            {
+                this.getVisibility = makeSendStub('getVisibility'); // TODO: getters don't make sense as stubs
+                this.getInterface = makeSendStub('getInterface'); // TODO: but maybe OK to keep here for consistency
+                this.getPositionX = makeSendStub('getPositionX');
+                this.getPositionY = makeSendStub('getPositionY');
+                this.getPositionZ = makeSendStub('getPositionZ');
+                this.getProjectionMatrix = makeSendStub('getProjectionMatrix');
+                this.getModelViewMatrix = makeSendStub('getModelViewMatrix');
+                this.getGroundPlaneMatrix = makeSendStub('getGroundPlaneMatrix');
+                this.getDevicePoseMatrix = makeSendStub('getDevicePoseMatrix');
+                this.getAllObjectMatrices = makeSendStub('getAllObjectMatrices');
+                this.registerTouchDecider = makeSendStub('registerTouchDecider');
+                this.unregisterTouchDecider = makeSendStub('unregisterTouchDecider');
+            }
+
+            /**
+             * Internet of Screens APIs
+             */
+            {
+                this.setIOCallback = makeSendStub('setIOCallback');
+                this.setIOSInterface = makeSendStub('setIOSInterface');
             }
 
         }
@@ -868,24 +908,6 @@
 
     };
 
-    RealityInterface.prototype.injectInternetOfScreensAPI = function() {
-        /**
-         * Callback function for Internet of screens
-         * @param callback
-         */
-        this.setIOCallback = function(callback) {
-            this.ioCallback = callback;
-        };
-
-        /**
-         * Socket connection for internet of screens
-         * @param o
-         */
-        this.setIOSInterface = function(o) {
-            this.iosObject = o;
-        };
-    };
-
     RealityInterface.prototype.injectMessageListenerAPI = function() {
         // ensures each callback has a unique name
         var callBackCounter = {
@@ -1066,6 +1088,24 @@
         this.unregisterTouchDecider = function() {
             // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
             realityObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
+        };
+    };
+
+    RealityInterface.prototype.injectInternetOfScreensAPI = function() {
+        /**
+         * Callback function for Internet of screens
+         * @param callback
+         */
+        this.setIOCallback = function(callback) {
+            this.ioCallback = callback;
+        };
+
+        /**
+         * Socket connection for internet of screens
+         * @param o
+         */
+        this.setIOSInterface = function(o) {
+            this.iosObject = o;
         };
     };
 
