@@ -1,6 +1,5 @@
 (function(exports) {
 
-    // makes sure this only gets loaded once per iframe
     if (typeof exports.realityObject !== 'undefined') {
         return;
     }
@@ -8,7 +7,6 @@
     // Hardcoded for now, host of the internet of screens.
     var iOSHost = 'https://10.10.10.107:5000';
 
-    // Keeps track of all state related to this frame and its API interactions
     var realityObject = {
         node: '',
         frame: '',
@@ -66,10 +64,8 @@
     realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
     document.getElementsByTagName('head')[0].appendChild(realityObject.style);
 
-    // this will be initialized once the frame creates a new RealityInterface()
-    var realityInterface = null;
+    var realityInterfaces = [];
 
-    // automatically injects the socket.io script into the page once the editor has posted frame info into the page
     function loadObjectSocketIo(object) {
         var script = document.createElement('script');
         script.type = 'text/javascript';
@@ -79,14 +75,14 @@
         script.src = url + '/socket.io/socket.io.js';
 
         script.addEventListener('load', function() {
-            if (realityInterface) {
-                // adds the API methods related to sending/receiving socket messages
-                realityInterface.injectSocketIoAPI();
+            for (var i = 0; i < realityInterfaces.length; i++) {
+                var ho = realityInterfaces[i];
+                ho.injectIo();
 
                 // Connect this frame to the internet of screens.
-                realityInterface.iosObject = io.connect(iOSHost);
-                if(realityInterface.ioCallback !== undefined) {
-                    realityInterface.ioCallback();
+                ho.iosObject = io.connect(iOSHost);
+                if(ho.ioCallback !== undefined) {
+                    ho.ioCallback();
                 }
             }
         });
@@ -94,7 +90,12 @@
         document.body.appendChild(script);
     }
 
-    // triggers all messageCallbacks functions
+    /**
+     ************************************************************
+     */
+
+    // function for resizing the windows.
+
     window.addEventListener('message', function (MSG) {
         // if (typeof MSG !== "string") { return; }
         var msgContent = JSON.parse(MSG.data);
@@ -103,7 +104,6 @@
         }
     }, false);
 
-    // TODO: not sure why this is here / if it ever gets used... DEBUG
     function tryResend() {
         var windowMatches = window.location.search.match(/nodeKey=([^&]+)/);
         if (!windowMatches) {
@@ -112,55 +112,17 @@
         var nodeKey = windowMatches[1];
         parent.postMessage(JSON.stringify({resendOnElementLoad: true, nodeKey: nodeKey}), '*');
     }
+
     tryResend();
 
-    function postAllDataToParent() {
-        if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
-            parent.postMessage(JSON.stringify(
-                {
-                    version: realityObject.version,
-                    node: realityObject.node,
-                    frame: realityObject.frame,
-                    object: realityObject.object,
-                    height: realityObject.height,
-                    width: realityObject.width,
-                    sendMatrix: realityObject.sendMatrix,
-                    sendMatrices: realityObject.sendMatrices,
-                    sendScreenPosition: realityObject.sendScreenPosition,
-                    sendAcceleration: realityObject.sendAcceleration,
-                    fullScreen: realityObject.sendFullScreen,
-                    fullscreenZPosition: realityObject.fullscreenZPosition,
-                    stickiness: realityObject.sendSticky,
-                    moveDelay: realityObject.moveDelay
-                }), '*');  // this needs to contain the final interface source
-        }
-    }
-
-    function postDataToParent(additionalProperties) {
-        var dataToSend = {
-            version: realityObject.version,
-            node: realityObject.node,
-            frame: realityObject.frame,
-            object: realityObject.object
-        };
-        if (additionalProperties) {
-            for (var key in additionalProperties) {
-                dataToSend[key] = additionalProperties[key];
-            }
-        }
-        parent.postMessage(JSON.stringify(dataToSend), '*');
-    }
-
-    // receives POST messages from parent to change realityObject state
     realityObject.messageCallBacks.mainCall = function (msgContent) {
 
         if (msgContent.objectData) {
-            if (!realityObject.frame) {
+            if (!realityObject.node) {
                 loadObjectSocketIo(msgContent.objectData);
             }
         }
 
-        // initialize frames
         if (typeof msgContent.node !== 'undefined') {
 
             if (realityObject.sendFullScreen === false) {
@@ -168,27 +130,42 @@
                 realityObject.width = document.body.scrollWidth;
             }
 
+            parent.postMessage(JSON.stringify(
+                {
+                    version: realityObject.version,
+                    node: msgContent.node,
+                    frame: msgContent.frame,
+                    object: msgContent.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices: realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky,
+                    moveDelay: realityObject.moveDelay
+                }
+                )
+                // this needs to contain the final interface source
+                , '*');
+
             var alreadyLoaded = !!realityObject.node;
             realityObject.node = msgContent.node;
             realityObject.frame = msgContent.frame;
             realityObject.object = msgContent.object;
 
-            postAllDataToParent();
-
             if (!alreadyLoaded) {
-                if (realityInterface) {
-                    // adds the API methods related to sending POST messages to parent
-                    realityInterface.injectPostMessageAPI();
+                for (var i = 0; i < realityInterfaces.length; i++) {
+                    realityInterfaces[i].injectPostMessage();
                 }
 
-                // triggers the onRealityInterfaceLoaded function
                 if (realityObject.onload) {
                     realityObject.onload();
                 }
             }
-
-        // initialize logic block settings iframes
         } else if (typeof msgContent.logic !== "undefined") {
+
 
             parent.postMessage(JSON.stringify(
                 {
@@ -210,7 +187,6 @@
             realityObject.publicData = msgContent.publicData;
         }
 
-        // receives matrices that were subscribed to
         if (typeof msgContent.modelViewMatrix !== 'undefined') {
             realityObject.modelViewMatrix = msgContent.modelViewMatrix;
             realityObject.matrices.modelView = msgContent.modelViewMatrix;
@@ -233,91 +209,48 @@
             realityObject.matrices.groundPlane = msgContent.groundPlaneMatrix;
         }
 
-        // receives visibility state (changes when guiState changes or frame gets unloaded due to outside of view)
         if (typeof msgContent.visibility !== 'undefined') {
             realityObject.visibility = msgContent.visibility;
 
             // reload public data when it becomes visible
-            // TODO: should this be triggered in the socketIo functions?
-            if (realityInterface) {
-                realityInterface.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+            for (var i = 0; i < realityInterfaces.length; i++) {
+                if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                }
             }
 
-            // ensure sticky fullscreen state gets sent to parent when it becomes visible
-            if (realityObject.visibility === "visible") {
+            if(realityObject.visibility === "visible"){
                 if (typeof realityObject.node !== "undefined") {
                     if(realityObject.sendSticky) {
-                        postAllDataToParent();
+                        parent.postMessage(JSON.stringify(
+                            {
+                                version: realityObject.version,
+                                node: realityObject.node,
+                                frame: realityObject.frame,
+                                object: realityObject.object,
+                                height: realityObject.height,
+                                width: realityObject.width,
+                                sendMatrix: realityObject.sendMatrix,
+                                sendAcceleration: realityObject.sendAcceleration,
+                                sendScreenPosition: realityObject.sendScreenPosition,
+                                fullScreen: realityObject.sendFullScreen,
+                                stickiness: realityObject.sendSticky
+                            }), "*");
                     }
                 }
             }
         }
 
-        // receives the guiState / "mode" that the app is in, e.g. ui, node, logic, etc...
         if (typeof msgContent.interface !== "undefined") {
             realityObject.interface = msgContent.interface
         }
 
-        // can be triggered by realtime system to refresh public data when editor received a message from another client
-        if (typeof msgContent.reloadPublicData !== "undefined") {
-            console.log('frame reload public data from post message');
-            realityInterface.reloadPublicData();
-        }
-
-        // handle synthetic touch events and pass them into the page contents
-        if (typeof msgContent.event !== "undefined" && typeof msgContent.event.pointerId !== "undefined") {
-
-            // eventData looks like {type: "pointerdown", pointerId: 29887780, pointerType: "touch", x: 334, y: 213}
-            var eventData = msgContent.event;
-
-            var event = new PointerEvent(eventData.type, {
-                view: window,
-                bubbles: true,
-                cancelable: true,
-                pointerId: eventData.pointerId,
-                pointerType: eventData.pointerType,
-                x: eventData.x,
-                y: eventData.y,
-                clientX: eventData.x,
-                clientY: eventData.y,
-                pageX: eventData.x,
-                pageY: eventData.y,
-                screenX: eventData.x,
-                screenY: eventData.y
-            });
-
-            // send unacceptedTouch message if this interface wants touches to pass through it
-            if (realityObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
-                var touchAccepted = realityObject.touchDecider(eventData);
-                if (!touchAccepted) {
-                    // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
-                    postDataToParent({
-                        unacceptedTouch : eventData
-                    });
-                    return;
-                }
-            }
-
-            // if it wasn't unaccepted, dispatch a touch event into the page contents
-            var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
-            elt.dispatchEvent(event);
-
-            // send acceptedTouch message to stop the touch propagation
-            if (eventData.type === 'pointerdown') {
-                postDataToParent({
-                    acceptedTouch : eventData
-                });
-            }
-        }
-
     };
 
-
     /**
-     * Defines the RealityInterface object
-     * A reality interface provides a Post Message API and a SocketIO API
-     * @constructor
+     ************************************************************
      */
+
     function RealityInterface() {
         this.publicData = realityObject.publicData;
         this.pendingSends = [];
@@ -327,24 +260,12 @@
 
         var self = this;
 
-        /**
-         * If you call a Post Message API function before that API has been initialized, it will get queued up as a stub
-         * and executed as soon as that API is fully loaded
-         * @param {string} name - the name of the function that should be called
-         * @return {Function}
-         */
         function makeSendStub(name) {
             return function() {
                 self.pendingSends.push({name: name, args: arguments});
             };
         }
 
-        /**
-         * If you call a SocketIO API function before that API has been initialized, it will get queued up as a stub
-         * and executed as soon as that API is fully loaded
-         * @param {string} name - the name of the function that should be called
-         * @return {Function}
-         */
         function makeIoStub(name) {
             return function() {
                 self.pendingIos.push({name: name, args: arguments});
@@ -352,7 +273,7 @@
         }
 
         if (realityObject.object) {
-            this.injectPostMessageAPI();
+            this.injectPostMessage();
         } else {
             this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
             this.sendCreateNode = makeSendStub('sendCreateNode');
@@ -364,11 +285,11 @@
 
         this.setIOCallback = function(callback) {
             this.ioCallback = callback;
-        };
+        }
 
         this.setIOSInterface = function(o) {
             this.iosObject = o;
-        };
+        }
 
         this.addGlobalMessageListener = function(callback) {
             realityObject.messageCallBacks.globalMessageCall = function (msgContent) {
@@ -455,9 +376,17 @@
             };
         };
 
+        /**
+         ************************************************************
+         */
+
         this.getVisibility = function () {
             return realityObject.visibility;
         };
+
+        /**
+         ************************************************************
+         */
 
         this.addVisibilityListener = function (callback) {
             realityObject.messageCallBacks.visibilityCall = function (msgContent) {
@@ -467,9 +396,17 @@
             };
         };
 
+        /**
+         ************************************************************
+         */
+
         this.getInterface = function () {
             return realityObject.interface;
         };
+
+        /**
+         ************************************************************
+         */
 
         this.addInterfaceListener = function (callback) {
             realityObject.messageCallBacks.interfaceCall = function (msgContent) {
@@ -479,11 +416,19 @@
             };
         };
 
+        /**
+         ************************************************************
+         */
+
         this.getPositionX = function () {
             if (typeof realityObject.matrices.modelView[12] !== "undefined") {
                 return realityObject.matrices.modelView[12];
             } else return undefined;
         };
+
+        /**
+         ************************************************************
+         */
 
         this.getPositionY = function () {
             if (typeof realityObject.matrices.modelView[13] !== "undefined") {
@@ -491,17 +436,29 @@
             } else return undefined;
         };
 
+        /**
+         ************************************************************
+         */
+
         this.getPositionZ = function () {
             if (typeof realityObject.matrices.modelView[14] !== "undefined") {
                 return realityObject.matrices.modelView[14];
             } else return undefined;
         };
 
+        /**
+         ************************************************************
+         */
+
         this.getProjectionMatrix = function () {
             if (typeof realityObject.matrices.projection !== "undefined") {
                 return realityObject.matrices.projection;
             } else return undefined;
         };
+
+        /**
+         ************************************************************
+         */
 
         this.getModelViewMatrix = function () {
             if (typeof realityObject.matrices.modelView !== "undefined") {
@@ -533,7 +490,7 @@
         };
 
         this.unregisterTouchDecider = function() {
-            // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
+            // realityObject.touchDecider = null; // touchDecider is passed by reference, so this alters the function definition
             realityObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
         };
 
@@ -584,11 +541,20 @@
         };
 
         /**
-         * Stubbed here for backwards compatibility of API. In previous versions:
          * Hides the frame itself and instead populates a background context within the editor with this frame's contents
          */
         this.sendToBackground = function() {
-            console.warn('The API function "sendToBackground" is no longer supported.');
+            if (realityObject.sendFullScreen) {
+                if (realityObject.object && realityObject.frame) {
+                    parent.postMessage(JSON.stringify({
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        sendToBackground : true
+                    }), '*');
+                }
+            }
         };
 
         /**
@@ -604,7 +570,7 @@
         };
 
         if (typeof io !== 'undefined') {
-            this.injectSocketIoAPI();
+            this.injectIo();
         } else {
             this.ioObject = {
                 on: function() {
@@ -620,20 +586,18 @@
             this.writePublicData = makeIoStub('writePublicData');
             this.writePrivateData = makeIoStub('writePrivateData');
             this.reloadPublicData = makeIoStub('reloadPublicData');
+
         }
 
-        realityInterface = this;
+        realityInterfaces.push(this);
     }
 
-    RealityInterface.prototype.injectSocketIoAPI = function() {
+    RealityInterface.prototype.injectIo = function() {
         var self = this;
 
         this.ioObject = io.connect(realityObject.socketIoUrl);
-
-        // keeps track of previous values of nodes so we don't re-send unnecessarily
         this.oldNumberList = {};
 
-        // reload a frame if its socket reconnects
         this.ioObject.on('reconnect', function() {
             console.log('reconnect');
             window.location.reload();
@@ -650,37 +614,18 @@
             }
         });
 
-        /**
-         * Subscribes this socket to data values being written to nodes on this frame
-         */
-        this.sendRealityEditorSubscribe = function () {
-            var timeoutFunction = function(){
-                if (realityObject.object) {
-                    console.log("emit sendRealityEditorSubscribe");
-                    _this.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
-                        object: realityObject.object,
-                        frame: realityObject.frame,
-                        protocol: realityObject.protocol
-                    }));
-                }
-            };
-            // Call it a few times to help ensure it succeeds
-            setTimeout(timeoutFunction, 10);
-            setTimeout(timeoutFunction, 50);
-            setTimeout(timeoutFunction, 100);
-            setTimeout(timeoutFunction, 1000);
-        };
-        this.sendRealityEditorSubscribe();
+        this.sendRealityEditorSubscribe = setInterval(function () {
+            if (realityObject.object) {
+                self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                clearInterval(self.sendRealityEditorSubscribe);
+            }
+        }, 10);
 
         /**
-         * @param {string} node - the name of the node
-         * @param {number} value - the new value you are writing to it
-         * @param mode - optional
-         * @param unit - optional
-         * @param unitMin - optional
-         * @param unitMax - optional
-         * @param {boolean|undefined} forceWrite - optional. if true, sends the value even if it hasn't changed since the last write
+         ************************************************************
          */
+
+
         this.write = function (node, value, mode, unit, unitMin, unitMax, forceWrite) {
             mode = mode || 'f';
             unit = unit || false;
@@ -704,10 +649,29 @@
         };
 
         /**
-         * Adds a callback function for when new data arrives at the specified node
-         * @param {string} node - node name
-         * @param {function} callback
+         ************************************************************
          */
+
+        this.readRequest = function (node) {
+            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.frame, node: realityObject.frame + node}));
+        };
+
+        /**
+         ************************************************************
+         */
+
+        this.read = function (node, msg) {
+            if (msg.node === realityObject.frame + node) {
+                return msg.item[0].number;
+            } else {
+                return undefined;
+            }
+        };
+
+        /**
+         ************************************************************
+         */
+
         this.addReadListener = function (node, callback) {
             self.ioObject.on('object', function (msg) {
                 var thisMsg = JSON.parse(msg);
@@ -721,13 +685,6 @@
             });
         };
 
-        /**
-         * Returns the current value of this node's publicData (without making a new network request)
-         * @param {string} node - node name
-         * @param {string} valueName - name of the property to read
-         * @param {*|undefined} value - default value for the property if it doesn't exist yet
-         * @return {*}
-         */
         this.readPublicData = function (node, valueName, value) {
             console.log(realityObject.publicData);
             if (!value)  value = 0;
@@ -745,13 +702,6 @@
         };
 
         // TODO: this function implementation is different in the server and the userinterface... standardize it
-        /**
-         * Adds a callback function that will be triggered whenever the specified property of the node's publicData
-         * is written to (and also when a /subscribe/realityEditorPublicData message is sent)
-         * @param {string} node
-         * @param {string} valueName
-         * @param {function} callback
-         */
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on("object/publicData", function (msg) {
                 var thisMsg = JSON.parse(msg);
@@ -774,7 +724,7 @@
                 if (typeof thisMsg.publicData[node][valueName] === "undefined") return;
 
                 var isUnset =   (typeof realityObject.publicData[node] === "undefined") ||
-                                (typeof realityObject.publicData[node][valueName] === "undefined");
+                    (typeof realityObject.publicData[node][valueName] === "undefined");
 
                 // only trigger the callback if there is new public data, otherwise infinite loop possible
                 if (isUnset || JSON.stringify(thisMsg.publicData[node][valueName]) !== JSON.stringify(realityObject.publicData[node][valueName])) {
@@ -800,13 +750,6 @@
             });
         };
 
-        /**
-         * Emits a socket message with a new value for the specified property of the node's publicData
-         * Also posts it to the parent window (so that e.g. when a frame moves between servers the editor can transfer publicData from one to another using the data it receives here)
-         * @param {string} node
-         * @param {string} valueName
-         * @param {*} value
-         */
         this.writePublicData = function (node, valueName, value) {
 
             if(typeof realityObject.publicData[node] === "undefined") {
@@ -833,22 +776,7 @@
             ), "*");
         };
 
-        /**
-         * Can be called to request the most recent publicData for this frame from the server
-         */
-        this.reloadPublicData = function() {
-            // reload public data when it becomes visible
-            this.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
-        };
-
-        /**
-         * @todo currently not supported yet. use publicData instead
-         * @param node
-         * @param valueName
-         * @param value
-         */
         this.writePrivateData = function (node, valueName, value) {
-            console.warn('privateData is not fully supported yet. use publicData instead.');
 
             var thisItem = {};
             thisItem[valueName] = value;
@@ -861,33 +789,16 @@
             }));
         };
 
-        /**
-         * @deprecated
-         *
-         * Backwards compatible for UI requesting a socket message with the value of a certain node
-         * @param {string} node - node name
-         */
-        this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: realityObject.object, frame: realityObject.frame, node: realityObject.frame + node}));
-        };
-
-        /**
-         * @deprecated
-         *
-         * Backwards compatible for reading the value of a node out of a JSON message
-         * @param {string} node - node name
-         * @param {object} msg
-         * @return {number|undefined}
-         */
-        this.read = function (node, msg) {
-            if (msg.node === realityObject.frame + node) {
-                return msg.item[0].number;
-            } else {
-                return undefined;
+        this.reloadPublicData = function() {
+            // reload public data when it becomes visible
+            for (var i = 0; i < realityInterfaces.length; i++) {
+                if (typeof realityInterfaces[i].ioObject.emit !== 'undefined') {
+                    realityInterfaces[i].ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                }
             }
         };
 
-        console.log('socket.io is loaded and injected into the object.js API');
+        console.log('socket.io is loaded and injected');
 
         for (var i = 0; i < this.pendingIos.length; i++) {
             var pendingIo = this.pendingIos[i];
@@ -896,90 +807,288 @@
         this.pendingIos = [];
     };
 
-    RealityInterface.prototype.injectPostMessageAPI = function() {
+    RealityInterface.prototype.injectPostMessage = function() {
         this.sendGlobalMessage = function (ohMSG) {
-            postDataToParent({
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
                 globalMessage: ohMSG
-            });
+            }), '*');
         };
 
         this.sendCreateNode = function (name) {
-            postDataToParent({
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
                 createNode: {name: name}
-            });
+            }), '*');
         };
 
         // subscriptions
         this.subscribeToMatrix = function() {
             realityObject.sendMatrix = true;
             realityObject.sendMatrices.modelView = true;
-            if (realityObject.sendFullScreen === false) {
-                realityObject.height = document.body.scrollHeight;
-                realityObject.width = document.body.scrollWidth;
+            if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
+
+                if (realityObject.sendFullScreen === false) {
+                    realityObject.height = document.body.scrollHeight;
+                    realityObject.width = document.body.scrollWidth;
+                }
+
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), '*');
             }
-            postAllDataToParent();
         };
 
         this.subscribeToScreenPosition = function() {
             realityObject.sendScreenPosition = true;
-            postAllDataToParent();
+            if (typeof realityObject.node !== 'undefined' || typeof realityObject.frame !== 'undefined') {
+
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), '*');
+            }
         };
 
         this.subscribeToDevicePoseMatrix = function () {
             realityObject.sendMatrices.devicePose = true;
-            postAllDataToParent();
+
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendScreenPosition: realityObject.sendScreenPosition,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+
+            }
         };
 
         this.subscribeToAllMatrices = function () {
             realityObject.sendMatrices.allObjects = true;
-            postAllDataToParent();
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendScreenPosition: realityObject.sendScreenPosition,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+            }
         };
 
         this.subscribeToGroundPlaneMatrix = function () {
             realityObject.sendMatrices.groundPlane = true;
-            postAllDataToParent();
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendScreenPosition: realityObject.sendScreenPosition,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+            }
         };
 
         // subscriptions
         this.subscribeToAcceleration = function () {
             realityObject.sendAcceleration = true;
-            postAllDataToParent();
+            parent.postMessage(JSON.stringify({
+                version: realityObject.version,
+                node: realityObject.node,
+                frame: realityObject.frame,
+                object: realityObject.object,
+                height: realityObject.height,
+                width: realityObject.width,
+                sendMatrix: realityObject.sendMatrix,
+                sendMatrices : realityObject.sendMatrices,
+                sendScreenPosition: realityObject.sendScreenPosition,
+                sendAcceleration: realityObject.sendAcceleration,
+                stickiness: realityObject.sendSticky,
+                fullScreen: realityObject.sendFullScreen
+            }), '*');
         };
 
         this.setFullScreenOn = function(zPosition) {
             realityObject.sendFullScreen = true;
-            realityObject.height = '100%';
-            realityObject.width = '100%';
-            if (zPosition !== undefined) {
-                realityObject.fullscreenZPosition = zPosition;
+            console.log('fullscreen is loaded');
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                realityObject.height = '100%';
+                realityObject.width = '100%';
+                if (zPosition !== undefined) {
+                    realityObject.fullscreenZPosition = zPosition;
+                }
+
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    fullscreenZPosition: realityObject.fullscreenZPosition,
+                    stickiness: realityObject.sendSticky
+                }), '*');
             }
-            postAllDataToParent();
         };
+
+        /**
+         ************************************************************
+         */
 
         this.setFullScreenOff = function () {
             realityObject.sendFullScreen = false;
-            realityObject.height = document.body.scrollHeight;
-            realityObject.width = document.body.scrollWidth;
-            postAllDataToParent();
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                realityObject.height = document.body.scrollHeight;
+                realityObject.width = document.body.scrollWidth;
+
+                parent.postMessage(JSON.stringify({
+                    version: realityObject.version,
+                    node: realityObject.node,
+                    frame: realityObject.frame,
+                    object: realityObject.object,
+                    height: realityObject.height,
+                    width: realityObject.width,
+                    sendMatrix: realityObject.sendMatrix,
+                    sendMatrices : realityObject.sendMatrices,
+                    sendScreenPosition: realityObject.sendScreenPosition,
+                    sendAcceleration: realityObject.sendAcceleration,
+                    fullScreen: realityObject.sendFullScreen,
+                    stickiness: realityObject.sendSticky
+                }), '*');
+            }
         };
+
+        /**
+         ************************************************************
+         */
 
         this.setStickyFullScreenOn = function () {
             realityObject.sendFullScreen = "sticky";
             realityObject.sendSticky = true;
-            realityObject.height = "100%";
-            realityObject.width = "100%";
-            postAllDataToParent();
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+
+                realityObject.height = "100%";
+                realityObject.width = "100%";
+
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendScreenPosition: realityObject.sendScreenPosition,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: realityObject.sendSticky
+                    }), "*");
+            }
         };
 
+        /**
+         ************************************************************
+         */
+
         this.setStickinessOff = function () {
-            realityObject.sendSticky = false;
-            postAllDataToParent();
+            console.log(realityObject.visibility);
+            //if(realityObject.visibility === "hidden"){
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        height: realityObject.height,
+                        width: realityObject.width,
+                        sendMatrix: realityObject.sendMatrix,
+                        sendMatrices : realityObject.sendMatrices,
+                        sendScreenPosition: realityObject.sendScreenPosition,
+                        sendAcceleration: realityObject.sendAcceleration,
+                        fullScreen: realityObject.sendFullScreen,
+                        stickiness: false
+                    }), "*");
+            }
+
         };
 
         this.startVideoRecording = function() {
-            postDataToParent({
-                videoRecording: true
-            });
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        videoRecording: true
+                    }), "*");
+            }
         };
 
         this.stopVideoRecording = function(callback) {
@@ -989,9 +1098,16 @@
                 }
             };
 
-            postDataToParent({
-                videoRecording: false
-            });
+            if (typeof realityObject.node !== "undefined" || typeof realityObject.frame !== "undefined") {
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        videoRecording: false
+                    }), "*");
+            }
         };
 
         for (var i = 0; i < this.pendingSends.length; i++) {
@@ -1000,9 +1116,106 @@
         }
         this.pendingSends = [];
 
-        console.log('Post Message API is loaded and injected into the object.js API');
+        // set this to true if you don't use native addEventListener('pointerdown', callback) API,
+        // and instead only use realityInterface.addPointerEventListener('pointerdown', callback) API
+        // It will be faster and doesn't require importing PEP.js, but doesn't work with unmodified webpages
+        this.doesUseSimplifiedPointerEvents = false;
+        this.useSimplifiedPointerEvents = function() {
+            this.doesUseSimplifiedPointerEvents = true;
+        };
 
+        this.pointerEventListeners = {
+            'pointerdown': [],
+            'pointermove': [],
+            'pointerup': []
+        };
+
+        this.addPointerEventListener = function(type, callback) {
+            if (typeof this.pointerEventListeners[type] !== 'undefined') {
+                this.pointerEventListeners[type].push(callback);
+            }
+        }
     };
+
+    window.addEventListener('load', function() {
+
+        window.addEventListener('message', function (msg) {
+
+            // if (typeof msg !== "string") { return; }
+
+            var msgContent = JSON.parse(msg.data);
+
+            if (msgContent.reloadPublicData) {
+                console.log('frame reload public data from post message');
+                realityInterface.reloadPublicData();
+            }
+
+            if (msgContent.event && msgContent.event.pointerId) {
+                var eventData = msgContent.event; // looks like {type: "pointerdown", pointerId: 29887780, pointerType: "touch", x: 334, y: 213}
+
+                var event;
+                if (!realityInterface.doesUseSimplifiedPointerEvents) {
+                    event = new PointerEvent(eventData.type, {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true,
+                        pointerId: eventData.pointerId,
+                        pointerType: eventData.pointerType,
+                        x: eventData.x,
+                        y: eventData.y,
+                        clientX: eventData.x,
+                        clientY: eventData.y,
+                        pageX: eventData.x,
+                        pageY: eventData.y,
+                        screenX: eventData.x,
+                        screenY: eventData.y
+                    });
+                }
+
+                // send unacceptedTouch message if this interface wants touches to pass through it
+                if (realityObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
+                    var touchAccepted = realityObject.touchDecider(eventData);
+                    if (!touchAccepted) {
+                        // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
+                        if (realityObject.object && realityObject.frame) {
+
+                            parent.postMessage(JSON.stringify({
+                                version: realityObject.version,
+                                node: realityObject.node,
+                                frame: realityObject.frame,
+                                object: realityObject.object,
+                                unacceptedTouch : eventData
+                            }), '*');
+                            return;
+                        }
+                    }
+                }
+
+                // the method of sending the pointerevent into the frame depends on whether useSimplifiedPointerEvents was called
+                if (realityInterface.doesUseSimplifiedPointerEvents) {
+                    if (typeof realityInterface.pointerEventListeners[eventData.type] !== 'undefined') {
+                        realityInterface.pointerEventListeners[eventData.type].forEach(function(callback) {
+                            callback(eventData);
+                        });
+                    }
+                } else {
+                    var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
+                    elt.dispatchEvent(event);
+                }
+
+                // otherwise send acceptedTouch message to stop the touch propagation
+                if (eventData.type === 'pointerdown') {
+                    parent.postMessage(JSON.stringify({
+                        version: realityObject.version,
+                        node: realityObject.node,
+                        frame: realityObject.frame,
+                        object: realityObject.object,
+                        acceptedTouch : eventData
+                    }), '*');
+                }
+            }
+        });
+    });
 
     function isDesktop() {
         return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
