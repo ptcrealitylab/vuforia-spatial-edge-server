@@ -36,3 +36,6 @@ daemon
 
 objects
 realityobjects
+
+# RealityZoneGifs
+hardwareInterfaces/pass/public
