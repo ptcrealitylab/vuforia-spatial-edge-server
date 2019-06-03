@@ -152,7 +152,6 @@
     tryResend();
 
     realityObject.messageCallBacks.mainCall = function (msgContent) {
-
         if (!isSocketLoadedAlready) {
             if (msgContent.objectData) {
                 if (!realityObject.node) {
@@ -168,6 +167,7 @@
                 realityObject.width = document.body.scrollWidth;
             }
 
+            console.log("sentMessage");
             parent.postMessage(JSON.stringify(
                 {
                     version: realityObject.version,
