@@ -109,9 +109,9 @@ if (exports.enabled) {
             });
 
             socket.on('getFramesForScreen', function(msg) {
-                console.log('getFramesForScreen', msg);
+                console.log('getFramesForScreen');
                 var frames = server.getAllFrames(objectName);
-                console.log(frames);
+                // console.log(frames);
                 socket.emit('framesForScreen', frames);
             });
 
