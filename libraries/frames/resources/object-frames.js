@@ -35,6 +35,7 @@
         sendScreenPosition: false,
         sendAcceleration: false,
         sendFullScreen: false,
+        sendScreenObject : false,
         fullscreenZPosition: 0,
         sendSticky : false,
         height: '100%',
@@ -142,6 +143,7 @@
                     fullScreen: realityObject.sendFullScreen,
                     fullscreenZPosition: realityObject.fullscreenZPosition,
                     stickiness: realityObject.sendSticky,
+                    sendScreenObject : realityObject.sendScreenObject,
                     moveDelay: realityObject.moveDelay
                 }), '*');  // this needs to contain the final interface source
         }
@@ -176,7 +178,7 @@
 
         // Adds the socket.io connection and adds the related API methods
         if (msgContent.objectData) { // objectData contains the IP necessary to load the socket script
-            if (!realityObject.frame) {
+            if (!realityObject.socketIoUrl) {
                 loadObjectSocketIo(msgContent.objectData);
             }
         }
@@ -211,6 +213,10 @@
                 }
             }
 
+            if (realityObject.sendScreenObject) {
+                reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+            }
+
         // initialize realityObject for logic block settings menus, which declare a new RealityLogic()
         } else if (typeof msgContent.logic !== "undefined") {
 
@@ -232,6 +238,10 @@
             realityObject.frame = msgContent.frame;
             realityObject.object = msgContent.object;
             realityObject.publicData = msgContent.publicData;
+
+            if (realityObject.sendScreenObject) {
+                reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
+            }
         }
 
         // Add some additional message listeners which keep the realityObject updated with application state
@@ -336,7 +346,6 @@
 
     };
 
-
     /**
      * Defines the RealityInterface object
      * A reality interface provides a SocketIO API, a Post Message API, and several other APIs
@@ -392,6 +401,8 @@
             this.addReadPublicDataListener = makeIoStub('addReadPublicDataListener');
             this.writePublicData = makeIoStub('writePublicData');
             this.reloadPublicData = makeIoStub('reloadPublicData');
+            this.addScreenObjectListener = makeIoStub('addScreenObjectListener');
+            this.addScreenObjectReadListener = makeIoStub('addScreenObjectReadListener');
             // deprecated or unimplemented methods
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
@@ -420,6 +431,8 @@
             {
                 this.sendGlobalMessage = makeSendStub('sendGlobalMessage');
                 this.sendCreateNode = makeSendStub('sendCreateNode');
+                this.sendMoveNode = makeSendStub('sendMoveNode');
+                this.sendResetNodes = makeSendStub('sendResetNodes');
                 this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
                 this.subscribeToScreenPosition = makeSendStub('subscribeToScreenPosition');
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
@@ -434,6 +447,7 @@
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.setMoveDelay = makeSendStub('setMoveDelay');
                 this.setVisibilityDistance = makeSendStub('setVisibilityDistance');
+                this.activateScreenObject = makeSendStub('activateScreenOb ject');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -458,6 +472,7 @@
              * Setter/Getter APIs
              */
             {
+                // Getters
                 this.getVisibility = makeSendStub('getVisibility'); // TODO: getters don't make sense as stubs
                 this.getInterface = makeSendStub('getInterface'); // TODO: but maybe OK to keep here for consistency
                 this.getPositionX = makeSendStub('getPositionX');
@@ -468,6 +483,11 @@
                 this.getGroundPlaneMatrix = makeSendStub('getGroundPlaneMatrix');
                 this.getDevicePoseMatrix = makeSendStub('getDevicePoseMatrix');
                 this.getAllObjectMatrices = makeSendStub('getAllObjectMatrices');
+                this.getUnitValue = makeSendStub('getUnitValue');
+                // deprecated getters
+                this.search = makeSendStub('search');
+
+                // Setters
                 this.registerTouchDecider = makeSendStub('registerTouchDecider');
                 this.unregisterTouchDecider = makeSendStub('unregisterTouchDecider');
             }
@@ -497,6 +517,14 @@
 
         // Adds the custom API functions that allow a frame to connect to the Internet of Screens application
         this.injectInternetOfScreensAPI();
+
+        for (var i = 0; i < this.pendingSends.length; i++) {
+            var pendingSend = this.pendingSends[i];
+            this[pendingSend.name].apply(this, pendingSend.args);
+        }
+        this.pendingSends = [];
+
+        console.log('All non-socket APIs are loaded and injected into the object.js API');
     };
 
     RealityInterface.prototype.injectSocketIoAPI = function() {
@@ -567,7 +595,7 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
-                this.ioObject.emit('object', JSON.stringify({
+                self.ioObject.emit('object', JSON.stringify({
                     object: realityObject.object,
                     frame: realityObject.frame,
                     node: realityObject.frame + node,
@@ -715,6 +743,41 @@
             this.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
         };
 
+        // Routing the messages via Server for Screen
+        this.addScreenObjectListener = function () {
+            console.log('add screen object listener');
+            realityObject.messageCallBacks.screenObjectCall = function (msgContent) {
+                if(realityObject.visibility !== "visible") return;
+                if (typeof msgContent.screenObject !== "undefined") {
+                    self.ioObject.emit('/object/screenObject', JSON.stringify(msgContent.screenObject));
+                }
+            };
+        };
+
+        this.addScreenObjectReadListener = function () {
+            console.log('add screen object read listener');
+            self.ioObject.on("/object/screenObject", function (msg) {
+                if(realityObject.visibility !== "visible") return;
+                var thisMsg = JSON.parse(msg);
+                if (!thisMsg.object) thisMsg.object = null;
+                if (!thisMsg.frame) thisMsg.frame = null;
+                if (!thisMsg.node) thisMsg.node = null;
+
+                postDataToParent({
+                    screenObject: {
+                        object: thisMsg.object,
+                        frame: thisMsg.frame,
+                        node: thisMsg.node,
+                        touchOffsetX: thisMsg.touchOffsetX,
+                        touchOffsetY: thisMsg.touchOffsetY
+                    }
+                });
+            });
+        };
+
+        this.addScreenObjectListener();
+        this.addScreenObjectReadListener();
+
         /**
          * @todo currently not supported yet. use publicData instead
          * @param node
@@ -763,6 +826,7 @@
 
         console.log('socket.io is loaded and injected into the object.js API');
 
+        console.log('apply pending ios');
         for (var i = 0; i < this.pendingIos.length; i++) {
             var pendingIo = this.pendingIos[i];
             this[pendingIo.name].apply(this, pendingIo.args);
@@ -777,9 +841,31 @@
             });
         };
 
-        this.sendCreateNode = function (name) {
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane) {
             postDataToParent({
-                createNode: {name: name}
+                createNode: {
+                    name: name,
+                    x: x,
+                    y: y,
+                    attachToGroundPlane: attachToGroundPlane
+                }
+            });
+        };
+
+        this.sendMoveNode = function (name, x, y) {
+            postDataToParent({
+                moveNode: {
+                    name: name,
+                    x: x,
+                    y: y
+                }
+            });
+        };
+
+        this.sendResetNodes = function () {
+            //removes all nodes from the frame
+            postDataToParent({
+                resetNodes: true
             });
         };
 
@@ -891,21 +977,25 @@
         };
 
         /**
+         * Enable frames to be pushed into screen or pulled into AR for this object
+         */
+        this.activateScreenObject = function() {
+            console.log('activate screen object');
+            realityObject.sendScreenObject = true;
+            postDataToParent({
+                sendScreenObject : true
+            });
+            // this.addScreenObjectListener();
+            // this.addScreenObjectReadListener();
+        };
+
+        /**
          * Stubbed here for backwards compatibility of API. In previous versions:
          * Hides the frame itself and instead populates a background context within the editor with this frame's contents
          */
         this.sendToBackground = function() {
             console.warn('The API function "sendToBackground" is no longer supported.');
         };
-
-        for (var i = 0; i < this.pendingSends.length; i++) {
-            var pendingSend = this.pendingSends[i];
-            this[pendingSend.name].apply(this, pendingSend.args);
-        }
-        this.pendingSends = [];
-
-        console.log('Post Message API is loaded and injected into the object.js API');
-
     };
 
     RealityInterface.prototype.injectMessageListenerAPI = function() {
@@ -1078,6 +1168,44 @@
             if (typeof realityObject.matrices.allObjects !== "undefined") {
                 return realityObject.matrices.allObjects;
             } else return undefined;
+        };
+
+        this.getUnitValue = function(dataPackage) {
+            return {
+                value: (dataPackage.value * (dataPackage.unitMax-dataPackage.unitMin))+dataPackage.unitMin,
+                unit: dataPackage.unit
+            };
+        };
+
+        /**
+         * @deprecated
+         * Used for the Target grocery demo
+         *
+         * @param ingredients
+         * @param userList
+         * @return {boolean}
+         */
+        this.search = function (ingredients, userList) {
+            console.warn('deprecated, might be removed');
+            for (var key in userList) {
+
+                if (userList[key].state === false) {
+                    if(typeof ingredients[key] !== "undefined"){
+                        if(ingredients[key].state === true){
+                            return false;
+                        }
+                    }
+                }
+
+                if (userList[key].state === true) {
+                    if(typeof ingredients[key] !== "undefined"){
+                        if(ingredients[key].state === false){
+                            return false;
+                        }
+                    } else return false;
+                }
+            }
+            return true;
         };
 
         this.registerTouchDecider = function(callback) {
