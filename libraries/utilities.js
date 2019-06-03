@@ -350,7 +350,7 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
             if (err) {
                 console.log(err);
             } else {
-                console.log("JSON saved to " + outputFilename);
+                // console.log("JSON saved to " + outputFilename);
             }
         });
     } else {
