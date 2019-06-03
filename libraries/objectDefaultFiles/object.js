@@ -275,7 +275,7 @@
 
             // reload public data when it becomes visible
             if (realityInterface && realityObject.ioObject) {
-                realityInterface.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: realityObject.object, frame: realityObject.frame}));
+                realityInterface.reloadPublicData();
             }
 
             // ensure sticky fullscreen state gets sent to parent when it becomes visible
