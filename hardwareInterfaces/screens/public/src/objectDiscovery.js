@@ -40,7 +40,7 @@ createNameSpace("realityEditor.objectDiscovery");
         realityEditor.network.registerCallback('allObjects', onAllObjects);
         realityEditor.network.registerCallback('allObjectsOnOtherServers', onAllObjectsOnOtherServers);
 
-        serverListDomElement = createDiv('serverListContainer', null, null, document.body);
+        serverListDomElement = createDiv('serverListContainer', 'closed', null, document.body);
         serverListDomElement.style.position = 'absolute';
         serverListDomElement.style.left = '80px';
         serverListDomElement.style.top = '20px';
