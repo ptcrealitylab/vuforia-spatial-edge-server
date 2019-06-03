@@ -302,7 +302,7 @@ body, html {
 #pocketButton {
     position: absolute;
     left: 0;
-    top: 195px;
+    top: 130px;
     width: 60px;
     height: 60px;
     background-color: rgba(45,255,255,0.15);
@@ -347,7 +347,7 @@ body, html {
 #trashButton {
     position: absolute;
     left: 0;
-    top: 260px;
+    top: 195px;
     width: 60px;
     height: 320px;
     background-color: rgba(242,22,121,0.15);
