@@ -1423,10 +1423,17 @@ function objectWebServer() {
         // HTML files get object.js injected
         var html = fs.readFileSync(fileName, 'utf8');
 
+        // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
         html = html.replace('<script src="resources/object.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
+
+        html = html.replace('<script src="object-frames.js"></script>', '');
         html = html.replace('<script src="resources/object-frames.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
+
         html = html.replace('<script src="resources/pep.min.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
 
         var level = "../";
         for(var i = 0; i < urlArray.length-3; i++){
