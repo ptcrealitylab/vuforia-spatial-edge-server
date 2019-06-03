@@ -1401,7 +1401,53 @@ function objectWebServer() {
 
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
+    // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
+
+    webServer.use('/frames', function (req, res, next) {
+        var urlArray = req.originalUrl.split("/");
+        console.log(urlArray);
+
+        var fileName = __dirname + '/libraries' + req.originalUrl;
+
+        if (!fs.existsSync(fileName)) {
+            next();
+            return;
+        }
+
+        // Non HTML files just get sent normally
+        if (urlArray[urlArray.length-1].indexOf('html') === -1) {
+            res.sendFile(fileName);
+            return;
+        }
+
+        // HTML files get object.js injected
+        var html = fs.readFileSync(fileName, 'utf8');
+
+        html = html.replace('<script src="object.js"></script>', '');
+        html = html.replace('<script src="resources/object.js"></script>', '');
+        html = html.replace('<script src="resources/object-frames.js"></script>', '');
+        html = html.replace('<script src="resources/pep.min.js"></script>', '');
+
+        var level = "../";
+        for(var i = 0; i < urlArray.length-3; i++){
+            level += "../";
+        }
+        var loadedHtml = cheerio.load(html);
+        var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
+        scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
+
+        var objectKey = utilities.readObject(objectLookup,urlArray[0]);
+        var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
+
+        scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
+        scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
+        scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
+        loadedHtml('head').prepend(scriptNode);
+        res.send(loadedHtml.html());
+
+    });
+
+
 
     webServer.use('/logicNodeIcon', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
