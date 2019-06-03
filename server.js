@@ -1405,7 +1405,6 @@ function objectWebServer() {
 
     webServer.use('/frames', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-        console.log(urlArray);
 
         var fileName = __dirname + '/libraries' + req.originalUrl;
 
