@@ -25,6 +25,10 @@ createNameSpace("realityEditor.memoryExplorer");
         memoryButton.id = 'memoryButton';
         document.body.appendChild(memoryButton);
 
+        // push down pocket and trash button to make room for memory button
+        document.getElementById('pocketButton').style.top = '195px';
+        document.getElementById('trashButton').style.top = '260px';
+
         memoryButton.addEventListener('pointerup', memoryButtonPressed);
     }
 
