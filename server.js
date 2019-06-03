@@ -4513,6 +4513,8 @@ function socketServer() {
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+
+            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node);
         });
 
         socket.on('block/setup', function (_msg) {

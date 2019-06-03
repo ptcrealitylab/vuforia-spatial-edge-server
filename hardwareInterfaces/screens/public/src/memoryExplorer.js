@@ -45,8 +45,6 @@ createNameSpace("realityEditor.memoryExplorer");
     }
 
     function memoryButtonPressed(event) {
-        isMemoryExplorerVisible = !isMemoryExplorerVisible;
-
         if (isMemoryExplorerVisible) {
             // show menu for showing and hiding memories
             document.getElementById('serverListContainer').classList.add('closed');
@@ -54,6 +52,7 @@ createNameSpace("realityEditor.memoryExplorer");
             // hide menu
             document.getElementById('serverListContainer').classList.remove('closed');
         }
+        isMemoryExplorerVisible = !isMemoryExplorerVisible;
     }
 
     /**
