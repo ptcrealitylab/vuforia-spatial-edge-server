@@ -198,7 +198,7 @@ createNameSpace("realityEditor.linkRenderer");
      * @param {number|undefined} speed - optionally adjusts how quickly the animation moves
      */
     function drawLine(context, lineStartPoint, lineEndPoint, lineStartWeight, lineEndWeight, linkObject, timeCorrector, startColor, endColor, speed) {
-        if(!speed) speed = 0.5; // todo: revert to 1, but fix
+        if(!speed) speed = 1;
         var angle = Math.atan2((lineStartPoint[1] - lineEndPoint[1]), (lineStartPoint[0] - lineEndPoint[0]));
         var positionDelta = 0;
         var length1 = lineEndPoint[0] - lineStartPoint[0];
@@ -257,7 +257,8 @@ createNameSpace("realityEditor.linkRenderer");
         context.arc(lineEndPoint[0],lineEndPoint[1], lineEndWeight, 0, 2*Math.PI);
         context.fill();
 
-        linkObject.ballAnimationCount += (lineStartWeight * timeCorrector.delta)+speed;
+        linkObject.ballAnimationCount += (lineStartWeight * timeCorrector.delta)*speed;
+        console.log(linkObject.ballAnimationCount);
 
         globalCanvas.hasContent = true;
     }
