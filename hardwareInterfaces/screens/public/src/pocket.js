@@ -202,7 +202,7 @@ createNameSpace("realityEditor.pocket");
             }
             addedNode.frameSizeX = 220;
             addedNode.frameSizeY = 220;
-            var scaleFactor = 1;
+            var scaleFactor = 2;
             if (typeof node.scaleFactor !== 'undefined') {
                 scaleFactor = node.scaleFactor;
             }

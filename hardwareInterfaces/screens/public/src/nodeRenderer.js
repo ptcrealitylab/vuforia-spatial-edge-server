@@ -176,10 +176,12 @@ createNameSpace("realityEditor.nodeRenderer");
 
             var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(frameKey);
 
-            nodeContainerDom.style.left = (parentFrameCenter.x + node.x - (node.width * node.scale * scaleRatio)/2) + 'px';
-            nodeContainerDom.style.top = (parentFrameCenter.y + node.y - (node.height * node.scale * scaleRatio)/2) + 'px';
+            var nodeScaleRatio = scaleRatio/2;
 
-            nodeContainerDom.style.transform = 'scale(' + node.scale * scaleRatio + ')';
+            nodeContainerDom.style.left = (parentFrameCenter.x + node.x - (node.width * node.scale * nodeScaleRatio)/2) + 'px';
+            nodeContainerDom.style.top = (parentFrameCenter.y + node.y - (node.height * node.scale * nodeScaleRatio)/2) + 'px';
+
+            nodeContainerDom.style.transform = 'scale(' + node.scale * nodeScaleRatio + ')';
 
         } else {
             nodeContainerDom.classList.add('screenFrame');
