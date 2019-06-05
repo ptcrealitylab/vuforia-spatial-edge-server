@@ -789,6 +789,7 @@ var hardwareAPICallbacks = {
                 node: nodeKey,
                 data: data
             });
+            hardwareAPI.readCall(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey).data);
             engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write : function (objectID){
