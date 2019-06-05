@@ -6,7 +6,7 @@
     }
 
     // Hardcoded for now, host of the internet of screens.
-    var iOSHost = 'https://10.10.10.107:5000';
+    var iOSHost = 'https://localhost:5000';
 
     // Keeps track of all state related to this frame and its API interactions
     var realityObject = {
@@ -86,13 +86,6 @@
             if (realityInterface) {
                 // adds the API methods related to sending/receiving socket messages
                 realityInterface.injectSocketIoAPI();
-
-                // TODO: this should only happen if an API call was made to turn it on
-                // Connect this frame to the internet of screens.
-                realityInterface.iosObject = io.connect(iOSHost);
-                if(realityInterface.ioCallback !== undefined) {
-                    realityInterface.ioCallback();
-                }
             }
         });
 
@@ -1222,6 +1215,7 @@
          */
         this.setIOCallback = function(callback) {
             this.ioCallback = callback;
+            this.initializeIOSSocket();
         };
 
         /**
@@ -1231,6 +1225,18 @@
         this.setIOSInterface = function(o) {
             this.iosObject = o;
         };
+
+        this.initializeIOSSocket = function() {
+            // TODO: this should only happen if an API call was made to turn it on
+            // Connect this frame to the internet of screens.
+            if (!this.iosObject) {
+                console.log('ios socket connected.');
+                this.iosObject = io.connect(iOSHost);
+                if(this.ioCallback !== undefined) {
+                    this.ioCallback();
+                }
+            }
+        }
     };
 
     function isDesktop() {
