@@ -49,7 +49,7 @@ var settings = server.loadHardwareInterface(__dirname);
 const { WebSocketInterface } = require('./websocketInterface');
 const { RestAPIInterface } = require('./restapiInterface');
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
