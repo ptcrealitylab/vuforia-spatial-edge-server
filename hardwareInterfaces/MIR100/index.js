@@ -45,15 +45,9 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
-/*
-const add = require('vectors/add')(2);
-const sub = require('vectors/sub')(2);
-const normalize = require('vectors/normalize')(2);
-const dist = require('vectors/dist')(2);
- */
 
-const fetch = require('node-fetch');
 const { WebSocketInterface } = require('./websocketInterface');
+const { RestAPIInterface } = require('./restapiInterface');
 
 exports.enabled = true;
 
@@ -69,9 +63,9 @@ if (exports.enabled) {
     //const hostIP = "10.88.132.58";
     //const hostIP = "192.168.12.20";
 
-    //const hostIP = "192.168.1.103";         // realityHQ-5G
+    const hostIP = "192.168.1.103";         // realityHQ-5G
     //const hostIP = "10.10.10.107";        // feederStuttgart-5G
-    const hostIP = "10.10.10.111";        // reality demo
+    //const hostIP = "10.10.10.111";        // reality demo
 
     const port = 9090;
 
@@ -81,8 +75,8 @@ if (exports.enabled) {
 
     // MIR100 REST API INFO
     const restAddress = "http://" + hostIP + "/api/v2.0.0";
-    //const restAddress = "http://mir.com/api/v2.0.0";
-    const authorization = "Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==";
+    let restapi = null;
+    if (enableMIRConnection) restapi = new RestAPIInterface(hostIP);
 
     /* MISSION STRUCTURE:
     {
@@ -111,12 +105,26 @@ if (exports.enabled) {
     let initOrientationMIR = 0;
     let initOrientationAR = 0;
 
-    if (enableMIRConnection) requestMissions();
+    if (enableMIRConnection) restRequest('/missions');;
 
     server.addNode("MIR", "kineticAR", "kineticNode2", "storeData");     // Node for the data path. Follow Checkpoints
     server.addNode("MIR", "kineticAR", "kineticNode3", "storeData");     // Node for receiving AR status
     server.addNode("MIR", "kineticAR", "kineticNode4", "storeData");     // Node for cleaning the path
 
+
+    // Request Information to the MIR100
+    function restRequest(endpoint){
+
+        newAddress = restAddress + endpoint;
+
+        //console.log("   -   -   -   Request: " + newAddress);
+        if (server.getDebug()) console.log("   -   -   -   Request: " + newAddress);
+
+        return restapi.getData(newAddress)
+            .then(data => processData(data)) // JSON-string from `response.json()` call
+            .catch(error => console.error(error));
+
+    }
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode3","ARstatus",function (data){
 
@@ -135,7 +143,6 @@ if (exports.enabled) {
         initOrientationMIR = mirStatus['orientation'];
         initOrientationAR =  (-1) * signed_angle([1,0], [lastDirectionAR.x, lastDirectionAR.y]) * 180 / Math.PI;
 
-        //console.log('initOrientationAR', initOrientationAR);
     });
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode4","ClearPath",function (data) {
@@ -157,7 +164,7 @@ if (exports.enabled) {
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode2","pathData",function (data){
 
-        // We go through array of paths. For now there is only 1
+        // We go through array of paths
         data.forEach(framePath => {
 
             let pathExists = false;
@@ -247,7 +254,6 @@ if (exports.enabled) {
 
         console.log('NODE ', checkpointIdx, ' path: ', pathIdx, ' received ', data);
 
-
         let checkpointTriggered = pathData[pathIdx].checkpoints[checkpointIdx];
 
         if (data.value === 1){
@@ -262,11 +268,10 @@ if (exports.enabled) {
 
                 let missionData = computeMIRCoordinatesTo(checkpointTriggered.posX, checkpointTriggered.posY, checkpointTriggered.orientation);
 
-
                 let newAddress = restAddress + "/mission_queue";
 
                 if (enableMIRConnection) {
-                    postData(newAddress, missionData)
+                    restapi.postData(newAddress, missionData)
                         .then(res => console.log(res)) // JSON-string from `response.json()` call
                         .catch(error => console.error(error));
                 }
@@ -293,7 +298,7 @@ if (exports.enabled) {
 
                     let newAddress = restAddress + "/mission_queue";
 
-                    deleteData(newAddress)
+                    restapi.deleteData(newAddress)
                         .then(res => console.log(res)) // JSON-string from `response.json()` call
                         .catch(error => console.error(error));
 
@@ -312,13 +317,11 @@ if (exports.enabled) {
                         nextCheckpointToTrigger = pathData[pathIdx].checkpoints[checkpointIdx + 1];
 
                         console.log('Next checkpoint triggered: ', nextCheckpointToTrigger.name);
-                        server.write("MIR", "kineticAR", nextCheckpointToTrigger.name, 1);   // server write
+                        server.write("MIR", "kineticAR", nextCheckpointToTrigger.name, 1);
 
                     } else {                                                                            // We reached end of path
 
-
                         activeCheckpointName = null;
-
 
                     }
 
@@ -435,22 +438,7 @@ if (exports.enabled) {
         return dataObj;
     }
 
-    function requestStatus(){ restRequest('/status'); }
-    function requestMissions(){ restRequest('/missions'); }
 
-    // Request Information to the MIR100
-    function restRequest(endpoint){
-
-        newAddress = restAddress + endpoint;
-
-        //console.log("   -   -   -   Request: " + newAddress);
-        if (server.getDebug()) console.log("   -   -   -   Request: " + newAddress);
-
-        return getData(newAddress)
-        .then(data => processData(data)) // JSON-string from `response.json()` call
-        .catch(error => console.error(error));
-        
-    }
 
     function processData(data){
 
@@ -475,7 +463,6 @@ if (exports.enabled) {
             
         } else {
             // status
-            //console.log("   -   -   -   ROBOT NAME: " + data['robot_name']);
 
             mirStatus = data['position'];
             currentPositionMIR.x = mirStatus['x'];
@@ -486,6 +473,7 @@ if (exports.enabled) {
 
             //console.log("   -   -   -   ROBOT POS: ", dataStatus);
             /*console.log("********************************");
+            console.log("   -   -   -   ROBOT NAME: " + data['robot_name']);
             console.log("   -   -   -   mission_queue_id: " + data['mission_queue_id']);
             console.log("   -   -   -   mission_queue_url: " + data['mission_queue_url']);
             console.log("   -   -   -   mission_text: " + data['mission_text']);
@@ -554,87 +542,7 @@ if (exports.enabled) {
         }
     }
 
-    // Example GET method implementation:
-    function getData(url = '') {
-        
-        // Default options are marked with *
-
-        //console.log('   -   -   -   GET: ' + url);
-
-        return fetch(url, {
-            method: "GET", // *GET, POST, PUT, DELETE, etc.
-            mode: "cors", // no-cors, cors, *same-origin
-            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
-            headers: {
-                "Content-Type": "application/json",
-                "authorization": authorization,
-            },
-            redirect: "follow", // manual, *follow, error
-            referrer: "no-referrer", // no-referrer, *client
-        })
-        .then(response => response.json()); // parses JSON response into native Javascript objects 
-    }
-
-
-    // Example POST method implementation:
-    function postData(url = '', data = {}) {
-
-        //console.log('   -   -   -   POST: ' + url + " | Body: " + JSON.stringify(data));
-
-        // Default options are marked with *
-        return fetch(url, {
-            method: "POST", // *GET, POST, PUT, DELETE, etc.
-            mode: "cors", // no-cors, cors, *same-origin
-            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
-            headers: {
-                "Content-Type": "application/json",
-                "authorization": authorization,
-            },
-            redirect: "follow", // manual, *follow, error
-            referrer: "no-referrer", // no-referrer, *client
-            body: JSON.stringify(data), // body data type must match "Content-Type" header
-        })
-
-        //.then(response => response.json());   // parses JSON response into native Javascript objects 
-        .then(response => response.text())      // convert to plain text
-        //.then(text => console.log(text))      // then log it out
-    }
-
-    // Example DELETE method implementation:
-    function deleteData(url = '') {
-
-        //console.log('   -   -   -   DELETE: ' + url + ");
-
-        // Default options are marked with *
-        return fetch(url, {
-            method: "DELETE", // *GET, POST, PUT, DELETE, etc.
-            mode: "cors", // no-cors, cors, *same-origin
-            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
-            headers: {
-                "Content-Type": "application/json",
-                "authorization": authorization,
-            },
-            redirect: "follow", // manual, *follow, error
-            referrer: "no-referrer" // no-referrer, *client
-        })
-
-        //.then(response => response.json());   // parses JSON response into native Javascript objects
-            .then(response => response.text())      // convert to plain text
-        //.then(text => console.log(text))      // then log it out
-    }
-
-    server.addEventListener("reset", function () {
-
-    });
-
-    server.addEventListener("shutdown", function () {
-
-    });
-
-/*
+    /*
     function followUser(){
 
         console.log('Current YAW:', websocket.currentYaw());
@@ -647,36 +555,33 @@ if (exports.enabled) {
 
     }
 
+
     function PositionFromMIRToAR(newPosition, newDirectionAngle)
     {
 
-        if (newDirectionAngle < 0) newDirectionAngle += 360;                      // newDirectionAngle must be between 0 - 360
+        if (newDirectionAngle < 0) newDirectionAngle += 360;                        // newDirectionAngle between 0 - 360
 
-        currentOrientationMIR = mirStatus['orientation'];
+        let initialAngleMIR = mirStatus['orientation'];
+        if (initialAngleMIR < 0) initialAngleMIR += 360;                            // initialAngleMIR between 0 - 360
 
-        let initialAngleMIR = currentOrientationMIR;
-        if (initialAngleMIR < 0) initialAngleMIR += 360;
-
-        let initialRobotDirectionVector = [Math.cos(degrees_to_radians(initialAngleMIR)),                              // MIR space
+        let initialRobotDirectionVector = [Math.cos(degrees_to_radians(initialAngleMIR)),              // MIR space
                                            Math.sin(degrees_to_radians(initialAngleMIR))];
 
         let from = [mirStatus['x'], mirStatus['y']];
         let to = newPosition;
 
-        let newDir = to;                                                  // to - from --> direction vector
-        sub(newDir, from);
-        normalize(newDir);
+        let newDir = [to[0] - from[0], to[1] - from[1]];                            // newDirection = to - from
 
-        let newDirectionDeg = signed_angle(initialRobotDirectionVector, newDir);   // Angle between initial direction and new direction
-        let newDistance = distance(from, to);                                     // Distance between points
+        let newDirectionDeg = signed_angle(initialRobotDirectionVector, newDir);    // Angle between initial direction and new direction
+        let newDistance = distance(from, to);                                       // Distance between points
 
-        let angleDifference = newDirectionAngle - initialAngleMIR; // Angle difference between current and initial MIR orientation
+        let angleDifference = newDirectionAngle - initialAngleMIR;                  // Angle difference between current and initial MIR orientation
 
-        let _initialOrientation_AR = angle([arStatus.robotInitDirection['x'], arStatus.robotInitDirection['z']]);
+        let _initialOrientation_AR = angle([arStatus.robotInitDirection['x'], arStatus.robotInitDirection['z']]);   // Initial AR direction
 
         let newARAngle = _initialOrientation_AR + angleDifference;
 
-        let newAngle = _initialOrientation_AR + newDirectionDeg + 90;                     // 90 degrees of difference between X axis and Forward (Z) axis
+        let newAngle = _initialOrientation_AR + newDirectionDeg + 90;               // 90 degrees of difference between X axis and Forward (Z) axis
 
         let newARPosition = {x:0, y:0, z:0};
         newARPosition.x = arStatus.robotInitPosition['x'] + newDistance * Math.cos(degrees_to_radians(newAngle));
@@ -686,7 +591,8 @@ if (exports.enabled) {
         return newARPosition;
 
     }
-*/
+
+     */
 
     // UPDATE FUNCTION
 
@@ -694,12 +600,24 @@ if (exports.enabled) {
         setTimeout(() => {
 
             // We request status in a loop forever
-            if (enableMIRConnection) requestStatus();
+            if (enableMIRConnection) {
+                restRequest('/status');
+                //followUser();
+            }
+
 
             updateEvery(++i, time);
         }, time)
     }
     
     updateEvery(0, 100);
+
+    server.addEventListener("reset", function () {
+
+    });
+
+    server.addEventListener("shutdown", function () {
+
+    });
     
 }
