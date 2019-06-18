@@ -76,7 +76,7 @@ var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
     saveToDisk : true, // allow system to save to file system// debug messages to console
-    worldObject : true
+    worldObject : false
 };
 
 // ports used to define the server behaviour
@@ -3082,10 +3082,9 @@ function objectWebServer() {
             newFrame.width = frame.width;
             newFrame.height = frame.height;
 
+            // give default values for this node type to each node's public data, if not already assigned
             for(key in newFrame.nodes){
-                if(!frame.publicData) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-                } else if(Object.keys(frame.publicData).length <= 0) {
+                if( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
             }

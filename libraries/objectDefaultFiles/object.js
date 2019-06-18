@@ -267,7 +267,7 @@
             realityObject.visibility = msgContent.visibility;
 
             // reload public data when it becomes visible
-            if (realityInterface && realityObject.ioObject) {
+            if (realityInterface) {
                 realityInterface.reloadPublicData();
             }
 
