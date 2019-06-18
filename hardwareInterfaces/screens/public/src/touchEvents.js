@@ -157,17 +157,22 @@ realityEditor.touchEvents.onMouseDown = function(e) {
                 var touchOffsetPercentX = -1 * editingState.touchOffset.x / (parseFloat(editingFrame.width) * editingFrame.screen.scale);
                 var touchOffsetPercentY = -1 * editingState.touchOffset.y / (parseFloat(editingFrame.height) * editingFrame.screen.scale);
 
-                socket.emit('writeScreenObject', {
-                    objectKey: editingState.objectKey,
-                    frameKey: editingState.frameKey,
-                    nodeKey: editingState.nodeKey,
-                    touchOffsetX: touchOffsetPercentX,
-                    touchOffsetY: touchOffsetPercentY
-                });
+                if (e.simulated) {
+                    socket.emit('writeScreenObject', {
+                        objectKey: editingState.objectKey,
+                        frameKey: editingState.frameKey,
+                        nodeKey: editingState.nodeKey,
+                        touchOffsetX: touchOffsetPercentX,
+                        touchOffsetY: touchOffsetPercentY,
+                        lastEditor: tempUuid
+                    });
+                }
             }
 
-
         }, moveDelay);
+
+        // trigger this in its own scope to maintain
+        // moveDelayTimeout(editingKeys, editingState, e.simulated);
 
         touchEditingTimer = {
             startX: mouseX,
@@ -179,6 +184,10 @@ realityEditor.touchEvents.onMouseDown = function(e) {
 
     realityEditor.touchEvents.triggerCallbacks('onMouseDown', {event: e});
 };
+
+// function moveDelayTimeout(editingKeys, editingState, simulated) {
+//
+// }
 
 realityEditor.touchEvents.onMouseMove = function(e) {
 

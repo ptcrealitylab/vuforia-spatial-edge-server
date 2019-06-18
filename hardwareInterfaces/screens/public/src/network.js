@@ -65,7 +65,7 @@ realityEditor.network.setupSocketListeners = function() {
 
     // callback for when the screenObject data structure is updated in the editor based on projected touch events
     socket.on('screenObject', function(msg) {
-        if (!realityEditor.network.isMessageForMe(msg)) return;
+        if (!realityEditor.network.isMessageForMe(msg) || realityEditor.network.isMessageFromMe(msg)) return;
 
         multiTouchList = [];
         if (msg.touches) {
@@ -165,6 +165,14 @@ realityEditor.network.isMessageForMe = function(msg) {
         }
     }
     return true;
+};
+
+realityEditor.network.isMessageFromMe = function(msg) {
+    if (msg.lastEditor) {
+        console.log('ignoring message from myself');
+        return msg.lastEditor === tempUuid;
+    }
+    return false;
 };
 
 /**
@@ -332,7 +340,8 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
         },
         node: nodeKey,
         nodes: simpleNodes,
-        interface: null
+        interface: null,
+        visibility: 'visible'
     };
 
     var activeKey = nodeKey || frameKey;

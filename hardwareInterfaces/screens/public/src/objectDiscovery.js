@@ -223,6 +223,7 @@ createNameSpace("realityEditor.objectDiscovery");
 
     function onElementLoad(params) {
         refreshToggleStates();
+        console.log('onElementLoad', params);
     }
 
     function refreshToggleStates() {
