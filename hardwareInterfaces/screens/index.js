@@ -100,6 +100,14 @@ if (exports.enabled) {
             io.emit('reloadScreen');
         });
 
+        server.subscribeToUDPMessages(function(msgContent) {
+            // console.log('received UDP message: ' + JSON.stringify(msgContent));
+            if (typeof msgContent.action !== 'undefined') {
+                console.log('received action message: ' + JSON.stringify(msgContent.action));
+                io.emit('actionMessage', msgContent.action);
+            }
+        });
+
         io.on('connection', function(socket) {
             console.log('frame screen socket connected');
             // relay messages from the AR interface to this app's frontend

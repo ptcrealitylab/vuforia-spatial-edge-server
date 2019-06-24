@@ -32,7 +32,7 @@ createNameSpace("realityEditor.memoryExplorer");
         memoryButton.addEventListener('pointerup', memoryButtonPressed);
     }
 
-    function injectGuiStateToMemories(newGuiState) {
+    function postMessageToMemoryFrames(msgContents) {
         var allMemoryFrames = Object.keys(frames).map(function(frameKey) {
             return frames[frameKey];
         }).filter(function(frame) {
@@ -41,11 +41,29 @@ createNameSpace("realityEditor.memoryExplorer");
 
         allMemoryFrames.forEach(function(memoryFrame) {
             var iframe = document.getElementById('iframe' + memoryFrame.uuid);
-            iframe.contentWindow.postMessage(JSON.stringify({
-                guiState: newGuiState,
-                platform: 'desktop'
-            }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify(msgContents), '*');
         });
+    }
+
+    function injectGuiStateToMemories(newGuiState) {
+        postMessageToMemoryFrames({
+            guiState: newGuiState,
+            platform: 'desktop'
+        });
+
+        // var allMemoryFrames = Object.keys(frames).map(function(frameKey) {
+        //     return frames[frameKey];
+        // }).filter(function(frame) {
+        //     return frame.visualization === 'screen' && frame.src === 'memoryFrame';
+        // });
+        //
+        // allMemoryFrames.forEach(function(memoryFrame) {
+        //     var iframe = document.getElementById('iframe' + memoryFrame.uuid);
+        //     iframe.contentWindow.postMessage(JSON.stringify({
+        //         guiState: newGuiState,
+        //         platform: 'desktop'
+        //     }), '*');
+        // });
     }
 
     function memoryButtonPressed(event) {
@@ -94,5 +112,6 @@ createNameSpace("realityEditor.memoryExplorer");
 
     exports.initFeature = initFeature;
     exports.getMemoryShownForObject = getMemoryShownForObject;
+    exports.postMessageToMemoryFrames = postMessageToMemoryFrames;
 
 })(realityEditor.memoryExplorer);

@@ -63,6 +63,14 @@ createNameSpace("realityEditor.database");
         });
     }
 
+    function forEachFrameOfType(frameType, callback) {
+        forEachFrame(function(frameKey, frame) {
+            if (frame.src === frameType) {
+                callback(frame);
+            }
+        });
+    }
+
     function getFrame(frameKey) {
         return frames[frameKey];
     }
@@ -236,6 +244,7 @@ createNameSpace("realityEditor.database");
     exports.forEachNodeInAllFrames = forEachNodeInAllFrames;
     exports.forEachLinkInFrame = forEachLinkInFrame;
     exports.forEachLinkInAllFrames = forEachLinkInAllFrames;
+    exports.forEachFrameOfType = forEachFrameOfType;
 
     // CRUD operators
     exports.createLink = createLink;

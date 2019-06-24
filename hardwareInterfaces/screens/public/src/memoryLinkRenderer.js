@@ -4,14 +4,26 @@ createNameSpace("realityEditor.memoryLinkRenderer");
 
     var guiState;
     var allLinks = {};
+    var memoryLinkCanvas = {};
 
     function initFeature() {
 
         realityEditor.modeToggle.addGuiStateListener(function(newGuiState) {
             guiState = newGuiState;
+            if (memoryLinkCanvas.context) {
+                memoryLinkCanvas.hasContent = true;
+                memoryLinkCanvas.context.clearRect(0, 0, memoryLinkCanvas.canvas.width, memoryLinkCanvas.canvas.height);
+            }
         });
 
         realityEditor.network.addPostMessageHandler('memoryMessage', handleMessageFromMemory);
+
+        memoryLinkCanvas.canvas = document.createElement('canvas');
+        memoryLinkCanvas.canvas.id = 'memoryLinkCanvas';
+        memoryLinkCanvas.canvas.width = window.outerWidth;
+        memoryLinkCanvas.canvas.height = window.outerHeight;
+        memoryLinkCanvas.context = memoryLinkCanvas.canvas.getContext('2d');
+        document.body.appendChild(memoryLinkCanvas.canvas);
     }
 
     /**
@@ -29,8 +41,13 @@ createNameSpace("realityEditor.memoryLinkRenderer");
     function renderLinks() {
         if (guiState !== 'node') return;
 
+        if (memoryLinkCanvas.hasContent) {
+            memoryLinkCanvas.context.clearRect(0, 0, memoryLinkCanvas.canvas.width, memoryLinkCanvas.canvas.height);
+        }
+
         for (var memoryObjectID in allLinks) {
             var thisMemoryLinks = allLinks[memoryObjectID];
+            timeCorrection.delta = 1/60.0; // 60 frames per second
             drawMemoryLinks(thisMemoryLinks);
         }
     }
@@ -49,7 +66,7 @@ createNameSpace("realityEditor.memoryLinkRenderer");
             var nodeDivB = document.getElementById('placeholder' + link.nodeB);
 
             if (nodeDivA && nodeDivB) {
-                console.log('found start and end node divs', nodeDivA, nodeDivB);
+                // console.log('found start and end node divs', nodeDivA, nodeDivB);
 
                 var nodeACenter = {
                     x: nodeDivA.getClientRects()[0].x + nodeDivA.getClientRects()[0].width/2,
@@ -73,8 +90,9 @@ createNameSpace("realityEditor.memoryLinkRenderer");
                 if (isNaN(link.ballAnimationCount)) {
                     link.ballAnimationCount = 0;
                 }
-                realityEditor.linkRenderer.drawLine(globalCanvas.context, [nodeACenter.x + startOffset.x, nodeACenter.y + startOffset.y], [nodeBCenter.x + endOffset.x, nodeBCenter.y + endOffset.y], linkWidth, linkWidth, link, timeCorrection, startColorCode, endColorCode);
-
+                var speed = 1; // manually chosen to a number that feels right
+                realityEditor.linkRenderer.drawLine(memoryLinkCanvas.context, [nodeACenter.x + startOffset.x, nodeACenter.y + startOffset.y], [nodeBCenter.x + endOffset.x, nodeBCenter.y + endOffset.y], linkWidth, linkWidth, link, timeCorrection, startColorCode, endColorCode, speed);
+                memoryLinkCanvas.hasContent = true;
             }
         }
     }

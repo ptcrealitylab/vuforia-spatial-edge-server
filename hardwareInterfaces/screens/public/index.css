@@ -275,6 +275,14 @@ body, html {
     /*z-index: 50;*/
 }
 
+#memoryLinkCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 50;
+}
+
 .touchOverlay {
     position: absolute;
     display: none;
@@ -395,7 +403,7 @@ body, html {
 
 .visibleMemoryFrame {
     /*opacity: 0.7;*/
-    /*opacity: 1.0 !important;*/
+    opacity: 1.0 !important;
     /*pointer-events: auto; !important;*/
 }
 
