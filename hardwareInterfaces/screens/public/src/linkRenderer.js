@@ -258,7 +258,7 @@ createNameSpace("realityEditor.linkRenderer");
         context.fill();
 
         linkObject.ballAnimationCount += (lineStartWeight * timeCorrector.delta)*speed;
-        console.log(linkObject.ballAnimationCount);
+        // console.log(linkObject.ballAnimationCount);
 
         globalCanvas.hasContent = true;
     }

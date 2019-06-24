@@ -152,6 +152,18 @@ realityEditor.network.setupSocketListeners = function() {
         realityEditor.network.callbackHandler.triggerCallbacks('allObjectsOnOtherServers', msg);
     });
 
+    socket.on('actionMessage', function(msg) {
+        // if action is reloadFrame, and reloadFrame.object === a memoryFrame's objectID, send this message into that object
+        if (typeof msg.reloadFrame !== 'undefined') {
+            // // loop over all memory frames
+            // realityEditor.database.forEachFrameOfType('memoryFrame', function(frame) {
+            //
+            // });
+
+            realityEditor.memoryExplorer.postMessageToMemoryFrames(msg);
+        }
+    });
+
 };
 
 /**

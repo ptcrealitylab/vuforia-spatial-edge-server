@@ -87,6 +87,16 @@
             //     postNodesAndLinksToParent();
             // }
 
+            // if this object has loaded a memory, allow it to update from reloadFrame action messages
+            if (thisObject) {
+                if (typeof msgData.reloadFrame !== 'undefined') {
+                    if (thisObject.objectId && msgData.reloadFrame.object === thisObject.objectId) {
+                        console.log(thisObject.name + ' memoryFrame received reloadFrame message', msgData.reloadFrame)
+                        reloadObject();
+                    }
+                }
+            }
+
         }
     });
 
@@ -100,6 +110,46 @@
                 links: links
             }
         }), '*');
+    }
+
+    function reloadObject() {
+
+        getData('http://' + memoryInformation.objectIP + ':' + httpPort + '/object/' + memoryInformation.objectID, function (object) {
+
+            // renderOnce(objects.stoneTestrmix4u3rq5ve);
+            console.log('downloaded object', object);
+
+            var isBackwardCompatibleMemory = typeof object.memory.matrix !== 'undefined';
+
+            if ((isBackwardCompatibleMemory && Object.keys(object.memory.matrix).length === 16) ||
+                !isBackwardCompatibleMemory && Object.keys(object.memory).length === 16) {
+
+                console.log('successfully loaded memory for object ' + memoryInformation.objectID);
+
+                thisObject = object;
+                objects[memoryInformation.objectID] = object; // TODO: not actually necessary right now to use objects dictionary in this iframe
+
+                var memoryUrl = 'http://' + memoryInformation.objectIP + ':' + httpPort + '/obj/' + object.name + '/memory/memoryThumbnail.jpg';
+                document.getElementById('memoryBackground').src = memoryUrl;
+
+                renderOnce(object, guiState);
+
+            } else {
+                // failed if can't find a 4x4 matrix in object.memory or object.memory.matrix
+
+                console.log('failed loading memory for object ' + memoryInformation.objectID);
+
+                memoryInformation = null; // reset so it can try to download again later
+
+                errorMessage = document.createElement('div');
+                errorMessage.id = 'memoryErrorMessage';
+                errorMessage.innerHTML = 'Memory for object<br>' + object.name + '<br>doesn\'t exist.<br><br>Please create one and try again.';
+                document.body.appendChild(errorMessage);
+
+            }
+
+        });
+
     }
 
     realityInterface.onRealityInterfaceLoaded(function() {
@@ -124,45 +174,12 @@
                 }
 
                 // if (typeof memoryInformation !== 'undefined') {
-                    console.log('---- memory frame received memoryInformation ----', memoryInformation);
+                console.log('---- memory frame received memoryInformation ----', memoryInformation);
 
                     // waitingForMemory = false;
 
-                    getData('http://' + memoryInformation.objectIP + ':' + httpPort + '/object/' + memoryInformation.objectID, function (object) {
+                reloadObject();
 
-                        // renderOnce(objects.stoneTestrmix4u3rq5ve);
-                        console.log('downloaded object', object);
-
-                        var isBackwardCompatibleMemory = typeof object.memory.matrix !== 'undefined';
-
-                        if ((isBackwardCompatibleMemory && Object.keys(object.memory.matrix).length === 16) ||
-                            !isBackwardCompatibleMemory && Object.keys(object.memory).length === 16) {
-
-                            console.log('successfully loaded memory for object ' + memoryInformation.objectID);
-
-                            thisObject = object;
-                            objects[memoryInformation.objectID] = object; // TODO: not actually necessary right now to use objects dictionary in this iframe
-
-                            var memoryUrl = 'http://' + memoryInformation.objectIP + ':' + httpPort + '/obj/' + object.name + '/memory/memoryThumbnail.jpg';
-                            document.getElementById('memoryBackground').src = memoryUrl;
-
-                            renderOnce(object, guiState);
-
-                        } else {
-                            // failed if can't find a 4x4 matrix in object.memory or object.memory.matrix
-
-                            console.log('failed loading memory for object ' + memoryInformation.objectID);
-
-                            memoryInformation = null; // reset so it can try to download again later
-
-                            errorMessage = document.createElement('div');
-                            errorMessage.id = 'memoryErrorMessage';
-                            errorMessage.innerHTML = 'Memory for object<br>' + object.name + '<br>doesn\'t exist.<br><br>Please create one and try again.';
-                            document.body.appendChild(errorMessage);
-
-                        }
-
-                    });
                 // }
 
             }
@@ -228,6 +245,8 @@
 
             // for now, don't recursively render memoryFrames
             if (activeFrame.src === 'memoryFrame') { continue; }
+
+            if (activeFrame.visualization === 'screen') { continue; }
 
             if (guiState === 'ui') {
 
