@@ -1,5 +1,10 @@
 const fetch = require('node-fetch');
 
+/*
+*  This class connects to the MIR RESTful API
+*  in order to get, post or delete information
+*  from the robot's server.
+*/
 class restapiInterface {
 
     constructor(hostIP){
@@ -32,6 +37,28 @@ class restapiInterface {
         })
             .then(response => response.json()); // parses JSON response into native Javascript objects
     }
+
+    // Example GET method implementation:
+    /*getImg() {
+
+        //console.log('   -   -   -   GET: ' + url);
+
+        let url = 'http://10.10.10.111/?mode=get-map&calltype=light&id=b1bf0757-1e42-11e9-8200-94c6911e8fa3&t=1561742783';
+
+        return fetch(url, {
+            method: "GET", // *GET, POST, PUT, DELETE, etc.
+            mode: "cors", // no-cors, cors, *same-origin
+            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: "same-origin", // include, *same-origin, omit
+            headers: {
+                "Content-Type": "image/png",
+                "authorization": this._authorization,
+            },
+            redirect: "follow", // manual, *follow, error
+            referrer: "no-referrer", // no-referrer, *client
+        })
+            .then(response => response.blob()); // parses JSON response into native Javascript objects
+    }*/
 
 
     // Example POST method implementation:

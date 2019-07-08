@@ -1,11 +1,16 @@
-// ************************************* WEBSOCKET
 const WebSocket = require('ws');
 
+/*
+*  This class connects to the WebSocket
+*  created by the MIR in order to access
+*  realtime data from the robot.
+*/
 class WebSocketInterface {
 
     constructor(hostIP, port){
 
         const ws_host = "ws://" + hostIP;
+        //const ws_host = "ws://mir.com";
         const ws_port = port;
         this._currentRobotAngle = {x:1, y:1, z:1, w:1};
         this._currentRobotPosition = {x:1, y:1};
