@@ -1,15 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 92 46" style="enable-background:new 0 0 92 46;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-miterlimit:10;}
-</style>
-<title>blockIconTemplates</title>
-<circle class="st0" cx="39.5" cy="29" r="15.2"/>
-<line class="st0" x1="64.6" y1="20.8" x2="92" y2="20.8"/>
-<polyline class="st0" points="50.3,39.8 63.9,39.8 63.9,1.8 0,1.8 "/>
-<line class="st0" x1="28.8" y1="39.8" x2="0" y2="39.8"/>
-<line class="st0" x1="39.5" y1="20.6" x2="39.5" y2="32.8"/>
-<line class="st0" x1="39.5" y1="35.1" x2="39.5" y2="38.1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 100">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: 0.5;
+      }
+
+      .cls-2 {
+        fill: #75fbfd;
+      }
+
+      .cls-3 {
+        fill: #008480;
+      }
+    </style>
+  </defs>
+  <title>Asset 17</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g>
+          <g class="cls-1">
+            <polygon points="0 0 0 100 37.08 100 170 100 170 66.65 170 0 0 0"/>
+          </g>
+          <g class="cls-1">
+            <path class="cls-2" d="M164,5.94V94.06H6V5.94H164M170,0H0V100H170V0Z"/>
+          </g>
+        </g>
+        <g>
+          <rect class="cls-2" x="6.17" y="69.37" width="50" height="2"/>
+          <polygon class="cls-2" points="107.17 71.37 81.78 71.37 81.78 69.37 105.17 69.37 105.17 30.37 6.17 30.37 6.17 28.37 107.17 28.37 107.17 71.37"/>
+          <rect class="cls-2" x="106.17" y="48.87" width="57.67" height="2"/>
+          <g>
+            <circle class="cls-3" cx="68.92" cy="57.2" r="18"/>
+            <path class="cls-2" d="M68.92,76.2a19,19,0,1,1,19-19A19,19,0,0,1,68.92,76.2Zm0-36a17,17,0,1,0,17,17A17,17,0,0,0,68.92,40.2Z"/>
+          </g>
+          <path class="cls-2" d="M66.92,69.2v-4h4v4Zm.2-8v-16h3.6v16Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>

@@ -1,1 +1,44 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 46"><defs><style>.cls-1{fill:none;stroke:#fff;stroke-miterlimit:10;stroke-width:2px;}</style></defs><title>_</title><polygon class="cls-1" points="46.6 21.63 37.21 37.91 56 37.91 46.6 21.63"/><line class="cls-1" x1="2" y1="31" x2="90" y2="8.59"/><line class="cls-1" x1="19.55" y1="18.06" x2="21.51" y2="25.84"/><line class="cls-1" x1="68.47" y1="6.73" x2="70.43" y2="14.51"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 100">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: 0.5;
+      }
+
+      .cls-2 {
+        fill: #75fbfd;
+      }
+
+      .cls-3 {
+        fill: #008480;
+      }
+    </style>
+  </defs>
+  <title>Asset 18</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g>
+          <g class="cls-1">
+            <polygon points="0 0 0 100 52.08 100 170 100 170 36.65 170 0 0 0"/>
+          </g>
+          <g class="cls-1">
+            <path class="cls-2" d="M164,5.94V94.06H6V5.94H164M170,0H0V100H170V0Z"/>
+          </g>
+        </g>
+        <g>
+          <path class="cls-2" d="M95,67.73H75a1,1,0,0,1-.71-1.7l10-10a1,1,0,0,1,1.42,0l10,10a1,1,0,0,1-.71,1.7Zm-17.59-2H92.59L85,58.15Z"/>
+          <path class="cls-2" d="M45.61,59.68a1,1,0,0,1-.18-2l78.79-13.9a1,1,0,0,1,1.16.81,1,1,0,0,1-.81,1.16L45.78,59.66A.52.52,0,0,1,45.61,59.68Z"/>
+          <g>
+            <circle class="cls-3" cx="55" cy="43.21" r="9"/>
+            <path class="cls-2" d="M55,53.21a10,10,0,1,1,10-10A10,10,0,0,1,55,53.21Zm0-18a8,8,0,1,0,8,8A8,8,0,0,0,55,35.21Z"/>
+          </g>
+          <g>
+            <circle class="cls-3" cx="115" cy="37.77" r="4.5"/>
+            <path class="cls-2" d="M115,43.27a5.5,5.5,0,1,1,5.5-5.5A5.51,5.51,0,0,1,115,43.27Zm0-9a3.5,3.5,0,1,0,3.5,3.5A3.5,3.5,0,0,0,115,34.27Z"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
