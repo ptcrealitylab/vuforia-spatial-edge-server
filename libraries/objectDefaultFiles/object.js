@@ -49,6 +49,7 @@
         version: 170,
         moveDelay: 400,
         visibilityDistance: 2.0,
+        customInteractionMode: false, // this is how frames used to respond to touches. change to true and add class realityInteraction to certain divs to make only some divs interactable
         eventObject : {
             version : null,
             object: null,
@@ -267,7 +268,7 @@
             realityObject.visibility = msgContent.visibility;
 
             // reload public data when it becomes visible
-            if (realityInterface) {
+            if (realityInterface && realityObject.ioObject) {
                 realityInterface.reloadPublicData();
             }
 
@@ -327,7 +328,52 @@
 
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
-            elt.dispatchEvent(event);
+
+            function forElementAndParentsRecursively(elt, callback) {
+                callback(elt);
+                if (elt.parentNode && elt.parentNode.tagName !== "HTML" && elt.parentNode !== document) {
+                    forElementAndParentsRecursively(elt.parentNode, callback);
+                }
+            }
+
+            function elementOrRecursiveParentIsOfClass(element, className) {
+                var foundClassOnAnyElement = false;
+                forElementAndParentsRecursively(element, function(thatElement) {
+                    if (thatElement.classList.contains(className)) {
+                        foundClassOnAnyElement = true;
+                    }
+                });
+                return foundClassOnAnyElement;
+            }
+
+            // see if it is a realityInteraction div
+            if (eventData.type === 'pointerdown') {
+                if (realityObject.customInteractionMode) {
+
+                    if (elementOrRecursiveParentIsOfClass(elt, 'realityInteraction')) {
+                    // if (elt.classList.contains('realityInteraction')) {
+                        elt.dispatchEvent(event);
+
+                        postDataToParent({
+                            pointerDownResult: 'interaction'
+                        });
+                        console.log('pointerdown interaction')
+                    } else {
+                        postDataToParent({
+                            pointerDownResult: 'nonInteraction'
+                        });
+                        // TODO: simplify. this is the one case where
+                        console.log('pointerdown nonInteraction')
+                    }
+
+                } else {
+                    elt.dispatchEvent(event);
+                }
+
+            } else {
+                elt.dispatchEvent(event);
+            }
+
 
             // send acceptedTouch message to stop the touch propagation
             if (eventData.type === 'pointerdown') {
@@ -448,7 +494,9 @@
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.setMoveDelay = makeSendStub('setMoveDelay');
                 this.setVisibilityDistance = makeSendStub('setVisibilityDistance');
-                this.activateScreenObject = makeSendStub('activateScreenOb ject');
+                this.activateScreenObject = makeSendStub('activateScreenObject');
+                this.enableCustomInteractionMode = makeSendStub('enableCustomInteractionMode');
+                this.setInteractableDivs = makeSendStub('setInteractableDivs');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -976,6 +1024,31 @@
             });
             // this.addScreenObjectListener();
             // this.addScreenObjectReadListener();
+        };
+
+        /**
+         * If enabled, touches on this frame will not be sent into the DOM of the iframe, instead they will immediately
+         * start moving the frame in the reality editor. Only frames with the class 'realityInteraction' will actually
+         * accept a pointerdown event and begin interaction within the frame contents. Touches on divs with
+         * 'realityInteraction' will still trigger moving after the moveDelay if not enough distance traveled.
+         */
+        this.enableCustomInteractionMode = function() {
+            realityObject.customInteractionMode = true;
+        };
+
+        /**
+         * Only use if also enableCustomInteractionMode
+         * A helper function to add the 'realityInteraction' class to a list of divs. Only these divs (and their children)
+         * will receive pointerevents, and touches on all other divs will immediately trigger moving the frame.
+         * @param {Array.<HTMLElement>} divList
+         */
+        this.setInteractableDivs = function(divList) {
+            if (!realityObject.customInteractionMode) {
+                console.warn('trying to set custom interactable divs without first enabling customInteractionMode');
+            }
+            divList.forEach(function(div) {
+                div.classList.add('realityInteraction');
+            });
         };
 
         /**
