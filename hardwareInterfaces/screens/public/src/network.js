@@ -38,7 +38,10 @@ realityEditor.network.setupSocketListeners = function() {
         if (!realityEditor.network.isMessageForMe(msg)) return;
 
         objectName = msg.objectName;
-        document.querySelector('#bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+
+        // document.querySelector('#bg').style.backgroundImage = 'url("resources/'+msg.objectName+'.jpg")';
+        document.querySelector('#bg').style.backgroundImage = 'url("http://'+SERVER_IP+':'+SERVER_PORT+'/obj/'+msg.objectName+'/target/target.jpg")';
+
         document.title = msg.objectName;
     });
 
