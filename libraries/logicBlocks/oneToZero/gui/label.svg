@@ -1,19 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 21.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 92 46" style="enable-background:new 0 0 92 46;" xml:space="preserve">
-<style type="text/css">
-	.st0{opacity:0.4;}
-	.st1{fill:none;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;}
-	.st2{fill:none;stroke:#FFFFFF;stroke-width:2;stroke-miterlimit:10;stroke-dasharray:5.71,5.71;}
-	.st3{fill:#FFFFFF;}
-</style>
-<title>label</title>
-<g class="st0">
-	<line class="st1" x1="46" y1="0" x2="46" y2="3"/>
-	<line class="st2" x1="46" y1="8.7" x2="46" y2="40.1"/>
-	<line class="st1" x1="46" y1="43" x2="46" y2="46"/>
-</g>
-<path class="st3" d="M61.2,15.4L30.8,30.6c-1.2-2.4-1.8-5-1.8-7.6c0-9.4,7.6-17,17-17C52.4,6,58.3,9.7,61.2,15.4z"/>
-<path class="st3" d="M92,0v46H0l30.8-15.4C35,39,45.2,42.4,53.6,38.2C59.4,35.3,63,29.4,63,23c0-2.6-0.6-5.2-1.8-7.6L92,0z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 100">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: 0.5;
+      }
+
+      .cls-2 {
+        fill: #75fbfd;
+      }
+    </style>
+  </defs>
+  <title>Asset 52</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g>
+          <g class="cls-1">
+            <polygon points="0 0 0 100 37.08 100 170 100 170 66.65 170 0 0 0"/>
+          </g>
+          <g class="cls-1">
+            <path class="cls-2" d="M164,5.94V94.06H6V5.94H164M170,0H0V100H170V0Z"/>
+          </g>
+        </g>
+        <g>
+          <polyline class="cls-2" points="85.17 71.37 85.17 30.37 6.01 30.37 6.01 28.37 87.17 28.37 87.17 71.37"/>
+          <rect class="cls-2" x="87.17" y="69.37" width="76.67" height="2"/>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>
