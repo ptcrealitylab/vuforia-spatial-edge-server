@@ -76,7 +76,7 @@ var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
     saveToDisk : true, // allow system to save to file system// debug messages to console
-    worldObject : false
+    worldObject : true
 };
 
 // ports used to define the server behaviour
@@ -1488,6 +1488,9 @@ function objectWebServer() {
         }
 
         if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
+            if (urlArray[0] === worldObjectName) {
+                urlArray[0] = identityFolderName + '/' + worldObjectName;
+            }
             urlArray[urlArray.length-2] = identityFolderName+"/videos";
         }
 
@@ -2843,6 +2846,10 @@ function objectWebServer() {
             }
 
             var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
+            if (objectKey.indexOf(worldObjectName) > -1) {
+                videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
+            }
+
             if (!fs.existsSync(videoDir)) {
                 fs.mkdirSync(videoDir);
             }
@@ -3237,7 +3244,6 @@ function objectWebServer() {
 
         console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
 
-        // Delete frame
         var object = getObject(objectId);
         if (!object) {
             res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
@@ -3250,6 +3256,35 @@ function objectWebServer() {
             return;
         }
 
+        //delete any videos associated with the frame, if necessary
+        // var isPublicDataOnFrame = frame.publicData.hasOwnProperty('data');
+        var publicDataOnAllNodes = Object.keys(frame.nodes).map(function(nodeKey) { return frame.nodes[nodeKey].publicData; });
+        var videoPaths = publicDataOnAllNodes.filter(function(publicData) {
+            if (publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
+                if (publicData.data.indexOf('http') > -1 && publicData.data.indexOf('.mp4') > -1) {
+                    return true;
+                }
+            }
+            return false;
+        }).map(function(publicData) {
+            return publicData.data;
+        });
+        console.log('frame being deleted contains these video paths: ', videoPaths);
+        videoPaths.forEach(function(videoPath) {
+            // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
+            var urlArray = videoPath.split('/');
+
+            var objectName = urlArray[4];
+            if (videoPath.indexOf(worldObjectName) > -1) {
+                objectName = identityFolderName + '/' + worldObjectName;
+            }
+            var videoFilePath = objectsPath + '/' + objectName + '/' + identityFolderName + '/videos/' + urlArray[6];
+
+            if (fs.existsSync(videoFilePath)) {
+                fs.unlinkSync(videoFilePath);
+            }
+        });
+
         var objectName = object.name;
         var frameName = object.frames[frameId].name;
 
@@ -3257,6 +3292,21 @@ function objectWebServer() {
 
         // remove the frame directory from the object
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
+
+        function deleteFolderRecursive(path) {
+            console.log('deleteFolderRecursive');
+            if (fs.existsSync(path)) {
+                fs.readdirSync(path).forEach(function(file, index){
+                    var curPath = path + "/" + file;
+                    if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                        deleteFolderRecursive(curPath);
+                    } else { // delete file
+                        fs.unlinkSync(curPath);
+                    }
+                });
+                fs.rmdirSync(path);
+            }
+        }
 
         // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
         var deletedNodes = {};
