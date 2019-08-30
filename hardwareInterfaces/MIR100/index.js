@@ -50,7 +50,7 @@ const { RestAPIInterface } = require('./restapiInterface');
 const { RestAPIServer } = require('./restapiserver');
 const { CustomMaths } = require('./customMaths');
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -181,7 +181,7 @@ if (exports.enabled) {
                     framePath.checkpoints.forEach(frameCheckpoint => {
 
                         let exists = false;
-                        
+
                         // Check against each checkpoint stored on the server
                         serverPath.checkpoints.forEach(serverCheckpoint => {
 
@@ -202,7 +202,7 @@ if (exports.enabled) {
                                 server.pushUpdatesToDevices("MIR");
 
                                 //console.log('server checkpoint: ', serverCheckpoint);
-                                
+
                             }
                         });
 
@@ -332,7 +332,7 @@ if (exports.enabled) {
             }
         }
     }
-    
+
     function computeMIRCoordinatesTo(newCheckpointX, newCheckpointY, checkpointOrientation){
 
         let lastDirectionTo = [lastDirectionAR.x, lastDirectionAR.y];
@@ -606,7 +606,7 @@ if (exports.enabled) {
             updateEvery(++i, time);
         }, time)
     }
-    
+
     updateEvery(0, 100);
 
     server.addEventListener("reset", function () {
@@ -616,5 +616,5 @@ if (exports.enabled) {
     server.addEventListener("shutdown", function () {
 
     });
-    
+
 }
