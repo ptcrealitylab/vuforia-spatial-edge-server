@@ -2850,7 +2850,10 @@ function objectWebServer() {
                 videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
             }
 
+            console.log('videoDir is: ' + videoDir);
+
             if (!fs.existsSync(videoDir)) {
+                console.log('make videoDir');
                 fs.mkdirSync(videoDir);
             }
 
@@ -2863,7 +2866,7 @@ function objectWebServer() {
             console.log('created form for video');
 
             form.on('error', function (err) {
-                res.status(500).res.send(err);
+                res.status(500).send(err);
             });
 
             var rawFilepath = form.uploadDir + '/' + videoId + '.mp4';
@@ -2925,7 +2928,7 @@ function objectWebServer() {
 
                 } else {
                     console.log('error parsing', err);
-                    res.status(500).res.send(err);
+                    res.status(500).send(err);
                 }
 
             });
