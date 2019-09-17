@@ -36,3 +36,5 @@ daemon
 
 objects
 realityobjects
+
+*.swp
