@@ -6,6 +6,7 @@ createNameSpace("realityEditor.nodeRenderer");
     var isMouseDown = false;
     var LOGIC_COLOR_PICKER_THRESHOLD = 200;
     var isLogicNodeHighlightingEnabled = true;
+    var hiddenNodeTypes = ['storeData', 'invisible'];
 
     function initFeature() {
 
@@ -63,6 +64,9 @@ createNameSpace("realityEditor.nodeRenderer");
 
     function renderNodes() {
         realityEditor.database.forEachNodeInAllFrames(function(frameKey, nodeKey, node) {
+            // nodes of certain types are invisible and don't need to be rendered (e.g. storeData nodes)
+            if (hiddenNodeTypes.indexOf(node.type) > -1) { return; }
+
             addElement(frameKey, nodeKey, node);
             drawTransformed(frameKey, nodeKey, node);
         });
@@ -172,10 +176,12 @@ createNameSpace("realityEditor.nodeRenderer");
 
             var parentFrameCenter = realityEditor.frameRenderer.getFrameCenter(frameKey);
 
-            nodeContainerDom.style.left = (parentFrameCenter.x + node.x - (node.width * node.scale * scaleRatio)/2) + 'px';
-            nodeContainerDom.style.top = (parentFrameCenter.y + node.y - (node.height * node.scale * scaleRatio)/2) + 'px';
+            var nodeScaleRatio = scaleRatio/2;
 
-            nodeContainerDom.style.transform = 'scale(' + node.scale * scaleRatio + ')';
+            nodeContainerDom.style.left = (parentFrameCenter.x + node.x - (node.width * node.scale * nodeScaleRatio)/2) + 'px';
+            nodeContainerDom.style.top = (parentFrameCenter.y + node.y - (node.height * node.scale * nodeScaleRatio)/2) + 'px';
+
+            nodeContainerDom.style.transform = 'scale(' + node.scale * nodeScaleRatio + ')';
 
         } else {
             nodeContainerDom.classList.add('screenFrame');

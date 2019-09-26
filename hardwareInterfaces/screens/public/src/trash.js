@@ -99,5 +99,6 @@ createNameSpace("realityEditor.trash");
     exports.initFeature = initFeature;
     exports.showTrash = showTrash;
     exports.hideTrash = hideTrash;
+    exports.deleteFrame = deleteFrame;
 
 })(realityEditor.trash);

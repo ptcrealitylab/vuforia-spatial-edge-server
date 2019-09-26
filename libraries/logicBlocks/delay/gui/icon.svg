@@ -1,1 +1,41 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 46"><defs><style>.cls-1{fill:#fff;}</style></defs><title>icon</title><g id="Routing_Layer-2" data-name="Routing Layer-2"><path class="cls-1" d="M65.6,23.6A17.88,17.88,0,0,1,47.7,41.5V36.6a13.05,13.05,0,1,0-13-14.5l5.9.2L32,30.4l-8-8.5,5.9.2a17.9,17.9,0,0,1,35.7,1.5Z"/><polygon class="cls-1" points="54.8 24.1 54.8 26.4 44.9 26.4 44.9 16.4 47.1 16.4 47.1 24.1 54.8 24.1"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 100">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: 0.5;
+      }
+
+      .cls-2 {
+        fill: #75fbfd;
+      }
+
+      .cls-3 {
+        fill: #008480;
+      }
+    </style>
+  </defs>
+  <title>Asset 15</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g>
+          <g class="cls-1">
+            <polygon points="0 0 0 100 37.08 100 170 100 170 36.65 170 0 0 0"/>
+          </g>
+          <g class="cls-1">
+            <path class="cls-2" d="M164,5.94V94.06H6V5.94H164M170,0H0V100H170V0Z"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <circle class="cls-3" cx="67.05" cy="41.29" r="11.96"/>
+            <path class="cls-2" d="M67.05,54.26a13,13,0,1,1,13-13A13,13,0,0,1,67.05,54.26Zm0-23.93a11,11,0,1,0,11,11A11,11,0,0,0,67.05,30.33Z"/>
+          </g>
+          <path class="cls-2" d="M87.49,73.49A23.52,23.52,0,0,1,65.75,59a1,1,0,1,1,1.85-.76A21.49,21.49,0,1,0,79.23,30.14a1,1,0,0,1-.77-1.85,23.5,23.5,0,1,1,9,45.2Z"/>
+          <path class="cls-2" d="M65.86,48.47V46.08h2.39v2.39ZM66,43.69V34.12h2.15v9.57Z"/>
+          <path class="cls-2" d="M93.05,56.26a1,1,0,0,1-.71-.3l-5.55-5.55V36.69a1,1,0,0,1,2,0v12.9l5,5a1,1,0,0,1-.71,1.71Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

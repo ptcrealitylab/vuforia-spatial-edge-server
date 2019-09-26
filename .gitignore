@@ -38,3 +38,6 @@ objects
 realityobjects
 
 *.swp
+
+# RealityZoneGifs
+hardwareInterfaces/pass/public/gifs/*

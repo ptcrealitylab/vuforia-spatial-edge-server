@@ -10,6 +10,7 @@
  * Set to true to enable the hardware interface
  **/
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var utilities = require(__dirname + '/../../libraries/utilities');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
@@ -99,6 +100,14 @@ if (exports.enabled) {
             io.emit('reloadScreen');
         });
 
+        server.subscribeToUDPMessages(function(msgContent) {
+            // console.log('received UDP message: ' + JSON.stringify(msgContent));
+            if (typeof msgContent.action !== 'undefined') {
+                console.log('received action message: ' + JSON.stringify(msgContent.action));
+                io.emit('actionMessage', msgContent.action);
+            }
+        });
+
         io.on('connection', function(socket) {
             console.log('frame screen socket connected');
             // relay messages from the AR interface to this app's frontend
@@ -108,9 +117,9 @@ if (exports.enabled) {
             });
 
             socket.on('getFramesForScreen', function(msg) {
-                console.log('getFramesForScreen', msg);
+                console.log('getFramesForScreen');
                 var frames = server.getAllFrames(objectName);
-                console.log(frames);
+                // console.log(frames);
                 socket.emit('framesForScreen', frames);
             });
 
@@ -129,6 +138,22 @@ if (exports.enabled) {
                 };
                 socket.emit('objectTargetSize', {targetSize: targetSize});
             });
+
+            socket.on('/nativeAPI/sendUDPMessage', function(msg) {
+                if (typeof msg === 'string') {
+                    msg = JSON.parse(msg);
+                }
+                console.log('send UDP message from screen client', msg);
+                utilities.actionSender(msg);
+            });
+
+            socket.on('getAllObjects', function() {
+                var objects = server.getAllObjects();
+                socket.emit('allObjects', objects);
+
+                var objectsOnOtherServers = server.getKnownObjects();
+                socket.emit('allObjectsOnOtherServers', objectsOnOtherServers);
+            })
         });
     }
 

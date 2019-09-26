@@ -5,11 +5,12 @@ function Objects() {
     this.frames = {};
     this.visualization = "ar";
     this.active = false;
-};
+}
 
 function Frame() {
     this.name = "";
-};
+}
+
 realityServer.initialize = function () {
     realityServer.downloadImage = new Image();
     realityServer.downloadImage.src="../libraries/gui/resources/icondownload.svg";
@@ -75,73 +76,85 @@ realityServer.update = function (thisItem2) {
 
         if(!thisItem2 || thisItem2 === objectKey)  {
 
-            console.log(this.objects);
-        thisObject.dom = this.templates[1].content.cloneNode(true);
-        thisObject.dom.querySelector(".object").id = "object"+objectKey;
-        // check if items are active
-        if (thisObject.initialized && thisObject.active) {
-            realityServer.changeActiveState(thisObject.dom, true, objectKey);
+        console.log(this.objects);
+
+        if (thisObject.isWorldObject) {
+
+            thisObject.dom = this.templates[15].content.cloneNode(true); // world object template
+            thisObject.dom.querySelector(".worldObject").id = "object"+objectKey;
+            thisObject.dom.querySelector(".name").innerText = thisObject.name;
+            this.domObjects.appendChild(thisObject.dom);
+
         } else {
-            realityServer.changeActiveState(thisObject.dom, false, objectKey);
-        }
 
-        if (thisObject.initialized) {
-            realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
-        } else {
-            realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
-        }
+            thisObject.dom = this.templates[1].content.cloneNode(true);
+            thisObject.dom.querySelector(".object").id = "object" + objectKey;
+            // check if items are active
+            if (thisObject.initialized && thisObject.active) {
+                realityServer.changeActiveState(thisObject.dom, true, objectKey);
+            } else {
+                realityServer.changeActiveState(thisObject.dom, false, objectKey);
+            }
 
-        if (thisObject.active) {
-            realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
-            thisObject.dom.querySelector(".active").innerText = "On";
-        } else {
-            realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
-            thisObject.dom.querySelector(".active").innerText = "Off";
-        }
+            if (thisObject.initialized) {
+                realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
+            } else {
+                realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
+            }
 
-        thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
+            if (thisObject.active) {
+                realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
+                thisObject.dom.querySelector(".active").innerText = "On";
+            } else {
+                realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
+                thisObject.dom.querySelector(".active").innerText = "Off";
+            }
 
-        if(thisObject.zone === "" || !thisObject.zone){
-            thisObject.dom.querySelector(".zone").innerText = "Zone";
-        } else {
-            thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
-        }
+            thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
 
-        console.log(thisObject.visualization);
-        if(thisObject.visualization === "AR") thisObject.visualization = "ar";
-        if(thisObject.visualization === "ar"){
-            thisObject.dom.querySelector(".visualization").innerText = "AR";
-        } else if(thisObject.visualization === "screen") {
-            thisObject.dom.querySelector(".visualization").innerText = "Screen";
-            realityServer.switchClass(thisObject.dom.querySelector(".visualization"), "blue", "purple");
-            realityServer.switchClass(thisObject.dom.querySelector(".addFrame"), "blue", "purple");
-            realityServer.switchClass(thisObject.dom.querySelector(".download"), "blue", "purple");
+            if (thisObject.zone === "" || !thisObject.zone) {
+                thisObject.dom.querySelector(".zone").innerText = "Zone";
+            } else {
+                thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
+            }
 
-            thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
-        }
+            console.log(thisObject.visualization);
+            if (thisObject.visualization === "AR") thisObject.visualization = "ar";
+            if (thisObject.visualization === "ar") {
+                thisObject.dom.querySelector(".visualization").innerText = "AR";
+            } else if (thisObject.visualization === "screen") {
+                thisObject.dom.querySelector(".visualization").innerText = "Screen";
+                realityServer.switchClass(thisObject.dom.querySelector(".visualization"), "blue", "purple");
+                realityServer.switchClass(thisObject.dom.querySelector(".addFrame"), "blue", "purple");
+                realityServer.switchClass(thisObject.dom.querySelector(".download"), "blue", "purple");
 
-
-        thisObject.dom.querySelector(".name").innerText = thisObject.name;
-            if(!thisItem2)
-        this.domObjects.appendChild(thisObject.dom);
+                thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
+            }
 
 
-            if(thisItem2 === objectKey) {
+            thisObject.dom.querySelector(".name").innerText = thisObject.name;
+            if (!thisItem2)
+                this.domObjects.appendChild(thisObject.dom);
+
+
+            if (thisItem2 === objectKey) {
                 var thisItem = "object" + objectKey;
                 console.log(thisItem);
                 var thisDom = document.getElementById(thisItem);
                 console.log(thisDom);
-                 thisDom.before(thisObject.dom);
+                thisDom.before(thisObject.dom);
                 thisDom.remove();
             }
 
 
-        if(thisObject.visualization === "screen") {
-            var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
-            thisFullScreen.querySelector(".fullscreen").id = "fullscreen"+objectKey;
-            if(!thisItem2)
-                this.domObjects.appendChild(thisFullScreen);
-            document.getElementById("fullscreen"+objectKey).addEventListener("click", realityServer.gotClick, false);
+            if (thisObject.visualization === "screen") {
+                var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
+                thisFullScreen.querySelector(".fullscreen").id = "fullscreen" + objectKey;
+                if (!thisItem2)
+                    this.domObjects.appendChild(thisFullScreen);
+                document.getElementById("fullscreen" + objectKey).addEventListener("click", realityServer.gotClick, false);
+            }
+
         }
 
         for (var frameKey in this.objects[objectKey].frames) {
@@ -174,10 +187,31 @@ realityServer.update = function (thisItem2) {
         this.domObjects.appendChild(this.templates[3].content.cloneNode(true));
     }
 
-console.log(realityServer.objects)
+    console.log(realityServer.objects)
 };
 
+realityServer.printFiles = function(item) {
+    var returnList = {
+        files: {},
+        folders:{}
+    };
 
+    for (var i = 0; i < item.children.length; i++) {
+        var thisItem = item.children[i];
+        if(thisItem.type === "file"){
+            returnList.files[thisItem.name] = {
+                path: thisItem.path,
+                extension: thisItem.extension
+            };
+        } else if(thisItem.type === "directory"){
+            returnList.folders[thisItem.name] = {
+                path: thisItem.path,
+                link: thisItem
+            };
+        }
+    }
+    return returnList;
+};
 
 realityServer.gotClick = function (event) {
     var thisEventObject = event.currentTarget;
@@ -502,39 +536,11 @@ realityServer.gotClick = function (event) {
                     }
 
                 }
-
-
-
-
-
             }
         });
         }
-
     }
 
-realityServer.printFiles = function (item){
-        var returnList = {
-            files: {},
-            folders:{}
-        };
-
-        for (var i = 0; i < item.children.length; i++) {
-            var thisItem = item.children[i];
-            if(thisItem.type === "file"){
-                returnList.files[thisItem.name] = {
-                    path: thisItem.path,
-                    extension: thisItem.extension
-                };
-            } else if(thisItem.type === "directory"){
-                returnList.folders[thisItem.name] = {
-                    path: thisItem.path,
-                    link: thisItem
-                };
-            }
-        }
-        return returnList;
-    }
 
     /**
      *  REMOVE
@@ -603,17 +609,18 @@ realityServer.printFiles = function (item){
      *  ADD OBJECT
      */
     if (buttonClassList.contains("addObject")) {
-console.log(document.getElementById("textEntryObject"));
-        if(!document.getElementById("textEntryObject")){
+        console.log(document.getElementById("textEntryObject"));
+        if (!document.getElementById("textEntryObject")){
             var thisObject = document.getElementById("textEntryId").content.cloneNode(true);
-               thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
+            thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
+            thisObject.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
             thisObject.querySelector(".textEntry").id = "textEntryObject";
             document.getElementById("addObject").parentNode.appendChild(thisObject);
            // realityServer.domObjects.querySelector(".textfield").setAttribute("contenteditable", "true");
         } else {
             var removeNode = document.getElementById("textEntryObject");
             realityServer.removeAnimated(removeNode);
-           // removeNode.remove();
+            // removeNode.remove();
         }
     }
 
@@ -693,6 +700,7 @@ console.log(document.getElementById("textEntryObject"));
             var referenceNode = document.getElementById("object" + objectKey);
             var newNode = document.getElementById("textEntryFrameId").content.cloneNode(true);
             newNode.querySelector(".addButtonFrame").addEventListener("click", realityServer.gotClick, false);
+            newNode.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
             newNode.querySelector(".addButtonFrame").setAttribute('objectID', objectKey);
             newNode.querySelector(".addButtonFrame").setAttribute('frameID', frameKey);
             referenceNode.after(newNode);
@@ -715,11 +723,20 @@ console.log(document.getElementById("textEntryObject"));
            // removeNode.remove();
         }
     }
-
-
-
 };
 
+realityServer.onTextFieldKeyPress = function(event) {
+  if (event.key !== 'Enter') {
+    return;
+  }
+  event.preventDefault();
+  const parent = event.target.parentNode;
+  if (parent.classList.contains('textEntryFrame')) {
+    parent.querySelector('.addButtonFrame').click();
+  } else if (parent.id === 'textEntryObject') {
+    parent.querySelector('.addButton').click();
+  }
+};
 
 realityServer.sendRequest = function(url, httpStyle, callback, body) {
     if(!body) body = "";

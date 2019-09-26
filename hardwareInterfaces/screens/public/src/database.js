@@ -63,6 +63,14 @@ createNameSpace("realityEditor.database");
         });
     }
 
+    function forEachFrameOfType(frameType, callback) {
+        forEachFrame(function(frameKey, frame) {
+            if (frame.src === frameType) {
+                callback(frame);
+            }
+        });
+    }
+
     function getFrame(frameKey) {
         return frames[frameKey];
     }
@@ -182,7 +190,7 @@ createNameSpace("realityEditor.database");
             addedLogic.frameSizeX = 220;
             addedLogic.frameSizeY = 220;
 
-            var defaultScale = 0.25;
+            var defaultScale = 0.5;
             addedLogic.scale = defaultScale;
         //     addedLogic.screenZ = 1000;
         //     addedLogic.loaded = false;
@@ -236,6 +244,7 @@ createNameSpace("realityEditor.database");
     exports.forEachNodeInAllFrames = forEachNodeInAllFrames;
     exports.forEachLinkInFrame = forEachLinkInFrame;
     exports.forEachLinkInAllFrames = forEachLinkInAllFrames;
+    exports.forEachFrameOfType = forEachFrameOfType;
 
     // CRUD operators
     exports.createLink = createLink;

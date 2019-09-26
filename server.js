@@ -76,7 +76,7 @@ var globalVariables = {
     developer: true, // show developer web GUI
     debug: false,
     saveToDisk : true, // allow system to save to file system// debug messages to console
-    worldObject : false
+    worldObject : true
 };
 
 // ports used to define the server behaviour
@@ -102,7 +102,7 @@ const netmask = "255.255.0.0"; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 const netInterface = "en0";
 
-console.log(parseInt(version.replace(/\./g, "")));
+//console.log(parseInt(version.replace(/\./g, "")));
 
 var os = require('os');
 var path = require('path');
@@ -131,7 +131,7 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
 var ips = {activeInterface : "en0", interfaces : {}};
 if(storage.getItemSync('activeNetworkInterface') !== undefined){
-    console.log( storage.getItemSync('activeNetworkInterface'));
+    //console.log( storage.getItemSync('activeNetworkInterface'));
     ips.activeInterface = storage.getItemSync('activeNetworkInterface');
 };
 
@@ -157,7 +157,7 @@ for(key in interfaceNames){
     for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
     ips.interfaces[interfaceNames[key]] = tempIps[0];
 };
-console.log(ips);
+//console.log(ips);
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -237,6 +237,7 @@ function Objects() {
     // This data can be used for interacting with objects for when they are not visible.
     this.memory = {};
     this.memoryCameraMatrix = {};
+    this.memoryProjectionMatrix = {};
     // Store the frames. These embed content positioned relative to the object
     this.frames = {};
     // keep a memory of the last commit state of the frames.
@@ -788,16 +789,15 @@ var hardwareAPICallbacks = {
                 node: nodeKey,
                 data: data
             });
-
-            hardwareAPI.readCall(objectKey, frameKey, nodeKey, objects[objectKey].frames[frameKey].nodes[nodeKey].data);
-            engine.trigger(objectKey, frameKey, nodeKey, objects[objectKey].frames[frameKey].nodes[nodeKey]);
+            hardwareAPI.readCall(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey).data);
+            engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write : function (objectID){
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, worldObject, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 cout("Done");
 
@@ -951,10 +951,12 @@ var executeSetups = function () {
             for (nodeKey in thisFrame.nodes) {
                 for (blockKey in thisFrame.nodes[nodeKey].blocks) {
                     var thisBlock = objects[objectKey].frames[frameKey].nodes[nodeKey].blocks[blockKey];
-                    blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
-                        function (object, frame, node, block, index, thisBlock) {
-                            engine.processBlockLinks(object, frame, node, block, index, thisBlock);
-                        })
+                    if (blockModules[thisBlock.type]) {
+                        blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
+                            function (object, frame, node, block, index, thisBlock) {
+                                engine.processBlockLinks(object, frame, node, block, index, thisBlock);
+                            })
+                    }
                 }
             }
         }
@@ -995,7 +997,7 @@ function loadWorldObject() {
     // try to read previously saved data to overwrite the default world object
     try {
         worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        console.log('loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+        console.log('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
     } catch (e) {
         console.log('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
     }
@@ -1027,7 +1029,7 @@ function loadWorldObject() {
             if (err) {
                 console.log(err);
             } else {
-                console.log('JSON saved to ' + jsonFilePath);
+                //console.log('JSON saved to ' + jsonFilePath);
             }
         });
     } else {
@@ -1400,7 +1402,59 @@ function objectWebServer() {
 
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
+    // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
+
+    webServer.use('/frames', function (req, res, next) {
+        var urlArray = req.originalUrl.split("/");
+
+        var fileName = __dirname + '/libraries' + req.originalUrl;
+
+        if (!fs.existsSync(fileName)) {
+            next();
+            return;
+        }
+
+        // Non HTML files just get sent normally
+        if (urlArray[urlArray.length-1].indexOf('html') === -1) {
+            res.sendFile(fileName);
+            return;
+        }
+
+        // HTML files get object.js injected
+        var html = fs.readFileSync(fileName, 'utf8');
+
+        // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
+        html = html.replace('<script src="object.js"></script>', '');
+        html = html.replace('<script src="resources/object.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
+
+        html = html.replace('<script src="object-frames.js"></script>', '');
+        html = html.replace('<script src="resources/object-frames.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
+
+        html = html.replace('<script src="resources/pep.min.js"></script>', '');
+        html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
+
+        var level = "../";
+        for(var i = 0; i < urlArray.length-3; i++){
+            level += "../";
+        }
+        var loadedHtml = cheerio.load(html);
+        var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
+        scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
+
+        var objectKey = utilities.readObject(objectLookup,urlArray[0]);
+        var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
+
+        scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
+        scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
+        scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
+        loadedHtml('head').prepend(scriptNode);
+        res.send(loadedHtml.html());
+
+    });
+
+
 
     webServer.use('/logicNodeIcon', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
@@ -1434,6 +1488,9 @@ function objectWebServer() {
         }
 
         if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
+            if (urlArray[0] === worldObjectName) {
+                urlArray[0] = identityFolderName + '/' + worldObjectName;
+            }
             urlArray[urlArray.length-2] = identityFolderName+"/videos";
         }
 
@@ -1446,7 +1503,7 @@ function objectWebServer() {
             newUrl += "index.html";
             urlArray.push("index.html");
         }
-        console.log(newUrl);
+        //console.log(newUrl);
 
         // TODO: ben - may need to update objectsPath if the object is a world object
 
@@ -1510,7 +1567,7 @@ function objectWebServer() {
             }
             res.json(json);
         } else {
-            console.log("end: "+newUrl);
+            //console.log("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
     });
@@ -2789,7 +2846,14 @@ function objectWebServer() {
             }
 
             var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
+            if (objectKey.indexOf(worldObjectName) > -1) {
+                videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
+            }
+
+            console.log('videoDir is: ' + videoDir);
+
             if (!fs.existsSync(videoDir)) {
+                console.log('make videoDir');
                 fs.mkdirSync(videoDir);
             }
 
@@ -2802,7 +2866,7 @@ function objectWebServer() {
             console.log('created form for video');
 
             form.on('error', function (err) {
-                res.status(500).res.send(err);
+                res.status(500).send(err);
             });
 
             var rawFilepath = form.uploadDir + '/' + videoId + '.mp4';
@@ -2864,7 +2928,7 @@ function objectWebServer() {
 
                 } else {
                     console.log('error parsing', err);
-                    res.status(500).res.send(err);
+                    res.status(500).send(err);
                 }
 
             });
@@ -2958,6 +3022,7 @@ function objectWebServer() {
             if (obj) {
                 obj.memory = JSON.parse(fields.memoryInfo);
                 obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
+                obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
@@ -3027,10 +3092,9 @@ function objectWebServer() {
             newFrame.width = frame.width;
             newFrame.height = frame.height;
 
+            // give default values for this node type to each node's public data, if not already assigned
             for(key in newFrame.nodes){
-                if(!frame.publicData) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-                } else if(Object.keys(frame.publicData).length <= 0) {
+                if( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
             }
@@ -3183,7 +3247,6 @@ function objectWebServer() {
 
         console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
 
-        // Delete frame
         var object = getObject(objectId);
         if (!object) {
             res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
@@ -3196,6 +3259,35 @@ function objectWebServer() {
             return;
         }
 
+        //delete any videos associated with the frame, if necessary
+        // var isPublicDataOnFrame = frame.publicData.hasOwnProperty('data');
+        var publicDataOnAllNodes = Object.keys(frame.nodes).map(function(nodeKey) { return frame.nodes[nodeKey].publicData; });
+        var videoPaths = publicDataOnAllNodes.filter(function(publicData) {
+            if (publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
+                if (publicData.data.indexOf('http') > -1 && publicData.data.indexOf('.mp4') > -1) {
+                    return true;
+                }
+            }
+            return false;
+        }).map(function(publicData) {
+            return publicData.data;
+        });
+        console.log('frame being deleted contains these video paths: ', videoPaths);
+        videoPaths.forEach(function(videoPath) {
+            // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
+            var urlArray = videoPath.split('/');
+
+            var objectName = urlArray[4];
+            if (videoPath.indexOf(worldObjectName) > -1) {
+                objectName = identityFolderName + '/' + worldObjectName;
+            }
+            var videoFilePath = objectsPath + '/' + objectName + '/' + identityFolderName + '/videos/' + urlArray[6];
+
+            if (fs.existsSync(videoFilePath)) {
+                fs.unlinkSync(videoFilePath);
+            }
+        });
+
         var objectName = object.name;
         var frameName = object.frames[frameId].name;
 
@@ -3203,6 +3295,21 @@ function objectWebServer() {
 
         // remove the frame directory from the object
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
+
+        function deleteFolderRecursive(path) {
+            console.log('deleteFolderRecursive');
+            if (fs.existsSync(path)) {
+                fs.readdirSync(path).forEach(function(file, index){
+                    var curPath = path + "/" + file;
+                    if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                        deleteFolderRecursive(curPath);
+                    } else { // delete file
+                        fs.unlinkSync(curPath);
+                    }
+                });
+                fs.rmdirSync(path);
+            }
+        }
 
         // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
         var deletedNodes = {};
@@ -3502,7 +3609,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject));
         });
 
         // restart the server from the web frontend to load
@@ -3796,9 +3903,11 @@ function objectWebServer() {
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
                 var pathKey = req.body.path;
-                if(objects[objectKey]) {
-                    if (req.body.frame in objects[objectKey].frames) {
-                        frameName = objects[objectKey].frames[req.body.frame].name;
+
+                var thisObject = getObject(objectKey);
+                if (thisObject) {
+                    if (req.body.frame in thisObject.frames) {
+                        frameName = thisObject.frames[req.body.frame].name;
                     } else {
                         frameNameKey = objectKey + req.body.frame;
                     }
@@ -3811,17 +3920,23 @@ function objectWebServer() {
                 };
 
                 if (frameName !== "") {
+
                     var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
+                    if (thisObject.isWorldObject) {
+                        folderDelFrame = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + req.body.name + "/" + frameName;
+                    }
 
                     deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
-                        if(objects[objectKey]) {
-                            delete objects[objectKey].frames[frameNameKey];
+                        if(thisObject) {
+                            delete thisObject.frames[frameNameKey];
                         }
                     }
 
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
+
                     res.send("ok");
 
                 } else {
@@ -4286,7 +4401,7 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
             }
         }
     }
-}
+};
 
 
 function socketServer() {
@@ -4294,7 +4409,7 @@ function socketServer() {
     io.on('connection', function (socket) {
         socketHandler.socket = socket;
 
-        console.log('connected to socket ' + socket.id);
+        //console.log('connected to socket ' + socket.id);
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
@@ -4306,11 +4421,11 @@ function socketServer() {
                 thisProtocol = "R0";
             }
 
-            if (objects.hasOwnProperty(msgContent.object)) {
+            if (doesObjectExist(msgContent.object)) {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
 
@@ -4324,6 +4439,9 @@ function socketServer() {
                     // it is more efficiant to call individual public data per node.
                     //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
 
+                    var nodeName = frame.nodes[key].name;
+                    publicData[nodeName] = frame.nodes[key].publicData;
+
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
@@ -4335,7 +4453,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4357,7 +4475,7 @@ function socketServer() {
                 cout("reality editor subscription for object: " + msgContent.object);
                 cout("the latest socket has the ID: " + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 cout(realityEditorSocketArray);
             }
 
@@ -4374,7 +4492,7 @@ function socketServer() {
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node : key,
-                        publicData: publicData
+                        publicData: frame.nodes[key].publicData
                     }));
                 }
             }
@@ -4428,7 +4546,7 @@ function socketServer() {
                     frame: msgContent.frame,
                     node: msgContent.node,
                     data: msgContent.data
-                });
+                }, socket.id);
             }
         });
 
@@ -4436,7 +4554,10 @@ function socketServer() {
             var msg = JSON.parse(_msg);
 
             var node = getNode(msg.object, msg.frame, msg.node);
-            if (node && msg && typeof node.publicData !== "undefined" && typeof msg.publicData !== "undefined") {
+            if (node && msg && typeof msg.publicData !== "undefined") {
+                if (typeof node.publicData === "undefined") {
+                    node.publicData = {};
+                }
                 var thisPublicData = node.publicData;
                 for (var key in msg.publicData) {
                     thisPublicData[key] = msg.publicData[key];
@@ -4444,6 +4565,8 @@ function socketServer() {
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+
+            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node);
         });
 
         socket.on('block/setup', function (_msg) {
@@ -4533,10 +4656,15 @@ function socketServer() {
     cout('socket.io started');
 }
 
-function sendMessagetoEditors(msgContent) {
+function sendMessagetoEditors(msgContent, sourceSocketID) {
+
+    // console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
 
     for (var thisEditor in realityEditorSocketArray) {
-        if (msgContent.object === realityEditorSocketArray[thisEditor].object) {
+        if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID) {
+            continue; // don't trigger the read listener of the socket that originally wrote the data
+        }
+        if (msgContent.object === realityEditorSocketArray[thisEditor].object && msgContent.frame === realityEditorSocketArray[thisEditor].frame) {
             messagetoSend(msgContent, thisEditor);
         }
     }
