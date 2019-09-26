@@ -78,8 +78,8 @@ createNameSpace("realityEditor.pocket");
             elt.style.transform = 'scale(' + scale + ')';
 
             container.addEventListener('pointerdown', pocketContainerDown);
-            container.addEventListener('pointermove', pocketContainerMove);
-            container.addEventListener('pointerup', pocketContainerUp);
+            container.addEventListener('pointermove', addFrameFromPocket);
+            container.addEventListener('pointerup', addFrameFromPocket);
 
         });
     }
@@ -90,19 +90,22 @@ createNameSpace("realityEditor.pocket");
         whichPocketContainerPressed = event.target.dataset.name;
     }
 
-    function pocketContainerUp(event) {
-        if (whichPocketContainerPressed === event.target.dataset.name) {
-            console.log('add frame ' + whichPocketContainerPressed + ' (by up)');
-            whichPocketContainerPressed = null;
-            addFrameFromPocket(event.target.dataset);
-        }
-    }
-
-    function pocketContainerMove(event) {
+    function addFrameFromPocket(event) {
         if (whichPocketContainerPressed === event.target.dataset.name) {
             console.log('add frame ' + whichPocketContainerPressed + ' (by move)');
             whichPocketContainerPressed = null;
-            addFrameFromPocket(event.target.dataset);
+
+            var parsedDataset = {
+                name: event.target.dataset.name,
+                src: event.target.dataset.src,
+                nodes: (typeof event.target.dataset.nodes === 'string') ? JSON.parse(event.target.dataset.nodes) : event.target.dataset.nodes,
+                height: parseFloat(event.target.dataset.height),
+                width:  parseFloat(event.target.dataset.width)
+            };
+
+            var addedFrame = addFrame(parsedDataset);
+            togglePocketVisibility();
+            realityEditor.touchEvents.beginTouchEditing(addedFrame.objectId, addedFrame.uuid, null);
         }
     }
 
@@ -110,16 +113,14 @@ createNameSpace("realityEditor.pocket");
      * Creates a new frame given the metadata from the pocket container
      * @param {{name: string, src: string, nodes: string, height: string, width: string}} dataset
      */
-    function addFrameFromPocket(dataset) {
+    function addFrame(dataset, additionalDefaultProperties) {
         var name = dataset.name;
         var src = dataset.src;
-        var nodes = JSON.parse(dataset.nodes);
-        var height = parseFloat(dataset.height);
-        var width = parseFloat(dataset.width);
+        var nodes = dataset.nodes;
+        var height = dataset.height;
+        var width = dataset.width;
 
         console.log('create frame from pocket');
-
-        togglePocketVisibility();
 
         var frame = new Frame();
         frame.objectId = getObjectId();
@@ -150,6 +151,10 @@ createNameSpace("realityEditor.pocket");
         frame.frameSizeY = height;
         frame.location = 'global';
         frame.src = name;
+
+        // if (frame.src === 'memoryFrame') {
+        //     frame.publicData =
+        // }
 
         // set other properties
         frame.width = frame.frameSizeX;
@@ -197,12 +202,17 @@ createNameSpace("realityEditor.pocket");
             }
             addedNode.frameSizeX = 220;
             addedNode.frameSizeY = 220;
-            var scaleFactor = 1;
+            var scaleFactor = 2;
             if (typeof node.scaleFactor !== 'undefined') {
                 scaleFactor = node.scaleFactor;
             }
             // var defaultNodeScale = 0.5;
             addedNode.scale = defaultScale * scaleFactor;
+
+            // {name: 'storage', type: 'storeData', publicData: {data: videoPath}}
+            if (typeof node.publicData !== 'undefined') {
+                addedNode.publicData = node.publicData;
+            }
 
         });
 
@@ -210,6 +220,14 @@ createNameSpace("realityEditor.pocket");
         //     realityEditor.device.eventObject.object = closestObjectKey;
         //     realityEditor.device.eventObject.frame = frameID;
         //     realityEditor.device.eventObject.node = null;
+
+        if (typeof additionalDefaultProperties !== 'undefined') {
+            for (var key in additionalDefaultProperties) {
+                if (additionalDefaultProperties.hasOwnProperty(key)) {
+                    frame[key] = additionalDefaultProperties[key];
+                }
+            }
+        }
 
         frames[frameID] = frame;
         console.log(frame);
@@ -224,8 +242,6 @@ createNameSpace("realityEditor.pocket");
         // realityEditor.draw.drawTransformed(frameID, frame);
         realityEditor.draw.render();
 
-        realityEditor.touchEvents.beginTouchEditing(getObjectId(), frameID, null);
-
         // // send it to the server
 
         realityEditor.network.postNewFrame(frame, function(error, response) {
@@ -238,9 +254,11 @@ createNameSpace("realityEditor.pocket");
 
         callbackHandler.triggerCallbacks('newFrameAdded', {frameKey: frameID, frame: frame});
 
+        return frame;
     }
 
     exports.initFeature = initFeature;
+    exports.addFrame = addFrame;
     exports.callbackHandler = callbackHandler;
 
 })(realityEditor.pocket);

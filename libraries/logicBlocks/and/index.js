@@ -44,37 +44,52 @@
  */
 
 /**
- * @desc prototype for a plugin. This prototype is called when a value should be changed.
- * It defines how this value should be transformed before sending it to the destination.
- * @param {object} objectID Origin object in which the related link is saved.
- * @param {string} linkID the id of the link that is related to the call
- * @param {object} inputData the data that needs to be processed
- * @param {function} callback the function that is called for when the process is rendered.
- * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
- **/
+ * @fileOverview
+ * AND is a block that outputs a 1 anytime either input changes and both are >= 0.5, otherwise outputs a 0
+ *
+ * Defines a new logic block that will appear in the crafting menu
+ * Anytime data arrives at the block, the render function will be triggered.
+ * The input data value(s) will arrive in thisBlock.data
+ * After performing the block's behavior, write the output value(s) to thisBlock.processedData,
+ * And finally call the callback function to send the data to whatever this block is next linked to
+ *
+ * gui/icon.svg is the small menu icon for the block
+ * gui/label.svg is the full image on the block (for a block of blockSize=1 might be the same as icon.svg)
+ * gui/index.html is the optional settings menu that pops up when you tap on the block
+ */
 
 var generalProperties = {
+    // display name underneath icon in block menu
     name : "and",
+    // set this to how wide the block should be - (the bigger of # inputs and # outputs)
     blockSize : 2,
     privateData : {},
+    // these properties are accessible to user modification via the block's settings menu (gui/index.html)
     publicData : {},
+    // sets which input indices of the block can have links drawn to them
     activeInputs : [true, true, false, false],
+    // sets which output indices of the block can have links drawn from them
     activeOutputs : [true, false, false, false],
     iconImage : "icon.png",
+    // not currently used anywhere, but helpful for developer reference
     nameInput : ["A", "B", "", ""],
     nameOutput : ["result", "", "", ""],
+    // should match the folder name
     type : "and"
 };
 
 exports.properties = generalProperties;
 
-exports.setup = function (object,frame, node, block, thisBlock, callback){
-// add code here that should be executed once.
-    // var publicData thisBlock.publicData;
-    // callback(object, frame, node, block, index, thisBlock);
-};
-//var logicAPI = require(__dirname + '/../../libraries/logicInterfaces');
-
+/**
+ * This defines how the value should be transformed before sending it to the destination
+ * @param {string} object - objectID (object/frame/node/block specifies the "street address" of this block)
+ * @param {string} frame - frameID
+ * @param {string} node - nodeID
+ * @param {string} block - blockID
+ * @param {number} index - the index of which input was just received. for example, a block with two inputs will have its render function called twice - once with index 0 and once with index 1. it is up to the implemented to decide whether to trigger the callback when either index is triggered, or only once all indices have received values, etc.
+ * @param {{data: Array.<number>, processedData: Array:<number>, ...}} thisBlock - reference to the full block data struct
+ * @param {function} callback - should be triggered with these arguments: (object, frame, node, block, index, thisBlock)
+ */
 exports.render = function (object, frame, node, block, index, thisBlock, callback) {
 
     for (var key in thisBlock.data[0]) {
@@ -88,4 +103,13 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
     }
 
     callback(object, frame, node, block, index, thisBlock);
+};
+
+/**
+ * @todo: not working yet
+ */
+exports.setup = function (object,frame, node, block, thisBlock, callback) {
+// add code here that should be executed once.
+    // var publicData thisBlock.publicData;
+    // callback(object, frame, node, block, index, thisBlock);
 };

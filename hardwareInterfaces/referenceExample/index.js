@@ -50,7 +50,7 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
@@ -69,6 +69,11 @@ if (exports.enabled) {
         if(b === 0) {
             b = 1;
             server.addNode("stoneTest", "markerPose", "testNode", "node");
+
+            server.addReadListener("stoneTest", "markerPose", "testNode", function (data) {
+                console.log('HOLAAA');
+            });
+
             // Call move Node after you have created it.
             // <node>, <frame>, <Node>, x, y, scale, matrix
             server.moveNode("stoneTest", "markerPose", "testNode", 0,0,0.3,[

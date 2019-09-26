@@ -296,8 +296,10 @@ realityEditor.utilities.optimizedResize = (function() {
 }());
 
 realityEditor.utilities.calculateScaleFactor = function() {
-    scaleRatio = window.innerWidth / targetSize.width;
-    console.log(scaleRatio);
+    var defaultScaleRatio = 3.2107;
+    // scaleRatio = window.innerWidth / targetSize.width;
+    scaleRatio = defaultScaleRatio; // window.innerWidth / targetSize.width;
+    console.log('scaleRatio', scaleRatio);
 };
 
 realityEditor.utilities.resetScreenFramePositions = function() {
@@ -596,3 +598,37 @@ realityEditor.utilities.insidePoly = function(point, vertices) {
 
     return inside;
 };
+
+/**
+ * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
+ * Any parameter can be omitted (pass in null) to ignore those effects
+ * @param {string|null} id
+ * @param {string|Array.<string>|null} classList
+ * @param {string|null} innerHTML
+ * @param {HTMLElement|null} parentToAddTo
+ * @return {HTMLDivElement}
+ */
+realityEditor.utilities.createDiv = function(id, classList, innerHTML, parentToAddTo) {
+    var div = document.createElement('div');
+    if (id) {
+        div.id = id;
+    }
+    if (classList) {
+        if (typeof classList === 'string') {
+            div.className = classList;
+        } else if (typeof classList === 'object') {
+            classList.forEach(function(className) {
+                div.classList.add(className);
+            });
+        }
+    }
+    if (innerHTML) {
+        div.innerHTML = innerHTML;
+    }
+    if (parentToAddTo) {
+        parentToAddTo.appendChild(div);
+    }
+    return div;
+};
+
+var createDiv = realityEditor.utilities.createDiv; // create global alias

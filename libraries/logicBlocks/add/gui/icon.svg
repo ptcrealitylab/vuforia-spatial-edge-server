@@ -1,10 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg id="Layer_1" viewBox="0 0 92 46" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 100">
   <defs>
-    <style>.cls-1{opacity:0.4;}.cls-2,.cls-3{fill:none;stroke:#fff;stroke-miterlimit:10;stroke-width:2px;}.cls-3{stroke-dasharray:5.71 5.71;}</style>
+    <style>
+      .cls-1 {
+        opacity: 0.5;
+      }
+
+      .cls-2 {
+        fill: #75fbfd;
+      }
+    </style>
   </defs>
-  <title>icon</title>
-  <g class="cls-1"/>
-  <text x="26.557" y="29.624" style="fill: rgb(255, 255, 255); font-size: 18px; white-space: pre; font-family: Helvetica Neue, Helvetica, sans-serif;">A   B</text>
-  <text x="41.065" y="27.687" style="fill: rgb(255, 255, 255); font-family: &quot;Helvetica Neue&quot;, Helvetica, sans-serif; letter-spacing: 1.5px; white-space: pre; font-size: 16px;">+</text>
+  <title>Asset 13</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g class="cls-1">
+          <polygon points="0 0 0 100 40.66 100 170 100 170 52.35 170 0 0 0"/>
+        </g>
+        <g class="cls-1">
+          <path class="cls-2" d="M164,6V94H6V6H164m6-6H0V100H170V0Z"/>
+        </g>
+        <g>
+          <path class="cls-2" d="M52,60.27v-1.5l7.75-20.9h4.44L72,58.77v1.5H67.48L65.69,55H58l-1.86,5.25Zm7.39-9h4.93L61.88,44Z"/>
+          <path class="cls-2" d="M83,57.33V52H77.72V48.53H83V43.18h3.78v5.35h5.27V52H86.78v5.35Z"/>
+          <path class="cls-2" d="M100.06,60.27V37.87h9.47c4.12,0,6.62,2.18,6.62,6.18a4.86,4.86,0,0,1-2.5,4.61,5.31,5.31,0,0,1,3.4,5.31c0,4.13-2.44,6.3-6.63,6.3Zm4.54-13.09h4.67c1.28,0,2.3-.89,2.3-2.68s-1-2.66-2.3-2.66H104.6Zm0,9.12h5.6c1.28,0,2.3-.89,2.3-2.68s-1-2.66-2.3-2.66h-5.6Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>

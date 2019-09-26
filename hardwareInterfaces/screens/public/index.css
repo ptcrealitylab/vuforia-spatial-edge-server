@@ -275,6 +275,14 @@ body, html {
     /*z-index: 50;*/
 }
 
+#memoryLinkCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 50;
+}
+
 .touchOverlay {
     position: absolute;
     display: none;
@@ -376,11 +384,27 @@ body, html {
     background-color: transparent;
 }
 
+#memoryButton {
+    position: absolute;
+    left: 0;
+    top: 130px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(45,255,255,0.15);
+    z-index: 100;
+}
+
 .ghostFrame {
     opacity: 0.5;
     /*display: inline;*/
     /*visibility: visible;*/
     pointer-events: none;
+}
+
+.visibleMemoryFrame {
+    /*opacity: 0.7;*/
+    opacity: 1.0 !important;
+    /*pointer-events: auto; !important;*/
 }
 
 .hiddenNode {
