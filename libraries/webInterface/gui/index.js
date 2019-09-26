@@ -612,7 +612,8 @@ realityServer.gotClick = function (event) {
         console.log(document.getElementById("textEntryObject"));
         if (!document.getElementById("textEntryObject")){
             var thisObject = document.getElementById("textEntryId").content.cloneNode(true);
-               thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
+            thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
+            thisObject.querySelector(".textfield").addEventListener("keydown", realityServer.onTextFieldKeyDown, false);
             thisObject.querySelector(".textEntry").id = "textEntryObject";
             document.getElementById("addObject").parentNode.appendChild(thisObject);
            // realityServer.domObjects.querySelector(".textfield").setAttribute("contenteditable", "true");
@@ -699,6 +700,7 @@ realityServer.gotClick = function (event) {
             var referenceNode = document.getElementById("object" + objectKey);
             var newNode = document.getElementById("textEntryFrameId").content.cloneNode(true);
             newNode.querySelector(".addButtonFrame").addEventListener("click", realityServer.gotClick, false);
+            newNode.querySelector(".textfield").addEventListener("keydown", realityServer.onTextFieldKeyDown, false);
             newNode.querySelector(".addButtonFrame").setAttribute('objectID', objectKey);
             newNode.querySelector(".addButtonFrame").setAttribute('frameID', frameKey);
             referenceNode.after(newNode);
@@ -723,6 +725,18 @@ realityServer.gotClick = function (event) {
     }
 };
 
+realityServer.onTextFieldKeyDown = function(event) {
+  if (event.key !== 'Enter') {
+    return;
+  }
+  event.preventDefault();
+  const parent = event.target.parentNode;
+  if (parent.classList.contains('textEntryFrame')) {
+    parent.querySelector('.addButtonFrame').click();
+  } else if (parent.id === 'textEntryObject') {
+    parent.querySelector('.addButton').click();
+  }
+};
 
 realityServer.sendRequest = function(url, httpStyle, callback, body) {
     if(!body) body = "";
