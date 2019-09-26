@@ -613,7 +613,7 @@ realityServer.gotClick = function (event) {
         if (!document.getElementById("textEntryObject")){
             var thisObject = document.getElementById("textEntryId").content.cloneNode(true);
             thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
-            thisObject.querySelector(".textfield").addEventListener("keydown", realityServer.onTextFieldKeyDown, false);
+            thisObject.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
             thisObject.querySelector(".textEntry").id = "textEntryObject";
             document.getElementById("addObject").parentNode.appendChild(thisObject);
            // realityServer.domObjects.querySelector(".textfield").setAttribute("contenteditable", "true");
@@ -700,7 +700,7 @@ realityServer.gotClick = function (event) {
             var referenceNode = document.getElementById("object" + objectKey);
             var newNode = document.getElementById("textEntryFrameId").content.cloneNode(true);
             newNode.querySelector(".addButtonFrame").addEventListener("click", realityServer.gotClick, false);
-            newNode.querySelector(".textfield").addEventListener("keydown", realityServer.onTextFieldKeyDown, false);
+            newNode.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
             newNode.querySelector(".addButtonFrame").setAttribute('objectID', objectKey);
             newNode.querySelector(".addButtonFrame").setAttribute('frameID', frameKey);
             referenceNode.after(newNode);
@@ -725,7 +725,7 @@ realityServer.gotClick = function (event) {
     }
 };
 
-realityServer.onTextFieldKeyDown = function(event) {
+realityServer.onTextFieldKeyPress = function(event) {
   if (event.key !== 'Enter') {
     return;
   }
