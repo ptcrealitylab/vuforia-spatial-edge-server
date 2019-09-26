@@ -5,11 +5,12 @@ function Objects() {
     this.frames = {};
     this.visualization = "ar";
     this.active = false;
-};
+}
 
 function Frame() {
     this.name = "";
-};
+}
+
 realityServer.initialize = function () {
     realityServer.downloadImage = new Image();
     realityServer.downloadImage.src="../libraries/gui/resources/icondownload.svg";
@@ -186,10 +187,31 @@ realityServer.update = function (thisItem2) {
         this.domObjects.appendChild(this.templates[3].content.cloneNode(true));
     }
 
-console.log(realityServer.objects)
+    console.log(realityServer.objects)
 };
 
+realityServer.printFiles = function(item) {
+    var returnList = {
+        files: {},
+        folders:{}
+    };
 
+    for (var i = 0; i < item.children.length; i++) {
+        var thisItem = item.children[i];
+        if(thisItem.type === "file"){
+            returnList.files[thisItem.name] = {
+                path: thisItem.path,
+                extension: thisItem.extension
+            };
+        } else if(thisItem.type === "directory"){
+            returnList.folders[thisItem.name] = {
+                path: thisItem.path,
+                link: thisItem
+            };
+        }
+    }
+    return returnList;
+};
 
 realityServer.gotClick = function (event) {
     var thisEventObject = event.currentTarget;
@@ -514,39 +536,11 @@ realityServer.gotClick = function (event) {
                     }
 
                 }
-
-
-
-
-
             }
         });
         }
-
     }
 
-realityServer.printFiles = function (item){
-        var returnList = {
-            files: {},
-            folders:{}
-        };
-
-        for (var i = 0; i < item.children.length; i++) {
-            var thisItem = item.children[i];
-            if(thisItem.type === "file"){
-                returnList.files[thisItem.name] = {
-                    path: thisItem.path,
-                    extension: thisItem.extension
-                };
-            } else if(thisItem.type === "directory"){
-                returnList.folders[thisItem.name] = {
-                    path: thisItem.path,
-                    link: thisItem
-                };
-            }
-        }
-        return returnList;
-    }
 
     /**
      *  REMOVE
@@ -615,8 +609,8 @@ realityServer.printFiles = function (item){
      *  ADD OBJECT
      */
     if (buttonClassList.contains("addObject")) {
-console.log(document.getElementById("textEntryObject"));
-        if(!document.getElementById("textEntryObject")){
+        console.log(document.getElementById("textEntryObject"));
+        if (!document.getElementById("textEntryObject")){
             var thisObject = document.getElementById("textEntryId").content.cloneNode(true);
                thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
             thisObject.querySelector(".textEntry").id = "textEntryObject";
@@ -625,7 +619,7 @@ console.log(document.getElementById("textEntryObject"));
         } else {
             var removeNode = document.getElementById("textEntryObject");
             realityServer.removeAnimated(removeNode);
-           // removeNode.remove();
+            // removeNode.remove();
         }
     }
 
@@ -727,9 +721,6 @@ console.log(document.getElementById("textEntryObject"));
            // removeNode.remove();
         }
     }
-
-
-
 };
 
 
