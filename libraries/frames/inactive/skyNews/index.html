@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sky News</title>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.5);
+        }
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        #graph {
+            stroke: #00ff00;
+            fill: none;
+            stroke-width: 4;
+        }
+
+        .lines {
+            stroke:  rgba(0, 255, 255, 0.5);
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -6pt;
+            font-size: 45pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body style="height: 430px; width: 660px;">
+<svg id="container" width="660" height="430" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+    <rect id="backgroundFrame" x="0" y="0" width="660" height="380"rx="3" ry="3" />
+    <svg x="0" y="390">
+        <rect id="backgroundFrame" x="0" y="0" width="660" height="40" rx="3" ry="3" />
+        <text class="dataFontMiddle" id="dataName" x="10" y="30">YouTube - Sky News - LiveStream</text>
+    </svg>
+
+</svg>
+<div style="height: 360px; width: 640px; background-color: rgba(0,0,0,0.001); position: absolute; left: 10px; top: 10px; z-index: 1"></div>
+<iframe style="height: 360px; width: 640px; position: absolute; left: 10px; top: 10px;"
+        id="player" width="640px" height="360px" src="https://www.youtube.com/embed/XOacA3RYrXk?enablejsapi=1&rel=0&amp;controls=0&playsinline=1&vq=large" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+<script>
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    var player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player',
+            {
+            suggestedQuality: "small",
+            events: {
+                'onReady': onPlayerReady
+            }
+        });
+    }
+
+  
+
+    function onPlayerReady(event) {
+       event.target.playVideo();
+       event.target.mute();
+    }
+
+    var realityInterface = new RealityInterface();
+
+
+    realityInterface.addReadListener('play', function(e) {
+        console.log(e.value);
+        if(e.value > 0.5){
+            player.playVideo();
+        } else {
+            player.stopVideo();
+        }
+    });
+    realityInterface.setMoveDelay(10);
+    
+    // realityInterface.onRealityInterfaceLoaded(function() {
+    //     realityInterface.setFullScreenOn(0);
+    //     realityInterface.sendToBackground();
+    // });
+    
+</script>
+</body>
+</html>
+
+</body>
+</html>
+</script>

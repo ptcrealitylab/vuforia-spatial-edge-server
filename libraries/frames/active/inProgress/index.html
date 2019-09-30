@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>progress</title>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 255, 255, 0.3);
+        }
+
+        .numberOutline {
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        .lines {
+            stroke-width: 2;
+            stroke: rgba(51, 255, 255, 0.4);
+        }
+
+        .green {
+            fill: rgb(41, 253, 47);
+        }
+
+        .greenStroke {
+            stroke: rgb(41, 253, 47);
+        }
+
+        .red {
+            fill: rgb(242, 22, 121);
+        }
+        .redlight {
+            fill: rgb(235, 61, 140);
+        }
+
+        .white {
+            fill: rgb(255, 255, 255);
+        }
+
+        .redStroke {
+            fill: rgb(242, 22, 121);
+
+        }
+
+        .overlay {
+            fill: rgba(0, 0, 0, 0.3);
+        }
+
+        .blue {
+            fill: rgb(45, 255, 255);
+        }
+
+        .purple {
+            fill: rgb(210, 113, 255);
+        }
+
+        .yellow {
+            fill: rgb(255, 255, 45);
+
+        }
+        .twentyfive {
+            opacity: 0.20;
+        }
+        .thirty {
+            opacity: 0.50;
+        }
+        
+        .yellowStroke {
+            stroke: rgb(255, 255, 45);
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -6pt;
+            font-size: 32pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body style="width: 600px; height: 600px;">
+<!--
+<div id= "outlineMinShadow" style=" backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+
+<div id= "outlineMaxShadow" style="backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+-->
+<div id="show" style=" visibility: hidden">
+    <svg id="container" width="600" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+    <svg x="-8" y="-8">
+        
+        <path id="outline" class="white" d="M499.15,591.56h-398.3c-50.96,0-92.42-41.46-92.42-92.42v-398.3c0-50.96,41.46-92.42,92.42-92.42h398.3c50.96,0,92.42,41.46,92.42,92.42v398.3C591.56,550.11,550.11,591.56,499.15,591.56z M100.85,9.44c-50.41,0-91.42,41.01-91.42,91.42v398.3c0,50.41,41.01,91.42,91.42,91.42h398.3c50.41,0,91.42-41.01,91.42-91.42v-398.3c0-50.41-41.01-91.42-91.42-91.42H100.85z"></path>
+        <svg id="visual">
+        <path id="overlay" class="overlay" d="M499.15,39.57 M499.15,8.94h-398.3c-50.68,0-91.92,41.23-91.92,91.92v398.3c0,50.68,41.23,91.92,91.92,91.92h398.3c50.68,0,91.91-41.23,91.91-91.92v-398.3C591.06,50.17,549.83,8.94,499.15,8.94L499.15,8.94z"></path>
+        <path id="stroke" class="yellow" d="M499.15,39.57c33.84,0,61.28,27.43,61.28,61.28v398.3c0,33.84-27.43,61.28-61.28,61.28h-398.3c-33.84,0-61.28-27.43-61.28-61.28v-398.3c0-33.84,27.43-61.28,61.28-61.28H499.15 M499.15,8.94h-398.3c-50.68,0-91.92,41.23-91.92,91.92v398.3c0,50.68,41.23,91.92,91.92,91.92h398.3c50.68,0,91.91-41.23,91.91-91.92v-398.3C591.06,50.17,549.83,8.94,499.15,8.94L499.15,8.94z"></path>
+        <path id="background" class="yellow twentyfive" d="M499.15,560.43h-398.3c-33.84,0-61.28-27.43-61.28-61.28v-398.3c0-33.84,27.43-61.28,61.28-61.28h398.3c33.84,0,61.28,27.43,61.28,61.28v398.3C560.43,532.99,532.99,560.43,499.15,560.43z"></path>
+        <path id="innerRing" class="yellow thirty" d="M499.15,70.21c16.89,0,30.64,13.74,30.64,30.64v398.3c0,16.89-13.74,30.64-30.64,30.64h-398.3c-16.89,0-30.64-13.74-30.64-30.64v-398.3c0-16.89,13.74-30.64,30.64-30.64H499.15 M499.15,39.57h-398.3c-33.84,0-61.28,27.43-61.28,61.28v398.3c0,33.84,27.43,61.28,61.28,61.28h398.3c33.84,0,61.28-27.43,61.28-61.28v-398.3C560.43,67.01,532.99,39.57,499.15,39.57L499.15,39.57z"></path>
+        <path id="x8" class="yellow" d="M281.3,140.72c-29.46,3.42-57.36,14.98-80.68,33.43l-5.4,4.27l34.29,34.29l4.24-3.12c14.52-10.67,31.53-17.74,49.19-20.45l5.2-0.8v-48.43L281.3,140.72z"></path>
+        <path id="x7" class="yellow" d="M178.42,195.21l-4.27,5.4c-18.45,23.33-30.01,51.23-33.43,80.68l-0.8,6.83h48.43l0.8-5.2c2.71-17.67,9.78-34.68,20.45-49.19l3.12-4.24L178.42,195.21z"></path>
+        <path id="x6" class="yellow" d="M209.6,366.26c-10.67-14.52-17.75-31.53-20.45-49.19l-0.8-5.2h-48.43l0.8,6.83c3.42,29.45,14.98,57.35,33.43,80.69l4.27,5.4l34.29-34.29L209.6,366.26z"></path>
+        <path id="x5" class="yellow" d="M200.6,425.85c23.25,18.41,51.15,29.96,80.69,33.41l6.84,0.8v-48.5l-5.2-0.79c-17.81-2.72-34.84-9.75-49.24-20.32l-4.24-3.11l-34.24,34.24L200.6,425.85z"></path>
+        <path id="x4" class="yellow" d="M311.87,460.06l6.84-0.8c29.54-3.45,57.44-15.01,80.69-33.41l5.39-4.27l-34.24-34.24l-4.24,3.11c-14.41,10.58-31.44,17.6-49.24,20.32l-5.2,0.79V460.06z"></path>
+        <path id="x3" class="yellow" d="M410.78,317.07c-2.72,17.81-9.75,34.84-20.32,49.24l-3.11,4.24l34.24,34.24l4.27-5.39c18.41-23.25,29.96-51.15,33.42-80.69l0.8-6.84l-48.5,0L410.78,317.07z"></path>
+        <path id="x2" class="yellow" d="M460.06,288.13l-0.8-6.84c-3.45-29.54-15.01-57.44-33.41-80.69l-4.27-5.39l-34.24,34.24l3.11,4.24c10.58,14.41,17.6,31.44,20.32,49.24l0.79,5.2H460.06z"></path>
+        <path id="x1" class="yellow" d="M317.07,189.22c17.81,2.72,34.84,9.75,49.24,20.32l4.24,3.11l34.24-34.24l-5.39-4.27c-23.25-18.41-51.15-29.96-80.69-33.42l-6.84-0.8l0,48.5L317.07,189.22z"></path>
+
+        </svg>
+    </svg>
+    </svg>
+</div>
+
+<audio id="audio" src="resources/error.wav">
+</audio>
+
+
+<script>
+    document.querySelector('#show').style.visibility = "visible";
+    var realityInterface = new RealityInterface();
+    var outline = document.querySelector('#outline');
+    var stroke = document.querySelector('#stroke');
+    var innerRing = document.querySelector('#innerRing');
+    var background = document.querySelector('#background');
+    var x1 = document.querySelector('#x1');
+    var x2 = document.querySelector('#x2');
+    var x3 = document.querySelector('#x3');
+    var x4 = document.querySelector('#x4');
+    var x5 = document.querySelector('#x5');//7
+    var x6 = document.querySelector('#x6');//8
+    var x7 = document.querySelector('#x7');
+    var x8 = document.querySelector('#x8');
+    var signal = document.querySelector('#signal');
+    var visual = document.querySelector('#visual');
+    var screenIsTouched = false;
+    
+    var time = 50;
+    var state = false;
+    var isReady = false;
+    var direction = true;
+    var count = 0;
+    var runner = 150;
+
+    function renderProperties() {
+        if (!isReady) {
+            return;
+        }
+    
+        var spalt = runner / 10;
+        
+        if(count < spalt) x1.style.opacity = "0.3"; else x1.style.opacity = "1";
+       if(count < spalt*2) x2.style.opacity = "0.3"; else x2.style.opacity = "1";
+          if(count < spalt*3) x3.style.opacity = "0.3"; else x3.style.opacity = "1";
+       if(count < spalt*4) x4.style.opacity = "0.3"; else x4.style.opacity = "1";
+       if(count < spalt*5) x5.style.opacity = "0.3"; else x5.style.opacity = "1";
+        if(count < spalt*6) x6.style.opacity = "0.3"; else x6.style.opacity = "1";
+       if(count < spalt*7) x7.style.opacity = "0.3"; else x7.style.opacity = "1";
+       if(count < spalt*8) x8.style.opacity = "0.3"; else x8.style.opacity = "1";
+
+        count++;
+        if(count >runner)count = 0;
+        
+        
+        if(state){
+            visual.style.visibility = "visible";
+         //   if(direction)   signal.style.visibility = "visible";
+        //else  signal.style.visibility = "hidden";
+          
+            outline.style.visibility = "hidden";
+        } else {
+           // signal.style.visibility = "hidden";
+            visual.style.visibility = "hidden";
+            outline.style.visibility = "visible";
+        }
+        // animation goes here
+    }
+
+    function ready() {
+        isReady = true;
+        renderProperties();
+    }
+
+    ready();
+
+    setInterval(function () {
+        renderProperties();
+    }, time);
+
+
+    realityInterface.addReadListener('state', function (e) {
+     if(e.value >= 0.5)
+     {
+         state = true;
+     } else {
+         state = false;
+     };
+    });
+    
+    realityInterface.setMoveDelay(10);
+    //  {value: 0.4565680618804775, mode: "f", unit: "volt", unitMin: 300, unitMax: 0}
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>progress</title>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 255, 255, 0.3);
+        }
+
+        .numberOutline {
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        .lines {
+            stroke-width: 2;
+            stroke: rgba(51, 255, 255, 0.4);
+        }
+
+        .green {
+            fill: rgb(41, 253, 47);
+        }
+
+        .greenStroke {
+            stroke: rgb(41, 253, 47);
+        }
+
+        .red {
+            fill: rgb(242, 22, 121);
+        }
+        .redlight {
+            fill: rgb(235, 61, 140);
+        }
+
+        .white {
+            fill: rgb(255, 255, 255);
+        }
+
+        .redStroke {
+            stroke: rgb(242, 22, 121);
+
+        }
+
+        .overlay {
+            fill: rgba(0, 0, 0, 0.3);
+        }
+
+        .blue {
+            fill: rgb(45, 255, 255);
+        }
+
+        .purple {
+            fill: rgb(210, 113, 255);
+        }
+
+        .yellow {
+            fill: rgb(255, 255, 45);
+
+        }
+        .twentyfive {
+            opacity: 0.20;
+        }
+        .thirty {
+            opacity: 0.50;
+        }
+        
+        .yellowStroke {
+            stroke: rgb(255, 255, 45);
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -6pt;
+            font-size: 32pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body style="width: 600px; height: 600px;">
+<!--
+<div id= "outlineMinShadow" style=" backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+
+<div id= "outlineMaxShadow" style="backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+-->
+<div id="show" style=" visibility: hidden">
+    <svg id="container" width="600" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+    <svg x="-8" y="-8">
+        <path id="outline" class="white" d="M397,9.41A57,57,0,0,1,437.57,26.2L574.21,162.85A56.92,56.92,0,0,1,591,203.38V396.62a56.92,56.92,0,0,1-16.79,40.53L437.57,573.8A57,57,0,0,1,397,590.59H203.79a57,57,0,0,1-40.53-16.79L26.61,437.15A57,57,0,0,1,9.83,396.62V203.38a57,57,0,0,1,16.78-40.53L163.26,26.2A57,57,0,0,1,203.79,9.41H397m0-1H203.79a58,58,0,0,0-41.24,17.08L25.91,162.14A57.92,57.92,0,0,0,8.83,203.38V396.62a57.91,57.91,0,0,0,17.08,41.24L162.55,574.51a58,58,0,0,0,41.24,17.08H397a57.94,57.94,0,0,0,41.23-17.08L574.92,437.86A58,58,0,0,0,592,396.62V203.38a58,58,0,0,0-17.08-41.24L438.27,25.49A57.94,57.94,0,0,0,397,8.41Z"></path>
+       <svg id="visual">
+           <path id="innerRingo" class="overlay" d="M554.3,182.76l-8.54-8.54L425.85,54.31l-8.2-8.2c-5.46-5.47-12.88-8.54-20.61-8.54H203.79c-7.73,0-15.15,3.07-20.62,8.54l-8.52,8.52L55.07,174.22l-8.54,8.54c-5.47,5.47-8.54,12.88-8.54,20.62v193.24c0,7.74,3.07,15.15,8.54,20.62l8.54,8.54l119.58,119.59l8.52,8.52c5.47,5.47,12.89,8.54,20.62,8.54h193.25c7.73,0,15.15-3.07,20.61-8.54l8.2-8.2L554.3,417.24c5.47-5.47,8.54-12.88,8.54-20.62V203.38C562.84,195.64,559.77,188.23,554.3,182.76z M533.68,384.55c0,7.78-3.03,15.11-8.54,20.61L405.58,524.73c-5.51,5.51-12.83,8.54-20.62,8.54H215.87c-7.79,0-15.11-3.03-20.62-8.54L75.68,405.16c-5.5-5.5-8.54-12.83-8.54-20.61v-169.1c0-7.78,3.04-15.11,8.54-20.61L195.25,75.27c5.51-5.51,12.83-8.54,20.62-8.54h169.09c7.79,0,15.11,3.03,20.62,8.54l119.56,119.57c5.51,5.5,8.54,12.83,8.54,20.61V384.55z"></path><path id="background" class="overlay " d="M533.68,215.45v169.1c0,7.78-3.03,15.11-8.54,20.61L405.58,524.73c-5.51,5.51-12.83,8.54-20.62,8.54H215.87c-7.79,0-15.11-3.03-20.62-8.54L75.68,405.16c-5.5-5.5-8.54-12.83-8.54-20.61v-169.1c0-7.78,3.04-15.11,8.54-20.61L195.25,75.27c5.51-5.51,12.83-8.54,20.62-8.54h169.09c7.79,0,15.11,3.03,20.62,8.54l119.56,119.57C530.65,200.34,533.68,207.67,533.68,215.45z"></path>
+           <path id="backgroundo" class="overlay " d="M533.68,215.45v169.1c0,7.78-3.03,15.11-8.54,20.61L405.58,524.73c-5.51,5.51-12.83,8.54-20.62,8.54H215.87c-7.79,0-15.11-3.03-20.62-8.54L75.68,405.16c-5.5-5.5-8.54-12.83-8.54-20.61v-169.1c0-7.78,3.04-15.11,8.54-20.61L195.25,75.27c5.51-5.51,12.83-8.54,20.62-8.54h169.09c7.79,0,15.11,3.03,20.62,8.54l119.56,119.57C530.65,200.34,533.68,207.67,533.68,215.45z"></path>
+           <path id="strokeo" class="overlay" d="M397,37.57a29.12,29.12,0,0,1,20.61,8.54L554.3,182.76a29.15,29.15,0,0,1,8.54,20.62V396.62a29.15,29.15,0,0,1-8.54,20.62L417.65,553.89A29.12,29.12,0,0,1,397,562.43H203.79a29.16,29.16,0,0,1-20.62-8.54L46.53,417.24A29.15,29.15,0,0,1,38,396.62V203.38a29.15,29.15,0,0,1,8.54-20.62L183.17,46.11a29.16,29.16,0,0,1,20.62-8.54H397m0-29.16H203.79a58,58,0,0,0-41.24,17.08L25.91,162.14A57.92,57.92,0,0,0,8.83,203.38V396.62a57.91,57.91,0,0,0,17.08,41.24L162.55,574.51a58,58,0,0,0,41.24,17.08H397a57.94,57.94,0,0,0,41.23-17.08L574.92,437.86A58,58,0,0,0,592,396.62V203.38a58,58,0,0,0-17.08-41.24L438.27,25.49A57.94,57.94,0,0,0,397,8.41Z"></path>
+           <path id="innerRing" class="redlight thirty" d="M554.3,182.76l-8.54-8.54L425.85,54.31l-8.2-8.2c-5.46-5.47-12.88-8.54-20.61-8.54H203.79c-7.73,0-15.15,3.07-20.62,8.54l-8.52,8.52L55.07,174.22l-8.54,8.54c-5.47,5.47-8.54,12.88-8.54,20.62v193.24c0,7.74,3.07,15.15,8.54,20.62l8.54,8.54l119.58,119.59l8.52,8.52c5.47,5.47,12.89,8.54,20.62,8.54h193.25c7.73,0,15.15-3.07,20.61-8.54l8.2-8.2L554.3,417.24c5.47-5.47,8.54-12.88,8.54-20.62V203.38C562.84,195.64,559.77,188.23,554.3,182.76z M533.68,384.55c0,7.78-3.03,15.11-8.54,20.61L405.58,524.73c-5.51,5.51-12.83,8.54-20.62,8.54H215.87c-7.79,0-15.11-3.03-20.62-8.54L75.68,405.16c-5.5-5.5-8.54-12.83-8.54-20.61v-169.1c0-7.78,3.04-15.11,8.54-20.61L195.25,75.27c5.51-5.51,12.83-8.54,20.62-8.54h169.09c7.79,0,15.11,3.03,20.62,8.54l119.56,119.57c5.51,5.5,8.54,12.83,8.54,20.61V384.55z"></path>
+        <path id="background" class="redlight twentyfive" d="M533.68,215.45v169.1c0,7.78-3.03,15.11-8.54,20.61L405.58,524.73c-5.51,5.51-12.83,8.54-20.62,8.54H215.87c-7.79,0-15.11-3.03-20.62-8.54L75.68,405.16c-5.5-5.5-8.54-12.83-8.54-20.61v-169.1c0-7.78,3.04-15.11,8.54-20.61L195.25,75.27c5.51-5.51,12.83-8.54,20.62-8.54h169.09c7.79,0,15.11,3.03,20.62,8.54l119.56,119.57C530.65,200.34,533.68,207.67,533.68,215.45z"></path>
+          <svg id="signal">
+        <polygon class="red" id="x" points="446.21,204.19 396.22,154.21 300.41,250.01 204.61,154.21 154.62,204.19 250.43,300 154.62,395.81 204.61,445.79 300.41,349.99 396.22,445.79 446.21,395.81 350.4,300 "></polygon>
+           <path id="stroke" class="red" d="M397,37.57a29.12,29.12,0,0,1,20.61,8.54L554.3,182.76a29.15,29.15,0,0,1,8.54,20.62V396.62a29.15,29.15,0,0,1-8.54,20.62L417.65,553.89A29.12,29.12,0,0,1,397,562.43H203.79a29.16,29.16,0,0,1-20.62-8.54L46.53,417.24A29.15,29.15,0,0,1,38,396.62V203.38a29.15,29.15,0,0,1,8.54-20.62L183.17,46.11a29.16,29.16,0,0,1,20.62-8.54H397m0-29.16H203.79a58,58,0,0,0-41.24,17.08L25.91,162.14A57.92,57.92,0,0,0,8.83,203.38V396.62a57.91,57.91,0,0,0,17.08,41.24L162.55,574.51a58,58,0,0,0,41.24,17.08H397a57.94,57.94,0,0,0,41.23-17.08L574.92,437.86A58,58,0,0,0,592,396.62V203.38a58,58,0,0,0-17.08-41.24L438.27,25.49A57.94,57.94,0,0,0,397,8.41Z"></path>
+           </svg>
+         
+       </svg>
+       </svg>
+    </svg>
+</div>
+
+<script>
+   /* var myAudio = document.createElement('audio');
+        myAudio.setAttribute('src','resources/error.mp3');
+myAudio.loop = true;
+    alert('play');
+
+    myAudio.play();
+*/
+
+    document.querySelector('#show').style.visibility = "visible";
+    var realityInterface = new RealityInterface();
+    var outline = document.querySelector('#outline');
+    var stroke = document.querySelector('#stroke');
+    var innerRing = document.querySelector('#innerRing');
+    var background = document.querySelector('#background');
+    var x = document.querySelector('#x');
+    var signal = document.querySelector('#signal');
+    var visual = document.querySelector('#visual');
+    var screenIsTouched = false;
+    
+    var time = 30;
+    var state = false;
+    var isReady = false;
+    var direction = true;
+    var count = 0;
+    var runner = 10;
+
+    function renderProperties() {
+        if (!isReady) {
+            return;
+        }
+    
+         
+   
+        if(direction) {
+            count++;
+            if(count >runner) direction = false;
+        } else {
+            count--;
+            if(count <0) direction = true;
+        }
+        
+        
+        if(state){
+            visual.style.visibility = "visible";
+            signal.style.opacity = ""+count/runner+"";
+            outline.style.visibility = "hidden";
+        } else {
+            visual.style.visibility = "hidden";
+            outline.style.visibility = "visible";
+        }
+        // animation goes here
+    }
+
+    function ready() {
+        isReady = true;
+        renderProperties();
+    }
+
+    ready();
+
+    setInterval(function () {
+        renderProperties();
+    }, time);
+
+
+    realityInterface.addReadListener('state', function (e) {
+     if(e.value >= 0.5)
+     {
+         state = true;
+     } else {
+         state = false;
+     };
+    });
+    
+    realityInterface.setMoveDelay(10);
+    //  {value: 0.4565680618804775, mode: "f", unit: "volt", unitMin: 300, unitMax: 0}
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>progress</title>
+    <style>
+        @font-face {
+            font-family: 'Speculum';
+            src: url('resources/speculum.ttf');
+        }
+
+        #frame {
+            stroke: #00ffff;
+            stroke-width: 4;
+            fill: rgba(0, 255, 255, 0.3);
+        }
+
+        .numberOutline {
+            stroke-width: 4;
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        #backgroundFrame {
+            fill: rgba(51, 51, 51, 0.8);
+        }
+
+        .lines {
+            stroke-width: 2;
+            stroke: rgba(51, 255, 255, 0.4);
+        }
+
+        .green {
+            fill: rgb(41, 253, 47);
+        }
+
+        .greenStroke {
+            stroke: rgb(41, 253, 47);
+        }
+
+        .red {
+            fill: rgb(242, 22, 121);
+        }
+        .redlight {
+            fill: rgb(235, 61, 140);
+        }
+
+        .white {
+            fill: rgb(255, 255, 255);
+        }
+
+        .redStroke {
+            fill: rgb(242, 22, 121);
+
+        }
+
+        .overlay {
+            fill: rgba(0, 0, 0, 0.3);
+        }
+
+        .blue {
+            fill: rgb(45, 255, 255);
+        }
+
+        .purple {
+            fill: rgb(210, 113, 255);
+        }
+
+        .yellow {
+            fill: rgb(255, 255, 45);
+
+        }
+        .twentyfive {
+            opacity: 0.20;
+        }
+        .thirty {
+            opacity: 0.50;
+        }
+        
+        .yellowStroke {
+            stroke: rgb(255, 255, 45);
+            fill: rgba(0, 0, 0, 0.2);
+        }
+
+        .dataFont {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -6pt;
+            font-size: 32pt;
+            alignment: right;
+            font-stretch: semi-expanded;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontMiddle {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            letter-spacing: -4pt;
+            fill: #00ffff;
+            font-size: 26pt;
+            transform: scaleX(0.7);
+        }
+
+        .dataFontSmall {
+
+            font-family: Speculum, Geneva, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            fill: #00ffff;
+            letter-spacing: -1pt;
+            font-size: 12pt;
+            alignment: right;
+            transform: scaleX(0.7);
+        }
+
+    </style>
+</head>
+<body style="width: 600px; height: 600px;">
+<!--
+<div id= "outlineMinShadow" style=" backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+
+<div id= "outlineMaxShadow" style="backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform: translateZ(-1px)" >
+</div>
+-->
+<div id="show" style=" visibility: hidden">
+    <svg id="container" width="600" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg" touch-action="none">
+    <svg x="-8" y="-8">
+        <path id="outline" class="white" d="M533.16,560.67H66.84c-21.24,0-40.26-10.98-50.87-29.37c-10.62-18.39-10.62-40.36,0-58.75
+	L249.13,68.7c10.62-18.39,29.64-29.37,50.87-29.37s40.25,10.98,50.87,29.37l233.16,403.85c10.62,18.39,10.62,40.36,0,58.75
+	C573.41,549.69,554.39,560.67,533.16,560.67z M300,40.33c-20.87,0-39.57,10.79-50.01,28.87L16.83,473.05
+	c-10.44,18.08-10.44,39.67,0,57.75s29.13,28.87,50.01,28.87h466.32c20.87,0,39.57-10.79,50.01-28.87s10.44-39.67,0-57.75
+	L350.01,69.2C339.57,51.12,320.87,40.33,300,40.33z"></path>
+            <svg id="visual">
+                <path id="overlay" class="overlay" d="M300.5,39.66c-21.06,0-39.91,10.89-50.44,29.12L16.9,472.63c-10.53,18.24-10.53,40.01,0,58.25S46.28,560,67.34,560h466.32c21.06,0,39.91-10.89,50.44-29.12c10.53-18.24,10.53-40.01,0-58.25L350.94,68.78C340.41,50.55,321.56,39.66,300.5,39.66L300.5,39.66z"></path>
+                    <path id="innerRing" class="redlight twentyfive" d="M275.28,83.34L42.12,487.19c-11.21,19.42,2.8,43.68,25.22,43.68h466.32c22.42,0,36.43-24.27,25.22-43.68L325.72,83.34C314.51,63.92,286.49,63.92,275.28,83.34z"></path>
+                    <path  id="background" class="redlight thirty"  d="M300.5,97.9l233.16,403.85H67.34L300.38,97.91C300.39,97.91,300.44,97.9,300.5,97.9 M300.5,68.78c-9.81,0-19.62,4.85-25.22,14.56L42.12,487.19c-11.21,19.42,2.8,43.68,25.22,43.68h466.32c22.42,0,36.43-24.27,25.22-43.68L325.72,83.34C320.12,73.63,310.31,68.78,300.5,68.78L300.5,68.78z"></path>
+             <path id="stroke_1_" class="red" d="M300.5,68.78c9.81,0,19.62,4.85,25.22,14.56l233.16,403.85c11.21,19.42-2.8,43.68-25.22,43.68H67.34c-22.42,0-36.43-24.27-25.22-43.68L275.28,83.34C280.88,73.63,290.69,68.78,300.5,68.78 M300.5,39.65c-21.06,0-39.91,10.89-50.44,29.12L16.9,472.62c-10.53,18.24-10.53,40.01,0,58.25c10.53,18.24,29.39,29.12,50.44,29.12h466.32c21.06,0,39.91-10.89,50.44-29.12c10.53-18.24,10.53-40.01,0-58.25L350.94,68.78C340.41,50.54,321.56,39.65,300.5,39.65L300.5,39.65z"></path>
+                <path class="red twentyfive" id="x" d="M279.17,463.02v-42.66h42.66v42.66H279.17z M281.3,377.71V207.09h38.39v170.62H281.3z"></path>
+          <svg id="signal">
+              <path class="red" id="x" d="M279.17,463.02v-42.66h42.66v42.66H279.17z M281.3,377.71V207.09h38.39v170.62H281.3z"></path>
+          </svg>
+                
+    </svg>
+    </svg>
+    </svg>
+</div>
+
+<audio id="audio" src="resources/error.wav">
+</audio>
+
+
+<script>
+    document.querySelector('#show').style.visibility = "visible";
+    var realityInterface = new RealityInterface();
+    var outline = document.querySelector('#outline');
+    var stroke = document.querySelector('#stroke');
+    var innerRing = document.querySelector('#innerRing');
+    var background = document.querySelector('#background');
+    var x = document.querySelector('#x');
+    var signal = document.querySelector('#signal');
+    var visual = document.querySelector('#visual');
+    var screenIsTouched = false;
+    
+    var time = 30;
+    var state = false;
+    var isReady = false;
+    var direction = true;
+    var count = 0;
+    var runner = 20;
+
+    function renderProperties() {
+        if (!isReady) {
+            return;
+        }
+    
+         
+   
+        if(direction) {
+            count++;
+            if(count >runner) direction = false;
+        } else {
+            count--;
+            if(count <0) direction = true;
+        }
+        
+        
+        if(state){
+            visual.style.visibility = "visible";
+            if(direction)   signal.style.visibility = "visible";
+            else  signal.style.visibility = "hidden";
+          
+            outline.style.visibility = "hidden";
+        } else {
+            signal.style.visibility = "hidden";
+            visual.style.visibility = "hidden";
+            outline.style.visibility = "visible";
+        }
+        // animation goes here
+    }
+
+    function ready() {
+        isReady = true;
+        renderProperties();
+    }
+
+    ready();
+
+    setInterval(function () {
+        renderProperties();
+    }, time);
+
+
+    realityInterface.addReadListener('state', function (e) {
+     if(e.value >= 0.5)
+     {
+         state = true;
+     } else {
+         state = false;
+     };
+    });
+    
+    realityInterface.setMoveDelay(10);
+    //  {value: 0.4565680618804775, mode: "f", unit: "volt", unitMin: 300, unitMax: 0}
+</script>
+</body>
+</html>

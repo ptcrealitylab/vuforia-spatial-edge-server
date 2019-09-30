@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>count</title>
+    <style>
+        #text {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+            width: 700px;
+            height: 283px;
+            line-height: 283px;
+            text-align: center;
+            vertical-align: middle;
+
+            font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 100pt;
+            color: rgb(45,255,255);
+        }
+        
+        #resetButton {
+            position: absolute;
+            left: 0;
+            top: 288px;
+            width: 700px;
+            height: 283px;
+        }
+    </style>
+</head>
+<body style="width: 700px; height: 283px">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174.67 70.67">
+    <defs>
+        <style>
+            .cls-1 {
+                opacity: 0.5;
+            }
+
+            .cls-2 {
+                fill: #008480;
+            }
+        </style>
+    </defs>
+    <title>Asset 40</title>
+    <g id="Layer_2" data-name="Layer 2">
+        <g id="UI">
+            <g>
+                <g class="cls-1">
+                    <polygon points="0 0 0 70.67 57 70.67 174.67 70.67 174.67 37 174.67 0 0 0"/>
+                </g>
+                <g class="cls-1">
+                    <path class="cls-2" d="M168.67,6V64.67H6V6H168.67m6-6H0V70.67H174.67V0Z"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
+
+<div id="text">01</div>
+
+<svg id="resetButton" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174.07 60.67">
+    <defs>
+        <style>
+            .cls-3 {
+                opacity: 0.25;
+            }
+
+            .cls-4 {
+                fill: #ff007d;
+            }
+        </style>
+    </defs>
+    <title>Asset 42</title>
+    <g id="Layer_2" data-name="Layer 2">
+        <g id="UI">
+            <g>
+                <g>
+                    <g class="cls-3">
+                        <polygon class="cls-4" points="168.23 54.83 168.23 5.83 47.92 5.83 5.83 5.83 5.83 37.92 5.83 54.83 168.23 54.83"/>
+                    </g>
+                    <path class="cls-4" d="M168.23,5.83v49H5.83v-49h162.4M172.4,0H1.67A1.67,1.67,0,0,0,0,1.67V59a1.67,1.67,0,0,0,1.67,1.67H172.4A1.67,1.67,0,0,0,174.07,59V1.67A1.67,1.67,0,0,0,172.4,0Z"/>
+                    <g class="cls-3">
+                        <path class="cls-4" d="M162.4,11.67V49H11.67V11.67H162.4m5.83-5.84H5.83v49h162.4v-49Z"/>
+                    </g>
+                </g>
+                <g>
+                    <path class="cls-4" d="M47.83,38.71V21.91H55.1c3.39,0,5.21,1.94,5.21,5.23A5.06,5.06,0,0,1,57.55,32l3.1,5.59v1.13H57.34L53.83,32.4H51.24v6.31Zm3.41-9.19h3.24a2.07,2.07,0,0,0,2.35-2.33,2.06,2.06,0,0,0-2.35-2.3H51.24Z"/>
+                    <path class="cls-4" d="M66.45,38.71V21.91h11v3H69.86v4H76.3V31.7H69.86v4h7.59v3Z"/>
+                    <path class="cls-4" d="M83.88,37.56A5.26,5.26,0,0,1,82,33.26h3.41a2.23,2.23,0,0,0,1,2.09,4.47,4.47,0,0,0,2.35.6c1.75,0,2.76-.74,2.76-1.82a1.39,1.39,0,0,0-.82-1.23,4.36,4.36,0,0,0-1-.45,3.54,3.54,0,0,0-.6-.24c-.31-.12-1.13-.41-1.53-.58l-.7-.26a10.52,10.52,0,0,1-3-1.59,3.81,3.81,0,0,1-1.47-3.16c0-3.08,2.38-5.07,6.22-5.07S95,23.35,95,27.22h-3.4c0-1.8-1.25-2.55-3-2.55s-2.74.67-2.74,1.75a1.33,1.33,0,0,0,.65,1.2,5.14,5.14,0,0,0,.75.39l.43.17,1,.36.67.24c.65.21,1.13.4,1.49.55l1.32.57a5.68,5.68,0,0,1,1.22.72A3.93,3.93,0,0,1,95.16,34c0,3-2.35,5.11-6.55,5.11A7.29,7.29,0,0,1,83.88,37.56Z"/>
+                    <path class="cls-4" d="M101.06,38.71V21.91h11v3h-7.54v4h6.43V31.7h-6.43v4h7.58v3Z"/>
+                    <path class="cls-4" d="M120.77,38.71V24.89H116v-3h12.84v3h-4.71V38.71Z"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
+
+<script>
+    var text = document.querySelector('#text');
+    var resetButton = document.querySelector('#resetButton');
+    var lastTick = false;
+    var count = 0;
+
+    try {
+        var realityInterface = new RealityInterface();
+        realityInterface.setMoveDelay(500);
+        realityInterface.enableCustomInteractionMode();
+        // this can also be done without the API by manually giving these divs the class 'realityInteraction'
+        realityInterface.setInteractableDivs([resetButton]);
+        
+    } catch (e) {
+        console.warn('Reality Interface is not accessible');
+    }
+
+    changetext(0);
+
+    function changetext(textContent){
+        text.innerText = textContent;
+        realityInterface.writePublicData("storage", "data",  text.innerText);
+    }
+
+    resetButton.addEventListener("pointerdown", reset , false);
+
+    function reset() {
+        count = 0;
+        changetext(count);
+        realityInterface.write("count", 0.001);
+        realityInterface.writePublicData("count",'count', 0);
+    }
+    
+    try {
+        realityInterface.addReadListener('count', function (e) {
+
+            if(e.value >= 0.5 && lastTick === false){
+                lastTick = true;
+                count++;
+            } else if(e.value <=0.4 && lastTick === true) {
+                lastTick = false;
+            }
+
+            changetext(count);
+        });
+
+        realityInterface.addReadListener('reset', function (e) {
+            reset();
+        });
+
+        realityInterface.addReadPublicDataListener("count",'count', function (e) {
+            count = e;
+            changetext(count);
+        });
+        
+    } catch (e) {
+        console.warn('Reality Interface is not accessible');
+        
+        // test suite for in-browser simulation without loading in AR
+        function mockReadListenerTrigger(value) {
+            if(value >=0.5 && lastTick === false){
+                lastTick = true;
+                count++;
+            } else if(value <=0.4 && lastTick === true) {
+                lastTick = false;
+            }
+
+            changetext(count);
+        }
+    }
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/envelope.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Test Envelope</title>
+    <style>
+        body {
+            font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+            width: 300px;
+            height: 300px;
+        }
+        #rootElementWhenOpen {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 736px; /* gets overwritten by realityInterface.getScreenDimensions but this is a default */
+            height: 414px;
+            background-color: rgba(100, 255, 50, 0.2);
+            color: white;
+            text-align: center;
+            font-size: 24px;
+        }
+        #rootElementWhenClosed {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 300px;
+            height: 300px;
+            background-color: rgba(100, 255, 50, 0.7);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            line-height: 300px;
+        }
+        .colorChangeButton {
+            position: absolute;
+            bottom: 0;
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            font-size: 16px;
+        }
+        #description {
+            margin-top: 10px;
+        }
+        .smallText {
+            font-size: 14px;
+        }
+        #colorChangeDescription {
+            position: absolute;
+            left: 20px;
+            bottom: 90px;
+        }
+        #counterDescription {
+            position: absolute;
+            left: 250px;
+            bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- rootElementWhenOpen is the UI that shows when it is in fullscreen 2D mode -->
+    <div id="rootElementWhenOpen">
+        <div id="description"></div>
+        <div id="colorChangeDescription" class="smallText">Set color for contained frames:</div>
+        <div id="counterDescription" class="smallText">Contained frames have been tapped 0 times.</div>
+        <div class="colorChangeButton" id="cyan"></div>
+        <div class="colorChangeButton" id="magenta"></div>
+        <div class="colorChangeButton" id="yellow"></div>
+    </div>
+    <!-- rootElementWhenClosed is the UI that shows when it minimized into an icon in 3D space -->
+    <div id="rootElementWhenClosed">
+        Application Envelope
+    </div>
+</body>
+<script>
+    let rootElementWhenOpen = document.getElementById('rootElementWhenOpen');
+    let rootElementWhenClosed = document.getElementById('rootElementWhenClosed');
+    
+    let description = document.getElementById('description');
+    let counterDescription = document.getElementById('counterDescription');
+    let cyanButton = document.getElementById('cyan');
+    let magentaButton = document.getElementById('magenta');
+    let yellowButton = document.getElementById('yellow');
+    
+    let realityInterface = new RealityInterface();
+    
+    // this is how to designate this frame as an envelope, automatically enabling all the associated features
+    let isStackable = false;
+    let areFramesOrdered = true;
+    let compatibleFrameTypes = ['test-envelope-contents'];
+    let envelope = new Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, isStackable, areFramesOrdered);
+    
+    let numberOfTaps = 0;
+    
+    // re-render anytime it opens / closes / number of contained frames change
+    envelope.onFrameAdded(render);
+    envelope.onFrameDeleted(render);
+    envelope.onOpen(render);
+    envelope.onClose(render);
+    
+    // this is how the envelope can listen for specific messages from its contained frames
+    envelope.onMessageFromContainedFrame(function(message) {
+        if (typeof message.containedFrameTapped !== 'undefined') {
+            numberOfTaps += 1;
+            render();
+        }
+    });
+
+    // opens up the envelope into fullscreen mode when the minimized icon is tapped
+    rootElementWhenClosed.addEventListener('pointerup', function() {
+        envelope.open();
+    });
+
+    // add tap event listeners to each button to change the color of all contained frames
+    [cyanButton, magentaButton, yellowButton].forEach(function(button, index) {
+        button.style.backgroundColor = button.id;
+        button.style.left = (80 * index) + 'px';
+        button.addEventListener('pointerup', function(event) {
+            event.stopPropagation();
+            // this is how the envelope can send messages to all of its contained frames
+            // you can also use sendMessageToFrameWithId or sendMessageToFrameAtIndex to send to a specific one
+            envelope.sendMessageToAllContainedFrames({
+                setColor: button.id
+            });
+        });
+    });
+
+    /**
+     * Update the UI based on the current state
+     */
+    function render() {
+        if (envelope.isOpen) {
+            // you can directly access envelope properties such as number of contained frames
+            let numContainedFrames = Object.keys(envelope.containedFrames).length;
+            description.innerText = 'Contains ' + numContainedFrames + ' frames';
+            counterDescription.innerText = 'Contained frames have been tapped ' + numberOfTaps + ' times.';
+        }
+        // TODO: post up a new width and height so that the editor can change the size of the overlay based on frame size changes
+    }
+</script>
+</html>
