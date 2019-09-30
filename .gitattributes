@@ -1,0 +1,2 @@
+#exclude counting certain files from git language statistics / line counts
+*.gltf linguist-generated=true

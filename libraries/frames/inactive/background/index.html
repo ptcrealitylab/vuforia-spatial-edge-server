@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Background</title>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+</head>
+<body>
+
+<iframe style="height: 100vh; width: 100vw; position: absolute; left: 0; top: 0;"
+        id="player" width="100vw" height="100vh" src="https://www.youtube.com/embed/XOacA3RYrXk?enablejsapi=1&rel=0&amp;controls=0&playsinline=1&vq=large" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+
+<script>
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    var player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player',
+            {
+                suggestedQuality: "small",
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+    }
+    
+    function onPlayerReady(event) {
+        event.target.playVideo();
+        event.target.mute();
+    }
+
+    var realityInterface = new RealityInterface();
+
+    realityInterface.onRealityInterfaceLoaded(function() {
+        
+        realityInterface.setMoveDelay(-1);
+        realityInterface.setFullScreenOn(0);
+        realityInterface.sendToBackground();
+        
+    });
+
+</script>
+</body>
+</html>
+
+</body>
+</html>
+</script>

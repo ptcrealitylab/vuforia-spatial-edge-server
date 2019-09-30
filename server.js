@@ -1475,14 +1475,14 @@ function objectWebServer() {
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
-        html = html.replace('<script src="resources/object.js"></script>', '');
+        html = html.replace('<script src="../resources/object.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
 
         html = html.replace('<script src="object-frames.js"></script>', '');
-        html = html.replace('<script src="resources/object-frames.js"></script>', '');
+        html = html.replace('<script src="../resources/object-frames.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
 
-        html = html.replace('<script src="resources/pep.min.js"></script>', '');
+        html = html.replace('<script src="../resources/pep.min.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
 
         var level = "../";

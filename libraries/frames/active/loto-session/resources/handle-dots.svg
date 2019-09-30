@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.17 56.69">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <title>UI_RealityEditor_Assets_v003</title>
+  <g id="UI">
+    <rect class="cls-1" x="5.76" y="10" width="2.87" height="2.87" rx="1.4"/>
+    <rect class="cls-1" x="5.76" y="26.91" width="2.87" height="2.87" rx="1.4"/>
+    <rect class="cls-1" x="5.76" y="43.83" width="2.87" height="2.87" rx="1.4"/>
+  </g>
+</svg>

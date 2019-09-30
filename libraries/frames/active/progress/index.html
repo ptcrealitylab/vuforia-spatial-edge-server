@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>progress</title>
+</head>
+<body style="width: 505px; height: 802px;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112.75 179.26">
+    <defs>
+        <style>
+            .dataFont {
+                font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+                font-size: 12pt;
+                alignment: right;
+                fill: cyan;
+            }
+
+            .cls-0 {
+                opacity: 0.75;
+            }
+            
+            .cls-1 {
+                opacity: 0.5;
+            }
+
+            .cls-2 {
+                opacity: 0.25;
+            }
+
+            .cls-3 {
+                fill: #75fbfd;
+            }
+
+            .cls-4 {
+                fill: #008480;
+            }
+
+            .cls-5 {
+                fill: lime;
+            }
+        </style>
+    </defs>
+    <title>progress-with-fill</title>
+    <g id="Layer_2" data-name="Layer 2">
+        <g id="UI">
+            <g>
+                <g id="valueBackground">
+                    <g class="cls-1">
+                        <polygon points="0 148.76 0 179.26 15.97 179.26 80.97 179.26 80.97 164.73 80.97 148.76 0 148.76"/>
+                    </g>
+                    <g class="cls-2">
+                        <path class="cls-3" d="M79,150.76v26.5H2v-26.5H79m2-2H0v30.5H81v-30.5Z"/>
+                    </g>
+                </g>
+                <g id="unitBackground">
+                    <g class="cls-1">
+                        <rect x="83.13" y="148.76" width="29.62" height="30.5"/>
+                    </g>
+                    <g class="cls-2">
+                        <path class="cls-3" d="M110.75,150.76v26.5H85.13v-26.5h25.62m2-2H83.13v30.5h29.62v-30.5Z"/>
+                    </g>
+                </g>
+                <g id="background" class="cls-1">
+                    <rect class="cls-4" x="0.27" width="112.22" height="146.74"/>
+                </g>
+                <g id="box4" class="cls-1">
+                    <rect x="8.78" y="108.98" width="94.95" height="32.37"/>
+                </g>
+                <g id="box3" class="cls-1">
+                    <rect x="8.78" y="74.45" width="94.95" height="32.37"/>
+                </g>
+                <g id="box2" class="cls-1">
+                    <rect x="9.02" y="39.92" width="94.95" height="32.37"/>
+                </g>
+                <g id="box1" class="cls-1">
+                    <rect x="9.02" y="5.4" width="94.95" height="32.37"/>
+                </g>
+                <g id="box4-green" class="cls-0">
+                    <rect class="cls-5" x="8.78" y="108.98" width="94.95" height="32.37"/>
+                </g>
+                <g id="box3-green" class="cls-0">
+                    <rect class="cls-5" x="8.78" y="74.45" width="94.95" height="32.37"/>
+                </g>
+                <g id="box2-green" class="cls-0">
+                    <rect class="cls-5" x="9.02" y="39.92" width="94.95" height="32.37"/>
+                </g>
+                <g id="box1-green" class="cls-0">
+                    <rect class="cls-5" x="9.02" y="5.4" width="94.95" height="32.37"/>
+                </g>
+            </g>
+            <g>
+                <g id="labelText">
+                    <text class="dataFont" id="dataValue" x="18" y="170">00.000</text>
+                    <text class="dataFont" id="dataUnit" x="88" y="170">lb</text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
+
+<script>
+
+    var properties = {
+        value: 0,
+        unitMax: 1,
+        unitMin: 0,
+        unit: ""
+    };
+    
+    var boxes = [
+        document.getElementById('box4'),
+        document.getElementById('box3'),
+        document.getElementById('box2'),
+        document.getElementById('box1')
+    ];
+    var greenBoxes = [
+        document.getElementById('box4-green'),
+        document.getElementById('box3-green'),
+        document.getElementById('box2-green'),
+        document.getElementById('box1-green')
+    ];
+    
+    var boxPositionsY = greenBoxes.map(function(svgElement) {
+        return parseFloat(svgElement.children[0].getAttribute('y'));
+    });
+    
+    var boxHeights = greenBoxes.map(function(svgElement) {
+        return parseFloat(svgElement.children[0].getAttribute('height'));
+    });
+
+    var dataValueText = document.getElementById('dataValue');
+    var dataUnitText = document.getElementById('dataUnit');
+    
+    function render(value) {
+        value = Math.max(0, Math.min(1, value));
+        var newHeight;
+        
+        // adjust the height of the top-most green region
+        if (value < 0.75) {
+            greenBoxes[3].style.visibility = 'hidden';
+        } else {
+            greenBoxes[3].style.visibility = 'visible';
+            newHeight = boxHeights[3] * (value - 0.75)/0.25;
+            greenBoxes[3].children[0].setAttribute('height', newHeight);
+            greenBoxes[3].children[0].setAttribute('y', boxPositionsY[3] + (boxHeights[3] - newHeight));
+        }
+        
+        // adjust the height of the second green region
+        if (value < 0.5) {
+            greenBoxes[2].style.visibility = 'hidden';
+        } else {
+            greenBoxes[2].style.visibility = 'visible';
+            newHeight = boxHeights[2] * (Math.min(0.75, value) - 0.5)/0.25;
+            greenBoxes[2].children[0].setAttribute('height', newHeight);
+            greenBoxes[2].children[0].setAttribute('y', boxPositionsY[2] + (boxHeights[2] - newHeight));
+        }
+
+        // adjust the height of the third green region
+        if (value < 0.25) {
+            greenBoxes[1].style.visibility = 'hidden';
+        } else {
+            greenBoxes[1].style.visibility = 'visible';
+            newHeight = boxHeights[1] * (Math.min(0.5, value) - 0.25)/0.25;
+            greenBoxes[1].children[0].setAttribute('height', newHeight);
+            greenBoxes[1].children[0].setAttribute('y', boxPositionsY[1] + (boxHeights[1] - newHeight));
+        }
+        
+        // adjust the height of the bottom green region
+        greenBoxes[0].style.visibility = 'visible';
+        newHeight = boxHeights[0] * Math.min(0.25, value)/0.25;
+        greenBoxes[0].children[0].setAttribute('height', newHeight);
+        greenBoxes[0].children[0].setAttribute('y', boxPositionsY[0] + (boxHeights[0] - newHeight));
+        
+        // render the text labels
+        dataValueText.textContent = numberToText(value).valueText;
+        dataUnitText.textContent = numberToText(value).unitText;
+    }
+
+    // scales the raw value from [0,1] range to [unitMin,unitMax] range
+    function scaleVal(number) {
+        return (number * (properties.unitMax - properties.unitMin)) + properties.unitMin;
+    }
+    
+    // outputs the text for the value and unit labels, given a raw data value
+    function numberToText(value) {
+        return {
+            valueText: scaleVal(value).toPrecision(4).substring(0, 6),
+            unitText: properties.unit
+        }
+    }
+
+    // set up and load the reality interface
+    var realityInterface = new RealityInterface();
+    realityInterface.addReadListener('value', function (e) {
+        properties.value = e.value;
+        if (e.unit) {
+            properties.unit = e.unit;
+        } else {
+            properties.unit = "";
+        }
+        properties.unitMax = e.unitMax;
+        properties.unitMin = e.unitMin;
+        render(properties.value);
+    });
+    
+    realityInterface.setMoveDelay(10);
+
+    /*
+    // Uncomment to run the debug update loop //
+    var fillPercent = 0;
+    function update() {
+        fillPercent += 0.002;
+        if (fillPercent > 1) {
+            fillPercent = 0;
+        }
+        render(fillPercent);
+    
+        requestAnimationFrame(update);
+    }
+    update();
+    */
+
+</script>
+
+</body>
+</html>
