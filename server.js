@@ -116,9 +116,11 @@ var path = require('path');
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+// The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
+const frameLibPath = __dirname + "/libraries/frames/active";
 // All visual UI representations for IO Points are stored in this folder:
 const nodePath = __dirname + "/libraries/nodes";
-// All visual UI representations for IO Points are stored in this folder:
+// All visual UI representations for logic blocks are stored in this folder:
 const blockPath = __dirname + "/libraries/logicBlocks";
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwarePath = __dirname + "/hardwareInterfaces";
@@ -722,6 +724,7 @@ function Protocols() {
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
+var frameTypeModules = {};   // Will hold all available frame interfaces
 var nodeTypeModules = {};   // Will hold all available data point interfaces
 var blockModules = {};   // Will hold all available data point interfaces
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
@@ -765,6 +768,21 @@ var worldObject;
 
 
 logger.debug("Starting the Server");
+
+// get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
+var frameFolderList = fs.readdirSync(frameLibPath).filter(function (file) {
+    return fs.statSync(frameLibPath + '/' + file).isDirectory();
+});
+
+// Load the config.js properties of each frame into an object that we can provide to clients upon request.
+for (var i = 0; i < frameFolderList.length; i++) {
+    if (fs.existsSync(frameLibPath + '/' + frameFolderList[i] + "/config.js")) {
+        frameTypeModules[frameFolderList[i]] = require(frameLibPath + '/' + frameFolderList[i] + "/config.js");
+    } else {
+        frameTypeModules[frameFolderList[i]] = {};
+    }
+}
+
 
 // get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
 // Each folder represents on IO-Point.
@@ -2218,6 +2236,21 @@ function objectWebServer() {
 
     }
 
+    // sends json object for a specific reality object. * is the object name
+    // ths is the most relevant for
+    // ****************************************************************************************************************
+    webServer.get('/availableFrames/', function (req, res) {
+        console.log("get available frames");
+        res.json(getFrameList());
+    });
+
+    /**
+     * Utility function that traverses all the frames and creates a new entry for each.
+     * @return {Object.<string, Object>}
+     */
+    function getFrameList() {
+        return frameTypeModules;
+    }
 
     // sends json object for a specific reality object. * is the object name
     // ths is the most relevant for
