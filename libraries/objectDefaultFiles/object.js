@@ -620,7 +620,7 @@
         }
         this.pendingSends = [];
 
-        console.log('All non-socket APIs are loaded and injected into the object.js API');
+        //console.log('All non-socket APIs are loaded and injected into the object.js API');
     };
 
     RealityInterface.prototype.injectSocketIoAPI = function() {
