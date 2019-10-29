@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Object Mover</title>
+    <style>
+        body {
+            margin: 10px;
+        }
+        div {
+            margin-bottom: 10px;
+        }
+        #title {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+
+<div id="container">
+    <div id="title">
+        Object Mover
+    </div>
+    <div id="dropdownContainer"></div>
+    <div>
+        X Offset: <input type="number" id="xOffsetField" value="0">
+    </div>
+    <div>
+        Y Offset: <input type="number" id="yOffsetField" value="0">
+    </div>
+    <div>
+        Matrix: <textarea type="text" id="matrixTextField">[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]</textarea>
+    </div>
+    <input type="button" value="Reset" id="resetButton">
+    <input type="button" value="Submit" id="submitButton">
+</div>
+
+<script>
+    var xOffsetField = document.getElementById('xOffsetField');
+    var yOffsetField = document.getElementById('yOffsetField');
+    var matrixTextField = document.getElementById('matrixTextField');
+    var submitButton = document.getElementById('submitButton');
+    xOffsetField.addEventListener('keyup', xChanged);
+    xOffsetField.addEventListener('change', xChanged);
+    yOffsetField.addEventListener('keyup', yChanged);
+    yOffsetField.addEventListener('change', yChanged);
+    // matrixTextField.addEventListener('keyup', matrixChanged);
+    resetButton.addEventListener('click', resetMatrix);
+    submitButton.addEventListener('click', matrixChanged);
+    
+    var defaultMatrix = "[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]";
+    var defaultObjectKey = 'stoneTestrmix4u3rq5ve';
+    var editorId = 'testid01';
+
+    var allObjectKeys = [];
+    
+    var socket = io();
+    socket.on('allObjects', function(e) {
+        console.log('allObjects', e);
+        allObjectKeys = Object.keys(e);
+        
+        // create dropdown for objects
+        var dropdown = document.createElement('select');
+        dropdown.id = 'dropdown';
+        allObjectKeys.forEach(function(discoveredObjectKey) {
+            var isDefault = discoveredObjectKey === defaultObjectKey;
+            dropdown.options.add(new Option(discoveredObjectKey, discoveredObjectKey, isDefault, isDefault));
+        });
+        document.getElementById('dropdownContainer').appendChild(dropdown);
+    });
+    socket.emit('getAllObjects', null);
+
+    var serverSocket = io.connect('http://localhost:8080');
+    serverSocket.on('connect', function() {
+        console.log('connected to server socket');
+    });
+    
+    function xChanged(event) {
+        var value = parseFloat(event.target.value) || 0;
+        console.log('x', value);
+        socket.emit('newX', value);
+        matrixChanged();
+    }
+    
+    function yChanged(event) {
+        var value = parseFloat(event.target.value) || 0;
+        console.log('y', value);
+        socket.emit('newY', value);
+        matrixChanged();
+    }
+    
+    function getXOffset() {
+        return parseFloat(xOffsetField.value) || 0;
+    }
+    
+    function getYOffset() {
+        return parseFloat(yOffsetField.value) || 0;
+    }
+    
+    function getSelectedObjectKey() {
+        return document.getElementById('dropdown').value || defaultObjectKey;
+    }
+    
+    function resetMatrix() {
+        xOffsetField.value = 0;
+        yOffsetField.value = 0;
+        matrixTextField.value = defaultMatrix;
+        matrixChanged();
+    }
+    
+    function matrixChanged() {
+        var matrixArray = JSON.parse(matrixTextField.value);
+        matrixArray[12] += getXOffset() * 10;
+        matrixArray[13] += getYOffset() * 10;
+        
+        var selectedObjectKey = getSelectedObjectKey();
+        
+        if (serverSocket) {
+            var messageBody = {
+                objectKey: selectedObjectKey,
+                matrix: matrixArray,
+                editorId: editorId
+            };
+            serverSocket.emit('/update/object/matrix', JSON.stringify(messageBody));
+        }
+    }
+</script>
+</body>
+</html>
