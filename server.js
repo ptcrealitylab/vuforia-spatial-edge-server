@@ -233,9 +233,9 @@ function Objects() {
     this.objectId = null;
     // The name for the object used for interfaces.
     this.name = "";
+    this.matrix = [];
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    //this.ip = ip.address();
     this.ip = ips.interfaces[ips.activeInterface];
     // The version number of the Object.
     this.version = version;
@@ -731,6 +731,7 @@ var socketArray = {};     // all socket connections that are kept alive
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
 var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
+var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -4666,6 +4667,45 @@ function socketServer() {
 
         });
 
+        socket.on('/subscribe/objectUpdates', function (msg) {
+            var msgContent = JSON.parse(msg);
+            realityEditorObjectMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
+            console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
+            console.log(realityEditorObjectMatrixSocketArray);
+        });
+        
+        socket.on('/update/object/matrix', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            var object = getObject(msgContent.objectKey);
+            if (!object) { return; }
+            if (!msgContent.hasOwnProperty('matrix')) { return; }
+            
+            object.matrix = msgContent.matrix;
+
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    continue; // don't send updates to the editor that triggered it
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    
+                    var updateResponse = {
+                        objectKey: msgContent.objectKey,
+                        propertyPath: 'matrix',
+                        newValue: msgContent.matrix,
+                    };
+                    if (typeof msgContent.editorId !== 'undefined') {
+                        updateResponse.editorId = msgContent.editorId;
+                    }
+                    
+                    thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                }
+            }
+        });
+        
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
