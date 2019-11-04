@@ -30,8 +30,14 @@
         Y Offset: <input type="number" id="yOffsetField" value="0">
     </div>
     <div>
-        Matrix: <textarea type="text" id="matrixTextField">[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]</textarea>
+        Z Offset: <input type="number" id="zOffsetField" value="0">
     </div>
+    <div>
+        Rotation: <input type="number" id="rotationField" value="0">
+    </div>
+<!--    <div>-->
+<!--        Matrix: <textarea type="text" id="matrixTextField">[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]</textarea>-->
+<!--    </div>-->
     <input type="button" value="Reset" id="resetButton">
     <input type="button" value="Submit" id="submitButton">
 </div>
@@ -39,19 +45,29 @@
 <script>
     var xOffsetField = document.getElementById('xOffsetField');
     var yOffsetField = document.getElementById('yOffsetField');
-    var matrixTextField = document.getElementById('matrixTextField');
+    var zOffsetField = document.getElementById('zOffsetField');
+    var rotationField = document.getElementById('rotationField');
+    // var matrixTextField = document.getElementById('matrixTextField');
     var submitButton = document.getElementById('submitButton');
     xOffsetField.addEventListener('keyup', xChanged);
     xOffsetField.addEventListener('change', xChanged);
     yOffsetField.addEventListener('keyup', yChanged);
     yOffsetField.addEventListener('change', yChanged);
+    zOffsetField.addEventListener('keyup', zChanged);
+    zOffsetField.addEventListener('change', zChanged);
+    rotationField.addEventListener('keyup', rotationChanged);
+    rotationField.addEventListener('change', rotationChanged);
     // matrixTextField.addEventListener('keyup', matrixChanged);
     resetButton.addEventListener('click', resetMatrix);
     submitButton.addEventListener('click', matrixChanged);
     
-    var defaultMatrix = "[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]";
+    // var defaultMatrix = "[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]";
+    // var defaultMatrix = '[0.9999010560091449,0.01203435538199682,-0.007265124494630683,0,-0.011959516021826377,0.9998757167509125,0.010281784874970532,0,0.007387583011282801,-0.010193258515928729,0.9999199474424679,0,989.0695336846786,-33.02772389802351,42.77521617565003,1]' // drawing10 matrix
+    var defaultMatrix = '[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]';
     var defaultObjectKey = 'stoneTestrmix4u3rq5ve';
     var editorId = 'testid01';
+
+    // matrixTextField.innerText = defaultMatrix;
 
     var allObjectKeys = [];
     
@@ -89,6 +105,20 @@
         socket.emit('newY', value);
         matrixChanged();
     }
+
+    function zChanged(event) {
+        var value = parseFloat(event.target.value) || 0;
+        console.log('z', value);
+        socket.emit('newZ', value);
+        matrixChanged();
+    }
+    
+    function rotationChanged(event) {
+        var value = parseFloat(event.target.value) || 0;
+        console.log('rotation', value);
+        socket.emit('newRotation', value);
+        matrixChanged();
+    }
     
     function getXOffset() {
         return parseFloat(xOffsetField.value) || 0;
@@ -98,6 +128,15 @@
         return parseFloat(yOffsetField.value) || 0;
     }
     
+    function getZOffset() {
+        return parseFloat(zOffsetField.value) || 0;
+    }
+    
+    function getRotationRadians() {
+        var degrees = parseFloat(rotationField.value) || 0;
+        return (degrees / 180) * Math.PI;
+    }
+    
     function getSelectedObjectKey() {
         return document.getElementById('dropdown').value || defaultObjectKey;
     }
@@ -105,24 +144,51 @@
     function resetMatrix() {
         xOffsetField.value = 0;
         yOffsetField.value = 0;
-        matrixTextField.value = defaultMatrix;
+        zOffsetField.value = 0;
+        rotationField.value = 0;
+        // matrixTextField.value = defaultMatrix;
         matrixChanged();
     }
     
     function matrixChanged() {
-        var matrixArray = JSON.parse(matrixTextField.value);
-        matrixArray[12] += getXOffset() * 10;
-        matrixArray[13] += getYOffset() * 10;
+        // var matrixArray = JSON.parse(matrixTextField.value);
+        // matrixArray[12] += getXOffset() * 10;
+        // matrixArray[13] += getYOffset() * 10;
+        
+        var rotationMatrix = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+        var radians = getRotationRadians();
+        rotationMatrix[0] = Math.cos(radians);
+        rotationMatrix[1] = -Math.sin(radians);
+        rotationMatrix[4] = Math.sin(radians);
+        rotationMatrix[5] = Math.cos(radians);
+        
+        rotationMatrix[12] = getXOffset();
+        rotationMatrix[13] = getYOffset();
+        rotationMatrix[14] = getZOffset();
+
+        // matrixTextField.value = JSON.stringify(rotationMatrix);
         
         var selectedObjectKey = getSelectedObjectKey();
         
         if (serverSocket) {
+            // var messageBody = {
+            //     objectKey: selectedObjectKey,
+            //     matrix: rotationMatrix, //matrixArray,
+            //     editorId: editorId
+            // };
+            // serverSocket.emit('/update/object/matrix', JSON.stringify(messageBody));
+
             var messageBody = {
                 objectKey: selectedObjectKey,
-                matrix: matrixArray,
-                editorId: editorId
+                position: {
+                    x: getXOffset(),
+                    y: getYOffset(),
+                    z: getZOffset()
+                },
+                rotationInRadians: getRotationRadians(),
+                editorId: 'testID'
             };
-            serverSocket.emit('/update/object/matrix', JSON.stringify(messageBody));
+            serverSocket.emit('/update/object/position', JSON.stringify(messageBody));
         }
     }
 </script>
