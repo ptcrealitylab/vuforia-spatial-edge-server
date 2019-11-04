@@ -4741,7 +4741,7 @@ function socketServer() {
 
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
-                    console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
                     
                     var updateResponse = {
                         objectKey: msgContent.objectKey,
@@ -4752,6 +4752,54 @@ function socketServer() {
                         updateResponse.editorId = msgContent.editorId;
                     }
                     
+                    thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                }
+            }
+        });
+
+        socket.on('/update/object/position', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            var object = getObject(msgContent.objectKey);
+            if (!object) { return; }
+            
+            var position = msgContent.position;
+            var rotationInRadians;
+            if (typeof msgContent.rotationInRadians !== 'undefined') {
+                rotationInRadians = msgContent.rotationInRadians;
+            } else if (typeof msgContent.rotationInDegrees !== 'undefined') {
+                rotationInRadians = (msgContent.rotationInDegrees / 180) * Math.PI;
+            }
+            
+            var matrix = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+            matrix[0] = Math.cos(rotationInRadians);
+            matrix[1] = -Math.sin(rotationInRadians);
+            matrix[4] = Math.sin(rotationInRadians);
+            matrix[5] = Math.cos(rotationInRadians);
+            matrix[12] = position.x;
+            matrix[13] = position.y;
+            matrix[14] = position.z;
+            
+            object.matrix = matrix;
+
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    continue; // don't send updates to the editor that triggered it
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+
+                    var updateResponse = {
+                        objectKey: msgContent.objectKey,
+                        propertyPath: 'matrix',
+                        newValue: object.matrix,
+                    };
+                    if (typeof msgContent.editorId !== 'undefined') {
+                        updateResponse.editorId = msgContent.editorId;
+                    }
+
                     thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                 }
             }
