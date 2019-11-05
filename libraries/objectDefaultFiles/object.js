@@ -767,7 +767,7 @@
                         publicDataKeys.forEach(function(existingKey) {
                             thisMsg.publicData[node][existingKey] = thisMsg.publicData[existingKey];
                         });
-                        console.warn('converted incorrect publicData format in object/publicData listener');
+                       // console.warn('converted incorrect publicData format in object/publicData listener');
                     } else {
                         return;
                     }

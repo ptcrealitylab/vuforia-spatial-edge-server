@@ -1,0 +1,16 @@
+{
+  "name": "robot",
+  "version": "1.0.0",
+  "description": "Motion Hardware Interface",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "kineticAR",
+    "motion",
+    "robot"
+  ],
+  "author": "Anna Fusté",
+  "license": "ISC"
+}

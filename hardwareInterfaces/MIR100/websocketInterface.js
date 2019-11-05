@@ -29,8 +29,6 @@ class WebSocketInterface {
 
         });
 
-        const self = this;
-
         // Parse robot pose
         ws.on('message', function incoming(data) {
 
@@ -38,15 +36,14 @@ class WebSocketInterface {
 
             const parsedData = JSON.parse(data);
 
-            self._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']), 
+            this._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']),
                                         y:parseFloat(parsedData['msg']['orientation']['y']), 
                                         z:parseFloat(parsedData['msg']['orientation']['z']), 
                                         w:parseFloat(parsedData['msg']['orientation']['w'])};
             
-            self._currentRobotPosition = {x:parseFloat(parsedData['msg']['position']['x']), 
+            this._currentRobotPosition = {x:parseFloat(parsedData['msg']['position']['x']),
                                         y:parseFloat(parsedData['msg']['position']['y'])};
-
-        });
+        }.bind(this));
 
         ws.onerror = function(event) {
             console.error("WebSocket error observed:", event);
@@ -62,6 +59,7 @@ class WebSocketInterface {
 
     get currentRobotPosition(){
         return this._currentRobotPosition;
+
     }
     set currentRobotPosition(currentPos){
         this._currentRobotPosition = currentPos;
