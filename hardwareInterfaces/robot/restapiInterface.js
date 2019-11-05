@@ -1,26 +1,23 @@
 const fetch = require('node-fetch');
 
 /*
-*  This class connects to the MIR RESTful API
+*  This class connects to a RESTful API
 *  in order to get, post or delete information
-*  from the robot's server.
+*  from a robot's server.
 */
-class restapiInterface {
+class RESTInterface {
 
-    constructor(hostIP){
+    constructor(restAddress, auth){
 
-        // MIR100 REST API INFO
-        //this._restAddress = "http://" + hostIP + "/api/v2.0.0";
-        const restAddress = "http://mir.com/api/v2.0.0";
-        this._authorization = "Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==";
+        this._restAddress = restAddress;
+        this._authorization = auth;
 
     }
 
-    // Example GET method implementation:
+    // GET method
     getData(url = '') {
 
         // Default options are marked with *
-
         return fetch(url, {
             method: "GET", // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, cors, *same-origin
@@ -33,15 +30,11 @@ class restapiInterface {
             redirect: "follow", // manual, *follow, error
             referrer: "no-referrer", // no-referrer, *client
         })
-            .then(response => response.json(), function (response) {
-                console.log("ERROR: ", response);
-            }); // parses JSON response into native Javascript objects
+            .then(response => response.json()); // parses JSON response into native Javascript objects
     }
 
-    // Example GET method implementation:
-    /*getImg() {
-
-        let url = 'http://10.10.10.111/?mode=get-map&calltype=light&id=b1bf0757-1e42-11e9-8200-94c6911e8fa3&t=1561742783';
+    // GET Image method
+    getImg(url = '') {
 
         return fetch(url, {
             method: "GET", // *GET, POST, PUT, DELETE, etc.
@@ -56,10 +49,9 @@ class restapiInterface {
             referrer: "no-referrer", // no-referrer, *client
         })
             .then(response => response.blob()); // parses JSON response into native Javascript objects
-    }*/
+    }
 
-
-    // Example POST method implementation:
+    // POST method
     postData(url = '', data = {}) {
 
         // Default options are marked with *
@@ -79,7 +71,7 @@ class restapiInterface {
             .then(response => response.text())      // convert to plain text
     }
 
-    // Example DELETE method implementation:
+    // DELETE method
     deleteData(url = '') {
 
         // Default options are marked with *
@@ -96,14 +88,6 @@ class restapiInterface {
             referrer: "no-referrer" // no-referrer, *client
         })
             .then(response => response.text())      // convert to plain text
-    }
-
-    checkStatus(res) {
-        if (res.ok) { // res.status >= 200 && res.status < 300
-            return res;
-        } else {
-            throw console.error("ERROR: ", res.statusText);
-        }
     }
 }
 

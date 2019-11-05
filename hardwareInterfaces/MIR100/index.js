@@ -45,12 +45,15 @@
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
+var events = require('events');
+
 const { WebSocketInterface } = require('./websocketInterface');
 const { RestAPIInterface } = require('./restapiInterface');
 const { RestAPIServer } = require('./restapiserver');
 const { CustomMaths } = require('./customMaths');
+const { SocketInterface } = require('./socketInterface');
 
-exports.enabled = false;
+exports.enabled = true;
 
 if (exports.enabled) {
 
@@ -60,15 +63,17 @@ if (exports.enabled) {
     server.enableDeveloperUI(true);
     server.removeAllNodes('MIR', 'kineticAR'); // We remove all existing nodes from the Frame
 
-    //const hostIP = "10.10.10.121";
-    //const hostIP = "10.88.132.58";
-    //const hostIP = "192.168.12.20";
-    //const hostIP = "192.168.1.103";           // realityHQ-5G
-    //const hostIP = "10.10.10.107";            // feederStuttgart-5G
-    //const hostIP = "10.10.10.110";            // feederStuttgart-5G
-    //const hostIP = "10.10.10.114";            // reality demo
-    const hostIP = "10.10.10.115";              // reality demo
+    const hostIP = "192.168.12.20";
+    //const hostIP = "10.10.10.115";              // reality demo
     const port = 9090;
+
+    //const benIP = "10.10.10.110";
+    const benIP = "192.168.12.249";
+    const benPort = 8080;
+
+    let websocketToBen = new SocketInterface(benIP, benPort);
+
+    let eventEmitter = new events.EventEmitter();
 
     let maths = new CustomMaths();
 
@@ -81,7 +86,6 @@ if (exports.enabled) {
     }
 
     // MIR100 REST API INFO
-    //const restAddress = "http://mir.com/api/v2.0.0";
     const restAddress = "http://" + hostIP + "/api/v2.0.0";
 
     const endpoints = {
@@ -106,8 +110,10 @@ if (exports.enabled) {
     let lastDirectionAR = {x:0, y:0};       // Variable to keep the last direction of the robot in AR
     let currentPositionMIR = {x:0, y:0};    // Current position of the robot in her MIR map
     let currentOrientationMIR = 0;          // Current orientation of the robot in his MIR map
+    let initPositionMIR = {x:0, y:0};
     let initOrientationMIR = 0;
     let initOrientationAR = 0;
+    let initialSync = false;
 
     let mirFollowUser = false;
     let mapGUID = "";                       // Mission GUID needed for REST calls
@@ -143,8 +149,12 @@ if (exports.enabled) {
         //console.log("LAST POSITION AR: ", lastPositionAR);              //       { x: -332.3420, y: 482.1173, z: 1749.54107 }
         //console.log("LAST DIRECTION AR: ", lastDirectionAR);            //       { x: -0.84, y: -0.00424 }
 
-        initOrientationMIR = mirStatus['orientation'];
+        initOrientationMIR = currentOrientationMIR;                         // Get orientation at this moment in time
         initOrientationAR =  (-1) * maths.signed_angle([1,0], [lastDirectionAR.x, lastDirectionAR.y]) * 180 / Math.PI;
+        initPositionMIR.x = currentPositionMIR.x;
+        initPositionMIR.y = currentPositionMIR.y;
+        initialSync = true;
+
 
     });
 
@@ -174,7 +184,7 @@ if (exports.enabled) {
 
             pathData.forEach(serverPath => {
 
-                if (serverPath.index === framePath.index){   // If this path exists on the server, proceed to check checkpoints
+                if (serverPath.index === framePath.index){   // If this path exists on the server, proceed to compare checkpoints
                     pathExists = true;
 
                     // Foreach checkpoint received from the frame
@@ -231,6 +241,7 @@ if (exports.enabled) {
                                 let indexValues = frameCheckpoint.name.split("_")[1];
                                 let pathIdx = parseInt(indexValues.split(":")[0]);
                                 let checkpointIdx = parseInt(indexValues.split(":")[1]);
+
                                 nodeReadCallback(data, checkpointIdx, pathIdx);
 
                             });
@@ -534,58 +545,94 @@ if (exports.enabled) {
 
     }
 
-/*
+
     function sendOcclusionPosition(){
 
         let _currentOrientation_MIR = websocket.currentYaw();                              // Orientation of the robot at this frame in degrees (from WebSocket)
         let _currentPosition_MIR = websocket.currentRobotPosition;                       // Position of the robot at this frame
 
-        console.log('Current YAW:', _currentOrientation_MIR);
-        console.log('Current Position:', _currentPosition_MIR);
+        //console.log('Current YAW:', _currentOrientation_MIR);
+        //console.log('Current Position:', _currentPosition_MIR);
 
         let newARPosition = positionFromMIRToAR(_currentPosition_MIR, _currentOrientation_MIR);
 
+        //console.log("SENDING: ", newARPosition);
+
         // Send newARPosition to frame
         server.writePublicData("MIR", "kineticAR", "kineticNode1", "ARposition", newARPosition);
+
     }
 
     function positionFromMIRToAR(newPosition, newDirectionAngle)
     {
 
+        //console.log("current pos and directionDeg: ", newPosition, newDirectionAngle);
+
+        let newARPosition = {x:0, y:0, z:0};
+
         if (newDirectionAngle < 0) newDirectionAngle += 360;                        // newDirectionAngle between 0 - 360
 
-        let initialAngleMIR = mirStatus['orientation'];
+        let initialAngleMIR = initOrientationMIR;
         if (initialAngleMIR < 0) initialAngleMIR += 360;                            // initialAngleMIR between 0 - 360
 
-        let initialRobotDirectionVector = [Math.cos(maths.degrees_to_radians(initialAngleMIR)),              // MIR space
+        let initialRobotDirectionVectorMIR = [Math.cos(maths.degrees_to_radians(initialAngleMIR)),              // MIR space
                                            Math.sin(maths.degrees_to_radians(initialAngleMIR))];
 
-        let from = [mirStatus['x'], mirStatus['y']];
-        let to = newPosition;
+        //console.log("MIR initialRobotDirectionVector", initialRobotDirectionVector);
+
+        let from = [initPositionMIR.x, initPositionMIR.y];
+        let to = [newPosition.x, newPosition.y];
+
+        //console.log("from: ", from, "to: ", to);
+
+        let newDistance = maths.distance(from, to);                                       // Distance between points
+        //console.log("new distance: ", newDistance);
 
         let newDir = [to[0] - from[0], to[1] - from[1]];                            // newDirection = to - from
+        let newDirectionRad = maths.signed_angle(initialRobotDirectionVectorMIR, newDir);    // Angle between initial direction and new direction
 
-        let newDirectionDeg = maths.signed_angle(initialRobotDirectionVector, newDir);    // Angle between initial direction and new direction
-        let newDistance = maths.distance(from, to);                                       // Distance between points
+        //console.log("MIR initialRobotDirectionVector: ", initialRobotDirectionVectorMIR);
+        //console.log("newDir: ", newDir);
+        //console.log("newDirection: ", maths.radians_to_degrees(newDirectionRad));
 
         let angleDifference = newDirectionAngle - initialAngleMIR;                  // Angle difference between current and initial MIR orientation
 
-        let _initialOrientation_AR = maths.signed_angle([arStatus.robotInitDirection['x'], arStatus.robotInitDirection['z']]);   // Initial AR direction
+        let _initialOrientation_AR = maths.signed_angle([arStatus.robotInitDirection['x'], arStatus.robotInitDirection['z']], [1,0]);   // Initial AR direction
 
-        let newARAngle = _initialOrientation_AR + angleDifference;
+        if (_initialOrientation_AR < 0) _initialOrientation_AR += 2*Math.PI;            // _initialOrientation_AR between 0 - 360
 
-        let newAngle = _initialOrientation_AR + newDirectionDeg + 90;               // 90 degrees of difference between X axis and Forward (Z) axis
+        //console.log("ARStatus robot direction: ", arStatus.robotInitDirection);
+        //console.log("_initialOrientation_AR", maths.radians_to_degrees(_initialOrientation_AR));
 
-        let newARPosition = {x:0, y:0, z:0};
-        newARPosition.x = arStatus.robotInitPosition['x'] + newDistance * Math.cos(maths.degrees_to_radians(newAngle));
-        newARPosition.y = arStatus.robotInitPosition['z'] + newDistance * Math.sin(maths.degrees_to_radians(newAngle));
-        newARPosition.z = newARAngle;
+        let newARAngle = maths.radians_to_degrees(_initialOrientation_AR) + angleDifference;
+
+        //let newAngleDeg = maths.radians_to_degrees(_initialOrientation_AR) + maths.radians_to_degrees(newDirectionRad) + 90;               // 90 degrees of difference between X axis and Forward (Z) axis
+
+        let newAngleDeg = maths.radians_to_degrees(_initialOrientation_AR) + maths.radians_to_degrees(newDirectionRad);
+
+        newARPosition.x = (arStatus.robotInitPosition['x']/groundPlaneScaleFactor) + (newDistance * Math.cos(maths.degrees_to_radians(newAngleDeg)));
+        newARPosition.y = - ((- arStatus.robotInitPosition['z']/groundPlaneScaleFactor) + (newDistance * Math.sin(maths.degrees_to_radians(newAngleDeg))));
+        //newARPosition.z = _initialOrientation_AR + newDirectionRad;
+
+        newARPosition.z = maths.degrees_to_radians(newARAngle);
+
+        var messageBody = {
+            objectKey: "newTurtletBjbb04jalux",
+            position: {
+                x: newARPosition.x * 1000, // 1000 = 1 meter in world space
+                y: newARPosition.y * 1000,
+                z: 0
+            },
+            rotationInRadians: newARPosition.z, // right now this API only supports rotation about the vertical axis. use the other API to pass a full rotation matrix.
+            editorId: 'testID' // the actual value doesn't matter but it needs to have one
+        };
+
+        websocketToBen.send(JSON.stringify(messageBody));
 
         return newARPosition;
 
     }
 
- */
 
     // UPDATE FUNCTION
 
@@ -600,7 +647,7 @@ if (exports.enabled) {
                 //if (inMotion) restRequest(endpoints.maps + "/" + mapGUID).then(processPaths).catch(error => console.error(error));
                 //if (inMotion) restRequest("/path_guides_positions").then(processPaths).catch(error => console.error(error));
 
-                //sendOcclusionPosition();
+                if (initialSync) sendOcclusionPosition();
             }
 
             updateEvery(++i, time);
