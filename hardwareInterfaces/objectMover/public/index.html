@@ -13,6 +13,24 @@
         #title {
             font-weight: bold;
         }
+        #drawing01 {
+            position: absolute;
+            left: -150px;
+            top: 850px;
+            width: 300px;
+            height: 300px;
+            /*transform: scale(0.4);*/
+            pointer-events: none;
+        }
+        #drawing10 {
+            position: absolute;
+            left: 850px;
+            top: -150px;
+            width: 300px;
+            height: 300px;
+            /*transform: scale(0.4);*/
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +58,11 @@
 <!--    </div>-->
     <input type="button" value="Reset" id="resetButton">
     <input type="button" value="Submit" id="submitButton">
+    <input type="button" value="Stream On" id="streamOnButton">
+    <input type="button" value="Stream Off" id="streamOffButton">
+
+    <iframe id='drawing01' src="http://localhost:8080/obj/drawing01/frames/default01/"></iframe>
+    <iframe id='drawing10' src="http://localhost:8080/obj/drawing10/frames/default10/"></iframe>
 </div>
 
 <script>
@@ -49,6 +72,8 @@
     var rotationField = document.getElementById('rotationField');
     // var matrixTextField = document.getElementById('matrixTextField');
     var submitButton = document.getElementById('submitButton');
+    var streamOnButton = document.getElementById('streamOnButton');
+    var streamOffButton = document.getElementById('streamOffButton');
     xOffsetField.addEventListener('keyup', xChanged);
     xOffsetField.addEventListener('change', xChanged);
     yOffsetField.addEventListener('keyup', yChanged);
@@ -60,7 +85,9 @@
     // matrixTextField.addEventListener('keyup', matrixChanged);
     resetButton.addEventListener('click', resetMatrix);
     submitButton.addEventListener('click', matrixChanged);
-    
+    streamOnButton.addEventListener('click', streamOn);
+    streamOffButton.addEventListener('click', streamOff);
+    document.addEventListener('mousemove', onPointerMove);
     // var defaultMatrix = "[0.841218,-0.013899,0.540517,0,0.050835,0.997275,-0.053472,0,-0.538301,0.072459,0.839632,0,-271.7233889999999,116.11174,-2338.165527000001,1]";
     // var defaultMatrix = '[0.9999010560091449,0.01203435538199682,-0.007265124494630683,0,-0.011959516021826377,0.9998757167509125,0.010281784874970532,0,0.007387583011282801,-0.010193258515928729,0.9999199474424679,0,989.0695336846786,-33.02772389802351,42.77521617565003,1]' // drawing10 matrix
     var defaultMatrix = '[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]';
@@ -191,6 +218,38 @@
             serverSocket.emit('/update/object/position', JSON.stringify(messageBody));
         }
     }
+    
+    var isStreamOn = false;
+    function streamOff() {
+        isStreamOn = false;
+    }
+    function streamOn() {
+        isStreamOn = true;
+    }
+    
+    function onPointerMove(event) {
+        if (isStreamOn) {
+            var x = event.pageX;
+            var y = event.pageY;
+
+            var selectedObjectKey = getSelectedObjectKey();
+
+            if (serverSocket) {
+                var messageBody = {
+                    objectKey: selectedObjectKey,
+                    position: {
+                        x: x,
+                        y: y,
+                        z: 0
+                    },
+                    rotationInRadians: getRotationRadians(),
+                    editorId: 'testID'
+                };
+                serverSocket.emit('/update/object/position', JSON.stringify(messageBody));
+            }
+        }
+    }
+    
 </script>
 </body>
 </html>
