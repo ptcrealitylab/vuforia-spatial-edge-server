@@ -4472,7 +4472,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 
 socketHandler = {};
 
-socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey) {
+socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey, sessionUuid) {
     var node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
@@ -4481,7 +4481,8 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
                     object: objectKey,
                     frames: frameKey,
                     node: nodeKey,
-                    publicData: node.publicData
+                    publicData: node.publicData,
+                    sessionUuid: sessionUuid // used to filter out messages received by the original sender
                 }));
 
             }
@@ -4652,7 +4653,8 @@ function socketServer() {
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
 
-            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node);
+            // msg.sessionUuid isused to exclude sending public data to the session that sent it
+            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node, msg.sessionUuid);
         });
 
         socket.on('block/setup', function (_msg) {
@@ -4735,7 +4737,7 @@ function socketServer() {
             object.matrix = msgContent.matrix;
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
-                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
                     continue; // don't send updates to the editor that triggered it
                 }
 
@@ -4783,7 +4785,7 @@ function socketServer() {
             object.matrix = matrix;
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
-                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
                     continue; // don't send updates to the editor that triggered it
                 }
 

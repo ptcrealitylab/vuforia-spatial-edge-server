@@ -69,6 +69,20 @@
         onload: null
     };
 
+    /**
+     * Generates a random 12 character unique identifier using uppercase, lowercase, and numbers (e.g. "OXezc4urfwja")
+     * @return {string}
+     */
+    function uuidTime () {
+        var dateUuidTime = new Date();
+        var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+        while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+        return stampUuidTime;
+    }
+    
+    var sessionUuid = uuidTime(); // prevents this application from sending itself data
+
     console.log('fullscreen reset for new frame ' + realityObject.sendFullScreen);
 
     // adding css styles nessasary for acurate 3D transformations.
@@ -756,6 +770,13 @@
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on("object/publicData", function (msg) {
                 var thisMsg = JSON.parse(msg);
+                
+                if (typeof thisMsg.sessionUuid !== "undefined") {
+                    if (thisMsg.sessionUuid === sessionUuid) {
+                        console.log('ignoring message sent by self (publicData)');
+                        return;
+                    }
+                }
 
                 if (typeof thisMsg.publicData === "undefined")  return;
                 if (thisMsg.node !== realityObject.frame+node) return;
@@ -807,8 +828,9 @@
          * @param {string} node
          * @param {string} valueName
          * @param {*} value
+         * @param {boolean} realtimeOnly - doesn't send a post message to reload object, allows rapid stream
          */
-        this.writePublicData = function (node, valueName, value) {
+        this.writePublicData = function (node, valueName, value, realtimeOnly) {
 
             if(typeof realityObject.publicData[node] === "undefined") {
                 realityObject.publicData[node] = {};
@@ -820,18 +842,22 @@
                 object: realityObject.object,
                 frame: realityObject.frame,
                 node: realityObject.frame + node,
-                publicData: realityObject.publicData[node]
+                publicData: realityObject.publicData[node],
+                sessionUuid: sessionUuid
             }));
-
-            parent.postMessage(JSON.stringify(
-                {
-                    version: realityObject.version,
-                    object: realityObject.object,
-                    frame: realityObject.frame,
-                    node: realityObject.frame + node,
-                    publicData: realityObject.publicData[node]
-                }
-            ), "*");
+            
+            if (!realtimeOnly) {
+                parent.postMessage(JSON.stringify(
+                    {
+                        version: realityObject.version,
+                        object: realityObject.object,
+                        frame: realityObject.frame,
+                        node: realityObject.frame + node,
+                        publicData: realityObject.publicData[node]
+                    }
+                ), "*");
+            }
+            
         };
 
         /**
