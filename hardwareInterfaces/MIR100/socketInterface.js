@@ -35,7 +35,7 @@ class SocketInterface{
 
     send(data){
 
-        console.log("SEND VALUES TO BEN", data);
+        //console.log("SEND VALUES TO BEN", data);
 
         this.client.emit('/update/object/position', data);
     }
