@@ -58,7 +58,7 @@ if (exports.enabled) {
     server.enableDeveloperUI(true);
     server.removeAllNodes('UR3E', 'kineticAR');   // We remove all existing nodes from the Frame
 
-    const hostIP = "10.10.10.108";                                      // feederStuttgart: UR IP
+    const hostIP = "10.10.10.108";                                      // UR IP
     const port = 30002;
 
     let maths = new CustomMaths();

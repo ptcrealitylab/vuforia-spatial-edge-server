@@ -63,14 +63,14 @@ if (exports.enabled) {
     server.enableDeveloperUI(true);
     server.removeAllNodes('MIR', 'kineticAR'); // We remove all existing nodes from the Frame
 
-    const hostIP = "192.168.12.20";
-    //const hostIP = "10.10.10.115";              // reality demo
+    // ROBOT IP
+    //const hostIP = "192.168.12.20"; 
+    const hostIP = "10.10.10.112";              // reality demo 5G
     const port = 9090;
 
     //const benIP = "10.10.10.110";
-    const benIP = "192.168.12.249";
+    const benIP = "127.0.0.1";
     const benPort = 8080;
-
     let websocketToBen = new SocketInterface(benIP, benPort);
 
     let eventEmitter = new events.EventEmitter();
@@ -233,7 +233,7 @@ if (exports.enabled) {
 
                             server.pushUpdatesToDevices("MIR");
 
-                            console.log(' ************** Add read listener to ', frameCheckpoint.name);
+                            //console.log(' ************** Add read listener to ', frameCheckpoint.name);
 
                             // Add listener to node
                             server.addReadListener("MIR", "kineticAR", frameCheckpoint.name, function(data){
@@ -433,10 +433,13 @@ if (exports.enabled) {
                             inMotion = false;
 
                             // MIR has finished mission. Send a 0 to current checkpoint
-
-                            console.log("\nSetting active checkpoint to 0", activeCheckpointName);
-
-                            server.write("MIR", "kineticAR", activeCheckpointName, 0);
+                            
+                            if (activeCheckpointName !== null){
+                                console.log("\nSetting active checkpoint to 0", activeCheckpointName);
+                                server.write("MIR", "kineticAR", activeCheckpointName, 0);
+                            } else {
+                                console.log("No checkpoint active. Active checkpoint is NULL");
+                            }
 
                             mir_current_state = 3;
                         }
@@ -505,9 +508,7 @@ if (exports.enabled) {
             });
         }
     }
-
-
-
+    
     function processPaths(data){
 
         console.log('Path Data: ', data);
@@ -565,68 +566,52 @@ if (exports.enabled) {
 
     function positionFromMIRToAR(newPosition, newDirectionAngle)
     {
-
-        //console.log("current pos and directionDeg: ", newPosition, newDirectionAngle);
-
+        
         let newARPosition = {x:0, y:0, z:0};
 
-        if (newDirectionAngle < 0) newDirectionAngle += 360;                        // newDirectionAngle between 0 - 360
+        if (newDirectionAngle < 0) newDirectionAngle += 360;                                                    // newDirectionAngle between 0 - 360
 
         let initialAngleMIR = initOrientationMIR;
-        if (initialAngleMIR < 0) initialAngleMIR += 360;                            // initialAngleMIR between 0 - 360
-
+        if (initialAngleMIR < 0) initialAngleMIR += 360;                                                        // initialAngleMIR between 0 - 360
         let initialRobotDirectionVectorMIR = [Math.cos(maths.degrees_to_radians(initialAngleMIR)),              // MIR space
                                            Math.sin(maths.degrees_to_radians(initialAngleMIR))];
-
-        //console.log("MIR initialRobotDirectionVector", initialRobotDirectionVector);
-
+        
         let from = [initPositionMIR.x, initPositionMIR.y];
         let to = [newPosition.x, newPosition.y];
+        
+        let newDistance = maths.distance(from, to);                                                             // Distance between points
 
-        //console.log("from: ", from, "to: ", to);
+        let newDir = [to[0] - from[0], to[1] - from[1]];                                                        // newDirection = to - from
+        let newDirectionRad = maths.signed_angle(initialRobotDirectionVectorMIR, newDir);                       // Angle between initial direction and new direction
 
-        let newDistance = maths.distance(from, to);                                       // Distance between points
-        //console.log("new distance: ", newDistance);
+        let angleDifference = newDirectionAngle - initialAngleMIR;                                              // Angle difference between current and initial MIR orientation
+        
+        let _initialOrientation_AR = maths.signed_angle([arStatus.robotInitDirection['x'],              // Initial AR direction
+                                                                 arStatus.robotInitDirection['z']], 
+                                                                [1,0]);   
 
-        let newDir = [to[0] - from[0], to[1] - from[1]];                            // newDirection = to - from
-        let newDirectionRad = maths.signed_angle(initialRobotDirectionVectorMIR, newDir);    // Angle between initial direction and new direction
-
-        //console.log("MIR initialRobotDirectionVector: ", initialRobotDirectionVectorMIR);
-        //console.log("newDir: ", newDir);
-        //console.log("newDirection: ", maths.radians_to_degrees(newDirectionRad));
-
-        let angleDifference = newDirectionAngle - initialAngleMIR;                  // Angle difference between current and initial MIR orientation
-
-        let _initialOrientation_AR = maths.signed_angle([arStatus.robotInitDirection['x'], arStatus.robotInitDirection['z']], [1,0]);   // Initial AR direction
-
-        if (_initialOrientation_AR < 0) _initialOrientation_AR += 2*Math.PI;            // _initialOrientation_AR between 0 - 360
-
-        //console.log("ARStatus robot direction: ", arStatus.robotInitDirection);
-        //console.log("_initialOrientation_AR", maths.radians_to_degrees(_initialOrientation_AR));
-
+        if (_initialOrientation_AR < 0) _initialOrientation_AR += 2*Math.PI;                                    // _initialOrientation_AR between 0 - 360
+        
         let newARAngle = maths.radians_to_degrees(_initialOrientation_AR) + angleDifference;
-
-        //let newAngleDeg = maths.radians_to_degrees(_initialOrientation_AR) + maths.radians_to_degrees(newDirectionRad) + 90;               // 90 degrees of difference between X axis and Forward (Z) axis
-
+        
         let newAngleDeg = maths.radians_to_degrees(_initialOrientation_AR) + maths.radians_to_degrees(newDirectionRad);
 
         newARPosition.x = (arStatus.robotInitPosition['x']/groundPlaneScaleFactor) + (newDistance * Math.cos(maths.degrees_to_radians(newAngleDeg)));
         newARPosition.y = - ((- arStatus.robotInitPosition['z']/groundPlaneScaleFactor) + (newDistance * Math.sin(maths.degrees_to_radians(newAngleDeg))));
-        //newARPosition.z = _initialOrientation_AR + newDirectionRad;
-
         newARPosition.z = maths.degrees_to_radians(newARAngle);
 
+        // Send position and rotation to server. 
+        // TODO: This should be sent to frame and frame would display! Not here
         var messageBody = {
-            objectKey: "newTurtletBjbb04jalux",
+            objectKey: "MIRA5el60nk4klg",
             position: {
                 x: newARPosition.x * 1000, // 1000 = 1 meter in world space
                 y: newARPosition.y * 1000,
                 z: 0
             },
-            rotationInRadians: newARPosition.z, // right now this API only supports rotation about the vertical axis. use the other API to pass a full rotation matrix.
+            rotationInRadians: maths.degrees_to_radians(newARAngle), // right now this API only supports rotation about the vertical axis. use the other API to pass a full rotation matrix.
             editorId: 'testID' // the actual value doesn't matter but it needs to have one
         };
-
         websocketToBen.send(JSON.stringify(messageBody));
 
         return newARPosition;
@@ -635,7 +620,6 @@ if (exports.enabled) {
 
 
     // UPDATE FUNCTION
-
     function updateEvery(i, time) {
         setTimeout(() => {
 
