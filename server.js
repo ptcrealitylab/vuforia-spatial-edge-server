@@ -272,11 +272,48 @@ function Objects() {
 
 }
 
-function HumanObject(name) {
+// matches the entries of the Azure Kinect Body Tracking SDK
+// k4abt_joint_id_t (https://microsoft.github.io/Azure-Kinect-Body-Tracking/release/0.9.x/group__btenums.html#ga5fe6fa921525a37dec7175c91c473781)
+var POSE_JOINTS = Object.freeze({
+    JOINT_PELVIS: 0,
+    JOINT_SPINE_NAVAL: 1,
+    JOINT_SPINE_CHEST: 2,
+    JOINT_NECK: 3,
+    JOINT_CLAVICLE_LEFT: 4,
+    JOINT_SHOULDER_LEFT: 5,
+    JOINT_ELBOW_LEFT: 6,
+    JOINT_WRIST_LEFT: 7,
+    JOINT_HAND_LEFT: 8,
+    JOINT_HANDTIP_LEFT: 9,
+    JOINT_THUMB_LEFT: 10,
+    JOINT_CLAVICLE_RIGHT: 11,
+    JOINT_SHOULDER_RIGHT: 12,
+    JOINT_ELBOW_RIGHT: 13,
+    JOINT_WRIST_RIGHT: 14,
+    JOINT_HAND_RIGHT: 15,
+    JOINT_HANDTIP_RIGHT: 16,
+    JOINT_THUMB_RIGHT: 17,
+    JOINT_HIP_LEFT: 18,
+    JOINT_KNEE_LEFT: 19,
+    JOINT_ANKLE_LEFT: 20,
+    JOINT_FOOT_LEFT: 21,
+    JOINT_HIP_RIGHT: 22,
+    JOINT_KNEE_RIGHT: 23,
+    JOINT_ANKLE_RIGHT: 24,
+    JOINT_FOOT_RIGHT: 25,
+    JOINT_HEAD: 26,
+    JOINT_NOSE: 27,
+    JOINT_EYE_LEFT: 28,
+    JOINT_EAR_LEFT: 29,
+    JOINT_EYE_RIGHT: 30,
+    JOINT_EAR_RIGHT: 31
+});
+
+function HumanObject(bodyId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = name + utilities.uuidTime();
+    this.objectId = getHumanObjectID(bodyId); //name + utilities.uuidTime();
     // The name for the object used for interfaces.
-    this.name = name;
+    this.name = bodyId; //name;
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
     this.ip = ips.interfaces[ips.activeInterface];
@@ -302,26 +339,69 @@ function HumanObject(name) {
     this.targetSize = {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
-    }
+    };
+    this.isHumanPose = true;
 }
 
 HumanObject.prototype.createPoseFrames = function() {
     var frames = {};
-    frames.head = this.createFrame('head');
-    frames.leftArm = this.createFrame('leftArm');
-    frames.rightArm = this.createFrame('rightArm');
-    frames.leftLeg = this.createFrame('leftLeg');
-    frames.rightLeg = this.createFrame('rightLeg');
+    Object.keys(POSE_JOINTS).forEach(function(jointName) {
+        frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
+    }.bind(this));
     return frames;
 };
 
-HumanObject.prototype.createFrame = function(frameName) {
+HumanObject.prototype.getFrameKey = function(jointName) {
+    return this.objectId + jointName;
+};
+
+HumanObject.prototype.createFrame = function(jointName) {
     var newFrame = new Frame();
     newFrame.objectId = this.objectId;
-    newFrame.uuid = this.objectId + frameName;// + utilities.uuidTime();
-    newFrame.name = frameName;
+    newFrame.uuid = this.getFrameKey(jointName); //this.objectId + frameName;// + utilities.uuidTime();
+    newFrame.name = jointName;
     return newFrame;
 };
+
+HumanObject.prototype.updateJointPositions = function(joints) {
+    
+    // todo: convert joint position from meters to mm?
+
+    var objPos = {
+        x: joints[0].x, // right now uses the pelvis, but could change to any other joint
+        y: joints[0].y,
+        z: joints[0].z
+    };
+
+    this.matrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 0, 1,
+        objPos.x, objPos.y, objPos.z, 1
+    ];
+    
+    // update the position of each frame based on the poseInfo
+    joints.forEach(function(position, i) {
+        var jointName = Object.keys(POSE_JOINTS)[i];
+        var frame = this.frames[this.getFrameKey(jointName)];
+        if (frame) {
+            frame.ar.matrix = [
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 0, 1,
+                objPos.x - position.x, objPos.y - position.y, objPos.z - position.z, 1
+            ];
+            // frame.ar.x = objPos.x - position.x;
+            // frame.ar.y = objPos.y - position.y;
+            // frame.ar.z = objPos.z - position.z;
+        }
+    }.bind(this));
+};
+
+// converts bodyID from Kinect into a UUID for an object
+function getHumanObjectID(bodyId) {
+    return 'humanObject' + bodyId;
+}
 
 function Frame() {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
@@ -4807,6 +4887,43 @@ function socketServer() {
             }
         });
         
+        socket.on('/update/humanPoses', function(msg) {
+            var msgContent = msg;
+            if (typeof msg === 'string') {
+                msgContent = JSON.parse(msg);
+            }
+            
+            forEachHumanObject(function(thisObject) {
+                thisObject.wasUpdated = false;
+            });
+            
+            msgContent.forEach(function(poseInfo) {
+                if (!doesObjectExist( getHumanObjectID(poseInfo.id) )) {
+                    // create an object
+                    objects[getHumanObjectID(poseInfo.id)] = new HumanObject(poseInfo.id);
+                    console.log('created human pose object');
+                    // todo: writeObjectToFile? needs to create directory in realityobjects etc
+                    // ^ might not actually be needed, why would human object need to persist?
+                }
+                var thisObject = objects[getHumanObjectID(poseInfo.id)];
+                // update the position of each frame based on the poseInfo
+                thisObject.updateJointPositions(poseInfo.joints);
+                thisObject.wasUpdated = true;
+                
+                console.log(thisObject);
+            });
+            
+            // check if any Human Objects were not contained in msgContent, and delete them
+            forEachHumanObject(function(objectKey, thisObject) {
+                if (!thisObject.wasUpdated) {
+                    console.log('delete human pose object', thisObject);
+                    delete objects[objectKey];
+                    // todo: delete folder recursive if necessary?
+                    // ^ might not actually be needed, why would human object need to persist?
+                }
+            });
+        });
+        
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
@@ -4869,8 +4986,16 @@ function forEachObject(callback) {
     for (var objectID in objects) {
         callback(objectID, objects[objectID]);
     }
-    if(globalVariables.worldObject) {
+    if (globalVariables.worldObject) {
         callback(worldObject.objectId, worldObject);
+    }
+}
+
+function forEachHumanObject(callback) {
+    for (var objectID in objects) {
+        if (objects[objectID].isHumanPose) {
+            callback(objectID, objects[objectID]);
+        }
     }
 }
 
