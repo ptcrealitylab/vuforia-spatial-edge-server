@@ -313,7 +313,7 @@ function HumanObject(bodyId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = getHumanObjectID(bodyId); //name + utilities.uuidTime();
     // The name for the object used for interfaces.
-    this.name = bodyId; //name;
+    this.name = getHumanObjectName(bodyId); //bodyId; //name;
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
     this.ip = ips.interfaces[ips.activeInterface];
@@ -401,6 +401,10 @@ HumanObject.prototype.updateJointPositions = function(joints) {
 // converts bodyID from Kinect into a UUID for an object
 function getHumanObjectID(bodyId) {
     return 'humanObject' + bodyId;
+}
+
+function getHumanObjectName(bodyId) {
+    return 'human' + bodyId;
 }
 
 function Frame() {
@@ -4901,7 +4905,12 @@ function socketServer() {
                 if (!doesObjectExist( getHumanObjectID(poseInfo.id) )) {
                     // create an object
                     objects[getHumanObjectID(poseInfo.id)] = new HumanObject(poseInfo.id);
+                    
                     console.log('created human pose object');
+
+                    // advertise to editors
+                    objectBeatSender(beatPort, getHumanObjectID(poseInfo.id), objects[getHumanObjectID(poseInfo.id)].ip, true);
+
                     // todo: writeObjectToFile? needs to create directory in realityobjects etc
                     // ^ might not actually be needed, why would human object need to persist?
                 }
@@ -4910,7 +4919,7 @@ function socketServer() {
                 thisObject.updateJointPositions(poseInfo.joints);
                 thisObject.wasUpdated = true;
                 
-                console.log(thisObject);
+                console.log(thisObject.name);
             });
             
             // check if any Human Objects were not contained in msgContent, and delete them
@@ -4922,6 +4931,28 @@ function socketServer() {
                     // ^ might not actually be needed, why would human object need to persist?
                 }
             });
+
+            // send updated objects / positions to editors
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                // if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                //     continue; // don't send updates to the editor that triggered it
+                // }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    // console.log('update human poses for editor (' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+
+                    var visibleHumanObjects = Object.keys(objects).filter(function(objectKey) {
+                        return objects[objectKey].isHumanPose;
+                    });
+                    
+                    var updateResponse = {
+                        visibleHumanObjects: visibleHumanObjects
+                    };
+
+                    thisSocket.emit('/update/humanPoses', JSON.stringify(updateResponse));
+                }
+            }
         });
         
         socket.on('disconnect', function () {
