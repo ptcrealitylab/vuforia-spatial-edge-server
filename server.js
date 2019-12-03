@@ -360,24 +360,27 @@ HumanObject.prototype.createFrame = function(jointName) {
     newFrame.objectId = this.objectId;
     newFrame.uuid = this.getFrameKey(jointName); //this.objectId + frameName;// + utilities.uuidTime();
     newFrame.name = jointName;
+    newFrame.ar.scale = 0.25;
     return newFrame;
 };
 
 HumanObject.prototype.updateJointPositions = function(joints) {
     
     // todo: convert joint position from meters to mm?
+    var scale = 100;
 
     var objPos = {
-        x: joints[0].x, // right now uses the pelvis, but could change to any other joint
-        y: joints[0].y,
-        z: joints[0].z
+        x: joints[0].x * scale, // right now uses the pelvis, but could change to any other joint
+        y: joints[0].y * scale,
+        z: joints[0].z * scale
     };
 
     this.matrix = [
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 0, 1,
-        objPos.x, objPos.y, objPos.z, 1
+        objPos.x, objPos.y, 0, 1
+        // objPos.x, objPos.y, 0, 1
     ];
     
     // update the position of each frame based on the poseInfo
@@ -389,7 +392,8 @@ HumanObject.prototype.updateJointPositions = function(joints) {
                 1, 0, 0, 0,
                 0, 1, 0, 0,
                 0, 0, 0, 1,
-                objPos.x - position.x, objPos.y - position.y, objPos.z - position.z, 1
+                objPos.x - position.x * scale, objPos.y - position.y * scale, 0, 1
+                // objPos.x - position.x * scale, objPos.y - position.y * scale, 0, 1
             ];
             // frame.ar.x = objPos.x - position.x;
             // frame.ar.y = objPos.y - position.y;
@@ -3170,6 +3174,11 @@ function objectWebServer() {
         }
 
         var obj = getObject(objectID);
+        
+        if (obj.isHumanPose) {
+            res.status(404).json({failure: true, error: 'Object ' + objectID + ' has no directory'}).end();
+            return;
+        }
 
         var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {

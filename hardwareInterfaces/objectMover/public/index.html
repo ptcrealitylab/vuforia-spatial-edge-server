@@ -61,6 +61,8 @@
     <input type="button" value="Stream On" id="streamOnButton">
     <input type="button" value="Stream Off" id="streamOffButton">
 
+    <input type="button" value="Debug" id="debugButton">
+
     <iframe id='drawing01' src="http://localhost:8080/obj/drawing01/frames/default01/"></iframe>
     <iframe id='drawing10' src="http://localhost:8080/obj/drawing10/frames/default10/"></iframe>
 </div>
@@ -74,6 +76,9 @@
     var submitButton = document.getElementById('submitButton');
     var streamOnButton = document.getElementById('streamOnButton');
     var streamOffButton = document.getElementById('streamOffButton');
+    
+    var debugButton = document.getElementById('debugButton');
+    
     xOffsetField.addEventListener('keyup', xChanged);
     xOffsetField.addEventListener('change', xChanged);
     yOffsetField.addEventListener('keyup', yChanged);
@@ -249,6 +254,49 @@
             }
         }
     }
+    
+    debugButton.addEventListener('click', function(e) {
+        if (serverSocket) {
+            // var messageBody = [{id: 0, joints: [{x: 1, y: 2, z: 3}, {x: 4, y: 5, z: 6}, ... (32 entries)]}, {id: 1, joints: [{x: 7, y: 8, z: 9}, {x: 10, y: 11, z: 12}, ... (32 entries)]
+            
+            // var messageBody = [];
+            // messageBody.push(newPoseEntry(0));
+            // messageBody.push(newPoseEntry(1));
+            
+            var messageBody = newPoseEntry(2);
+            
+            console.log(messageBody);
+            
+            serverSocket.emit('/update/humanPoses', JSON.stringify(messageBody));
+        }
+    });
+    
+    function newPoseEntry(id) {
+        return [
+            {
+                "id":2,
+                "joints":[{"x":-2.85808753967285,"y":1.09325528144836,"z":1.86841201782227},{"x":-2.88649940490723,"y":1.28932952880859,"z":1.874720454216},{"x":-2.9052848815918,"y":1.44648587703705,"z":1.88254809379578},{"x":-2.91767024993896,"y":1.68731904029846,"z":1.88830482959747},{"x":-2.89380407333374,"y":1.65015554428101,"z":1.90425324440002},{"x":-2.73518109321594,"y":1.64421701431274,"z":1.90979313850403},{"x":-2.59784317016602,"y":1.37169241905212,"z":1.94355845451355},{"x":-2.46968936920166,"y":1.2962589263916,"z":1.73309445381165},{"x":-2.45180678367615,"y":1.32216215133667,"z":1.63084101676941},{"x":-2.35400819778442,"y":1.26007270812988,"z":1.59931862354279},{"x":-2.42386150360107,"y":1.25834238529205,"z":1.58319044113159},{"x":-2.94943594932556,"y":1.64581489562988,"z":1.89379620552063},{"x":-3.07334184646606,"y":1.6096978187561,"z":1.82528829574585},{"x":-3.13171124458313,"y":1.30607533454895,"z":1.77755284309387},{"x":-2.98326969146729,"y":1.34714078903198,"z":1.5668888092041},{"x":-2.87338900566101,"y":1.34909844398499,"z":1.6014244556427},{"x":-2.93799495697021,"y":1.41435360908508,"z":1.52730488777161},{"x":-2.82947373390198,"y":1.40204799175262,"z":1.54997944831848},{"x":-2.76111936569214,"y":1.1064635515213,"z":1.89461135864258},{"x":-2.68932175636292,"y":0.668614268302917,"z":1.86327600479126},{"x":-2.64878392219543,"y":0.253593683242798,"z":1.94585204124451},{"x":-2.58115911483765,"y":0.103814959526062,"z":1.81810688972473},{"x":-2.94552707672119,"y":1.08134162425995,"z":1.84478569030762},{"x":-2.93494749069214,"y":0.637665510177612,"z":1.86629295349121},{"x":-2.98301076889038,"y":0.23420786857605,"z":2.00571250915527},{"x":-2.87934303283691,"y":0.0808491706848145,"z":1.95662999153137},{"x":-2.9167206287384,"y":1.77221739292145,"z":1.85623002052307},{"x":-2.88282299041748,"y":1.82121288776398,"z":1.68792676925659},{"x":-2.84897303581238,"y":1.85563611984253,"z":1.72712755203247},{"x":-2.81039333343506,"y":1.84990763664246,"z":1.86247324943542},{"x":-2.92399954795837,"y":1.85568761825562,"z":1.70843195915222},{"x":-3.01743745803833,"y":1.85042190551758,"z":1.81993818283081}]
+            }
+        ];
+    }
+
+    // function newJoint() {
+    //     return {
+    //         x: Math.random() * 10,
+    //         y: Math.random() * 10,
+    //         z: Math.random()
+    //     }
+    // }
+    // function newPoseEntry(id) {
+    //     var joints = [];
+    //     for (var i = 0; i < 32; i++) {
+    //         joints.push(newJoint());
+    //     }
+    //     return {
+    //         id: id,
+    //         joints: joints
+    //     }
+    // }
     
 </script>
 </body>
