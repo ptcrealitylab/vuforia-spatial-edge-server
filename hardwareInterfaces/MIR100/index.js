@@ -53,7 +53,7 @@ const { RestAPIServer } = require('./restapiserver');
 const { CustomMaths } = require('./customMaths');
 const { SocketInterface } = require('./socketInterface');
 
-exports.enabled = true;
+exports.enabled = false;
 
 if (exports.enabled) {
 
