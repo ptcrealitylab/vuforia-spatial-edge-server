@@ -1,3 +1,6 @@
+var DependencyInjector = require(__dirname + '/DependencyInjector');
+var dependencies = new DependencyInjector();
+
 /**
  * A functional "subclass" of Objects, which automatically generates frames for each pose joint
  * and sets other parameters for a human pose object
@@ -11,11 +14,11 @@ function HumanObject(bodyId) {
     this.name = this.getHumanObjectName(bodyId); //bodyId; //name;
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    this.ip = ips.interfaces[ips.activeInterface];
+    this.ip = dependencies.ips.interfaces[dependencies.ips.activeInterface];
     // The version number of the Object.
-    this.version = version;
+    this.version = dependencies.version;
     this.deactivated = false;
-    this.protocol = protocol;
+    this.protocol = dependencies.protocol;
     // The (t)arget (C)eck(S)um is a sum of the checksum values for the target files.
     this.tcs = null;
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
@@ -131,7 +134,7 @@ HumanObject.prototype.createPoseFrames = function(dontFilterJoints) {
  * @return {Frame}
  */
 HumanObject.prototype.createFrame = function(jointName, shouldCreateNode) {
-    var newFrame = new Frame();
+    var newFrame = new dependencies.Frame();
     newFrame.objectId = this.objectId;
     newFrame.uuid = this.getFrameKey(jointName);
     newFrame.name = jointName;
@@ -139,7 +142,7 @@ HumanObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = new Node();
+        var newNode = new dependencies.Node();
         newNode.objectId = this.objectId;
         newNode.frameId = newFrame.uuid;
         newNode.name = 'value';
@@ -201,3 +204,4 @@ HumanObject.getObjectId = function(bodyId) {
 };
 
 exports.HumanObject = HumanObject;
+exports.humanObjectDependencies = dependencies;
