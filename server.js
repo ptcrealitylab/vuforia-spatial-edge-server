@@ -203,8 +203,8 @@ var webFrontend = require(__dirname + '/libraries/webFrontend');
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
 // This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
-var { HumanObject, humanObjectDependencies } = require(__dirname + '/libraries/HumanObject');
-humanObjectDependencies.inject({
+var { HumanPoseObject, humanPoseObjectDependencies } = require(__dirname + '/libraries/HumanPoseObject');
+humanPoseObjectDependencies.inject({
     ips: ips,
     version: version,
     protocol: protocol,
@@ -4770,6 +4770,7 @@ function socketServer() {
             }
         });
         
+        // create or update the position of a HumanPoseObject 
         socket.on('/update/humanPoses', function(msg) {
             var msgContent = msg;
             if (typeof msg === 'string') {
@@ -4779,16 +4780,16 @@ function socketServer() {
             
             // if no poses changed this frame, don't clog the network with sending the same information
             var didAnythingChange = false;
-            forEachHumanObject(function(objectKey, thisObject) {
+            forEachHumanPoseObject(function(objectKey, thisObject) {
                 thisObject.wasUpdated = false;
             });
             
             msgContent.forEach(function(poseInfo) {
-                var objectId = HumanObject.getObjectId(poseInfo.id);
+                var objectId = HumanPoseObject.getObjectId(poseInfo.id);
                 var thisObject = objects[objectId];
                 if (!doesObjectExist(objectId)) {
                     // create an object if needed
-                    objects[objectId] = new HumanObject(poseInfo.id);
+                    objects[objectId] = new HumanPoseObject(poseInfo.id);
                     // advertise to editors
                     objectBeatSender(beatPort, objectId, thisObject.ip, true);
                     // currently doesn't writeObjectToFile, because I've found no need for human objects to persist 
@@ -4800,7 +4801,7 @@ function socketServer() {
             });
             
             // check if any Human Objects were not contained in msgContent, and delete them
-            forEachHumanObject(function(objectKey, thisObject) {
+            forEachHumanPoseObject(function(objectKey, thisObject) {
                 if (!thisObject.wasUpdated) {
                     console.log('delete human pose object', objectKey);
                     didAnythingChange = true;
@@ -4817,15 +4818,15 @@ function socketServer() {
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
                     // sends an array of objectIds for the visible poses in this timestep
-                    var visibleHumanObjects = Object.keys(objects).filter(function(objectKey) {
+                    var visibleHumanPoseObjects = Object.keys(objects).filter(function(objectKey) {
                         return objects[objectKey].isHumanPose;
                     });
                     var updateResponse = {
-                        visibleHumanObjects: visibleHumanObjects
+                        visibleHumanPoseObjects: visibleHumanPoseObjects
                     };
                     // also sends all object JSON data for each visible pose object
                     var objectData = {};
-                    visibleHumanObjects.forEach(function(objectKey) {
+                    visibleHumanPoseObjects.forEach(function(objectKey) {
                         objectData[objectKey] = objects[objectKey];
                     });
                     updateResponse.objectData = objectData;
@@ -4835,7 +4836,7 @@ function socketServer() {
                     // but there might be a way in the future to only send full data for objects that are newly detected
                     // to reduce the bandwidth used by constantly sending object/frame/pose information to all clients
                     // var compressedObjectData = {};
-                    // visibleHumanObjects.forEach(function(objectKey) {
+                    // visibleHumanPoseObjects.forEach(function(objectKey) {
                     //     compressedObjectData[objectKey] = {
                     //         ip: objects[objectKey].ip
                     //         matrix: objects[objectKey].matrix
@@ -4918,7 +4919,7 @@ function forEachObject(callback) {
     }
 }
 
-function forEachHumanObject(callback) {
+function forEachHumanPoseObject(callback) {
     for (var objectID in objects) {
         if (objects[objectID].isHumanPose) {
             callback(objectID, objects[objectID]);

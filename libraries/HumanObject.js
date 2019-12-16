@@ -7,11 +7,11 @@ var dependencies = new DependencyInjector();
  * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
  * @constructor
  */
-function HumanObject(bodyId) {
+function HumanPoseObject(bodyId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = HumanObject.getObjectId(bodyId);// getHumanObjectID(bodyId); //name + utilities.uuidTime();
+    this.objectId = HumanPoseObject.getObjectId(bodyId);
     // The name for the object used for interfaces.
-    this.name = this.getHumanObjectName(bodyId); //bodyId; //name;
+    this.name = this.getName(bodyId);
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
     this.ip = dependencies.ips.interfaces[dependencies.ips.activeInterface];
@@ -38,11 +38,12 @@ function HumanObject(bodyId) {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
     };
+    
     this.isHumanPose = true;
     this.isWorldObject = true;
 }
 
-HumanObject.prototype.getHumanObjectName = function(bodyId) {
+HumanPoseObject.prototype.getName = function(bodyId) {
     return 'human' + bodyId;
 };
 
@@ -51,14 +52,14 @@ HumanObject.prototype.getHumanObjectName = function(bodyId) {
  * @param {string} jointName - e.g. JOINT_PELVIS, JOINT_FOOT_RIGHT
  * @return {string} - e.g. objectUuidJOINT_PELVIS, objectUuidJOINT_FOOT_RIGHT
  */
-HumanObject.prototype.getFrameKey = function(jointName) {
+HumanPoseObject.prototype.getFrameKey = function(jointName) {
     return this.objectId + jointName;
 };
 
 // matches the entries of the Azure Kinect Body Tracking SDK
 // k4abt_joint_id_t (https://microsoft.github.io/Azure-Kinect-Body-Tracking/release/0.9.x/group__btenums.html#ga5fe6fa921525a37dec7175c91c473781)
 // For out purposes, serves as a mapping from joint names to the index they appear in the socket message updating the joint positions
-HumanObject.prototype.POSE_JOINTS = Object.freeze({
+HumanPoseObject.prototype.POSE_JOINTS = Object.freeze({
     JOINT_PELVIS: 0,
     JOINT_SPINE_NAVEL: 1,
     JOINT_SPINE_CHEST: 2,
@@ -94,7 +95,7 @@ HumanObject.prototype.POSE_JOINTS = Object.freeze({
 });
 
 // a selected subset of joints that frames should be created for to represent the most important parts of the pose
-HumanObject.prototype.POSE_JOINTS_FILTERED = Object.freeze({
+HumanPoseObject.prototype.POSE_JOINTS_FILTERED = Object.freeze({
     JOINT_PELVIS: 0,
     JOINT_SPINE_NAVEL: 1,
     JOINT_CLAVICLE_LEFT: 4,
@@ -115,7 +116,7 @@ HumanObject.prototype.POSE_JOINTS_FILTERED = Object.freeze({
  * By default, only generates the subset in POSE_JOINTS_FILTERED.
  * @param {boolean|undefined} dontFilterJoints - If truthy argument is provided, generates all in POSE_JOINTS
  */
-HumanObject.prototype.createPoseFrames = function(dontFilterJoints) {
+HumanPoseObject.prototype.createPoseFrames = function(dontFilterJoints) {
     var frames = {};
     var jointsToCreate = this.POSE_JOINTS;
     if (!dontFilterJoints) {
@@ -133,7 +134,7 @@ HumanObject.prototype.createPoseFrames = function(dontFilterJoints) {
  * @param {boolean|undefined} shouldCreateNode
  * @return {Frame}
  */
-HumanObject.prototype.createFrame = function(jointName, shouldCreateNode) {
+HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     var newFrame = new dependencies.Frame();
     newFrame.objectId = this.objectId;
     newFrame.uuid = this.getFrameKey(jointName);
@@ -154,7 +155,7 @@ HumanObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     return newFrame;
 };
 
-HumanObject.prototype.updateJointPositions = function(joints) {
+HumanPoseObject.prototype.updateJointPositions = function(joints) {
 
     // converts joint position from meters to mm scale
     var scale = 1000;
@@ -194,14 +195,14 @@ HumanObject.prototype.updateJointPositions = function(joints) {
 };
 
 /**
- * @static - static method used to locate the correct HumanObject instance based on tracker info
+ * @static - static method used to locate the correct HumanPoseObject instance based on tracker info
  * Converts bodyID from Kinect into a UUID for an object
  * @param {number} bodyId - the body id provided from the tracker (an integer)
  * @return {string}
  */
-HumanObject.getObjectId = function(bodyId) {
-    return 'humanObject' + bodyId;
+HumanPoseObject.getObjectId = function(bodyId) {
+    return 'humanPoseObject' + bodyId;
 };
 
-exports.HumanObject = HumanObject;
-exports.humanObjectDependencies = dependencies;
+exports.HumanPoseObject = HumanPoseObject;
+exports.humanPoseObjectDependencies = dependencies;
