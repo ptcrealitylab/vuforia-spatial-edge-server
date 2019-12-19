@@ -1502,15 +1502,19 @@ function objectWebServer() {
 
         html = html.replace('<script src="../resources/pep.min.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
-
+        
         var level = "../";
         for(var i = 0; i < urlArray.length-3; i++){
             level += "../";
         }
+
+        html = html.replace('objectDefaultFiles/envelope.js', level+'objectDefaultFiles/envelope.js');
+        html = html.replace('objectDefaultFiles/envelopeContents.js', level+'objectDefaultFiles/envelopeContents.js');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
-
+        
         var objectKey = utilities.readObject(objectLookup,urlArray[0]);
         var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
 
