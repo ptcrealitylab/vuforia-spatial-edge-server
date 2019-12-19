@@ -12,6 +12,7 @@
     </style>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
 </head>
 <body onload="startGame()">
 <script>
@@ -174,6 +175,7 @@ var size = {
     }
 
     var realityInterface = new RealityInterface();
+    var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
     realityInterface.addReadListener('x', function(e) {
         
         myGamePiece.speedX = ((e.value) - 0.5) * 2;

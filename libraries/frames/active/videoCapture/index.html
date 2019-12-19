@@ -3,6 +3,7 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>videoCapture-new</title>
     <style>
@@ -227,6 +228,7 @@
 <script>
     try {
         var realityInterface = new RealityInterface();
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.setMoveDelay(1000);
         
         realityInterface.onRealityInterfaceLoaded(function() {

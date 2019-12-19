@@ -3,8 +3,9 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
-    <title>limiter</title>
+    <title>two sided limiter</title>
     <style>
         body {
             /*background-color: #4E4E4F;*/
@@ -12,7 +13,7 @@
         #limiter {
             position: absolute;
             top: 300px;
-            width: 759px;
+            width: 780px;
         }
         #touchpadMaxLimit {
             position: absolute;
@@ -30,26 +31,43 @@
         }
     </style>
 </head>
-<body style="width: 759px">
-<svg id="limiter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 169.48 179.26">
+<body style="width: 859px; height: 1200px">
+<svg id="limiter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.3 259.73">
     <defs>
         <style>
-            .dataFont {
-                font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
-                font-size: 12pt;
-                alignment: right;
-                fill: cyan;
-            }
-
             .handleFont {
                 font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
                 font-size: 6pt;
                 alignment: right;
                 fill: #fed003;
             }
-            
-            .cls-0 {
-                opacity: 0.75;
+
+            @font-face {
+                font-family: 'Brutal Type';
+                src: url('../../sharedResources/fonts/brutal/BrutalType.otf');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Brutal Type';
+                src: url('../../sharedResources/fonts/brutal/BrutalType-Bold.otf');
+                font-weight: bold;
+                font-style: normal;
+            }
+
+            .dataFont {
+                font-family: BrutalType-Bold, Brutal Type, "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+                font-size: 12pt;
+                alignment: right;
+                font-weight: bold;
+                fill: white;
+            }
+
+            .datatypeFont {
+                font-family: BrutalType-Bold, Brutal Type, "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+                font-size: 12pt;
+                alignment: right;
+                fill: cyan;
             }
 
             .cls-1 {
@@ -61,78 +79,89 @@
             }
 
             .cls-3 {
-                fill: #75fbfd;
+                fill: #00ffe6;
             }
 
             .cls-4 {
-                fill: #008480;
+                fill: #fff;
+            }
+
+            .cls-5 {
+                fill: lime;
             }
 
             .green-fill {
                 fill: lime;
             }
-            
+
             .cls-6 {
-                fill: #fed003;
+                fill: #feff00;
             }
-            
+
             .red-fill {
                 fill: #FF007D;
             }
+
+            .handleFont {
+                font-family: BrutalType-Bold, Brutal Type, "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+                font-size: 12pt;
+                alignment: right;
+                fill: #feff00;
+            }
+
         </style>
     </defs>
     <title>progress-with-fill</title>
     <g id="Layer_2" data-name="Layer 2">
         <g id="UI">
             <g>
-                <g id="valueBackground">
+                <g>
                     <g class="cls-1">
-                        <polygon points="0 148.76 0 179.26 15.97 179.26 80.97 179.26 80.97 164.73 80.97 148.76 0 148.76"/>
+                        <rect x="3" y="3" width="149.3" height="207.62"/>
                     </g>
                     <g class="cls-2">
-                        <path class="cls-3" d="M79,150.76v26.5H2v-26.5H79m2-2H0v30.5H81v-30.5Z"/>
+                        <path class="cls-3" d="M149.14,6.17V207.46H6.17V6.17h143m3.33-3.34H2.83v208H152.47V2.83Z"/>
                     </g>
                 </g>
-                <g id="unitBackground">
-                    <g class="cls-1">
-                        <rect x="83.13" y="148.76" width="29.62" height="30.5"/>
-                    </g>
-                    <g class="cls-2">
-                        <path class="cls-3" d="M110.75,150.76v26.5H85.13v-26.5h25.62m2-2H83.13v30.5h29.62v-30.5Z"/>
-                    </g>
+                <g class="cls-2">
+                    <rect class="cls-4" x="13.34" y="154.93" width="128.31" height="43.74"/>
                 </g>
-                <g id="background" class="cls-1">
-                    <rect class="cls-4" x="0.27" width="112.22" height="146.74"/>
+                <g class="cls-2">
+                    <rect class="cls-4" x="13.34" y="108.27" width="128.31" height="43.74"/>
                 </g>
-                <g id="box4" class="cls-1">
-                    <rect x="8.78" y="108.98" width="94.95" height="32.37"/>
+                <g class="cls-2">
+                    <rect class="cls-4" x="13.34" y="61.61" width="128.31" height="43.74"/>
                 </g>
-                <g id="box3" class="cls-1">
-                    <rect x="8.78" y="74.45" width="94.95" height="32.37"/>
+                <g class="cls-2">
+                    <rect class="cls-4" x="13.34" y="14.96" width="128.31" height="43.74"/>
                 </g>
-                <g id="box2" class="cls-1">
-                    <rect x="9.02" y="39.92" width="94.95" height="32.37"/>
+                <g class="cls-1">
+                    <polygon points="1.31 218.51 1.31 259.73 22.89 259.73 110.72 259.73 110.72 240.09 110.72 218.51 1.31 218.51"/>
                 </g>
-                <g id="box1" class="cls-1">
-                    <rect x="9.02" y="5.4" width="94.95" height="32.37"/>
+                <path class="cls-3" d="M107.23,222v34.22H4.81V222H107.23m3.5-3.5H1.31v41.22H110.73V218.51Z"/>
+                <g class="cls-1">
+                    <rect x="113.64" y="218.51" width="40.03" height="41.21"/>
                 </g>
+                <path class="cls-3" d="M150.17,222v34.22h-33V222h33m3.5-3.5h-40v41.22h40V218.51Z"/>
+                <path class="cls-3" d="M152.3,3V210.62H3V3H152.3m3-3H0V213.62H155.3V0Z"/>
+
                 <g id="box4-green" class="cls-0">
-                    <rect class="green-fill" x="8.78" y="108.98" width="94.95" height="32.37"/>
+                    <rect class="cls-5" x="13.34" y="154.93" width="128.31" height="43.74"/>
                 </g>
                 <g id="box3-green" class="cls-0">
-                    <rect class="green-fill" x="8.78" y="74.45" width="94.95" height="32.37"/>
+                    <rect class="cls-5" x="13.34" y="108.27" width="128.31" height="43.74"/>
                 </g>
                 <g id="box2-green" class="cls-0">
-                    <rect class="green-fill" x="9.02" y="39.92" width="94.95" height="32.37"/>
+                    <rect class="cls-5" x="13.34" y="61.61" width="128.31" height="43.74"/>
                 </g>
                 <g id="box1-green" class="cls-0">
-                    <rect class="green-fill" x="9.02" y="5.4" width="94.95" height="32.37"/>
+                    <rect class="cls-5" x="13.34" y="14.96" width="128.31" height="43.74"/>
                 </g>
             </g>
             <g>
                 <g id="labelText">
-                    <text class="dataFont unselectable" id="dataValue" x="18" y="170">00.000</text>
-                    <text class="dataFont unselectable" id="dataUnit" x="88" y="170">lb</text>
+                    <text class="dataFont" id="dataValue" x="18" y="245">00.000</text>
+                    <text class="datatypeFont" id="dataUnit" x="128" y="245">lb</text>
                 </g>
             </g>
         </g>
@@ -141,23 +170,23 @@
     <g id="Layer_3" data-name="Layer 3">
         <g id="limitMax">
             <g>
-                <g id="handle" class="cls-2">
-                    <rect x="109.05" width="60.42" height="17.26"/>
+                <g id="handleMax" class="cls-2">
+                    <rect x="170.56" width="81.65" height="23.33"/>
                 </g>
                 <g id="handleText">
-                    <text class="handleFont unselectable" id="handleValue" x="129" y="10">0.000</text>
+                    <text class="handleFont unselectable" id="handleValue" x="179" y="19">0.000</text>
                 </g>
                 <g id="bar">
-                    <rect class="cls-6" x="0.75" y="8.13" width="103.65" height="1"/>
-                    <rect class="cls-6" y="3.76" width="1.5" height="9.75"/>
-                    <rect class="cls-6" x="99.44" y="3.68" width="9.9" height="9.9"/>
+                    <rect class="cls-6" x="14.21" y="11.08" width="150.05" height="1.17"/>
+                    <rect class="cls-6" x="13.34" y="5.98" width="1.75" height="11.37"/>
+                    <rect class="cls-6" x="158.49" y="5.89" width="11.55" height="11.55"/>
                 </g>
             </g>
         </g>
     </g>
 </svg>
 
-<svg id="touchpadMaxLimit" class="realityInteraction" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 116">
+<svg id="touchpadMaxLimit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 116">
     <defs>
         <style>
             .touchpad-1 {
@@ -165,11 +194,11 @@
             }
 
             .touchpad-2 {
-                fill: #fed003;
+                fill: black;
             }
 
             .touchpad-3 {
-                fill: #fc0;
+                fill: #feff00;
             }
 
             .touchpad-4 {
@@ -194,6 +223,7 @@
     </g>
 </svg>
 
+
 <script>
 
     var properties = {
@@ -203,7 +233,7 @@
         unit: ""
     };
     var limits = {
-        max: 0.5
+        max: 1
     };
 
     var boxes = [
@@ -273,7 +303,7 @@
         // render the text labels
         dataValueText.textContent = numberToText(value).valueText;
         dataUnitText.textContent = numberToText(value).unitText;
-        
+
         styleBasedOnLimits();
     }
 
@@ -289,7 +319,7 @@
             unitText: properties.unit
         }
     }
-    
+
     // // Uncomment to run the debug update loop //
     // var fillPercent = 0;
     // function update() {
@@ -302,7 +332,7 @@
     //     requestAnimationFrame(update);
     // }
     // update();
-    
+
     // custom code for limiter, in addition to the above code which is identical to the progress frame
     var limitMax = document.getElementById('limitMax');
     var touchpadMaxLimit = document.getElementById('touchpadMaxLimit');
@@ -317,7 +347,7 @@
         width: document.querySelector('svg').getAttribute('viewBox').split(' ')[2],
         height: document.querySelector('svg').getAttribute('viewBox').split(' ')[3]
     };
-    
+
     var svgClientRect = document.querySelector('svg').getClientRects()[0];
 
     function recurseThruSvgElement(svgElement, callback) {
@@ -329,7 +359,7 @@
             callback(svgElement);
         }
     }
-    
+
     function buildOffsetsLookup(svgElement) {
         // builds up the limitMaxOffsets
         recurseThruSvgElement(svgElement, function(svgElement) {
@@ -345,7 +375,7 @@
 
     buildOffsetsLookup(limitMax);
     // buildOffsetsLookup(touchpadMaxLimit);
-    
+
     function setGroupY(svgElement, yOffset) {
         recurseThruSvgElement(svgElement, function(childElement) {
             if (childElement.tagName === 'rect' || childElement.tagName === 'text') {
@@ -355,77 +385,100 @@
             }
         });
     }
-    
+
     touchpadMaxLimit.addEventListener('pointerdown', function(e) {
         isMouseDown = true;
+        lastHandleSelected = 'max';
+        console.log(lastHandleSelected);
     });
 
-    document.addEventListener('pointerup', function(e) {
-        isMouseDown = false;
-        
+    document.getElementById('limiter').addEventListener('pointerdown', function(e) {
+        isMouseDown = true;
+        lastHandleSelected = 'max';
+        console.log(lastHandleSelected);
+    });
+
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+
+    function onPointerUp(e) {
         try {
             realityInterface.writePublicData("in_out", "max",  limits.max);
         } catch (e) {
             console.warn('Reality Interface is not accessible');
         }
-    });
-    
+
+        isMouseDown = false;
+    }
+
+    var maxSvgY = -3;
+    var minSvgY = 133.22;
+
+    var y141 = 195; //183.69; //141.35; // the height in SVG units between top and bottom of the four boxes
+    // var y28 = 28;
+
+    var svgTop = 4;
+
     document.addEventListener('pointermove', function(e) {
         if (!isMouseDown) { return; }
-        
+
         var mouseY = e.pageY - 300;
+
+        if (isNaN(mouseY)) { return; }
         
         // move handle/limiter bar
         var svgMouseY = mouseY * (svgViewBox.height / svgClientRect.height) + 28; //centeredOffsetY;
-        svgMouseY = Math.max(-3, Math.min(141.35-centeredOffsetY, svgMouseY));
-        setGroupY(limitMax, svgMouseY);
-        
-        // update limit value
-        limits.max = 1 - (svgMouseY + 3) / ((141.35-centeredOffsetY+3));
+        svgMouseY = Math.max(svgTop, Math.min(y141-centeredOffsetY, svgMouseY));
+        maxSvgY = svgMouseY;
+        setGroupY(limitMax, maxSvgY);
 
-        // move touchpad
-        var touchpadY = Math.max(20, Math.min(632, e.pageY - 150));
-        touchpadMaxLimit.style.top = touchpadY + 'px';
-        
-        // update handle text
-        handleValueText.textContent = numberToText(limits.max).valueText + ' ' + numberToText(limits.max).unitText;
+        // update limit value
+        limits.max = 1 - (maxSvgY - svgTop) / ((y141-centeredOffsetY - svgTop));
+
+        console.log(limits.max);
+
+        renderTouchpadAndHandle(lastHandleSelected);
 
         // update colors
         render(properties.value);
     });
-    
-    function renderLimit() {
-        // move handle
-        var percentageDown = 1 - Math.max(0, Math.min(1, limits.max));
-        var y = -3 + (141.35-centeredOffsetY+3) * percentageDown;
-        console.log('y = ' + y);
-        setGroupY(limitMax, y);
-        
+
+    var pxHeight = 560;
+    var y20 = 20;
+    var y370 = 420;
+
+    function renderTouchpadAndHandle() {
         // move touchpad
-        touchpadMaxLimit.style.top = 20 + (1 - limits.max) * 612 + 'px';
+        touchpadMaxLimit.style.top = y20 + (1 - limits.max) * pxHeight + 'px';
 
         // update handle text
         handleValueText.textContent = numberToText(limits.max).valueText + ' ' + numberToText(limits.max).unitText;
+    }
+
+    function renderLimit() {
+        // move max handle
+        var percentageDown = 1 - Math.max(0, Math.min(1, limits.max));
+        var y = svgTop + (y141-centeredOffsetY-svgTop) * percentageDown;
+        setGroupY(limitMax, y);
+        renderTouchpadAndHandle('max');
 
         // update colors
         render(properties.value);
     }
-    
+
     renderLimit();
-    
+
     function styleBasedOnLimits() {
         if (properties.value >= limits.max) {
             greenBoxes.forEach(function(greenBox) {
                 if (!greenBox.children[0].classList.contains('red-fill')) {
                     greenBox.children[0].classList.add('red-fill');
-                    // greenBox.classList.remove('green-fill');
                 }
             });
         } else {
             greenBoxes.forEach(function(greenBox) {
                 if (greenBox.children[0].classList.contains('red-fill')) {
                     greenBox.children[0].classList.remove('red-fill');
-                    // greenBox.classList.add('green-fill');
                 }
             });
         }
@@ -434,7 +487,7 @@
     try {
         // set up and load the reality interface
         var realityInterface = new RealityInterface();
-
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.addReadListener('in_out', function (e) {
             properties.value = e.value;
             if (e.unit) {
@@ -448,17 +501,18 @@
         });
 
         realityInterface.addReadPublicDataListener('in_out', "max", function (e) {
+            console.log('read in_out max');
             if (!isMouseDown) {
-                limits.max = e;
+                limits.max = Math.max(e, 0);
                 renderLimit();
             }
         });
-        
+
         realityInterface.subscribeToMatrix();
         realityInterface.addMatrixListener(function(modelView, projection) {
             var scaleFactor = Math.abs(modelView[0]);
             var zDistance = Math.abs(modelView[14]);
-            if (zDistance/scaleFactor > 950) { // found this to be a good distance through trial and error
+            if (zDistance/scaleFactor > 950*1.5) { // found this to be a good distance through trial and error // todo: switch back to 950, but needs to be bigger for the desktop demo
                 // hide the touch pad
                 touchpadMaxLimit.style.visibility = 'hidden';
             } else {
@@ -469,19 +523,25 @@
 
         realityInterface.setMoveDelay(1000);
         realityInterface.enableCustomInteractionMode();
+        // this can also be done without the API by manually giving these divs the class 'realityInteraction'
+        realityInterface.setInteractableDivs([touchpadMaxLimit, document.getElementById('limiter')]);
+
+        realityInterface.onRealityInterfaceLoaded(function() {
+            realityInterface.changeFrameSize(800, 1300); // adjust the touch overlay of the iframe to match contents
+        });
 
     } catch (e) {
         console.warn('Reality Interface is not accessible');
-        
+
         // test suite for in-browser simulation without loading in AR
-        function mockReadListenerTrigger(e) {
+        function mockListenerTrigger(e) {
             properties.value = e;
             render(properties.value);
         }
-        
-        function mockPublicDataListenerTrigger(e) {
+
+        function mockMaxPublicDataListenerTrigger(e) {
             if (!isMouseDown) {
-                limits.max = e;
+                limits.max = Math.max(e, 0);
                 renderLimit();
             }
         }

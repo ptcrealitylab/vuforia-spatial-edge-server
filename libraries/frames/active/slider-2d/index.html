@@ -35,6 +35,10 @@
             .cls-4 {
                 fill: #6ff;
             }
+
+            .green {
+                fill: #00FB00;
+            }
         </style>
     </defs>
     <title>Asset 44</title>
@@ -97,9 +101,9 @@
             <g>
                 <g id="handle">
                     <g class="cls-1">
-                        <path class="cls-3" d="M79,107.71a8,8,0,0,1-5.66-2.35L52.6,84.64a8,8,0,0,1,0-11.32L73.32,52.6a8,8,0,0,1,11.32,0l20.72,20.72a8,8,0,0,1,0,11.32L84.64,105.36A8,8,0,0,1,79,107.71Z"/>
+                        <path class="green" d="M79,107.71a8,8,0,0,1-5.66-2.35L52.6,84.64a8,8,0,0,1,0-11.32L73.32,52.6a8,8,0,0,1,11.32,0l20.72,20.72a8,8,0,0,1,0,11.32L84.64,105.36A8,8,0,0,1,79,107.71Z"/>
                     </g>
-                    <path class="cls-4" d="M79,52.26A6,6,0,0,1,83.22,54L104,74.74a6,6,0,0,1,0,8.48L83.22,104a6,6,0,0,1-8.48,0L54,83.22a6,6,0,0,1,0-8.48L74.74,54A6,6,0,0,1,79,52.26m0-4a10,10,0,0,0-7.07,2.92L51.18,71.91a10,10,0,0,0,0,14.14l20.73,20.73a10,10,0,0,0,14.14,0l20.73-20.73a10,10,0,0,0,0-14.14L86.05,51.18A10,10,0,0,0,79,48.26Z"/>
+                    <path class="green" d="M79,52.26A6,6,0,0,1,83.22,54L104,74.74a6,6,0,0,1,0,8.48L83.22,104a6,6,0,0,1-8.48,0L54,83.22a6,6,0,0,1,0-8.48L74.74,54A6,6,0,0,1,79,52.26m0-4a10,10,0,0,0-7.07,2.92L51.18,71.91a10,10,0,0,0,0,14.14l20.73,20.73a10,10,0,0,0,14.14,0l20.73-20.73a10,10,0,0,0,0-14.14L86.05,51.18A10,10,0,0,0,79,48.26Z"/>
                 </g>
             </g>
         </g>
@@ -109,7 +113,7 @@
 <script>
     try {
         var realityInterface = new RealityInterface();
-        var envelopeContents = new EnvelopeContents(realityInterface, document.body); // just initializing this makes it compatible with envelopes
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.setMoveDelay(1000);
     } catch (e) {
         console.warn('Reality Interface is not accessible');

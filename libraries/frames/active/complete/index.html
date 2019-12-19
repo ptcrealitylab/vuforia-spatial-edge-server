@@ -3,12 +3,13 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>progress</title>
     <style>
         @font-face {
             font-family: 'Speculum';
-            src: url('resources/speculum.ttf');
+            src: url('../../sharedResources/fonts/speculum.ttf');
         }
 
         #frame {
@@ -82,6 +83,10 @@
             stroke: rgb(255, 255, 45);
             fill: rgba(0, 0, 0, 0.2);
         }
+        
+        .black {
+            fill: black;
+        }
 
         .dataFont {
 
@@ -135,7 +140,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
         <svg id="visual">
                 <path id="overlay" class="overlay" d="M300.5,8.83C139.77,8.83,9,139.59,9,300.33s130.77,291.5,291.5,291.5S592,461.06,592,300.33S461.23,8.83,300.5,8.83L300.5,8.83z"></path>
             <path id="innerRing" class="green thirty" d="M300.5,67.13c128.59,0,233.2,104.61,233.2,233.2s-104.61,233.2-233.2,233.2S67.3,428.91,67.3,300.33S171.91,67.13,300.5,67.13 M300.5,37.98c-144.89,0-262.35,117.46-262.35,262.35S155.61,562.68,300.5,562.68s262.35-117.46,262.35-262.35S445.39,37.98,300.5,37.98L300.5,37.98z"></path>
-            <circle id="background" class="green twentyfive" cx="300.5" cy="300.33" r="262.35"></circle>
+            <circle id="background" class="black twentyfive" cx="300.5" cy="300.33" r="262.35"></circle>
             <path id="stroke" class="green" d="M300.5,37.98c144.89,0,262.35,117.46,262.35,262.35S445.39,562.68,300.5,562.68S38.15,445.22,38.15,300.33S155.61,37.98,300.5,37.98 M300.5,8.83C139.77,8.83,9,139.59,9,300.33s130.77,291.5,291.5,291.5S592,461.06,592,300.33S461.23,8.83,300.5,8.83L300.5,8.83z"></path>
             <polygon id="x" class="green" points="386.86,187.06 260.27,313.65 214.14,267.51 164.17,317.48 210.3,363.62 210.3,363.62 260.27,413.59 310.25,363.62 436.83,237.03 "></polygon>
           <svg id="signal">
@@ -153,6 +158,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
 <script>
     document.querySelector('#show').style.visibility = "visible";
     var realityInterface = new RealityInterface();
+    var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
     var outline = document.querySelector('#outline');
     var stroke = document.querySelector('#stroke');
     var innerRing = document.querySelector('#innerRing');

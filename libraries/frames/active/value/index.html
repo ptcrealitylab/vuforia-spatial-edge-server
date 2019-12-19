@@ -3,9 +3,23 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>value</title>
     <style>
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType.otf');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType-Bold.otf');
+            font-weight: bold;
+            font-style: normal;
+        }
+        
         #text {
             position: absolute;
             left: 0;
@@ -19,7 +33,7 @@
             text-align: center;
             vertical-align: middle;
             
-            font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-family: BrutalType-Bold, Brutal Type, "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
             font-size: 100pt;
             color: rgb(45,255,255);
         }
@@ -34,7 +48,7 @@
             }
 
             .cls-2 {
-                fill: #008480;
+                fill: #00ffe6;
             }
         </style>
     </defs>
@@ -45,7 +59,7 @@
                 <g class="cls-1">
                     <polygon points="0 0 0 70.67 57 70.67 174.67 70.67 174.67 37 174.67 0 0 0"/>
                 </g>
-                <g class="cls-1">
+                <g>
                     <path class="cls-2" d="M168.67,6V64.67H6V6H168.67m6-6H0V70.67H174.67V0Z"/>
                 </g>
             </g>
@@ -59,6 +73,7 @@
 <script>
     try {
         var realityInterface = new RealityInterface();
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.setMoveDelay(10);
     } catch (e) {
         console.warn('Reality Interface is not accessible');

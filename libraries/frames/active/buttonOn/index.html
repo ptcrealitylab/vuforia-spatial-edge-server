@@ -3,6 +3,7 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>buttonOn</title>
 </head>
@@ -15,7 +16,11 @@
             }
 
             .cls-2 {
-                fill: #75fbfd;
+                fill: #00fb00;
+            }
+
+            .background {
+                fill: black;
             }
         </style>
     </defs>
@@ -23,7 +28,7 @@
     <g id="Layer_2" data-name="Layer 2">
         <g id="UI">
             <g id="buttonFill" class="cls-1">
-                <polygon class="cls-2" points="75.33 75.33 75.33 4.67 38.34 4.67 4.67 4.67 4.67 38.34 4.67 75.33 75.33 75.33"/>
+                <polygon class="background" points="75.33 75.33 75.33 4.67 38.34 4.67 4.67 4.67 4.67 38.34 4.67 75.33 75.33 75.33"/>
             </g>
             <path class="cls-2" d="M75.33,4.67V75.33H4.67V4.67H75.33M78.67,0H1.33A1.34,1.34,0,0,0,0,1.33V78.67A1.34,1.34,0,0,0,1.33,80H78.67A1.34,1.34,0,0,0,80,78.67V1.33A1.34,1.34,0,0,0,78.67,0Z"/>
             <g class="cls-1">
@@ -38,6 +43,7 @@
 <script>
     try {
         var realityInterface = new RealityInterface();
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.setMoveDelay(1000);
     } catch (e) {
         console.warn('Reality Interface is not accessible');
