@@ -3,12 +3,13 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>progress</title>
     <style>
         @font-face {
             font-family: 'Speculum';
-            src: url('resources/speculum.ttf');
+            src: url('../../sharedResources/fonts/speculum.ttf');
         }
 
         #frame {
@@ -68,7 +69,7 @@
         }
 
         .yellow {
-            fill: rgb(255, 255, 45);
+            fill: rgb(255, 255, 0);
 
         }
         .twentyfive {
@@ -79,8 +80,12 @@
         }
         
         .yellowStroke {
-            stroke: rgb(255, 255, 45);
+            stroke: rgb(255, 255, 0);
             fill: rgba(0, 0, 0, 0.2);
+        }
+        
+        .black {
+            fill: black;
         }
 
         .dataFont {
@@ -134,7 +139,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
         <svg id="visual">
         <path id="overlay" class="overlay" d="M499.15,39.57 M499.15,8.94h-398.3c-50.68,0-91.92,41.23-91.92,91.92v398.3c0,50.68,41.23,91.92,91.92,91.92h398.3c50.68,0,91.91-41.23,91.91-91.92v-398.3C591.06,50.17,549.83,8.94,499.15,8.94L499.15,8.94z"></path>
         <path id="stroke" class="yellow" d="M499.15,39.57c33.84,0,61.28,27.43,61.28,61.28v398.3c0,33.84-27.43,61.28-61.28,61.28h-398.3c-33.84,0-61.28-27.43-61.28-61.28v-398.3c0-33.84,27.43-61.28,61.28-61.28H499.15 M499.15,8.94h-398.3c-50.68,0-91.92,41.23-91.92,91.92v398.3c0,50.68,41.23,91.92,91.92,91.92h398.3c50.68,0,91.91-41.23,91.91-91.92v-398.3C591.06,50.17,549.83,8.94,499.15,8.94L499.15,8.94z"></path>
-        <path id="background" class="yellow twentyfive" d="M499.15,560.43h-398.3c-33.84,0-61.28-27.43-61.28-61.28v-398.3c0-33.84,27.43-61.28,61.28-61.28h398.3c33.84,0,61.28,27.43,61.28,61.28v398.3C560.43,532.99,532.99,560.43,499.15,560.43z"></path>
+        <path id="background" class="black twentyfive" d="M499.15,560.43h-398.3c-33.84,0-61.28-27.43-61.28-61.28v-398.3c0-33.84,27.43-61.28,61.28-61.28h398.3c33.84,0,61.28,27.43,61.28,61.28v398.3C560.43,532.99,532.99,560.43,499.15,560.43z"></path>
         <path id="innerRing" class="yellow thirty" d="M499.15,70.21c16.89,0,30.64,13.74,30.64,30.64v398.3c0,16.89-13.74,30.64-30.64,30.64h-398.3c-16.89,0-30.64-13.74-30.64-30.64v-398.3c0-16.89,13.74-30.64,30.64-30.64H499.15 M499.15,39.57h-398.3c-33.84,0-61.28,27.43-61.28,61.28v398.3c0,33.84,27.43,61.28,61.28,61.28h398.3c33.84,0,61.28-27.43,61.28-61.28v-398.3C560.43,67.01,532.99,39.57,499.15,39.57L499.15,39.57z"></path>
         <path id="x8" class="yellow" d="M281.3,140.72c-29.46,3.42-57.36,14.98-80.68,33.43l-5.4,4.27l34.29,34.29l4.24-3.12c14.52-10.67,31.53-17.74,49.19-20.45l5.2-0.8v-48.43L281.3,140.72z"></path>
         <path id="x7" class="yellow" d="M178.42,195.21l-4.27,5.4c-18.45,23.33-30.01,51.23-33.43,80.68l-0.8,6.83h48.43l0.8-5.2c2.71-17.67,9.78-34.68,20.45-49.19l3.12-4.24L178.42,195.21z"></path>
@@ -157,6 +162,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
 <script>
     document.querySelector('#show').style.visibility = "visible";
     var realityInterface = new RealityInterface();
+    var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
     var outline = document.querySelector('#outline');
     var stroke = document.querySelector('#stroke');
     var innerRing = document.querySelector('#innerRing');

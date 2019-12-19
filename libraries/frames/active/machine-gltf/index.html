@@ -5,10 +5,11 @@
     <title>THREE.js Sphere</title>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <!--<script src="resources/navigation-arrow.js"></script>-->
     <!--<link rel="stylesheet" type="text/css" href="resources/navigation-arrow.css">-->
-    <script src="../sharedResources/threejs-src/2018/three.min.js"></script>
-    <script src="../sharedResources/threejs-src/2018/loaders/GLTFLoader.js"></script>
+    <script src="../../sharedResources/threejs-src/2018/three.min.js"></script>
+    <script src="../../sharedResources/threejs-src/2018/loaders/GLTFLoader.js"></script>
     <style>
         .sequenceButton {
             /*border: 2px solid cyan;*/
@@ -199,6 +200,7 @@
         // make the frame fullscreen within the reality editor,
         // and subscribe to the modelview and projection matrices
         realityInterface = new RealityInterface();
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.subscribeToMatrix();
         realityInterface.setFullScreenOn();
 

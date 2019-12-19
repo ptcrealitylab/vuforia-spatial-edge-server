@@ -3,6 +3,7 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>switch</title>
     <style>
@@ -32,27 +33,31 @@
             }
 
             .cls-2 {
-                fill: #75fbfd;
+                fill: #00fb00;
             }
 
             .cls-3 {
                 fill: #ff007d;
             }
+            
+            .background {
+                fill: black;
+            }
         </style>
     </defs>
     <title>Asset 35</title>
     <g id="Layer_2" data-name="Layer 2">
-        <g id="UI">
+        <g id="offUI">
             <g>
                 <g class="cls-1">
-                    <polygon class="cls-2" points="162 75.33 162 14.67 135 14.67 101.33 14.67 101.33 43.34 101.33 75.33 162 75.33"/>
+                    <polygon class="background" points="162 75.33 162 14.67 135 14.67 101.33 14.67 101.33 43.34 101.33 75.33 162 75.33"/>
                 </g>
                 <path class="cls-2" d="M162,14.67V75.33H101.33V14.67H162M165.33,10H98a1.33,1.33,0,0,0-1.33,1.33V78.67A1.33,1.33,0,0,0,98,80h67.33a1.34,1.34,0,0,0,1.34-1.33V11.33A1.34,1.34,0,0,0,165.33,10Z"/>
                 <g class="cls-1">
                     <path class="cls-2" d="M157.33,19.33V70.67H106V19.33h51.33M162,14.67H101.33V75.33H162V14.67Z"/>
                 </g>
                 <g class="cls-1">
-                    <polygon class="cls-3" points="85.33 85.33 85.33 4.67 48.34 4.67 4.67 4.67 4.67 43.34 4.67 85.33 85.33 85.33"/>
+                    <polygon class="background" points="85.33 85.33 85.33 4.67 48.34 4.67 4.67 4.67 4.67 43.34 4.67 85.33 85.33 85.33"/>
                 </g>
                 <path class="cls-3" d="M85.33,4.67V85.33H4.67V4.67H85.33M88.67,0H1.33A1.34,1.34,0,0,0,0,1.33V88.67A1.34,1.34,0,0,0,1.33,90H88.67A1.34,1.34,0,0,0,90,88.67V1.33A1.34,1.34,0,0,0,88.67,0Z"/>
                 <g class="cls-1">
@@ -66,28 +71,13 @@
 </svg>
 
 <svg id="on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 167.51 90">
-    <defs>
-        <style>
-            .cls-1 {
-                opacity: 0.25;
-            }
-
-            .cls-2 {
-                fill: #75fbfd;
-            }
-
-            .cls-3 {
-                fill: #ff007d;
-            }
-        </style>
-    </defs>
     <title>Asset 37</title>
     <g id="Layer_2" data-name="Layer 2">
-        <g id="UI">
+        <g id="onUI">
             <g>
                 <g>
                     <g class="cls-1">
-                        <polygon class="cls-2" points="162.85 85.33 162.85 4.67 115.85 4.67 82.18 4.67 82.18 43.34 82.18 85.33 162.85 85.33"/>
+                        <polygon class="background" points="162.85 85.33 162.85 4.67 115.85 4.67 82.18 4.67 82.18 43.34 82.18 85.33 162.85 85.33"/>
                     </g>
                     <path class="cls-2" d="M162.85,4.67V85.33H82.18V4.67h80.67M166.18,0H78.85a1.34,1.34,0,0,0-1.34,1.33V88.67A1.34,1.34,0,0,0,78.85,90h87.33a1.33,1.33,0,0,0,1.33-1.33V1.33A1.33,1.33,0,0,0,166.18,0Z"/>
                     <g class="cls-1">
@@ -163,6 +153,7 @@
 
     try {
         var realityInterface = new RealityInterface();
+        var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
         realityInterface.setMoveDelay(1000);
 
         realityInterface.addReadListener('value', function (e) {

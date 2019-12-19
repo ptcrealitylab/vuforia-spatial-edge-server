@@ -3,12 +3,13 @@
 <head>
     <script src="objectDefaultFiles/object.js"></script>
     <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
     <meta charset="UTF-8">
     <title>progress</title>
     <style>
         @font-face {
             font-family: 'Speculum';
-            src: url('resources/speculum.ttf');
+            src: url('../../sharedResources/fonts/speculum.ttf');
         }
 
         #frame {
@@ -82,6 +83,10 @@
             stroke: rgb(255, 255, 45);
             fill: rgba(0, 0, 0, 0.2);
         }
+        
+        .black {
+            fill: black;
+        }
 
         .dataFont {
 
@@ -136,7 +141,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
 	L350.01,69.2C339.57,51.12,320.87,40.33,300,40.33z"></path>
             <svg id="visual">
                 <path id="overlay" class="overlay" d="M300.5,39.66c-21.06,0-39.91,10.89-50.44,29.12L16.9,472.63c-10.53,18.24-10.53,40.01,0,58.25S46.28,560,67.34,560h466.32c21.06,0,39.91-10.89,50.44-29.12c10.53-18.24,10.53-40.01,0-58.25L350.94,68.78C340.41,50.55,321.56,39.66,300.5,39.66L300.5,39.66z"></path>
-                    <path id="innerRing" class="redlight twentyfive" d="M275.28,83.34L42.12,487.19c-11.21,19.42,2.8,43.68,25.22,43.68h466.32c22.42,0,36.43-24.27,25.22-43.68L325.72,83.34C314.51,63.92,286.49,63.92,275.28,83.34z"></path>
+                    <path id="innerRing" class="black twentyfive" d="M275.28,83.34L42.12,487.19c-11.21,19.42,2.8,43.68,25.22,43.68h466.32c22.42,0,36.43-24.27,25.22-43.68L325.72,83.34C314.51,63.92,286.49,63.92,275.28,83.34z"></path>
                     <path  id="background" class="redlight thirty"  d="M300.5,97.9l233.16,403.85H67.34L300.38,97.91C300.39,97.91,300.44,97.9,300.5,97.9 M300.5,68.78c-9.81,0-19.62,4.85-25.22,14.56L42.12,487.19c-11.21,19.42,2.8,43.68,25.22,43.68h466.32c22.42,0,36.43-24.27,25.22-43.68L325.72,83.34C320.12,73.63,310.31,68.78,300.5,68.78L300.5,68.78z"></path>
              <path id="stroke_1_" class="red" d="M300.5,68.78c9.81,0,19.62,4.85,25.22,14.56l233.16,403.85c11.21,19.42-2.8,43.68-25.22,43.68H67.34c-22.42,0-36.43-24.27-25.22-43.68L275.28,83.34C280.88,73.63,290.69,68.78,300.5,68.78 M300.5,39.65c-21.06,0-39.91,10.89-50.44,29.12L16.9,472.62c-10.53,18.24-10.53,40.01,0,58.25c10.53,18.24,29.39,29.12,50.44,29.12h466.32c21.06,0,39.91-10.89,50.44-29.12c10.53-18.24,10.53-40.01,0-58.25L350.94,68.78C340.41,50.54,321.56,39.65,300.5,39.65L300.5,39.65z"></path>
                 <path class="red twentyfive" id="x" d="M279.17,463.02v-42.66h42.66v42.66H279.17z M281.3,377.71V207.09h38.39v170.62H281.3z"></path>
@@ -156,6 +161,7 @@ height: 130px; width: 230px; top: 12px;left: 373px; position: fixed;  transform:
 <script>
     document.querySelector('#show').style.visibility = "visible";
     var realityInterface = new RealityInterface();
+    var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
     var outline = document.querySelector('#outline');
     var stroke = document.querySelector('#stroke');
     var innerRing = document.querySelector('#innerRing');
