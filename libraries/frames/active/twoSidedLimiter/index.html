@@ -430,12 +430,6 @@
         console.log(lastHandleSelected);
     });
 
-    document.getElementById('limiter').addEventListener('pointerdown', function(e) {
-        isMouseDown = true;
-        lastHandleSelected = 'max';
-        console.log(lastHandleSelected);
-    });
-
     document.addEventListener('pointerup', onPointerUp);
     document.addEventListener('pointercancel', onPointerUp);
 
@@ -602,7 +596,7 @@
         realityInterface.addMatrixListener(function(modelView, projection) {
             var scaleFactor = Math.abs(modelView[0]);
             var zDistance = Math.abs(modelView[14]);
-            if (zDistance/scaleFactor > 950*1.5) { // found this to be a good distance through trial and error // todo: switch back to 950, but needs to be bigger for the desktop demo
+            if (zDistance/scaleFactor > 950) { // found this to be a good distance through trial and error // todo: switch back to 950, but needs to be bigger for the desktop demo
                 // hide the touch pad
                 touchpadMaxLimit.style.visibility = 'hidden';
                 touchpadMinLimit.style.visibility = 'hidden';
@@ -616,7 +610,7 @@
         realityInterface.setMoveDelay(1000);
         realityInterface.enableCustomInteractionMode();
         // this can also be done without the API by manually giving these divs the class 'realityInteraction'
-        realityInterface.setInteractableDivs([touchpadMaxLimit, touchpadMinLimit, document.getElementById('limiter')]);
+        realityInterface.setInteractableDivs([touchpadMaxLimit, touchpadMinLimit]);
 
         realityInterface.onRealityInterfaceLoaded(function() {
             realityInterface.changeFrameSize(800, 1300); // adjust the touch overlay of the iframe to match contents
