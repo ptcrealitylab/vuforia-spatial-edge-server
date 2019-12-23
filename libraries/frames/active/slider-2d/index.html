@@ -212,12 +212,12 @@
 
     try {
         realityInterface.addReadListener('valueX', function(e) {
-            properties.value = e.valueX;
+            properties.valueX = e.value;
             renderProperties();
         });
 
         realityInterface.addReadListener('valueY', function(e) {
-            properties.value = e.valueY;
+            properties.valueY = e.value;
             renderProperties();
         });
         

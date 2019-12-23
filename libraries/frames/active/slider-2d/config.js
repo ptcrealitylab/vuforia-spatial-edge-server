@@ -3,7 +3,7 @@ exports.properties = {
     showInPocket: true,
     tags: ['input', 'analog'],
     nodes: [
-        { name: 'valueX', type: 'node', x: -50, y: -50 },
-        { name: 'valueY', type: 'node', x: 50, y: 50 }
+        { name: 'valueX', defaultValue: 0.5, type: 'node', x: -50, y: -50 },
+        { name: 'valueY', defaultValue: 0.5, type: 'node', x: 50, y: 50 }
     ]
 };
