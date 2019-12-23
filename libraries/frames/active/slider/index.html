@@ -148,9 +148,6 @@
     });
     
     function renderProperties() {
-        // for stylistic purposes, don't render when it's at 0 (otherwise when you create a new frame it jumps into awkward-looking state by default)
-        if (properties.value === 0) { return; }
-        
         var newY = (maxY - minY) * (1 - properties.value) + minY;
         newY = Math.max(minY, Math.min(maxY, newY));
         handleContainer.style.top = newY + 'px';

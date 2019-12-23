@@ -3,6 +3,6 @@ exports.properties = {
     showInPocket: true,
     tags: ['input', 'analog'],
     nodes: [
-        { name: 'value', type: 'node', x: 0, y: 0 }
+        { name: 'value', defaultValue: 0.5, type: 'node', x: 0, y: 0 }
     ]
 };

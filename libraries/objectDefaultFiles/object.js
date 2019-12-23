@@ -80,7 +80,7 @@
         while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
         return stampUuidTime;
     }
-    
+
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
 
     console.log('fullscreen reset for new frame ' + realityObject.sendFullScreen);
@@ -193,7 +193,7 @@
      * @param {object} msgContent - JSON contents received by the iframe's contentWindow.postMessage listener
      */
     realityObject.messageCallBacks.mainCall = function (msgContent) {
-        
+
         if (typeof msgContent.sendMessageToFrame !== 'undefined') {
             return; // TODO: fix this bug in a cleaner way
         }
@@ -214,14 +214,14 @@
                     realityObject.height = document.body.scrollHeight;
                     realityObject.width = document.body.scrollWidth;
                 }
-                
+
                 realityObject.node = msgContent.node;
                 realityObject.frame = msgContent.frame;
                 realityObject.object = msgContent.object;
 
                 // Post the default state of this frame to the parent application
                 postAllDataToParent();
-                
+
                 if (realityInterface) {
                     // adds the API methods not reliant on the socket.io connection
                     realityInterface.injectAllNonSocketAPIs();
@@ -239,7 +239,7 @@
                     realityInterface.activateScreenObject(); // make sure it gets sent with updated object,frame,node
                 }
             }
-            
+
             realityObject.alreadyLoaded = true;
 
             // initialize realityObject for logic block settings menus, which declare a new RealityLogic()
@@ -366,14 +366,14 @@
 
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
-            
+
             function forElementAndParentsRecursively(elt, callback) {
                 callback(elt);
                 if (elt.parentNode && elt.parentNode.tagName !== "HTML" && elt.parentNode !== document) {
                     forElementAndParentsRecursively(elt.parentNode, callback);
                 }
             }
-            
+
             function elementOrRecursiveParentIsOfClass(element, className) {
                 var foundClassOnAnyElement = false;
                 forElementAndParentsRecursively(element, function(thatElement) {
@@ -387,7 +387,7 @@
             // see if it is a realityInteraction div
             if (eventData.type === 'pointerdown') {
                 if (realityObject.customInteractionMode) {
-                    
+
                     if (!realityObject.invertedInteractionMode) {
 
                         if (elementOrRecursiveParentIsOfClass(elt, 'realityInteraction')) {
@@ -402,9 +402,9 @@
                                 pointerDownResult: 'nonInteraction'
                             });
                         }
-                        
+
                     } else {
-                        
+
                         // do the opposite for each condition
                         if (elementOrRecursiveParentIsOfClass(elt, 'realityInteraction')) {
                             postDataToParent({
@@ -417,19 +417,19 @@
                                 pointerDownResult: 'interaction'
                             });
                         }
-                        
-                    }
-                    
 
-                    
+                    }
+
+
+
                 } else {
                     elt.dispatchEvent(event);
                 }
-            
+
             } else {
                 elt.dispatchEvent(event);
             }
-            
+
 
             // send acceptedTouch message to stop the touch propagation
             if (eventData.type === 'pointerdown') {
@@ -634,7 +634,7 @@
         }
         this.pendingSends = [];
 
-        //console.log('All non-socket APIs are loaded and injected into the object.js API');
+        // console.log('All non-socket APIs are loaded and injected into the object.js API');
     };
 
     RealityInterface.prototype.injectSocketIoAPI = function() {
@@ -770,7 +770,7 @@
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on("object/publicData", function (msg) {
                 var thisMsg = JSON.parse(msg);
-                
+
                 if (typeof thisMsg.sessionUuid !== "undefined") {
                     if (thisMsg.sessionUuid === sessionUuid) {
                         console.log('ignoring message sent by self (publicData)');
@@ -788,7 +788,7 @@
                         publicDataKeys.forEach(function(existingKey) {
                             thisMsg.publicData[node][existingKey] = thisMsg.publicData[existingKey];
                         });
-                       // console.warn('converted incorrect publicData format in object/publicData listener');
+                        // console.warn('converted incorrect publicData format in object/publicData listener');
                     } else {
                         return;
                     }
@@ -845,7 +845,7 @@
                 publicData: realityObject.publicData[node],
                 sessionUuid: sessionUuid
             }));
-            
+
             if (!realtimeOnly) {
                 parent.postMessage(JSON.stringify(
                     {
@@ -857,7 +857,7 @@
                     }
                 ), "*");
             }
-            
+
         };
 
         /**
@@ -965,7 +965,7 @@
 
         this.sendMessageToFrame = function (frameId, msgContent) {
             // console.log(realityObject.frame + ' is sending a message to ' + frameId);
-            
+
             postDataToParent({
                 sendMessageToFrame: {
                     sourceFrame: realityObject.frame,
@@ -974,7 +974,7 @@
                 }
             });
         };
-        
+
         this.sendEnvelopeMessage = function (msgContent) {
             postDataToParent({
                 envelopeMessage: msgContent
@@ -1096,17 +1096,17 @@
             // realityObject.height = document.body.scrollHeight;
             // realityObject.width = document.body.scrollWidth;
             // postAllDataToParent();
-            
+
             var dataToPost = {
                 fullScreen: realityObject.sendFullScreen,
                 fullscreenZPosition: realityObject.fullscreenZPosition,
                 stickiness: realityObject.sendSticky
             };
 
-            if (typeof params.animated !== 'undefined') {
+            if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
             }
-            
+
             postDataToParent(dataToPost);
         };
 
@@ -1117,17 +1117,17 @@
             // realityObject.height = "100%";
             // realityObject.width = "100%";
             // postAllDataToParent();
-            
+
             var dataToPost = {
                 fullScreen: realityObject.sendFullScreen,
                 fullscreenZPosition: realityObject.fullscreenZPosition,
                 stickiness: realityObject.sendSticky
             };
-            
+
             if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
             }
-            
+
             postDataToParent(dataToPost);
         };
 
@@ -1147,7 +1147,7 @@
          */
         this.setExclusiveFullScreenOn = function (onEjectedCallback) {
             realityObject.isFullScreenExclusive = true;
-            
+
             if (typeof onEjectedCallback !== 'undefined') {
                 realityObject.messageCallBacks.fullScreenEjectedCall = function (msgContent) {
                     if (typeof msgContent.fullScreenEjectedEvent !== "undefined") {
@@ -1155,12 +1155,12 @@
                     }
                 };
             }
-            
+
             postDataToParent({
                 isFullScreenExclusive: realityObject.isFullScreenExclusive
             });
         };
-        
+
         this.setExclusiveFullScreenOff = function () {
             realityObject.isFullScreenExclusive = false;
             postDataToParent({
@@ -1185,7 +1185,7 @@
                 videoRecording: false
             });
         };
-        
+
         this.getScreenshotBase64 = function(callback) {
             realityObject.messageCallBacks.screenshotBase64 = function (msgContent) {
                 if (typeof msgContent.screenshotBase64 !== 'undefined') {
@@ -1241,7 +1241,7 @@
         this.enableCustomInteractionMode = function() {
             realityObject.customInteractionMode = true;
         };
-        
+
         this.enableCustomInteractionModeInverted = function() {
             realityObject.customInteractionMode = true;
             realityObject.invertedInteractionMode = true;
@@ -1296,7 +1296,7 @@
 
         /**
          * Broadcasts a standardized message when a video plays, that will automatically pause videos in all other frames
-         * The event that is sent 
+         * The event that is sent
          */
         this.announceVideoPlay = function() {
             var messageToSend = 'pauseOtherVideosExcept' + realityObject.frame;
@@ -1356,7 +1356,7 @@
          * @param {function} callback
          */
         this.getScreenDimensions = function(callback) {
-            
+
             realityObject.messageCallBacks.screenDimensionsCall = function (msgContent) {
                 if(realityObject.visibility !== "visible") return;
                 if (typeof msgContent.screenDimensions !== "undefined") {
@@ -1368,9 +1368,9 @@
             postDataToParent({
                 getScreenDimensions: true
             });
-            
+
         };
-        
+
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
          * Hides the frame itself and instead populates a background context within the editor with this frame's contents
@@ -1396,7 +1396,7 @@
                 }
             }
         };
-        
+
         this.addFrameMessageListener = function(callback) {
             realityObject.messageCallBacks.frameMessageCall = function (msgContent) {
                 if (typeof msgContent.sendMessageToFrame !== 'undefined') {
@@ -1608,12 +1608,12 @@
             }
             return true;
         };
-        
+
         this.registerTouchDecider = function(callback) {
             realityObject.touchDecider = callback;
             realityObject.touchDeciderRegistered = true;
         };
-        
+
         // by default, register a touch decider that ignores touches if they hit a transparent body background
         this.registerTouchDecider(function(eventData) {
             var elt = document.elementFromPoint(eventData.x, eventData.y);
@@ -1647,7 +1647,7 @@
         this.setIOSInterface = function(o) {
             this.iosObject = o;
         };
-        
+
         this.initializeIOSSocket = function() {
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
