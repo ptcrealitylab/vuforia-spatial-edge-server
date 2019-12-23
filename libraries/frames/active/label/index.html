@@ -97,11 +97,15 @@
     text.style.fontSize = (700/textLength)+"pt";
 
     text.addEventListener("pointerup", function (){
-        if(text.innerText === "edit label") {
+        if (text.innerText.toLowerCase() === "edit label") {
             text.innerText = "";
         }
         text.focus();
     }, false);
+    
+    text.addEventListener("focusout", function(e) {
+        console.log('keyboard closed');
+    });
 
     // if outside the frame has focus, it will receive the keyboard event via a post message
     window.addEventListener("message", function (e) {
