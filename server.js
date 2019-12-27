@@ -1515,11 +1515,7 @@ function objectWebServer() {
         var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
         
-        var objectKey = utilities.readObject(objectLookup,urlArray[0]);
-        var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
-
-        scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
-        scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
+        // inject the server IP address, but don't inject the objectKey and frameKey, as those come from the editor
         scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
