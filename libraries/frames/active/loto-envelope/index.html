@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/envelope.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <meta charset="UTF-8">
+    <title>LOTO Envelope</title>
+    <style>
+        #rootElementWhenOpen {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 736px; /* gets overwritten by realityInterface.getScreenDimensions but this is a default */
+            height: 414px;
+            color: white;
+            text-align: center;
+            font-size: 24px;
+        }
+        #rootElementWhenClosed {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 766px;
+            height: 418px;
+        }
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType.otf');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType-Bold.otf');
+            font-weight: bold;
+            font-style: normal;
+        }
+        body {
+            font-family: "Brutal Type", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            /*border: 2px solid black;*/
+        }
+        .block {
+            width: 200px;
+            height: 200px;
+            border: 10px solid white;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            line-height: 190px;
+            font-size: 60px;
+            box-sizing: border-box;
+            border-radius: 5px;
+        }
+        .small {
+            width: 120px;
+            height: 120px;
+            line-height: 120px;
+        }
+        .smaller {
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            font-size: 20px;
+        }
+        .sleek {
+            border-width: 0;
+            color: white;
+        }
+        .dashedOutline {
+            border: 3px dashed white;
+            background-color: transparent;
+        }
+        .step {
+            background-color: rgba(0,255,255,0.3);
+            color: cyan;
+            font-size: 45px;
+            font-weight: bold;
+            border: none;
+        }
+        .completed {
+            background-color: rgba(0,255,0,0.3);
+            color: rgb(0,255,0);
+        }
+        #instructionLabel {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            line-height: 80px;
+            text-align: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        #navigation {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #navArrow {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100px;
+            height: 100px;
+            border: 5px solid cyan;
+        }
+        #navCanvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 768px;
+            height: 414px;
+            pointer-events: none;
+            background-color: transparent;
+            /*border: 2px solid red;*/
+        }
+        .dangerWarningIcon {
+            position: absolute;
+            left: 100px;
+            top: 5px;
+            width: 70px;
+            height: 70px;
+        }
+        #handle {
+            width: 60px;
+        }
+        #handleDots {
+            position: absolute;
+            left: 5px; /* centered */
+            top: 0;
+            width: 50px;
+            height: 200px;
+        }
+        .animatedX {
+            transition: left 0.25s ease-out;
+        }
+    </style>
+</head>
+<body style="width: 766px; height: 418px">
+    <!-- rootElementWhenOpen is the UI that shows when it is in fullscreen 2D mode -->
+    <div id="rootElementWhenOpen">
+        <div id="openContainer"></div>
+        <div id="navigation">
+            <canvas id="navCanvas" width="768px" height="414px"></canvas>
+        </div>
+    </div>
+    <!-- rootElementWhenClosed is the UI that shows when it minimized into an icon in 3D space -->
+    <div id="rootElementWhenClosed">
+        <div id="handle" class="block sleek realityInteraction">
+            <img id="handleDots" src="resources/handle-dots.svg" class="realityInteraction">
+        </div>
+        <div id="editButton" class="block sleek" style="left: 70px; width: 698px;">Edit LOTO Steps</div>
+        <div id="playButton" class="block sleek" style="display:none; left: 70px; width: 698px; top: 220px;">Start Procedure</div>
+    </div>
+</body>
+<script>
+    let rootElementWhenOpen = document.getElementById('rootElementWhenOpen');
+    let rootElementWhenClosed = document.getElementById('rootElementWhenClosed');
+    var openContainer = document.getElementById('openContainer'); // holds all programatically generate elements when step is expanded
+
+    let realityInterface = new RealityInterface();
+
+    var frameMetadata = {}; // holds info about each step, such as isCompleted
+
+    var isSessionEditing = true; // whether we're in editing or playback mode
+    var currentStepNumber = 0; // steps are 1-indexed. 0 means undefined.
+    var didManuallySetStepNumber = false; // if we tap on a specific step number, jumps to that instead of first one
+    var manuallySetStepNumber = 0;
+    var canvasUsed = false; // flag to only clear canvas if it has content
+
+    var DangerTypes = Object.freeze({ // enum matches DangerTypes in the loto-step frame
+        ELECTRIC: 0,
+        WATER: 1,
+        GAS: 2,
+        PNEUMATIC: 3
+    });
+
+    var stepButtonWidth = 80; // properties to render the row step number icons 
+    var stepNumberSelected;
+    var stepDivSelected;
+    var stepRenderingOrder;
+    var stepStartPositionMap = {}; // important for reordering steps, keeps track of where they should all end up
+    var previousArrowStartX = 0; // used to animate/tween arrow x position when going to next step
+
+    // this designates this frame as an envelope that accepts loto-steps, is not stackable, and keeps track of frame order
+    let envelope = new Envelope(realityInterface, ['loto-step'], rootElementWhenOpen, rootElementWhenClosed, false, true);
+
+    // listen for isStepCompleted messages and screenPosition messages from steps
+    envelope.onMessageFromContainedFrame(function(message) {
+        // update completion status of steps in response to isStepCompleted messages
+        if (envelope.isOpen && !isSessionEditing) {
+            if (typeof message.isStepCompleted !== 'undefined') {
+                if (typeof frameMetadata[message.sourceFrame] === 'undefined') {
+                    frameMetadata[message.sourceFrame] = {};
+                }
+                if (message.isStepCompleted && !frameMetadata[message.sourceFrame].isCompleted) {
+                    didManuallySetStepNumber = false; // otherwise can get stuck on same step when you manually set
+                }
+                if (frameMetadata[message.sourceFrame].isCompleted !== message.isStepCompleted) {
+                    frameMetadata[message.sourceFrame].isCompleted = message.isStepCompleted;
+                    render(); // only need to re-render if new completion state is different
+                }
+            }
+        }
+
+        // do a few checks to make sure we only process the fast stream of step position data when we really need it
+        if (!isSessionEditing && envelope.isOpen) {
+            if (frameMetadata[message.sourceFrame]) {
+                if (message.sourceFrame === envelope.getFrameIdAtIndex(currentStepNumber-1) && typeof message.screenPosition !== 'undefined') {
+                    renderNavigationArrow(message.screenPosition); // draw an arrow to the current step
+                }
+            }
+        }
+    });
+
+    // opens up the envelope into fullscreen mode when the minimized icon is tapped
+    document.getElementById('editButton').addEventListener('pointerup', function() {
+        isSessionEditing = true;
+        envelope.open();
+    });
+    
+    // we make sure to reset all step progress when we enter playback mode
+    document.getElementById('playButton').addEventListener('pointerup', function() {
+        isSessionEditing = false;
+        resetStepProgress();
+        envelope.open();
+    });
+    
+    init();
+    
+    /**
+     * Finishes setting up realityInterface and envelope, and renders the initial view
+     */
+    function init() {
+        render(); // render immediately, but will likely render again with updated data due to event listeners
+
+        // this makes it only movable using the handle (because it has class 'realityInteraction')
+        realityInterface.enableCustomInteractionModeInverted();
+        realityInterface.setMoveDelay(-1); // impossible to move/delete except using custom interaction div
+
+        // re-render anytime it opens / closes / number of contained frames change
+        envelope.onFrameAdded(render);
+        envelope.onFrameDeleted(render);
+        envelope.onOpen(render);
+        envelope.onClose(render);
+        envelope.onPublicDataLoaded(render);
+
+        // reset completion state whenever you exit playback mode (preserves state when exiting editing mode)
+        envelope.onClose(function() {
+            if (!isSessionEditing) { resetStepProgress(); }
+        });
+
+        // touch listeners for re-ordering steps by dragging around the step numbers
+        document.addEventListener('pointermove', onDocumentPointerMove);
+        document.addEventListener('pointerup', onDocumentPointerUp);
+    }
+    
+    /**
+     * Resets completion status of each step, and sends a message to collapse their UI if they are expanded
+     */
+    function resetStepProgress() {
+        currentStepNumber = 0;
+        didManuallySetStepNumber = false;
+        manuallySetStepNumber = 0;
+        Object.values(frameMetadata).forEach(function(frameData) {
+            frameData.isCompleted = false;
+        });
+        for (var stepNumber = 1; stepNumber <= envelope.frameIdOrdering.length; stepNumber++) {
+            collapseStep(stepNumber);
+        }
+        render();
+    }
+
+    /**
+     * Update the UI based on the current state. Uses a state machine to manage the variety of potential views.
+     * Most divs get destroyed and re-created each render, so that we don't have to track as much UI state.
+     */
+    function render() {
+        if (!envelope.isOpen) {
+            // only show 'Start Procedure' button if you've added any steps
+            var numFrames = envelope.frameIdOrdering.length;
+            document.getElementById('playButton').style.display = (numFrames === 0) ? 'none' : '';
+            
+        } else {
+            // reset container on every re-render, by removing all its children
+            var first = openContainer.firstElementChild;
+            while (first) {
+                first.remove();
+                first = openContainer.firstElementChild;
+            }
+
+            // only clear the canvas when needed
+            if (canvasUsed) {
+                var canvas = document.getElementById('navCanvas');
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, envelope.screenDimensions.width, envelope.screenDimensions.height);
+                canvasUsed = false;
+            }
+            
+            // add a row of step numbers at the bottom edge of the screen based on how many steps have been added
+            renderStepIcons();
+
+            if (isSessionEditing) {
+                // in editing mode, the step number icons can be dragged to reorder
+                [].slice.call(document.querySelectorAll('.step')).forEach(function(stepButton, index) {
+                    stepButton.addEventListener('pointerdown', function(e) {
+                        stepNumberSelected = parseInt(stepButton.getAttribute("data-step-number"));
+                        stepDivSelected = stepButton;
+                    });
+                });
+                
+                createDiv('instructionLabel', null, 'Add LOTO Steps...', openContainer);
+
+            } else {
+                // only in playback mode, render warning divs in corner based on overall dangers of the sequence
+                computeDangerTypes().forEach(function(dangerType, iconIndex) {
+                    var warning = document.createElement('img');
+                    warning.id = 'dangerWarning' + dangerType;
+                    warning.className = 'dangerWarningIcon';
+                    warning.src = getDangerTypeWarningIconSrc(parseInt(dangerType));
+                    warning.style.left = 100 + (iconIndex * 80) + 'px';
+                    openContainer.appendChild(warning);
+                });
+                
+                // collapse the previous step and show the new one if needed
+                if (currentStepNumber !== computeCurrentStepNumber()) {
+                    collapseStep(currentStepNumber); // at this point, currentStepNumber points to the previous step
+                    currentStepNumber = computeCurrentStepNumber(); // only after collapsing can we update currentStepNumber
+                    expandStep(currentStepNumber); // now show the new step
+                }
+            }
+
+            // all steps need to be kept up-to-date about whether they are in playback or editing mode
+            envelope.sendMessageToAllContainedFrames({
+                isEditable: isSessionEditing
+            });
+        }
+    }
+
+    /**
+     * Sends a message to a step telling it to expand from icon to show its details/contents
+     */
+    function expandStep(stepNumber) {
+        setTimeout(function() {
+            envelope.sendMessageToFrameAtIndex(stepNumber-1, {
+                expandFrame: true
+            });
+        }, 50); // expand after a tiny delay, for visual sequence perception
+    }
+
+    /**
+     * Sends a message to a step telling it to minimize into its icon 
+     */ 
+    function collapseStep(stepNumber) {
+        envelope.sendMessageToFrameAtIndex(stepNumber-1, {
+            expandFrame: false
+        });
+    }
+    
+    /**
+     * Add a step number to the bottom row for each contained frame
+     */
+    function renderStepIcons() {
+        envelope.frameIdOrdering.forEach(function(id) {
+            if (typeof frameMetadata[id] === 'undefined') {
+                frameMetadata[id] = {};
+            }
+        });
+
+        // TODO: adjust the visuals of the envelope [X] button when all steps are completed
+        // var areAllCompleted = true;
+        // envelope.frameIdOrdering.forEach(function(id) {
+        //     if (!frameMetadata[id].isCompleted) {
+        //         areAllCompleted = false;
+        //     }
+        // });
+        // if (envelope.frameIdOrdering.length === 0) {
+        //     areAllCompleted = false;
+        // }
+        // if (areAllCompleted) { console.log('all steps completed!'); }
+
+        var margin = 10;
+        var stepButtonTop = (envelope.screenDimensions.height - stepButtonWidth - margin);
+        var numSteps = envelope.frameIdOrdering.length;
+        stepStartPositionMap = {};
+        
+        envelope.frameIdOrdering.forEach(function(id, index) {
+            var stepNumber = index + 1;
+            var stepButton = createDiv('stepButton' + stepNumber, ['block', 'smaller', 'step', 'animatedX'], stepNumber, openContainer);
+            stepButton.setAttribute("data-step-number", stepNumber);
+            stepButton.style.top = stepButtonTop + 'px';
+            // position each step button so that the row is centered and they each have a margin between them
+            stepButton.style.left = envelope.screenDimensions.width/2 - ((stepButtonWidth + margin)/2) * numSteps + (stepButtonWidth + margin) * index + 'px';
+            // cache the center position of each to use when dragging them around to re-order
+            stepStartPositionMap[stepNumber] = parseInt(stepButton.style.left) + stepButton.getClientRects()[0].width/2;
+            // if completed, turns them green instead of blue
+            if (frameMetadata[id].isCompleted) {
+                stepButton.classList.add('completed');
+            }
+            // when you tap on a button in playback mode, jump to that step and expand it
+            stepButton.addEventListener('pointerdown', function() {
+                if (isSessionEditing) {
+                    stepButton.classList.remove('animatedX'); // don't animate position of element being dragged
+                } else {
+                    manuallySetStepNumber = stepNumber;
+                    didManuallySetStepNumber = true;
+                    render();
+                }
+            });
+        });
+    }
+
+    /**
+     * Drags a step's x position and swaps the order of it and its neighbors if it moves beyond them
+     * Somewhat convoluted calculations that mimic the behavior of dragging to reorder icons in the MacOS dock
+     */
+    function onDocumentPointerMove(e) {
+        if (isSessionEditing && stepDivSelected) {
+            
+            // moving the step button itself is simple
+            var newLeft = (e.pageX - stepButtonWidth/2);
+            stepDivSelected.style.left = newLeft + 'px';
+
+            // whenever you cross the threshold so that this is < x of the thing before it, or > x of the thing after it
+            // animate the other one to move into this one's current spot. we do this by getting the current X position
+            // of all steps, sorting the list, and rendering all others in the resulting spots as if they were at those indices
+
+            // gets the cached X positions of each button (excluding the one dragged around) and sorts the list
+            var positions = [].slice.call(document.querySelectorAll('.step')).filter(function(stepDiv) {
+                return parseInt(stepDiv.getAttribute('data-step-number')) !== stepNumberSelected;
+            }).map(function(stepDiv) {
+                return stepStartPositionMap[parseInt(stepDiv.getAttribute('data-step-number'))];
+            });
+            positions.push(e.pageX); // includes the new dragged x position of the selected step button
+            positions.sort();
+
+            // helper function, not efficient but the length of the list is short enough that it doesn't matter much
+            function getKeyByValue(object, value) {
+                return Object.keys(object).find(function(key) {
+                    return object[key] === value; // returns the first key that maps to the specified value
+                });
+            }
+
+            // figures out which step number corresponds to which index of the sorted list of x positions
+            stepRenderingOrder = positions.map(function(x) {
+                var stepNumber = getKeyByValue(stepStartPositionMap, x);
+                if (typeof stepNumber === 'undefined') {
+                    stepNumber = stepNumberSelected;
+                }
+                return parseInt(stepNumber);
+            }); // result will be something like [3, 1, 2] if you drag the third step to the left of the first
+
+            // renders the buttons based on their index in the stepRenderingOrder list
+            stepRenderingOrder.forEach(function(stepNumber, index) {
+                // render the button for 'stepNumber' at x position for 'index' (except for stepNumberSelected)
+                if (stepNumber !== stepNumberSelected) {
+                    var stepButton = document.getElementById('stepButton' + stepNumber);
+                    stepButton.style.left = stepStartPositionMap[index+1] - stepButton.getClientRects()[0].width/2 + 'px';
+                }
+            });
+        }
+    }
+
+    /**
+     * Stop dragging the step number, update the envelope with the resulting order, and reset some temporary state
+     */ 
+    function onDocumentPointerUp() {
+        if (isSessionEditing && stepDivSelected) {
+            var frameSelected = envelope.frameIdOrdering[stepNumberSelected-1];
+            var newIndex = stepRenderingOrder.indexOf(stepNumberSelected);
+            envelope.reorderFrames(frameSelected, newIndex); // simple API to move the frame's ordering in the envelope
+            stepRenderingOrder = null;
+            stepNumberSelected = undefined;
+            stepDivSelected.classList.add('animatedX'); // re-enable animations on this div now that it's not dragged
+            stepDivSelected = null;
+            render();
+        }
+    }
+
+    /**
+     * Draws an arrow from the step number button to the approximate screen (x,y) of the step frame
+     * @param {{center: {x: number, y: number}}} screenPosition - the x,y position of the step frame on the viewport
+     */
+    function renderNavigationArrow(screenPosition) {
+        var stepPosition = {
+            x: screenPosition.center.x,
+            y: screenPosition.center.y
+        };
+        var canvas = document.getElementById('navCanvas');
+        var ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, envelope.screenDimensions.width, envelope.screenDimensions.height);
+        
+        // animates position and opacity to ease out towards the next step
+        var destinationStartX = getArrowStartX(computeCurrentStepNumber());
+        var startX = destinationStartX - 0.7 * (destinationStartX - previousArrowStartX);
+        var startY = envelope.screenDimensions.height - 100;
+        var alpha = Math.max(0.2, 1.0 - 3 * Math.abs((startX / destinationStartX) - 1));
+
+        if (stepPosition.y > startY) { return; } // only draw line if it goes upwards from the button, otherwise it looks bad
+
+        // starting path of the arrow from the start square to the end square and drawing the stroke
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX, stepPosition.y);
+        ctx.lineTo(stepPosition.x, stepPosition.y);
+        ctx.strokeStyle = 'rgba(0,255,255,'+alpha+')';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        
+        previousArrowStartX = startX; // update for next frame's animation
+        canvasUsed = true;
+    }
+
+    /**
+     * Helper function returns x position of the step number button
+     */
+    function getArrowStartX(stepNumber) {
+        return stepStartPositionMap[stepNumber] || envelope.screenDimensions.width/2; // use center of screen as backup
+    }
+    
+    /**
+     * Returns the set of all danger types of steps that this envelope contains at least one of
+     *@return {Array.<string>}
+     */
+    function computeDangerTypes() {
+        var dangerTypesPresent = [];
+
+        // converts from type used in loto-step frame, to enuj
+        function dangerCategoryToType(categoryName) {
+            if (categoryName === 'loto-step-E') {
+                return DangerTypes.ELECTRIC;
+            } else if (categoryName === 'loto-step-W') {
+                return DangerTypes.WATER;
+            } else if (categoryName === 'loto-step-P') {
+                return DangerTypes.GAS;
+            } else if (categoryName === 'loto-step-M') {
+                return DangerTypes.PNEUMATIC;
+            }
+        }
+
+        Object.values(envelope.containedFrames).map(function(frame){
+            return frame.categories; // get category names e.g. 'loto-step-E' of each frame
+        }).reduce(function(a,b){
+            return a.concat(b); // flatten array of category names
+        }, []).map(function(category){
+            return dangerCategoryToType(category); // convert to DangerType enum
+        }).filter(function(dangerType) {
+            return typeof dangerType !== 'undefined'; // remove undefined
+        }).forEach(function(dangerType) {
+            if (dangerTypesPresent.indexOf(dangerType) === -1) {
+                dangerTypesPresent.push(dangerType); // only push one of each
+            }
+        });
+        
+        return dangerTypesPresent;
+    }
+
+    /**
+     * Helper function returns icon img src for each warning symbol given the DangerType
+     */
+    function getDangerTypeWarningIconSrc(type) {
+        if (type === DangerTypes.ELECTRIC) {
+            return 'resources/loto-warnings/warning-electrical.svg';
+        } else if (type === DangerTypes.WATER) {
+            return 'resources/loto-warnings/warning-water.svg';
+        } else if (type === DangerTypes.GAS) {
+            return 'resources/loto-warnings/warning-pneumatic.svg';
+        } else if (type === DangerTypes.PNEUMATIC) {
+            return 'resources/loto-warnings/warning-mechanical.svg';
+        } else return null;
+    }
+
+    /**
+     * Calculates which is the earliest step that hasn' tbeen completed yet. Or returns the manual step number, if you
+     * specifically tapped on one of the buttons.
+     */
+    function computeCurrentStepNumber() {
+        if (didManuallySetStepNumber) { // when you tap on one of the step buttons, override the auto calculation
+            return manuallySetStepNumber;
+        }
+
+        // walk through each step in order, starting from the first, and return as soon as you find one that isn't completed
+        var firstUncompletedStep = null;
+        envelope.frameIdOrdering.forEach(function(id, index) {
+            if (firstUncompletedStep) return; // only get the first one
+            if (!frameMetadata[id].isCompleted) {
+                firstUncompletedStep = index+1;
+            }
+        });
+        return firstUncompletedStep;
+    }
+
+    /**
+     * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
+     * Any parameter can be omitted (pass in null) to ignore those effects
+     * @param {string|null} id
+     * @param {string|Array.<string>|null} classList
+     * @param {string|null} innerHTML
+     * @param {HTMLElement|null} parentToAddTo
+     * @return {HTMLDivElement}
+     */
+    function createDiv(id, classList, innerHTML, parentToAddTo) {
+        var preExistingDiv = document.getElementById(id);
+        var div = preExistingDiv ? preExistingDiv : document.createElement('div');
+        if (id) {
+            div.id = id;
+        }
+        if (classList) {
+            if (typeof classList === 'string') {
+                div.className = classList;
+            } else if (typeof classList === 'object') {
+                classList.forEach(function(className) {
+                    div.classList.add(className);
+                });
+            }
+        }
+        if (innerHTML) {
+            div.innerHTML = innerHTML;
+        }
+        if (parentToAddTo) {
+            parentToAddTo.appendChild(div);
+        }
+        return div;
+    }
+</script>
+</html>

@@ -1,5 +1,5 @@
 exports.properties = {
-    name: 'loto',
+    name: 'loto-step',
     showInPocket: true,
     tags: ['lockout-tagout', 'step', 'envelope-contents'],
     nodes: [

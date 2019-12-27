@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
+    <meta charset="UTF-8">
+    <title>LOTO Step</title>
+    <style>
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType.otf');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Brutal Type';
+            src: url('../../sharedResources/fonts/brutal/BrutalType-Bold.otf');
+            font-weight: bold;
+            font-style: normal;
+        }
+        body {
+            font-family: "Brutal Type", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        .block {
+            width: 200px;
+            height: 200px;
+            border: 10px solid white;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            line-height: 190px;
+            font-size: 60px;
+            box-sizing: border-box;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+        .blockSvg {
+            width: 200px;
+            height: 200px;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            line-height: 190px;
+            font-size: 60px;
+            box-sizing: border-box;
+        }
+        .small {
+            width: 120px;
+            height: 120px;
+            line-height: 110px;
+        }
+        .sleek {
+            border-width: 0;
+            color: white;
+        }
+        .twoLine {
+            font-size: 40px;
+            line-height: 50px !important;
+        }
+        #topLeft {
+            left: 0;
+            top: 0;
+        }
+        #topRight {
+            left: 220px;
+            top: 0;
+        }
+        #bottomLeft {
+            left: 0;
+            top: 220px;
+        }
+        #bottomRight {
+            left: 220px;
+            top: 220px;
+        }
+        #locator {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border: 5px solid #ff4365;
+            background-color: #ff436588;
+            box-sizing: border-box;
+        }
+        #lotoIcon {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            left: 0;
+            top: 440px;
+        }
+        #completedImage {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            left: 0;
+            top: 440px;
+        }
+        .recording {
+            color: red !important;
+        }
+        #recordedVideo {
+            display: inline;
+            position: absolute;
+            left: 440px;
+            top: 0;
+            width: 782px;
+            height: 440px;
+        }
+        #videoImage {
+            display: inline;
+            position: absolute;
+            left: 440px;
+            top: 0;
+            width: 782px;
+            height: 440px;
+        }
+        .videoHidden {
+            display: none !important;
+        }
+        .videoRecordIcon {
+            width: 120px;
+            height: 120px;
+            left: 40px;
+            top: 40px;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div id="videoContainer">
+    <div id="videoSrc" class="videoHidden">
+        <video id="recordedVideo" width="782" height="440" playsinline webkit-playsinline>
+            <source id="source">
+        </video>
+    </div>
+</div>
+</body>
+<script>
+    var container = document.getElementById('container');
+    var recordedVideo = document.querySelector('#recordedVideo');
+    var isDangerTypeConfigured = false;
+    var isDangerValueConfigured = true; // right now I'm counting it as configured even if you haven't entered a value (it is optional)
+
+    var dangerType = undefined;
+    var dangerValue = undefined;
+    var dangerTypeNumber = 1; // step number, out of steps of the same danger type (electrical, water, etc)
+
+    var videoPath = null;
+    var isVideoRecording = false;
+    var isVideoLoaded = false;
+    var isVideoPlaying = false;
+
+    // Possible state machine states for which view to render
+    var InterfaceStates = Object.freeze({
+        COLLAPSED: 0,
+        EXPANDED_EDITABLE: 1,
+        SET_DANGER_TYPE: 2,
+        SET_DANGER_VALUE: 3,
+        EXPANDED_PLAYBACK: 4,
+        COMPLETED: 5,
+        RECORDING: 6
+    });
+    var currentInterfaceState = InterfaceStates.COLLAPSED;
+    
+    /**
+     * @typedef {number} DangerType
+     * Possible danger types. If we change these, need to update the enum in loto-envelope too.
+     */
+    var DangerTypes = Object.freeze({
+        ELECTRIC: 0,
+        WATER: 1,
+        GAS: 2,
+        PNEUMATIC: 3
+    });
+    
+    var realityInterface = new RealityInterface();
+    let envelopeContents = new EnvelopeContents(realityInterface, document.body);
+
+    var isEditable = true;
+    var isCompleted = false;
+
+    // use to optimize subscription to screen position
+    var screenPositionListenerHandle = null;
+    var mostRecentScreenPosition = null;
+    
+    var currentTimeSave = 0; // for video play/pause
+    var currentVideoUrl = '';
+    var attemptsLeft = 5;
+    
+    init();
+    function init() {
+        render();
+
+        // handle key strokes for text fields
+        document.addEventListener('keyup', onKeyUp);
+
+        // if outside the frame has focus, it will receive the keyboard event via a post message
+        window.addEventListener("message", function (e) {
+            var msg = JSON.parse(e.data);
+            if (typeof msg.keyboardUpEvent !== "undefined") {
+                onKeyUp(msg.keyboardUpEvent);
+            }
+        });
+
+        envelopeContents.onOpen(render);
+        
+        // reset completion progress when close envelope
+        envelopeContents.onClose(function() {
+            setCompletionStatus(false);
+            // edge case, cancel video recording when envelope closes mid-recording
+            if (isVideoRecording) {
+                realityInterface.stopVideoRecording(function () {
+                    isVideoRecording = false;
+                });
+                if (currentInterfaceState === InterfaceStates.RECORDING) {
+                    setInterfaceState(InterfaceStates.EXPANDED_EDITABLE);
+                    render();
+                }
+            }
+        });
+
+        // update step number by category (if the step has been assigned a danger type yet)
+        envelopeContents.onOrderUpdated(function(orderUpdatedMessage) {
+            var category = orderUpdatedMessage.categories[getDangerTypeCategory()];
+            if (category) {
+                if (dangerTypeNumber !== (category.index + 1)) { // dangerTypeNumber is 1-indexed
+                    dangerTypeNumber = category.index + 1;
+                    render();
+                }
+            }
+        });
+
+        // listen for isEditable and expandFrame messages from envelope
+        envelopeContents.onMessageFromEnvelope(function(messageFromEnvelope) {
+            
+            if (typeof messageFromEnvelope.isEditable !== 'undefined') {
+                if (messageFromEnvelope.isEditable !== isEditable) {
+                    isEditable = messageFromEnvelope.isEditable; // updates whether we're in playback or edit mode
+                    render();
+                }
+            }
+
+            if (typeof messageFromEnvelope.expandFrame !== 'undefined') {
+                // update UI state when receiving an expandFrame message
+                if (messageFromEnvelope.expandFrame) {
+                    if (isEditable) {
+                        setInterfaceState(InterfaceStates.EXPANDED_EDITABLE);
+                    } else {
+                        setInterfaceState(InterfaceStates.EXPANDED_PLAYBACK);
+                    }
+                    setCompletionStatus(false); // not completed when it becomes expanded again
+                } else {
+                    if (isCompleted && !isEditable) {
+                        setInterfaceState(InterfaceStates.COMPLETED);
+                    } else {
+                        setInterfaceState(InterfaceStates.COLLAPSED);
+                    }
+                }
+                render();
+            }
+            
+        });
+
+        // update completion status in response to node values (if in playback mode)
+        // Note: it would also be a valid decision to only use node to mark as complete, not incomplete, but I chose to
+        // allow node values < 0.5 to reset step completion even if manually set as complete beforehand
+        realityInterface.addReadListener('step_complete', function(e) {
+            if (!isEditable) {
+                if (e.value >= 0.5 && !isCompleted) {
+                    // mark as completed if not already
+                    setCompletionStatus(true);
+                    setInterfaceState(InterfaceStates.COMPLETED);
+                    render();
+                } else if (e.value < 0.5 && isCompleted) {
+                    // mark as incomplete if not already
+                    setCompletionStatus(false);
+                    setInterfaceState(InterfaceStates.COLLAPSED);
+                    render();
+                }
+            }
+        });
+
+        // load customizations for this step (danger type, value) from persistent data
+        realityInterface.addReadPublicDataListener('storage', 'configuration', loadConfiguration);
+        
+        realityInterface.addReadPublicDataListener('storage', 'interfaceState', loadInterfaceState);
+
+        // load video file path from persistent data
+        realityInterface.addReadPublicDataListener('storage', 'data', function (videoFilePath) {
+            if (typeof videoFilePath !== 'string' || videoFilePath === '') { return; }
+            videoPath = videoFilePath;
+            attemptToLoadVideo(videoPath, 5);
+        });
+
+        // pause video if a video in another frame starts playing (if the other calls realityInterface.announceVideoPlay)
+        realityInterface.subscribeToVideoPauseEvents(function() {
+            if (isVideoPlaying) {
+                toggleVideoPlayback(); 
+            }
+        });
+        
+        recordedVideo.addEventListener('pointerdown', toggleVideoPlayback); 
+        recordedVideo.addEventListener('ended', toggleVideoPlayback); // make sure the state and UI update when it ends
+
+        // add event listeners to video for smart loading/unloading screenshot
+        recordedVideo.onloadeddata = function () {
+            recordedVideo.currentTime = currentTimeSave;
+        };
+        recordedVideo.onpause = function () {
+            showCanvas();
+            hideVideo();
+        };
+        recordedVideo.onplaying = function (){
+            setTimeout(function(){
+                recordedVideo.style.display = "inline";
+                hideCanvas();
+            }, 100);
+        };
+        
+        // try loading the video again if it fails, up to a certain number of times
+        document.getElementById('source').addEventListener('error', function() {
+            setTimeout(function() {
+                if (attemptsLeft > 0) {
+                    attemptToLoadVideo(currentVideoUrl);
+                }
+            }, 3000);
+        });
+    }
+
+    /**
+     * Play or pause the video and update related state/UI
+     */
+    function toggleVideoPlayback() {
+        var videoButton = document.getElementById('videoButton');
+        if (isVideoPlaying) {
+            isVideoPlaying = false;
+            recordedVideo.pause();
+            if (videoButton && videoButton.innerHTML === 'Pause') {
+                videoButton.innerHTML = 'Play';
+            }
+        } else {
+            isVideoPlaying = true;
+            recordedVideo.play();
+            realityInterface.announceVideoPlay();
+            if (videoButton && videoButton.innerHTML === 'Play') {
+                videoButton.innerHTML = 'Pause';
+            }
+        }
+    }
+
+    /**
+     * Processes keyboard events to type in the danger value text field
+     */
+    function onKeyUp(e) {
+        if (currentInterfaceState === InterfaceStates.SET_DANGER_VALUE) {
+            var valueTextInput = document.getElementById('dangerValueTextInput');
+            if (valueTextInput) {
+                var isAlphanumeric = !!e.key.match(/^[a-zA-Z0-9]$/);
+                if (isAlphanumeric) {
+                    valueTextInput.innerText = valueTextInput.innerText + e.key;
+                } else {
+                    if (e.key === "Backspace") {
+                        text.innerText = text.innerText.slice(0, -1); // remove last character
+                    } else if (e.key === " ") {
+                        text.innerText = text.innerText + "\u00a0"; // special space character doesn't get escaped
+                        // hack prevents keyboard from auto-scrolling the iframe in weird ways
+                        resetScroll(); 
+                        setTimeout(function() { resetScroll(); }, 100); // helps to do it after slight delay, too
+                    }
+                }
+                dangerValue = valueTextInput.innerText;
+            }
+        }
+    }
+
+    /**
+     * Helper determines if all required customizations have been set
+     */
+    function isFullyConfigured() {
+        return isDangerTypeConfigured && isDangerValueConfigured;
+    }
+
+    /**
+     * Helper returns correct expanded interface state based on editing mode
+     */
+    function expandedState() {
+        if (isEditable) {
+            return InterfaceStates.EXPANDED_EDITABLE;
+        } else {
+            return InterfaceStates.EXPANDED_PLAYBACK;
+        }
+    }
+    
+    function setInterfaceState(newInterfaceState) {
+        currentInterfaceState = newInterfaceState;
+        broadcastInterfaceState();
+    }
+
+    /**
+     * Main rendering function.
+     * Update the UI based on the current state. Uses a state machine to manage the variety of potential views.
+     * Most divs get destroyed and re-created each render, so that we don't have to track as much UI state.
+     */
+    function renderInterfaceState(state) {
+        // reset container on every re-render, by removing all its children
+        var first = container.firstElementChild;
+        while (first) {
+            first.remove();
+            first = container.firstElementChild;
+        }
+        
+        // hide the video by default
+        document.getElementById('videoSrc').classList.add('videoHidden');
+        
+        if (state !== InterfaceStates.EXPANDED_PLAYBACK) {
+            // minimize the amount of time we send screen positions, as that uses a lot of message-passing bandwidth
+            cancelScreenPositionListenerIfNeeded(); 
+        }
+
+        var lotoIcon; // this gets created differently depending on the state
+        
+        if (state === InterfaceStates.COLLAPSED) {
+
+            // if fully configured, show colored step number e.g. 'E-2', otherwise show the tag image as its icon
+            if (isFullyConfigured()) {
+                lotoIcon = createDiv('topLeft', 'block', getDangerTypeString() + '-' + (dangerTypeNumber || 0), container);
+                lotoIcon.style.fontSize = '90px';
+                lotoIcon.style.fontWeight = 'bold';
+                lotoIcon.style.borderColor = getDangerTypeColor();
+                lotoIcon.style.color = getDangerTypeColor();
+                lotoIcon.id = 'lotoIcon';
+            } else {
+                lotoIcon = document.createElement('img');
+                lotoIcon.id = 'lotoIcon';
+                lotoIcon.src = 'resources/loto-icon.svg';
+                container.appendChild(lotoIcon);
+            }
+
+            // mark this step as incomplete
+            envelopeContents.sendMessageToEnvelope({
+                isStepCompleted: false
+            });
+
+            realityInterface.changeFrameSize(400, 610); // adjust the touch overlay of the iframe to match contents
+
+            // tapping the icon expands the step
+            lotoIcon.addEventListener('pointerdown', function () {
+                setInterfaceState(expandedState());
+                render();
+            });
+
+        } else if (state === InterfaceStates.COMPLETED) {
+            
+            // show a check mark icon
+            lotoIcon = document.createElement('img');
+            lotoIcon.id = 'completedImage';
+            lotoIcon.src = 'resources/completed-icon.svg';
+            container.appendChild(lotoIcon);
+
+            // mark this step as complete
+            setCompletionStatus(true);
+            envelopeContents.sendMessageToEnvelope({
+                isStepCompleted: true
+            });
+
+            realityInterface.changeFrameSize(400, 610);
+
+            lotoIcon.addEventListener('pointerdown', function() {
+                setInterfaceState(expandedState());
+                render();
+            });
+
+        } else {
+
+            realityInterface.changeFrameSize(860, 610);
+            
+            // create DONE button that appears in all interfaces except COLLAPSED and COMPLETED
+            lotoIcon = createDiv('lotoIcon', ['block', 'sleek'], 'Done', container);
+            
+            // tapping on DONE button changes interface state
+            lotoIcon.addEventListener('pointerdown', function() {
+                if (currentInterfaceState === InterfaceStates.EXPANDED_PLAYBACK) {
+                    setInterfaceState(InterfaceStates.COMPLETED);
+                } else if (currentInterfaceState === InterfaceStates.SET_DANGER_VALUE) {
+                    isDangerValueConfigured = dangerValue && dangerValue !== '';
+                    saveConfiguration();
+                    setInterfaceState(InterfaceStates.EXPANDED_EDITABLE);
+                } else {
+                    setInterfaceState(InterfaceStates.COLLAPSED);
+                }
+                render();
+            });
+            
+            if (state === InterfaceStates.EXPANDED_EDITABLE) {
+
+                renderExpanded(true); // adds the grid of divs to show danger type, value, step number, etc
+
+                // add a button to record and attach a video to this step
+                if (!isVideoRecording) {
+                    var videoButton = createDiv('videoButton', ['block', 'sleek', 'twoLine'], "Attach<br/>Video", container);
+                    if (videoPath) {
+                        videoButton.innerHTML = 'Replace<br/>Video';
+                    }
+                    videoButton.style.paddingTop = '50px';
+                    videoButton.style.left = '220px';
+                    videoButton.style.top = '440px';
+
+                    // start recording a video when you first tap the button
+                    videoButton.addEventListener('pointerdown', function () {
+                        realityInterface.startVideoRecording();
+                        isVideoRecording = true;
+                        setInterfaceState(InterfaceStates.RECORDING);
+                        render();
+                    });
+                }
+
+            } else if (state === InterfaceStates.RECORDING) {
+                
+                // add a button to stop the recording
+                var videoButton = createDiv('videoButton', ['block', 'sleek'], null, container);
+                videoButton.style.lineHeight = '200px';
+                videoButton.style.left = '220px';
+                videoButton.style.top = '440px';
+                var videoRecordIcon = document.createElement('img');
+                videoRecordIcon.className = 'videoRecordIcon';
+                videoRecordIcon.src = 'resources/record-button-stop.svg';
+                videoButton.appendChild(videoRecordIcon);
+
+                lotoIcon.style.display = 'none'; // need to hide all other buttons except the stop button
+
+                if (isVideoRecording) {
+                    // stop recording a video when you tap the button
+                    videoRecordIcon.addEventListener('pointerdown', function () {
+                        setInterfaceState(InterfaceStates.EXPANDED_EDITABLE);
+                        render(); // immediately exit recording state
+                        
+                        realityInterface.stopVideoRecording(function (videoFilePath) {
+                            videoPath = videoFilePath; // when it finishes uploading to server, store file path of the video 
+                            isVideoRecording = false;
+                            realityInterface.writePublicData('storage', 'data', videoFilePath);
+                            attemptToLoadVideo(videoFilePath, 5); // try downloading it into the frame
+                            render();
+                        });
+
+                    });
+                }
+                
+            } else if (state === InterfaceStates.SET_DANGER_TYPE) {
+                
+                function createDangerTypeDiv(id, thisDangerType, left, top) {
+                    var thisDiv = document.createElement('img');
+                    thisDiv.id = id;
+                    thisDiv.className = 'blockSvg';
+                    thisDiv.src = getDangerTypeIconSrc(thisDangerType);
+                    thisDiv.style.left = left + 'px';
+                    thisDiv.style.top = top + 'px';
+                    container.appendChild(thisDiv);
+                    thisDiv.addEventListener('pointerdown', function() {
+                        setDangerType(thisDangerType);
+                    });
+                }
+
+                function setDangerType(newType) {
+                    dangerType = newType;
+                    isDangerTypeConfigured = true;
+                    saveConfiguration();
+                    envelopeContents.setCategories([getDangerTypeCategory()]);
+                    setInterfaceState(InterfaceStates.EXPANDED_EDITABLE);
+                    render();
+                }
+
+                createDangerTypeDiv('water', DangerTypes.WATER, 0, 220);
+                createDangerTypeDiv('gas', DangerTypes.GAS, 220, 220);
+                createDangerTypeDiv('electric', DangerTypes.ELECTRIC, 440, 220);
+                createDangerTypeDiv('pneumatic', DangerTypes.PNEUMATIC, 660, 220);
+
+            } else if (state === InterfaceStates.SET_DANGER_VALUE) {
+                
+                var textInput = createDiv('dangerValueTextInput', ['block', 'sleek'], (dangerValue || 'enter value...'), container);
+                textInput.style.lineHeight = '200px';
+                textInput.style.top = '220px';
+                textInput.style.width = '420px';
+                textInput.setAttribute('contenteditable', 'true');
+
+                // tapping on it clears the text and opens the keyboard
+                textInput.addEventListener('pointerdown', function() {
+                    textInput.innerHTML = '';
+                    textInput.focus();
+                });
+
+            } else if (state === InterfaceStates.EXPANDED_PLAYBACK) {
+                
+                renderExpanded(false); // false means we don't add touch event listeners to the grid of divs
+
+                // show the video if there is one
+                if (isVideoLoaded) {
+                    document.getElementById('videoSrc').classList.remove('videoHidden');
+                    // add a button to play/pause the video
+                    var videoButton = createDiv('videoButton', ['block', 'sleek'], 'Play', container);
+                    videoButton.style.lineHeight = '200px';
+                    videoButton.style.left = '220px';
+                    videoButton.style.top = '440px';
+                    videoButton.addEventListener('pointerdown', toggleVideoPlayback);
+                }
+                
+                envelopeContents.sendMessageToEnvelope({
+                    isStepCompleted: false
+                });
+
+                // subscribes to realityInterface API that receives a stream of this frame's (x,y) screen position
+                // gets forwarded to envelope to render navigation arrows
+                registerScreenPositionListenerIfNeeded();
+            }
+        }
+
+        /**
+         * Creates the grid of squares for showing / configuring the danger type, value, and step number
+         * @param {boolean} shouldAddEventListeners - true for editing mode, false for playback
+         */
+        function renderExpanded(shouldAddEventListeners) {
+            var dangerTypeDiv = createDiv('topLeft', 'block', getDangerTypeString(), container);
+            dangerTypeDiv.style.fontSize = '100px';
+            dangerTypeDiv.style.fontWeight = 'bold';
+            dangerTypeDiv.style.borderColor = getDangerTypeColor();
+            dangerTypeDiv.style.color = getDangerTypeColor();
+
+            var stepNumberDiv = createDiv('topRight', 'block', (dangerTypeNumber || 0), container);
+            stepNumberDiv.style.fontSize = '100px';
+            stepNumberDiv.style.fontWeight = 'bold';
+            stepNumberDiv.style.borderColor = getDangerTypeColor();
+            stepNumberDiv.style.color = getDangerTypeColor();
+
+            var dangerIconSrc = getDangerTypeIconSrc();
+            if (dangerIconSrc) {
+                var dangerIconDiv = document.createElement('img');
+                dangerIconDiv.id = 'bottomLeft';
+                dangerIconDiv.className = 'blockSvg';
+                dangerIconDiv.src = getDangerTypeIconSrc();
+                container.appendChild(dangerIconDiv);
+            } else {
+                dangerIconDiv = createDiv('bottomLeft', 'block', null, container); // show empty square if no type set
+                dangerIconDiv.style.borderColor = getDangerTypeColor();
+                dangerIconDiv.style.color = getDangerTypeColor();
+            }
+            
+            var dangerValueDiv = createDiv('bottomRight', ['block', 'sleek'], dangerValue || '___', container);
+            dangerValueDiv.style.lineHeight = '200px';
+
+            // in editing mode, tap on the squares to set their values
+            if (shouldAddEventListeners) {
+                [dangerTypeDiv, dangerIconDiv].forEach(function(div) {
+                    div.addEventListener('pointerdown', function() {
+                        setInterfaceState(InterfaceStates.SET_DANGER_TYPE);
+                        render();
+                    });
+                });
+                dangerValueDiv.addEventListener('pointerdown', function() {
+                    setInterfaceState(InterfaceStates.SET_DANGER_VALUE);
+                    render();
+                });
+            }
+        }
+    }
+
+    /**
+     * Tries to load the videoUrl into the video source's src tag, keeping track of the number of attempts
+     */
+    function attemptToLoadVideo(videoUrl, newAttemptsLeft) {
+        if (typeof videoUrl !== 'string' || videoUrl === '') { return; } // don't try loading in a null or {} or '' path
+
+        if (typeof newAttemptsLeft !== 'undefined') {
+            attemptsLeft = newAttemptsLeft;
+        } else {
+            attemptsLeft -= 1;
+        }
+        if (attemptsLeft <= 0) { return; } // TODO: also show error UI for video load timeout
+
+        currentVideoUrl = videoUrl;
+        document.getElementById('source').setAttribute('src', videoUrl);
+        recordedVideo.load();
+        isVideoLoaded = true;
+    }
+
+    /**
+     * Writes danger type and value to persistent storage.
+     * If we add equipment (number of locks, tags, etc) to each step, that should be saved here too.
+     */
+    function saveConfiguration() {
+        var configuration = {
+            dangerType: dangerType,
+            isDangerTypeConfigured: isDangerTypeConfigured,
+            dangerValue: dangerValue,
+            isDangerValueConfigured: isDangerValueConfigured
+        };
+        realityInterface.writePublicData('storage', 'configuration',  configuration);
+    }
+
+    /**
+     * Loads danger type and value from persistent storage
+     */
+    function loadConfiguration(savedConfig) {
+        dangerType = savedConfig.dangerType;
+        isDangerTypeConfigured = savedConfig.isDangerTypeConfigured;
+        dangerValue = savedConfig.dangerValue;
+        isDangerValueConfigured = savedConfig.isDangerValueConfigured;
+        envelopeContents.setCategories([getDangerTypeCategory()]); // ensure the category we load gets forwarded to envelope
+        renderInterfaceState(currentInterfaceState);
+    }
+    
+    function broadcastInterfaceState() {
+        var data = {
+            interfaceState: currentInterfaceState
+        };
+        realityInterface.writePublicData('storage', 'interfaceState',  data);
+    }
+    
+    function loadInterfaceState(savedData) {
+        currentInterfaceState = savedData.interfaceState;
+        renderInterfaceState(currentInterfaceState);
+    }
+    
+    /**
+     * Subscribe to the screen x and y position of this frame. The screenPositionListener will repeat ~60fps so we
+     * discard duplicate values and only forward to envelope if this is the current step (in expanded playback mode)
+     */
+    function registerScreenPositionListenerIfNeeded() {
+        if (!screenPositionListenerHandle) {
+            screenPositionListenerHandle = realityInterface.addScreenPositionListener(function(screenPosition) {
+                if (mostRecentScreenPosition &&
+                    mostRecentScreenPosition.center.x === screenPosition.center.x &&
+                    mostRecentScreenPosition.center.y === screenPosition.center.y) {
+                    return; // don't send duplicate values
+                }
+                mostRecentScreenPosition = screenPosition;
+
+                var isCurrentStep = (currentInterfaceState === InterfaceStates.EXPANDED_PLAYBACK);
+                if (isCurrentStep) {
+                    envelopeContents.sendMessageToEnvelope({
+                        screenPosition: mostRecentScreenPosition
+                    });
+                }
+            });
+        }
+    }
+    
+    /**
+     * Cancels the screen position subscription so we don't waste message passing between iframes when it isn't needed
+     */
+    function cancelScreenPositionListenerIfNeeded() {
+        if (screenPositionListenerHandle) {
+            realityInterface.cancelScreenPositionListener(screenPositionListenerHandle);
+            screenPositionListenerHandle = null;
+        }
+    }
+
+    /**
+     * Helper to get the icon text character for the current danger type
+     * @return {string}
+     */
+    function getDangerTypeString() {
+        if (dangerType === DangerTypes.ELECTRIC) {
+            return 'E';
+        } else if (dangerType === DangerTypes.WATER) {
+            return 'W';
+        } else if (dangerType === DangerTypes.GAS) {
+            return 'P';
+        } else if (dangerType === DangerTypes.PNEUMATIC) {
+            return 'M';
+        }
+    }
+    
+    /**
+     * Helper that converts current danger type into a category name for the loto-envelope.
+     * The category is used to sort step numbers based on which type they are.
+     * @return {string}
+     */
+    function getDangerTypeCategory() {
+        return 'loto-step-' + getDangerTypeString();
+    }
+
+    /**
+     * Helper that gets the hex color string for the current danger type (or the one passed in)
+     * @param {DangerType|undefined} optionalType - if not included, gets the current danger type color instead
+     * @return {string}
+     */
+    function getDangerTypeColor(optionalType) {
+        var dangerTypeToParse = (typeof optionalType !== 'undefined') ? optionalType : dangerType;
+
+        if (dangerTypeToParse === DangerTypes.ELECTRIC) {
+            return '#FF007D';
+        } else if (dangerTypeToParse === DangerTypes.WATER) {
+            return '#00FF00';
+        } else if (dangerTypeToParse === DangerTypes.GAS) {
+            return '#75FBFD';
+        } else if (dangerTypeToParse === DangerTypes.PNEUMATIC) {
+            return '#AE00FF';
+        }
+    }
+
+    /**
+     * Helper that gets the SVG icon file path for the current danger type (or the one passed in)
+     * @param {DangerType|undefined} optionalType
+     * @return {string}
+     */
+    function getDangerTypeIconSrc(optionalType) {
+        var dangerTypeToParse = (typeof optionalType !== 'undefined') ? optionalType : dangerType;
+
+        if (dangerTypeToParse === DangerTypes.ELECTRIC) {
+            return 'resources/loto-electrical.svg';
+        } else if (dangerTypeToParse === DangerTypes.WATER) {
+            return 'resources/loto-water.svg';
+        } else if (dangerTypeToParse === DangerTypes.GAS) {
+            return 'resources/loto-gas.svg';
+        } else if (dangerTypeToParse === DangerTypes.PNEUMATIC) {
+            return 'resources/loto-mechanical.svg';
+        } else return null;
+    }
+
+    /**
+     * Unloads and hides the video, so that a canvas screenshot can be loaded in its place (using showCanvas) for performance
+     */
+    function hideVideo() {
+        recordedVideo.pause();
+        currentTimeSave = recordedVideo.currentTime;
+        document.getElementById('source').setAttribute('src', '');
+        recordedVideo.style.display = 'none';
+    }
+
+    /**
+     * Creates a canvas in the place of the video and renders a screenshot of the video into the canvas
+     */
+    function showCanvas() {
+        if (currentInterfaceState !== InterfaceStates.EXPANDED_PLAYBACK) { return hideCanvas(); }
+        var canvas = document.createElement('canvas');
+        canvas.id = 'videoImage';
+        document.getElementById('videoSrc').appendChild(canvas);
+        var context = canvas.getContext('2d');
+        var w = recordedVideo.clientWidth;
+        var h = recordedVideo.clientHeight;
+        canvas.width = w;
+        canvas.height = h;
+        context.fillRect(0, 0, w, h);
+        context.drawImage(recordedVideo, 0, 0, w,h);
+    }
+
+    /**
+     * Hides the canvas that was rendering a screenshot of the video
+     */
+    function hideCanvas() {
+        var element = document.getElementById('videoImage');
+        if (element) {
+            element.parentNode.removeChild(element);
+        }
+    }
+
+    /**
+     * Shortcut to call renderInterfaceState with default argument
+     */
+    function render() {
+        renderInterfaceState(currentInterfaceState);
+    }
+
+    /**
+     * Setter for isCompleted
+     */
+    function setCompletionStatus(newIsCompleted) {
+        isCompleted = newIsCompleted;
+    }
+
+    /**
+     * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
+     * Any parameter can be omitted (pass in null) to ignore those effects
+     * @param {string|null} id
+     * @param {string|Array.<string>|null} classList
+     * @param {string|null} innerHTML
+     * @param {HTMLElement|null} parentToAddTo
+     * @return {HTMLDivElement}
+     */
+    function createDiv(id, classList, innerHTML, parentToAddTo) {
+        var preExistingDiv = document.getElementById(id);
+        var div = preExistingDiv ? preExistingDiv : document.createElement('div');
+        if (id) {
+            div.id = id;
+        }
+        if (classList) {
+            if (typeof classList === 'string') {
+                div.className = classList;
+            } else if (typeof classList === 'object') {
+                classList.forEach(function(className) {
+                    div.classList.add(className);
+                });
+            }
+        }
+        if (innerHTML) {
+            div.innerHTML = innerHTML;
+        }
+        if (parentToAddTo) {
+            parentToAddTo.appendChild(div);
+        }
+        return div;
+    }
+</script>
+</html>
