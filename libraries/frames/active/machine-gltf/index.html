@@ -36,8 +36,7 @@
         
         #playButton {
             width: 160px;
-            left: 173px;
-            /*right: 384px;*/
+            left: 173px; /* gets overwritten on getScreenSize */
         }
         
         .hidden {
@@ -46,7 +45,8 @@
         
         #stepText {
             position: absolute;
-            left: 238px;
+            width: 160px; /* matches playButton width */
+            left: 238px; /* gets overwritten on getScreenSize */
             bottom: 3px;
             font-size: 12px;
             font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
@@ -201,8 +201,23 @@
         // and subscribe to the modelview and projection matrices
         realityInterface = new RealityInterface();
         var _envelopeContents = new EnvelopeContents(realityInterface, document.body);
+        
         realityInterface.subscribeToMatrix();
         realityInterface.setFullScreenOn();
+
+        realityInterface.getScreenDimensions(function(width, height) {
+            document.body.width = width + 'px';
+            document.body.height = height + 'px';
+            rendererWidth = width;
+            rendererHeight = height;
+            renderer.setSize( rendererWidth, rendererHeight );
+
+            // halfway between left:75px and right:(width-137)px
+            playButton.style.left = ((width-137) - 75)/2 + 'px';
+            stepText.style.left = playButton.style.left;
+
+            realityInterface.changeFrameSize(width, height);
+        });
 
         realityInterface.setMoveDelay(400);
 
