@@ -118,6 +118,20 @@
                     lightness = 0.6;
                 }
             });
+
+            realityInterface.addReadListener('hue', function(e) {
+                hue = e.value;
+            });
+
+            realityInterface.addReadListener('saturation', function(e) {
+                saturation = e.value;
+            });
+
+            realityInterface.addReadListener('lightness', function(e) {
+                lightness = e.value;
+            });
+
+
         });
 
     });
