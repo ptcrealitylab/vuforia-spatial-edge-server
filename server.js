@@ -279,8 +279,8 @@ function Objects() {
     this.targetSize = {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
-    }
-
+    };
+    this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
 function Frame() {
@@ -1052,6 +1052,7 @@ function loadWorldObject() {
         worldObject.objectId = worldObjectName + utilities.uuidTime();
     }
     worldObject.isWorldObject = true;
+    worldObject.timestamp = Date.now();
 
     // try to read previously saved data to overwrite the default world object
     if (globalVariables.saveToDisk) {
@@ -4823,6 +4824,7 @@ function socketServer() {
                 if (!doesObjectExist(objectId)) {
                     // create an object if needed
                     objects[objectId] = new HumanPoseObject(poseInfo.id);
+                    thisObject = objects[objectId];
                     // advertise to editors
                     objectBeatSender(beatPort, objectId, thisObject.ip, true);
                     // currently doesn't writeObjectToFile, because I've found no need for human objects to persist 
