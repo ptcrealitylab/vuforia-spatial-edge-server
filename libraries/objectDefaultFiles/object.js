@@ -121,7 +121,8 @@
      * messageCallbacks are added by calling the methods in realityInterface.injectMessageListenerAPI
      */
     window.addEventListener('message', function (MSG) {
-        // if (typeof MSG !== "string") { return; }
+        if (!MSG.data) { return; }
+        if (typeof MSG.data !== "string") { return; }
         var msgContent = JSON.parse(MSG.data);
         for (var key in realityObject.messageCallBacks) {
             realityObject.messageCallBacks[key](msgContent);
