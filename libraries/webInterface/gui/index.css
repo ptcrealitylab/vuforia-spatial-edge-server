@@ -149,6 +149,11 @@ body {
   z-index: -1;
 }
 
+.globalFrame .space {
+    width: 2px;
+    border: none;
+}
+
 .clickAble:hover {
   opacity: 0.75;
   cursor: pointer;
@@ -370,4 +375,3 @@ position: relative;
 #ipInput::-moz-placeholder {
   color: rgb(255,255,255);
 }
-

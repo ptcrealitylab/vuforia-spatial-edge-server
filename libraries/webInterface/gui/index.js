@@ -159,16 +159,38 @@ realityServer.update = function (thisItem2) {
 
         for (var frameKey in this.objects[objectKey].frames) {
             var thisFrame = this.objects[objectKey].frames[frameKey];
-            thisFrame.dom = this.templates[2].content.cloneNode(true);
+            console.log('thisFrame: ', thisFrame);
 
+            // thisFrame.dom = this.templates[2].content.cloneNode(true);
 
-            thisFrame.dom.querySelector(".frame").id = "frame"+objectKey+frameKey;
+            var className = 'frame';
 
-            if(thisObject.visualization === "screen") {
+            if (thisFrame.location === 'global') {
+                thisFrame.dom = this.templates[16].content.cloneNode(true);
+            } else {
+                thisFrame.dom = this.templates[2].content.cloneNode(true);
+            }
+
+            className = thisFrame.location === 'global' ? 'globalFrame' : 'frame';
+
+            thisFrame.dom.querySelector('.' + className).id = 'frame'+objectKey+frameKey;
+            
+            function addLinkToContent(buttonDiv, frameType) {
+                buttonDiv.addEventListener('click', function(e) {
+                    var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                    window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
+                });
+            }
+            var contentButton = thisFrame.dom.querySelector('.content');
+            if (thisFrame.location === 'global') {
+                addLinkToContent(contentButton, thisFrame.src);
+            }
+
+            if(thisObject.visualization === 'screen' && thisFrame.location !== 'global') {
                 realityServer.switchClass(thisFrame.dom.querySelector(".reset"), "blue", "purple");
                 realityServer.switchClass(thisFrame.dom.querySelector(".hardware"), "blue", "purple");
             }
-
+ 
             // check if items are active
             if (thisObject.initialized && thisObject.active) {
                 realityServer.changeActiveState(thisFrame.dom, true, objectKey, frameKey);

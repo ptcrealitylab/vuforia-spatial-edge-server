@@ -305,6 +305,25 @@
     </div>
 </template>
 
+<template id="globalFrame">
+    <div class="">
+        <div class="globalFrame">
+            <div class='button hidden one'></div>
+            <div class='item space'></div>
+            <div class='name item button white two'>Name</div>
+            <div class='item space'></div>
+            <div class='content item button green one'>Content</div>
+            <div class='item space'></div>
+            <div class='button hidden two'></div>
+            <div class='item space'></div>
+            <div class='remove item button red half'>X</div>
+            <div class="appendix">
+                <div class="child"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
     var realityServer = {
         myTargetDropzone : {},
@@ -313,8 +332,7 @@
         states: {/*replace States*/},
         domObjects: document.getElementById("contents"),
         templates: document.getElementsByTagName("template")
-    };
-
+    }; // the objects and states get injected from the server webFrontend.js
 </script>
 
 <script src="index.js?33saasdd"></script>
