@@ -50,28 +50,31 @@ var debug = false;
 var pathUtilities = require('path');
 var readdirp = require('readdirp');
 var hardwareAPI = require(__dirname + '/hardwareInterfaces');
-const logger = require('../logger');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort,worldObject)
-{
-    logger.debug(objectInterfaceName);
-    function ThisObjects() {
-        this.name = "";
-        this.initialized = false;
-        this.frames = {};
-        this.visualization = "AR";
-        this.active = false;
-        this.zone = "";
-        this.screenPort = "";
-        this.isWorldObject = false;
-    };
+// Constructor with subset of object information necessary for the web frontend
+function ThisObjects() {
+    this.name = '';
+    this.initialized = false;
+    this.frames = {};
+    this.visualization = 'AR';
+    this.active = false;
+    this.zone = '';
+    this.screenPort = '';
+    this.isWorldObject = false;
+}
 
-    function Frame() {
-        this.name = "";
-    };
+// Constructor with subset of frame information necessary for the web frontend
+function Frame() {
+    this.name = '';
+    this.location = 'local'; // or 'global'
+    this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
+}
 
+exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject) {
+    
+    // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
 
     var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
@@ -81,427 +84,96 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     while (tempFiles.length > 0 && tempFiles[0][0] === ".") {
         tempFiles.splice(0, 1);
     }
-
+    
+    // populate the data for each object template on the frontend, using data from each directory found in the realityobjects
     tempFiles.forEach(function(objectKey) {
+        
         var thisObjectKey = objectKey;
-       var tempKey = utilities.getObjectIdFromTarget(objectKey, objectsPath);
-
-       if(tempKey)
-           thisObjectKey = tempKey;
-
-    logger.debug(thisObjectKey);
-
-        newObject[thisObjectKey] = new ThisObjects();
-
-        // check if file is activated
-
-            if(!fs.readdirSync(objectsPath).filter(function (file) {return fs.statSync(objectsPath + '/' + file).isDirectory();
-                })) return;
-
-        if (fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.jpg"))
-        {
-            logger.debug("file Exists "+ objectKey)
-            newObject[thisObjectKey].initialized = true;
-
-            newObject[thisObjectKey].targetName = thisObjectKey;
-        }else {
-            newObject[thisObjectKey].initialized = false;
-            newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime();
+        var tempKey = utilities.getObjectIdFromTarget(objectKey, objectsPath); // gets the object id from the xml target file
+        if (tempKey) {
+            thisObjectKey = tempKey;
         }
+        
+        // create a data structure for the information to create the DOM elements representing this object
+        newObject[thisObjectKey] = new ThisObjects();
+        
+        // check if the object is correctly initialized with tracking targets
+        var datExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.dat');
+        var xmlExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.xml');
+        var jpgExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.jpg');
+        
+        if (datExists && xmlExists && jpgExists) { // TODO: if xmlExists && (datExists || jpgExists) // because we can now use jpg instead of dat we only need one
+            console.log('object files exist: ' + objectKey);
+            newObject[thisObjectKey].initialized = true;
+            newObject[thisObjectKey].targetName = thisObjectKey; // obtained earlier from the xml file
+        } else {
+            newObject[thisObjectKey].initialized = false;
+            newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime(); // generates a suggested uuid for the target
+        }
+        
+        // if the object has been correctly created (with tracking targets), populate the DOM with its frames and other data
+        if (newObject[thisObjectKey].initialized && objects[thisObjectKey]) {
+            
+            newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
+            newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
+            newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
+            newObject[thisObjectKey].screenPort = hardwareAPI.getScreenPort(thisObjectKey);
 
-        if(objectKey !== thisObjectKey) {
-            if(objects[thisObjectKey]) {
-                newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
-                for (var frameKey in objects[thisObjectKey].frames) {
-                    newObject[thisObjectKey].frames[frameKey] = new Frame();
-                    newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
-                    newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
-                    newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
-                    newObject[thisObjectKey].screenPort = hardwareAPI.getScreenPort(thisObjectKey);
-                }
+            // populate the data for each frame template on the frontend, using data from the object json structure
+            for (var frameKey in objects[thisObjectKey].frames) {
+                newObject[thisObjectKey].frames[frameKey] = new Frame();
+                newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
+                newObject[thisObjectKey].frames[frameKey].location = objects[thisObjectKey].frames[frameKey].location; // 'global' or 'local'
+                newObject[thisObjectKey].frames[frameKey].src = objects[thisObjectKey].frames[frameKey].src; // the frame type, e.g. 'graphUI'
             }
-
         }
 
         newObject[thisObjectKey].name = objectKey;
-
-
     });
 
+    // TODO: update by storing worldObjects just like any other objects, instead of treating as an exception ... but maybe sort at end
     if (worldObject) {
         var worldObjectEntry = new ThisObjects();
         worldObjectEntry.name = worldObject.name;
         worldObjectEntry.initialized = true;
         worldObjectEntry.active = true;
-
         worldObjectEntry.isWorldObject = true;
 
         for (var frameKey in worldObject.frames) {
             worldObjectEntry.frames[frameKey] = new Frame();
             worldObjectEntry.frames[frameKey].name = worldObject.frames[frameKey].name;
+            worldObjectEntry.frames[frameKey].location = worldObject.frames[frameKey].location; // will always be 'global'
+            worldObjectEntry.frames[frameKey].src = worldObject.frames[frameKey].src;
         }
+        
+        console.log('worldObjectEntry', worldObjectEntry);
 
         newObject[worldObject.objectId] = worldObjectEntry;
     }
 
-    var html = fs.readFileSync(__dirname+"/webInterface/gui/index.html", 'utf8');
-
-
+    // loads the index.html content
+    var html = fs.readFileSync(__dirname + '/webInterface/gui/index.html', 'utf8');
+    
+    // update the correct library paths
     html = html.replace(/href="/g, "href=\"../libraries/gui/");
     html = html.replace(/src="/g, "src=\"../libraries/gui/");
+    
+    console.log(newObject);
 
-    var states= {
+    // inject the data structure with all objects and frames
+    html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
+
+    // inject the server information
+    var states = {
         version : version,
         ipAdress: ipAddress,
         serverPort : serverPort
     };
-
-    html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
-
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
+    
     return html;
-
 };
 
-/*
-exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort) {
-    var resText = "<!DOCTYPE html>" +
-        "<html>" +
-        "<head>" +
-        "<meta charset=='utf-8'>" +
-        "<link rel='stylesheet' href='../libraries/css/bootstrap.min.css'>" +
-        '   <script src="../libraries/js/dropzone.js"></script>\n' +
-        '    <style>\n' +
-        '        #total-progress {\n' +
-        '            opacity: 0;\n' +
-        '            transition: opacity 0.3s linear;\n' +
-        '        }\n' +
-        '    </style>\n' +
-            // "<link rel='stylesheet' href='http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css'>"+
-        "</head>" +
-        '<body style="height: 100%; weight: 100%; background-color: #ffffff;">' +//  background:repeating-linear-gradient(-45deg, #e4f6ff, #e4f6ff 5px, white 5px, white 10px);" >\n'+
-        "<div class='container' style='width: 750px;height:100vh;'>" +
-
-        "<div class='panel panel-primary'>" +
-        "<div class='panel-heading'>" +
-        "<h3 class='panel-title'><font size='6'>Reality Object - Administration</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Version: "+version+"<br>" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Server IP: "+ipAddress+":"+serverPort+"</h3> " +
-        "</div>" +
-
-
-        "</div>" +
-        "<ul class='list-group'>";
-
-
-    var tempFiles = "";
-    var objectsPath = dirnameO + "/objects";
-    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory();
-    });
-
-    if (debug) {
-        logger.debug("----------------------- objects");
-        for (var keykey in objects) {
-            logger.debug(keykey);
-        }
-
-        logger.debug("----------------------- objects");
-        for (var keykey in objects) {
-            logger.debug(keykey);
-        }
-
-        logger.debug("----------------------- object lookup");
-
-        for (var keykey in objectLookup) {
-            logger.debug(keykey + " = " + JSON.stringify(objectLookup[keykey]));
-        }
-        logger.debug("----------------------- end" + Math.random());
-    }
-    // remove hidden directories
-    if (typeof tempFiles[0] !== "undefined") {
-        while (tempFiles[0][0] === ".") {
-            tempFiles.splice(0, 1);
-        }
-
-        var allFilesOn = false;
-
-        for (var i = 0; i < tempFiles.length; i++) {
-            if(tempFiles[i] === "allTargetsPlaceholder") {
-
-                resText += "<li class='list-group-item'>" +
-                    "<div class='row'>" +
-                    "<div class='col-xs-4'>" +
-                    "<font size='5'>single Targets File</font>" +
-                    "</div>" +
-                    "<div class='col-xs-8 text-right' style='' >";
-
-                if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectsPath + "/" + tempFiles[i] + "/target/target.xml")) {
-                    resText +=
-                        "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
-                } else {
-                    resText +=
-                        "<button style='display: none;' class='btn btn-info' disabled='disabled'>Info</button> ";
-                }
-
-                resText += "<button style='width:120px;  position: relative; right: 262px;' class='pull-right ";
-                if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.jpg")) {
-                    resText += "btn btn-success";
-                } else {
-                    resText += "btn btn-primary";
-                }
-
-                resText += "' onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
-                    "<button  style='visibility: hidden;' class='";
-
-                if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectsPath + '/' + tempFiles[i] + "/index.html")) {
-
-                    if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.jpg")) {
-                        resText += "btn btn-success";
-                    }
-                    else {
-                        resText += "btn btn-warning";
-                    }
-                } else {
-                    resText += "btn btn-primary";
-                }
-
-                resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
-
-                var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
-
-                if (objects.hasOwnProperty(thisObject)) {
-
-                    if (objects[thisObject].deactivated !== true) {
-                        allFilesOn = true;
-                        resText += " <button style='width:125px; position: relative; right: 13px;'  class='btn btn-success pull-right'";
-                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/deactivate/'\">on</button> ";
-                    }
-                    else {
-                        allFilesOn = false;
-                        resText += " <button  style='width:125px; position: relative; right: 13px;'  class='btn btn-warning pull-right'";
-                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
-                    }
-
-                } else {
-                    resText += " <button style='width:125px; position: relative; right: 13px;' class='btn btn-default pull-right' disabled='disabled'>off</button>";
-                }
-
-                resText +=
-
-                    // "</div>"+
-                    // "<div class='col-xs-3'>"+
-
-                    // " <div>" +
-                    ' <button  style="display: none;" class="btn btn-default" onclick="window.location.href=\'/object/' + tempFiles[i] + '/zipBackup/\'"' + tempFiles[i] + '\'" > ' +
-
-                    'Download' +
-                    '</button> ' +
-                    " <form  style='display: none; id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden'  style='display: none;' name='name' value='" + tempFiles[i] + "'>" +
-                    "<input type='hidden'   style='display: none;' name='action' value='delete'>" +
-                    " <input type='submit'   style='display: none;' class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
-                    "</form>";
-
-                resText +=
-                    //" </div>"+
-                    "</div>" +
-                    "</div></li>";
-
-            }
-
-        }
-
-        resText += "</ul><ul class='list-group'>";
-
-        for (var i = 0; i < tempFiles.length; i++) {
-
-            if(tempFiles[i] !== "allTargetsPlaceholder") {
-
-                resText += "<li class='list-group-item'>" +
-                    "<div class='row'>" +
-                    "<div class='col-xs-4'>" +
-                    "<font size='5'>" + tempFiles[i] + "</font>" +
-                    "</div>" +
-                    "<div class='col-xs-8 text-right' style='' >";
-
-                if (objects.hasOwnProperty(utilities.readObject(objectLookup, tempFiles[i])) && fs.existsSync(objectsPath + "/" + tempFiles[i] + "/target/target.xml")) {
-                    resText +=
-                        "<button  class='btn btn-info' onclick=\"window.location.href='/info/" + tempFiles[i] + "'\" > Info</button> ";
-                } else {
-                    resText +=
-                        "<button  class='btn btn-info' disabled='disabled'>Info</button> ";
-                }
-
-                resText += "<button  class='";
-                if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.jpg")) {
-                    resText += "btn btn-success'";
-                } else {
-                    resText += "btn btn-primary'";
-                }
-
-
-                if(allFilesOn){
-                   // resText += " disabled='disabled'";
-                }
-
-
-                resText += " onclick=\"window.location.href='/target/" + tempFiles[i] + "'\">Target</button> " +
-                    "<button  class='";
-
-                if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/index.htm") || fs.existsSync(objectsPath + '/' + tempFiles[i] + "/index.html")) {
-
-                    if (fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.dat") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.xml") && fs.existsSync(objectsPath + '/' + tempFiles[i] + "/target/target.jpg")) {
-                        resText += "btn btn-success";
-                    }
-                    else {
-                        resText += "btn btn-warning";
-                    }
-                } else {
-                    resText += "btn btn-primary";
-                }
-
-                resText += "' onclick=\"window.location.href='/content/" + tempFiles[i] + "'\">Interface</button> ";
-
-                var thisObject = utilities.readObject(objectLookup, tempFiles[i]);
-
-                if (objects.hasOwnProperty(thisObject)) {
-                    if (objects[thisObject].deactivated !== true) {
-                        resText += " <button class='btn btn-success'";
-                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/deactivate/'\">on</button> ";
-                    }
-                    else {
-                        resText += " <button class='btn btn-warning'";
-                        resText += "' onclick=\"window.location.href='/object/" + thisObject + "/activate/'\">off</button> ";
-                    }
-
-                } else {
-                    resText += " <button class='btn btn-default' disabled='disabled'>off</button>";
-                }
-
-                resText +=
-
-                    // "</div>"+
-                    // "<div class='col-xs-3'>"+
-
-                    // " <div>" +
-                    ' <button  class="btn btn-default" onclick="window.location.href=\'/object/' + tempFiles[i] + '/zipBackup/\'"' + tempFiles[i] + '\'" > ' +
-
-                    'Download' +
-                    '</button> ' +
-                    " <form  style='display: inline; background-color: #bde9ba;' id='delete" + i + "' action='" + objectInterfaceName + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + tempFiles[i] + "'>" +
-                    "<input type='hidden' name='action' value='delete'>" +
-                    " <input type='submit'  class='btn btn-danger' value='X' onclick=\"return confirm('Do you really want to delete the object " + tempFiles[i] + "?')\">" +
-                    "</form>";
-
-                resText +=
-                    //" </div>"+
-                    "</div>" +
-                    "</div></li>";
-
-            }
-        }
-
-    }
-
-    resText +=
-        "</ul><div class='row'>" +
-        "<form id='newNameForm' action='" + objectInterfaceName + "' method='post' style='display:inline'>" +
-        "<div class='col-xs-5'>" +
-        "<input type='text' class='form-control' name='name' id='name' placeholder='New Object Name'/>" +
-        "<input type='hidden' name='action' value='new'>" +
-        "</div>" +
-        "<div class='col-xs-4' style='display: inline'>" +
-        "<button  class='btn btn-warning'>Create New Reality Object</button> " +
-        "</div>" +
-        "</form>" +
-        "<div class='col-xs-2' style='display: inline'>" +
-        '        <span class="btn btn-default fileinput-button" id="targetButton">' +
-        '            <span>' +
-
-        'Upload Object' +
-
-        '</span>' +
-        '        </span>' +
-
-        ' <br><br><span class="fileupload-process">' +
-        '          <div id="total-progress" class="progress progress-striped active" role="progressbar" aria-valuemin="0"' +
-        '               aria-valuemax="100" aria-valuenow="0">' +
-        '              <div class="progress-bar progress-bar-success" style="width:100%;" data-dz-uploadprogress></div>' +
-        '          </div>' +
-        '        </span>' +
-        "</div>" +
-
-
-        '    <div class="table table-striped" class="files" id="previews" style="display: none">' +
-        '        <div id="template" class="file-row">' +
-        '        </div>' +
-        '    </div>' +
-        "</div>" +
-
-            // "<span class='badge' style='background-color: #d58512;'>upload default files</span>"+
-
-
-        '    <script>' +
-        '        var previewNode = document.querySelector("#template");' +
-        '        previewNode.id = "";' +
-        '        var previewTemplate = previewNode.parentNode.innerHTML;' +
-        '        previewNode.parentNode.removeChild(previewNode);' +
-        '        var myDropzone = new Dropzone(document.body, {' +
-        '            url: "/backup",' +
-        '            autoProcessQueue: true,' +
-        '            thumbnailWidth: 80,' +
-        'headers: { "type": "objectUpload" },'+
-        '            thumbnailHeight: 80,' +
-        '            parallelUploads: 20,' +
-        '            createImageThumbnails: false,' +
-        '            previewTemplate: previewTemplate,' +
-        '            autoQueue: true,' +
-        '            previewsContainer: "#previews",' +
-        '            clickable: ".fileinput-button"' +
-        '        });' +
-        '        myDropzone.on("addedfile", function (file) {' +
-        '           ' +
-        '           ' +
-        '        });' +
-        '        myDropzone.on("drop", function (file) {' +
-        '           ' +
-        '            myDropzone.enqueueFiles(myDropzone.getFilesWithStatus(Dropzone.ADDED));' +
-        '        });' +
-        '        ' +
-        '        myDropzone.on("totaluploadprogress", function (progress) {' +
-        '            document.querySelector("#total-progress").style.width = progress + "%";' +
-        '        });' +
-        '        myDropzone.on("sending", function (file) {' +
-        '           ' +
-        '            document.querySelector("#total-progress").style.opacity = "1";' +
-        '           ' +
-        '            ' +
-        '        });' +
-        '        ' +
-        '        myDropzone.on("queuecomplete", function (progress) {' +
-            //'        document.querySelector("#total-progress").style.opacity = "0";'+
-            // '        document.getElementById("targetButton").className = "btn btn-success fileinput-button";'+
-            //'location.reload();'+
-        '    });' +
-
-
-        '      myDropzone.on("success", function (file, responseText) {' +
-        '   logger.debug(responseText );  if(responseText  === "done") {     document.querySelector("#total-progress").style.opacity = "0"; ' +
-            // '        document.getElementById("targetButton").className = "btn btn-success fileinput-button";'+
-        'location.reload();' +
-        '}' +
-        '    });' +
-        '    </script>';
-
-    resText += "</body></html>";
-    return resText;
-
-}
-*/
 exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
     var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
 
@@ -532,7 +204,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
 
         '/*var myVar = setInterval(loadInfoContent, 100);*/' +
         'loadInfoContent();'+
-        'function loadInfoContent () {logger.debug("newtick");'+
+        'function loadInfoContent () {console.log("newtick");'+
 
    'var con = document.getElementById("changeContent")'+
     '    ,   xhr = new XMLHttpRequest();'+
@@ -778,7 +450,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
 exports.uploadTargetText = function (parm, objectLookup, objects) {
-    if(debug) logger.debug("target content");
+    if(debug) console.log("target content");
     var objectName = "";
     if (objects.hasOwnProperty(utilities.readObject(objectLookup, parm))) {
 
@@ -927,7 +599,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
-    if(debug) logger.debug("interface content");
+    if(debug) console.log("interface content");
     var text =
 
         '';
@@ -1028,7 +700,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
 
-                // logger.debug("---" + content[0]);
+                // console.log("---" + content[0]);
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
@@ -1040,11 +712,11 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // logger.debug("-"+content[0]);
-            //  logger.debug(content[0]+" / "+content[1]);
+            // console.log("-"+content[0]);
+            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== "." && content[1][0] !== "_") {
-                if (debug)logger.debug(content[1]);
+                if (debug)console.log(content[1]);
                 var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
 
                 text += '<tr ';
@@ -1070,7 +742,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
                     "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
-                if (debug) logger.debug(dateiTobeRemoved);
+                if (debug) console.log(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
 
@@ -1134,7 +806,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)logger.debug(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
+    if (debug)console.log(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(objectsPath + parm + "/index.htm") || fs.existsSync(objectsPath + '/' + parm + "/index.html")) {
         if (fs.existsSync(objectsPath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
@@ -1217,7 +889,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 };
 
 exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInterfaceName) {
-    if(debug) logger.debug("interface content");
+    if(debug) console.log("interface content");
     var text =
 
         '';
@@ -1324,7 +996,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
 
-                // logger.debug("---" + content[0]);
+                // console.log("---" + content[0]);
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
@@ -1336,11 +1008,11 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // logger.debug("-"+content[0]);
-            //  logger.debug(content[0]+" / "+content[1]);
+            // console.log("-"+content[0]);
+            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== "." && content[1][0] !== "_") {
-                if (debug)logger.debug(content[1]);
+                if (debug)console.log(content[1]);
                 var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
 
                 text += '<tr ';
@@ -1366,7 +1038,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
                     "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
-                if (debug) logger.debug(dateiTobeRemoved);
+                if (debug) console.log(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
 
@@ -1430,7 +1102,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)logger.debug(framePath + parm + '/' + identityFolderName + "/target/target.dat");
+    if (debug)console.log(framePath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(framePath + parm + "/index.htm") || fs.existsSync(framePath + '/' + parm + "/index.html")) {
         if (fs.existsSync(framePath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
@@ -1513,7 +1185,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 };
 
 exports.editContent = function(req, res) {
-    logger.debug(req.params);
+    console.log(req.params);
     var path = req.params[0];
     // TODO sanitize path for security
     var file = pathUtilities.basename(path);
