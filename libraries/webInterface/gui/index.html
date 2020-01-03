@@ -18,8 +18,14 @@
         </div>
         <div id='subtitle'>Reality Server - V. 3.0. - Server IP: <span id="ip">xxx.xxx.xxx.xxx</span></div>
     </div>
+    
+    <div id='commonContents'></div>
 
     <div id='contents'>
+        <div id='manageObjectsContents' class='selectedTab'></div>
+        <div id='manageFramesContents' class='hiddenTab'></div>
+        <div id='manageHardwareInterfacesContents' class='hiddenTab'></div>
+        
         <!--   <div class='objectGroup'>
                <div class='unitGroup'>
                    Reality Server Objects
@@ -79,7 +85,17 @@
     </div>
 </template>
 
-
+<template id="tabs">
+    <div class="">
+        <div class="tabs">
+            <div id="manageObjects" class='addObject button white three clickAble'>Object Configuration</div>
+            <div class='space hidden'></div>
+            <div id="manageFrames" class='addObject button white two clickAble'>Global Frames</div>
+            <div class='space hidden'></div>
+            <div id="manageHardwareInterfaces" class='addObject button white two clickAble'>Manage Hardware Interfaces</div>
+        </div>
+    </div>
+</template>
 
 <template id="object">
     <div class="">
@@ -105,6 +121,14 @@
     </div>
 </template>
 
+<template id="worldObject">
+    <div>
+        <div class="worldObject">
+            <div class='name item button white two'>Name</div>
+        </div>
+    </div>
+</template>
+
 <template id="frame">
     <div class="">
     <div class="frame">
@@ -112,7 +136,7 @@
         </div><div class='item space hidden'>
         </div><div class='name item button white two'>Name
         </div><div class='item space'>
-        </div><div class='content item button green one'>Content
+        </div><div class='content item button green one clickAble'>Content
         </div><div class='item space'>
         </div><div class='reset item button blue one'>Reset UI
     <!--    </div><div class='item space'>
@@ -121,12 +145,30 @@
     </div><div class='hardware item button blue one inactive'>Hardware I/O
 
     </div><div class='item space'>
-    </div><div class='remove item button red half'>X
+    </div><div class='remove item button red half clickAble'>X
     </div>
     </div>
         <div class="appendix"><div class = "child"></div></div>
     </div>
+</template>
 
+<template id="globalFrame">
+    <div class="">
+        <div class="globalFrame">
+            <div class='button hidden one'></div>
+            <div class='item space'></div>
+            <div class='name item button white two'>Name</div>
+            <div class='item space'></div>
+            <div class='content item button green one clickAble'>Content</div>
+            <div class='item space'></div>
+            <div class='button hidden two'></div>
+            <div class='item space'></div>
+            <div class='remove item button red half clickAble'>X</div>
+        </div>
+        <div class="appendix">
+            <div class="child"></div>
+        </div>
+    </div>
 </template>
 
 <template id="end">
@@ -281,46 +323,28 @@
 </div><div class='space hidden'>
 </template>
 
-<template id="worldObject">
-    <div>
-        <div class="worldObject">
-            <div class='name item button white two'>Name</div>
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='textfield zone item button white one' contenteditable-->
-                   <!--onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='target item button yellow one'>Add Target-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='addFrame item button blue one'>Add Frame-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='visualization item button blue one'>Screen-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='remove item button red half'>X-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='active item button yellow half'>Off-->
-            <!--</div>-->
-        </div>
+<template id="frameManager">
+    <div class="frameManager">
+        <div class='button hidden one'></div>
+        <div class='item hidden space' style="width: 2px"></div>
+        <div class='name item button white two'>Name</div>
+        <div class='item hidden space'></div>
+        <div class='content item button green one clickAble'>Content</div>
+        <div class='item hidden space'></div>
+        <div class='active item button green half clickAble'>On</div>
+    </div>
+    <div class="appendix">
+        <div class="child"></div>
     </div>
 </template>
 
-<template id="globalFrame">
-    <div class="">
-        <div class="globalFrame">
-            <div class='button hidden one'></div>
-            <div class='item space'></div>
-            <div class='name item button white two'>Name</div>
-            <div class='item space'></div>
-            <div class='content item button green one'>Content</div>
-            <div class='item space'></div>
-            <div class='button hidden two'></div>
-            <div class='item space'></div>
-            <div class='remove item button red half'>X</div>
-            <div class="appendix">
-                <div class="child"></div>
-            </div>
-        </div>
+<template id="hardwareInterface">
+    <div class="hardwareInterface">
+        <div class='button hidden one'></div>
+        <div class='item hidden space' style="width: 2px"></div>
+        <div class='name item button white two'>Name</div>
+        <div class='item hidden space'></div>
+        <div class='active item button yellow half'>Off</div>
     </div>
 </template>
 
@@ -330,6 +354,9 @@
         dropZoneId : "",
         objects: {/*replace Object*/},
         states: {/*replace States*/},
+        globalFrames: {/*replace Frames*/},
+        hardwareInterfaces: {/*replace HardwareInterfaces*/},
+        selectedTab: 'manageObjects',
         domObjects: document.getElementById("contents"),
         templates: document.getElementsByTagName("template")
     }; // the objects and states get injected from the server webFrontend.js

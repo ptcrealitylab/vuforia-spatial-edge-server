@@ -72,7 +72,7 @@ function Frame() {
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject) {
+exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules) {
     
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
@@ -146,7 +146,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
             worldObjectEntry.frames[frameKey].src = worldObject.frames[frameKey].src;
         }
         
-        console.log('worldObjectEntry', worldObjectEntry);
+        // console.log('worldObjectEntry', worldObjectEntry);
 
         newObject[worldObject.objectId] = worldObjectEntry;
     }
@@ -158,10 +158,14 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     html = html.replace(/href="/g, "href=\"../libraries/gui/");
     html = html.replace(/src="/g, "src=\"../libraries/gui/");
     
-    console.log(newObject);
-
-    // inject the data structure with all objects and frames
+    // inject the data structure with all objects
     html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
+
+    // inject the data structure with all the possible global frames
+    html = html.replace('{/*replace Frames*/}', JSON.stringify(frameTypeModules, null, 4));
+
+    // inject the data structure with all the hardware interfaces
+    html = html.replace('{/*replace HardwareInterfaces*/}', JSON.stringify(hardwareInterfaceModules, null, 4));
 
     // inject the server information
     var states = {

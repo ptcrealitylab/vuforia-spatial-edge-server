@@ -14,7 +14,7 @@ var logger = require('../../logger');
 var utilities = require('../../libraries/utilities');
 var settings = server.loadHardwareInterface(__dirname);
 
-exports.enabled = settings("disabled");
+exports.enabled = settings("enabled");
 
 if (exports.enabled) {
 
