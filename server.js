@@ -877,12 +877,13 @@ if (!isMobile) {
     }
 }
 
-// add all types to the nodeTypeModules object. Iterate backwards because splice works inplace
+// add all types to the hardwareTypeModules object. Iterate backwards because splice works inplace
 for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
-    //check if hardwareInterface is enabled, if it is, add it to the hardwareInterfaceModules
-    if (require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js").enabled) {
-        hardwareInterfaceModules[hardwareAPIFolderList[i]] = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
-    } else {
+
+    var thisHardwareInterface = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
+    hardwareInterfaceModules[hardwareAPIFolderList[i]] = thisHardwareInterface;
+
+    if (!thisHardwareInterface.enabled) {
         hardwareAPIFolderList.splice(i, 1);
     }
 }
@@ -3699,8 +3700,8 @@ function objectWebServer() {
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
-            // logger.debug("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject));
+            // cout("get 16");
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules));
         });
 
         // restart the server from the web frontend to load
@@ -3795,7 +3796,105 @@ function objectWebServer() {
             zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
         });
+        
+        /**
+         * Overwrites the 'enabled' property in the realityObjects/.identity/hardwareInterfaceName/settings.json
+         * If the file is new (empty), write a default json blob into it with the new enabled value
+         */
+        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
+            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+            console.log(interfaceSettingsPath);
 
+            try {
+                var settings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+                settings.enabled = shouldBeEnabled;
+
+                if (globalVariables.saveToDisk) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, '\t'), function (err) {
+                        if (err) {
+                            console.log(err);
+                            callback(false, 'error writing to file');
+                        } else {
+                            console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
+                            callback(true);
+                        }
+                    });
+                } else {
+                    console.log("I am not allowed to save");
+                    callback(false, 'saveToDisk globally disabled for this server');
+                }
+            } catch (e) {
+                console.log('error reading settings.json for ' + interfaceName + '. try reverting to default settings');
+                var defaultSettings = {
+                    enabled: shouldBeEnabled
+                };
+                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, '\t'), function (err) {
+                    if (err) {
+                        console.log(err);
+                        callback(false, 'error writing to file');
+                    } else {
+                        console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
+                        callback(true);
+                    }
+                });
+            }
+        }
+
+        webServer.get('/hardwareInterface/*/disable/', function (req, res) {
+            var interfaceName = req.params[0];
+            
+            setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/hardwareInterface/*/enable/', function (req, res) {
+            var interfaceName = req.params[0];
+
+            setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/globalFrame/*/disable/', function (req, res) {
+            var frameName = req.params[0];
+
+            setFrameEnabled(frameName, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/globalFrame/*/enable/', function (req, res) {
+            var frameName = req.params[0];
+
+            setFrameEnabled(frameName, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+        
+        function setFrameEnabled(frameName, shouldBeEnabled, callback) {
+            callback(true);
+            console.log('TODO: implement setFrameEnabled by adding to .identity');
+        }
+        
         // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
