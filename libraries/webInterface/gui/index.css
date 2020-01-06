@@ -135,8 +135,8 @@ body {
 }
 
 .space {
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   width: 8px;
   height: 36px;
   line-height: 32px;
@@ -149,10 +149,9 @@ body {
   z-index: -1;
 }
 
-.globalFrame .space {
+.smallSpace {
     width: 1px;
-    /*visibility: hidden;*/
-    /*border: none;*/
+    background-color: transparent;
 }
 
 .clickAble:hover {
@@ -246,6 +245,11 @@ body {
   border: 2px solid rgba(255,255,255,0);
   background-color: rgba(255,255,255,0.15);
 }
+
+.noBackground {
+    background-color: transparent;
+}
+
 .zero {
   margin-left: -12px;
   width: 0px;
@@ -295,9 +299,6 @@ body {
 
   background-image: url("/libraries/gui/resources/dropZone.svg?2");
   background-repeat: no-repeat, repeat;
-
-
-
 }
 
 .makeTextSelectAble {

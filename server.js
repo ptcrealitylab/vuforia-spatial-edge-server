@@ -117,7 +117,7 @@ var path = require('path');
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
-const frameLibPath = __dirname + "/libraries/frames/active";
+const frameLibPath = path.join(path.join(os.homedir(), 'Documents'), 'realityframes'); //__dirname + "/libraries/frames/active";
 // All visual UI representations for IO Points are stored in this folder:
 const nodePath = __dirname + "/libraries/nodes";
 // All visual UI representations for logic blocks are stored in this folder:
@@ -155,6 +155,10 @@ if(!fs.existsSync(objectsPath)) {
 }
 
 var identityFolderName = '.identity';
+
+// This file hosts the functions related to loading the set of available frames from the realityframes/ directory
+var globalFrames = require(__dirname + '/libraries/globalFrames');
+globalFrames.initialize(frameLibPath, identityFolderName);
 
 // find ips
 var ni = require('network-interfaces');
@@ -724,7 +728,6 @@ function Protocols() {
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
-var frameTypeModules = {};   // Will hold all available frame interfaces
 var nodeTypeModules = {};   // Will hold all available data point interfaces
 var blockModules = {};   // Will hold all available data point interfaces
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
@@ -768,21 +771,6 @@ var worldObject;
 
 
 logger.debug("Starting the Server");
-
-// get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
-var frameFolderList = fs.readdirSync(frameLibPath).filter(function (file) {
-    return fs.statSync(frameLibPath + '/' + file).isDirectory();
-});
-
-// Load the config.js properties of each frame into an object that we can provide to clients upon request.
-for (var i = 0; i < frameFolderList.length; i++) {
-    if (fs.existsSync(frameLibPath + '/' + frameFolderList[i] + "/config.js")) {
-        frameTypeModules[frameFolderList[i]] = require(frameLibPath + '/' + frameFolderList[i] + "/config.js");
-    } else {
-        frameTypeModules[frameFolderList[i]] = {};
-    }
-}
-
 
 // get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
 // Each folder represents on IO-Point.
@@ -2243,16 +2231,10 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.get('/availableFrames/', function (req, res) {
         console.log("get available frames");
-        res.json(getFrameList());
+        res.json(globalFrames.getFrameList());
+        // TODO: decide whether to use this instead of getFrameList, or whether the client should be resposible for filtering out disabled frames
+        // res.json(globalFrames.getEnabledFrames());
     });
-
-    /**
-     * Utility function that traverses all the frames and creates a new entry for each.
-     * @return {Object.<string, Object>}
-     */
-    function getFrameList() {
-        return frameTypeModules;
-    }
 
     // sends json object for a specific reality object. * is the object name
     // ths is the most relevant for
@@ -3701,7 +3683,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
 
         // restart the server from the web frontend to load
@@ -3784,11 +3766,16 @@ function objectWebServer() {
             var objectID = req.params[0];
             logger.debug("++++++++++++++++++++++++++++++++++++++++++++++++");
 
+            if (!fs.existsSync(objectsPath + '/' + objectID)) {
+                res.status(404).send('object directory for ' + objectID + 'does not exist at ' + objectsPath + '/' + objectID);
+                return;
+            }
+
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
                 'Content-disposition': 'attachment; filename=' + objectID + '.zip'
             });
-
+            
             var archiver = require('archiver');
 
             var zip = archiver('zip');
@@ -3796,7 +3783,33 @@ function objectWebServer() {
             zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
         });
-        
+
+        webServer.get('/hardwareInterface/*/disable/', function (req, res) {
+            var interfaceName = req.params[0];
+            
+            setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/hardwareInterface/*/enable/', function (req, res) {
+            var interfaceName = req.params[0];
+
+            setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
         /**
          * Overwrites the 'enabled' property in the realityObjects/.identity/hardwareInterfaceName/settings.json
          * If the file is new (empty), write a default json blob into it with the new enabled value
@@ -3840,36 +3853,10 @@ function objectWebServer() {
             }
         }
 
-        webServer.get('/hardwareInterface/*/disable/', function (req, res) {
-            var interfaceName = req.params[0];
-            
-            setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
-                if (success) {
-                    res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface changes to take place');
-                } else {
-                    res.status(500).send(errorMessage);
-                }
-            });
-        });
-
-        webServer.get('/hardwareInterface/*/enable/', function (req, res) {
-            var interfaceName = req.params[0];
-
-            setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
-                if (success) {
-                    res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface changes to take place');
-                } else {
-                    res.status(500).send(errorMessage);
-                }
-            });
-        });
-
         webServer.get('/globalFrame/*/disable/', function (req, res) {
             var frameName = req.params[0];
 
-            setFrameEnabled(frameName, false, function(success, errorMessage) {
+            globalFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                 } else {
@@ -3881,7 +3868,7 @@ function objectWebServer() {
         webServer.get('/globalFrame/*/enable/', function (req, res) {
             var frameName = req.params[0];
 
-            setFrameEnabled(frameName, true, function(success, errorMessage) {
+            globalFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                 } else {
@@ -3894,7 +3881,62 @@ function objectWebServer() {
             callback(true);
             console.log('TODO: implement setFrameEnabled by adding to .identity');
         }
-        
+
+        webServer.get('/object/*/disableFrameSharing/', function (req, res) {
+            var objectKey = req.params[0];
+
+            setFrameSharingEnabled(objectKey, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/object/*/enableFrameSharing/', function (req, res) {
+            var objectKey = req.params[0];
+
+            setFrameSharingEnabled(objectKey, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
+            callback(true);
+            console.log('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
+        }
+
+        // request a zip-file with the frame stored inside. *1 is the frameName
+        // ****************************************************************************************************************
+        webServer.get('/frame/*/zipBackup/', function (req, res) {
+            var frameName = req.params[0];
+            console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
+            
+            var framePath = path.join(frameLibPath, frameName);
+
+            if (!fs.existsSync(framePath)) {
+                res.status(404).send('frame directory for ' + frameName + 'does not exist at ' + framePath);
+                return;
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'application/zip',
+                'Content-disposition': 'attachment; filename=' + frameName + '.zip'
+            });
+
+            var Archiver = require('archiver');
+
+            var zip = Archiver.create('zip', false);
+            zip.pipe(res);
+            zip.directory(framePath, frameName + "/");
+            zip.finalize();
+        });
+
         // sends json object for a specific reality object. * is the object name
         // ths is the most relevant for
         // ****************************************************************************************************************
@@ -4060,9 +4102,9 @@ function objectWebServer() {
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey+ req.body.frame].location);
                     }
                 }
-              //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
 
-            res.send("ok");
+                res.send("ok");
             }
             if (req.body.action === "delete") {
 

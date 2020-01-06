@@ -8,6 +8,7 @@ function Objects() {
     this.zone = '';
     this.screenPort = '';
     this.isWorldObject = false;
+    this.sharingEnabled = false; // world objects can enable their frames to be visually attached to other objects
 }
 
 // Constructor with subset of frame information necessary for the web frontend
@@ -32,7 +33,7 @@ realityServer.getDomContents = function() {
 };
 
 realityServer.getCommonContents = function() {
-    return document.querySelector('#commonContents');
+    return this.domObjects.querySelector('#commonContents');
 };
 
 realityServer.initialize = function () {
@@ -45,39 +46,132 @@ realityServer.initialize = function () {
 
     document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
-    
-    var DEBUG_SET_ENABLED_TRUE = true;
-    if (DEBUG_SET_ENABLED_TRUE) {
-        for (var frameKey in realityServer.globalFrames) {
-            realityServer.globalFrames[frameKey].enabled = true;
-        }
-    }
 
     this.update();
+};
+
+realityServer.forEachSortedObjectKey = function(callback) {
+    var sorted = realityServer.sortObject(realityServer.objects);
+    sorted.forEach(function(sortedKey) {
+        callback(sortedKey[1]);
+    });
 };
 
 realityServer.updateManageObjects = function(thisItem2) {
 
     this.getDomContents().appendChild(this.templates["start"].content.cloneNode(true));
     //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
-    document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
 
-    for (var objectKey in this.objects) {
-        if(objectKey === "allTargetsPlaceholder000000000000") continue;
+    document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
+    
+    document.getElementById("addWorldObject").addEventListener("click", realityServer.gotClick, false);
+    
+    realityServer.forEachSortedObjectKey( function(objectKey) {
+        if(objectKey === "allTargetsPlaceholder000000000000") { return; }
 
         var thisObject = this.objects[objectKey];
 
         console.log("--------"+thisItem2);
 
-        if(!thisItem2 || thisItem2 === objectKey)  {
-
-            console.log(this.objects);
+        if (!thisItem2 || thisItem2 === objectKey)  {
 
             if (thisObject.isWorldObject) {
 
                 thisObject.dom = this.templates['worldObject'].content.cloneNode(true); // world object template
                 thisObject.dom.querySelector(".worldObject").id = "object"+objectKey;
                 thisObject.dom.querySelector(".name").innerText = thisObject.name;
+
+                thisObject.dom.querySelector(".target").setAttribute('objectId', objectKey);
+                thisObject.dom.querySelector(".target").setAttribute('isWorldObject', true);
+                thisObject.dom.querySelector(".target").addEventListener("click", realityServer.gotClick, false);
+                
+                function addDeleteListener(button, container, thisObjectKey) {
+                    button.addEventListener('click', function(e) {
+                        // add a expandcollapse div with Sure? Yes
+                        var alreadyOpen = container.querySelector('.expandcollapse');
+                        if (alreadyOpen) {
+                            realityServer.removeAnimated(alreadyOpen.querySelector('.deleteOK'));
+                            return;
+                        }
+                        var deleteConfirmation = realityServer.templates['deleteOKId'].content.cloneNode(true);
+                        container.appendChild(deleteConfirmation);
+                        
+                        container.querySelector('.deleteYes').addEventListener('click', function(e) {
+                            realityServer.removeAnimated(container.querySelector('.deleteOK'));
+
+                            realityServer.sendRequest("/", "POST", function(state) {
+                                if(state === "ok") {
+                                    delete realityServer.objects[thisObjectKey];
+                                    realityServer.update();
+                                }
+                                realityServer.update();
+                            }, "action=delete&name="+realityServer.objects[thisObjectKey].name+"&frame=");
+                        });
+                    });
+                }
+                addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.worldObject'), objectKey);
+
+                if (thisObject.initialized) {
+
+                    // on/off and download buttons are always clickable if initialized
+                    thisObject.dom.querySelector(".active").classList.add('clickAble');
+                    thisObject.dom.querySelector(".download").classList.add('clickAble');
+
+                    // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
+                    if (thisObject.active) {
+                        realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
+                        thisObject.dom.querySelector(".active").innerText = "On";
+
+                        thisObject.dom.querySelector(".sharing").classList.add('clickAble');
+                        thisObject.dom.querySelector(".sharing").classList.add('clickAble');
+
+                        addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
+
+                    } else {
+                        realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
+                        thisObject.dom.querySelector(".active").innerText = "Off";
+
+                        thisObject.dom.querySelector(".name").classList.add('inactive');
+                        thisObject.dom.querySelector(".zone").classList.add('inactive');
+                        thisObject.dom.querySelector(".sharing").classList.add('inactive');
+                    }
+
+                    // download zip file if click on download button
+                    thisObject.dom.querySelector('.download').addEventListener('click', function(e) {
+                        window.location.href = "/object/" + realityServer.objects[objectKey].name + "/zipBackup/";
+                    });
+
+                    // make Add Target button turn green when fully initialized
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
+
+                    // make Frame Sharing button turn green or yellow depending on state
+                    if (thisObject.sharingEnabled) {
+                        realityServer.switchClass(thisObject.dom.querySelector('.sharing'), "yellow", "green");
+                        thisObject.dom.querySelector(".sharing").innerText = "Frame Sharing On";
+
+                    } else {
+                        realityServer.switchClass(thisObject.dom.querySelector('.sharing'), "green", "yellow");
+                        thisObject.dom.querySelector(".sharing").innerText = "Frame Sharing Off";
+                    }
+                    
+                    addEnabledToggle(thisObject.dom.querySelector(".active"), objectKey, thisObject); // create inside closure so interfaceInfo doesn't change after definition
+
+                } else { // if not initializes with target files...
+                    
+                    thisObject.dom.querySelector(".name").classList.add('inactive');
+                    thisObject.dom.querySelector(".zone").classList.add('inactive');
+                    thisObject.dom.querySelector(".sharing").classList.add('inactive');
+                    thisObject.dom.querySelector(".download").classList.add('inactive');
+                    thisObject.dom.querySelector(".active").classList.add('inactive');
+
+                    // make on/off button yellow always if not properly initialized
+                    realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
+                    thisObject.dom.querySelector(".active").innerText = "Off";
+                    
+                    // make Add Target button yellow
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
+                }
+                
                 this.getDomContents().appendChild(thisObject.dom);
 
             } else {
@@ -113,7 +207,6 @@ realityServer.updateManageObjects = function(thisItem2) {
                     thisObject.dom.querySelector(".zone").innerText = thisObject.zone;
                 }
 
-                console.log(thisObject.visualization);
                 if (thisObject.visualization === "AR") thisObject.visualization = "ar";
                 if (thisObject.visualization === "ar") {
                     thisObject.dom.querySelector(".visualization").innerText = "AR";
@@ -155,29 +248,31 @@ realityServer.updateManageObjects = function(thisItem2) {
 
             for (var frameKey in this.objects[objectKey].frames) {
                 var thisFrame = this.objects[objectKey].frames[frameKey];
-                console.log('thisFrame: ', thisFrame);
 
-                // thisFrame.dom = this.templates[2].content.cloneNode(true);
-
-                var className = 'frame';
-                className = thisFrame.location === 'global' ? 'globalFrame' : 'frame';
+                // use the right template for a local frame or a global frame
+                var className = thisFrame.location === 'global' ? 'globalFrame' : 'frame';
                 thisFrame.dom = this.templates[className].content.cloneNode(true);
 
-                thisFrame.dom.querySelector('.' + className).id = 'frame'+objectKey+frameKey;
+                thisFrame.dom.querySelector('.' + className).id = 'frame' + objectKey + frameKey;
 
+                // clicking on the "Content" button opens the html for that frame
                 function addLinkToContent(buttonDiv, frameType) {
-                    buttonDiv.addEventListener('click', function(e) {
+                    buttonDiv.addEventListener('click', function(e) { // put in a closure so it references don't mutate
                         var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open('http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html', '_blank');
-                        // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
+                        window.open('http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
-                var contentButton = thisFrame.dom.querySelector('.content');
                 if (thisFrame.location === 'global') {
-                    addLinkToContent(contentButton, thisFrame.src);
+                    addLinkToContent(thisFrame.dom.querySelector('.content'), thisFrame.src);
+                    
+                    if (thisObject.isWorldObject && thisObject.sharingEnabled) {
+                        // thisFrame.dom.querySelector('.attachedTo').classList.remove('hidden');
+                        realityServer.switchClass(thisFrame.dom.querySelector('.attachedTo'), 'hidden', 'inactive');
+                        // TODO: in future, make active/visible only if it is attached to another object, and change the text to show that object's name
+                    }
                 }
 
-                if(thisObject.visualization === 'screen' && thisFrame.location !== 'global') {
+                if (thisObject.visualization === 'screen' && thisFrame.location !== 'global') {
                     realityServer.switchClass(thisFrame.dom.querySelector(".reset"), "blue", "purple");
                     realityServer.switchClass(thisFrame.dom.querySelector(".hardware"), "blue", "purple");
                 }
@@ -196,7 +291,7 @@ realityServer.updateManageObjects = function(thisItem2) {
             }
         }
 
-    }
+    }.bind(this));
     
     if (thisItem2 === "") {
         this.getDomContents().appendChild(this.templates['end'].content.cloneNode(true));
@@ -208,6 +303,14 @@ realityServer.updateManageObjects = function(thisItem2) {
 realityServer.updateManageFrames = function() {
     console.log('updateManageFrames');
 
+    this.getDomContents().appendChild(this.templates["startFrames"].content.cloneNode(true));
+    
+    // this.getDomContents().querySelector('#pathSelectionInput').addEventListener('change', function(e) {
+    //     console.log(e);
+    // });
+    
+    this.getDomContents().querySelector('#framesPath').innerText = realityServer.states.globalFramesPath || '';
+    
     for (var frameKey in this.globalFrames) {
         
         var frameInfo = this.globalFrames[frameKey];
@@ -219,47 +322,35 @@ realityServer.updateManageFrames = function() {
                 var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
                 window.open('http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html', '_blank');
-
             });
         }
         var contentButton = frameInfo.dom.querySelector('.content');
         addLinkToContent(contentButton, frameKey);
 
+        var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+        frameInfo.dom.querySelector(".frameIcon").src = 'http://' + ipAddress + ':8080/frames/active/' + frameKey + '/icon.gif';
+        
+        addZipDownload(frameInfo.dom.querySelector('.download'), frameKey);
+
         frameInfo.dom.querySelector(".name").innerText = frameKey;
-        if (!frameInfo.enabled) {
+        if (!frameInfo.metadata.enabled) {
+            frameInfo.dom.querySelector('.frameIcon').classList.add('inactive');
             frameInfo.dom.querySelector('.name').classList.add('inactive');
+            frameInfo.dom.querySelector('.content').classList.add('inactive');
+            frameInfo.dom.querySelector('.download').classList.add('inactive');
         }
 
         var activeToggleButton = frameInfo.dom.querySelector('.active');
 
-        if (frameInfo.enabled) {
+        if (frameInfo.metadata.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
         }
-
-        function addEnabledToggle(button, frameName, frameInfo) {
-            button.addEventListener('click', function(e) {
-                if (frameInfo.enabled) {
-                    realityServer.sendRequest('/globalFrame/' + frameName + '/disable/', 'GET', function (state) {
-                        if (state === 'ok') {
-                            frameInfo.enabled = false;
-                        }
-                        realityServer.update();
-                    });
-                } else {
-                    realityServer.sendRequest('/globalFrame/' + frameName + '/enable/', 'GET', function (state) {
-                        if (state === 'ok') {
-                            frameInfo.enabled = true;
-                        }
-                        realityServer.update();
-                    });
-                }
-            });
-        }
-        addEnabledToggle(activeToggleButton, frameKey, frameInfo); // create inside closure so interfaceInfo doesn't change after definition
+        
+        addFrameEnabledToggle(activeToggleButton, frameKey, frameInfo); // create inside closure so interfaceInfo doesn't change after definition
 
         this.getDomContents().appendChild(frameInfo.dom, true);
     }
@@ -442,19 +533,19 @@ realityServer.gotClick = function (event) {
 
         var referenceNode = document.getElementById("object"+objectKey);
 
-        if(realityServer.dropZoneId !== "targetDropZone"+objectKey) {
+        // create a dropdown
+        if (realityServer.dropZoneId !== "targetDropZone"+objectKey) {
             var elementList = document.querySelectorAll(".dropZoneElement");
             for (var i = 0; i < elementList.length; ++i) {
-               // elementList[i].remove();
                 realityServer.removeAnimated(elementList[i], "expandcollapseTarget", "expandTarget", "collapseTarget");
             }
-
 
             var newNode = document.getElementById("targetId").content.cloneNode(true);
             newNode.querySelector(".dropZoneElement").id = "targetDropZone"+objectKey;
 
-            if(!realityServer.objects[objectKey].targetName)
+            if (!realityServer.objects[objectKey].targetName) {
                 realityServer.objects[objectKey].targetName = realityServer.objects[objectKey].name+realityServer.uuidTime();
+            }
 
             newNode.querySelector(".name").innerText =realityServer.objects[objectKey].targetName;
             referenceNode.after(newNode);
@@ -516,7 +607,7 @@ realityServer.gotClick = function (event) {
 
                       delete realityServer.objects[responseText.name];
 
-                        realityServer.objects = realityServer.sortObject(realityServer.objects);
+                        // realityServer.objects = realityServer.sortObject(realityServer.objects);
                     }
 
                     if(responseText.jpgExists && responseText.targetExists) {
@@ -715,7 +806,6 @@ realityServer.gotClick = function (event) {
 
                     // todo: change the depth for the folders
 
-
                     for(var fileKey in thisLevel.files) {
                         newNode = document.getElementById("fileId").content.cloneNode(true);
                         newNode.querySelector(".fileName").setAttribute("file", thisLevel.files[fileKey].path);
@@ -806,49 +896,65 @@ realityServer.gotClick = function (event) {
         */
     }
 
-
-
     /**
      *  ADD OBJECT
      */
-    if (buttonClassList.contains("addObject")) {
+    if (buttonClassList.contains("addObject") || buttonClassList.contains("addWorldObject")) {
         console.log(document.getElementById("textEntryObject"));
+        
         if (!document.getElementById("textEntryObject")){
-            var thisObject = document.getElementById("textEntryId").content.cloneNode(true);
-            thisObject.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
-            thisObject.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
-            thisObject.querySelector(".textEntry").id = "textEntryObject";
-            document.getElementById("addObject").parentNode.appendChild(thisObject);
-           // realityServer.getDomContents().querySelector(".textfield").setAttribute("contenteditable", "true");
+            var textEntryElements = document.getElementById("textEntryId").content.cloneNode(true);
+            textEntryElements.querySelector(".addButton").addEventListener("click", realityServer.gotClick, false);
+            textEntryElements.querySelector(".textfield").addEventListener("keypress", realityServer.onTextFieldKeyPress, false);
+            textEntryElements.querySelector(".textEntry").id = "textEntryObject";
+            
+            if (buttonClassList.contains('addWorldObject')) {
+                textEntryElements.getElementById('textEntryObject').setAttribute('isWorldObject', true);
+            }
+            
+            document.getElementById("addObject").parentNode.appendChild(textEntryElements);
         } else {
             var removeNode = document.getElementById("textEntryObject");
             realityServer.removeAnimated(removeNode);
-            // removeNode.remove();
         }
     }
 
     if (buttonClassList.contains("addButton")) {
-      var textContent = document.getElementById("textEntryObject").querySelector(".textfield").innerText;
-      if(textContent === "Enter Name") {return;}
-      else {
-          console.log(textContent);
-          var removeNode = document.getElementById("textEntryObject");
-          realityServer.removeAnimated(removeNode);
-        //  removeNode.remove();
 
-          if (textContent !== "") {
-              realityServer.sendRequest("/", "POST", function(state){
-                  if(state === "ok") {
-                      realityServer.objects[textContent] = new Objects();
-                      realityServer.objects[textContent].name = textContent;
-                  }
+        var shouldAddWorldObject = document.getElementById('textEntryObject').getAttribute('isWorldObject');
 
-                  realityServer.objects =  realityServer.sortObject(realityServer.objects);
-                  realityServer.update();}, "action=new&name="+textContent);
-          }
-      }//
+        var textContent = document.getElementById("textEntryObject").querySelector(".textfield").innerText;
+        
+        if (textContent === "Enter Name") {
+            return;
+        } else {
+            console.log(textContent);
+            var removeNode = document.getElementById("textEntryObject");
+            realityServer.removeAnimated(removeNode);
+
+            if (textContent !== "") {
+                
+                var objectName = textContent;
+                if (shouldAddWorldObject) {
+                    objectName = '_WORLD_OBJECT_' + textContent;
+                }
+                
+                realityServer.sendRequest("/", "POST", function(state) {
+                    if (state === "ok") {
+                        realityServer.objects[objectName] = new Objects();
+                        realityServer.objects[objectName].name = objectName;
+                        
+                        if (shouldAddWorldObject) {
+                            realityServer.objects[objectName].isWorldObject = true;
+                        }
+                    }
+
+                    // realityServer.objects = realityServer.sortObject(realityServer.objects);
+                    realityServer.update();
+                }, "action=new&name="+objectName);
+            }
+        }
     }
-
 
     if (buttonClassList.contains("addButtonFrame")) {
         var textContent = document.querySelector(".textEntryFrame").querySelector(".textfield").innerText;
@@ -942,7 +1048,7 @@ realityServer.onTextFieldKeyPress = function(event) {
 };
 
 realityServer.sendRequest = function(url, httpStyle, callback, body) {
-    if(!body) body = "";
+    if (!body) { body = ""; }
     var req = new XMLHttpRequest();
     try {
         req.open(httpStyle, url, true);
@@ -1091,7 +1197,6 @@ realityServer.toggleFullScreen = function (item) {
     }
 };
 
-
 realityServer.removeAnimated = function (item, target, expand, collapse){
     if(!target) target = "expandcollapse";
     if(!expand) expand = "expand";
@@ -1111,20 +1216,29 @@ realityServer.removeAnimated = function (item, target, expand, collapse){
     }
 };
 
-realityServer.sortObject = function (o) {
-    var sorted = {};
-    var a = [],i;
-    for(i in o){
-        if(o.hasOwnProperty(i)){
-            a.push([o[i].name,i]);
+realityServer.sortObject = function (objects) {
+    var objectInfo = [];
+    var worldObjectInfo = [];
+    
+    for (var objectKey in objects) {
+        if (!objects.hasOwnProperty(objectKey)) { continue; }
+        
+        if (objects[objectKey].isWorldObject) {
+            worldObjectInfo.push([ objects[objectKey].name, objectKey ]);
+        } else {
+            objectInfo.push([ objects[objectKey].name, objectKey ]);
         }
     }
-    a.sort(function(a,b){ return a[0]>b[0]?1:-1; });
-
-    for (key = 0; key < a.length; key++) {
-        sorted[a[key][1]] = o[a[key][1]];
-    }
-    return sorted;
+    
+    // sort alphabetically for non-world objects, and for world objects, and then combine them
+    objectInfo.sort(function(a, b) {
+        return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
+    });
+    worldObjectInfo.sort(function(a, b) {
+        return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
+    });
+    
+    return objectInfo.concat(worldObjectInfo);
 };
 
 realityServer.uuidTime = function () {
@@ -1134,5 +1248,77 @@ realityServer.uuidTime = function () {
     while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
     return stampUuidTime;
 };
+
+// toggle between activated and deactivated
+function addEnabledToggle(button, objectKey, thisObject) {
+    button.addEventListener('click', function(e) {
+        if (thisObject.active) {
+            realityServer.sendRequest('/object/' + objectKey + '/deactivate/', 'GET', function (state) {
+                if (state === 'ok') {
+                    thisObject.active = false;
+                }
+                realityServer.update();
+            });
+        } else {
+            realityServer.sendRequest('/object/' + objectKey + '/activate/', 'GET', function (state) {
+                if (state === 'ok') {
+                    thisObject.active = true;
+                }
+                realityServer.update();
+            });
+        }
+    });
+}
+
+// toggle between enabled and disabled frame
+function addFrameEnabledToggle(button, frameName, frameInfo) {
+    button.addEventListener('click', function(e) {
+        if (frameInfo.metadata.enabled) {
+            realityServer.sendRequest('/globalFrame/' + frameName + '/disable/', 'GET', function (state) {
+                if (state === 'ok') {
+                    frameInfo.metadata.enabled = false;
+                }
+                realityServer.update();
+            });
+        } else {
+            realityServer.sendRequest('/globalFrame/' + frameName + '/enable/', 'GET', function (state) {
+                if (state === 'ok') {
+                    frameInfo.metadata.enabled = true;
+                }
+                realityServer.update();
+            });
+        }
+    });
+}
+
+// toggle between frame sharing enabled/disabled
+function addSharingToggle(button, objectKey, thisObject) {
+    button.addEventListener('click', function(e) {
+        if (thisObject.sharingEnabled) {
+            realityServer.sendRequest('/object/' + objectKey + '/disableFrameSharing/', 'GET', function (state) {
+                if (state === 'ok') {
+                    thisObject.sharingEnabled = false;
+                    console.log(objectKey, thisObject.sharingEnabled);
+                }
+                realityServer.update();
+            });
+        } else {
+            realityServer.sendRequest('/object/' + objectKey + '/enableFrameSharing/', 'GET', function (state) {
+                if (state === 'ok') {
+                    thisObject.sharingEnabled = true;
+                    console.log(objectKey, thisObject.sharingEnabled);
+                }
+                realityServer.update();
+            });
+        }
+    });
+}
+
+// download zip of global frame directory
+function addZipDownload(button, frameName) {
+    button.addEventListener('click', function(e) {
+        window.location.href = "/frame/" + frameName + "/zipBackup/";
+    });
+}
 
 realityServer.initialize();
