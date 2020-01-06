@@ -70,14 +70,6 @@ var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 hardwareIdentity = homedir +"/.identity";
 
-var worldObjectName;
-var worldObject;
-
-exports.setWorldObject = function(name, reference) {
-    worldObjectName = name;
-    worldObject = reference;
-};
-
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
@@ -85,8 +77,6 @@ exports.writeObject = function (objectLookup, folder, id) {
 exports.readObject = function (objectLookup, folder) {
     if (objectLookup.hasOwnProperty(folder)) {
         return objectLookup[folder].id;
-    } else if (folder.indexOf(worldObjectName) > -1) {
-        return worldObject.objectId;
     } else {
         return null;
     }
@@ -335,18 +325,9 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  **/
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
-       // logger.debug("start saving");
-
-        var objectData;
-        var outputFilename;
-
-        if (object.indexOf(worldObjectName) > -1) {
-            outputFilename = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + 'object.json';
-            objectData = worldObject;
-        } else {
-            outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-            objectData = objects[object];
-        }
+        // console.log("start saving");
+        var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
+        var objectData = objects[object];
 
         fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
             if (err) {
@@ -649,3 +630,11 @@ exports.actionSender = function(action, timeToLive, beatport) {
     });
 
 };
+
+/**
+ * Prints to the console, only if in debug mode
+ * @param {string} msg
+ */
+function cout(msg) {
+    if (debug) console.log(msg);
+}
