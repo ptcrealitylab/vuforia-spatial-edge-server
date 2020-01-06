@@ -72,7 +72,7 @@ function Frame() {
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules) {
+exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
     
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
@@ -96,6 +96,11 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         
         // create a data structure for the information to create the DOM elements representing this object
         newObject[thisObjectKey] = new ThisObjects();
+        
+        // TODO: more robust way to keep track of world objects that haven't been fully initialized with a target (for now, the name is the only way to tell)
+        if (thisObjectKey.indexOf('_WORLD_OBJECT_') > -1) {
+            newObject[thisObjectKey].isWorldObject = true;
+        }
         
         // check if the object is correctly initialized with tracking targets
         var datExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.dat');
@@ -171,7 +176,8 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     var states = {
         version : version,
         ipAdress: ipAddress,
-        serverPort : serverPort
+        serverPort : serverPort,
+        globalFramesPath: globalFramesPath
     };
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
     
