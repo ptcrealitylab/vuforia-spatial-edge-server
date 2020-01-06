@@ -80,7 +80,8 @@ const globalVariables = {
     // Allow system to save to file system
     saveToDisk : !isMobile,
     // Create an object for attaching frames to the world
-    worldObject : true
+    worldObject : true,
+    listenForHumanPose: false
 };
 
 // ports used to define the server behaviour
@@ -284,6 +285,7 @@ function Objects() {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
     };
+    this.isWorldObject = false;
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
@@ -759,7 +761,7 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
-var worldObjectName = '_WORLD_OBJECT_';
+var worldObjectName = '_WORLD_';
 if (isMobile) {
     worldObjectName += 'local';
 }
@@ -834,7 +836,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, worldObject, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 logger.debug("Done");
 
@@ -1008,86 +1010,6 @@ var executeSetups = function () {
 };
 executeSetups();
 
-
-/**
- * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
- * Create the json file if doesn't already exist
- */
-function loadWorldObject() {
-
-    // create the file for it if necessary
-    var folder = objectsPath + '/.identity/' + worldObjectName + '/';
-    var identityPath = folder + identityFolderName + '/';
-    var jsonFilePath = identityPath + 'object.json';
-
-    // create objects folder at objectsPath if necessary
-    if(!fs.existsSync(folder)) {
-        logger.debug('created worldObject directory at ' + folder);
-        fs.mkdirSync(folder);
-    }
-
-    // create a /identity folder within it to hold the object.json data
-    if(!fs.existsSync(identityPath)) {
-        logger.debug('created worldObject identity at ' + identityPath);
-        fs.mkdirSync(identityPath);
-    }
-
-    // create a new world object
-    worldObject = new Objects();
-    worldObject.name = worldObjectName;
-    if (isMobile) {
-        worldObject.objectId = worldObjectName;
-    } else {
-        worldObject.objectId = worldObjectName + utilities.uuidTime();
-    }
-    worldObject.isWorldObject = true;
-    worldObject.timestamp = Date.now();
-
-    // try to read previously saved data to overwrite the default world object
-    if (globalVariables.saveToDisk) {
-        try {
-            worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-            logger.debug('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
-        } catch (e) {
-            logger.debug('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
-        }
-    }
-
-    worldObject.ip = ips.interfaces[ips.activeInterface];
-
-    utilities.setWorldObject(worldObjectName, worldObject);
-
-    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-    //     delete objects[utilities.readObject(objectLookup, folderVar)];
-    // }
-    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-    // objectLookup[folder] = {id: id};
-    // entering the obejct in to the lookup table
-    // ask the object to reinitialize
-    //serialPort.write("ok\n");
-    // todo send init to internal
-
-    hardwareAPI.reset();
-
-    // utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
-
-    // write world object to file
-    // var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-
-    if (globalVariables.saveToDisk) {
-
-        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
-            if (err) {
-                logger.debug('worldObject save error', err);
-            } else {
-                //logger.debug('JSON saved to ' + jsonFilePath);
-            }
-        });
-    } else {
-        logger.debug('I am not allowed to save');
-    }
-}
-
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
  **********************************************************************************************************************/
@@ -1097,9 +1019,6 @@ function loadWorldObject() {
  **/
 
 function startSystem() {
-
-
-
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (var key in objects) {
@@ -1546,9 +1465,6 @@ function objectWebServer() {
         }
 
         if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
-            if (urlArray[0] === worldObjectName) {
-                urlArray[0] = identityFolderName + '/' + worldObjectName;
-            }
             urlArray[urlArray.length-2] = identityFolderName+"/videos";
         }
 
@@ -1648,23 +1564,12 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object)
      */
     function getObjectAsync(objectKey, callback) {
-
         if (!objects.hasOwnProperty(objectKey)) {
-            if(globalVariables.worldObject) {
-                if (objectKey.indexOf(worldObjectName) > -1) {
-                    callback(null, worldObject);
-                    return;
-                }
-            }
-
             callback({failure: true, error: 'Object ' + objectKey + ' not found'});
             return;
         }
-
         var object = objects[objectKey];
-
         callback(null, object);
-
     }
 
     /**
@@ -1673,24 +1578,18 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getFrameAsync(objectKey, frameKey, callback) {
-
         getObjectAsync(objectKey, function(error, object) {
             if (error) {
                 callback(error);
                 return;
             }
-
             if (!object.frames.hasOwnProperty(frameKey)) {
                 callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
                 return;
             }
-
             var frame = object.frames[frameKey];
-
             callback(null, object, frame);
-
         });
-
     }
 
     /**
@@ -1700,24 +1599,18 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
-
         getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
             }
-
             if (!frame.nodes.hasOwnProperty(nodeKey)) {
                 callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
                 return;
             }
-
             var node = frame.nodes[nodeKey];
-
             callback(null, object, frame, node);
-
         });
-
     }
 
     /**
@@ -2461,10 +2354,6 @@ function objectWebServer() {
             if (!objects.hasOwnProperty(objectKey)) continue;
             callback(objects[objectKey], objectKey);
         }
-
-        if (worldObject) {
-            callback(worldObject, worldObject.objectId);
-        }
     }
 
     function forEachFrameInObject(object, callback) {
@@ -2915,11 +2804,7 @@ function objectWebServer() {
             }
 
             var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
-            if (objectKey.indexOf(worldObjectName) > -1) {
-                videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
-            }
-
-            logger.debug('videoDir is', videoDir);
+            console.log('videoDir is: ' + videoDir);
 
             if (!fs.existsSync(videoDir)) {
                 logger.debug('make videoDir');
@@ -3352,9 +3237,6 @@ function objectWebServer() {
             var urlArray = videoPath.split('/');
 
             var objectName = urlArray[4];
-            if (videoPath.indexOf(worldObjectName) > -1) {
-                objectName = identityFolderName + '/' + worldObjectName;
-            }
             var videoFilePath = objectsPath + '/' + objectName + '/' + identityFolderName + '/videos/' + urlArray[6];
 
             if (fs.existsSync(videoFilePath)) {
@@ -3683,7 +3565,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // cout("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
 
         // restart the server from the web frontend to load
@@ -3859,6 +3741,7 @@ function objectWebServer() {
             globalFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3871,16 +3754,12 @@ function objectWebServer() {
             globalFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
                 } else {
                     res.status(500).send(errorMessage);
                 }
             });
         });
-        
-        function setFrameEnabled(frameName, shouldBeEnabled, callback) {
-            callback(true);
-            console.log('TODO: implement setFrameEnabled by adding to .identity');
-        }
 
         webServer.get('/object/*/disableFrameSharing/', function (req, res) {
             var objectKey = req.params[0];
@@ -3908,7 +3787,7 @@ function objectWebServer() {
 
         function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
             callback(true);
-            console.log('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
+            console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
         }
 
         // request a zip-file with the frame stored inside. *1 is the frameName
@@ -3968,17 +3847,12 @@ function objectWebServer() {
         });
 
         /**
-         * Gets the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         * Previously, retrieved the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         * Now it is deprecated, because world objects are discovered using UDP broadcasts
          */
         webServer.get('/worldObject/', function(req, res) {
-
-            if (typeof worldObject === 'undefined') {
-                worldObject = {};
-            }
-
-            res.json(worldObject);
+            res.status(410).send('This API has been removed. World objects should be discovered the same way as any other object.');
         });
-
 
         // use allObjects for TCP/IP object discovery
         // ****************************************************************************************************************
@@ -4148,9 +4022,6 @@ function objectWebServer() {
                 if (frameName !== "") {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
-                    if (thisObject.isWorldObject) {
-                        folderDelFrame = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + req.body.name + "/" + frameName;
-                    }
 
                     deleteFolderRecursive(folderDelFrame);
 
@@ -4549,8 +4420,9 @@ function objectWebServer() {
 }
 
 // TODO this should move to the utilities section
-//createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
-
+/**
+ * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
+ */
 function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
     logger.debug("I can start");
 
@@ -4569,6 +4441,11 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
+                
+                if (objectIDXML.indexOf(worldObjectPrefix) > -1) { // TODO: implement a more robust way to tell if it's a world object
+                    objects[objectIDXML].isWorldObject = true;
+                    objects[objectIDXML].timestamp = Date.now();
+                }
 
                 logger.debug("this should be the IP" + objectIDXML);
 
@@ -4947,6 +4824,8 @@ function socketServer() {
         
         // create or update the position of a HumanPoseObject 
         socket.on('/update/humanPoses', function(msg) {
+            if (!globalVariables.listenForHumanPose) { return; }
+            
             var msgContent = msg;
             if (typeof msg === 'string') {
                 msgContent = JSON.parse(msg);
@@ -5069,29 +4948,20 @@ function sendMessagetoEditors(msgContent, sourceSocketID) {
 /////////
 
 function doesObjectExist(objectKey) {
-    if(globalVariables.worldObject)
-    return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
-    else
-        return objects.hasOwnProperty(objectKey);
+    return objects.hasOwnProperty(objectKey);
 }
 
 function getObject(objectKey) {
     if (doesObjectExist(objectKey)) {
-        if(globalVariables.worldObject)
-        return objects[objectKey] || worldObject;
-        else
-            return objects[objectKey];
+        return objects[objectKey];
     }
     return null;
 }
 
-// invokes callback(objectID, object) for each object (including world object)
+// invokes callback(objectID, object) for each object
 function forEachObject(callback) {
     for (var objectID in objects) {
         callback(objectID, objects[objectID]);
-    }
-    if (globalVariables.worldObject) {
-        callback(worldObject.objectId, worldObject);
     }
 }
 

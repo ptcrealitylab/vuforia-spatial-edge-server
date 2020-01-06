@@ -52,6 +52,7 @@ var readdirp = require('readdirp');
 var hardwareAPI = require(__dirname + '/hardwareInterfaces');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
+var worldObjectPrefix = '_WORLD_'; // TODO: get this from server.js
 
 // Constructor with subset of object information necessary for the web frontend
 function ThisObjects() {
@@ -72,7 +73,7 @@ function Frame() {
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, worldObject, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
+exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
     
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
@@ -98,7 +99,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         newObject[thisObjectKey] = new ThisObjects();
         
         // TODO: more robust way to keep track of world objects that haven't been fully initialized with a target (for now, the name is the only way to tell)
-        if (thisObjectKey.indexOf('_WORLD_OBJECT_') > -1) {
+        if (thisObjectKey.indexOf(worldObjectPrefix) > -1) {
             newObject[thisObjectKey].isWorldObject = true;
         }
         
@@ -135,26 +136,6 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
 
         newObject[thisObjectKey].name = objectKey;
     });
-
-    // TODO: update by storing worldObjects just like any other objects, instead of treating as an exception ... but maybe sort at end
-    if (worldObject) {
-        var worldObjectEntry = new ThisObjects();
-        worldObjectEntry.name = worldObject.name;
-        worldObjectEntry.initialized = true;
-        worldObjectEntry.active = true;
-        worldObjectEntry.isWorldObject = true;
-
-        for (var frameKey in worldObject.frames) {
-            worldObjectEntry.frames[frameKey] = new Frame();
-            worldObjectEntry.frames[frameKey].name = worldObject.frames[frameKey].name;
-            worldObjectEntry.frames[frameKey].location = worldObject.frames[frameKey].location; // will always be 'global'
-            worldObjectEntry.frames[frameKey].src = worldObject.frames[frameKey].src;
-        }
-        
-        // console.log('worldObjectEntry', worldObjectEntry);
-
-        newObject[worldObject.objectId] = worldObjectEntry;
-    }
 
     // loads the index.html content
     var html = fs.readFileSync(__dirname + '/webInterface/gui/index.html', 'utf8');

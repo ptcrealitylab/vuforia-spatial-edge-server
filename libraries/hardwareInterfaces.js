@@ -28,7 +28,6 @@ var objects = {};
 var objectLookup;
 var knownObjects; // needed to check if sockets are still used when we delete links
 var socketArray; // needed to delete sockets when links are removed
-var worldObject;
 var globalVariables;
 var dirnameO;
 var objectsPath;
@@ -218,7 +217,7 @@ exports.removeAllNodes = function (objectName, frameName) {
 var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
 
     // loop over all nodes in all frames in all objects to see if they need to be deleted
-    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+    for (var otherObjectKey in objects) {
         for (var otherFrameKey in objects[otherObjectKey].frames) {
             var thatFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
             for (var linkKey in thatFrameLinks) {
@@ -234,7 +233,7 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
 
                     // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
 
-                    for (var otherObjectKey in objects) { // TODO: loop over world objects too
+                    for (var otherObjectKey in objects) {
                         for (var otherFrameKey in objects[otherObjectKey].frames) {
                             var otherFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
                             for (var otherLinkKey in otherFrameLinks) {
@@ -616,12 +615,11 @@ exports.getDebug = function () {
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
  **/
-exports.setup = function (objExp, objLookup, knownObjs, socketArr, worldObj, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
+exports.setup = function (objExp, objLookup, knownObjs, socketArr, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
     objects = objExp;
     objectLookup = objLookup;
     knownObjects = knownObjs;
     socketArray = socketArr;
-    worldObject = worldObj;
     globalVariables = glblVars;
     dirnameO = dir;
     objectsPath = objPath;
@@ -896,3 +894,9 @@ exports.shutdown = function (){
 exports.loadHardwareInterface = function (hardwareInterfaceName){
     return utilities.loadHardwareInterface(hardwareInterfaceName.split(path.sep).pop());
 };
+
+
+
+function cout(msg) {
+    if (globalVariables.debug) console.log(msg);
+}

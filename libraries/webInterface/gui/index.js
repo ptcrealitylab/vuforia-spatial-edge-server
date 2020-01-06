@@ -936,7 +936,7 @@ realityServer.gotClick = function (event) {
                 
                 var objectName = textContent;
                 if (shouldAddWorldObject) {
-                    objectName = '_WORLD_OBJECT_' + textContent;
+                    objectName = '_WORLD_' + textContent;
                 }
                 
                 realityServer.sendRequest("/", "POST", function(state) {
