@@ -270,6 +270,10 @@ realityServer.updateManageObjects = function(thisItem2) {
                         realityServer.switchClass(thisFrame.dom.querySelector('.attachedTo'), 'hidden', 'inactive');
                         // TODO: in future, make active/visible only if it is attached to another object, and change the text to show that object's name
                     }
+
+                    thisFrame.dom.querySelector(".name").innerText = thisFrame.src;
+                } else {
+                    thisFrame.dom.querySelector(".name").innerText = thisFrame.name;
                 }
 
                 if (thisObject.visualization === 'screen' && thisFrame.location !== 'global') {
@@ -283,7 +287,6 @@ realityServer.updateManageObjects = function(thisItem2) {
                 } else {
                     realityServer.changeActiveState(thisFrame.dom, false, objectKey, frameKey);
                 }
-                thisFrame.dom.querySelector(".name").innerText = thisFrame.name;
 
                 if(!thisItem2) {
                     this.getDomContents().appendChild(thisFrame.dom, true);
@@ -377,37 +380,36 @@ realityServer.updateManageHardwareInterfaces = function() {
         
         } else {
             activeToggleButton.classList.add('clickAble');
-            
-            if (interfaceInfo.enabled) {
-                realityServer.switchClass(activeToggleButton, 'yellow', 'green');
-                activeToggleButton.innerText = 'On';
-            } else {
-                realityServer.switchClass(activeToggleButton, 'green', 'yellow');
-                activeToggleButton.innerText = 'Off';
-            }
-
-            function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) {
-                button.addEventListener('click', function(e) {
-                    if (hardwareInterfaceInfo.enabled) {
-                        realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/disable/', 'GET', function (state) {
-                            if (state === 'ok') {
-                                hardwareInterfaceInfo.enabled = false;
-                            }
-                            realityServer.update();
-                        });
-                    } else {
-                        realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/enable/', 'GET', function (state) {
-                            if (state === 'ok') {
-                                hardwareInterfaceInfo.enabled = true;
-                            }
-                            realityServer.update();
-                        });
-                    }
-                });
-            }
-            addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
+        }
+    
+        if (interfaceInfo.enabled) {
+            realityServer.switchClass(activeToggleButton, 'yellow', 'green');
+            activeToggleButton.innerText = 'On';
+        } else {
+            realityServer.switchClass(activeToggleButton, 'green', 'yellow');
+            activeToggleButton.innerText = 'Off';
         }
 
+        function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) {
+            button.addEventListener('click', function(e) {
+                if (hardwareInterfaceInfo.enabled) {
+                    realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/disable/', 'GET', function (state) {
+                        if (state === 'ok') {
+                            hardwareInterfaceInfo.enabled = false;
+                        }
+                        realityServer.update();
+                    });
+                } else {
+                    realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/enable/', 'GET', function (state) {
+                        if (state === 'ok') {
+                            hardwareInterfaceInfo.enabled = true;
+                        }
+                        realityServer.update();
+                    });
+                }
+            });
+        }
+        addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
         
         this.getDomContents().appendChild(interfaceInfo.dom, true);
     }
