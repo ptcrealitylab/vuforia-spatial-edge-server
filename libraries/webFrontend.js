@@ -73,6 +73,29 @@ function Frame() {
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
 
+exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort) {
+    console.log(hardwareInterfaceName, ipAddress, serverPort, hardwareInterfaceModules);
+
+    var path = __dirname.split('libraries')[0];
+    // loads the index.html content
+    var html = fs.readFileSync( path + 'hardwareInterfaces/' + hardwareInterfaceName + '/config.html', 'utf8');
+
+    // inject the data structure with all the hardware interfaces
+    html = html.replace('{/*replace HardwareInterface*/}', JSON.stringify(hardwareInterfaceModules[hardwareInterfaceName], null, 4));
+
+    html = html.replace('{/*replace HardwareInterfaceName*/}', JSON.stringify(hardwareInterfaceName, null, 4));
+    
+    // inject the server information
+    var states = {
+        version : version,
+        ipAdress: ipAddress,
+        serverPort : serverPort
+    };
+    html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
+    
+    return html;
+};
+
 exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
     
     // overall data structure that contains everything that will be passed into the HTML template

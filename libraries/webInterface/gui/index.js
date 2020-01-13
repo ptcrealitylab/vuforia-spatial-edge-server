@@ -259,7 +259,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                 function addLinkToContent(buttonDiv, frameType) {
                     buttonDiv.addEventListener('click', function(e) { // put in a closure so it references don't mutate
                         var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open('http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
+                        window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
                 if (thisFrame.location === 'global') {
@@ -324,14 +324,14 @@ realityServer.updateManageFrames = function() {
             buttonDiv.addEventListener('click', function(e) {
                 var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
-                window.open('http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html', '_blank');
+                window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameType + '/index.html', '_blank');
             });
         }
         var contentButton = frameInfo.dom.querySelector('.content');
         addLinkToContent(contentButton, frameKey);
 
         var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-        frameInfo.dom.querySelector(".frameIcon").src = 'http://' + ipAddress + ':8080/frames/active/' + frameKey + '/icon.gif';
+        frameInfo.dom.querySelector(".frameIcon").src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameKey + '/icon.gif';
         
         addZipDownload(frameInfo.dom.querySelector('.download'), frameKey);
 
@@ -361,16 +361,39 @@ realityServer.updateManageFrames = function() {
 
 realityServer.updateManageHardwareInterfaces = function() {
     console.log('updateManageHardwareInterfaces');
+    
+    var columnContainer = document.createElement('div');
+    columnContainer.classList.add('row');
+    this.getDomContents().appendChild(columnContainer);
 
-    for (var interfaceName in this.hardwareInterfaces) {
+    var firstColumn = document.createElement('div');
+    firstColumn.classList.add('column', 'columnFortyPercent');
+    columnContainer.appendChild(firstColumn);
 
-        var interfaceInfo = this.hardwareInterfaces[interfaceName];
+    var secondColumn = document.createElement('div');
+    secondColumn.classList.add('column', 'columnSixtyPercent');
+    columnContainer.appendChild(secondColumn);
+
+    for (let interfaceName in this.hardwareInterfaces) {
+
+        let interfaceInfo = this.hardwareInterfaces[interfaceName];
         interfaceInfo.dom = this.templates['hardwareInterface'].content.cloneNode(true);
         console.log('interfaceInfo: ', interfaceInfo);
 
         interfaceInfo.dom.querySelector('.name').innerText = interfaceName;
         if (!interfaceInfo.enabled) {
             interfaceInfo.dom.querySelector('.name').classList.add('inactive');
+        }
+        
+        if (typeof interfaceInfo.settings !== 'undefined') {
+            interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
+            interfaceInfo.dom.querySelector('.name').addEventListener('click', function(e) {
+                let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
+                // window.open(pathToConfig, '_blank');
+                
+                configFrame.src = pathToConfig;
+            });
         }
         
         var activeToggleButton = interfaceInfo.dom.querySelector('.active');
@@ -411,8 +434,12 @@ realityServer.updateManageHardwareInterfaces = function() {
         }
         addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
         
-        this.getDomContents().appendChild(interfaceInfo.dom, true);
+        firstColumn.appendChild(interfaceInfo.dom, true);
     }
+
+    let configFrame = document.createElement('iframe');
+    configFrame.classList.add('configFrame');
+    secondColumn.appendChild(configFrame, true);
 };
 
 realityServer.updateCommonContents = function(thisItem2) {
