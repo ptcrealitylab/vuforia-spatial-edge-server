@@ -3567,7 +3567,10 @@ function objectWebServer() {
             // cout("get 16");
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
-
+        
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:name', function(req, res) {
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.name, hardwareInterfaceModules, version, ips, serverPort));
+        });
         // restart the server from the web frontend to load
 
         webServer.get('/restartServer/', function(req, res) {
@@ -3664,6 +3667,20 @@ function objectWebServer() {
             zip.pipe(res);
             zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
+        });
+        
+        webServer.post('/hardwareInterface/*/settings/', function(req, res) {
+            console.log(req.body);
+
+            console.log('TODO: write hardware settings to file');
+
+            // if (req.body.action === "zone") {
+            //     var objectKey = utilities.readObject(objectLookup, req.body.name);
+            //     objects[objectKey].zone = req.body.zone;
+            //     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            //     res.send("ok");
+            // }
+            res.send('ok');
         });
 
         webServer.get('/hardwareInterface/*/disable/', function (req, res) {

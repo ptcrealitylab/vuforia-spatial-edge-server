@@ -385,3 +385,28 @@ position: relative;
 .selectedTab {
     display: inline;
 }
+
+.column {
+    float: left;
+    width: 50%;
+}
+
+.columnFortyPercent {
+    width: 42%;
+}
+.columnSixtyPercent {
+    width: 58%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.configFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}

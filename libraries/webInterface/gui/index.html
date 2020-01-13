@@ -23,7 +23,12 @@
         <div id='commonContents'></div>
         <div id='manageObjectsContents' class='selectedTab'></div>
         <div id='manageFramesContents' class='hiddenTab'></div>
-        <div id='manageHardwareInterfacesContents' class='hiddenTab'></div>
+        <div id='manageHardwareInterfacesContents' class='hiddenTab'>
+            <div class="row"> <!--These get deleted and recreated on each render-->
+                <div class="column"></div>
+                <div class="column"></div>
+            </div>
+        </div>
     </div>
     
 </div>
@@ -333,6 +338,8 @@
         <div class='name item button white two'>Name</div>
         <div class='item hidden space'></div>
         <div class='active item button yellow half'>Off</div>
+        <div class='item hidden space'></div>
+        <div class='active item button yellow half'>Settings</div>
     </div>
 </template>
 

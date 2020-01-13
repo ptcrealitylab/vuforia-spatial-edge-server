@@ -34,6 +34,31 @@ var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
+
+/**
+ * These settings will be exposed to the webFrontend to potentially be modified
+ */
+exports.settings = {
+    ip: {
+        value: settings('ip'),
+        type: 'text'
+    },
+    name: {
+        value: settings('name'),
+        type: 'text'
+    },
+    port: {
+        value: settings('port'),
+        type: 'number',
+        default: 39320
+    },
+    updateRate: {
+        value: settings('updateRate'),
+        type: 'number',
+        default: 100
+    },
+};
+
 //exports.enabled = false;
 
 if (exports.enabled) {
