@@ -56,8 +56,8 @@ createNameSpace("realityEditor.pocket");
             container.id = 'pocket-element';
 
             var urlPrefix = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/';
-            var thisUrl = urlPrefix + 'frames/active/' + element.name + '/index.html';
-            var gifUrl = urlPrefix + 'frames/active/' + element.name + '/icon.gif';
+            var thisUrl = urlPrefix + 'frames/' + element.name + '/index.html';
+            var gifUrl = urlPrefix + 'frames/' + element.name + '/icon.gif';
 
             container.dataset.src = thisUrl;
             container.dataset.name = element.name;

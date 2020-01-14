@@ -54,7 +54,12 @@ function loadFramesJsonData() {
         if (fs.existsSync(frameLibPath + '/' + frameName + "/config.js")) {
             frameTypeModules[frameName] = require(frameLibPath + '/' + frameName + "/config.js");
         } else {
-            frameTypeModules[frameName] = {};
+            // frameTypeModules[frameName] = {};
+            frameTypeModules[frameName] = {
+                properties: {
+                    name: frameName
+                }
+            }
         }
     }
     

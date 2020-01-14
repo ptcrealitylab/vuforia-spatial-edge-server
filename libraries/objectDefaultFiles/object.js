@@ -503,6 +503,7 @@
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
+            this.initNode = makeIoStub('initNode');
 
             /**
              * Internet of Screens APIs
@@ -919,6 +920,43 @@
                 frame: realityObject.frame,
                 node: realityObject.frame + node,
                 privateData: thisItem
+            }));
+        };
+
+        /**
+         * Declares a new node that should be created for this frame.
+         * @param {string} name - required
+         * @param type - required. (default type should be "node")
+         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} scaleFactor - optional. defaults to 1
+         * @param {number|undefined} defaultValue - optional. defaults to 0
+         */
+        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            var nodeData = {
+                name: name,
+                type: type
+            };
+            if (typeof x !== 'undefined') {
+                nodeData.x = x;
+            }
+            if (typeof y !== 'undefined') {
+                nodeData.y = y;
+            }
+            if (typeof scaleFactor !== 'undefined') {
+                nodeData.scaleFactor = scaleFactor;
+            }
+            if (typeof defaultValue !== 'undefined') {
+                nodeData.defaultValue = defaultValue;
+            }
+
+            this.ioObject.emit('node/setup', JSON.stringify({
+                object: realityObject.object,
+                frame: realityObject.frame,
+                nodeData: nodeData
             }));
         };
 
