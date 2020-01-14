@@ -528,7 +528,12 @@
                 // realityServer.render();
                 console.log('TODO: write settings to file');
                 
-                this.classList.add('hidden');
+                // this.classList.add('hidden');
+
+                realityServer.writeHardwareInterfaceSettings(settings, [settingsName] ,function(res) {
+                    console.log('got response... re-render');
+                    realityServer.render();
+                });
             });
             
             realityServer.domObjects.appendChild(newElement);
@@ -582,8 +587,8 @@
                     }
                     // realityServer.render();
                     
-                    realityServer.writeHardwareInterfaceSettings(settings, function(res) {
-                        console.log('got response... re-render')
+                    realityServer.writeHardwareInterfaceSettings(settings, ['tagsEnabled'], function(res) {
+                        console.log('got response... re-render');
                         realityServer.render();
                     });
                 });
@@ -594,25 +599,32 @@
     };
     
     function getBrowseResults(completionHandler) {
-        realityServer.sendRequest('http://10.10.10.10:39320/iotgateway/browse', 'GET', function(response) {
-            if (response === 'err') {
-                console.log('returning mock data results');
-                completionHandler(mockBrowseData.browseResults);
-                return; // mockBrowseData.browseResults;
-            }
+        completionHandler(mockBrowseData.browseResults);
 
-            var msgContent = JSON.parse(response);
-            console.log('real data response: ', msgContent.browseResults);
-            // return msgContent.browseResults;
-            completionHandler(msgContent.browseResults);
-        });
+        // realityServer.sendRequest('http://10.10.10.10:39320/iotgateway/browse', 'GET', function(response) {
+        //     if (response === 'err') {
+        //         console.log('returning mock data results');
+        //         completionHandler(mockBrowseData.browseResults);
+        //         return; // mockBrowseData.browseResults;
+        //     }
+        //
+        //     var msgContent = JSON.parse(response);
+        //     console.log('real data response: ', msgContent.browseResults);
+        //     // return msgContent.browseResults;
+        //     completionHandler(msgContent.browseResults);
+        // });
         
         // var mockEmptyResults = [];
         // completionHandler(mockEmptyResults);
     }
     
-    realityServer.writeHardwareInterfaceSettings = function(settings, callback) {
-        var body = settings;
+    realityServer.writeHardwareInterfaceSettings = function(settings, limitToKeys, callback) {
+        var body = {
+            settings: settings,
+        };
+        if (limitToKeys) {
+            body.limitToKeys = limitToKeys;
+        }
         realityServer.sendRequest('/hardwareInterface/' + realityServer.hardwareInterfaceName + '/settings/', 'POST', function (state) {
             if (state === 'ok') {
                 console.log('successfully wrote settings')
