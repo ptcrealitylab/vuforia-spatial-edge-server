@@ -259,7 +259,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                 function addLinkToContent(buttonDiv, frameType) {
                     buttonDiv.addEventListener('click', function(e) { // put in a closure so it references don't mutate
                         var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
+                        window.open('http://' + ipAddress + ':8080/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
                 if (thisFrame.location === 'global') {
@@ -324,14 +324,14 @@ realityServer.updateManageFrames = function() {
             buttonDiv.addEventListener('click', function(e) {
                 var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
-                window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameType + '/index.html', '_blank');
+                window.open('http://' + ipAddress + ':8080/frames/' + frameType + '/index.html', '_blank');
             });
         }
         var contentButton = frameInfo.dom.querySelector('.content');
         addLinkToContent(contentButton, frameKey);
 
         var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-        frameInfo.dom.querySelector(".frameIcon").src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/active/' + frameKey + '/icon.gif';
+        frameInfo.dom.querySelector(".frameIcon").src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameKey + '/icon.gif';
         
         addZipDownload(frameInfo.dom.querySelector('.download'), frameKey);
 

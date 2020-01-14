@@ -1383,8 +1383,8 @@ function objectWebServer() {
 
     webServer.use('/frames', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-
-        var fileName = __dirname + '/libraries' + req.originalUrl;
+        
+        var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
 
         if (!fs.existsSync(fileName)) {
             next();
@@ -4712,7 +4712,6 @@ function socketServer() {
             }));
         });
 
-
         socket.on('object', function (msg) {
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
@@ -4983,6 +4982,61 @@ function socketServer() {
 
                     thisSocket.emit('/update/humanPoses', JSON.stringify(updateResponse));
                 }
+            }
+        });
+        
+        socket.on('node/setup', function(msg) {
+            var msgContent = msg;
+            if (typeof msg === 'string') {
+                msgContent = JSON.parse(msg);
+            }
+            if (!msgContent) { return; }
+            
+            console.log(msgContent);
+            var objectKey = msgContent.object;
+            var frameKey = msgContent.frame;
+            var nodeData = msgContent.nodeData;
+            
+            var frame = getFrame(objectKey, frameKey);
+            if (!frame) {
+                console.warn('could not find frame for node/setup', objectKey, frameKey, nodeData);
+                return;
+            }
+            
+            var nodeKey = frameKey + nodeData.name;
+            
+            // this function can be called multiple times... only set up the new node if it doesnt already exist
+            if (typeof frame.nodes[nodeKey] === 'undefined') {
+                console.log('creating node ' + nodeKey);
+                var newNode = new Node();
+                frame.nodes[nodeKey] = newNode;
+                newNode.objectId = objectKey;
+                newNode.frameId = frameKey;
+                newNode.name = nodeData.name;
+                
+                if (typeof nodeData.type !== 'undefined') {
+                    newNode.type = nodeData.type;
+                }
+                if (typeof nodeData.x !== 'undefined') {
+                    newNode.x = nodeData.x;
+                } else {
+                    newNode.x = utilities.randomIntInc(0, 200) - 100; // nodes are given a random position if not specified
+                }
+                if (typeof nodeData.y !== 'undefined') {
+                    newNode.y = nodeData.y;
+                } else {
+                    newNode.y = utilities.randomIntInc(0, 200) - 100;
+                }
+                if (typeof nodeData.scaleFactor !== 'undefined') {
+                    newNode.scale = nodeData.scaleFactor;
+                }
+                newNode.scale *= 0.25; // TODO fix this without hard coding
+                if (typeof nodeData.defaultValue !== 'undefined') {
+                    addedNode.data.value = nodeData.defaultValue;
+                }
+
+                // notify each editor to reload the frame with the new node it has
+                utilities.actionSender({reloadFrame: {object: objectKey, frame: frameKey}, lastEditor: null});
             }
         });
         
