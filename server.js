@@ -3670,9 +3670,20 @@ function objectWebServer() {
         });
         
         webServer.post('/hardwareInterface/*/settings/', function(req, res) {
+            var interfaceName = req.params[0];
+
             console.log(req.body);
 
-            console.log('TODO: write hardware settings to file');
+            // console.log('TODO: write hardware settings to file');
+            
+            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface settings changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
 
             // if (req.body.action === "zone") {
             //     var objectKey = utilities.readObject(objectLookup, req.body.name);
@@ -3680,8 +3691,59 @@ function objectWebServer() {
             //     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
             //     res.send("ok");
             // }
-            res.send('ok');
+            // res.send('ok');
         });
+
+        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
+            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+            console.log(interfaceSettingsPath);
+
+            try {
+                var existingSettings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+
+                console.log('before:', hardwareInterfaceModules[interfaceName]);
+
+                for (var key in settings) {
+                    if (!settings.hasOwnProperty(key)) { continue; }
+                    if (limitToKeys) {
+                        if (limitToKeys.indexOf(key) === -1) { continue; }
+                    }
+                    
+                    // update value that will get written to disk
+                    if (typeof settings[key].value !== 'undefined') {
+                        existingSettings[key] = settings[key].value;
+                    } else {
+                        existingSettings[key] = settings[key];
+                    }
+                    console.log('set ' + key + ' to ' + existingSettings[key]);
+
+                    // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
+                    if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
+                        hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
+                    }
+                }
+
+                console.log('after:', hardwareInterfaceModules[interfaceName]);
+
+                if (globalVariables.saveToDisk) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, '\t'), function (err) {
+                        if (err) {
+                            console.log(err);
+                            callback(false, 'error writing to file');
+                        } else {
+                            console.log('successfully wrote settings hardwareInterface: ' + interfaceName);
+                            callback(true);
+                        }
+                    });
+                } else {
+                    console.log('I am not allowed to save');
+                    callback(false, 'saveToDisk globally disabled for this server');
+                }
+            } catch (e) {
+                console.log('error reading settings.json for ' + interfaceName + '.');
+                callback(false, 'error writing to file');
+            }
+        }
 
         webServer.get('/hardwareInterface/*/disable/', function (req, res) {
             var interfaceName = req.params[0];
@@ -3732,7 +3794,7 @@ function objectWebServer() {
                         }
                     });
                 } else {
-                    console.log("I am not allowed to save");
+                    console.log('I am not allowed to save');
                     callback(false, 'saveToDisk globally disabled for this server');
                 }
             } catch (e) {

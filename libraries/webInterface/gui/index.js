@@ -378,7 +378,7 @@ realityServer.updateManageHardwareInterfaces = function() {
 
         let interfaceInfo = this.hardwareInterfaces[interfaceName];
         interfaceInfo.dom = this.templates['hardwareInterface'].content.cloneNode(true);
-        console.log('interfaceInfo: ', interfaceInfo);
+        // console.log('interfaceInfo: ', interfaceInfo);
 
         interfaceInfo.dom.querySelector('.name').innerText = interfaceName;
         if (!interfaceInfo.enabled) {
@@ -386,8 +386,12 @@ realityServer.updateManageHardwareInterfaces = function() {
         }
         
         if (typeof interfaceInfo.settings !== 'undefined') {
-            interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
-            interfaceInfo.dom.querySelector('.name').addEventListener('click', function(e) {
+
+            interfaceInfo.dom.querySelector('.gear').classList.remove('hidden');
+            interfaceInfo.dom.querySelector('.gear').classList.add('clickAble');
+            
+            // interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
+            interfaceInfo.dom.querySelector('.gear').addEventListener('click', function(e) {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
                 // window.open(pathToConfig, '_blank');

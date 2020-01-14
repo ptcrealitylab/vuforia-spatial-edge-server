@@ -301,6 +301,14 @@ body {
   background-repeat: no-repeat, repeat;
 }
 
+.yellowGearContent {
+    background-image: url("/libraries/gui/resources/yellowgear.svg");
+    /* Center and scale the image nicely */
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
 .makeTextSelectAble {
   cursor: text;
   -webkit-user-select: text;

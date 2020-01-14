@@ -28,9 +28,9 @@
  *
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
+
 //Enable this hardware interface
-var server = require('../../libraries/hardwareInterfaces');
-var logger = require('../../logger');
+var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
@@ -57,20 +57,19 @@ exports.settings = {
         type: 'number',
         default: 100
     },
+    tagsEnabled: settings('tagsEnabled')
 };
-
-//exports.enabled = false;
 
 if (exports.enabled) {
     kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"));
-   kepware1.setup();
-/*
-  var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
-     kepware2.setup();
-*/
+    kepware1.setup();
 
+    /*
+      var kepware2 = new Kepware("192.168.56.2", "kepwareBox2", "39320", 100);
+         kepware2.setup();
+    */
 
-    function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval){
+    function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval) {
         this.KepwareData = function() {
             this.name = "";
             this.id = "";
@@ -95,38 +94,50 @@ if (exports.enabled) {
                 "value":0
             };
         };
-        this.kepwareInterfaces ={};
-
+        this.kepwareInterfaces = {};
         this.Client = require('node-rest-client').Client;
         this.remoteDevice = new this.Client();
         server.enableDeveloperUI(true);
         this.kepwareAddress = "http://" + kepwareServerIP + ":" + kepwareServerPort + "/iotgateway/";
+
+        /**
+         * Browse the IoT gateway and create nodes for each found tag. Also starts an update interval.
+         */
         this.setup = function () {
+            
             this.thisID = {};
-            this.remoteDevice.get(this.kepwareAddress + "browse", function (data, res) {
+            this.remoteDevice.get(this.kepwareAddress + "browse", function (data, _res) {
+                
                 for (i = 0; i < data.browseResults.length; i++) {
                     this.thisID = data.browseResults[i].id;
                     this.kepwareInterfaces[this.thisID] = new this.KepwareData();
                     this.kepwareInterfaces[this.thisID].id = data.browseResults[i].id;
                     this.kepwareInterfaces[this.thisID].name = this.thisID.substr(this.thisID.lastIndexOf('.') + 1);
 
-                    logger.debug("kepware browse", kepwareServerName, this.kepwareInterfaces[this.thisID].name);
+                    console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
+                    
+                    // TODO: remove node instead of adding if settings.tagsEnabled[this.thisID] is disabled
                     server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
+                    
                     this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
                 }
+                
                 this.interval = setInterval(this.start, kepwareServerRequestInterval);
-
-
-
-            }.bind(this)).on('error', function (err) {
+                
+            }.bind(this)).on('error', function (_err) {
                 this.error();
+                
             }.bind(this));
+            
         }.bind(this);
 
-       this.setReadList = function(object, frame, node, name, kepwareInterfaces){
+        /**
+         * When new data arrives at the node from a linked node, write the result to the kepware device using the IoT gateway.
+         */
+        this.setReadList = function(object, frame, node, name, kepwareInterfaces){
 
             server.addReadListener(object,frame, name, function (data) {
-             
+
                 kepwareInterfaces[node].data.value = data.value;
 
                 var args = {
@@ -134,18 +145,22 @@ if (exports.enabled) {
                     headers: { "Content-Type": "application/json" }
                 };
 
-
                 this.remoteDevice.post(this.kepwareAddress + "write", args, function (data, res) {
-                }).on('error', function (err) {
+                    
+                }).on('error', function (_err) {
                     this.error();
+                    
                 }.bind(this));
 
             }.bind(this));
+            
         }.bind(this);
 
-
-
-        this.start = function (){
+        /**
+         * The update interval that gets called many times per second (defined by settings("updateRate"))
+         * Reads all tags at once from the kepware device. 
+         */
+        this.start = function () {
 
             var argstring = "?";
             for (var key in this.kepwareInterfaces) {
@@ -156,67 +171,77 @@ if (exports.enabled) {
                 // parsed response body as js object
 
                 for (i = 0; i < data.readResults.length; i++) {
+                    
                     var thisID = data.readResults[i].id;
                     this.kepwareInterfaces[thisID].data.s = data.readResults[i].s;
                     this.kepwareInterfaces[thisID].data.r = data.readResults[i].r;
                     this.kepwareInterfaces[thisID].data.v = data.readResults[i].v;
                     this.kepwareInterfaces[thisID].data.t = data.readResults[i].t;
-                    if(typeof this.kepwareInterfaces[thisID].data.v === "boolean" ){
-                        if(this.kepwareInterfaces[thisID].data.v)  {this.kepwareInterfaces[thisID].data.v = 1;}
-                        else  {this.kepwareInterfaces[thisID].data.v = 0;};
+                    if (typeof this.kepwareInterfaces[thisID].data.v === "boolean" ) { // converts boolean to 0 or 1 because nodes can only handle numbers
+                        if (this.kepwareInterfaces[thisID].data.v) { this.kepwareInterfaces[thisID].data.v = 1; }
+                        else {this.kepwareInterfaces[thisID].data.v = 0; }
                     }
-                    if(isNaN(this.kepwareInterfaces[thisID].data.v)){
-                        logger.debug("nan kepware data", this.kepwareInterfaces[thisID].data.v);
-                        this.kepwareInterfaces[thisID].data.v = 0;
+                    if (isNaN(this.kepwareInterfaces[thisID].data.v)) {
+                        console.log( this.kepwareInterfaces[thisID].data.v);
+                        this.kepwareInterfaces[thisID].data.v = 0; // uses 0 as default node value if NaN
                     }
-                    if(this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
+
+                    // continuously adjusts min and max based on values it's seen so far
+                    if (this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
                         this.kepwareInterfaces[thisID].data.max = this.kepwareInterfaces[thisID].data.v;
                     }
-                    if(this.kepwareInterfaces[thisID].data.v < this.kepwareInterfaces[thisID].data.min) {
+                    if (this.kepwareInterfaces[thisID].data.v < this.kepwareInterfaces[thisID].data.min) {
                         this.kepwareInterfaces[thisID].data.min = this.kepwareInterfaces[thisID].data.v;
                     }
 
-                    if( this.kepwareInterfaces[thisID].data.v !== 0) {
-                        if(this.kepwareInterfaces[thisID].name === "sensor") {
-                            if(this.kepwareInterfaces[thisID].data.v < 75) this.kepwareInterfaces[thisID].data.v = 75;
-                            if(this.kepwareInterfaces[thisID].data.v > 65535) this.kepwareInterfaces[thisID].data.v = 65535;
-
+                    if (this.kepwareInterfaces[thisID].data.v !== 0) {
+                        // clips sensor readings to the range of 75 to 65535, and then normalizes to range of [0 - 1]
+                        if (this.kepwareInterfaces[thisID].name === "sensor") {
+                            if (this.kepwareInterfaces[thisID].data.v < 75) this.kepwareInterfaces[thisID].data.v = 75;
+                            if (this.kepwareInterfaces[thisID].data.v > 65535) this.kepwareInterfaces[thisID].data.v = 65535;
                             this.kepwareInterfaces[thisID].data.value = Math.round(server.map(this.kepwareInterfaces[thisID].data.v, 75, 65535, 0, 1) * 1000) / 1000;
                         } else {
-                        this.kepwareInterfaces[thisID].data.value = Math.round(server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
+                            this.kepwareInterfaces[thisID].data.value = Math.round(server.map(this.kepwareInterfaces[thisID].data.v, this.kepwareInterfaces[thisID].data.min, this.kepwareInterfaces[thisID].data.max, 0, 1) * 1000) / 1000;
                         }
                     } else {
-                        this.kepwareInterfaces[thisID].data.value= 0;
+                        this.kepwareInterfaces[thisID].data.value = 0;
                     }
 
-                    if(this.kepwareInterfaces[thisID].name &&  (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)){
+                    // if the new value is different than the previous value, write to the node -> propagate value to rest of the system
+                    if (this.kepwareInterfaces[thisID].name && (this.kepwareInterfaces[thisID].dataOld.value !== this.kepwareInterfaces[thisID].data.value)) {
 
-                        if(this.kepwareInterfaces[thisID].name === "sensor"){
-                            server.write(kepwareServerName, kepwareServerName+"1",
+                        if(this.kepwareInterfaces[thisID].name === "sensor") {
+                            // the sensor values are hard-coded right now with inches as units, and (min,max) = (0,11.5)
+                            server.write(kepwareServerName, kepwareServerName+"1", // the object's name is kepwareBox1. TODO: check that this generalizes using only the exposed settings
                                 this.kepwareInterfaces[thisID].name,
                                 this.kepwareInterfaces[thisID].data.value, "f", 'inch',
                                 0.0,
                                 11.5)
                         } else {
-                        server.write(kepwareServerName, kepwareServerName+"1",
-                            this.kepwareInterfaces[thisID].name,
-                            this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
-                            this.kepwareInterfaces[thisID].data.min,
-                            this.kepwareInterfaces[thisID].data.max)
-                    }
+                            // everything other than the sensor just gets written as-is
+                            server.write(kepwareServerName, kepwareServerName+"1",
+                                this.kepwareInterfaces[thisID].name,
+                                this.kepwareInterfaces[thisID].data.value, "f", this.kepwareInterfaces[thisID].name,
+                                this.kepwareInterfaces[thisID].data.min,
+                                this.kepwareInterfaces[thisID].data.max)
+                        }
                     }
 
                     this.kepwareInterfaces[thisID].dataOld.value = this.kepwareInterfaces[thisID].data.value;
                 }
+                
             }.bind(this)).on('error', function (err) {
                 this.error();
+                
             }.bind(this));
+            
         }.bind(this);
+
+        /**
+         * If there's ever an error with connecting to the IoT gateway, print debug information.
+         */
         this.error = function() {
-            logger.debug("cant find kepware server", {
-                name: kepwareServerName,
-                ip: kepwareServerIP,
-            });
+            console.log("cant find kepware server: \033[33m"+ kepwareServerName +"\033[0m with the IP: \033[33m"+ kepwareServerIP+"\033[0m");
         }
     }
 }
