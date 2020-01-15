@@ -63,7 +63,8 @@
 
 <template id="object">
     <div class="">
-    <div class="object">
+    <div class="object group">
+        <div class="item half button noBorder noBackground triangle"></div>
         <div class='name item button white two'>Name
         </div><div class='item space'>
         </div><div class='textfield zone item button white one' contenteditable
@@ -86,8 +87,9 @@
 </template>
 
 <template id="worldObject">
-    <div class="worldObject">
+    <div class="worldObject group">
         <div>
+            <div class="item half button noBorder noBackground triangle hidden"></div>
             <div class='name item button white two'>Name</div>
             <div class='item hidden space smallSpace'></div>
             <div class='textfield zone item button white one' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
