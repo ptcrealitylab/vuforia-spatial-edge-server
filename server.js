@@ -5032,7 +5032,7 @@ function socketServer() {
                 }
                 newNode.scale *= 0.25; // TODO fix this without hard coding
                 if (typeof nodeData.defaultValue !== 'undefined') {
-                    addedNode.data.value = nodeData.defaultValue;
+                    newNode.data.value = nodeData.defaultValue;
                 }
 
                 // notify each editor to reload the frame with the new node it has
