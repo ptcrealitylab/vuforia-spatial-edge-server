@@ -9,6 +9,7 @@ function Objects() {
     this.screenPort = '';
     this.isWorldObject = false;
     this.sharingEnabled = false; // world objects can enable their frames to be visually attached to other objects
+    this.isExpanded = true;
 }
 
 // Constructor with subset of frame information necessary for the web frontend
@@ -17,6 +18,9 @@ function Frame() {
     this.location = 'local'; // or 'global'
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
+
+var collapsedObjects = {};
+var objectKeyToHighlight = null;
 
 realityServer.hideAllTabs = function() {
     this.domObjects.querySelector('#manageObjectsContents').classList.remove('selectedTab');
@@ -43,10 +47,28 @@ realityServer.initialize = function () {
     realityServer.downloadImageP.src="../libraries/gui/resources/icondownloadP.svg";
 
     console.log(realityServer.states);
+    
+    collapsedObjects = JSON.parse(window.localStorage.getItem('collapsedObjects')) || {};
+    for (let objectKey in collapsedObjects) {
+        if (realityServer.objects.hasOwnProperty(objectKey)) {
+            realityServer.objects[objectKey].isExpanded = !collapsedObjects[objectKey]; // expanded is opposite of collapsed
+        }
+    }
 
     document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
 
+    // set up objects with default properties
+    var defaultObject = new Objects();
+    for (let objectKey in realityServer.objects) {
+        var thisObject = realityServer.objects[objectKey];
+        for (let key in defaultObject) {
+            if (typeof thisObject[key] === 'undefined') {
+                thisObject[key] = JSON.parse(JSON.stringify(defaultObject[key]));
+            }
+        }
+    }
+    
     this.update();
 };
 
@@ -126,7 +148,19 @@ realityServer.updateManageObjects = function(thisItem2) {
                         thisObject.dom.querySelector(".sharing").classList.add('clickAble');
 
                         addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
+                        
+                        if (Object.keys(thisObject.frames).length > 0) {
+                            thisObject.dom.querySelector('.triangle').classList.remove('hidden');
+                            thisObject.dom.querySelector('.triangle').classList.add('clickAble');
+                            addExpandedToggle(thisObject.dom.querySelector('.triangle'), objectKey, thisObject);
 
+                            if (thisObject.isExpanded) {
+                                thisObject.dom.querySelector('.triangle').classList.add('triangleDown');
+                            } else {
+                                thisObject.dom.querySelector('.triangle').classList.remove('triangleDown');
+                            }
+                        }
+                        
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
                         thisObject.dom.querySelector(".active").innerText = "Off";
@@ -198,6 +232,25 @@ realityServer.updateManageObjects = function(thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
                     thisObject.dom.querySelector(".active").innerText = "Off";
                 }
+                
+                if (thisObject.initialized) {
+                    if (Object.keys(thisObject.frames).length > 0) {
+                        thisObject.dom.querySelector('.triangle').classList.remove('hidden');
+                        thisObject.dom.querySelector('.triangle').classList.remove('inactive');
+                        thisObject.dom.querySelector('.triangle').classList.add('clickAble');
+                        addExpandedToggle(thisObject.dom.querySelector('.triangle'), objectKey, thisObject);
+
+                        if (thisObject.isExpanded) {
+                            thisObject.dom.querySelector('.triangle').classList.add('triangleDown');
+                        } else {
+                            thisObject.dom.querySelector('.triangle').classList.remove('triangleDown');
+                        }
+                    } else {
+                        thisObject.dom.querySelector('.triangle').classList.add('hidden');
+                    }
+                } else {
+                    thisObject.dom.querySelector('.triangle').classList.add('hidden');
+                }
 
                 thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImage.src;
 
@@ -218,13 +271,12 @@ realityServer.updateManageObjects = function(thisItem2) {
 
                     thisObject.dom.querySelector(".downloadIcon").src = realityServer.downloadImageP.src;
                 }
-
-
+                
                 thisObject.dom.querySelector(".name").innerText = thisObject.name;
-                if (!thisItem2)
+                if (!thisItem2) {
                     this.getDomContents().appendChild(thisObject.dom);
-
-
+                }
+                
                 if (thisItem2 === objectKey) {
                     var thisItem = "object" + objectKey;
                     console.log(thisItem);
@@ -233,8 +285,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                     thisDom.before(thisObject.dom);
                     thisDom.remove();
                 }
-
-
+                
                 if (thisObject.visualization === "screen") {
                     var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
                     thisFullScreen.querySelector(".fullscreen").id = "fullscreen" + objectKey;
@@ -247,6 +298,8 @@ realityServer.updateManageObjects = function(thisItem2) {
             }
 
             for (var frameKey in this.objects[objectKey].frames) {
+                if (!this.objects[objectKey].isExpanded) { continue; }
+                
                 var thisFrame = this.objects[objectKey].frames[frameKey];
 
                 // use the right template for a local frame or a global frame
@@ -298,6 +351,10 @@ realityServer.updateManageObjects = function(thisItem2) {
     
     if (thisItem2 === "") {
         this.getDomContents().appendChild(this.templates['end'].content.cloneNode(true));
+    }
+    
+    if (objectKeyToHighlight) {
+        highlightObject(objectKeyToHighlight, true);
     }
 
     console.log(realityServer.objects)
@@ -1125,7 +1182,7 @@ realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, 
         if(!allItems[x].classList.contains("hardware"))
         this.switchClass(allItems[x], "inactive");
 
-        if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("target"))) {
+        if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("target") && !allItems[x].classList.contains("triangle"))) {
             realityServer.setDeactive (allItems[x]);
         } else {
         if(!allItems[x].classList.contains("hardware"))
@@ -1343,6 +1400,45 @@ function addSharingToggle(button, objectKey, thisObject) {
                 }
                 realityServer.update();
             });
+        }
+    });
+}
+
+function addExpandedToggle(button, objectKey, thisObject) {
+    button.addEventListener('click', function() {
+        console.log('toggle expanded');
+        thisObject.isExpanded = !thisObject.isExpanded;
+        
+        collapsedObjects[objectKey] = !(thisObject.isExpanded); // stores which ones are collapsed (opposite of expanded)
+        window.localStorage.setItem('collapsedObjects', JSON.stringify(collapsedObjects));
+        
+        console.log(thisObject.isExpanded);
+        realityServer.update();
+    });
+
+    button.addEventListener('pointerenter', function() {
+        console.log('enter ' + objectKey);
+        objectKeyToHighlight = objectKey;
+        highlightObject(objectKey, true);
+    });
+
+    button.addEventListener('pointerleave', function() {
+        console.log('leave ' + objectKey);
+        highlightObject(objectKey, false);
+        objectKeyToHighlight = null;
+    });
+}
+
+function highlightObject(objectKey, shouldHighlight) {
+    var objectDom = document.getElementById('object' + objectKey);//.querySelector('.object');
+    if (objectDom) {
+        objectDom.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
+    }
+    var thisObject = realityServer.objects[objectKey];
+    Object.keys(thisObject.frames).forEach(function(frameKey) {
+        var frameDom = document.getElementById('frame'+objectKey+frameKey);
+        if (frameDom) {
+            frameDom.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
         }
     });
 }
