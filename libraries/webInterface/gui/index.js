@@ -21,6 +21,7 @@ function Frame() {
 
 var collapsedObjects = {};
 var objectKeyToHighlight = null;
+var defaultHardwareInterfaceSelected = 'kepware';
 
 realityServer.hideAllTabs = function() {
     this.domObjects.querySelector('#manageObjectsContents').classList.remove('selectedTab');
@@ -139,6 +140,14 @@ realityServer.updateManageObjects = function(thisItem2) {
                     thisObject.dom.querySelector(".active").classList.add('clickAble');
                     thisObject.dom.querySelector(".download").classList.add('clickAble');
 
+                    // let targetUrl = 'http://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
+                    // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
+
+                    var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                    thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+
+
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
                         realityServer.switchClass(thisObject.dom.querySelector(".active"), "yellow", "green");
@@ -168,6 +177,8 @@ realityServer.updateManageObjects = function(thisItem2) {
                         thisObject.dom.querySelector(".name").classList.add('inactive');
                         thisObject.dom.querySelector(".zone").classList.add('inactive');
                         thisObject.dom.querySelector(".sharing").classList.add('inactive');
+                        
+                        // realityServer.setDeactive
                     }
 
                     // download zip file if click on download button
@@ -177,7 +188,9 @@ realityServer.updateManageObjects = function(thisItem2) {
 
                     // make Add Target button turn green when fully initialized
                     realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
-
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "targetWidthMedium", "one");
+                    thisObject.dom.querySelector(".target").innerText = 'Edit Target';
+                    
                     // make Frame Sharing button turn green or yellow depending on state
                     if (thisObject.sharingEnabled) {
                         realityServer.switchClass(thisObject.dom.querySelector('.sharing'), "yellow", "green");
@@ -204,6 +217,17 @@ realityServer.updateManageObjects = function(thisItem2) {
                     
                     // make Add Target button yellow
                     realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "one", "targetWidthMedium");
+
+                    // if (thisObject.dom.querySelector('.objectIcon')) {
+                    thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
+                    // } 
+                    // if (thisObject.dom.querySelector('.objectIconSpace')) {
+                    // thisObject.dom.querySelector('.objectIconSpace').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIconSpace'));
+                    // }
+                    // realityServer.switchClass(thisObject.dom.querySelector(".name"), "oneAndHalf", "two");
+                    // thisObject.dom.querySelector('.spaceAfterTarget').style.width = '2px';
+                    
                 }
                 
                 this.getDomContents().appendChild(thisObject.dom);
@@ -221,8 +245,28 @@ realityServer.updateManageObjects = function(thisItem2) {
 
                 if (thisObject.initialized) {
                     realityServer.switchClass(thisObject.dom.querySelector(".target"), "yellow", "green");
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "targetWidthMedium", "one");
+
+                    // let targetUrl = 'http://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
+                    // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
+                    
+                    var ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                    thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                    thisObject.dom.querySelector(".target").innerText = 'Edit Target';
+
                 } else {
                     realityServer.switchClass(thisObject.dom.querySelector(".target"), "green", "yellow");
+                    realityServer.switchClass(thisObject.dom.querySelector(".target"), "one", "targetWidthMedium");
+
+                    // if (thisObject.dom.querySelector('.objectIcon')) {
+                        thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
+                    // } 
+                    // if (thisObject.dom.querySelector('.objectIconSpace')) {
+                    //     thisObject.dom.querySelector('.objectIconSpace').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIconSpace'));
+                    // }
+                    // realityServer.switchClass(thisObject.dom.querySelector(".name"), "oneAndHalf", "two");
+                    // thisObject.dom.querySelector('.spaceAfterTarget').style.width = '5px';
                 }
 
                 if (thisObject.active) {
@@ -286,7 +330,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                     thisDom.remove();
                 }
                 
-                if (thisObject.visualization === "screen") {
+                if (thisObject.visualization === "screen" && thisObject.active && thisObject.isExpanded) {
                     var thisFullScreen = document.getElementById("fullScreenId").content.cloneNode(true);
                     thisFullScreen.querySelector(".fullscreen").id = "fullscreen" + objectKey;
                     if (!thisItem2) {
@@ -416,6 +460,13 @@ realityServer.updateManageFrames = function() {
     }
 };
 
+realityServer.selectHardwareInterfaceSettings = function(interfaceName) {
+    let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
+    let configFrame = document.querySelector('.configFrame');
+    configFrame.src = pathToConfig;
+};
+
 realityServer.updateManageHardwareInterfaces = function() {
     console.log('updateManageHardwareInterfaces');
     
@@ -430,10 +481,20 @@ realityServer.updateManageHardwareInterfaces = function() {
     var secondColumn = document.createElement('div');
     secondColumn.classList.add('column', 'columnSixtyPercent');
     columnContainer.appendChild(secondColumn);
+    
+    var sortedInterfaceNames = realityServer.sortHardwareInterfaces(Object.keys(this.hardwareInterfaces));
 
-    for (let interfaceName in this.hardwareInterfaces) {
-
+    // for (let interfaceName in sortedInterfaceNames) {
+    //for (let interfaceName in this.hardwareInterfaces) {
+    for (let i = 0; i < sortedInterfaceNames.length; i++) {
+        let interfaceName = sortedInterfaceNames[i];
         let interfaceInfo = this.hardwareInterfaces[interfaceName];
+
+        if (interfaceInfo.configurable === false) { // certain hardware interfaces cannot be turned on and off through the frontend
+            // activeToggleButton.classList.add('inactive');
+            continue;
+        }
+        
         interfaceInfo.dom = this.templates['hardwareInterface'].content.cloneNode(true);
         // console.log('interfaceInfo: ', interfaceInfo);
 
@@ -449,22 +510,12 @@ realityServer.updateManageHardwareInterfaces = function() {
             
             // interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
             interfaceInfo.dom.querySelector('.gear').addEventListener('click', function(e) {
-                let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
-                // window.open(pathToConfig, '_blank');
-                
-                configFrame.src = pathToConfig;
+                realityServer.selectHardwareInterfaceSettings(interfaceName);
             });
         }
         
         var activeToggleButton = interfaceInfo.dom.querySelector('.active');
-        
-        if (interfaceInfo.configurable === false) { // certain hardware interfaces cannot be turned on and off through the frontend
-            activeToggleButton.classList.add('inactive');
-        
-        } else {
-            activeToggleButton.classList.add('clickAble');
-        }
+        activeToggleButton.classList.add('clickAble');
     
         if (interfaceInfo.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
@@ -538,6 +589,11 @@ realityServer.updateCommonContents = function(thisItem2) {
             realityServer.getCommonContents().querySelector('#' + tabName).addEventListener('click', function(e) {
                 realityServer.selectedTab = tabName;
                 realityServer.update();
+                
+                // handle side effects for each button separately here
+                if (tabName === 'manageHardwareInterfaces') {
+                    realityServer.selectHardwareInterfaceSettings(defaultHardwareInterfaceSelected);
+                }
             });
         }
 
@@ -704,6 +760,7 @@ realityServer.gotClick = function (event) {
                         realityServer.objects[responseText.id].initialized = true;
                         realityServer.objects[responseText.id].active = true;
                         realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "yellow", "green");
+                        realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "targetWidthMedium", "one");
                     }
                     realityServer.update(responseText.id);
 
@@ -1175,6 +1232,7 @@ realityServer.sendRequest = function(url, httpStyle, callback, body) {
 realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, frameKey) {
     if (!frameKey) frameKey = "";
     var allItems = thisObjectDom.querySelectorAll(".item");//document.getElementsByClassName("button");
+    var objectInfo = this.objects[objectKey];
 
     for (var x = 0; x < allItems.length; x++) {
         allItems[x].setAttribute('objectID', objectKey);
@@ -1182,11 +1240,12 @@ realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, 
         if(!allItems[x].classList.contains("hardware"))
         this.switchClass(allItems[x], "inactive");
 
-        if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("target") && !allItems[x].classList.contains("triangle"))) {
+        if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("triangle")) && (!allItems[x].classList.contains("target") || objectInfo.initialized)) {
             realityServer.setDeactive (allItems[x]);
         } else {
-        if(!allItems[x].classList.contains("hardware"))
-            realityServer.setActive(allItems[x]);
+            if(!allItems[x].classList.contains("hardware")) {
+                realityServer.setActive(allItems[x]);
+            }
         }
 
         if(realityServer.objects[objectKey].initialized && (allItems[x].classList.contains("active") || allItems[x].classList.contains("download"))){
@@ -1329,6 +1388,27 @@ realityServer.sortObject = function (objects) {
     });
     
     return objectInfo.concat(worldObjectInfo);
+};
+
+realityServer.sortHardwareInterfaces = function(interfaceNames) {
+    let keysToPrioritize = ['kepware'];
+    let result = [];
+    
+    // adds each prioritized hardware interface first
+    keysToPrioritize.forEach(function(name) {
+        if (interfaceNames.indexOf(name) > -1) {
+            result.push(name);
+        }
+    });
+    
+    // adds unprioritized hardware interfaces afterwards
+    interfaceNames.forEach(function(name) {
+        if (keysToPrioritize.indexOf(name) === -1) {
+            result.push(name);
+        }
+    });
+    
+    return result;
 };
 
 realityServer.uuidTime = function () {

@@ -12,6 +12,7 @@ var settings = server.loadHardwareInterface(__dirname);
 
 // exports.enabled = settings("enabled");
 exports.enabled = true;
+exports.configurable = false;
 
 if (exports.enabled) {
     

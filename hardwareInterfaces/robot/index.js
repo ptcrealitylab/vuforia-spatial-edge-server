@@ -50,6 +50,7 @@ const { CustomMaths } = require('./customMaths');
 const { Robot } = require('./robot');
 
 exports.enabled = false;
+exports.configurable = false;
 
 if (exports.enabled) {
 

@@ -269,6 +269,10 @@ body {
   width: 104px;
 }
 
+.oneAndHalf {
+    width: 162px;
+}
+
 .two {
   width: 220px;
 }
@@ -434,4 +438,28 @@ position: relative;
 
 .triangleDown {
     background-image: url("resources/triangleDown.svg");
+}
+
+.objectTargetIcon {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.objectIcon {
+    overflow: hidden;
+    border: 2px solid rgb(41, 253, 47);
+    width: 36px;
+    height: 32px;
+    margin-left: -6px;
+}
+
+.nameWidthMedium {
+    width: 181px;
+}
+
+.targetWidthMedium {
+    width: 142px;
 }
