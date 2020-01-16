@@ -65,21 +65,24 @@
     <div class="">
     <div class="object group">
         <div class="item half button noBorder noBackground triangle"></div>
-        <div class='name item button white two'>Name
-        </div><div class='item space'>
+        <div class='name item button white nameWidthMedium'>Name
+        </div><div class='item space hidden'>
         </div><div class='textfield zone item button white one' contenteditable
                onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='target item button yellow one'>Add Target
-        </div><div class='item space'>
-        </div><div class='addFrame item button blue one'>Add Frame
-        </div><div class='item space'>
+<!--        </div><div class='item space hidden spaceAfterTarget'>-->
+        </div>
+        <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
+        <div class='objectIconSpace item hidden space' style="width: 2px"></div>
+        <div class='addFrame item button blue one'>Add Frame
+        </div><div class='item space hidden'>
         </div><div class='visualization item button blue one'>Screen
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='remove item button red half'>X
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='active item button yellow half'>Off
     </div>
     </div>
@@ -90,12 +93,14 @@
     <div class="worldObject group">
         <div>
             <div class="item half button noBorder noBackground triangle hidden"></div>
-            <div class='name item button white two'>Name</div>
+            <div class='name item button white nameWidthMedium'>Name</div>
             <div class='item hidden space smallSpace'></div>
             <div class='textfield zone item button white one' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
             <div class='item hidden space smallSpace'></div>
             <div class='target item button yellow one clickAble'>Add Target</div>
-            <div class='item hidden space smallSpace'></div>
+<!--            <div class='item hidden space smallSpace spaceAfterTarget'></div>-->
+            <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
+            <div class='objectIconSpace item hidden space' style="width: 2px"></div>
             <div class='sharing item button yellow two'>Frame Sharing Off</div>
             <div class='item hidden space smallSpace'></div>
             <div class='remove item button red half clickAble'>X</div>

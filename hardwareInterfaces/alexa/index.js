@@ -52,6 +52,7 @@ var settings = server.loadHardwareInterface(__dirname);
  * Set to true to enable the hardware interface
  */
 exports.enabled = false;
+exports.configurable = false;
 
 if (exports.enabled) {
     var request = require("request");

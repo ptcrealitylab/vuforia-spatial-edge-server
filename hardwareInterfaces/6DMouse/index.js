@@ -48,6 +48,7 @@
  * Set to true to enable the hardware interface
  **/
 exports.enabled = false;
+exports.configurable = false;
 
 if (exports.enabled) {
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
