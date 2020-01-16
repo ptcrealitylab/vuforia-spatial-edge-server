@@ -63,11 +63,11 @@
 
 <template id="object">
     <div class="">
-    <div class="object group">
+    <div class="object group adjustedMargin">
         <div class="item half button noBorder noBackground triangle"></div>
         <div class='name item button white nameWidthMedium'>Name
         </div><div class='item space hidden'>
-        </div><div class='textfield zone item button white one' contenteditable
+        </div><div class='textfield zone item button white one textcursor' contenteditable
                onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone
         </div><div class='item space hidden'>
         </div><div class='target item button yellow one'>Add Target
@@ -90,12 +90,12 @@
 </template>
 
 <template id="worldObject">
-    <div class="worldObject group">
+    <div class="worldObject group adjustedMargin">
         <div>
             <div class="item half button noBorder noBackground triangle hidden"></div>
             <div class='name item button white nameWidthMedium'>Name</div>
             <div class='item hidden space smallSpace'></div>
-            <div class='textfield zone item button white one' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
+            <div class='textfield zone item button white one textcursor' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
             <div class='item hidden space smallSpace'></div>
             <div class='target item button yellow one clickAble'>Add Target</div>
 <!--            <div class='item hidden space smallSpace spaceAfterTarget'></div>-->
@@ -114,20 +114,20 @@
 
 <template id="frame">
     <div class="">
-    <div class="frame">
+    <div class="frame adjustedMargin">
         <div class='button hidden one'>
-        </div><div class='item space hidden'>
+        </div><div class='item space smallSpace hidden'>
         </div><div class='name item button white two'>Name
-        </div><div class='item space'>
-        </div><div class='content item button green one clickAble'>Content
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
+        </div><div class='content item button green one clickAble' style="padding-right: 4px">Content
+        </div><div class='item space hidden'>
         </div><div class='reset item button blue one'>Reset UI
     <!--    </div><div class='item space'>
     </div><div class='item space halfPlus'>-->
-    </div><div class='item space'>
+    </div><div class='item space hidden'>
     </div><div class='hardware item button blue one inactive'>Hardware I/O
 
-    </div><div class='item space'>
+    </div><div class='item space hidden'>
     </div><div class='remove item button red half clickAble'>X
     </div>
     </div>
@@ -137,12 +137,12 @@
 
 <template id="globalFrame">
     <div class="">
-        <div class="globalFrame">
-            <div class='button hidden one'></div>
-            <div class='item space smallSpace'></div>
+        <div class="globalFrame adjustedMargin">
+            <div class='button hidden one' style="margin-left: -2px"></div>
+<!--            <div class='item space smallSpace'></div>-->
             <div class='name item button white two'>Name</div>
             <div class='item space smallSpace'></div>
-            <div class='content item button green one clickAble'>Content</div>
+            <div class='content item button green one clickAble' style="padding-right: 4px">Content</div>
             <div class='item space smallSpace'></div>
             <div class='attachedTo button yellow two hidden'>Object Name</div>
             <div class='item space smallSpace'></div>
@@ -178,6 +178,16 @@
             </div><div class='item space hidden'>
             </div><div class='item dropZoneContent space fourAndHalf'></div>
             <div class="dropZoneContentBackground"></div>
+        </div>
+        <div class="dropZoneFeedback">
+            <div class='button hidden two'></div>
+            <div class='item space hidden'></div>
+            <div class='hasDat item button red one'>Missing .DAT</div>
+            <div class='item space hidden'></div>
+            <div class='hasXml item button red one'>Missing .XML</div>
+            <div class='item space hidden'></div>
+            <div class='hasJpg item button red one'>Missing .JPG</div>
+            <div class='item space hidden'></div>
         </div>
     </div>
     </div>
@@ -237,9 +247,9 @@
 
 <template id="fullScreenId">
     <div class="expandcollapse expand">
-    <div class="fullScreenObject">
+    <div class="fullScreenObject adjustedMargin" style="margin-bottom: 0; padding-bottom: 0">
         <div class='button hidden one'>
-        </div><div class='item space hidden'>
+        </div><div class='item space smallSpace hidden'>
         </div><div class='fullscreen item button purple fiveAndHalf clickAble'>OPEN USER INTERFACE IN FULLSCREEN
         </div>
     </div>

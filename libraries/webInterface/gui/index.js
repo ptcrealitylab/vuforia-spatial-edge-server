@@ -10,6 +10,11 @@ function Objects() {
     this.isWorldObject = false;
     this.sharingEnabled = false; // world objects can enable their frames to be visually attached to other objects
     this.isExpanded = true;
+    this.targetsExist = {
+        datExists: false,
+        xmlExists: false,
+        jpgExists: false
+    };
 }
 
 // Constructor with subset of frame information necessary for the web frontend
@@ -465,6 +470,11 @@ realityServer.selectHardwareInterfaceSettings = function(interfaceName) {
     let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
+    
+    var selectedButton = document.getElementById('hardwareInterface' + interfaceName);
+    if (selectedButton) {
+        selectedButton.classList.add('selectedButton');
+    }
 };
 
 realityServer.updateManageHardwareInterfaces = function() {
@@ -499,6 +509,7 @@ realityServer.updateManageHardwareInterfaces = function() {
         // console.log('interfaceInfo: ', interfaceInfo);
 
         interfaceInfo.dom.querySelector('.name').innerText = interfaceName;
+        interfaceInfo.dom.querySelector('.name').id = 'hardwareInterface' + interfaceName;
         if (!interfaceInfo.enabled) {
             interfaceInfo.dom.querySelector('.name').classList.add('inactive');
         }
@@ -628,6 +639,8 @@ realityServer.update = function (thisItem2) {
     } else if (this.selectedTab === 'manageHardwareInterfaces') {
         this.updateManageHardwareInterfaces();
     }
+    
+    document.getElementById(this.selectedTab).classList.add('selectedButton');
 
 };
 
@@ -695,6 +708,22 @@ realityServer.gotClick = function (event) {
 
             newNode.querySelector(".name").innerText =realityServer.objects[objectKey].targetName;
             referenceNode.after(newNode);
+            
+            var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
+            if (visualFeedback && realityServer.objects[objectKey] && realityServer.objects[objectKey].targetsExist) {
+                if (realityServer.objects[objectKey].targetsExist.datExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
+                    // visualFeedback.querySelector('.hasDat').innerText = 'Has .DAT';
+                }
+                if (realityServer.objects[objectKey].targetsExist.xmlExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
+                    // visualFeedback.querySelector('.hasXml').innerText = 'Has .XML';
+                }
+                if (realityServer.objects[objectKey].targetsExist.jpgExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
+                    // visualFeedback.querySelector('.hasJpg').innerText = 'Has .JPG';
+                }
+            }
 
             realityServer.dropZoneId = "targetDropZone"+objectKey;
 
@@ -767,6 +796,17 @@ realityServer.gotClick = function (event) {
 
                   //  realityServer.changeActiveState(realityServer.objects[objectKey].dom, true, objectKey);
                    // realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
+                
+                } else {
+                    if (responseText === 'ok') {
+                        if (file.type === 'image/jpeg') {
+                            realityServer.objects[objectKey].targetsExist.jpgExists = true;
+                            var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
+                            if (visualFeedback) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
+                            }
+                        }
+                    }
                 }
 
             });
@@ -1288,7 +1328,7 @@ realityServer.setActive = function(item){
         item.classList.remove("inactive");
     // if (!item.classList.contains("name")) {
     item.style.pointerEvents = "all";
-    item.style.cursor = "pointer";
+    item.style.cursor = "";
     item.classList.add("clickAble");
 
 
@@ -1347,6 +1387,7 @@ realityServer.toggleFullScreen = function (item) {
 };
 
 realityServer.removeAnimated = function (item, target, expand, collapse){
+    if(!item) return;
     if(!target) target = "expandcollapse";
     if(!expand) expand = "expand";
     if(!collapse) collapse = "collapse";
@@ -1511,9 +1552,11 @@ function addExpandedToggle(button, objectKey, thisObject) {
 
 function highlightObject(objectKey, shouldHighlight) {
     var objectDom = document.getElementById('object' + objectKey);//.querySelector('.object');
+    // highlight the object row
     if (objectDom) {
         objectDom.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
     }
+    // highlight the frame rows, if there are any
     var thisObject = realityServer.objects[objectKey];
     Object.keys(thisObject.frames).forEach(function(frameKey) {
         var frameDom = document.getElementById('frame'+objectKey+frameKey);
@@ -1521,6 +1564,11 @@ function highlightObject(objectKey, shouldHighlight) {
             frameDom.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
         }
     });
+    // highlight the fullscreen button row, if there is one
+    var fullscreenDiv = document.getElementById('fullscreen' + objectKey);
+    if (fullscreenDiv) {
+        fullscreenDiv.parentElement.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
+    }
 }
 
 // download zip of global frame directory
