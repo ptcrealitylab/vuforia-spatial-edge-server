@@ -140,6 +140,12 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
             newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime(); // generates a suggested uuid for the target
         }
         
+        newObject[thisObjectKey].targetsExist = {
+            datExists: datExists,
+            xmlExists: xmlExists,
+            jpgExists: jpgExists
+        };
+        
         // if the object has been correctly created (with tracking targets), populate the DOM with its frames and other data
         if (newObject[thisObjectKey].initialized && objects[thisObjectKey]) {
             

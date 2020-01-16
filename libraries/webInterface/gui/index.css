@@ -461,5 +461,25 @@ position: relative;
 }
 
 .targetWidthMedium {
-    width: 142px;
+    width: 140px;
+}
+
+/* This makes the background extend nicely beyond the edges of the div when it gets highlighted*/
+.adjustedMargin {
+    margin-left: -8px;
+    padding-left: 8px;
+    margin-bottom: -8px;
+    padding-bottom: 8px;
+}
+
+.textcursor {
+    cursor: text !important;
+}
+
+/*.textcursor:hover {*/
+/*    cursor: pointer;*/
+/*}*/
+
+.selectedButton {
+    background-color: rgba(255, 255, 255, 0.5);
 }
