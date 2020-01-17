@@ -65,7 +65,7 @@ exports.settings = {
 };
 
 if (exports.enabled) {
-    kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"));
+    kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"), settings("tagsEnabled"));
     kepware1.setup();
 
     /*
@@ -73,7 +73,7 @@ if (exports.enabled) {
          kepware2.setup();
     */
 
-    function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval) {
+    function Kepware (kepwareServerIP, kepwareServerName, kepwareServerPort, kepwareServerRequestInterval, kepwareServerTagsEnabled) {
         this.KepwareData = function() {
             this.name = "";
             this.id = "";
@@ -97,12 +97,15 @@ if (exports.enabled) {
                 "max":0,
                 "value":0
             };
+            this.enabled = true;
         };
         this.kepwareInterfaces = {};
         this.Client = require('node-rest-client').Client;
         this.remoteDevice = new this.Client();
         server.enableDeveloperUI(true);
         this.kepwareAddress = "http://" + kepwareServerIP + ":" + kepwareServerPort + "/iotgateway/";
+        
+        console.log("tags enabled: ", kepwareServerTagsEnabled);
 
         /**
          * Browse the IoT gateway and create nodes for each found tag. Also starts an update interval.
@@ -119,12 +122,19 @@ if (exports.enabled) {
                     this.kepwareInterfaces[this.thisID].name = this.thisID.substr(this.thisID.lastIndexOf('.') + 1);
 
                     console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
+
+                    // enabled by default, unless there is a specific entry in the settings.tagsEnabled saying it is disabled
+                    this.kepwareInterfaces[this.thisID].enabled = (typeof kepwareServerTagsEnabled[this.thisID] !== 'undefined') ? kepwareServerTagsEnabled[this.thisID] : true;
                     
-                    // TODO: remove node instead of adding if settings.tagsEnabled[this.thisID] is disabled
                     // TODO: better frame naming configuration instead of just appending a "1" to the end of the object name
-                    server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
+                    if (this.kepwareInterfaces[this.thisID].enabled) {
+                        server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
+                        this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
+                    } else {
+                        // remove node instead of adding if settings.tagsEnabled is disabled for this node
+                        server.removeNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name);
+                    }
                     
-                    this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
                 }
                 
                 this.interval = setInterval(this.start, kepwareServerRequestInterval);
@@ -176,8 +186,12 @@ if (exports.enabled) {
                 // parsed response body as js object
 
                 for (i = 0; i < data.readResults.length; i++) {
-                    
                     var thisID = data.readResults[i].id;
+
+                    if (this.kepwareInterfaces[thisID] && !this.kepwareInterfaces[thisID].enabled) {
+                        continue; // don't try to update nodes that are disabled (they don't exist!)
+                    }
+                    
                     this.kepwareInterfaces[thisID].data.s = data.readResults[i].s;
                     this.kepwareInterfaces[thisID].data.r = data.readResults[i].r;
                     this.kepwareInterfaces[thisID].data.v = data.readResults[i].v;
