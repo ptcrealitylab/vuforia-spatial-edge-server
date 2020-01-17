@@ -481,7 +481,7 @@ realityServer.updateManageHardwareInterfaces = function() {
     console.log('updateManageHardwareInterfaces');
     
     var columnContainer = document.createElement('div');
-    columnContainer.classList.add('row');
+    columnContainer.classList.add('row', 'group');
     this.getDomContents().appendChild(columnContainer);
 
     var firstColumn = document.createElement('div');
@@ -508,17 +508,18 @@ realityServer.updateManageHardwareInterfaces = function() {
         interfaceInfo.dom = this.templates['hardwareInterface'].content.cloneNode(true);
         // console.log('interfaceInfo: ', interfaceInfo);
 
-        interfaceInfo.dom.querySelector('.name').innerText = interfaceName;
+        interfaceInfo.dom.querySelector('.name').querySelector('.nameText').innerText = interfaceName;
         interfaceInfo.dom.querySelector('.name').id = 'hardwareInterface' + interfaceName;
         if (!interfaceInfo.enabled) {
             interfaceInfo.dom.querySelector('.name').classList.add('inactive');
         }
         
+        // TODO: fix for gear icon inside of name
         if (typeof interfaceInfo.settings !== 'undefined') {
 
             interfaceInfo.dom.querySelector('.gear').classList.remove('hidden');
             interfaceInfo.dom.querySelector('.gear').classList.add('clickAble');
-            
+
             // interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
             interfaceInfo.dom.querySelector('.gear').addEventListener('click', function(e) {
                 realityServer.selectHardwareInterfaceSettings(interfaceName);

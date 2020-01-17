@@ -41,21 +41,25 @@ exports.enabled = settings("enabled");
 exports.settings = {
     ip: {
         value: settings('ip'),
-        type: 'text'
-    },
-    name: {
-        value: settings('name'),
-        type: 'text'
+        type: 'text',
+        helpText: 'The IP address of the KEPServerEX you want to connect to.'
     },
     port: {
         value: settings('port'),
         type: 'number',
-        default: 39320
+        default: 39320,
+        helpText: 'The port of the IoT Gateway on the KEPServerEx.'
     },
     updateRate: {
         value: settings('updateRate'),
         type: 'number',
-        default: 100
+        default: 100,
+        helpText: 'How many times per second to stream data into this server from the IoT Gateway.'
+    },
+    name: {
+        value: settings('name'),
+        type: 'text',
+        helpText: 'The name of the Reality Object where nodes for each tag will be created.'
     },
     tagsEnabled: settings('tagsEnabled')
 };
@@ -117,6 +121,7 @@ if (exports.enabled) {
                     console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
                     
                     // TODO: remove node instead of adding if settings.tagsEnabled[this.thisID] is disabled
+                    // TODO: better frame naming configuration instead of just appending a "1" to the end of the object name
                     server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
                     
                     this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
