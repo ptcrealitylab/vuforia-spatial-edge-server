@@ -4308,7 +4308,7 @@ function objectWebServer() {
                         logger.debug('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
 
-                        if (fileExtension === "jpg") {
+                        if (fileExtension === "jpg" || fileExtension === "dat") {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + "/target/")) {
                                 fs.mkdirSync(folderD + '/' + identityFolderName + "/target/", "0766", function (err) {
                                     if (err) {
@@ -4318,70 +4318,77 @@ function objectWebServer() {
                                 });
                             }
 
-                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target.jpg");
+                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target." + fileExtension);
 
                             var objectName = req.params.id + utilities.uuidTime();
+                            
+                            // create the object data and respond to the webFrontend once the XML file is confirmed to exist
+                            function onXmlVerified(err) {
+                                if (err) {
+                                    cout(err);
+                                } else {
+                                    // create the object if needed / possible
+                                    if (typeof objects[thisObjectId] === "undefined") {
+                                        cout("creating object from target file " + tmpFolderFile);
+                                        // createObjectFromTarget(tmpFolderFile);
+                                        createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+
+                                        //todo send init to internal modules
+                                        cout("have created a new object");
+
+                                        hardwareAPI.reset();
+                                        cout("have initialized the modules");
+                                    }
+                                }
+                                
+                                var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
+                                var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+
+                                if (typeof objects[thisObjectId] !== "undefined") {
+                                    var thisObject = objects[thisObjectId];
+                                    var jpg = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg");
+                                    var dat = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat");
+                                    var xml = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml");
+                                    
+                                    var sendObject = {
+                                        id: thisObjectId,
+                                        name: thisObject.name,
+                                        initialized: (jpg && xml && dat),
+                                        jpgExists: jpg,
+                                        xmlExists: xml,
+                                        datExists: dat
+                                    };
+                                    
+                                    thisObject.tcs = utilities.genereateChecksums(objects, fileList);
+                                    utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                    objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                    // res.status(200).send('ok');
+                                    res.status(200).json(sendObject);
+                                    
+                                } else {
+                                    // var sendObject = {
+                                    //     initialized : false
+                                    // };
+                                    res.status(200).send('ok');
+                                }
+                            }
 
                             var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                                 '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                                 '   <Tracking>\n' +
-                                '   <ImageTarget name="' + objectName + '" size="300.000000 300.000000" />\n' +
+                                '   <ImageTarget name="' + objectName + '" size="0.30000000 0.30000000" />\n' +
                                 '   </Tracking>\n' +
                                 '   </ARConfig>';
 
                             var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
                             if (!fs.existsSync(xmlOutFile)) {
                                 fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                                    if (err) {
-                                        logger.debug(err);
-                                    } else {
-                                        logger.debug("XML saved to " + xmlOutFile);
-                                    }
+                                    onXmlVerified(err);
                                 });
-                            }
-
-                            var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
-
-                            var thisObjectId = utilities.readObject(objectLookup, req.params.id);
-
-
-                            if (typeof  objects[thisObjectId] !== "undefined") {
-                                var thisObject = objects[thisObjectId];
-
-                                var jpg = false;
-                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
-                                var dat = false;
-                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
-
-
-                                var sendObject = {
-                                    id : thisObjectId,
-                                    name: thisObject.name,
-                                    initialized : true,
-                                    jpgExists :jpg,
-                                    targetExists: dat
-                                };
-
-                                thisObject.tcs = utilities.genereateChecksums(objects, fileList);
-
-                                utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
-
-                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
-
-                                res.status(200);
-                                res.json(sendObject);
                             } else {
-                                res.status(200);
-
-                                var sendObject = {
-                                    initialized : false
-                                };
-
-                                res.json("ok");
+                                onXmlVerified();
                             }
 
-
-                            //   fs.unlinkSync(folderD + "/" + filename);
                         }
 
                         else if (fileExtension === "zip") {
@@ -4438,19 +4445,17 @@ function objectWebServer() {
 
                                             res.status(200);
 
-
-                                            var jpg = false;
-                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
-                                            var dat = false;
-                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
-
+                                            var jpg = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg");
+                                            var dat = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat");
+                                            var xml = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml");
 
                                             var sendObject = {
                                                 id : thisObjectId,
                                                 name: thisObject.name,
-                                                initialized : true,
-                                                jpgExists :jpg,
-                                                targetExists: dat
+                                                initialized: (jpg && xml && dat),
+                                                jpgExists: jpg,
+                                                xmlExists: xml,
+                                                datExists: dat
                                             };
 
                                             res.json(sendObject);

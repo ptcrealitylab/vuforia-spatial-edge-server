@@ -76,6 +76,60 @@ realityServer.initialize = function () {
     }
     
     this.update();
+    
+    this.initializeHelp();
+};
+
+realityServer.initializeHelp = function() {
+    var showHelpText = 'Show Help';
+    var hideHelpText = 'Hide Help';
+
+    // if there are no objects, show help by default. otherwise hide help by default.
+    if (Object.keys(realityServer.objects).length === 0) {
+        showHelp();
+    } else {
+        hideHelp();
+    }
+
+    document.getElementById("showHelpButton").addEventListener('click', function() {
+        // toggle the help text
+        var isHelpActive = document.getElementById('showHelpButton').innerText === hideHelpText;
+        if (isHelpActive) {
+            hideHelp();
+        } else {
+            showHelp();
+        }
+    });
+
+    function showHelp() {
+        // show help text
+        var objectDescription = document.getElementById('objectDescription');
+        if (objectDescription) {
+            objectDescription.style.display = '';
+        }
+        var framesDescription = document.getElementById('globalFramesDescription');
+        if (framesDescription) {
+            framesDescription.style.display = '';
+        }
+
+        // make the button say "Hide Help" instead of "Help"
+        document.getElementById("showHelpButton").innerText = hideHelpText;
+    }
+
+    function hideHelp() {
+        // hide all help text
+        var objectDescription = document.getElementById('objectDescription');
+        if (objectDescription) {
+            objectDescription.style.display = 'none';
+        }
+        var framesDescription = document.getElementById('globalFramesDescription');
+        if (framesDescription) {
+            framesDescription.style.display = 'none';
+        }
+
+        // make the button say "Help" instead of "Hide Help"
+        document.getElementById("showHelpButton").innerText = showHelpText;
+    }
 };
 
 realityServer.forEachSortedObjectKey = function(callback) {
@@ -89,6 +143,41 @@ realityServer.updateManageObjects = function(thisItem2) {
 
     this.getDomContents().appendChild(this.templates["start"].content.cloneNode(true));
     //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
+    
+    document.getElementById('objectDescription').appendChild(this.templates["objectTutorial"].content.cloneNode(true));
+    // update tutorial based on current application state
+    var tutorialStateNumber = 0;
+    
+    if (Object.keys(realityServer.objects).length === 0) { // if there are no objects
+        tutorialStateNumber = 1;
+    
+    } else if ( Object.keys(realityServer.objects).filter(function(key) {
+        return realityServer.objects[key].initialized; // if there are objects initialized with targets
+    }).length === 0) {
+        tutorialStateNumber = 2;
+    
+    } else if ( Object.keys(realityServer.objects).filter(function(key) {
+        return Object.keys(realityServer.objects[key].frames).length > 0;
+    }).length === 0) { // if there are no objects with frames
+        tutorialStateNumber = 3;
+    }
+    
+    if (tutorialStateNumber !== 0 && tutorialStateNumber !== 1) {
+        document.getElementById('mainDescription').classList.add('hiddenTab');
+    }
+    if (tutorialStateNumber !== 1) {
+        document.getElementById('createObjectDescription').classList.add('hiddenTab');
+    }
+    if (tutorialStateNumber !== 2) {
+        document.getElementById('addTargetDescription').classList.add('hiddenTab');
+    }
+    if (tutorialStateNumber !== 3) {
+        document.getElementById('addFrameDescription').classList.add('hiddenTab');
+    }
+
+    if (document.getElementById('showHelpButton').innerText === 'Show Help') {
+        document.getElementById('objectDescription').style.display = 'none';
+    }
 
     document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
     
@@ -420,6 +509,26 @@ realityServer.updateManageFrames = function() {
     
     this.getDomContents().querySelector('#framesPath').innerText = realityServer.states.globalFramesPath || '';
     
+    document.getElementById('globalFramesDescription').appendChild(this.templates["globalFramesTutorial"].content.cloneNode(true));
+    
+    var tutorialStateNumber = 0;
+    
+    if (Object.keys(realityServer.globalFrames).length === 0) { // if there are no frames
+        tutorialStateNumber = 1;
+    } else {
+        tutorialStateNumber = 2;
+    }
+    if (tutorialStateNumber !== 1) {
+        document.getElementById('noFramesDescription').classList.add('hiddenTab');
+    }
+    if (tutorialStateNumber !== 2) {
+        document.getElementById('foundFramesDescription').classList.add('hiddenTab');
+    }
+
+    if (document.getElementById('showHelpButton').innerText === 'Show Help') {
+        document.getElementById('globalFramesDescription').style.display = 'none';
+    }
+
     for (var frameKey in this.globalFrames) {
         
         var frameInfo = this.globalFrames[frameKey];
@@ -643,6 +752,7 @@ realityServer.update = function (thisItem2) {
     
     document.getElementById(this.selectedTab).classList.add('selectedButton');
 
+    // this.updateHelp();
 };
 
 realityServer.printFiles = function(item) {
@@ -769,43 +879,121 @@ realityServer.gotClick = function (event) {
                 console.log("test");
                 realityServer.getDomContents().querySelector(".dropZoneContentBackground").style.width = "0px";
 
-                if(responseText.initialized){
-                    if( realityServer.objects[responseText.name])
-                    {
-                        realityServer.objects[responseText.id] =  realityServer.objects[responseText.name];
-                       var thisObject  = document.getElementById("object"+responseText.name);
-                       thisObject.id = "object"+responseText.id;
-                        var objectList = thisObject.querySelectorAll("button");
+                if (typeof responseText.initialized !== 'undefined') {
+                    
+                    if (responseText.targetExists) { // this is from the ZIP upload
+                        
+                        if (realityServer.objects[responseText.name]) {
+                            realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
+                            var thisObject  = document.getElementById("object"+responseText.name);
+                            thisObject.id = "object"+responseText.id;
+                            var objectList = thisObject.querySelectorAll("button");
 
-                        for(var i = 0; i < objectList.length; i++){
-                            objectList[i].id = responseText.id;
+                            for (var i = 0; i < objectList.length; i++) {
+                                objectList[i].id = responseText.id;
+                            }
+
+                            delete realityServer.objects[responseText.name];
+                            // realityServer.objects = realityServer.sortObject(realityServer.objects);
                         }
 
-                      delete realityServer.objects[responseText.name];
+                        if (responseText.jpgExists && responseText.targetExists) {
+                            realityServer.objects[responseText.id].initialized = true;
+                            realityServer.objects[responseText.id].active = true;
+                            realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "yellow", "green");
+                            realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "targetWidthMedium", "one");
+                        }
+                        realityServer.update();
+                        
+                    } else {
+                        // var sendObject = {
+                        //     id: thisObjectId,
+                        //     name: thisObject.name,
+                        //     initialized: (jpg && xml && dat),
+                        //     jpgExists: jpg,
+                        //     xmlExists: xml,
+                        //     datExists: dat
+                        // };
+                        
+                        // update initialized
+                        realityServer.objects[objectKey].initialized = responseText.initialized;
 
-                        // realityServer.objects = realityServer.sortObject(realityServer.objects);
+                        // update targetsExist
+                        realityServer.objects[objectKey].targetsExist.jpgExists = responseText.jpgExists;
+                        realityServer.objects[objectKey].targetsExist.xmlExists = responseText.xmlExists;
+                        realityServer.objects[objectKey].targetsExist.datExists = responseText.datExists;
+                        
+                        let visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
+                        if (visualFeedback) {
+                            if (responseText.jpgExists) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
+                            } else {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'hidden', 'red');
+                            }
+                            if (responseText.xmlExists) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
+                            } else {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'hidden', 'red');
+                            }
+                            if (responseText.datExists) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
+                            } else {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'hidden', 'red');
+                            }
+                        }
+                        
+                        if (realityServer.objects[objectKey].initialized) {
+                            // activate the object
+                            realityServer.objects[objectKey].active = true;
+                            
+                            // rename object from objectName to objectID generated from server
+                            realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
+                            delete realityServer.objects[responseText.name];
+
+                            // render
+                            realityServer.update();
+                        }
                     }
 
-                    if(responseText.jpgExists && responseText.targetExists) {
-                        realityServer.objects[responseText.id].initialized = true;
-                        realityServer.objects[responseText.id].active = true;
-                        realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "yellow", "green");
-                        realityServer.switchClass(document.getElementById("object"+responseText.id).querySelector(".target"), "targetWidthMedium", "one");
-                    }
-                    realityServer.update(responseText.id);
-
-
-                  //  realityServer.changeActiveState(realityServer.objects[objectKey].dom, true, objectKey);
-                   // realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
-                
                 } else {
                     if (responseText === 'ok') {
+                        
+                        var xmlGenerated = false;
+                        
                         if (file.type === 'image/jpeg') {
                             realityServer.objects[objectKey].targetsExist.jpgExists = true;
                             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
                             if (visualFeedback) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
                             }
+                            // this assumes XML gets auto-generated along with jpg
+                            xmlGenerated = true;
+                            
+                        } else if (file.name === 'target.dat') {
+                            realityServer.objects[objectKey].targetsExist.datExists = true;
+                            var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
+                            if (visualFeedback) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
+                            }
+                            // this assumes XML gets auto-generated along with dat
+                            xmlGenerated = true;
+                        }
+                        
+                        if (xmlGenerated) {
+                            realityServer.objects[objectKey].targetsExist.xmlExists = true;
+                            var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
+                            if (visualFeedback) {
+                                realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
+                            }
+                        }
+                        
+                        var targetFiles = realityServer.objects[objectKey].targetsExist;
+                        if (targetFiles.jpgExists && targetFiles.xmlExists && targetFiles.datExists) {
+                            realityServer.objects[objectKey].initialized = true;
+                            realityServer.objects[objectKey].active = true;
+                            realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
+                            realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "targetWidthMedium", "one");
+                            realityServer.update();
                         }
                     }
                 }
@@ -1539,13 +1727,13 @@ function addExpandedToggle(button, objectKey, thisObject) {
     });
 
     button.addEventListener('pointerenter', function() {
-        console.log('enter ' + objectKey);
+        // console.log('enter ' + objectKey);
         objectKeyToHighlight = objectKey;
         highlightObject(objectKey, true);
     });
 
     button.addEventListener('pointerleave', function() {
-        console.log('leave ' + objectKey);
+        // console.log('leave ' + objectKey);
         highlightObject(objectKey, false);
         objectKeyToHighlight = null;
     });
