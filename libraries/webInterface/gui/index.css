@@ -20,8 +20,13 @@ body {
 
 }
 
+/*a {*/
+/*    color: rgba(45,255,255, 0.5);*/
+/*}*/
+
 #app {
   padding-top: 25px;
+    position: relative;
 }
 
 #header {
@@ -42,6 +47,23 @@ body {
 
 #subtitle {
   color: rgb(255,255,255);
+}
+
+#showHelpButton {
+    color: white;
+    position: absolute;
+    right: 0;
+    top: 20px;
+    /*font-size: 12;*/
+    cursor: pointer;
+}
+
+#showHelpButton:hover {
+    color: yellow;
+}
+
+.serverDescription {
+    margin-top: 21px;
 }
 
 #contents {

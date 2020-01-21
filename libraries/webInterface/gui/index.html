@@ -17,6 +17,7 @@
             Reality Server
         </div>
         <div id='subtitle'>Reality Server - V. 3.0. - Server IP: <span id="ip">xxx.xxx.xxx.xxx</span></div>
+        <div id='showHelpButton'></div>
     </div>
     
     <div id='contents'>
@@ -45,6 +46,50 @@
             <div class='singleTarget button yellow two inactive'>Activate Single Target File</div>
             <div class='space smallSpace hidden'></div>
             <div class='upload button blue two inactive'>Upload Object File</div>
+        </div>
+        <div id="objectDescription"></div>
+<!--        <div class="serverDescription" id="mainDescription">-->
+<!--            Welcome to the Reality Server web interface. Here in the Object Configuration tab, you can create new objects to be associated with AR targets, add custom HTML content to those targets, and manage which objects will be active and viewable in this network.-->
+<!--        </div>-->
+<!--        <div class="serverDescription" id="createObjectDescription">-->
+<!--            To get started, click the Add Object button and give your new Reality Object a name. It must have a unique name compared to all the other Reality Objects on this server.-->
+<!--        </div>-->
+<!--        <div class="serverDescription" id="addTargetDescription">-->
+<!--            Now you need to add target files to your object. Click on Add Target.-->
+<!--        </div>-->
+    </div>
+</template>
+
+<template id="objectTutorial">
+    <div class="tutorial">
+        <div class="serverDescription" id="mainDescription">
+            Welcome to the Reality Server web interface. Here in the Object Configuration tab, you can create new objects to be associated with AR targets, add custom HTML content to those targets, and manage which objects will be active and viewable in this network.
+        </div>
+        <div class="serverDescription" id="createObjectDescription">
+            To get started, click the Add Object button and give your new Reality Object a name. It must have a unique name compared to all the other Reality Objects on this server.
+        </div>
+        <div class="serverDescription" id="addTargetDescription">
+            Now you need to add an Image or Object target to your object. Click on Add Target. To use an image target, drag and drop a .jpg image file onto the drop zone. To use an object target, drag and drop the .dat file generated from the Vuforia Developer portal.
+        </div>
+        <div class="serverDescription" id="addFrameDescription">
+            Your object is now active, and should be visible to a Reality Editor app connected to the same WiFi network, as long as the network supports UDP broadcasting. But there is currently no AR content associated with your object. <br>
+            <br>
+            To add some placeholder content, click on Add Frame, and give your frame a name. Now, when you view the specified image or object target, you should see the default UI appear. You can edit this content by editing the index.html file for this frame, in your realityobjects directory.
+        </div>
+
+    </div>
+</template>
+
+<template id="globalFramesTutorial">
+    <div class="tutorial">
+        <div class="serverDescription" id="framesDescription">
+            The Global Frames tab lets you see all the reusable frames that you will be able to drop into your environment using any Reality Editor that is connected to the same WiFi network as this server. Just tap on the Pocket button in the app and you will see all of these available frames.
+        </div>
+        <div class="serverDescription" id="noFramesDescription">
+            This list of frames is loaded from your ~/Documents/realityframes directory, which should be automatically generated at the path displayed above. You currently don't have any frames correctly set up in that directory. To download the default set of Global Frames, follow our installation instructions.
+        </div>
+        <div class="serverDescription" id="foundFramesDescription">
+            To preview the application content in this web browser, just click on the Content button. The download button will download a backup of this frame. The On/Off button can be used to hide individual frames from being shown in the Pocket of Reality Editors in this network.
         </div>
     </div>
 </template>
@@ -328,6 +373,7 @@
             <!--            <input type="file" id="pathSelectionInput" webkitdirectory directory multiple/>-->
         </div>
     </div>
+    <div id="globalFramesDescription"></div>
 </template>
 
 <template id="frameManager">
