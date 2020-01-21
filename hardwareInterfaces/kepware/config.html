@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Kepware Configurator</title>
     <style>
-        body {
+        html {
             background-color: rgb(34,34,34);
             font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
             font-size: 12pt;
@@ -358,7 +358,7 @@
             tagsContainer.id = 'tags';
             realityServer.domObjects.appendChild(tagsContainer);
 
-            if (typeof settings.tagsEnabled === 'undefined') {
+            if (typeof settings.tagsEnabled === 'undefined' || settings.tagsEnabled === 0) {
                 settings.tagsEnabled = {};
             }
 
