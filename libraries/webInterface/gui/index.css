@@ -50,10 +50,10 @@ body {
 }
 
 #showHelpButton {
-    color: white;
+    color: rgba(210,210,210);
     position: absolute;
     right: 0;
-    top: 20px;
+    top: 22px;
     /*font-size: 12;*/
     cursor: pointer;
 }
@@ -64,6 +64,7 @@ body {
 
 .serverDescription {
     margin-top: 21px;
+    color: rgba(210,210,210);
 }
 
 #contents {
