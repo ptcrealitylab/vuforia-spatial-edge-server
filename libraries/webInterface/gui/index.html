@@ -74,14 +74,18 @@
         <div class="serverDescription" id="addFrameDescription">
             Your object is now active, and should be visible to a Reality Editor app connected to the same WiFi network, as long as the network supports UDP broadcasting. But there is currently no AR content associated with your object. <br>
             <br>
-            To add some placeholder content, click on Add Frame, and give your frame a name. Now, when you view the specified image or object target, you should see the default UI appear. You can edit this content by editing the index.html file for this frame, in your realityobjects directory.
+            To add some placeholder content, click on Add Frame, and give your frame a name.
         </div>
-
+        <div class="serverDescription" id="frameAddedDescription">
+            Now, when you view the specified image or object target, you should see the default UI appear. You can edit this content by editing the index.html file for this frame, in your realityobjects directory.<br>
+            <br>
+            To toggle additional help messages in the future, click the Show/Hide Help button in the upper right corner.
+        </div>
     </div>
 </template>
 
 <template id="globalFramesTutorial">
-    <div class="tutorial">
+    <div class="tutorial" style="margin-bottom: 21px">
         <div class="serverDescription" id="framesDescription">
             The Global Frames tab lets you see all the reusable frames that you will be able to drop into your environment using any Reality Editor that is connected to the same WiFi network as this server. Just tap on the Pocket button in the app and you will see all of these available frames.
         </div>
@@ -90,6 +94,16 @@
         </div>
         <div class="serverDescription" id="foundFramesDescription">
             To preview the application content in this web browser, just click on the Content button. The download button will download a backup of this frame. The On/Off button can be used to hide individual frames from being shown in the Pocket of Reality Editors in this network.
+        </div>
+    </div>
+</template>
+
+<template id="hardwareInterfacesTutorial">
+    <div class="tutorial" style="margin-bottom: 21px">
+        <div class="serverDescription" id="hardwareDescription">
+            The Hardware Interfaces tab lets you manage the adaptors that this server uses to communicate with external hardware systems. Configurable hardware interfaces can be turned on and off here. Hardware Interfaces with a gear icon can be clicked on to further configure their settings.<br>
+            <br>
+            You must restart your server after making any changes for those changes to take effect.
         </div>
     </div>
 </template>
@@ -227,11 +241,13 @@
         <div class="dropZoneFeedback">
             <div class='button hidden two'></div>
             <div class='item space hidden'></div>
-            <div class='hasDat item button red one'>Missing .DAT</div>
+            <div class='hasDat item button red one'>Missing .dat</div>
             <div class='item space hidden'></div>
-            <div class='hasXml item button red one'>Missing .XML</div>
+            <div class='hasJpg item button red one'>Missing .jpg</div>
             <div class='item space hidden'></div>
-            <div class='hasJpg item button red one'>Missing .JPG</div>
+            <div class='hasXml item button red one'>Missing .xml</div>
+            <div class='item space hidden'></div>
+            <div class='generateXml item button green one clickAble'>Set Target Size</div>
             <div class='item space hidden'></div>
         </div>
     </div>
@@ -257,6 +273,24 @@
              onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
     </div><div class='addButtonFrame item button green one clickAble'>Add</div>
     </div>
+    </div>
+</template>
+
+<template id="textEntryTargetSize">
+    <div class="expandcollapse expand">
+        <div class="textEntry">
+            <div class='button hidden two'></div>
+            <div class='item space hidden'></div>
+            <div class='button hidden one'></div>
+            <div class='item space hidden'></div>
+            <div class='button hidden one'></div>
+            <div class='item space hidden'></div>
+            <div class='button hidden one'></div>
+            <div class='item space hidden'></div>
+            <div class='textfield size item button white one' contenteditable onclick='if(this.innerText === "Width (meters)") {this.innerHTML=""; this.style.fonts = "12pt"}'>Width (meters)</div>
+            <div class='item space hidden'></div>
+            <div class='setSizeButton item button green one clickAble'>Set Width</div>
+        </div>
     </div>
 </template>
 
@@ -392,6 +426,10 @@
     <div class="appendix">
         <div class="child"></div>
     </div>
+</template>
+
+<template id="startHardwareInterfaces">
+    <div id="hardwareInterfacesDescription"></div>
 </template>
 
 <template id="hardwareInterface">

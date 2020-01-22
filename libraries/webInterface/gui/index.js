@@ -80,10 +80,10 @@ realityServer.initialize = function () {
     this.initializeHelp();
 };
 
-realityServer.initializeHelp = function() {
-    var showHelpText = 'Show Help';
-    var hideHelpText = 'Hide Help';
+var showHelpText = 'Show Help';
+var hideHelpText = 'Hide Help';
 
+realityServer.initializeHelp = function() {
     // if there are no objects, show help by default. otherwise hide help by default.
     if (Object.keys(realityServer.objects).length === 0) {
         showHelp();
@@ -100,37 +100,53 @@ realityServer.initializeHelp = function() {
             showHelp();
         }
     });
-
-    function showHelp() {
-        // show help text
-        var objectDescription = document.getElementById('objectDescription');
-        if (objectDescription) {
-            objectDescription.style.display = '';
-        }
-        var framesDescription = document.getElementById('globalFramesDescription');
-        if (framesDescription) {
-            framesDescription.style.display = '';
-        }
-
-        // make the button say "Hide Help" instead of "Help"
-        document.getElementById("showHelpButton").innerText = hideHelpText;
-    }
-
-    function hideHelp() {
-        // hide all help text
-        var objectDescription = document.getElementById('objectDescription');
-        if (objectDescription) {
-            objectDescription.style.display = 'none';
-        }
-        var framesDescription = document.getElementById('globalFramesDescription');
-        if (framesDescription) {
-            framesDescription.style.display = 'none';
-        }
-
-        // make the button say "Help" instead of "Hide Help"
-        document.getElementById("showHelpButton").innerText = showHelpText;
-    }
 };
+
+function showHelp() {
+    // show help text
+    var objectDescription = document.getElementById('objectDescription');
+    if (objectDescription) {
+        objectDescription.style.display = '';
+    }
+    var framesDescription = document.getElementById('globalFramesDescription');
+    if (framesDescription) {
+        framesDescription.style.display = '';
+    }
+    var hardwareInterfacesDescription = document.getElementById('hardwareInterfacesDescription');
+    if (hardwareInterfacesDescription) {
+        hardwareInterfacesDescription.style.display = '';
+    }
+
+    // make the button say "Hide Help" instead of "Help"
+    document.getElementById("showHelpButton").innerText = hideHelpText;
+}
+
+function hideHelp() {
+    // hide all help text
+    var objectDescription = document.getElementById('objectDescription');
+    if (objectDescription) {
+        objectDescription.style.display = 'none';
+    }
+    var framesDescription = document.getElementById('globalFramesDescription');
+    if (framesDescription) {
+        framesDescription.style.display = 'none';
+    }
+    var hardwareInterfacesDescription = document.getElementById('hardwareInterfacesDescription');
+    if (hardwareInterfacesDescription) {
+        hardwareInterfacesDescription.style.display = 'none';
+    }
+
+    // make the button say "Help" instead of "Hide Help"
+    document.getElementById("showHelpButton").innerText = showHelpText;
+}
+
+function updateVisibilityOfTutorials() {
+    if (document.getElementById('showHelpButton').innerText === showHelpText) {
+        hideHelp();
+    } else {
+        showHelp();
+    }
+}
 
 realityServer.forEachSortedObjectKey = function(callback) {
     var sorted = realityServer.sortObject(realityServer.objects);
@@ -144,6 +160,7 @@ realityServer.updateManageObjects = function(thisItem2) {
     this.getDomContents().appendChild(this.templates["start"].content.cloneNode(true));
     //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
     
+    /////// Tutorial ///////
     document.getElementById('objectDescription').appendChild(this.templates["objectTutorial"].content.cloneNode(true));
     // update tutorial based on current application state
     var tutorialStateNumber = 0;
@@ -160,6 +177,20 @@ realityServer.updateManageObjects = function(thisItem2) {
         return Object.keys(realityServer.objects[key].frames).length > 0;
     }).length === 0) { // if there are no objects with frames
         tutorialStateNumber = 3;
+    
+    } else {
+        var isExactlyOneObject = Object.keys(realityServer.objects).filter(function(key) {
+            return realityServer.objects[key].initialized; // if there are objects initialized with targets
+        }).length === 1;
+        
+        var hasExactlyOneFrame = Object.keys(realityServer.objects).filter(function(key) {
+            return Object.keys(realityServer.objects[key].frames).length === 1;
+        }).length === 1;
+        
+        // show the tutorial complete step
+        if (isExactlyOneObject && hasExactlyOneFrame) {
+            tutorialStateNumber = 4;
+        }
     }
     
     if (tutorialStateNumber !== 0 && tutorialStateNumber !== 1) {
@@ -174,11 +205,12 @@ realityServer.updateManageObjects = function(thisItem2) {
     if (tutorialStateNumber !== 3) {
         document.getElementById('addFrameDescription').classList.add('hiddenTab');
     }
-
-    if (document.getElementById('showHelpButton').innerText === 'Show Help') {
-        document.getElementById('objectDescription').style.display = 'none';
+    if (tutorialStateNumber !== 4) {
+        document.getElementById('frameAddedDescription').classList.add('hiddenTab');
     }
-
+    updateVisibilityOfTutorials();
+    /////// ^ Tutorial ^ ///////
+    
     document.getElementById("addObject").addEventListener("click", realityServer.gotClick, false);
     
     document.getElementById("addWorldObject").addEventListener("click", realityServer.gotClick, false);
@@ -508,7 +540,8 @@ realityServer.updateManageFrames = function() {
     // });
     
     this.getDomContents().querySelector('#framesPath').innerText = realityServer.states.globalFramesPath || '';
-    
+
+    /////// Tutorial ///////
     document.getElementById('globalFramesDescription').appendChild(this.templates["globalFramesTutorial"].content.cloneNode(true));
     
     var tutorialStateNumber = 0;
@@ -524,10 +557,8 @@ realityServer.updateManageFrames = function() {
     if (tutorialStateNumber !== 2) {
         document.getElementById('foundFramesDescription').classList.add('hiddenTab');
     }
-
-    if (document.getElementById('showHelpButton').innerText === 'Show Help') {
-        document.getElementById('globalFramesDescription').style.display = 'none';
-    }
+    updateVisibilityOfTutorials();
+    /////// ^ Tutorial ^ ///////
 
     for (var frameKey in this.globalFrames) {
         
@@ -588,6 +619,12 @@ realityServer.selectHardwareInterfaceSettings = function(interfaceName) {
 
 realityServer.updateManageHardwareInterfaces = function() {
     console.log('updateManageHardwareInterfaces');
+
+    /////// Tutorial ///////
+    this.getDomContents().appendChild(this.templates["startHardwareInterfaces"].content.cloneNode(true));
+    document.getElementById('hardwareInterfacesDescription').appendChild(this.templates["hardwareInterfacesTutorial"].content.cloneNode(true));
+    updateVisibilityOfTutorials();
+    /////// ^ Tutorial ^ ///////
     
     var columnContainer = document.createElement('div');
     columnContainer.classList.add('row', 'group');
@@ -778,6 +815,49 @@ realityServer.printFiles = function(item) {
     return returnList;
 };
 
+function showGenerateXml(parentElement, objectKey) {
+    var visualFeedback = parentElement;
+    var generateXmlButton = visualFeedback.querySelector('.generateXml');
+    console.log('generateXmlButton', generateXmlButton);
+    generateXmlButton.addEventListener('click', function() {
+        if (!visualFeedback.querySelector(".textEntry")){
+            var textEntryElements = document.getElementById("textEntryTargetSize").content.cloneNode(true);
+
+            textEntryElements.querySelector('.setSizeButton').addEventListener('click', function() {
+
+                var newWidth = parseFloat(this.parentElement.querySelector('.size').innerText);
+                console.log(newWidth);
+
+                if (!isNaN(newWidth) && typeof newWidth === 'number' && newWidth > 0) {
+                    
+                    var body = {
+                        width: newWidth,
+                        name: realityServer.objects[objectKey].name
+                    };
+                    
+                    // console.log(body);
+                    
+                    // var targetName = realityServer.objects[objectKey];
+                    realityServer.sendRequest('/object/' + objectKey + '/generateXml/', 'POST', function (state) {
+                        if (state === 'ok') {
+                            console.log('successfully generated xml from width ' + newWidth);
+                        }
+                        var removeNode = visualFeedback.querySelector('.textEntry');
+                        realityServer.removeAnimated(removeNode);
+                    }, "name="+realityServer.objects[objectKey].name+"&width="+newWidth);
+                    
+                }
+
+            });
+
+            visualFeedback.appendChild(textEntryElements);
+        } else {
+            var removeNode = visualFeedback.querySelector('.textEntry');
+            realityServer.removeAnimated(removeNode);
+        }
+    });
+}
+
 realityServer.gotClick = function (event) {
     var thisEventObject = event.currentTarget;
     var buttonClassList = thisEventObject.classList;
@@ -833,6 +913,14 @@ realityServer.gotClick = function (event) {
                 if (realityServer.objects[objectKey].targetsExist.jpgExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
                     // visualFeedback.querySelector('.hasJpg').innerText = 'Has .JPG';
+                }
+
+                if (!realityServer.objects[objectKey].targetsExist.jpgExists && !realityServer.objects[objectKey].targetsExist.datExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
+                    // visualFeedback.querySelector('.hasJpg').innerText = 'Has .JPG';
+                } else {
+                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
+                    showGenerateXml(visualFeedback, objectKey);
                 }
             }
 
@@ -939,6 +1027,13 @@ realityServer.gotClick = function (event) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
                             } else {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'hidden', 'red');
+                            }
+
+                            if (!responseText.jpgExists && !responseText.datExists) {
+                                realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
+                            } else {
+                                realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
+                                showGenerateXml(visualFeedback, objectKey);
                             }
                         }
                         

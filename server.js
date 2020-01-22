@@ -3669,6 +3669,40 @@ function objectWebServer() {
             zip.finalize();
         });
         
+        webServer.post('/object/*/generateXml/', function(req, res) {
+            var objectKey = req.params[0];
+            console.log(req.body);
+            
+            var msgObject = req.body;
+            var objectName = msgObject.name; //getObject(objectKey).name;
+            
+            console.log(objectKey, msgObject);
+            
+            var aspectRatio = 1.0; // TODO: get this from the image
+            console.log('support inferred aspect ratio of image targets');
+            console.log('support object targets');
+            
+            // var isImageTarget = true;
+            // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
+            
+            var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
+                '   <Tracking>\n' +
+                '   <ImageTarget name="' + objectKey + '" size="' + parseFloat(msgObject.width).toFixed(8) + ' ' + (parseFloat(msgObject.width) * aspectRatio).toFixed(8) + '" />\n' +
+                '   </Tracking>\n' +
+                '   </ARConfig>';
+
+            var xmlOutFile = objectsPath + '/' + objectName + '/' + identityFolderName + "/target/target.xml";
+            // if (!fs.existsSync(xmlOutFile)) {
+            fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                if (err) {
+                    res.status(500).send('error writing new target size to .xml file for ' + objectKey);
+                } else {
+                    res.status(200).send('ok');
+                }
+            });
+        });
+        
         webServer.post('/hardwareInterface/*/settings/', function(req, res) {
             var interfaceName = req.params[0];
 
