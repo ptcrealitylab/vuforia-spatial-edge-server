@@ -3671,14 +3671,11 @@ function objectWebServer() {
         
         webServer.post('/object/*/generateXml/', function(req, res) {
             var objectKey = req.params[0];
-            console.log(req.body);
-            
             var msgObject = req.body;
-            var objectName = msgObject.name; //getObject(objectKey).name;
+            var objectName = msgObject.name;
             
             console.log(objectKey, msgObject);
             
-            var aspectRatio = 1.0; // TODO: get this from the image
             console.log('support inferred aspect ratio of image targets');
             console.log('support object targets');
             
@@ -3688,7 +3685,7 @@ function objectWebServer() {
             var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                 '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                 '   <Tracking>\n' +
-                '   <ImageTarget name="' + objectKey + '" size="' + parseFloat(msgObject.width).toFixed(8) + ' ' + (parseFloat(msgObject.width) * aspectRatio).toFixed(8) + '" />\n' +
+                '   <ImageTarget name="' + objectKey + '" size="' + parseFloat(msgObject.width).toFixed(8) + ' ' + parseFloat(msgObject.height).toFixed(8) + '" />\n' +
                 '   </Tracking>\n' +
                 '   </ARConfig>';
 
@@ -3699,6 +3696,14 @@ function objectWebServer() {
                     res.status(500).send('error writing new target size to .xml file for ' + objectKey);
                 } else {
                     res.status(200).send('ok');
+                    
+                    // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
+                    var object = getObject(objectKey);
+                    if (object) {
+                        object.targetSize.width = parseFloat(msgObject.width);
+                        object.targetSize.height = parseFloat(msgObject.height);
+                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    }
                 }
             });
         });
@@ -4387,7 +4392,7 @@ function objectWebServer() {
                                     var sendObject = {
                                         id: thisObjectId,
                                         name: thisObject.name,
-                                        initialized: (jpg && xml && dat),
+                                        initialized: ((jpg || dat) && xml),
                                         jpgExists: jpg,
                                         xmlExists: xml,
                                         datExists: dat

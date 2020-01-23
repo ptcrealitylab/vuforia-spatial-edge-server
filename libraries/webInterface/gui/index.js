@@ -825,26 +825,20 @@ function showGenerateXml(parentElement, objectKey) {
 
             textEntryElements.querySelector('.setSizeButton').addEventListener('click', function() {
 
-                var newWidth = parseFloat(this.parentElement.querySelector('.size').innerText);
-                console.log(newWidth);
+                var newWidth = parseFloat(this.parentElement.querySelector('.sizeWidth').innerText);
+                var newHeight = parseFloat(this.parentElement.querySelector('.sizeHeight').innerText);
 
-                if (!isNaN(newWidth) && typeof newWidth === 'number' && newWidth > 0) {
-                    
-                    var body = {
-                        width: newWidth,
-                        name: realityServer.objects[objectKey].name
-                    };
-                    
-                    // console.log(body);
+                if (!isNaN(newWidth) && typeof newWidth === 'number' && newWidth > 0 &&
+                    !isNaN(newHeight) && typeof newHeight === 'number' && newHeight > 0) {
                     
                     // var targetName = realityServer.objects[objectKey];
                     realityServer.sendRequest('/object/' + objectKey + '/generateXml/', 'POST', function (state) {
                         if (state === 'ok') {
-                            console.log('successfully generated xml from width ' + newWidth);
+                            console.log('successfully generated xml from width ' + newWidth + ' and height ' + newHeight);
                         }
                         var removeNode = visualFeedback.querySelector('.textEntry');
                         realityServer.removeAnimated(removeNode);
-                    }, "name="+realityServer.objects[objectKey].name+"&width="+newWidth);
+                    }, "name="+realityServer.objects[objectKey].name+"&width="+newWidth+"&height="+newHeight);
                     
                 }
 
@@ -894,25 +888,36 @@ realityServer.gotClick = function (event) {
             newNode.querySelector(".dropZoneElement").id = "targetDropZone"+objectKey;
 
             if (!realityServer.objects[objectKey].targetName) {
-                realityServer.objects[objectKey].targetName = realityServer.objects[objectKey].name+realityServer.uuidTime();
+                // generate a random UUID if not yet initialized with a persistent UUID
+                if (objectKey === realityServer.objects[objectKey].name) {
+                    realityServer.objects[objectKey].targetName = realityServer.objects[objectKey].name+realityServer.uuidTime();
+                }
+            }
+            
+            if (objectKey !== realityServer.objects[objectKey].name) {
+                realityServer.objects[objectKey].targetName = objectKey;
             }
 
-            newNode.querySelector(".name").innerText =realityServer.objects[objectKey].targetName;
+            newNode.querySelector(".name").innerText = realityServer.objects[objectKey].targetName;
             referenceNode.after(newNode);
             
             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
             if (visualFeedback && realityServer.objects[objectKey] && realityServer.objects[objectKey].targetsExist) {
                 if (realityServer.objects[objectKey].targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
-                    // visualFeedback.querySelector('.hasDat').innerText = 'Has .DAT';
+                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
+                    visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
+                } else if (realityServer.objects[objectKey].targetsExist.jpgExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'yellow');
                 }
                 if (realityServer.objects[objectKey].targetsExist.xmlExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
-                    // visualFeedback.querySelector('.hasXml').innerText = 'Has .XML';
+                    realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
+                    visualFeedback.querySelector('.hasXml').innerText = 'Has .xml';
                 }
                 if (realityServer.objects[objectKey].targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
-                    // visualFeedback.querySelector('.hasJpg').innerText = 'Has .JPG';
+                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'green');
+                    visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
+                } else if (realityServer.objects[objectKey].targetsExist.datExists) {
+                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
                 }
 
                 if (!realityServer.objects[objectKey].targetsExist.jpgExists && !realityServer.objects[objectKey].targetsExist.datExists) {
@@ -950,7 +955,11 @@ realityServer.gotClick = function (event) {
             });
 
             realityServer.myTargetDropzone.on("totaluploadprogress", function (progress) {
-                realityServer.getDomContents().querySelector(".dropZoneContentBackground").style.width = (456 /100 *progress) +"px";
+                var maxWidth = 514;
+                if (document.querySelector('.dropZoneContent')) {
+                    maxWidth = document.querySelector('.dropZoneContent').getClientRects()[0].width;
+                }
+                realityServer.getDomContents().querySelector(".dropZoneContentBackground").style.width = (maxWidth / 100 * progress) +"px";
             });
             realityServer.myTargetDropzone.on("sending", function (file) {
                 //  document.querySelector("#total-progress").style.opacity = "1";
@@ -994,14 +1003,6 @@ realityServer.gotClick = function (event) {
                         realityServer.update();
                         
                     } else {
-                        // var sendObject = {
-                        //     id: thisObjectId,
-                        //     name: thisObject.name,
-                        //     initialized: (jpg && xml && dat),
-                        //     jpgExists: jpg,
-                        //     xmlExists: xml,
-                        //     datExists: dat
-                        // };
                         
                         // update initialized
                         realityServer.objects[objectKey].initialized = responseText.initialized;
@@ -1016,7 +1017,8 @@ realityServer.gotClick = function (event) {
                             if (responseText.jpgExists) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
                             } else {
-                                realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'hidden', 'red');
+                                let newColor = responseText.datExists ? 'yellow' : 'red';
+                                realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'hidden', newColor);
                             }
                             if (responseText.xmlExists) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
@@ -1026,7 +1028,8 @@ realityServer.gotClick = function (event) {
                             if (responseText.datExists) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
                             } else {
-                                realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'hidden', 'red');
+                                let newColor = responseText.datExists ? 'yellow' : 'red';
+                                realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'hidden', newColor);
                             }
 
                             if (!responseText.jpgExists && !responseText.datExists) {
@@ -1041,12 +1044,20 @@ realityServer.gotClick = function (event) {
                             // activate the object
                             realityServer.objects[objectKey].active = true;
                             
+                            if (typeof responseText.id !== 'undefined') {
+                                realityServer.objects[objectKey].targetName = responseText.id;
+                            }
+                            
                             // rename object from objectName to objectID generated from server
-                            realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
-                            delete realityServer.objects[responseText.name];
-
-                            // render
-                            realityServer.update();
+                            if (typeof realityServer.objects[responseText.name] !== 'undefined') {
+                                realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
+                                delete realityServer.objects[responseText.name];
+                            }
+                            
+                            // re-render after a slight delay, so the user can acknowledge what happened
+                            setTimeout(function() {
+                                realityServer.update();
+                            }, 300);
                         }
                     }
 
