@@ -3697,9 +3697,9 @@ function objectWebServer() {
                 'Content-disposition': 'attachment; filename=' + objectID + '.zip'
             });
 
-            var Archiver = require('archiver');
+            var archiver = require('archiver');
 
-            var zip = Archiver.create('zip', false);
+            var zip = archiver('zip');
             zip.pipe(res);
             zip.directory(objectsPath + '/' + objectID, objectID + "/");
             zip.finalize();
