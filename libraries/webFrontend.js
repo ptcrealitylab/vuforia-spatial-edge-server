@@ -131,7 +131,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         var xmlExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.xml');
         var jpgExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.jpg');
         
-        if (datExists && xmlExists && jpgExists) { // TODO: if xmlExists && (datExists || jpgExists) // because we can now use jpg instead of dat we only need one
+        if (xmlExists && (datExists || jpgExists)) {
             console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
             newObject[thisObjectKey].targetName = thisObjectKey; // obtained earlier from the xml file
