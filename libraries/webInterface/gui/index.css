@@ -474,6 +474,7 @@ position: relative;
 .objectIcon {
     overflow: hidden;
     border: 2px solid rgb(41, 253, 47);
+    border-left: none;
     width: 36px;
     height: 32px;
     margin-left: -6px;
@@ -525,4 +526,12 @@ position: relative;
 
 .startFrames {
     margin-bottom: 21px;
+}
+
+.target.green {
+    border-right: none;
+}
+
+.objectIcon:hover {
+    opacity: 1;
 }
