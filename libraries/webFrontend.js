@@ -209,7 +209,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
         '<head>\n' +
         '<head>'+
         '    <link rel="stylesheet" href="../libraries/css/bootstrap.min.css">\n' +
-        '    <link rel="stylesheet" href="../libraries/css/bootstrap-theme.min.css">\n' +
+        '    <link rel="stylesheet" href="../libraries/css/bootstrap-adjustments.css">\n' +
         '</head>\n' +
         '<body style="height:100vh; width: 100%">\n' +
         '<div class="container" id="container" style="width: 750px;">\n' +
@@ -232,7 +232,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
     'xhr.onreadystatechange = function (e) {'+
      '   if (xhr.readyState == 4 && xhr.status == 200) {'+
       '      con.innerHTML = xhr.responseText;' +
-        'setTimeout(loadInfoContent, 10);'+
+        'setTimeout(loadInfoContent, 100);'+
 
        ' }'+
     '}; ' +
@@ -484,7 +484,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '<head>\n' +
         '   <meta charset="utf-8">\n' +
         '   <link rel="stylesheet" href="../libraries/css/bootstrap.min.css">\n' +
-        '   <link rel="stylesheet" href="../libraries/css/bootstrap-theme.min.css">\n' +
+        '   <link rel="stylesheet" href="../libraries/css/bootstrap-adjustments.css">\n' +
         '   <script src="../libraries/js/dropzone.js"></script>\n' +
         '    <style>\n' +
         '        #total-progress {\n' +
@@ -685,7 +685,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '<head>\n' +
         '<head>\n' +
         '    <link rel="stylesheet" href="../libraries/css/bootstrap.min.css">\n' +
-        '    <link rel="stylesheet" href="../libraries/css/bootstrap-theme.min.css">\n' +
+        '    <link rel="stylesheet" href="../libraries/css/bootstrap-adjustments.css">\n' +
         '   <script src="../libraries/js/dropzone.js"></script>\n' +
         '    <style>\n' +
         '        #total-progress {\n' +
@@ -981,7 +981,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '<head>\n' +
         '<head>\n' +
         '    <link rel="stylesheet" href="../../libraries/css/bootstrap.min.css">\n' +
-        '    <link rel="stylesheet" href="../../libraries/css/bootstrap-theme.min.css">\n' +
+        '    <link rel="stylesheet" href="../../libraries/css/bootstrap-adjustments.css">\n' +
         '   <script src="../../libraries/js/dropzone.js"></script>\n' +
         '    <style>\n' +
         '        #total-progress {\n' +

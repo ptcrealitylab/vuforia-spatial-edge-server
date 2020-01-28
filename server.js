@@ -3974,13 +3974,12 @@ function objectWebServer() {
 
         // use allObjects for TCP/IP object discovery
         // ****************************************************************************************************************
-        // TODO: BEN - should this return world object too?
         webServer.get('/allObjects/', function (req, res) {
 
             var returnJSON = [];
 
-            for (var thisId in objects) { // TODO: possibly change to forEachObject(callback(objectID, object) { ... })
-                if (objects[thisId].deactivated) continue;
+            for (var thisId in objects) {
+                if (objects[thisId].deactivated) continue; // todo: filter by zone, too?
 
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
