@@ -260,6 +260,18 @@ realityServer.updateManageObjects = function(thisItem2) {
                 }
                 addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.worldObject'), objectKey);
 
+                if (Object.keys(thisObject.frames).length > 0) {
+                    thisObject.dom.querySelector('.triangle').classList.remove('hidden');
+                    thisObject.dom.querySelector('.triangle').classList.add('clickAble');
+                    addExpandedToggle(thisObject.dom.querySelector('.triangle'), objectKey, thisObject);
+
+                    if (thisObject.isExpanded) {
+                        thisObject.dom.querySelector('.triangle').classList.add('triangleDown');
+                    } else {
+                        thisObject.dom.querySelector('.triangle').classList.remove('triangleDown');
+                    }
+                }
+
                 if (thisObject.initialized) {
 
                     // on/off and download buttons are always clickable if initialized
@@ -283,18 +295,6 @@ realityServer.updateManageObjects = function(thisItem2) {
                         thisObject.dom.querySelector(".sharing").classList.add('clickAble');
 
                         addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
-                        
-                        if (Object.keys(thisObject.frames).length > 0) {
-                            thisObject.dom.querySelector('.triangle').classList.remove('hidden');
-                            thisObject.dom.querySelector('.triangle').classList.add('clickAble');
-                            addExpandedToggle(thisObject.dom.querySelector('.triangle'), objectKey, thisObject);
-
-                            if (thisObject.isExpanded) {
-                                thisObject.dom.querySelector('.triangle').classList.add('triangleDown');
-                            } else {
-                                thisObject.dom.querySelector('.triangle').classList.remove('triangleDown');
-                            }
-                        }
                         
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector(".active"), "green", "yellow");
