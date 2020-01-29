@@ -91,11 +91,11 @@ var globalVariables = {
 
 const serverPort = 8080;
 const socketPort = serverPort;     // server and socket port are always identical
-const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
+const beatPort = 52317;            // this is the port for UDP broadcasting so that the objects find each other.
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const version = "3.1.0";           // the version of this server
+const version = "3.2.0";           // the version of this server
 const protocol = "R2";           // the version of this server
 const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
@@ -122,7 +122,11 @@ const objectInterfaceFolder = "/";
 /**********************************************************************************************************************
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
-const storage = require('node-persist');
+const storage = {
+    initSync: function() {},
+    getItemSync: function() {},
+    setItemSync: function() {},
+}; // require('node-persist');
 storage.initSync();
 
 var logger = require('./logger');
@@ -158,7 +162,8 @@ for(key in interfaceNames){
     for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
     ips.interfaces[interfaceNames[key]] = tempIps[0];
 };
-//logger.debug(ips);
+
+ips.interfaces[ips.activeInterface] = "127.0.0.1";
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -180,7 +185,7 @@ var cors = require('cors');             // Library for HTTP Cross-Origin-Resourc
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
-var sharp = require('sharp'); // Image resizing library
+// var sharp = require('sharp'); // Image resizing library
 
 // additional files containing project code
 
@@ -190,7 +195,34 @@ var utilities = require(__dirname + '/libraries/utilities');
 var webFrontend = require(__dirname + '/libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
-var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
+// var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
+
+var hardwareAPI = {
+    readCall: function() {
+    },
+    setup: function() {
+    },
+    reset: function() {
+    },
+    shutdown: function() {
+    },
+    triggerMatrixCallbacks: function() {
+    },
+    triggerUDPCallbacks: function() {
+    },
+    connectCall: function() {
+    },
+    runResetCallbacks: function() {
+    },
+    runFrameAddedCallbacks: function() {
+    },
+    readPublicDataCall: function() {
+    },
+    screenObjectCall: function() {
+    },
+    screenObjectServerCallBack: function() {
+    },
+};
 
 var git = require(__dirname + '/libraries/gitInterface');
 
@@ -726,7 +758,7 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
-var worldObjectName = '_WORLD_OBJECT_';
+var worldObjectName = '_WORLD_OBJECT_local';
 var worldObject;
 
 /**********************************************************************************************************************
@@ -815,12 +847,15 @@ startSystem();
 cout("started");
 
 // get the directory names of all available soutyperces for the 3D-UI
-var hardwareAPIFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
-    return fs.statSync(hardwarePath + '/' + file).isDirectory();
-});
+var hardwareAPIFolderList = [];
+// fs.readdirSync(hardwarePath).filter(function (file) {
+//     return fs.statSync(hardwarePath + '/' + file).isDirectory();
+// });
 // remove hidden directories
-while (hardwareAPIFolderList[0][0] === ".") {
-    hardwareAPIFolderList.splice(0, 1);
+if (hardwareAPIFolderList.length > 0) {
+    while (hardwareAPIFolderList[0][0] === ".") {
+        hardwareAPIFolderList.splice(0, 1);
+    }
 }
 
 // add all types to the nodeTypeModules object. Iterate backwards because splice works inplace
@@ -992,7 +1027,7 @@ function loadWorldObject() {
     // create a new world object
     worldObject = new Objects();
     worldObject.name = worldObjectName;
-    worldObject.objectId = worldObjectName +  utilities.uuidTime(); // create a new random id
+    worldObject.objectId = worldObjectName;
     worldObject.isWorldObject = true;
 
     // try to read previously saved data to overwrite the default world object
@@ -1401,6 +1436,7 @@ function objectWebServer() {
 
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+    webServer.use('/userinterface', express.static(path.join(__dirname, '../userinterface/')));
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames', function (req, res, next) {
@@ -2294,26 +2330,28 @@ function objectWebServer() {
                 // copied fullsize file into resized image file as backup, in case resize operation fails
                 fs.copyFileSync(rawFilepath, resizedFilepath);
 
-                sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
-                    if (!err) {
-                        logger.debug('done resizing', info);
+                if (typeof sharp !== 'undefined') {
+                    sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
+                        if (!err) {
+                            logger.debug('done resizing', info);
 
-                        if (node) {
-                            node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                            utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+                            if (node) {
+                                node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
+                                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                                utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+                            }
+
+                            res.status(200);
+                            res.json({success: true}).end();
+
+                        } else {
+                            logger.debug('error resizing', err);
+                            res.status(500);
+                            res.send(err);
+                            throw err;
                         }
-
-                        res.status(200);
-                        res.json({success: true}).end();
-
-                    } else {
-                        logger.debug('error resizing', err);
-                        res.status(500);
-                        res.send(err);
-                        throw err;
-                    }
-                });
+                    });
+                }
 
             });
 
