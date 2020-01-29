@@ -555,6 +555,10 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.openKeyboard = makeSendStub('openKeyboard');
+                this.closeKeyboard = makeSendStub('closeKeyboard');
+                this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
+                this.onKeyUp = makeSendStub('onKeyUp');
                 this.setMoveDelay = makeSendStub('setMoveDelay');
                 this.setVisibilityDistance = makeSendStub('setVisibilityDistance');
                 this.activateScreenObject = makeSendStub('activateScreenObject');
@@ -1235,6 +1239,53 @@
             postDataToParent({
                 getScreenshotBase64: true
             });
+        };
+
+        /**
+         * Programmatically opens device keyboard.
+         * This is preferred compared to directly opening keyboard by focusing on a frame element, because there is
+         * a bug in the webkit browser where the keyboard will keep opening again on random user interactions
+         *  (in particular, can't properly close if the iframe gets deleted before manually un-focusing.)
+         */
+        this.openKeyboard = function() {
+            postDataToParent({
+                openKeyboard: true
+            });
+        };
+
+        /**
+         * Programmatically closes device keyboard.
+         */
+        this.closeKeyboard = function() {
+            postDataToParent({
+                openKeyboard: false
+            });
+        };
+
+        /**
+         * Listens for when the device keyboard was closed.
+         * @param {function} callback
+         */
+        this.onKeyboardClosed = function(callback) {
+            realityObject.messageCallBacks.keyboardHiddenEvent = function(msgContent) {
+                if (typeof msgContent.keyboardHiddenEvent !== 'undefined') {
+                    callback();
+                }
+            };
+        };
+
+        /**
+         * Listens to each character typed into the device keyboard.
+         * It receives the keyboard event via a post message, because directly interacting with the keyboard from within
+         * the iframe leads to an open webkit bug where the keyboard will keep opening again on random user interactions
+         * @param {function} callback
+         */
+        this.onKeyUp = function(callback) {
+            realityObject.messageCallBacks.keyboardUpEvent = function(msgContent) {
+                if (typeof msgContent.keyboardUpEvent !== 'undefined') {
+                    callback(msgContent.keyboardUpEvent);
+                }
+            };
         };
 
         /**
