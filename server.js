@@ -4358,7 +4358,85 @@ function objectWebServer() {
 
                             fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target." + fileExtension);
 
-                            var objectName = req.params.id + utilities.uuidTime();
+                            // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
+                            // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
+                            if (fileExtension === 'jpg') {
+
+                                var rawFilepath         = folderD + '/' + identityFolderName + "/target/target." + fileExtension;
+                                var tempFilepath        = folderD + '/' + identityFolderName + "/target/target-temp." + fileExtension;
+                                var originalFilepath    = folderD + '/' + identityFolderName + "/target/target-original-size." + fileExtension;
+                                
+                                var image = sharp(rawFilepath);
+                                image.metadata().then(function(metadata) {
+                                    console.log(metadata);
+                                    var desiredMaxDimension = 1024;
+
+                                    if (Math.max(metadata.width, metadata.height) <= desiredMaxDimension) {
+                                        console.log('jpg doesnt need resizing');
+                                        continueProcessingUpload();
+
+                                    } else {
+                                        console.log('attempting to resize file to ' + rawFilepath);
+
+                                        var aspectRatio = metadata.width / metadata.height;
+                                        var newWidth = desiredMaxDimension;
+                                        if (metadata.width < metadata.height) {
+                                            newWidth = desiredMaxDimension * aspectRatio;
+                                        }
+
+                                        // copy fullsize file as backup
+                                        if (fs.existsSync(originalFilepath)) {
+                                            console.log('deleted old original file');
+                                            fs.unlinkSync(originalFilepath);
+                                        }
+                                        fs.copyFileSync(rawFilepath, originalFilepath);
+
+                                        // copied file into temp file to be used during the resize operation
+                                        if (fs.existsSync(tempFilepath)) {
+                                            console.log('deleted old temp file');
+                                            fs.unlinkSync(tempFilepath);
+                                        }
+                                        fs.copyFileSync(rawFilepath, tempFilepath);
+
+                                        sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err, info) {
+                                            if (!err) {
+                                                console.log('done resizing');
+                                                if (fs.existsSync(tempFilepath)) {
+                                                    fs.unlinkSync(tempFilepath);
+                                                }
+                                                continueProcessingUpload();
+                                            } else {
+                                                console.warn('error resizing', err);
+                                                continueProcessingUpload();
+                                            }
+                                        });
+                                    }
+                                });
+                            
+                            } else {
+                                continueProcessingUpload();
+                            }
+                            
+                            // Step 2) - Generate a default XML file if needed
+                            function continueProcessingUpload() {
+                                var objectName = req.params.id + utilities.uuidTime();
+
+                                var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                                    '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
+                                    '   <Tracking>\n' +
+                                    '   <ImageTarget name="' + objectName + '" size="0.30000000 0.30000000" />\n' +
+                                    '   </Tracking>\n' +
+                                    '   </ARConfig>';
+
+                                var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
+                                if (!fs.existsSync(xmlOutFile)) {
+                                    fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                                        onXmlVerified(err);
+                                    });
+                                } else {
+                                    onXmlVerified();
+                                }
+                            }
                             
                             // create the object data and respond to the webFrontend once the XML file is confirmed to exist
                             function onXmlVerified(err) {
@@ -4409,22 +4487,6 @@ function objectWebServer() {
                                     // };
                                     res.status(200).send('ok');
                                 }
-                            }
-
-                            var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                                '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
-                                '   <Tracking>\n' +
-                                '   <ImageTarget name="' + objectName + '" size="0.30000000 0.30000000" />\n' +
-                                '   </Tracking>\n' +
-                                '   </ARConfig>';
-
-                            var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
-                            if (!fs.existsSync(xmlOutFile)) {
-                                fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                                    onXmlVerified(err);
-                                });
-                            } else {
-                                onXmlVerified();
                             }
 
                         }
