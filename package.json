@@ -30,8 +30,8 @@
     "sharp": "^0.21.3",
     "simple-git": "^1.130.0",
     "smtp-server": "^1.16.1",
-    "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.0",
+    "socket.io": "~2.2.0",
+    "socket.io-client": "~2.2.0",
     "wedo2": "^1.5.10",
     "winston": "^3.2.1",
     "xml2js": "^0.4.23"
