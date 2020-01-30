@@ -74,8 +74,8 @@
 
 var globalVariables = {
     developer: true, // show developer web GUI
-    debug: false,
-    saveToDisk : true, // allow system to save to file system// debug messages to console
+    debug: false, // debug messages to console
+    saveToDisk : false, // allow system to save to file system
     worldObject : true
 };
 
