@@ -44,12 +44,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-/**
- * Set to true to enable the hardware interface
- **/
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
+var server = require('../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
+/**
+ * Set to true to enable the hardware interface
+ */
 exports.enabled = false;
 
 if (exports.enabled) {
@@ -71,13 +72,13 @@ if (exports.enabled) {
 
         request(options, function (error, response, body) {
             if (error) throw new Error(error);
-            console.log(body);
+            logger.debug("alexa request body", body);
 
             var actions = JSON.parse(body);
 
             actions.forEach(function(action) {
                 server.write("box", "arduino01", action.color.toLowerCase(), action.value);
-                console.log("Wrote value " + action.value + " to node " + action.color.toLowerCase());
+                logger.debug("Wrote value " + action.value + " to node " + action.color.toLowerCase());
             });
         });
     }

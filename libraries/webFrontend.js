@@ -50,12 +50,13 @@ var debug = false;
 var pathUtilities = require('path');
 var readdirp = require('readdirp');
 var hardwareAPI = require(__dirname + '/hardwareInterfaces');
+const logger = require('../logger');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 
 exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress,serverPort,worldObject)
 {
-console.log(objectInterfaceName);
+    logger.debug(objectInterfaceName);
     function ThisObjects() {
         this.name = "";
         this.initialized = false;
@@ -88,7 +89,7 @@ console.log(objectInterfaceName);
        if(tempKey)
            thisObjectKey = tempKey;
 
-    console.log(thisObjectKey);
+    logger.debug(thisObjectKey);
 
         newObject[thisObjectKey] = new ThisObjects();
 
@@ -99,7 +100,7 @@ console.log(objectInterfaceName);
 
         if (fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + "/target/target.jpg"))
         {
-            console.log("file Exists "+ objectKey)
+            logger.debug("file Exists "+ objectKey)
             newObject[thisObjectKey].initialized = true;
 
             newObject[thisObjectKey].targetName = thisObjectKey;
@@ -202,22 +203,22 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
     });
 
     if (debug) {
-        console.log("----------------------- objects");
+        logger.debug("----------------------- objects");
         for (var keykey in objects) {
-            console.log(keykey);
+            logger.debug(keykey);
         }
 
-        console.log("----------------------- objects");
+        logger.debug("----------------------- objects");
         for (var keykey in objects) {
-            console.log(keykey);
+            logger.debug(keykey);
         }
 
-        console.log("----------------------- object lookup");
+        logger.debug("----------------------- object lookup");
 
         for (var keykey in objectLookup) {
-            console.log(keykey + " = " + JSON.stringify(objectLookup[keykey]));
+            logger.debug(keykey + " = " + JSON.stringify(objectLookup[keykey]));
         }
-        console.log("----------------------- end" + Math.random());
+        logger.debug("----------------------- end" + Math.random());
     }
     // remove hidden directories
     if (typeof tempFiles[0] !== "undefined") {
@@ -489,7 +490,7 @@ exports.printFolder = function (objects, dirnameO, debug, objectInterfaceName, o
 
 
         '      myDropzone.on("success", function (file, responseText) {' +
-        '   console.log(responseText );  if(responseText  === "done") {     document.querySelector("#total-progress").style.opacity = "0"; ' +
+        '   logger.debug(responseText );  if(responseText  === "done") {     document.querySelector("#total-progress").style.opacity = "0"; ' +
             // '        document.getElementById("targetButton").className = "btn btn-success fileinput-button";'+
         'location.reload();' +
         '}' +
@@ -531,7 +532,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
 
         '/*var myVar = setInterval(loadInfoContent, 100);*/' +
         'loadInfoContent();'+
-        'function loadInfoContent () {console.log("newtick");'+
+        'function loadInfoContent () {logger.debug("newtick");'+
 
    'var con = document.getElementById("changeContent")'+
     '    ,   xhr = new XMLHttpRequest();'+
@@ -777,7 +778,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
 exports.uploadTargetText = function (parm, objectLookup, objects) {
-    if(debug) console.log("target content");
+    if(debug) logger.debug("target content");
     var objectName = "";
     if (objects.hasOwnProperty(utilities.readObject(objectLookup, parm))) {
 
@@ -926,7 +927,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
-    if(debug) console.log("interface content");
+    if(debug) logger.debug("interface content");
     var text =
 
         '';
@@ -1027,7 +1028,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
 
-                // console.log("---" + content[0]);
+                // logger.debug("---" + content[0]);
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
@@ -1039,11 +1040,11 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
+            // logger.debug("-"+content[0]);
+            //  logger.debug(content[0]+" / "+content[1]);
 
             if (content[1][0] !== "." && content[1][0] !== "_") {
-                if (debug)console.log(content[1]);
+                if (debug)logger.debug(content[1]);
                 var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
 
                 text += '<tr ';
@@ -1069,7 +1070,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
                     "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
-                if (debug) console.log(dateiTobeRemoved);
+                if (debug) logger.debug(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
 
@@ -1133,7 +1134,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
+    if (debug)logger.debug(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(objectsPath + parm + "/index.htm") || fs.existsSync(objectsPath + '/' + parm + "/index.html")) {
         if (fs.existsSync(objectsPath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
@@ -1216,7 +1217,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 };
 
 exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInterfaceName) {
-    if(debug) console.log("interface content");
+    if(debug) logger.debug("interface content");
     var text =
 
         '';
@@ -1323,7 +1324,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
 
-                // console.log("---" + content[0]);
+                // logger.debug("---" + content[0]);
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
@@ -1335,11 +1336,11 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
+            // logger.debug("-"+content[0]);
+            //  logger.debug(content[0]+" / "+content[1]);
 
             if (content[1][0] !== "." && content[1][0] !== "_") {
-                if (debug)console.log(content[1]);
+                if (debug)logger.debug(content[1]);
                 var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
 
                 text += '<tr ';
@@ -1365,7 +1366,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
                     "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
                     "<input type='hidden' name='action' value='delete'>";
-                if (debug) console.log(dateiTobeRemoved);
+                if (debug) logger.debug(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
 
@@ -1429,7 +1430,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(framePath + parm + '/' + identityFolderName + "/target/target.dat");
+    if (debug)logger.debug(framePath + parm + '/' + identityFolderName + "/target/target.dat");
     if (fs.existsSync(framePath + parm + "/index.htm") || fs.existsSync(framePath + '/' + parm + "/index.html")) {
         if (fs.existsSync(framePath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
             text += "btn-success";
@@ -1512,7 +1513,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 };
 
 exports.editContent = function(req, res) {
-    console.log(req.params);
+    logger.debug(req.params);
     var path = req.params[0];
     // TODO sanitize path for security
     var file = pathUtilities.basename(path);

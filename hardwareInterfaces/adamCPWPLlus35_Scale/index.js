@@ -44,6 +44,7 @@
  */
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
+var logger = require('../../logger');
 
 exports.enabled = settings("enabled");
 if (exports.enabled) {
@@ -61,7 +62,7 @@ if (exports.enabled) {
                          baudRate: 9600
                      });
                      serialPort.on('error', function (err) {
-                         console.error("Serial port error", err);
+                         logger.error('Serial port error', err);
                      });
                      serialServer(serialPort);
                      break;

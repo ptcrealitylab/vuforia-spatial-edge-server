@@ -12,7 +12,6 @@
         }
         if (typeof msgData.demo === 'undefined') return;
 
-        console.log('demo mode = ' + msgData.demo);
         stopDemo = !(msgData.demo);
         demonstrateMotion();
     }

@@ -54,6 +54,7 @@
  **/
 
 var request = require('request');
+var logger = require('../../../logger');
 
 var generalProperties = {
     name : "webPost2",
@@ -88,14 +89,14 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
     // BUT ALSO: makes a post request to the server endpoint configured in publicData
     if (index === 1) {
 
-        console.log("making post request to " + JSON.stringify(thisBlock.publicData));
+        logger.debug("webPost2 making post request to", thisBlock.publicData);
 
         request.post(
             thisBlock.publicData.endpointUrl,
             { json: {blockData: thisBlock.processedData} },
             function (error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    console.log(body);
+                    logger.debug('webPost2 request success', body);
                 }
             }
         );

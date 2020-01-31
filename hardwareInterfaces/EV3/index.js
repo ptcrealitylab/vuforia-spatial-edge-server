@@ -48,6 +48,7 @@
  * Set to true to enable the hardware interface
  **/
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -184,7 +185,7 @@ if (exports.enabled) {
 
             target.registerSensor(3, target.S_TYPE_COLOR, target.SM_COL_COLOR);
             target.registerSensorListener(3, function (result) {
-                //console.log("Result has value:" + result + "and prev value was " + f_twist_res);
+                //logger.debug("Result has value:" + result + "and prev value was " + f_twist_res);
                 prev_f_twist = f_twist;
                 f_twist = result;
                 if(result == Ev3.COL_RED){
@@ -211,7 +212,7 @@ if (exports.enabled) {
                     arm_upwards=true;
                     arm_downwards=true;
                 }
-                //console.log(result);
+                //logger.debug(result);
             });
         })
     });
@@ -225,10 +226,11 @@ if (exports.enabled) {
                 if (top_output) {
                     top_target.sp.write(top_output, function (err, len) {
                         if (err) {
-
-                            console.log(motor_output_top);
-                            console.log(top_output);
-                            console.log(JSON.stringify([].slice.call(arguments)));
+                            logger.error("EV3 write error", {
+                                motor_output_top: motor_output_top,
+                                top_output: top_output,
+                                args: JSON.stringify([].slice.call(arguments))
+                            });
                         }
                     });
                 }
@@ -237,9 +239,11 @@ if (exports.enabled) {
                 if (bot_output) {
                     bot_target.sp.write(bot_output, function (err, len) {
                         if (err) {
-                            console.log(motor_output_bot);
-                            console.log(bot_output);
-                            console.log(JSON.stringify([].slice.call(arguments)));
+                            logger.error("EV3 write error", {
+                                motor_output_bot: motor_output_bot,
+                                bot_output: bot_output,
+                                args: JSON.stringify([].slice.call(arguments))
+                            });
                         }
                     });
                 }
@@ -257,11 +261,11 @@ if (exports.enabled) {
                 if (!grip_calibrated)
                     grip_calibrated = resetGrip(forearm_touch_sensor);
                 else{
-                  //  console.log("The motor speed is: " + motor_output_top['b']);
+                  //  logger.debug("The motor speed is: " + motor_output_top['b']);
                 }
                 if (!shoulder_calibrated)
                     shoulder_calibrated = resetShoulder(shoulder_color);
-               // console.log("Im writing a command with values" + motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
+               // logger.debug("Im writing a command with values" + motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
                 var top_output = top_target.getOutputSequence(motor_output_top["a"], motor_output_top["b"], motor_output_top["c"], motor_output_top["d"]);
                 top_target.sp.write(top_output, function () {});
                 var bot_output = bot_target.getOutputSequence(motor_output_bot["a"], motor_output_bot["b"], motor_output_bot["c"], motor_output_bot["d"]);
@@ -366,14 +370,14 @@ if (exports.enabled) {
             motor_output_top['c'] = -30;
             motor_output_bot.d=-10;
             //motor_output_top['b'] = -30;
-           // console.log("he's going up sir");
+           // logger.debug("he's going up sir");
             setTimeout(function(){
                 motor_output_top['c'] = 0;
                 motor_output_top['b'] = 0;
                 motor_output_bot.d=0;
                 gripper_open=true;
                 grip_ready=true;
-               // console.log("command has been sent");
+               // logger.debug("command has been sent");
             },2800);
             return true; // grip has hit the touch sensor and is fully calibrated
         }
@@ -491,7 +495,7 @@ if (exports.enabled) {
                     else {
                         motor_output_top['a'] = speed;
                     }
-                    //  console.log("gripval: " + grip_val);
+                    //  logger.debug("gripval: " + grip_val);
                     speed = Math.floor(grip_val);
                     motor_output_top['c'] = speed;
                 }
@@ -614,14 +618,14 @@ if (exports.enabled) {
                var value = Math.floor(map(item.value,0,1,-100,100));
 
                 // code
-                //console.log("base joint " + value);
+                //logger.debug("base joint " + value);
                 speed = value;
 
                 if(!shoulder_forwards && speed <0)
                     speed=0;
                 else if(!shoulder_backwards && speed >0)
                     speed =0;
-                //  console.log("I recieved a value of " + value + " and speed: " + speed + " and i should go down " + shoulder_forwards);
+                //logger.debug("I recieved a value of " + value + " and speed: " + speed + " and i should go down " + shoulder_forwards);
                 motor_output_bot['b'] = speed;
                 motor_output_bot['c'] = speed;
 
@@ -634,7 +638,7 @@ if (exports.enabled) {
     });
 
     server.addEventListener("shutdown", function () {
-        console.log("shutting down from exports.shutdown!");
+        logger.debug("shutting down from exports.shutdown!");
         if(top_target!==undefined)
             top_target.disconnect();
         if(bot_target!==undefined)

@@ -9,8 +9,9 @@
 /**
  * Set to true to enable the hardware interface
  **/
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
-var utilities = require(__dirname + '/../../libraries/utilities');
+var server = require('../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
+var utilities = require('../../libraries/utilities');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
@@ -42,7 +43,7 @@ if (exports.enabled) {
 
     function bindScreen(objectName, port) {
         var screen = new Screen(objectName, port);
-        console.log('activating screen for ' + objectName + ' on port ' + port);
+        logger.debug('activating screen for ' + objectName + ' on port ' + port);
         server.activateScreen(objectName, port);
         activeScreens.push(screen);
     }
@@ -68,7 +69,7 @@ if (exports.enabled) {
         var port = screen.port;
         var objectName = screen.objectName;
 
-        console.log('startHTTPServer on port ' + port + ' with dir: ' + __dirname);
+        logger.debug('startHTTPServer on port ' + port + ' with dir: ' + __dirname);
 
         var http = require('http').Server(app);
         var io = require('socket.io')(http);
@@ -77,7 +78,7 @@ if (exports.enabled) {
         // ioSockets[port] = io;
 
         http.listen(port, function() {
-            console.log('started screen for object ' + objectName + ' on port ' + port);
+            logger.debug('started screen for object ' + objectName + ' on port ' + port);
         });
 
         // TODO: make this port-specific
@@ -101,35 +102,35 @@ if (exports.enabled) {
         });
 
         server.subscribeToUDPMessages(function(msgContent) {
-            // console.log('received UDP message: ' + JSON.stringify(msgContent));
+            // logger.debug('received UDP message: ' + JSON.stringify(msgContent));
             if (typeof msgContent.action !== 'undefined') {
-                console.log('received action message: ' + JSON.stringify(msgContent.action));
+                logger.debug('received action message: ' + JSON.stringify(msgContent.action));
                 io.emit('actionMessage', msgContent.action);
             }
         });
 
         io.on('connection', function(socket) {
-            console.log('frame screen socket connected');
+            logger.debug('frame screen socket connected');
             // relay messages from the AR interface to this app's frontend
             socket.on('writeScreenObject', function(msg) {
-                console.log('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey, msg.touchOffsetX, msg.touchOffsetY);
+                logger.debug('writeScreenObject', msg.objectKey, msg.frameKey, msg.nodeKey, msg.touchOffsetX, msg.touchOffsetY);
                 server.writeScreenObjects(msg.objectKey, msg.frameKey, msg.nodeKey, msg.touchOffsetX, msg.touchOffsetY);
             });
 
             socket.on('getFramesForScreen', function(msg) {
-                console.log('getFramesForScreen');
+                logger.debug('getFramesForScreen');
                 var frames = server.getAllFrames(objectName);
-                // console.log(frames);
+                // logger.debug(frames);
                 socket.emit('framesForScreen', frames);
             });
 
             socket.on('getObjectName', function(msg) {
-                console.log('getObjectName', msg);
+                logger.debug('getObjectName', msg);
                 socket.emit('objectName', {objectName: objectName});
             });
 
             socket.on('getObjectTargetSize', function(msg) {
-                console.log('getObjectTargetSize', msg);
+                logger.debug('getObjectTargetSize', msg);
 
                 var mmToMeterScale = 1000;
                 var targetSize = {
@@ -143,7 +144,7 @@ if (exports.enabled) {
                 if (typeof msg === 'string') {
                     msg = JSON.parse(msg);
                 }
-                console.log('send UDP message from screen client', msg);
+                logger.debug('send UDP message from screen client', msg);
                 utilities.actionSender(msg);
             });
 

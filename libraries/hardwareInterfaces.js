@@ -10,16 +10,18 @@
  */
 
 /**
- * Reality Objecst Hardware Interface API
- * 
+ * Reality Objects Hardware Interface API
+ *
  * This API is intended for users who want to create their own hardware interfaces.
  * To create a new hardware interface create a folder under hardwareInterfaces and create the file index.js.
  * You should take a look at /hardwareInterfaces/emptyExample/index.js to get started.
  */
 
 var http = require('http');
-var utilities = require(__dirname + '/utilities');
+var path = require('path');
+var utilities = require('./utilities');
 var _ = require('lodash');
+var logger = require('../logger');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -144,8 +146,7 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
 
     var nodeUuid = objectKey+frameName+nodeName;
     var frameUuid = objectKey+frameName;
-    //console.log(objectLookup);
-//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
+
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
             if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
@@ -166,8 +167,7 @@ exports.writePublicData = function (objectName, frameName, nodeName, dataObject,
     var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
     var nodeUuid = objectKey+frameName+nodeName;
     var frameUuid = objectKey+frameName;
-    //console.log(objectLookup);
-//    console.log("writeIOToServer obj: "+objectName + "  name: "+nodeName+ "  value: "+value+ "  mode: "+mode);
+
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
             if (objects[objectKey].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
@@ -189,13 +189,13 @@ exports.clearObject = function (objectId, frameID) {
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
-                cout("Deleting: " + objectID + "   "+ objectID + "   " + key);
+                logger.debug("Deleting: " + objectID + "   "+ objectID + "   " + key);
                 delete objects[objectID].frames[frameID].nodes[key];
             }
         }
     }
     //TODO: clear links too
-    cout("object is all cleared");
+    logger.debug("object is all cleared");
 };
 
 exports.removeAllNodes = function (objectName, frameName) {
@@ -204,7 +204,6 @@ exports.removeAllNodes = function (objectName, frameName) {
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
-                //console.log("object+frame exists");
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeKey);
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
@@ -276,8 +275,7 @@ exports.getKnownObjects = function () {
 
 exports.getAllFrames = function (objectName) {
     var objectID = utilities.readObject(objectLookup, objectName);
-    // var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    //console.log(objectID);
+
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -328,7 +326,6 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
 };
 
 exports.subscribeToNewFramesAdded = function (objectName, callback) {
-    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     frameAddedCallbacks.push({
@@ -338,17 +335,14 @@ exports.subscribeToNewFramesAdded = function (objectName, callback) {
 };
 
 exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
-    console.log('runFrameAddedCallbacks for object ' + objectKey);
     frameAddedCallbacks.forEach(function(callbackObject) {
         if (callbackObject.objectID === objectKey) {
-            console.log('found a callback');
             callbackObject.callback(thisFrame);
         }
     });
 };
 
 exports.subscribeToReset = function (objectName, callback) {
-    //console.log('subscribeToNewFramesAdded');
     var objectID = utilities.readObject(objectLookup, objectName);
 
     resetCallbacks.push({
@@ -358,10 +352,8 @@ exports.subscribeToReset = function (objectName, callback) {
 };
 
 exports.runResetCallbacks = function(objectKey) {
-    console.log('runResetCallbacks for object ' + objectKey);
     resetCallbacks.forEach(function(callbackObject) {
         if (callbackObject.objectID === objectKey) {
-            console.log('found a callback');
             callbackObject.callback();
         }
     });
@@ -399,12 +391,10 @@ exports.triggerUDPCallbacks = function(msgContent) {
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
- //   cout("AddIO objectID: " + objectID);
+    logger.debug("hardwareInterfaces.addNode objectID: ", objectID);
 
     var nodeUuid = objectID+frameName+nodeName;
     var frameUuid = objectID+frameName;
-
-    //objID = nodeName + objectID;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -447,9 +437,13 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.objectId = objectID;
             thisObject.text = undefined;
             thisObject.type = type;
-            //console.log("added node " + nodeName + " to object: "+objectName+" frame: "+ frameName);
-            //console.log('set new node name to ' + thisObject.name);
-            //console.log(objects[objectID].frames[frameUuid].nodes[nodeUuid]);
+
+            logger.debug("added node", {
+                node: nodeName,
+                object: objectName,
+                frame: frameName,
+                name: thisObject.name,
+            });
 
             if (!hardwareObjects.hasOwnProperty(objectName)) {
                 hardwareObjects[objectName] = new EmptyObject(objectName);
@@ -520,7 +514,6 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
                         objects[objectID].frames[frameID].nodes[nodeID].loyalty = thisLoyalty;
                         objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = true;
                     }
-                    //console.log("moved node " + nodeName + " to (" + x + ", " + y + ")");
                 }
             }
         }
@@ -536,7 +529,6 @@ exports.removeNode = function (objectName, frameName, nodeName) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeID);
-                    //console.log("deleted node " + nodeName);
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
@@ -555,7 +547,7 @@ exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, sho
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
 
                     objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
-                    console.log("Attached node " + nodeName + " to ground plane");
+                    logger.debug("Attached node " + nodeName + " to ground plane");
                 }
             }
         }
@@ -578,7 +570,7 @@ exports.activate = function (objectName) {
 
 exports.deactivate = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log("--------- DEACTIVATE---------")
+    logger.debug("hardwareInterfaces.deactivate")
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
@@ -658,7 +650,7 @@ exports.reset = function (){
         }
     }
 
-    cout("sendReset");
+    logger.debug("hardwareInterfaces.reset calling reset callbacks");
     for (var i = 0; i < callBacks.resetCallBacks.length; i++) {
         callBacks.resetCallBacks[i]();
     }
@@ -739,7 +731,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
-    cout("Add read listener for objectID: " + objectID);
+    logger.debug("Add read listener for objectID: ", objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -758,7 +750,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
-                console.log('Add read listener: ', callBack);
+                logger.debug('Add read listener: ', callBack);
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
 
             }
@@ -772,7 +764,7 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
-    cout("Add publicData listener for objectID: " + objectID);
+    logger.debug("Add publicData listener for objectID: ", objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -802,30 +794,16 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
 };
 
 exports.connectCall = function (objectID, frameID, nodeID, data) {
-    console.log('\nCallBacks...\n');
-    // console.log(callBacks);
-    // var prettyprintCallbacks = {};
-    {
-        for (var c in callBacks) {
-            if (callBacks[c].hasOwnProperty('frames')) {
-                // prettyprintCallbacks[c] = callBacks[c].frames;
-                for (var f in callBacks[c].frames) {
-                   // console.log(callBacks[c].frames[f].nodes);
-                }
-            }
-        }
-    }
-    // console.log(prettyprintCallbacks);
-   // console.log('\n');
+    logger.debug('connectCall');
+
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-              //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
-                    console.log("Connection callback called");
+                    logger.debug("Connection callback called");
                 } else {
-                    console.log("No connection callback");
+                    logger.debug("No connection callback");
                 }
             }
         }
@@ -837,7 +815,7 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
 
-    cout("Add connection listener for objectID: " + objectID + ", " + frameID + ", " + nodeName);
+    logger.debug("Add connection listener for objectID: ", objectID, frameID, nodeName);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -857,11 +835,7 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
                 callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
             }
 
-          //  console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
-
             callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack = callBack;
-
-            //console.log(callBacks[objectID].frames[frameID].nodes[nodeID]);
 
         }
     }
@@ -883,11 +857,11 @@ exports.map = function (x, in_min, in_max, out_min, out_max) {
 
 exports.addEventListener = function (option, callBack){
     if(option === "reset") {
-        cout("Add reset listener");
+        logger.debug("Add reset listener");
         callBacks.resetCallBacks.push(callBack);
     }
     if(option === "shutdown") {
-        cout("Add reset listener");
+        logger.debug("Add reset listener");
         callBacks.shutdownCallBacks.push(callBack);
     }
 
@@ -913,18 +887,12 @@ exports.advertiseConnection = function (object, frame, node, logic){
 
 exports.shutdown = function (){
 
-    cout("call shutdowns");
+    logger.debug("hardwareInterfaces.shutdown");
     for (var i = 0; i < callBacks.shutdownCallBacks.length; i++) {
         callBacks.shutdownCallBacks[i]();
     }
 };
-var path = require('path');
+
 exports.loadHardwareInterface = function (hardwareInterfaceName){
     return utilities.loadHardwareInterface(hardwareInterfaceName.split(path.sep).pop());
 };
-
-
-
-function cout(msg) {
-    if (globalVariables.debug) console.log(msg);
-}

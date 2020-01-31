@@ -102,7 +102,7 @@ const netmask = "255.255.0.0"; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 const netInterface = "en0";
 
-//console.log(parseInt(version.replace(/\./g, "")));
+//logger.debug(parseInt(version.replace(/\./g, "")));
 
 var os = require('os');
 var path = require('path');
@@ -125,13 +125,14 @@ const objectInterfaceFolder = "/";
 const storage = require('node-persist');
 storage.initSync();
 
+var logger = require('./logger');
 var _ = require('lodash');    // JavaScript utility library
 var fs = require('fs');       // Filesystem library
 var dgram = require('dgram'); // UDP Broadcasting library
 var ip = require("ip");       // get the device IP address library
 var ips = {activeInterface : "en0", interfaces : {}};
 if(storage.getItemSync('activeNetworkInterface') !== undefined){
-    //console.log( storage.getItemSync('activeNetworkInterface'));
+    //logger.debug( storage.getItemSync('activeNetworkInterface'));
     ips.activeInterface = storage.getItemSync('activeNetworkInterface');
 };
 
@@ -141,7 +142,7 @@ var exphbs = require('express-handlebars'); // View Template library
 
 // create objects folder at objectsPath if necessary
 if(!fs.existsSync(objectsPath)) {
-    console.log('created objects directory at ' + objectsPath);
+    logger.debug('created objects directory at ' + objectsPath);
     fs.mkdirSync(objectsPath);
 }
 
@@ -157,7 +158,7 @@ for(key in interfaceNames){
     for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
     ips.interfaces[interfaceNames[key]] = tempIps[0];
 };
-//console.log(ips);
+//logger.debug(ips);
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -978,13 +979,13 @@ function loadWorldObject() {
 
     // create objects folder at objectsPath if necessary
     if(!fs.existsSync(folder)) {
-        console.log('created worldObject directory at ' + folder);
+        logger.debug('created worldObject directory at ' + folder);
         fs.mkdirSync(folder);
     }
 
     // create a /identity folder within it to hold the object.json data
     if(!fs.existsSync(identityPath)) {
-        console.log('created worldObject identity at ' + identityPath);
+        logger.debug('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
     }
 
@@ -997,9 +998,9 @@ function loadWorldObject() {
     // try to read previously saved data to overwrite the default world object
     try {
         worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        console.log('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+        logger.debug('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
     } catch (e) {
-        console.log('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+        logger.debug('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
     }
 
     worldObject.ip = ips.interfaces[ips.activeInterface];
@@ -1027,13 +1028,13 @@ function loadWorldObject() {
 
         fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
             if (err) {
-                console.log(err);
+                logger.debug(err);
             } else {
-                //console.log('JSON saved to ' + jsonFilePath);
+                //logger.debug('JSON saved to ' + jsonFilePath);
             }
         });
     } else {
-        console.log('I am not allowed to save');
+        logger.debug('I am not allowed to save');
     }
 }
 
@@ -1091,7 +1092,7 @@ function exit() {
 process.on('SIGINT', exit);
 
 if (process.pid) {
-    console.log('Reality Server server.js process is running with PID ' + process.pid);
+    logger.debug('Reality Server server.js process is running with PID ' + process.pid);
 }
 
 /**********************************************************************************************************************
@@ -1140,8 +1141,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         zone: zone
     }));
 
-    if (globalVariables.debug) console.log("UDP broadcasting on port: " + PORT);
-    if (globalVariables.debug) console.log("Sending beats... Content: " + JSON.stringify({
+    if (globalVariables.debug) logger.debug("UDP broadcasting on port: " + PORT);
+    if (globalVariables.debug) logger.debug("Sending beats... Content: " + JSON.stringify({
         id: thisId,
         ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
@@ -1185,7 +1186,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 }));
 
 // this is an uglly trick to sync each object with being a developer object
-//                 console.warn('ugly trick');
                 /*
                 if (globalVariables.developer) {
                     objects[thisId].developer = true;
@@ -1193,12 +1193,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     objects[thisId].developer = false;
                 }
                 */
-                //console.log(globalVariables.developer);
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
                         cout("error in beatSender");
-                        console.log(err);
+                        logger.debug(err);
                         //throw err;
                     }
                     // client is not being closed, as the beat is send ongoing
@@ -1292,7 +1291,7 @@ function objectBeatServer() {
 
         if (typeof msgContent.matrixBroadcast !== "undefined") {
             // if (Object.keys(msgContent.matrixBroadcast).length > 0) {
-                // console.log(msgContent.matrixBroadcast);
+                // logger.debug(msgContent.matrixBroadcast);
                 hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
             // }
         } else {
@@ -1458,7 +1457,7 @@ function objectWebServer() {
 
     webServer.use('/logicNodeIcon', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-        console.log(urlArray);
+        logger.debug(urlArray);
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
         if (!fs.existsSync(fileName)) {
@@ -1503,7 +1502,7 @@ function objectWebServer() {
             newUrl += "index.html";
             urlArray.push("index.html");
         }
-        //console.log(newUrl);
+        //logger.debug(newUrl);
 
         // TODO: ben - may need to update objectsPath if the object is a world object
 
@@ -1567,7 +1566,7 @@ function objectWebServer() {
             }
             res.json(json);
         } else {
-            //console.log("end: "+newUrl);
+            //logger.debug("end: "+newUrl);
             res.sendFile(newUrl, {root: objectsPath});
         }
     });
@@ -1993,12 +1992,12 @@ function objectWebServer() {
     });
 
     function triggerBlock(objectID, frameID, nodeID, blockID, body) {
-        console.log(objectID, frameID, nodeID, blockID, body);
+        logger.debug(objectID, frameID, nodeID, blockID, body);
         var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
             var block = foundNode.blocks[blockID];
-            console.log(block);
-            console.log('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
+            logger.debug(block);
+            logger.debug('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
 
             block.data[0].value = body.value;
             engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
@@ -2173,7 +2172,7 @@ function objectWebServer() {
     // ths is the most relevant for
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
-        console.log("get available logic blocks");
+        logger.debug("get available logic blocks");
         res.json(getLogicBlockList())
     });
 
@@ -2211,7 +2210,7 @@ function objectWebServer() {
         var frameID = req.params.frameID;
         var nodeID = req.params.nodeID;
 
-        console.log('received name for', objectID, frameID, nodeID);
+        logger.debug('received name for', objectID, frameID, nodeID);
 
         getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
@@ -2238,7 +2237,7 @@ function objectWebServer() {
         var frameID = req.params.frameID;
         var nodeID = req.params.nodeID;
 
-        console.log('received icon image for', objectID, frameID, nodeID);
+        logger.debug('received icon image for', objectID, frameID, nodeID);
 
         getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
@@ -2258,7 +2257,7 @@ function objectWebServer() {
                 accept: 'image/jpeg'
             });
 
-            console.log('created form');
+            logger.debug('created form');
 
             form.on('error', function (err) {
                 res.status(500);
@@ -2269,26 +2268,26 @@ function objectWebServer() {
             var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
 
             if (fs.existsSync(rawFilepath)) {
-                console.log('deleted old raw file');
+                logger.debug('deleted old raw file');
                 fs.unlinkSync(rawFilepath);
             }
 
             form.on('fileBegin', function (name, file) {
-                console.log('fileBegin loading', name, file);
+                logger.debug('fileBegin loading', name, file);
                 file.path = rawFilepath;
             });
 
-            console.log('about to parse');
+            logger.debug('about to parse');
 
             form.parse(req, function (err, fields) {
 
-                console.log('successfully created icon image', err, fields);
+                logger.debug('successfully created icon image', err, fields);
 
                 var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
-                console.log('attempting to write file to ' + resizedFilepath);
+                logger.debug('attempting to write file to ' + resizedFilepath);
 
                 if (fs.existsSync(resizedFilepath)) {
-                    console.log('deleted old resized file');
+                    logger.debug('deleted old resized file');
                     fs.unlinkSync(resizedFilepath);
                 }
 
@@ -2297,7 +2296,7 @@ function objectWebServer() {
 
                 sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
                     if (!err) {
-                        console.log('done resizing', info);
+                        logger.debug('done resizing', info);
 
                         if (node) {
                             node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
@@ -2309,7 +2308,7 @@ function objectWebServer() {
                         res.json({success: true}).end();
 
                     } else {
-                        console.log('error resizing', err);
+                        logger.debug('error resizing', err);
                         res.status(500);
                         res.send(err);
                         throw err;
@@ -2318,7 +2317,7 @@ function objectWebServer() {
 
             });
 
-            console.log('parse called');
+            logger.debug('parse called');
 
         });
 
@@ -2349,7 +2348,7 @@ function objectWebServer() {
         var linkAddedData = null;
 
         if (fullEntry) {
-            console.log(fullEntry);
+            logger.debug(fullEntry);
 
             var linkObjectA = fullEntry["objectA"];
             var linkObjectB = fullEntry["objectB"];
@@ -2382,7 +2381,7 @@ function objectWebServer() {
             };
 
         } else {
-            console.log("thisObject does not exist");
+            logger.debug("thisObject does not exist");
         }
         return linkAddedData;
     }
@@ -2473,12 +2472,12 @@ function objectWebServer() {
     // ****************************************************************************************************************
 
     webServer.post('/object/:objectID/frame/:frameID/link/:linkID/addLink/', function (req, res) {
-        console.log("routed by 2");
+        logger.debug("routed by 2");
         res.status(200).send(newLink(req.params.objectID, req.params.frameID, req.params.linkID, req.body));
     });
 
     webServer.post('/object/*/link/*/', function (req, res) {
-        console.log("routed by 1");
+        logger.debug("routed by 1");
         res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
     });
 
@@ -2496,7 +2495,7 @@ function objectWebServer() {
         var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
 
-            console.log("found frame to add link to");
+            logger.debug("found frame to add link to");
 
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
@@ -2850,10 +2849,10 @@ function objectWebServer() {
                 videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
             }
 
-            console.log('videoDir is: ' + videoDir);
+            logger.debug('videoDir is: ' + videoDir);
 
             if (!fs.existsSync(videoDir)) {
-                console.log('make videoDir');
+                logger.debug('make videoDir');
                 fs.mkdirSync(videoDir);
             }
 
@@ -2863,7 +2862,7 @@ function objectWebServer() {
                 accept: 'video/mp4'
             });
 
-            console.log('created form for video');
+            logger.debug('created form for video');
 
             form.on('error', function (err) {
                 res.status(500).send(err);
@@ -2872,29 +2871,29 @@ function objectWebServer() {
             var rawFilepath = form.uploadDir + '/' + videoId + '.mp4';
 
             if (fs.existsSync(rawFilepath)) {
-                console.log('deleted old raw file');
+                logger.debug('deleted old raw file');
                 fs.unlinkSync(rawFilepath);
             }
 
             form.on('fileBegin', function (name, file) {
-                console.log('fileBegin loading', name, file);
+                logger.debug('fileBegin loading', name, file);
                 file.path = rawFilepath;
             });
 
-            console.log('about to parse');
+            logger.debug('about to parse');
 
             form.parse(req, function (err, fields) {
 
                 if (!err) {
 
-                    console.log('successfully created video file', err, fields);
+                    logger.debug('successfully created video file', err, fields);
 
                     var frameType = 'videoRecording';
                     var frameKey = objectKey + frameType + videoId;
 
                     getFrameAsync(objectKey, frameKey, function(error, object, frame) {
                         if (error) {
-                            console.log('a frame with key ' + frameKey + ' does not exist (yet)');
+                            logger.debug('a frame with key ' + frameKey + ' does not exist (yet)');
                             res.status(404).send(err);
                             return;
                         }
@@ -2927,13 +2926,13 @@ function objectWebServer() {
                     });
 
                 } else {
-                    console.log('error parsing', err);
+                    logger.debug('error parsing', err);
                     res.status(500).send(err);
                 }
 
             });
 
-            console.log('parse called');
+            logger.debug('parse called');
 
         });
 
@@ -3028,7 +3027,7 @@ function objectWebServer() {
                 utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
             }
 
-            console.log('successfully created memory');
+            logger.debug('successfully created memory');
 
             res.status(200);
             res.json({success: true}).end();
@@ -3118,7 +3117,7 @@ function objectWebServer() {
     webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
-        console.log('making a copy of frame: ' + frameID);
+        logger.debug('making a copy of frame: ' + frameID);
 
         getFrameAsync(objectID, frameID, function(error, object, frame) {
             if (error) {
@@ -3127,7 +3126,7 @@ function objectWebServer() {
             }
 
             if (frame.location !== 'global') {
-                console.warn('trying to clone a non-global frame... not allowed');
+                logger.warn('trying to clone a non-global frame... not allowed');
                 return;
             }
 
@@ -3245,7 +3244,7 @@ function objectWebServer() {
         var objectId = req.params.objectId;
         var frameId = req.params.frameId;
 
-        console.log('delete frame from server: ' + objectId + ' :: ' + frameId);
+        logger.debug('delete frame from server: ' + objectId + ' :: ' + frameId);
 
         var object = getObject(objectId);
         if (!object) {
@@ -3272,7 +3271,7 @@ function objectWebServer() {
         }).map(function(publicData) {
             return publicData.data;
         });
-        console.log('frame being deleted contains these video paths: ', videoPaths);
+        logger.debug('frame being deleted contains these video paths: ', videoPaths);
         videoPaths.forEach(function(videoPath) {
             // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
             var urlArray = videoPath.split('/');
@@ -3297,7 +3296,7 @@ function objectWebServer() {
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
         function deleteFolderRecursive(path) {
-            console.log('deleteFolderRecursive');
+            logger.debug('deleteFolderRecursive');
             if (fs.existsSync(path)) {
                 fs.readdirSync(path).forEach(function(file, index){
                     var curPath = path + "/" + file;
@@ -3388,8 +3387,8 @@ function objectWebServer() {
 
         // // TODO: ask Valentin what this route was used for?
         // webServer.post('/object/*/size/*', function (req, res) {
-        //     console.log("post 1");
-        //     console.log(req.params);
+        //     logger.debug("post 1");
+        //     logger.debug(req.params);
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
 
@@ -3411,7 +3410,7 @@ function objectWebServer() {
 
                 var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
-                // console.log('really changing size for ... ' + activeVehicle.uuid, body);
+                // logger.debug('really changing size for ... ' + activeVehicle.uuid, body);
 
                 // cout("post 2");
                 var updateStatus = "nothing happened";
@@ -3450,7 +3449,7 @@ function objectWebServer() {
                         frame.ar.y = body.arY;
                     }
 
-                    // console.log(req.body);
+                    // logger.debug(req.body);
                     // ask the devices to reload the objects
                     didUpdate = true;
                 }
@@ -3472,7 +3471,7 @@ function objectWebServer() {
         }
 
         webServer.post('/object/*/frame/*/visualization/', function (req, res) {
-            console.log('change visualization');
+            logger.debug('change visualization');
             changeVisualization(req.params[0], req.params[1], req.body, res);
         });
 
@@ -3562,7 +3561,7 @@ function objectWebServer() {
         // sends the content page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
-            console.log(req.params.object, req.params.frame);
+            logger.debug(req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.object +"/" + req.params.frame;
             var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
@@ -3574,7 +3573,7 @@ function objectWebServer() {
 
         webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
             // cout("get 13");
-            console.log(req.params);
+            logger.debug(req.params);
             res.send(webFrontend.uploadTargetContentFrame(req.params.object, req.params.frame, objectsPath, objectInterfaceFolder));
         });
 
@@ -3584,7 +3583,7 @@ function objectWebServer() {
 
         webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
             // TODO insecure, requires sanitization of path
-            console.log('PUT', req.path, req.body.content);
+            logger.debug('PUT', req.path, req.body.content);
             fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
                 if (err) {
                     throw err;
@@ -3619,7 +3618,7 @@ function objectWebServer() {
         });
 
         webServer.get('/server/networkInterface/*/', function (req, res) {
-            console.log( req.params[0]);
+            logger.debug( req.params[0]);
             ips.activeInterface = req.params[0];
             res.json(ips);
 
@@ -3652,7 +3651,7 @@ function objectWebServer() {
         webServer.get('/object/*/screen/', function (req, res) {
             var objectID = req.params[0];
             getObject(objectID).visualization = "screen";
-            console.log(objectID, "screen");
+            logger.debug(objectID, "screen");
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
@@ -3660,7 +3659,7 @@ function objectWebServer() {
         webServer.get('/object/*/ar/', function (req, res) {
             var objectID = req.params[0];
             getObject(objectID).visualization = "ar";
-            console.log(objectID, "ar");
+            logger.debug(objectID, "ar");
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
@@ -3690,7 +3689,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get('/object/*/zipBackup/', function (req, res) {
             var objectID = req.params[0];
-            console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
+            logger.debug("++++++++++++++++++++++++++++++++++++++++++++++++");
 
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
@@ -3736,7 +3735,7 @@ function objectWebServer() {
             var objectID = req.params[0];
             var object = getObject(objectID);
 
-            console.log("----x---xx----xx--x-----");
+            logger.debug("----x---xx----xx--x-----");
 
             res.json(object);
         });
@@ -3857,7 +3856,7 @@ function objectWebServer() {
             }
 
             if (req.body.action === "new") {
-                console.log("got NEW "+req.body.name );
+                logger.debug("got NEW "+req.body.name );
                 // cout(req.body);
                 if (req.body.name !== "" && !req.body.frame) {
                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
@@ -4112,8 +4111,8 @@ function objectWebServer() {
                     if (req.headers.type === "targetUpload") {
                         file.path = form.uploadDir + "/" + file.name;
                     } else if(req.headers.type === "fileUpload") {
-                        console.log(form.uploadDir);
-                        console.log(req.headers.folder);
+                        logger.debug(form.uploadDir);
+                        logger.debug(req.headers.folder);
 
                         if(typeof req.headers.folder !== "undefined"){
                             file.path = form.uploadDir + "/" + req.headers.frame +"/"+ req.headers.folder +"/" +file.name;
@@ -4130,8 +4129,8 @@ function objectWebServer() {
                     cout("------------" + form.uploadDir + "/" + filename);
 
                     if (req.headers.type === "targetUpload") {
-                        console.log(req.params.id);
-                        console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                        logger.debug(req.params.id);
+                        logger.debug("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
                         var fileExtension = getFileExtension(filename);
 
                         if (fileExtension === "jpg") {
@@ -4409,7 +4408,7 @@ function socketServer() {
     io.on('connection', function (socket) {
         socketHandler.socket = socket;
 
-        //console.log('connected to socket ' + socket.id);
+        //logger.debug('connected to socket ' + socket.id);
 
         socket.on('/subscribe/realityEditor', function (msg) {
 
@@ -4611,9 +4610,9 @@ function socketServer() {
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
             var msgContent = JSON.parse(msg);
             realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
-            console.log('editor ' + msgContent.editorId + ' subscribed to updates');
-            console.log("WTF");
-            console.log(realityEditorUpdateSocketArray);
+            logger.debug('editor ' + msgContent.editorId + ' subscribed to updates');
+            logger.debug("WTF");
+            logger.debug(realityEditorUpdateSocketArray);
         });
 
         socket.on('/update', function (msg) {
@@ -4621,13 +4620,13 @@ function socketServer() {
 
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
-                  //  console.log('dont send updates to the editor that triggered it');
+                  //  logger.debug('dont send updates to the editor that triggered it');
                     continue;
                 }
 
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
-                    console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    logger.debug('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
                     thisSocket.emit('/update', JSON.stringify(msgContent));
                 }
             }
@@ -4638,14 +4637,14 @@ function socketServer() {
 
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
-                console.log("GUI for " + socket.id + " has disconnected");
+                logger.debug("GUI for " + socket.id + " has disconnected");
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
                 utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
                 delete realityEditorBlockSocketArray[socket.id];
-                console.log("Settings for " + socket.id + " has disconnected");
+                logger.debug("Settings for " + socket.id + " has disconnected");
             }
 
             //utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
@@ -4658,7 +4657,7 @@ function socketServer() {
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
 
-    // console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
+    // logger.debug(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
 
     for (var thisEditor in realityEditorSocketArray) {
         if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID) {
@@ -4853,7 +4852,7 @@ var engine = {
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
         if (!internalObjectDestination) {
-            console.log('temporarily ignored undefined destination in computeProcessedData', thisLink);
+            logger.debug('temporarily ignored undefined destination in computeProcessedData', thisLink);
             return;
         }
 
@@ -4879,7 +4878,7 @@ var engine = {
     },
     // this is when a logic block is triggered.
     blockTrigger: function (object, frame, node, block, index, thisBlock) {
-      //  console.log(objects[object].frames[frame].nodes[node].blocks[block]);
+      //  logger.debug(objects[object].frames[frame].nodes[node].blocks[block]);
         if (!thisBlock.processedData)
             thisBlock.processedData = [{}, {}, {}, {}];
 
@@ -4968,7 +4967,7 @@ var engine = {
             data: internalObjectDestination.data
         });
 
-        // console.log( thisNode.processedData[index].value)
+        // logger.debug( thisNode.processedData[index].value)
         // trigger the next round of the engine on the next object
         this.trigger(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination);
     }
@@ -5114,7 +5113,7 @@ function socketUpdaterInterval() {
 }
 
 function cout(msg) {
-    if (globalVariables.debug) console.log(msg);
+    if (globalVariables.debug) logger.debug(msg);
 }
 
 function checkObjectActivation(id) {

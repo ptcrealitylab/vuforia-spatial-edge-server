@@ -44,6 +44,7 @@
  */
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
+var logger = require('../../logger');
 
 
 const { WebSocketInterface } = require('./websocketInterface');
@@ -57,7 +58,7 @@ if (exports.enabled) {
     server.removeAllNodes('MIR', 'kineticAR'); // We remove all existing nodes from the Frame
 
     let enableMIRConnection = true;
-    console.log('\nMIR Connection: ', enableMIRConnection,'\n');
+    logger.debug('\nMIR Connection: ', enableMIRConnection,'\n');
 
     //const hostIP = "10.10.10.121";
     //const hostIP = "10.88.132.58";
@@ -117,18 +118,18 @@ if (exports.enabled) {
 
         newAddress = restAddress + endpoint;
 
-        //console.log("   -   -   -   Request: " + newAddress);
-        if (server.getDebug()) console.log("   -   -   -   Request: " + newAddress);
+        //logger.debug("   -   -   -   Request: " + newAddress);
+        if (server.getDebug()) logger.debug("   -   -   -   Request: " + newAddress);
 
         return restapi.getData(newAddress)
             .then(data => processData(data)) // JSON-string from `response.json()` call
-            .catch(error => console.error(error));
+            .catch(error => logger.error(error));
 
     }
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode3","ARstatus",function (data){
 
-        //console.log(data);
+        //logger.debug(data);
         arStatus = data;
 
         lastPositionAR.x = data.robotInitPosition['x']/groundPlaneScaleFactor;
@@ -137,8 +138,8 @@ if (exports.enabled) {
         lastDirectionAR.x = data.robotInitDirection['x'];
         lastDirectionAR.y = data.robotInitDirection['z'];
 
-        //console.log("LAST POSITION AR: ", lastPositionAR);              //       { x: -332.3420, y: 482.1173, z: 1749.54107 }
-        //console.log("LAST DIRECTION AR: ", lastDirectionAR);            //       { x: -0.84, y: -0.00424 }
+        //logger.debug("LAST POSITION AR: ", lastPositionAR);              //       { x: -332.3420, y: 482.1173, z: 1749.54107 }
+        //logger.debug("LAST DIRECTION AR: ", lastDirectionAR);            //       { x: -0.84, y: -0.00424 }
 
         initOrientationMIR = mirStatus['orientation'];
         initOrientationAR =  (-1) * signed_angle([1,0], [lastDirectionAR.x, lastDirectionAR.y]) * 180 / Math.PI;
@@ -147,7 +148,7 @@ if (exports.enabled) {
 
     server.addPublicDataListener("MIR", "kineticAR", "kineticNode4","ClearPath",function (data) {
 
-        console.log("   -   -   -   Frame has requested to clear path: ", data);
+        logger.debug("   -   -   -   Frame has requested to clear path: ", data);
 
         pathData.forEach(path => {
             path.checkpoints.forEach(checkpoint => {
@@ -198,7 +199,7 @@ if (exports.enabled) {
                                 ], true);
                                 server.pushUpdatesToDevices("MIR");
 
-                                //console.log('server checkpoint: ', serverCheckpoint);
+                                //logger.debug('server checkpoint: ', serverCheckpoint);
                                 
                             }
                         });
@@ -209,7 +210,7 @@ if (exports.enabled) {
 
                             server.addNode("MIR", "kineticAR", frameCheckpoint.name, "node");
 
-                            console.log('NEW ' + frameCheckpoint.name + ' | position: ', frameCheckpoint.posX, frameCheckpoint.posY);
+                            logger.debug('NEW ' + frameCheckpoint.name + ' | position: ', frameCheckpoint.posX, frameCheckpoint.posY);
 
                             server.moveNode("MIR", "kineticAR", frameCheckpoint.name, frameCheckpoint.posX, frameCheckpoint.posY, 0.3,[
                                 1, 0, 0, 0,
@@ -220,7 +221,7 @@ if (exports.enabled) {
 
                             server.pushUpdatesToDevices("MIR");
 
-                            console.log(' ************** Add read listener to ', frameCheckpoint.name);
+                            logger.debug(' ************** Add read listener to ', frameCheckpoint.name);
 
                             // Add listener to node
                             server.addReadListener("MIR", "kineticAR", frameCheckpoint.name, function(data){
@@ -243,7 +244,7 @@ if (exports.enabled) {
             }
         });
 
-        console.log("\nCurrent PATH DATA in SERVER: ", JSON.stringify(pathData), '\n');
+        logger.debug("\nCurrent PATH DATA in SERVER: ", JSON.stringify(pathData), '\n');
 
     });
 
@@ -252,7 +253,7 @@ if (exports.enabled) {
         // if the value of the checkpoint node changed to 1, we need to send the robot to that checkpoint
         // if the value of the checkpoint node changed to 0, the robot just reached the checkpoint and we can trigger other stuff
 
-        console.log('NODE ', checkpointIdx, ' path: ', pathIdx, ' received ', data);
+        logger.debug('NODE ', checkpointIdx, ' path: ', pathIdx, ' received ', data);
 
         let checkpointTriggered = pathData[pathIdx].checkpoints[checkpointIdx];
 
@@ -260,7 +261,7 @@ if (exports.enabled) {
 
             if (!checkpointTriggered.active){
 
-                console.log('Checkpoint has changed from not active to active: ', checkpointTriggered.name);
+                logger.debug('Checkpoint has changed from not active to active: ', checkpointTriggered.name);
 
                 // Checkpoint has changed from not active to active. We have to send robot here
                 activeCheckpointName = checkpointTriggered.name;
@@ -272,35 +273,35 @@ if (exports.enabled) {
 
                 if (enableMIRConnection) {
                     restapi.postData(newAddress, missionData)
-                        .then(res => console.log(res)) // JSON-string from `response.json()` call
-                        .catch(error => console.error(error));
+                        .then(res => logger.debug(res)) // JSON-string from `response.json()` call
+                        .catch(error => logger.error(error));
                 }
 
                 inMotion = true;
             } else {
-                console.log('WARNING: This checkpoint was already active!');
+                logger.debug('WARNING: This checkpoint was already active!');
             }
 
         } else if (data.value === 0){   // If node receives a 0
 
-            console.log('Value === 0');
+            logger.debug('Value === 0');
 
             if (checkpointTriggered.active){
 
-                console.log('Checkpoint has changed from active to not active: ', checkpointTriggered.name);
+                logger.debug('Checkpoint has changed from active to not active: ', checkpointTriggered.name);
 
                 if (inMotion){
 
                     // The node has been deactivated in the middle of the move mission!
                     // We need to delete the mission from the mission queue
 
-                    console.log('MISSION INTERRUPTED');
+                    logger.debug('MISSION INTERRUPTED');
 
                     let newAddress = restAddress + "/mission_queue";
 
                     restapi.deleteData(newAddress)
-                        .then(res => console.log(res)) // JSON-string from `response.json()` call
-                        .catch(error => console.error(error));
+                        .then(res => logger.debug(res)) // JSON-string from `response.json()` call
+                        .catch(error => logger.error(error));
 
                     mir_mission_interrupted = true;
 
@@ -308,7 +309,7 @@ if (exports.enabled) {
 
                     // Checkpoint has changed from active to not active, robot just got here. We have to trigger next checkpoint
 
-                    console.log('Checkpoint reached: ', checkpointTriggered.name);
+                    logger.debug('Checkpoint reached: ', checkpointTriggered.name);
                     checkpointTriggered.active = 0; // This checkpoint gets deactivated
 
                     let nextCheckpointToTrigger = null;
@@ -316,7 +317,7 @@ if (exports.enabled) {
                     if (checkpointIdx + 1 < pathData[pathIdx].checkpoints.length){                      // Next checkpoint in same path
                         nextCheckpointToTrigger = pathData[pathIdx].checkpoints[checkpointIdx + 1];
 
-                        console.log('Next checkpoint triggered: ', nextCheckpointToTrigger.name);
+                        logger.debug('Next checkpoint triggered: ', nextCheckpointToTrigger.name);
                         server.write("MIR", "kineticAR", nextCheckpointToTrigger.name, 1);
 
                     } else {                                                                            // We reached end of path
@@ -345,8 +346,8 @@ if (exports.enabled) {
     function distance( a, b )
     {
 
-        //console.log('a: ', a);
-        //console.log('b: ', b);
+        //logger.debug('a: ', a);
+        //logger.debug('b: ', b);
 
         var dx = a[0] - b[0];
         var dy = a[1] - b[1];
@@ -374,12 +375,12 @@ if (exports.enabled) {
         let from = [lastPositionAR.x, lastPositionAR.y];
         let to = [newCheckpointX / groundPlaneScaleFactor, newCheckpointY / groundPlaneScaleFactor];
 
-        console.log('Last Direction To: ', lastDirectionTo);
-        console.log('From: ', from);
-        console.log('To: ', to);
+        logger.debug('Last Direction To: ', lastDirectionTo);
+        logger.debug('From: ', from);
+        logger.debug('To: ', to);
 
         const newDistance = distance(from, to);                                 // Distance that the robot has to travel to get to the next point
-        console.log('Distance: ', newDistance);
+        logger.debug('Distance: ', newDistance);
 
         //let newDirection = to;                                                // to - from --> direction vector
         //sub(newDirection, from);
@@ -387,14 +388,14 @@ if (exports.enabled) {
 
         let newDirectionVector = [to[0] - from[0], to[1] - from[1]];                  // newDirection = to - from
 
-        console.log('New Direction Vector: ', newDirectionVector);
+        logger.debug('New Direction Vector: ', newDirectionVector);
 
         let angleBetween = signed_angle(newDirectionVector, lastDirectionTo);   // Angle between direction vectors
 
         const newDirectionDeg = radians_to_degrees(angleBetween);               // Angle that the robot has to turn to go to next coordinate in deg
 
-        console.log('New direction deg: ', newDirectionDeg);
-        console.log('Current orientation MIR: ', currentOrientationMIR);
+        logger.debug('New direction deg: ', newDirectionDeg);
+        logger.debug('Current orientation MIR: ', currentOrientationMIR);
 
         currentOrientationMIR = currentOrientationMIR + newDirectionDeg;        // Angle in the MIR Coordinate system
 
@@ -410,15 +411,15 @@ if (exports.enabled) {
         let angleDifferenceAR = initOrientationAR + checkpointOrientation;
         let newOrientation = initOrientationMIR - angleDifferenceAR;
 
-        console.log('\ncheckpointOrientation: ', checkpointOrientation);
-        console.log('angleDifferenceAR: ', angleDifferenceAR);
-        console.log('newOrientation: ', newOrientation);
+        logger.debug('\ncheckpointOrientation: ', checkpointOrientation);
+        logger.debug('angleDifferenceAR: ', angleDifferenceAR);
+        logger.debug('newOrientation: ', newOrientation);
 
         // Normalize to range range (-180, 180]
         if (newOrientation > 180)        { newOrientation -= 360; }
         else if (newOrientation <= -180) { newOrientation += 360; }
 
-        console.log('newOrientation normalized: ', newOrientation, '\n');
+        logger.debug('newOrientation normalized: ', newOrientation, '\n');
 
         let dataObj = {
             "mission_id": moveToCoordinateGUID,
@@ -427,7 +428,7 @@ if (exports.enabled) {
             {"input_name":"orientation","value": newOrientation}]
         };
 
-        //console.log(dataObj);
+        //logger.debug(dataObj);
 
         currentOrientationMIR = newOrientation;
         lastDirectionAR.x = Math.cos(degrees_to_radians(checkpointOrientation));
@@ -442,23 +443,23 @@ if (exports.enabled) {
 
     function processData(data){
 
-        //console.log("   -   -   -   ", data);
+        //logger.debug("   -   -   -   ", data);
 
         // There has to be a better way of doing this
 
         if (data['robot_name'] === undefined){ // the robot name appears only when we ask for status
             
-            //console.log("   -   -   -   MISSION", data[0]);
+            //logger.debug("   -   -   -   MISSION", data[0]);
 
             for(var i = 0; i < data.length; i++) {
                 var obj = data[i];
 
                 if (obj.name === 'Move To Coordinate'){
                     moveToCoordinateGUID = obj.guid;
-                    //console.log("   -   -   -   ", moveToCoordinateGUID);
+                    //logger.debug("   -   -   -   ", moveToCoordinateGUID);
                 }   
             
-                //console.log(obj.name);
+                //logger.debug(obj.name);
             }
             
         } else {
@@ -469,17 +470,17 @@ if (exports.enabled) {
             currentPositionMIR.y = mirStatus['y'];
             currentOrientationMIR = mirStatus['orientation'];
 
-            //console.log(mirStatus);
+            //logger.debug(mirStatus);
 
-            //console.log("   -   -   -   ROBOT POS: ", dataStatus);
-            /*console.log("********************************");
-            console.log("   -   -   -   ROBOT NAME: " + data['robot_name']);
-            console.log("   -   -   -   mission_queue_id: " + data['mission_queue_id']);
-            console.log("   -   -   -   mission_queue_url: " + data['mission_queue_url']);
-            console.log("   -   -   -   mission_text: " + data['mission_text']);
-            console.log("   -   -   -   mode_id: " + data['mode_id']);
-            console.log("   -   -   -   state_id: " + data['state_id']);
-            console.log("   -   -   -   state_text: " + data['state_text']);*/
+            //logger.debug("   -   -   -   ROBOT POS: ", dataStatus);
+            /*logger.debug("********************************");
+            logger.debug("   -   -   -   ROBOT NAME: " + data['robot_name']);
+            logger.debug("   -   -   -   mission_queue_id: " + data['mission_queue_id']);
+            logger.debug("   -   -   -   mission_queue_url: " + data['mission_queue_url']);
+            logger.debug("   -   -   -   mission_text: " + data['mission_text']);
+            logger.debug("   -   -   -   mode_id: " + data['mode_id']);
+            logger.debug("   -   -   -   state_id: " + data['state_id']);
+            logger.debug("   -   -   -   state_text: " + data['state_text']);*/
 
             const state_id = parseInt(data['state_id']);
 
@@ -489,7 +490,7 @@ if (exports.enabled) {
 
                         if (mir_mission_interrupted){
 
-                            console.log('ALL MISSIONS STOPPED DUE TO INTERRUPTION');
+                            logger.debug('ALL MISSIONS STOPPED DUE TO INTERRUPTION');
 
                             mir_mission_interrupted = false;
 
@@ -499,12 +500,12 @@ if (exports.enabled) {
 
                         } else {
 
-                            console.log("MIR CHANGED STATE TO READY!");
+                            logger.debug("MIR CHANGED STATE TO READY!");
                             inMotion = false;
 
                             // MIR has finished mission. Send a 0 to current checkpoint
 
-                            console.log("\nSetting active checkpoint to 0", activeCheckpointName);
+                            logger.debug("\nSetting active checkpoint to 0", activeCheckpointName);
 
                             server.write("MIR", "kineticAR", activeCheckpointName, 0);
 
@@ -514,11 +515,11 @@ if (exports.enabled) {
                     break;
                 case 4:
                     // pause
-                    //console.log("PAUSE");
+                    //logger.debug("PAUSE");
                     break;
                 case 5:
                     if (mir_current_state !== 5){
-                        console.log("MIR CHANGED STATE TO EXECUTING!");
+                        logger.debug("MIR CHANGED STATE TO EXECUTING!");
 
                         mir_current_state = 5;
 
@@ -528,12 +529,12 @@ if (exports.enabled) {
 
                 case 10:
                     // emergency stop
-                    console.log("EMERGENCY STOP!");
+                    logger.debug("EMERGENCY STOP!");
                     break;
 
                 case 11:
                     // manual control
-                    //console.log("MANUAL CONTROL");
+                    //logger.debug("MANUAL CONTROL");
                     break;
                 default:
                     // code block
@@ -545,8 +546,8 @@ if (exports.enabled) {
     /*
     function followUser(){
 
-        console.log('Current YAW:', websocket.currentYaw());
-        console.log('Current Position:', websocket.currentRobotPosition);
+        logger.debug('Current YAW:', websocket.currentYaw());
+        logger.debug('Current Position:', websocket.currentRobotPosition);
 
         let _currentOrientation_MIR = websocket.currentYaw();                              // Orientation of the robot at this frame in degrees (from WebSocket)
         let _currentPosition_MIR = websocket.currentRobotPosition();                       // Position of the robot at this frame

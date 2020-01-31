@@ -29,7 +29,8 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var server = require('../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -60,7 +61,7 @@ if (exports.enabled) {
         //load the config file
         //lights = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf8"));
 
-        if (server.getDebug()) console.log("setup philipsHue");
+        logger.debug("setup philipsHue");
         for (var key in lights) {
             lights[key].switch = undefined;
             lights[key].bri = undefined;
@@ -98,7 +99,7 @@ if (exports.enabled) {
                 //TODO add some error handling
                 state = JSON.parse(str).state;
                 if (!state) {
-                    console.error('Philips Hue Error', str);
+                    logger.error('Philips Hue Error', str);
                     return;
                 }
                 if (state.on != light.switch) {
@@ -135,7 +136,7 @@ if (exports.enabled) {
 
         var req = http.request(options, callbackHttp);
         req.on('error', function (e) {
-            console.log('GetLightState HTTP error: ' + e.message);
+            logger.debug('GetLightState HTTP error', e.message);
         });
         req.end();
 
@@ -157,7 +158,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            console.log('writeSwitchState HTTP error: ' + e.message);
+            logger.debug('writeSwitchState HTTP error', e.message);
         });
 
         if (state < 0.5) {
@@ -198,7 +199,7 @@ if (exports.enabled) {
             }, 100);
         });
         req.on('error', function (e) {
-            console.log('writeBrightness HTTP error: ' + e.message);
+            logger.debug('writeBrightness HTTP error', e.message);
             setTimeout(function() {
                 writeBrightness.requestInFlight = false;
             }, 100);
@@ -224,7 +225,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            console.log('writeSaturation HTTP error: ' + e.message);
+            logger.debug('writeSaturation HTTP error', e.message);
         });
         req.write('{"sat":' + _.floor(sat * 254) + '}');
         req.end();
@@ -245,7 +246,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            console.log('writeHue HTTP error: ' + e.message);
+            logger.debug('writeHue HTTP error', e.message);
         });
         req.write('{"hue":' + _.floor(hue * 65535) + '}');
         req.end();
@@ -255,11 +256,10 @@ if (exports.enabled) {
      * @desc philipsHueServer() The main function, runs the setup and then periodically checks whether the lights are on.
      **/
     function philipsHueServer() {
-        console.log("philipsHue starting philipsHue");
+        logger.debug("philipsHue starting philipsHue");
         setup();
 
 
-        if (server.getDebug()) console.log("philipsHue setup read by poll");
         //TODO poll more often in productive environment
         for (var key in lights) {
             setInterval(function (light) {
