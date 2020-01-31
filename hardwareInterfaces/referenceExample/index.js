@@ -71,7 +71,7 @@ if (exports.enabled) {
             server.addNode("stoneTest", "markerPose", "testNode", "node");
 
             server.addReadListener("stoneTest", "markerPose", "testNode", function (data) {
-                console.log('HOLAAA');
+                // console.log('HOLAAA');
             });
 
             // Call move Node after you have created it.

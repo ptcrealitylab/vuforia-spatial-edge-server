@@ -42,7 +42,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var server = require('../../libraries/hardwareInterfaces');
+const logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -90,7 +91,7 @@ if (exports.enabled) {
                          baudRate: 19200
                      });
                      serialPort.on('error', function (err) {
-                         console.error("Serial port error", err);
+                         logger.error("Serial port error", err);
                      });
                      serialServer(serialPort);
                      break;
@@ -106,14 +107,14 @@ if (exports.enabled) {
         const parser = serialPort.pipe(new Readline({ delimiter: '\n' }));
         parser.on('data', function (data){
             // get a buffer of data from the serial port
-            // console.log(data,"test");
+            // logger.debug('serial data', data);
         });
-        if (server.getDebug()) console.log("opneserial");
+        logger.debug('serial opening');
        // serialPort.open();
 
         serialPort.on('open', function () {
 
-            if (server.getDebug()) console.log('Serial port opened');
+            logger.debug('Serial port opened');
             serialPortOpen = true;
             var dataSwitch = 0;
             var pos = null;
@@ -129,8 +130,8 @@ if (exports.enabled) {
             //var okCounter = 0;
 
         parser.on('data', function (data) {
-           // console.log(data.toString());
-               // console.log(data);
+           // logger.debug(data.toString());
+               // logger.debug(data);
                 switch (dataSwitch) {
                     case 0:
                         if (data === "f") {
@@ -164,15 +165,15 @@ if (exports.enabled) {
 
                             serialPort.write(" \n");
                             serialPort.write("okbird\n");
-                            if (server.getDebug()) console.log("ok as respond");
+                            logger.debug("serial response ok");
                             dataSwitch = 0;
                         }
                         else if (data === "def") {
-                            if (server.getDebug()) console.log("developer");
+                            logger.debug("serial response developer");
                             dataSwitch = 40;
                         }
                         else if (data === "c") {
-                            if (server.getDebug()) console.log("clear");
+                            logger.debug("serial response clear");
                             dataSwitch = 50;
 
                         }
@@ -203,7 +204,7 @@ if (exports.enabled) {
                         obj = object[1];
                         pos = object[0];
 
-                        if (server.getDebug()) console.log("Add Arduino Yun");
+                        logger.debug("Serial add Arduino Yun");
 
                         ArduinoLookup[obj + pos] = new ArduinoIndex();
                         ArduinoLookup[obj + pos].objName = obj;
@@ -226,9 +227,7 @@ if (exports.enabled) {
                         if(thisObjectID) {
                             FullLookup[thisObjectID][thisObjectID+pos] = arrayID;
 
-                           // console.log("dddddsasdasdasdasdasdasdasdasdasdsd ",obj, pos);
                             server.addReadListener(obj, "arduino01", pos, function (obj,pos,node,data) {
-                             //   console.log(obj,pos,data);
                               serialSender(serialPort, obj, pos, data.value, "f");
                             }.bind(data,thisObjectID,thisObjectID+pos,"node"));
 
@@ -261,21 +260,17 @@ if (exports.enabled) {
             serialPort.write("okbird\n");
 
         });
-        if (server.getDebug()) console.log("no problem");
     }
 
 
     function serialSender(serialPort, objName, ioName, value, mode) {
-       // console.log("check index: ", objName);
-
-       // console.log(FullLookup);
         if (FullLookup.hasOwnProperty(objName)) {
 
             if (FullLookup[objName].hasOwnProperty(ioName)) {
 
                 var index = FullLookup[objName][ioName];
 
-               // console.log("check index: ", index);
+               // logger.debug("check index: ", index);
                 var yunModes = ["f", "d", "p", "n"];
                 if (_.includes(yunModes, mode)) {
                     serialPort.write(mode + "\n");

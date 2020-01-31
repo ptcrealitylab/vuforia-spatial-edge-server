@@ -61,6 +61,7 @@
  */
 
 var request = require('request');
+var logger = require('../../../logger');
 
 var generalProperties = {
     // display name underneath icon in block menu
@@ -105,7 +106,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
     }
 
     // BUT ALSO: makes a post request to the server endpoint configured in publicData
-    console.log("making ifttt request to " + JSON.stringify(thisBlock.publicData));
+    logger.debug("making ifttt request to " + JSON.stringify(thisBlock.publicData));
 
     if (index === 0) {
 
@@ -122,14 +123,14 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
 
         request(options, function (err, res, body) {
             if (err) {
-                console.error('error posting json: ', err);
+                logger.error('error posting json: ', err);
                 throw err
             }
             var headers = res.headers;
             var statusCode = res.statusCode;
-            console.log('headers: ', headers);
-            console.log('statusCode: ', statusCode);
-            console.log('body: ', body);
+            logger.debug('headers: ', headers);
+            logger.debug('statusCode: ', statusCode);
+            logger.debug('body: ', body);
         });
 
     }

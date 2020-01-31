@@ -1,14 +1,15 @@
-
 var os = require('os');
 var path = require('path');
-
-var utilities = require(__dirname + '/utilities');
+var logger = require('../logger');
+var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
 var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 var git = require('simple-git')(homeDirectory);
 
-var saveCommit = function (object, objects, callback) {
-    console.log("got here");
+
+
+function saveCommit(object, objects, callback) {
+    logger.debug("git saveCommit");
    // Generating historic data for ghost images
    if (object) {
       var objectFolderName = object.name;
@@ -23,8 +24,8 @@ var saveCommit = function (object, objects, callback) {
                    git.init();
                    return;
                }
-               git.commit("server identity commit for " + objectFolderName, [objectFolderName+identityFile], function(){
-                   console.log("commit for "+objectFolderName);
+               git.commit("server identity commit for " + objectFolderName, [objectFolderName + identityFile], function(){
+                   logger.debug("commit for ", objectFolderName);
                    utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                    callback();
                })
@@ -38,10 +39,10 @@ var saveCommit = function (object, objects, callback) {
 
    }
 
-};
+}
 
-var resetToLastCommit = function (object, objects, callback) {
-    console.log("got here too");
+function resetToLastCommit(object, objects, callback) {
+    logger.debug("git resetToLastCommit");
     if (object) {
 
         if (!object.isWorldObject) { // TODO: fully support world objects too
@@ -52,7 +53,7 @@ var resetToLastCommit = function (object, objects, callback) {
                     return;
                 }
                 git.checkout(objectFolderName + identityFile, function () {
-                    console.log("reset for " + objectFolderName);
+                    logger.debug("reset for ", objectFolderName);
                     utilities.updateObject(objectFolderName, objects);
                     utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                     callback();

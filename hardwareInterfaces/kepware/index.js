@@ -29,7 +29,8 @@
  * TODO: Add some more functionality, i.e. change color or whatever the philips Hue API offers
  */
 //Enable this hardware interface
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var server = require('../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
@@ -84,7 +85,7 @@ if (exports.enabled) {
                     this.kepwareInterfaces[this.thisID].id = data.browseResults[i].id;
                     this.kepwareInterfaces[this.thisID].name = this.thisID.substr(this.thisID.lastIndexOf('.') + 1);
 
-                    console.log(kepwareServerName +"_"+ this.kepwareInterfaces[this.thisID].name);
+                    logger.debug("kepware browse", kepwareServerName, this.kepwareInterfaces[this.thisID].name);
                     server.addNode(kepwareServerName, kepwareServerName+"1",this.kepwareInterfaces[this.thisID].name, "node");
                     this.setReadList(kepwareServerName, kepwareServerName+"1",this.thisID, this.kepwareInterfaces[this.thisID].name, this.kepwareInterfaces);
                 }
@@ -140,7 +141,7 @@ if (exports.enabled) {
                         else  {this.kepwareInterfaces[thisID].data.v = 0;};
                     }
                     if(isNaN(this.kepwareInterfaces[thisID].data.v)){
-                        console.log( this.kepwareInterfaces[thisID].data.v);
+                        logger.debug("nan kepware data", this.kepwareInterfaces[thisID].data.v);
                         this.kepwareInterfaces[thisID].data.v = 0;
                     }
                     if(this.kepwareInterfaces[thisID].data.v > this.kepwareInterfaces[thisID].data.max) {
@@ -187,7 +188,10 @@ if (exports.enabled) {
             }.bind(this));
         }.bind(this);
         this.error = function() {
-            console.log("cant find kepware server: \033[33m"+ kepwareServerName +"\033[0m with the IP: \033[33m"+ kepwareServerIP+"\033[0m");
+            logger.debug("cant find kepware server", {
+                name: kepwareServerName,
+                ip: kepwareServerIP,
+            });
         }
     }
 }

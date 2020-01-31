@@ -1,4 +1,5 @@
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var server = require('../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -64,7 +65,7 @@ if (exports.enabled) {
             }
         });
         req.on('error', function(e) {
-            console.log('Problem with request:', e.message);
+            logger.error('Problem with request:', e.message);
             if (callback) {
                 callback();
             }
@@ -176,6 +177,6 @@ if (exports.enabled) {
         res.send('complete');
     });
     app.listen(42448, function() {
-        console.log('listening on 42448');
+        logger.debug('listening on 42448');
     });
 }

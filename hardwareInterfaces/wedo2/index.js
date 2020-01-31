@@ -47,7 +47,8 @@
 /**
  * Set to true to enable the hardware interface
  **/
-var server = require(__dirname + '/../../libraries/hardwareInterfaces');
+var server = require('../../libraries/hardwareInterfaces');
+var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -63,12 +64,12 @@ if (exports.enabled) {
 
 
    /* server.addAppReadListener (function (msg,arg){
-        console.log(msg,arg);
+        logger.debug(msg,arg);
     });
     */
 
    /* server.addAppReadListener (function (msg,arg){
-        console.log(msg,arg);
+        logger.debug(msg,arg);
     });
     */
 
@@ -109,7 +110,7 @@ if (exports.enabled) {
 
 
             if(wedo.wedo[uuid].name) {
-                console.log("#####################"+wedo.wedo[uuid].name);
+                logger.debug("wedo connected", wedo.wedo[uuid].name);
                 var thisWedo = wedo.wedo[uuid].name;
 
                 server.addNode(thisWedo, FRAME_NAME, "port 1", "node");
@@ -130,16 +131,16 @@ if (exports.enabled) {
                 server.activate(thisWedo);
 
                 server.addReadListener(names[uuid].name, FRAME_NAME, "port 1", function (names, wedo, uuid, data) {
-                    // console.log(names[uuid].name,data);
+                    // logger.debug(names[uuid].name,data);
                     if (names[uuid].px1 === "motor 1") {
                         wedo.setMotor(server.map(data.value, -1, 1, -100, 100), 1, uuid);
                     }
                 }.bind(this, names, wedo, uuid));
 
                 server.addReadListener(names[uuid].name, FRAME_NAME, "port 2", function (names, wedo, uuid, data) {
-                    //  console.log(names[uuid].name,data);
+                    //  logger.debug(names[uuid].name,data);
                     if (names[uuid].px2 === "motor 2") {
-                        //  console.log(server.map(data.value,0,1,-100,100));
+                        //  logger.debug(server.map(data.value,0,1,-100,100));
                         wedo.setMotor(server.map(data.value, -1, 1, -100, 100), 2, uuid);
                     }
                 }.bind(this, names, wedo, uuid));
