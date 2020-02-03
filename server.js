@@ -67,15 +67,19 @@
  ******************************************** constant settings *******************************************************
  **********************************************************************************************************************/
 
+const os = require('os');
+const isMobile = os.platform() === 'android' || os.platform() === 'ios';
+
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
-
-    var server = {};
-
-var globalVariables = {
-    developer: true, // show developer web GUI
-    debug: false, // debug messages to console
-    saveToDisk : false, // allow system to save to file system
+const globalVariables = {
+    // Show developer web GUI
+    developer: true,
+    // Send more debug messages to console
+    debug: false,
+    // Allow system to save to file system
+    saveToDisk : !isMobile,
+    // Create an object for attaching frames to the world
     worldObject : true
 };
 
@@ -91,12 +95,15 @@ var globalVariables = {
 
 const serverPort = 8080;
 const socketPort = serverPort;     // server and socket port are always identical
-const beatPort = 52317;            // this is the port for UDP broadcasting so that the objects find each other.
+const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const version = "3.2.0";           // the version of this server
-const protocol = "R2";           // the version of this server
+
+// The version of this server
+const version = isMobile ? "3.2.0" : "3.1.0";
+// The protocol of this server
+const protocol = "R2";
 const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
@@ -104,7 +111,6 @@ const netInterface = "en0";
 
 //logger.debug(parseInt(version.replace(/\./g, "")));
 
-var os = require('os');
 var path = require('path');
 
 // All objects are stored in this folder:
@@ -122,11 +128,7 @@ const objectInterfaceFolder = "/";
 /**********************************************************************************************************************
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
-const storage = {
-    initSync: function() {},
-    getItemSync: function() {},
-    setItemSync: function() {},
-}; // require('node-persist');
+const storage = require('./libraries/storage');
 storage.initSync();
 
 var logger = require('./logger');
@@ -185,7 +187,9 @@ var cors = require('cors');             // Library for HTTP Cross-Origin-Resourc
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
-// var sharp = require('sharp'); // Image resizing library
+
+// Image resizing library, not available on mobile
+const sharp = isMobile ? null : require('sharp');
 
 // additional files containing project code
 
@@ -195,36 +199,15 @@ var utilities = require(__dirname + '/libraries/utilities');
 var webFrontend = require(__dirname + '/libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
-// var hardwareAPI = require(__dirname + '/libraries/hardwareInterfaces');
+var hardwareAPI;
 
-var hardwareAPI = {
-    readCall: function() {
-    },
-    setup: function() {
-    },
-    reset: function() {
-    },
-    shutdown: function() {
-    },
-    triggerMatrixCallbacks: function() {
-    },
-    triggerUDPCallbacks: function() {
-    },
-    connectCall: function() {
-    },
-    runResetCallbacks: function() {
-    },
-    runFrameAddedCallbacks: function() {
-    },
-    readPublicDataCall: function() {
-    },
-    screenObjectCall: function() {
-    },
-    screenObjectServerCallBack: function() {
-    },
-};
+if (isMobile) {
+    hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
+} else {
+    hardwareAPI = require('./libraries/hardwareInterfaces');
+}
 
-var git = require(__dirname + '/libraries/gitInterface');
+var git = require('./libraries/gitInterface');
 
 //git.saveCommit("lego2", false);
 
@@ -758,7 +741,10 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
-var worldObjectName = '_WORLD_OBJECT_local';
+var worldObjectName = '_WORLD_OBJECT_';
+if (isMobile) {
+    worldObjectName += 'local';
+}
 var worldObject;
 
 /**********************************************************************************************************************
@@ -846,15 +832,18 @@ cout("Done loading world object");
 startSystem();
 cout("started");
 
-// get the directory names of all available soutyperces for the 3D-UI
 var hardwareAPIFolderList = [];
-// fs.readdirSync(hardwarePath).filter(function (file) {
-//     return fs.statSync(hardwarePath + '/' + file).isDirectory();
-// });
-// remove hidden directories
-if (hardwareAPIFolderList.length > 0) {
-    while (hardwareAPIFolderList[0][0] === ".") {
-        hardwareAPIFolderList.splice(0, 1);
+
+// Get the directory names of all available sources for the 3D-UI
+if (!isMobile) {
+    hardwareAPIFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
+        return fs.statSync(hardwarePath + '/' + file).isDirectory();
+    });
+    // remove hidden directories
+    if (hardwareAPIFolderList.length > 0) {
+        while (hardwareAPIFolderList[0][0] === ".") {
+            hardwareAPIFolderList.splice(0, 1);
+        }
     }
 }
 
@@ -1027,7 +1016,11 @@ function loadWorldObject() {
     // create a new world object
     worldObject = new Objects();
     worldObject.name = worldObjectName;
-    worldObject.objectId = worldObjectName;
+    if (isMobile) {
+        worldObject.objectId = worldObjectName;
+    } else {
+        worldObject.objectId = worldObjectName + utilities.uuidTime();
+    }
     worldObject.isWorldObject = true;
 
     // try to read previously saved data to overwrite the default world object
@@ -1145,6 +1138,10 @@ if (process.pid) {
  **/
 
 function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
+    if (isMobile) {
+        return;
+    }
+
     if (typeof oneTimeOnly === "undefined") {
         oneTimeOnly = false;
     }
@@ -1282,6 +1279,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 var thisIP = ips.interfaces[ips.activeInterface]; //ip.address();
 
 function objectBeatServer() {
+    if (isMobile) {
+        return;
+    }
 
     // creating the udp server
     var udpServer = dgram.createSocket("udp4");
@@ -1436,7 +1436,9 @@ function objectWebServer() {
 
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    webServer.use('/userinterface', express.static(path.join(__dirname, '../userinterface/')));
+    if (isMobile) {
+        webServer.use('/userinterface', express.static(path.join(__dirname, '../userinterface/')));
+    }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames', function (req, res, next) {
@@ -2330,7 +2332,7 @@ function objectWebServer() {
                 // copied fullsize file into resized image file as backup, in case resize operation fails
                 fs.copyFileSync(rawFilepath, resizedFilepath);
 
-                if (typeof sharp !== 'undefined') {
+                if (sharp) {
                     sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
                         if (!err) {
                             logger.debug('done resizing', info);
