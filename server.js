@@ -165,7 +165,9 @@ for(key in interfaceNames){
     ips.interfaces[interfaceNames[key]] = tempIps[0];
 };
 
-ips.interfaces[ips.activeInterface] = "127.0.0.1";
+if (isMobile) {
+    ips.interfaces[ips.activeInterface] = "127.0.0.1";
+}
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
