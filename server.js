@@ -179,7 +179,7 @@ webServer.engine('handlebars', exphbs({
 webServer.set('view engine', 'handlebars');
 
 var http = require('http').createServer(webServer).listen(serverPort, function () {
-    cout('webserver + socket.io is listening on port: ' + serverPort);
+    logger.debug('webserver + socket.io is listening on port', serverPort);
 });
 var io = require('socket.io')(http); // Websocket library
 var socket = require('socket.io-client'); // websocket client source
@@ -752,7 +752,7 @@ var worldObject;
  **********************************************************************************************************************/
 
 
-cout("Starting the Server");
+logger.debug("Starting the Server");
 
 // get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
 // Each folder represents on IO-Point.
@@ -788,8 +788,8 @@ for (var i = 0; i < blockFolderList.length; i++) {
 }
 
 
-cout("Initialize System: ");
-cout("Loading Hardware interfaces");
+logger.debug("Initialize System: ");
+logger.debug("Loading Hardware interfaces");
 
 
 var hardwareAPICallbacks = {
@@ -818,19 +818,19 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, worldObject, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
-cout("Done");
+logger.debug("Done");
 
-cout("Loading Objects");
+logger.debug("Loading Objects");
 // This function will load all the Objects
 loadObjects();
-cout("Done loading objects");
+logger.debug("Done loading objects");
 if(globalVariables.worldObject) {
     loadWorldObject();
 }
-cout("Done loading world object");
+logger.debug("Done loading world object");
 
 startSystem();
-cout("started");
+logger.debug("started");
 
 var hardwareAPIFolderList = [];
 
@@ -857,12 +857,12 @@ for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
     }
 }
 
-cout("ready to start internal servers");
+logger.debug("ready to start internal servers");
 
 hardwareAPI.reset();
 
-cout("found " + hardwareAPIFolderList.length + " internal server");
-cout("starting internal Server.");
+logger.debug("found " + hardwareAPIFolderList.length + " internal server");
+logger.debug("starting internal Server.");
 
 /**
  * Returns the file extension (portion after the last dot) of the given filename.
@@ -880,7 +880,7 @@ function getFileExtension(fileName) {
  * @desc Add objects from the objects folder to the system
  **/
 function loadObjects() {
-    cout("Enter loadObjects");
+    logger.debug("Enter loadObjects");
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
     var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
@@ -893,12 +893,12 @@ function loadObjects() {
             objectFolderList.splice(0, 1);
         }
     } catch (e) {
-        cout("no hidden files");
+        logger.debug("no hidden files");
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
         var tempFolderName = utilities.getObjectIdFromTarget(objectFolderList[i], objectsPath);
-        cout("TempFolderName: " + tempFolderName);
+        logger.debug("TempFolderName: " + tempFolderName);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -949,17 +949,17 @@ function loadObjects() {
                     }
                 }
 
-                cout("I found objects that I want to add");
+                logger.debug("I found objects that I want to add");
 
 
             } catch (e) {
                 objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
-                cout("No saved data for: " + tempFolderName);
+                logger.debug("No saved data for: " + tempFolderName);
             }
 
         } else {
-            cout(" object " + objectFolderList[i] + " has no marker yet");
+            logger.debug(" object " + objectFolderList[i] + " has no marker yet");
         }
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
@@ -1056,7 +1056,7 @@ function loadWorldObject() {
 
         fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
             if (err) {
-                logger.debug(err);
+                logger.debug('worldObject save error', err);
             } else {
                 //logger.debug('JSON saved to ' + jsonFilePath);
             }
@@ -1148,7 +1148,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     var HOST = '255.255.255.255';
 
-    cout("creating beat for object: " + thisId);
+    logger.debug("creating beat for object: " + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
 
@@ -1159,7 +1159,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     }
 
     // Objects
-    cout("with version number: " + thisVersionNumber);
+    logger.debug("with version number: " + thisVersionNumber);
     var zone = "";
     if(objects[thisId].zone) zone = objects[thisId].zone;
 
@@ -1182,8 +1182,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         tcs: objects[thisId].tcs,
         zone: zone
     }));
-    cout("UDP broadcasting on port: " + PORT);
-    cout("Sending beats... Content: " + JSON.stringify({
+    logger.debug("UDP broadcasting on port: " + PORT);
+    logger.debug("Sending beats... Content: " + JSON.stringify({
         id: thisId,
         ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
@@ -1204,7 +1204,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         setInterval(function () {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
-                // cout("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
+                // logger.debug("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
                 var zone = "";
                 if(objects[thisId].zone) zone = objects[thisId].zone;
 
@@ -1228,8 +1228,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
-                        cout("error in beatSender");
-                        logger.debug(err);
+                        logger.debug('error in beatSender', err);
                         //throw err;
                     }
                     // client is not being closed, as the beat is send ongoing
@@ -1286,7 +1285,7 @@ function objectBeatServer() {
     // creating the udp server
     var udpServer = dgram.createSocket("udp4");
     udpServer.on("error", function (err) {
-        cout("server error:\n" + err);
+        logger.debug('server error', err);
         udpServer.close();
     });
 
@@ -1314,11 +1313,11 @@ function objectBeatServer() {
             if (msgContent.ip)
                 knownObjects[msgContent.id].ip = msgContent.ip;
 
-            cout("I found new Objects: " + JSON.stringify(knownObjects[msgContent.id]));
+            logger.debug("I found new Objects: " + JSON.stringify(knownObjects[msgContent.id]));
         }
         // check if action 'ping'
         if (msgContent.action === "ping") {
-            cout(msgContent.action);
+            logger.debug(msgContent.action);
             for (var key in objects) {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
@@ -1337,7 +1336,7 @@ function objectBeatServer() {
 
     udpServer.on("listening", function () {
         var address = udpServer.address();
-        cout("UDP listening on port: " + address.port);
+        logger.debug("UDP listening on port: " + address.port);
     });
 
     // bind the udp server to the udp beatPort
@@ -1495,7 +1494,7 @@ function objectWebServer() {
 
     webServer.use('/logicNodeIcon', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-        logger.debug(urlArray);
+        logger.debug('logicNodeIcon urlArray', urlArray);
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
         if (!fs.existsSync(fileName)) {
@@ -1760,7 +1759,7 @@ function objectWebServer() {
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            cout("deleted link: " + linkID);
+            logger.debug("deleted link: " + linkID);
             updateStatus = "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
         }
 
@@ -1818,7 +1817,7 @@ function objectWebServer() {
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-                cout("added link: " + linkID);
+                logger.debug("added link: " + linkID);
                 updateStatus = "added";
             } else {
                 updateStatus = "found endless Loop";
@@ -1900,7 +1899,7 @@ function objectWebServer() {
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            cout("added block: " + blockID);
+            logger.debug("added block: " + blockID);
             updateStatus = "added";
         }
 
@@ -1935,7 +1934,7 @@ function objectWebServer() {
         if (foundNode) {
 
             delete foundNode.blocks[blockID];
-            cout("deleted block: " + blockID);
+            logger.debug("deleted block: " + blockID);
 
             var thisLinks = foundNode.links;
             // Make sure that no links are connected to deleted blocks
@@ -1975,7 +1974,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        cout("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
+        logger.debug("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
 
         var foundNode = getNode(objectID, frameID, nodeID);
 
@@ -2030,11 +2029,11 @@ function objectWebServer() {
     });
 
     function triggerBlock(objectID, frameID, nodeID, blockID, body) {
-        logger.debug(objectID, frameID, nodeID, blockID, body);
+        logger.debug('triggerBlock', objectID, frameID, nodeID, blockID, body);
         var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
             var block = foundNode.blocks[blockID];
-            logger.debug(block);
+            logger.debug('block', block);
             logger.debug('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
 
             block.data[0].value = body.value;
@@ -2094,7 +2093,7 @@ function objectWebServer() {
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
 
-            cout("added logic node: " + nodeID);
+            logger.debug("added logic node: " + nodeID);
             updateStatus = "added";
         }
 
@@ -2126,7 +2125,7 @@ function objectWebServer() {
         var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
             delete foundFrame.nodes[nodeID];
-            cout("deleted node: " + nodeID);
+            logger.debug("deleted node: " + nodeID);
 
             //todo check all links as well in object
             // Make sure that no links are connected to deleted objects
@@ -2173,7 +2172,7 @@ function objectWebServer() {
 
         var updateStatus = "nothing happened";
 
-        cout("changing Size for :" + objectID + " : " + nodeID);
+        logger.debug("changing Size for :" + objectID + " : " + nodeID);
 
         getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
@@ -2388,7 +2387,7 @@ function objectWebServer() {
         var linkAddedData = null;
 
         if (fullEntry) {
-            logger.debug(fullEntry);
+            logger.debug('getLinkData', fullEntry);
 
             var linkObjectA = fullEntry["objectA"];
             var linkObjectB = fullEntry["objectB"];
@@ -2499,7 +2498,7 @@ function objectWebServer() {
                 delete socketArray[destinationIp];
             }
 
-            cout("deleted link: " + linkKey);
+            logger.debug("deleted link: " + linkKey);
             updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
         }
 
@@ -2546,7 +2545,7 @@ function objectWebServer() {
             foundFrame.links[linkID] = body;
 
             if (!body.loop) {
-                cout("added link: " + linkID);
+                logger.debug("added link: " + linkID);
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
@@ -2889,7 +2888,7 @@ function objectWebServer() {
                 videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
             }
 
-            logger.debug('videoDir is: ' + videoDir);
+            logger.debug('videoDir is', videoDir);
 
             if (!fs.existsSync(videoDir)) {
                 logger.debug('make videoDir');
@@ -3157,7 +3156,7 @@ function objectWebServer() {
     webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
-        logger.debug('making a copy of frame: ' + frameID);
+        logger.debug('making a copy of frame', frameID);
 
         getFrameAsync(objectID, frameID, function(error, object, frame) {
             if (error) {
@@ -3284,7 +3283,7 @@ function objectWebServer() {
         var objectId = req.params.objectId;
         var frameId = req.params.frameId;
 
-        logger.debug('delete frame from server: ' + objectId + ' :: ' + frameId);
+        logger.debug('delete frame from server', objectId, frameId);
 
         var object = getObject(objectId);
         if (!object) {
@@ -3438,7 +3437,7 @@ function objectWebServer() {
          */
         function changeSize(objectID, frameID, nodeID, body, callback) {
 
-            cout("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
+            logger.debug("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
 
             var activeVehicle = null;
 
@@ -3452,7 +3451,7 @@ function objectWebServer() {
 
                 // logger.debug('really changing size for ... ' + activeVehicle.uuid, body);
 
-                // cout("post 2");
+                // logger.debug("post 2");
                 var updateStatus = "nothing happened";
 
                 // the reality editor will overwrite all properties from the new frame except these.
@@ -3589,19 +3588,19 @@ function objectWebServer() {
         // sends the info page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
-            // cout("get 12");
+            // logger.debug("get 12");
             res.send(webFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
-            // cout("get 12");
+            // logger.debug("get 12");
             res.send(webFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         // sends the content page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
-            logger.debug(req.params.object, req.params.frame);
+            logger.debug('get frameFolder', req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.object +"/" + req.params.frame;
             var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
@@ -3612,8 +3611,8 @@ function objectWebServer() {
 
 
         webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
-            // cout("get 13");
-            logger.debug(req.params);
+            // logger.debug("get 13");
+            logger.debug('get frame index', req.params);
             res.send(webFrontend.uploadTargetContentFrame(req.params.object, req.params.frame, objectsPath, objectInterfaceFolder));
         });
 
@@ -3635,7 +3634,7 @@ function objectWebServer() {
         // sends the target page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
-            //   cout("get 14");
+            //   logger.debug("get 14");
             res.send(webFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
         });
@@ -3647,7 +3646,7 @@ function objectWebServer() {
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
-            // cout("get 16");
+            // logger.debug("get 16");
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject));
         });
 
@@ -3658,7 +3657,7 @@ function objectWebServer() {
         });
 
         webServer.get('/server/networkInterface/*/', function (req, res) {
-            logger.debug( req.params[0]);
+            logger.debug('get networkInterface', req.params[0]);
             ips.activeInterface = req.params[0];
             res.json(ips);
 
@@ -3691,7 +3690,7 @@ function objectWebServer() {
         webServer.get('/object/*/screen/', function (req, res) {
             var objectID = req.params[0];
             getObject(objectID).visualization = "screen";
-            logger.debug(objectID, "screen");
+            logger.debug('screen', objectID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
@@ -3699,7 +3698,7 @@ function objectWebServer() {
         webServer.get('/object/*/ar/', function (req, res) {
             var objectID = req.params[0];
             getObject(objectID).visualization = "ar";
-            logger.debug(objectID, "ar");
+            logger.debug('ar', objectID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             res.send("ok");
         });
@@ -3896,8 +3895,8 @@ function objectWebServer() {
             }
 
             if (req.body.action === "new") {
-                logger.debug("got NEW "+req.body.name );
-                // cout(req.body);
+                logger.debug("got NEW", req.body.name);
+                // logger.debug(req.body);
                 if (req.body.name !== "" && !req.body.frame) {
                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
@@ -3996,7 +3995,7 @@ function objectWebServer() {
 
                     }
 
-                    cout("i deleted: " + tempFolderName2);
+                    logger.debug("i deleted: " + tempFolderName2);
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
                     res.send("ok");
@@ -4011,9 +4010,9 @@ function objectWebServer() {
         //*************************************************************************************
         webServer.post(objectInterfaceFolder + 'backup/',
             function (req, res) {
-                // cout("post 23");
+                // logger.debug("post 23");
 
-                cout("komm ich hier hin?");
+                logger.debug("komm ich hier hin?");
 
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath,  // don't forget the __dirname here
@@ -4036,29 +4035,29 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
-                    // cout("------------" + form.uploadDir + " " + filename);
+                    // logger.debug("------------" + form.uploadDir + " " + filename);
 
                     if (getFileExtension(filename) === "zip") {
 
-                        cout("I found a zip file");
+                        logger.debug("I found a zip file");
 
                         try {
                             var DecompressZip = require('decompress-zip');
                             var unzipper = new DecompressZip(folderD + "/" + filename);
 
                             unzipper.on('error', function (err) {
-                                cout('Caught an error');
+                                logger.debug('Caught an error');
                             });
 
                             unzipper.on('extract', function (log) {
-                                cout('Finished extracting');
-                                cout("have created a new object");
+                                logger.debug('Finished extracting');
+                                logger.debug("have created a new object");
                                 //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
                                 createObjectFromTarget(Objects, objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                 //todo add object to the beatsender.
 
-                                cout("have created a new object");
+                                logger.debug("have created a new object");
                                 fs.unlinkSync(folderD + "/" + filename);
 
                                 res.status(200);
@@ -4067,7 +4066,7 @@ function objectWebServer() {
                             });
 
                             unzipper.on('progress', function (fileIndex, fileCount) {
-                                cout('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                logger.debug('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                             });
 
                             unzipper.extract({
@@ -4077,10 +4076,10 @@ function objectWebServer() {
                                 }
                             });
 
-                            cout("extracting: " + filename + "  " + folderD);
+                            logger.debug("extracting: " + filename + "  " + folderD);
 
                         } catch (err) {
-                            cout("could not unzip file");
+                            logger.debug("could not unzip file");
                         }
                     }
                 });
@@ -4092,7 +4091,7 @@ function objectWebServer() {
         webServer.post(objectInterfaceFolder + 'content/:id',
             function (req, res) {
 
-                cout("object is: " + req.params.id);
+                logger.debug("object is: " + req.params.id);
 
                 tmpFolderFile = req.params.id;
 
@@ -4129,7 +4128,7 @@ function objectWebServer() {
                         delete knownObjects[tempFolderName2];
                     }
 
-                    cout("i deleted: " + tempFolderName2);
+                    logger.debug("i deleted: " + tempFolderName2);
 
                     res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
                 }
@@ -4151,8 +4150,7 @@ function objectWebServer() {
                     if (req.headers.type === "targetUpload") {
                         file.path = form.uploadDir + "/" + file.name;
                     } else if(req.headers.type === "fileUpload") {
-                        logger.debug(form.uploadDir);
-                        logger.debug(req.headers.folder);
+                        logger.debug('upload begins', form.uploadDir, req.headers.folder);
 
                         if(typeof req.headers.folder !== "undefined"){
                             file.path = form.uploadDir + "/" + req.headers.frame +"/"+ req.headers.folder +"/" +file.name;
@@ -4166,18 +4164,17 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
-                    cout("------------" + form.uploadDir + "/" + filename);
+                    logger.debug("------------" + form.uploadDir + "/" + filename);
 
                     if (req.headers.type === "targetUpload") {
-                        logger.debug(req.params.id);
-                        logger.debug("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                        logger.debug('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
 
                         if (fileExtension === "jpg") {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + "/target/")) {
                                 fs.mkdirSync(folderD + '/' + identityFolderName + "/target/", "0766", function (err) {
                                     if (err) {
-                                        cout(err);
+                                        logger.debug(err);
                                         res.send("ERROR! Can't make the directory! \n");    // echo the result back
                                     }
                                 });
@@ -4198,9 +4195,9 @@ function objectWebServer() {
                             if (!fs.existsSync(xmlOutFile)) {
                                 fs.writeFile(xmlOutFile, documentcreate, function (err) {
                                     if (err) {
-                                        cout(err);
+                                        logger.debug(err);
                                     } else {
-                                        cout("XML saved to " + xmlOutFile);
+                                        logger.debug("XML saved to " + xmlOutFile);
                                     }
                                 });
                             }
@@ -4251,14 +4248,14 @@ function objectWebServer() {
 
                         else if (fileExtension === "zip") {
 
-                            cout("I found a zip file");
+                            logger.debug("I found a zip file");
 
                             try {
                                 var DecompressZip = require('decompress-zip');
                                 var unzipper = new DecompressZip(folderD + "/" + filename);
 
                                 unzipper.on('error', function (err) {
-                                    cout('Caught an error in unzipper');
+                                    logger.debug('Caught an error in unzipper');
                                 });
 
                                 unzipper.on('extract', function (log) {
@@ -4266,7 +4263,7 @@ function objectWebServer() {
                                     var folderFileType;
 
                                     for (var i = 0; i < folderFile.length; i++) {
-                                        cout(folderFile[i]);
+                                        logger.debug(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
                                         if (folderFileType === "xml" || folderFileType === "dat") {
                                             fs.renameSync(folderD + '/' + identityFolderName + "/target/" + folderFile[i], folderD + '/' + identityFolderName + "/target/target." + folderFileType);
@@ -4278,15 +4275,15 @@ function objectWebServer() {
 
                                     if (fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) {
 
-                                        cout("creating object from target file " + tmpFolderFile);
+                                        logger.debug("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
-                                        cout("have created a new object");
+                                        logger.debug("have created a new object");
 
                                         hardwareAPI.reset();
-                                        cout("have initialized the modules");
+                                        logger.debug("have initialized the modules");
 
                                         var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
 
@@ -4331,7 +4328,7 @@ function objectWebServer() {
                                 });
 
                                 unzipper.on('progress', function (fileIndex, fileCount) {
-                                    cout('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                    logger.debug('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                                 });
 
                                 unzipper.extract({
@@ -4341,7 +4338,7 @@ function objectWebServer() {
                                     }
                                 });
                             } catch (err) {
-                                cout("could not unzip file");
+                                logger.debug("could not unzip file");
                             }
                         } else {
                             res.status(200);
@@ -4357,7 +4354,7 @@ function objectWebServer() {
             });
     } else {
         webServer.get(objectInterfaceFolder, function (req, res) {
-            //   cout("GET 21");
+            //   logger.debug("GET 21");
             res.send("Objects<br>Developer functions are off");
         });
     }
@@ -4367,16 +4364,16 @@ function objectWebServer() {
 //createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
 function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
-    cout("I can start");
+    logger.debug("I can start");
 
     var folder = objectsPath + '/' + folderVar + '/';
-    cout(folder);
+    logger.debug(folder);
 
     if (fs.existsSync(folder)) {
-        cout("folder exists");
+        logger.debug("folder exists");
         var objectIDXML = utilities.getObjectIdFromTarget(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
-        cout("got ID: objectIDXML");
+        logger.debug("got ID: objectIDXML");
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
@@ -4385,16 +4382,16 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
 
-                cout("this should be the IP" + objectIDXML);
+                logger.debug("this should be the IP" + objectIDXML);
 
                 try {
                     objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + "/object.json", "utf8"));
                     objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
-                    cout("testing: " + objects[objectIDXML].ip);
+                    logger.debug("testing: " + objects[objectIDXML].ip);
                 } catch (e) {
                     objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
-                    cout("testing: " + objects[objectIDXML].ip);
-                    cout("No saved data for: " + objectIDXML);
+                    logger.debug("testing: " + objects[objectIDXML].ip);
+                    logger.debug("No saved data for: " + objectIDXML);
                 }
 
                 if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
@@ -4409,7 +4406,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 
                 hardwareAPI.reset();
 
-                cout("weiter im text " + objectIDXML);
+                logger.debug("weiter im text " + objectIDXML);
                 utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
 
                 objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
@@ -4461,11 +4458,11 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                cout("reality editor subscription for object: " + msgContent.object);
-                cout("the latest socket has the ID: " + socket.id);
+                logger.debug("reality editor subscription for object: " + msgContent.object);
+                logger.debug("the latest socket has the ID: " + socket.id);
 
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
-                cout(realityEditorSocketArray);
+                logger.debug(realityEditorSocketArray);
             }
 
             var publicData = {};
@@ -4511,11 +4508,11 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                cout("reality editor subscription for object: " + msgContent.object);
-                cout("the latest socket has the ID: " + socket.id);
+                logger.debug("reality editor subscription for object: " + msgContent.object);
+                logger.debug("the latest socket has the ID: " + socket.id);
 
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
-                cout(realityEditorSocketArray);
+                logger.debug(realityEditorSocketArray);
             }
 
             var publicData = {};
@@ -4543,11 +4540,11 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
 
             if (doesObjectExist(msgContent.object)) {
-                cout("reality editor block: " + msgContent.object);
-                cout("the latest socket has the ID: " + socket.id);
+                logger.debug("reality editor block: " + msgContent.object);
+                logger.debug("the latest socket has the ID: " + socket.id);
 
                 realityEditorBlockSocketArray[socket.id] = {object: msgContent.object};
-                cout(realityEditorBlockSocketArray);
+                logger.debug(realityEditorBlockSocketArray);
             }
 
             var publicData = {};
@@ -4650,9 +4647,7 @@ function socketServer() {
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
             var msgContent = JSON.parse(msg);
             realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
-            logger.debug('editor ' + msgContent.editorId + ' subscribed to updates');
-            logger.debug("WTF");
-            logger.debug(realityEditorUpdateSocketArray);
+            logger.debug('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
         });
 
         socket.on('/update', function (msg) {
@@ -4692,7 +4687,7 @@ function socketServer() {
         });
     });
     this.io = io;
-    cout('socket.io started');
+    logger.debug('socket.io started');
 }
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
@@ -5044,7 +5039,7 @@ function socketSender(object, frame, link, data) {
             }
         }
         catch (e) {
-            cout("can not emit from link ID:" + link + "and object: " + object);
+            logger.debug("can not emit from link ID:" + link + "and object: " + object);
         }
 
     }
@@ -5060,7 +5055,7 @@ function socketSender(object, frame, link, data) {
  **/
 // TODO: implement new object lookup functions here
 function socketUpdater() {
-    // cout(knownObjects);
+    // logger.debug(knownObjects);
     // delete unconnected connections
     var sockKey, objectKey, nodeKey, frameKey;
 
@@ -5092,7 +5087,7 @@ function socketUpdater() {
                 if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
                     var thisIp = knownObjects[thisLink.objectB].ip;
                     if (!(thisIp in socketArray)) {
-                        // cout("shoudl not show up -----------");
+                        // logger.debug("shoudl not show up -----------");
                         socketArray[thisIp] = new ObjectSockets(socketPort, thisIp);
                     }
                 }
@@ -5107,13 +5102,13 @@ function socketUpdater() {
             if (!socketArray[socketKey].io.connected) {
                 for (var objectKey in knownObjects) {
                     if (knownObjects[objectKey] === socketKey) {
-                        cout("Looking for: " + objectKey + " with the ip: " + socketKey);
+                        logger.debug("Looking for: " + objectKey + " with the ip: " + socketKey);
                     }
                 }
             }
         }
 
-        cout(sockets.sockets + " connections; " + sockets.connected + " connected and " + sockets.notConnected + " not connected");
+        logger.debug(sockets.sockets + " connections; " + sockets.connected + " connected and " + sockets.notConnected + " not connected");
 
     }
     sockets.socketsOld = sockets.sockets;
@@ -5150,10 +5145,6 @@ function socketUpdaterInterval() {
     setInterval(function () {
         socketUpdater();
     }, socketUpdateInterval);
-}
-
-function cout(msg) {
-    if (globalVariables.debug) logger.debug(msg);
 }
 
 function checkObjectActivation(id) {
