@@ -3771,15 +3771,9 @@ function objectWebServer() {
             res.status(404).json({failure: true, error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'}).end();
         });
 
-        // sends json object for a specific reality object. * is the object name
-        // ths is the most relevant for
-        // ****************************************************************************************************************
-        webServer.get('/object/*/', function (req, res) {
-            var objectID = req.params[0];
-            var object = getObject(objectID);
-
-            logger.debug("----x---xx----xx--x-----");
-
+        // sends json object for a specific reality object
+        webServer.get('/object/:objectId/', function (req, res) {
+            var object = getObject(req.params.objectId);
             res.json(object);
         });
 
