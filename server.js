@@ -1026,11 +1026,13 @@ function loadWorldObject() {
     worldObject.isWorldObject = true;
 
     // try to read previously saved data to overwrite the default world object
-    try {
-        worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        logger.debug('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
-    } catch (e) {
-        logger.debug('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+    if (globalVariables.saveToDisk) {
+        try {
+            worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            logger.debug('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+        } catch (e) {
+            logger.debug('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+        }
     }
 
     worldObject.ip = ips.interfaces[ips.activeInterface];
