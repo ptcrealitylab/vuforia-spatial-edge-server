@@ -121,7 +121,6 @@ var logger = require('./logger');
 var _ = require('lodash');    // JavaScript utility library
 var fs = require('fs');       // Filesystem library
 var dgram = require('dgram'); // UDP Broadcasting library
-var ip = require("ip");       // get the device IP address library
 var ips = {activeInterface : "en0", interfaces : {}};
 if(storage.getItemSync('activeNetworkInterface') !== undefined){
     //logger.debug( storage.getItemSync('activeNetworkInterface'));
@@ -130,7 +129,6 @@ if(storage.getItemSync('activeNetworkInterface') !== undefined){
 
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
-var exphbs = require('express-handlebars'); // View Template library
 
 // create objects folder at objectsPath if necessary
 if(!fs.existsSync(objectsPath)) {
@@ -144,31 +142,35 @@ var identityFolderName = '.identity';
 var globalFrames = require('./libraries/globalFrames');
 globalFrames.initialize(frameLibPath, identityFolderName);
 
-// find ips
-var ni = require('network-interfaces');
-var options = {ipVersion: 4};
-
-var interfaceNames = ni.getInterfaces(options);
-for(key in interfaceNames){
-    var tempIps = ni.toIps(interfaceNames[key], options);
-    for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
-    ips.interfaces[interfaceNames[key]] = tempIps[0];
-};
-
 if (isMobile) {
     ips.interfaces[ips.activeInterface] = "127.0.0.1";
+} else {
+    // find ips
+    var ni = require('network-interfaces');
+    var options = {ipVersion: 4};
+
+    var interfaceNames = ni.getInterfaces(options);
+    for(var key in interfaceNames){
+        var tempIps = ni.toIps(interfaceNames[key], options);
+        for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
+        ips.interfaces[interfaceNames[key]] = tempIps[0];
+    }
 }
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
-webServer.set('views', 'libraries/webInterface/views');
 
-webServer.engine('handlebars', exphbs({
-    defaultLayout: 'main',
-    layoutsDir: 'libraries/webInterface/views/layouts',
-    partialsDir: 'libraries/webInterface/views/partials'
-}));
-webServer.set('view engine', 'handlebars');
+if (!isMobile) {
+    webServer.set('views', 'libraries/webInterface/views');
+
+    var exphbs = require('express-handlebars'); // View Template library
+    webServer.engine('handlebars', exphbs({
+        defaultLayout: 'main',
+        layoutsDir: 'libraries/webInterface/views/layouts',
+        partialsDir: 'libraries/webInterface/views/partials'
+    }));
+    webServer.set('view engine', 'handlebars');
+}
 
 var http = require('http').createServer(webServer).listen(serverPort, function () {
     logger.debug('webserver + socket.io is listening on port', serverPort);
@@ -178,7 +180,6 @@ var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
-var request = require('request');
 
 // Image resizing library, not available on mobile
 const sharp = isMobile ? null : require('sharp');
@@ -187,8 +188,15 @@ const sharp = isMobile ? null : require('sharp');
 
 // This file hosts all kinds of utilities programmed for the server
 var utilities = require('./libraries/utilities');
+
 // The web frontend a developer is able to see when creating new user interfaces.
-var webFrontend = require('./libraries/webFrontend');
+var webFrontend;
+if (isMobile) {
+    webFrontend = require('./libraries/mobile/webFrontend');
+} else {
+    webFrontend = require('./libraries/webFrontend');
+}
+
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
@@ -209,9 +217,12 @@ if (isMobile) {
     hardwareAPI = require('./libraries/hardwareInterfaces');
 }
 
-var git = require('./libraries/gitInterface');
-
-//git.saveCommit("lego2", false);
+var git;
+if (isMobile) {
+    git = null;
+} else {
+    git = require('./libraries/gitInterface');
+}
 
 var util = require("util"); // node.js utility functionality
 var events = require("events"); // node.js events used for the socket events.
@@ -2944,6 +2955,10 @@ function objectWebServer() {
      */
 
     webServer.post('/object/:id/saveCommit', function (req, res) {
+        if (isMobile) {
+            res.status(500).send('saveCommit unavailable on mobile');
+            return;
+        }
         var object = getObject(req.params.id);
         if (object) {
             git.saveCommit(object, objects, function() {
@@ -2954,6 +2969,10 @@ function objectWebServer() {
     });
 
     webServer.post('/object/:id/resetToLastCommit', function (req, res) {
+        if (isMobile) {
+            res.status(500).send('resetToLastCommit unavailable on mobile');
+            return;
+        }
         var object = getObject(req.params.id);
         if (object) {
             git.resetToLastCommit(object, objects, function() {
@@ -3688,11 +3707,15 @@ function objectWebServer() {
             res.send("ok");
         });
 
-        // request a zip-file with the object stored inside. *1 is the object
+        // request a zip-file with the object stored inside
         // ****************************************************************************************************************
-        webServer.get('/object/*/zipBackup/', function (req, res) {
-            var objectID = req.params[0];
-            logger.debug("++++++++++++++++++++++++++++++++++++++++++++++++");
+        webServer.get('/object/:objectId/zipBackup/', function (req, res) {
+            if (isMobile) {
+                res.status(500).send('zipBackup unavailable on mobile');
+                return;
+            }
+            var objectId = req.params.objectId;
+            logger.debug('sending zipBackup', objectId);
 
             if (!fs.existsSync(path.join(objectsPath, objectID))) {
                 res.status(404).send('object directory for ' + objectID + 'does not exist at ' + objectsPath + '/' + objectID);
@@ -3701,14 +3724,14 @@ function objectWebServer() {
 
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=' + objectID + '.zip'
+                'Content-disposition': 'attachment; filename=' + objectId + '.zip'
             });
             
             var archiver = require('archiver');
 
             var zip = archiver('zip');
             zip.pipe(res);
-            zip.directory(objectsPath + '/' + objectID, objectID + "/");
+            zip.directory(objectsPath + '/' + objectId, objectId + "/");
             zip.finalize();
         });
         
