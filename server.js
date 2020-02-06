@@ -1017,13 +1017,13 @@ function loadWorldObject() {
     var jsonFilePath = path.join(folder, 'object.json');
 
     // create objects folder at objectsPath if necessary
-    if(!fs.existsSync(folder)) {
+    if(globalVariables.saveToDisk && !fs.existsSync(folder)) {
         logger.debug('created worldObject directory at ' + folder);
         fs.mkdirSync(folder);
     }
 
     // create a /.identity folder within it to hold the object.json data
-    if(!fs.existsSync(identityPath)) {
+    if(globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
         logger.debug('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
     }
