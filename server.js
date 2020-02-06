@@ -45,25 +45,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-/*********************************************************************************************************************
- ******************************************** TODOS *******************************************************************
- **********************************************************************************************************************
 
- **
-
- * TODO - Only allow upload backups and not any other data....
- *
- * TODO - check any collision with knownObjects -> Show collision with other object....
- * TODO - Check if Targets are double somehwere. And iff Target has more than one target in the file...
- *
- * TODO - Check the socket connections
- * TODO - check if links are pointing to values that actually exist. - (happens in browser at the moment)
- * TODO - Test self linking from internal to internal value (endless loop) - (happens in browser at the moment)
- *
- * TODO - Checksum for marker needs to be verified on the server side as well.
- **
-
- **********************************************************************************************************************
+/**********************************************************************************************************************
  ******************************************** constant settings *******************************************************
  **********************************************************************************************************************/
 
