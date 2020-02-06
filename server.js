@@ -209,9 +209,10 @@ var webFrontend = require(__dirname + '/libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
+
 // This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
 var { HumanPoseObject, humanPoseObjectDependencies } = require(__dirname + '/libraries/HumanPoseObject');
-humanPoseObjectDependencies.inject({
+humanPoseObjectDependencies.inject({ // this is a temporary workaround to inject the HumanPoseObject module with dependencies it needs
     ips: ips,
     version: version,
     protocol: protocol,
@@ -2119,14 +2120,10 @@ function objectWebServer() {
 
     }
 
-    // sends json object for a specific reality object. * is the object name
-    // ths is the most relevant for
-    // ****************************************************************************************************************
+    // Responds with the set of global frames that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
         console.log("get available frames");
         res.json(globalFrames.getFrameList());
-        // TODO: decide whether to use this instead of getFrameList, or whether the client should be resposible for filtering out disabled frames
-        // res.json(globalFrames.getEnabledFrames());
     });
 
     // sends json object for a specific reality object. * is the object name

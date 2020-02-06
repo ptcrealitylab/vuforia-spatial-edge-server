@@ -16,7 +16,6 @@ function saveCommit(object, objects, callback) {
        object.framesHistory = JSON.parse(JSON.stringify(object.frames));
 
        // todo; replace with a try-catch ?
-       // if (!object.isWorldObject) { // TODO: fully support world objects too
            utilities.writeObjectToFile(objects, object.objectId, homeDirectory, true);
 
            git.checkIsRepo(function (err){
@@ -30,13 +29,6 @@ function saveCommit(object, objects, callback) {
                    callback();
                })
            });
-
-       // } else {
-       //     // doesn't save world object changes to git, but still writes state to local framesHistory
-       //     utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
-       //     callback();
-       // }
-
    }
 
 }
@@ -45,7 +37,6 @@ function resetToLastCommit(object, objects, callback) {
     logger.debug("git resetToLastCommit");
     if (object) {
 
-        if (!object.isWorldObject) { // TODO: fully support world objects too
             var objectFolderName = object.name;
             git.checkIsRepo(function (err) {
                 if(err) {
@@ -59,12 +50,6 @@ function resetToLastCommit(object, objects, callback) {
                     callback();
                 })
             });
-        } else {
-            // doesn't save world object changes to git, but still performs a simple reset to local framesHistory state
-            object.frames = JSON.parse(JSON.stringify(object.framesHistory));
-            utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
-            callback();
-        }
 
     }
 };
