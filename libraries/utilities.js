@@ -630,11 +630,3 @@ exports.actionSender = function(action, timeToLive, beatport) {
     });
 
 };
-
-/**
- * Prints to the console, only if in debug mode
- * @param {string} msg
- */
-function cout(msg) {
-    if (debug) console.log(msg);
-}

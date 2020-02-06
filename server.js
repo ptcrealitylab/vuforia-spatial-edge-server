@@ -1011,6 +1011,80 @@ var executeSetups = function () {
 };
 executeSetups();
 
+/**
+ * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
+ * Create the json file if doesn't already exist
+ */
+function loadWorldObject() {
+
+    // create the file for it if necessary
+    var folder = path.join(objectsPath, worldObjectName);
+    var identityPath = path.join(folder, '.identity');
+    var jsonFilePath = path.join(folder, 'object.json');
+
+    // create objects folder at objectsPath if necessary
+    if(!fs.existsSync(folder)) {
+        logger.debug('created worldObject directory at ' + folder);
+        fs.mkdirSync(folder);
+    }
+
+    // create a /identity folder within it to hold the object.json data
+    if(!fs.existsSync(identityPath)) {
+        logger.debug('created worldObject identity at ' + identityPath);
+        fs.mkdirSync(identityPath);
+    }
+
+    // create a new world object
+    worldObject = new Objects();
+    worldObject.name = worldObjectName;
+    if (isMobile) {
+        worldObject.objectId = worldObjectName;
+    } else {
+        worldObject.objectId = worldObjectName + utilities.uuidTime();
+    }
+    worldObject.isWorldObject = true;
+
+    // try to read previously saved data to overwrite the default world object
+    if (globalVariables.saveToDisk) {
+        try {
+            worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            logger.debug('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+        } catch (e) {
+            logger.debug('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+        }
+    }
+
+    worldObject.ip = ips.interfaces[ips.activeInterface];
+
+    // utilities.setWorldObject(worldObjectName, worldObject);
+    objects[worldObject.objectId] = worldObject;
+
+    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+    //     delete objects[utilities.readObject(objectLookup, folderVar)];
+    // }
+    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
+    // objectLookup[folder] = {id: id};
+    // entering the obejct in to the lookup table
+    // ask the object to reinitialize
+    //serialPort.write("ok\n");
+    // todo send init to internal
+
+    hardwareAPI.reset();
+
+    if (globalVariables.saveToDisk) {
+
+        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
+            if (err) {
+                logger.debug('worldObject save error', err);
+            } else {
+                //logger.debug('JSON saved to ' + jsonFilePath);
+            }
+        });
+    } else {
+        logger.debug('I am not allowed to save');
+    }
+}
+
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
  **********************************************************************************************************************/
@@ -3561,7 +3635,7 @@ function objectWebServer() {
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
-            // cout("get 16");
+            // logger.debug("get 16");
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
         
@@ -4438,19 +4512,19 @@ function objectWebServer() {
                             // create the object data and respond to the webFrontend once the XML file is confirmed to exist
                             function onXmlVerified(err) {
                                 if (err) {
-                                    cout(err);
+                                    logger.debug(err);
                                 } else {
                                     // create the object if needed / possible
                                     if (typeof objects[thisObjectId] === "undefined") {
-                                        cout("creating object from target file " + tmpFolderFile);
+                                        logger.debug("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
-                                        cout("have created a new object");
+                                        logger.debug("have created a new object");
 
                                         hardwareAPI.reset();
-                                        cout("have initialized the modules");
+                                        logger.debug("have initialized the modules");
                                     }
                                 }
                                 
