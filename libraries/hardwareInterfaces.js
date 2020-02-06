@@ -894,9 +894,3 @@ exports.shutdown = function (){
 exports.loadHardwareInterface = function (hardwareInterfaceName){
     return utilities.loadHardwareInterface(hardwareInterfaceName.split(path.sep).pop());
 };
-
-
-
-function cout(msg) {
-    if (globalVariables.debug) console.log(msg);
-}
