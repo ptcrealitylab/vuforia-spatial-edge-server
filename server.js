@@ -80,7 +80,7 @@ const globalVariables = {
     // Allow system to save to file system
     saveToDisk : !isMobile,
     // Create an object for attaching frames to the world
-    worldObject : true,
+    worldObject : isMobile,
     listenForHumanPose: false
 };
 
