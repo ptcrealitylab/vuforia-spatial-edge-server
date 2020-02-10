@@ -118,7 +118,7 @@ var path = require('path');
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
-const frameLibPath = path.join(path.join(os.homedir(), 'Documents'), 'realityframes'); //__dirname + "/libraries/frames/active";
+const frameLibPath = isMobile ? __dirname + '/realityframes' : path.join(path.join(os.homedir(), 'Documents'), 'realityframes');
 // All visual UI representations for IO Points are stored in this folder:
 const nodePath = __dirname + "/libraries/nodes";
 // All visual UI representations for logic blocks are stored in this folder:
@@ -1012,7 +1012,7 @@ var executeSetups = function () {
 executeSetups();
 
 /**
- * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
+ * Initialize worldObject to contents of realityobjects/_WORLD_local/.identity/object.json
  * Create the json file if doesn't already exist
  */
 function loadWorldObject() {
@@ -1028,7 +1028,7 @@ function loadWorldObject() {
         fs.mkdirSync(folder);
     }
 
-    // create a /identity folder within it to hold the object.json data
+    // create a /.identity folder within it to hold the object.json data
     if(!fs.existsSync(identityPath)) {
         logger.debug('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
@@ -1056,18 +1056,7 @@ function loadWorldObject() {
 
     worldObject.ip = ips.interfaces[ips.activeInterface];
 
-    // utilities.setWorldObject(worldObjectName, worldObject);
     objects[worldObject.objectId] = worldObject;
-
-    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-    //     delete objects[utilities.readObject(objectLookup, folderVar)];
-    // }
-    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-    // objectLookup[folder] = {id: id};
-    // entering the obejct in to the lookup table
-    // ask the object to reinitialize
-    //serialPort.write("ok\n");
-    // todo send init to internal
 
     hardwareAPI.reset();
 
