@@ -1243,8 +1243,11 @@ realityServer.gotClick = function (event) {
 
         if(thisNode.getAttribute("showUI") === "true")
         {
-            var last;
-            while (last = thisNode.lastChild) thisNode.removeChild(last);
+            var last = thisNode.lastChild;
+            while (last) {
+                thisNode.removeChild(last);
+                last = thisNode.lastChild;
+            }
             thisNode.setAttribute("showUI", "false");
         } else {
             thisNode.setAttribute("showUI", "true");
@@ -1366,11 +1369,12 @@ realityServer.gotClick = function (event) {
                         delete thisObject.frames[frameKey];
                         realityServer.update();
                     } else {
-                        delete  thisObject;
+                        delete realityServer.objects[objectKey];
                         realityServer.update();
                     }
                 }
-                realityServer.update();}, "action=delete&name="+thisObject.name+"&frame="+frameKey);
+                realityServer.update();
+            }, "action=delete&name="+thisObject.name+"&frame="+frameKey);
 
         /*
         realityServer.sendRequest("/object/" + objectKey + "/"+ frameKey+"/reset/", "GET", function (state) {

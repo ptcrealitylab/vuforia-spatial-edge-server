@@ -200,7 +200,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
 
     var ArduinoINstance = 0;
 
-    for (subKey in objects) {
+    for (var subKey in objects) {
         if (subKey === objectName) {
             break;
         }
@@ -428,7 +428,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
     infoCount = 0;
-    for (framekey in uploadInfoTexttempArray.frames) {
+    for (var framekey in uploadInfoTexttempArray.frames) {
         if( Object.keys(uploadInfoTexttempArray.frames).length >1) {
             text += '          <tr>\n' +
                 '            <td  colspan="5"><b>Frame: ' + uploadInfoTexttempArrayValue.frames[frameKey].name + '</b></td>\n' +
@@ -436,7 +436,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         }
 
 
-        for (subKey in uploadInfoTexttempArray.frames[framekey].links) {
+        for (var subKey in uploadInfoTexttempArray.frames[framekey].links) {
             if (uploadInfoTexttempArray.frames[framekey].links[subKey].hasOwnProperty("namesA"))
                 text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[1] + '</font></td></tr>\n';
             else
