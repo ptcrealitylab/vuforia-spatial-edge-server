@@ -274,12 +274,12 @@ realityEditor.utilities.optimizedResize = (function() {
     }
 
     // adds callback to loop
-    function addCallback(callback, arguments) {
+    function addCallback(callback, args) {
 
-        arguments = arguments || [];
+        args = args || [];
 
         if (callback) {
-            callbacks.push({callbackFunction: callback, callbackArguments: arguments});
+            callbacks.push({callbackFunction: callback, callbackArguments: args});
         }
 
     }
