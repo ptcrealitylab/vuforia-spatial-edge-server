@@ -118,7 +118,7 @@ var Ev3_base = function(btport){
 	this.TERMINATE_SEQ = new Buffer("070055008000000201","hex");
 
 	this.sp = new SerialPort(btport, {
-		  parser: SP.parsers.raw
+        parser: SP.parsers.raw
 	}, false); 
 
 	this.getOutputSequence = function(a,b,c,d){
@@ -146,7 +146,7 @@ var Ev3_base = function(btport){
 			return new Buffer( body.toUpperCase(), "hex");
 		} catch(e) {
 			console.log(body.toUpperCase());
-			debugger;
+			throw e;
 		}
 	};
 	var counter = 0;
