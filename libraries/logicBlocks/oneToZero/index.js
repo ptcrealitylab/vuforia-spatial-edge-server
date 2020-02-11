@@ -111,7 +111,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
         callback(object, frame, node, block, index, thisBlock);
 
     } else {
-    	thisBlock.processedData[0].value = 0;
+        thisBlock.processedData[0].value = 0;
         callback(object, frame, node, block, index, thisBlock);
     }
 
