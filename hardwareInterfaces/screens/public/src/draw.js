@@ -99,7 +99,7 @@ realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
         addIframe.dataset.nodeKey = nodeKey || null;
         addIframe.dataset.frameKey = frameKey;
         addIframe.dataset.objectKey = vehicle.objectId;
-        addIframe.setAttribute("onload", 'realityEditor.network.onElementLoad(\"' + vehicle.objectId + '\", \"' + frameKey + '\", \"' + nodeKey + '\")');
+        addIframe.setAttribute("onload", 'realityEditor.network.onElementLoad("' + vehicle.objectId + '", "' + frameKey + '", "' + nodeKey + '")');
         addIframe.setAttribute("sandbox", "allow-forms allow-pointer-lock allow-same-origin allow-scripts");
         document.body.appendChild(addIframe);
         addIframe.display = 'inline';

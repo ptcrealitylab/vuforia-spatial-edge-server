@@ -342,7 +342,7 @@ realityEditor.network.onElementLoad = function(objectKey, frameKey, nodeKey) {
     if (nodeKey === "null") nodeKey = null;
 
     var frame = frames[frameKey];
-    var nodes = (!!frame) ? frame.nodes : {};
+    var nodes = frame ? frame.nodes : {};
     var simpleNodes = realityEditor.utilities.getNodesJsonForIframes(nodes);
 
     var newStyle = {

@@ -272,7 +272,7 @@ createNameSpace("realityEditor.groupingByDrawing");
         var groupID = frame.groupID;
 
         if (frame === undefined || groupID === undefined) return;
-        if (!!groupID) {
+        if (groupID) {
             console.log('removing ' + frameKey + 'from any group');
             realityEditor.database.groupStruct[groupID].delete(frameKey); // group restruct
             frame.groupID = null;

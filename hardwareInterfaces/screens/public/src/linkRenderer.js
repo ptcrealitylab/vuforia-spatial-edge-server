@@ -212,7 +212,7 @@ createNameSpace("realityEditor.linkRenderer");
 
         // TODO: temporary solution to render lock information for this link
 
-        if (!!linkObject.lockPassword) {
+        if (linkObject.lockPassword) {
             if (linkObject.lockType === "full") {
                 newColor[3] = 0.25;
             } else if (linkObject.lockType === "half") {

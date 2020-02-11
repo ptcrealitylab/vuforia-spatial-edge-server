@@ -179,7 +179,7 @@ createNameSpace("realityEditor.objectDiscovery");
         // hideMemoryButton.addEventListener('pointerup', hideMemory);
         addPointerEventListener(showMemoryButton, 'pointerup', showMemory);
 
-        if (!!realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
+        if (realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
             showMemoryButton.classList.add('toggleSelected');
         } else {
             hideMemoryButton.classList.add('toggleSelected');
@@ -234,7 +234,7 @@ createNameSpace("realityEditor.objectDiscovery");
                 var showMemoryButton = document.getElementById('showMemory' + objectKey);
                 var hideMemoryButton = document.getElementById('hideMemory' + objectKey);
 
-                if (!!realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
+                if (realityEditor.memoryExplorer.getMemoryShownForObject(objectKey)) {
                     showMemoryButton.classList.add('toggleSelected');
                     hideMemoryButton.classList.remove('toggleSelected');
                 } else {
@@ -255,7 +255,7 @@ createNameSpace("realityEditor.objectDiscovery");
 
         // console.log('isMemoryShownForObject ' + thisObjectID, isMemoryShownForObject(thisObjectID));
 
-        if (!!realityEditor.memoryExplorer.getMemoryShownForObject(thisObjectID)) {
+        if (realityEditor.memoryExplorer.getMemoryShownForObject(thisObjectID)) {
             console.log('already showing this memory, don\'t re-add it');
             return;
         }
