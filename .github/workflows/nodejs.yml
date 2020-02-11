@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [6.x, 8.x, 10.x]
+        node-version: [8.x, 10.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -20,5 +20,24 @@ jobs:
     - run: npm install
     - run: npm run build --if-present
     - run: npm test
+      env:
+        CI: true
+
+  check-six-install:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [6.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run: npm run build --if-present
       env:
         CI: true
