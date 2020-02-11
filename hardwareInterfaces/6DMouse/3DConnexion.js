@@ -1,5 +1,5 @@
 //import hid from "node-hid";
-hid = require("node-hid");
+var hid = require("node-hid");
 
 function joinInt16(min, maj)
 {
