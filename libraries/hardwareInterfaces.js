@@ -563,21 +563,24 @@ exports.getDebug = function () {
 
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
- **/
-exports.setup = function (objExp, objLookup, knownObjs, socketArr, glblVars, dir, objPath, types, blocks, objValue, callbacks) {
-    objects = objExp;
-    objectLookup = objLookup;
-    knownObjects = knownObjs;
-    socketArray = socketArr;
-    globalVariables = glblVars;
-    dirnameO = dir;
-    objectsPath = objPath;
-    nodeTypeModules = types;
-    blockModules = blocks;
-    publicDataCallBack = callbacks.publicData;
-    actionCallback = callbacks.actions;
-    callback = callbacks.data;
-    writeObjectCallback = callbacks.write;
+ */
+exports.setup = function setup(objects_, objectLookup_, knownObjects_,
+                               socketArray_, globalVariables_, dirnameO_,
+                               objectsPath_, nodeTypeModules_, blockModules_,
+                               hardwareAPICallbacks) {
+    objects = objects_;
+    objectLookup = objectLookup_;
+    knownObjects = knownObjects_;
+    socketArray = socketArray_;
+    globalVariables = globalVariables_;
+    dirnameO = dirnameO_;
+    objectsPath = objectsPath_;
+    nodeTypeModules = nodeTypeModules_;
+    blockModules = blockModules_;
+    publicDataCallBack = hardwareAPICallbacks.publicData;
+    actionCallback = hardwareAPICallbacks.actions;
+    callback = hardwareAPICallbacks.data;
+    writeObjectCallback = hardwareAPICallbacks.write;
 };
 
 exports.reset = function (){
