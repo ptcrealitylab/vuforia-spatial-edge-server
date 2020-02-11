@@ -51,7 +51,7 @@ class WebSocketInterface {
     }
 
     get currentRobotAngle(){
-        return _currentRobotAngle;
+        return this._currentRobotAngle;
     }
     set currentRobotAngle(currentAngle){
         this._currentRobotAngle = currentAngle;
