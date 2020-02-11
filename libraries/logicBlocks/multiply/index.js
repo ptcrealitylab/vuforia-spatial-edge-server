@@ -58,7 +58,7 @@
  * gui/index.html is the optional settings menu that pops up when you tap on the block
  */
 
-var logger = require('../../../logger');
+
 
 var generalProperties = {
     // display name underneath icon in block menu
@@ -106,7 +106,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
         thisBlock.processedData[0][key] = thisBlock.data[0][key];
     }
 
-    logger.debug(product);
+    console.log(product);
 
     thisBlock.processedData[0].value = product;
 

@@ -30,7 +30,7 @@
  */
 //Enable this hardware interface
 var server = require('../../libraries/hardwareInterfaces');
-var logger = require('../../logger');
+
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -62,7 +62,7 @@ if (exports.enabled) {
         //load the config file
         //lights = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf8"));
 
-        logger.debug("setup philipsHue");
+        console.log("setup philipsHue");
         for (var key in lights) {
             lights[key].switch = undefined;
             lights[key].bri = undefined;
@@ -100,7 +100,7 @@ if (exports.enabled) {
                 //TODO add some error handling
                 state = JSON.parse(str).state;
                 if (!state) {
-                    logger.error('Philips Hue Error', str);
+                    console.error('Philips Hue Error', str);
                     return;
                 }
                 if (state.on != light.switch) {
@@ -137,7 +137,7 @@ if (exports.enabled) {
 
         var req = http.request(options, callbackHttp);
         req.on('error', function (e) {
-            logger.debug('GetLightState HTTP error', e.message);
+            console.log('GetLightState HTTP error', e.message);
         });
         req.end();
 
@@ -159,7 +159,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            logger.debug('writeSwitchState HTTP error', e.message);
+            console.log('writeSwitchState HTTP error', e.message);
         });
 
         if (state < 0.5) {
@@ -200,7 +200,7 @@ if (exports.enabled) {
             }, 100);
         });
         req.on('error', function (e) {
-            logger.debug('writeBrightness HTTP error', e.message);
+            console.log('writeBrightness HTTP error', e.message);
             setTimeout(function() {
                 writeBrightness.requestInFlight = false;
             }, 100);
@@ -226,7 +226,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            logger.debug('writeSaturation HTTP error', e.message);
+            console.log('writeSaturation HTTP error', e.message);
         });
         req.write('{"sat":' + _.floor(sat * 254) + '}');
         req.end();
@@ -247,7 +247,7 @@ if (exports.enabled) {
 
         var req = http.request(options, function () { });
         req.on('error', function (e) {
-            logger.debug('writeHue HTTP error', e.message);
+            console.log('writeHue HTTP error', e.message);
         });
         req.write('{"hue":' + _.floor(hue * 65535) + '}');
         req.end();
@@ -257,7 +257,7 @@ if (exports.enabled) {
      * @desc philipsHueServer() The main function, runs the setup and then periodically checks whether the lights are on.
      **/
     function philipsHueServer() {
-        logger.debug("philipsHue starting philipsHue");
+        console.log("philipsHue starting philipsHue");
         setup();
 
 

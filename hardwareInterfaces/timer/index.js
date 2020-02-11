@@ -48,7 +48,7 @@
  * Set to true to enable the hardware interface
  **/
 var server = require('../../libraries/hardwareInterfaces');
-var logger = require('../../logger');
+
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
@@ -72,7 +72,7 @@ if (exports.enabled) {
 
 
     http.listen(3000, function(){
-        logger.debug('listening on *:3000');
+        console.log('listening on *:3000');
     });
 
     var counter = 0;
@@ -101,7 +101,7 @@ if (exports.enabled) {
     });
 
     server.addReadListener("timer", "timer01", "stop", function (data) {
-        logger.debug('timer01 value', data.value);
+        console.log('timer01 value', data.value);
         if (data.value > 0.5) {
             if (timer) {
                 io.emit('timer', {timer: "stop"});

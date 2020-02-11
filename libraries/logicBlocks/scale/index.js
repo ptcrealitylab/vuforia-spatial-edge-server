@@ -43,7 +43,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var logger = require('../../../logger');
+
 
 /**
  * @fileOverview
@@ -96,7 +96,7 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
 
     for (var key in thisBlock.data[0]) {
         if (key === "value") {
-            logger.debug(thisBlock.data[0][key]);
+            console.log(thisBlock.data[0][key]);
             thisBlock.processedData[0][key] = thisBlock.data[0][key] * thisBlock.publicData.scale;
         } else {
             thisBlock.processedData[0][key] = thisBlock.data[0][key];
