@@ -45,16 +45,15 @@ function loadFramesJsonData() {
     // get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
     let frameFolderList = fs.readdirSync(frameLibPath).filter(function (filename) {
         let isHidden = filename[0] === '.';
-        return fs.statSync(frameLibPath + '/' + filename).isDirectory() && !isHidden;
+        return fs.statSync(path.join(frameLibPath, filename)).isDirectory() && !isHidden;
     });
 
     // Load the config.js properties of each frame into an object that we can provide to clients upon request.
     for (let i = 0; i < frameFolderList.length; i++) {
         let frameName = frameFolderList[i];
-        if (fs.existsSync(frameLibPath + '/' + frameName + "/config.js")) {
-            frameTypeModules[frameName] = require(frameLibPath + '/' + frameName + "/config.js");
+        if (fs.existsSync(path.join(frameLibPath, frameName, '/config.js'))) {
+            frameTypeModules[frameName] = require(path.join(frameLibPath, frameName, '/config.js'));
         } else {
-            // frameTypeModules[frameName] = {};
             frameTypeModules[frameName] = {
                 properties: {
                     name: frameName

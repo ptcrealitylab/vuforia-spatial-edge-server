@@ -34,6 +34,7 @@ var logger = require('../../logger');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = false;
+exports.configurable = true; // can be turned on/off/adjusted from the web frontend
 
 if (exports.enabled) {
 

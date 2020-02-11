@@ -156,7 +156,7 @@ realityServer.forEachSortedObjectKey = function(callback) {
 };
 
 realityServer.updateManageObjects = function(thisItem2) {
-
+    
     this.getDomContents().appendChild(this.templates["start"].content.cloneNode(true));
     //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
     
@@ -164,26 +164,27 @@ realityServer.updateManageObjects = function(thisItem2) {
     document.getElementById('objectDescription').appendChild(this.templates["objectTutorial"].content.cloneNode(true));
     // update tutorial based on current application state
     var tutorialStateNumber = 0;
-    
-    if (Object.keys(realityServer.objects).length === 0) { // if there are no objects
+    var objectKeys = Object.keys(realityServer.objects);
+
+    if (objectKeys.length === 0) { // if there are no objects
         tutorialStateNumber = 1;
     
-    } else if ( Object.keys(realityServer.objects).filter(function(key) {
+    } else if (objectKeys.filter(function(key) {
         return realityServer.objects[key].initialized; // if there are objects initialized with targets
     }).length === 0) {
         tutorialStateNumber = 2;
     
-    } else if ( Object.keys(realityServer.objects).filter(function(key) {
+    } else if (objectKeys.filter(function(key) {
         return Object.keys(realityServer.objects[key].frames).length > 0;
     }).length === 0) { // if there are no objects with frames
         tutorialStateNumber = 3;
     
     } else {
-        var isExactlyOneObject = Object.keys(realityServer.objects).filter(function(key) {
+        var isExactlyOneObject = objectKeys.filter(function(key) {
             return realityServer.objects[key].initialized; // if there are objects initialized with targets
         }).length === 1;
         
-        var hasExactlyOneFrame = Object.keys(realityServer.objects).filter(function(key) {
+        var hasExactlyOneFrame = objectKeys.filter(function(key) {
             return Object.keys(realityServer.objects[key].frames).length === 1;
         }).length === 1;
         
@@ -858,16 +859,16 @@ realityServer.gotClick = function (event) {
     var objectKey = thisEventObject.getAttribute("objectid");
     var frameKey = thisEventObject.getAttribute("frameid");
 
-    var thisObject = {};
+    let thisObject = {};
 
     if (frameKey) {
         thisObject = realityServer.objects[objectKey].frames[frameKey];
     } else {
         thisObject = realityServer.objects[objectKey];
-    };
+    }
 
     if (buttonClassList.contains("download")) {
-        window.location.href= "/object/" + realityServer.objects[objectKey].name + "/zipBackup/";
+        window.location.href= "/object/" + thisObject.name + "/zipBackup/";
     }
 
     /**
@@ -887,42 +888,41 @@ realityServer.gotClick = function (event) {
             var newNode = document.getElementById("targetId").content.cloneNode(true);
             newNode.querySelector(".dropZoneElement").id = "targetDropZone"+objectKey;
 
-            if (!realityServer.objects[objectKey].targetName) {
+            if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
-                if (objectKey === realityServer.objects[objectKey].name) {
-                    realityServer.objects[objectKey].targetName = realityServer.objects[objectKey].name+realityServer.uuidTime();
+                if (objectKey === thisObject.name) {
+                    thisObject.targetName = thisObject.name+realityServer.uuidTime();
                 }
             }
             
-            if (objectKey !== realityServer.objects[objectKey].name) {
-                realityServer.objects[objectKey].targetName = objectKey;
+            if (objectKey !== thisObject.name) {
+                thisObject.targetName = objectKey;
             }
 
-            newNode.querySelector(".name").innerText = realityServer.objects[objectKey].targetName;
+            newNode.querySelector(".name").innerText = thisObject.targetName;
             referenceNode.after(newNode);
             
             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
-            if (visualFeedback && realityServer.objects[objectKey] && realityServer.objects[objectKey].targetsExist) {
-                if (realityServer.objects[objectKey].targetsExist.datExists) {
+            if (visualFeedback && thisObject && thisObject.targetsExist) {
+                if (thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
                     visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
-                } else if (realityServer.objects[objectKey].targetsExist.jpgExists) {
+                } else if (thisObject.targetsExist.jpgExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'yellow');
                 }
-                if (realityServer.objects[objectKey].targetsExist.xmlExists) {
+                if (thisObject.targetsExist.xmlExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
                     visualFeedback.querySelector('.hasXml').innerText = 'Has .xml';
                 }
-                if (realityServer.objects[objectKey].targetsExist.jpgExists) {
+                if (thisObject.targetsExist.jpgExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'green');
                     visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
-                } else if (realityServer.objects[objectKey].targetsExist.datExists) {
+                } else if (thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
                 }
 
-                if (!realityServer.objects[objectKey].targetsExist.jpgExists && !realityServer.objects[objectKey].targetsExist.datExists) {
+                if (!thisObject.targetsExist.jpgExists && !thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
-                    // visualFeedback.querySelector('.hasJpg').innerText = 'Has .JPG';
                 } else {
                     realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
                     showGenerateXml(visualFeedback, objectKey);
@@ -936,7 +936,7 @@ realityServer.gotClick = function (event) {
             //previewNode.parentNode.removeChild(previewNode);
             realityServer.myTargetDropzone = {};
             realityServer.myTargetDropzone = new Dropzone(document.getElementById("targetDropZone"+objectKey), {
-                url: "/content/" + realityServer.objects[objectKey].name ,
+                url: "/content/" + thisObject.name ,
                 autoProcessQueue: true,
                 headers: { "type": "targetUpload" },
                 parallelUploads: 20,
@@ -973,6 +973,8 @@ realityServer.gotClick = function (event) {
                 console.log(responseText);
                // var conText = JSON.parse(responseText);
 
+                thisObject = realityServer.objects[objectKey];
+
                 console.log("test");
                 realityServer.getDomContents().querySelector(".dropZoneContentBackground").style.width = "0px";
 
@@ -987,6 +989,7 @@ realityServer.gotClick = function (event) {
                             var objectList = thisObject.querySelectorAll("button");
 
                             for (var i = 0; i < objectList.length; i++) {
+                                // TODO: don't assign same id to every button (not sure about side effects of removing, so assigned to github issue #19)
                                 objectList[i].id = responseText.id;
                             }
 
@@ -1005,12 +1008,12 @@ realityServer.gotClick = function (event) {
                     } else {
                         
                         // update initialized
-                        realityServer.objects[objectKey].initialized = responseText.initialized;
+                        thisObject.initialized = responseText.initialized;
 
                         // update targetsExist
-                        realityServer.objects[objectKey].targetsExist.jpgExists = responseText.jpgExists;
-                        realityServer.objects[objectKey].targetsExist.xmlExists = responseText.xmlExists;
-                        realityServer.objects[objectKey].targetsExist.datExists = responseText.datExists;
+                        thisObject.targetsExist.jpgExists = responseText.jpgExists;
+                        thisObject.targetsExist.xmlExists = responseText.xmlExists;
+                        thisObject.targetsExist.datExists = responseText.datExists;
                         
                         let visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
                         if (visualFeedback) {
@@ -1040,12 +1043,12 @@ realityServer.gotClick = function (event) {
                             }
                         }
                         
-                        if (realityServer.objects[objectKey].initialized) {
+                        if (thisObject.initialized) {
                             // activate the object
-                            realityServer.objects[objectKey].active = true;
+                            thisObject.active = true;
                             
                             if (typeof responseText.id !== 'undefined') {
-                                realityServer.objects[objectKey].targetName = responseText.id;
+                                thisObject.targetName = responseText.id;
                             }
                             
                             // rename object from objectName to objectID generated from server
@@ -1067,7 +1070,7 @@ realityServer.gotClick = function (event) {
                         var xmlGenerated = false;
                         
                         if (file.type === 'image/jpeg') {
-                            realityServer.objects[objectKey].targetsExist.jpgExists = true;
+                            thisObject.targetsExist.jpgExists = true;
                             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
                             if (visualFeedback) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'hidden');
@@ -1076,7 +1079,7 @@ realityServer.gotClick = function (event) {
                             xmlGenerated = true;
                             
                         } else if (file.name === 'target.dat') {
-                            realityServer.objects[objectKey].targetsExist.datExists = true;
+                            thisObject.targetsExist.datExists = true;
                             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
                             if (visualFeedback) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'hidden');
@@ -1086,17 +1089,17 @@ realityServer.gotClick = function (event) {
                         }
                         
                         if (xmlGenerated) {
-                            realityServer.objects[objectKey].targetsExist.xmlExists = true;
+                            thisObject.targetsExist.xmlExists = true;
                             var visualFeedback = document.getElementById("targetDropZone"+objectKey).querySelector('.dropZoneFeedback');
                             if (visualFeedback) {
                                 realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'hidden');
                             }
                         }
                         
-                        var targetFiles = realityServer.objects[objectKey].targetsExist;
+                        var targetFiles = thisObject.targetsExist;
                         if (targetFiles.jpgExists && targetFiles.xmlExists && targetFiles.datExists) {
-                            realityServer.objects[objectKey].initialized = true;
-                            realityServer.objects[objectKey].active = true;
+                            thisObject.initialized = true;
+                            thisObject.active = true;
                             realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "yellow", "green");
                             realityServer.switchClass(document.getElementById("object"+objectKey).querySelector(".target"), "targetWidthMedium", "one");
                             realityServer.update();
@@ -1129,7 +1132,7 @@ realityServer.gotClick = function (event) {
      *  INFO
      */
     if (buttonClassList.contains("name")) {
-        window.location.href='/info/' + realityServer.objects[objectKey].name;
+        window.location.href='/info/' + thisObject.name;
     }
 
     if (buttonClassList.contains("netInterface")) {
@@ -1248,7 +1251,7 @@ realityServer.gotClick = function (event) {
 
      //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
 
-        realityServer.sendRequest("/object/" + realityServer.objects[objectKey].name + "/"+ realityServer.objects[objectKey].frames[frameKey].name    +"/frameFolder", "GET", function (state) {
+        realityServer.sendRequest("/object/" + thisObject.name + "/"+ thisObject.frames[frameKey].name    +"/frameFolder", "GET", function (state) {
 
             console.log("got here");
             console.log("-----------------------------xx---------------------");
@@ -1360,14 +1363,14 @@ realityServer.gotClick = function (event) {
             realityServer.sendRequest("/", "POST", function(state){
                 if(state === "ok") {
                     if (frameKey !== "") {
-                        delete realityServer.objects[objectKey].frames[frameKey];
+                        delete thisObject.frames[frameKey];
                         realityServer.update();
                     } else {
-                        delete  realityServer.objects[objectKey];
+                        delete  thisObject;
                         realityServer.update();
                     }
                 }
-                realityServer.update();}, "action=delete&name="+realityServer.objects[objectKey].name+"&frame="+frameKey);
+                realityServer.update();}, "action=delete&name="+thisObject.name+"&frame="+frameKey);
 
         /*
         realityServer.sendRequest("/object/" + objectKey + "/"+ frameKey+"/reset/", "GET", function (state) {
@@ -1420,6 +1423,8 @@ realityServer.gotClick = function (event) {
                 if (shouldAddWorldObject) {
                     objectName = '_WORLD_' + textContent;
                 }
+
+                // TODO: sanitize object names before creating, for example prevent _WORLD_local (github issue #20)
                 
                 realityServer.sendRequest("/", "POST", function(state) {
                     if (state === "ok") {
@@ -1450,10 +1455,10 @@ realityServer.gotClick = function (event) {
             if (textContent !== "") {
                 realityServer.sendRequest("/", "POST", function(state){
                     if(state === "ok") {
-                        realityServer.objects[objectKey].frames[textContent] = new Objects();
-                        realityServer.objects[objectKey].frames[textContent].name = textContent;
+                        thisObject.frames[textContent] = new Objects();
+                        thisObject.frames[textContent].name = textContent;
                     }
-                    realityServer.update();}, "action=new&name="+realityServer.objects[objectKey].name+"&frame="+textContent);
+                    realityServer.update();}, "action=new&name="+thisObject.name+"&frame="+textContent);
             }
         }//
     }
@@ -1468,9 +1473,9 @@ realityServer.gotClick = function (event) {
         realityServer.sendRequest("/", "POST", function(state){
             if(state === "ok") {
                 thisEventObject.style.color = "rgb(41,253,47)";
-                realityServer.objects[objectKey].zone = thisEventObject.innerText;
+                thisObject.zone = thisEventObject.innerText;
             }
-            }, "action=zone&name="+realityServer.objects[objectKey].name+"&zone="+thisEventObject.innerText);
+            }, "action=zone&name="+thisObject.name+"&zone="+thisEventObject.innerText);
 
         console.log(thisEventObject.innerText);
     }
@@ -1577,15 +1582,14 @@ realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, 
 
         if ((!activate && !allItems[x].classList.contains("remove") && !allItems[x].classList.contains("triangle")) && (!allItems[x].classList.contains("target") || objectInfo.initialized)) {
             realityServer.setDeactive (allItems[x]);
-        } else {
+        } else if(!allItems[x].classList.contains("hardware")) {
+            realityServer.setActive(allItems[x]);
+        }
+
+        if (realityServer.objects[objectKey].initialized && (allItems[x].classList.contains("active") || allItems[x].classList.contains("download"))) {
             if(!allItems[x].classList.contains("hardware")) {
                 realityServer.setActive(allItems[x]);
             }
-        }
-
-        if(realityServer.objects[objectKey].initialized && (allItems[x].classList.contains("active") || allItems[x].classList.contains("download"))){
-            if(!allItems[x].classList.contains("hardware"))
-            realityServer.setActive(allItems[x]);
         }
     }
 };

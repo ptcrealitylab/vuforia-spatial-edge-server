@@ -47,6 +47,8 @@ var settings = server.loadHardwareInterface(__dirname);
 var logger = require('../../logger');
 
 exports.enabled = settings("enabled");
+exports.configurable = true; // can be turned on/off/adjusted from the web frontend
+
 if (exports.enabled) {
 
     const SerialPort = require('serialport');

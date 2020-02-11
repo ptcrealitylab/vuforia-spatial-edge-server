@@ -118,13 +118,13 @@ var path = require('path');
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
-const frameLibPath = isMobile ? __dirname + '/realityframes' : path.join(path.join(os.homedir(), 'Documents'), 'realityframes');
+const frameLibPath = isMobile ? path.join(__dirname, 'realityframes') : path.join(path.join(os.homedir(), 'Documents'), 'realityframes');
 // All visual UI representations for IO Points are stored in this folder:
-const nodePath = __dirname + "/libraries/nodes";
+const nodePath = path.join(__dirname, "/libraries/nodes");
 // All visual UI representations for logic blocks are stored in this folder:
-const blockPath = __dirname + "/libraries/logicBlocks";
+const blockPath = path.join(__dirname, "./libraries/logicBlocks");
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
-const hardwarePath = __dirname + "/hardwareInterfaces";
+const hardwarePath =  path.join(__dirname, "./hardwareInterfaces");
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = "/";
 
@@ -158,7 +158,7 @@ if(!fs.existsSync(objectsPath)) {
 var identityFolderName = '.identity';
 
 // This file hosts the functions related to loading the set of available frames from the realityframes/ directory
-var globalFrames = require(__dirname + '/libraries/globalFrames');
+var globalFrames = require('./libraries/globalFrames');
 globalFrames.initialize(frameLibPath, identityFolderName);
 
 // find ips
@@ -203,15 +203,15 @@ const sharp = isMobile ? null : require('sharp');
 // additional files containing project code
 
 // This file hosts all kinds of utilities programmed for the server
-var utilities = require(__dirname + '/libraries/utilities');
+var utilities = require('./libraries/utilities');
 // The web frontend a developer is able to see when creating new user interfaces.
-var webFrontend = require(__dirname + '/libraries/webFrontend');
+var webFrontend = require('./libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
 
 // This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
-var { HumanPoseObject, humanPoseObjectDependencies } = require(__dirname + '/libraries/HumanPoseObject');
+var { HumanPoseObject, humanPoseObjectDependencies } = require('./libraries/HumanPoseObject');
 humanPoseObjectDependencies.inject({ // this is a temporary workaround to inject the HumanPoseObject module with dependencies it needs
     ips: ips,
     version: version,
@@ -1062,7 +1062,7 @@ function loadWorldObject() {
 
     if (globalVariables.saveToDisk) {
 
-        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
+        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4), function (err) {
             if (err) {
                 logger.debug('worldObject save error', err);
             } else {
@@ -3711,7 +3711,7 @@ function objectWebServer() {
             var objectID = req.params[0];
             logger.debug("++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            if (!fs.existsSync(objectsPath + '/' + objectID)) {
+            if (!fs.existsSync(path.join(objectsPath, objectID))) {
                 res.status(404).send('object directory for ' + objectID + 'does not exist at ' + objectsPath + '/' + objectID);
                 return;
             }
@@ -3729,8 +3729,8 @@ function objectWebServer() {
             zip.finalize();
         });
         
-        webServer.post('/object/*/generateXml/', function(req, res) {
-            var objectKey = req.params[0];
+        webServer.post('/object/:objectKey/generateXml/', function(req, res) {
+            var objectKey = req.params.objectKey;
             var msgObject = req.body;
             var objectName = msgObject.name;
             
@@ -3749,7 +3749,7 @@ function objectWebServer() {
                 '   </Tracking>\n' +
                 '   </ARConfig>';
 
-            var xmlOutFile = objectsPath + '/' + objectName + '/' + identityFolderName + "/target/target.xml";
+            var xmlOutFile = path.join(objectsPath, objectName, identityFolderName, "/target/target.xml");
             // if (!fs.existsSync(xmlOutFile)) {
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
                 if (err) {
@@ -3768,34 +3768,28 @@ function objectWebServer() {
             });
         });
         
-        webServer.post('/hardwareInterface/*/settings/', function(req, res) {
-            var interfaceName = req.params[0];
-
-            console.log(req.body);
-
-            // console.log('TODO: write hardware settings to file');
+        webServer.post('/hardwareInterface/:interfaceName/settings/', function(req, res) {
+            var interfaceName = req.params.interfaceName;
             
             setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface settings changes to take place');
+                    console.log('TODO: restart server for any hardwareInterface settings changes to take place'); // TODO: github issue #21
                 } else {
                     res.status(500).send(errorMessage);
                 }
             });
-
-            // if (req.body.action === "zone") {
-            //     var objectKey = utilities.readObject(objectLookup, req.body.name);
-            //     objects[objectKey].zone = req.body.zone;
-            //     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-            //     res.send("ok");
-            // }
-            // res.send('ok');
         });
 
+        /**
+         * Updates the settings.json for a particular hardware interface, based on changes from the webFrontend.
+         * @param {string} interfaceName - the folder name of the hardwareInterface
+         * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
+         * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
+         * @param {function<boolean, string|undefined>} callback - first param is success, second is error message
+         */
         function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-            console.log(interfaceSettingsPath);
 
             try {
                 var existingSettings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
@@ -3804,9 +3798,7 @@ function objectWebServer() {
 
                 for (var key in settings) {
                     if (!settings.hasOwnProperty(key)) { continue; }
-                    if (limitToKeys) {
-                        if (limitToKeys.indexOf(key) === -1) { continue; }
-                    }
+                    if (limitToKeys && !limitToKeys.includes(key)) { continue; }
                     
                     // update value that will get written to disk
                     if (typeof settings[key].value !== 'undefined') {
@@ -3825,7 +3817,7 @@ function objectWebServer() {
                 console.log('after:', hardwareInterfaceModules[interfaceName]);
 
                 if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, '\t'), function (err) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
                         if (err) {
                             console.log(err);
                             callback(false, 'error writing to file');
@@ -3844,8 +3836,8 @@ function objectWebServer() {
             }
         }
 
-        webServer.get('/hardwareInterface/*/disable/', function (req, res) {
-            var interfaceName = req.params[0];
+        webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
+            var interfaceName = req.params.interfaceName;
             
             setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
                 if (success) {
@@ -3857,8 +3849,8 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/hardwareInterface/*/enable/', function (req, res) {
-            var interfaceName = req.params[0];
+        webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
+            var interfaceName = req.params.interfaceName;
 
             setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
                 if (success) {
@@ -3873,6 +3865,9 @@ function objectWebServer() {
         /**
          * Overwrites the 'enabled' property in the realityObjects/.identity/hardwareInterfaceName/settings.json
          * If the file is new (empty), write a default json blob into it with the new enabled value
+         * @param {string} interfaceName
+         * @param {boolean} shouldBeEnabled
+         * @param callback {function<boolean, string|undefined>} - success, error message
          */
         function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
@@ -3883,7 +3878,7 @@ function objectWebServer() {
                 settings.enabled = shouldBeEnabled;
 
                 if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, '\t'), function (err) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4), function (err) {
                         if (err) {
                             console.log(err);
                             callback(false, 'error writing to file');
@@ -3901,7 +3896,7 @@ function objectWebServer() {
                 var defaultSettings = {
                     enabled: shouldBeEnabled
                 };
-                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, '\t'), function (err) {
+                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4), function (err) {
                     if (err) {
                         console.log(err);
                         callback(false, 'error writing to file');
@@ -3913,8 +3908,8 @@ function objectWebServer() {
             }
         }
 
-        webServer.get('/globalFrame/*/disable/', function (req, res) {
-            var frameName = req.params[0];
+        webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
+            var frameName = req.params.frameName;
 
             globalFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
                 if (success) {
@@ -3926,8 +3921,8 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/globalFrame/*/enable/', function (req, res) {
-            var frameName = req.params[0];
+        webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
+            var frameName = req.params.frameName;
 
             globalFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
                 if (success) {
@@ -3939,8 +3934,8 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/object/*/disableFrameSharing/', function (req, res) {
-            var objectKey = req.params[0];
+        webServer.get('/object/:objectKey/disableFrameSharing/', function (req, res) {
+            var objectKey = req.params.objectKey;
 
             setFrameSharingEnabled(objectKey, false, function(success, errorMessage) {
                 if (success) {
@@ -3951,8 +3946,8 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/object/*/enableFrameSharing/', function (req, res) {
-            var objectKey = req.params[0];
+        webServer.get('/object/:objectKey/enableFrameSharing/', function (req, res) {
+            var objectKey = req.params.objectKey;
 
             setFrameSharingEnabled(objectKey, true, function(success, errorMessage) {
                 if (success) {
@@ -3963,6 +3958,13 @@ function objectWebServer() {
             });
         });
 
+        /**
+         * Enable sharing of global frames from this server to objects on other servers
+         * @todo: see github issue #23 - function is currently unimplemented
+         * @param {string} objectKey
+         * @param {boolean} shouldBeEnabled
+         * @param {function<boolean, string|undefined>} callback - success, error message
+         */
         function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
             callback(true);
             console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
@@ -3970,8 +3972,8 @@ function objectWebServer() {
 
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
-        webServer.get('/frame/*/zipBackup/', function (req, res) {
-            var frameName = req.params[0];
+        webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
+            var frameName = req.params.frameName;
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
             
             var framePath = path.join(frameLibPath, frameName);
@@ -3986,9 +3988,9 @@ function objectWebServer() {
                 'Content-disposition': 'attachment; filename=' + frameName + '.zip'
             });
 
-            var Archiver = require('archiver');
+            var archiver = require('archiver');
 
-            var zip = Archiver.create('zip', false);
+            var zip = archiver('zip');
             zip.pipe(res);
             zip.directory(framePath, frameName + "/");
             zip.finalize();
@@ -4426,52 +4428,58 @@ function objectWebServer() {
                                 var tempFilepath        = folderD + '/' + identityFolderName + "/target/target-temp." + fileExtension;
                                 var originalFilepath    = folderD + '/' + identityFolderName + "/target/target-original-size." + fileExtension;
                                 
-                                var image = sharp(rawFilepath);
-                                image.metadata().then(function(metadata) {
-                                    console.log(metadata);
-                                    var desiredMaxDimension = 1024;
+                                var image;
+                                try {
+                                    image = sharp(rawFilepath);
+                                    image.metadata().then(function(metadata) {
+                                        console.log(metadata);
+                                        var desiredMaxDimension = 1024;
 
-                                    if (Math.max(metadata.width, metadata.height) <= desiredMaxDimension) {
-                                        console.log('jpg doesnt need resizing');
-                                        continueProcessingUpload();
+                                        if (Math.max(metadata.width, metadata.height) <= desiredMaxDimension) {
+                                            console.log('jpg doesnt need resizing');
+                                            continueProcessingUpload();
 
-                                    } else {
-                                        console.log('attempting to resize file to ' + rawFilepath);
+                                        } else {
+                                            console.log('attempting to resize file to ' + rawFilepath);
 
-                                        var aspectRatio = metadata.width / metadata.height;
-                                        var newWidth = desiredMaxDimension;
-                                        if (metadata.width < metadata.height) {
-                                            newWidth = desiredMaxDimension * aspectRatio;
-                                        }
-
-                                        // copy fullsize file as backup
-                                        if (fs.existsSync(originalFilepath)) {
-                                            console.log('deleted old original file');
-                                            fs.unlinkSync(originalFilepath);
-                                        }
-                                        fs.copyFileSync(rawFilepath, originalFilepath);
-
-                                        // copied file into temp file to be used during the resize operation
-                                        if (fs.existsSync(tempFilepath)) {
-                                            console.log('deleted old temp file');
-                                            fs.unlinkSync(tempFilepath);
-                                        }
-                                        fs.copyFileSync(rawFilepath, tempFilepath);
-
-                                        sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err, info) {
-                                            if (!err) {
-                                                console.log('done resizing');
-                                                if (fs.existsSync(tempFilepath)) {
-                                                    fs.unlinkSync(tempFilepath);
-                                                }
-                                                continueProcessingUpload();
-                                            } else {
-                                                console.warn('error resizing', err);
-                                                continueProcessingUpload();
+                                            var aspectRatio = metadata.width / metadata.height;
+                                            var newWidth = desiredMaxDimension;
+                                            if (metadata.width < metadata.height) {
+                                                newWidth = desiredMaxDimension * aspectRatio;
                                             }
-                                        });
-                                    }
-                                });
+
+                                            // copy fullsize file as backup
+                                            if (fs.existsSync(originalFilepath)) {
+                                                console.log('deleted old original file');
+                                                fs.unlinkSync(originalFilepath);
+                                            }
+                                            fs.copyFileSync(rawFilepath, originalFilepath);
+
+                                            // copied file into temp file to be used during the resize operation
+                                            if (fs.existsSync(tempFilepath)) {
+                                                console.log('deleted old temp file');
+                                                fs.unlinkSync(tempFilepath);
+                                            }
+                                            fs.copyFileSync(rawFilepath, tempFilepath);
+
+                                            sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err, info) {
+                                                if (!err) {
+                                                    console.log('done resizing');
+                                                    if (fs.existsSync(tempFilepath)) {
+                                                        fs.unlinkSync(tempFilepath);
+                                                    }
+                                                    continueProcessingUpload();
+                                                } else {
+                                                    console.warn('error resizing', err);
+                                                    continueProcessingUpload();
+                                                }
+                                            });
+                                        }
+                                    });
+                                } catch (e) {
+                                    console.warn('error using sharp to load and rezie image from: ' + rawFilepath + ', but trying to continue upload process anyways', err);
+                                    continueProcessingUpload();
+                                }
                             
                             } else {
                                 continueProcessingUpload();
@@ -4488,7 +4496,8 @@ function objectWebServer() {
                                     '   </Tracking>\n' +
                                     '   </ARConfig>';
 
-                                var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
+                                
+                                var xmlOutFile = path.join(folderD, identityFolderName, "/target/target.xml");
                                 if (!fs.existsSync(xmlOutFile)) {
                                     fs.writeFile(xmlOutFile, documentcreate, function (err) {
                                         onXmlVerified(err);
@@ -4517,14 +4526,18 @@ function objectWebServer() {
                                     }
                                 }
                                 
-                                var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
+                                let jpgPath = path.join(folderD, identityFolderName, "/target/target.jpg");
+                                let datPath = path.join(folderD, identityFolderName, "/target/target.dat");
+                                let xmlPath = path.join(folderD, identityFolderName, "/target/target.xml");
+                                
+                                var fileList = [jpgPath, xmlPath, datPath];
                                 var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                 if (typeof objects[thisObjectId] !== "undefined") {
                                     var thisObject = objects[thisObjectId];
-                                    var jpg = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg");
-                                    var dat = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat");
-                                    var xml = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml");
+                                    var jpg = fs.existsSync(jpgPath);
+                                    var dat = fs.existsSync(datPath);
+                                    var xml = fs.existsSync(xmlPath);
                                     
                                     var sendObject = {
                                         id: thisObjectId,
@@ -4535,7 +4548,7 @@ function objectWebServer() {
                                         datExists: dat
                                     };
                                     
-                                    thisObject.tcs = utilities.genereateChecksums(objects, fileList);
+                                    thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
@@ -4597,7 +4610,7 @@ function objectWebServer() {
                                         if (typeof  objects[thisObjectId] !== "undefined") {
                                             var thisObject = objects[thisObjectId];
 
-                                            thisObject.tcs = utilities.genereateChecksums(objects, fileList);
+                                            thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
                                             utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
 
@@ -4686,7 +4699,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
                 
-                if (objectIDXML.indexOf(worldObjectPrefix) > -1) { // TODO: implement a more robust way to tell if it's a world object
+                if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
                     objects[objectIDXML].isWorldObject = true;
                     objects[objectIDXML].timestamp = Date.now();
                 }

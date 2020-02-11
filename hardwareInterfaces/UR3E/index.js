@@ -49,6 +49,7 @@ const { SocketInterface } = require('./socketClient');
 const { CustomMaths } = require('./customMaths');
 
 exports.enabled = false;
+exports.configurable = true; // can be turned on/off/adjusted from the web frontend
 
 if (exports.enabled) {
 

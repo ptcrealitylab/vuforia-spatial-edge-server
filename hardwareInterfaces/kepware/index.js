@@ -34,6 +34,7 @@ var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
 exports.enabled = settings("enabled");
+exports.configurable = true; // can be turned on/off/adjusted from the web frontend
 
 /**
  * These settings will be exposed to the webFrontend to potentially be modified
