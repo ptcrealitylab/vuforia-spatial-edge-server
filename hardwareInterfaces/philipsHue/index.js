@@ -89,7 +89,7 @@ if (exports.enabled) {
             method: 'GET',
         };
 
-        callbackHttp = function (response) {
+        var callbackHttp = function (response) {
             var str = '';
 
             response.on('data', function (chunk) {
