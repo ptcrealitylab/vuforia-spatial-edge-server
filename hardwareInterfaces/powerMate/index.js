@@ -90,7 +90,7 @@ if(buttonValue != buttonValueOld)
         if(buttonValue <-1) buttonValue =-1;
         if(buttonValue <= 0.01 && buttonValue >= -0.01) buttonValue = 0;
         //server.write("box", "rotation", buttonValue);
-    	//console.log(buttonValue);
+        //console.log(buttonValue);
 	});
 
 }
