@@ -39,7 +39,7 @@ class SocketInterface{
 
             TCPindex = 0;   // New TCP package, reset TCPindex
 
-            if (URindex => URsize) {
+            if (URindex >= URsize) {
                 URsize = data.readUIntBE(0, 4);
                 pack = Buffer.alloc(URsize);                            // create a new buffer to allocate all the UR packet
                 URindex = 0;
