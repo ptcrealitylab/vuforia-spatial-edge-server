@@ -3979,9 +3979,14 @@ function objectWebServer() {
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
         webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
+            if (isMobile) {
+                res.status(500).send('zipBackup unavailable on mobile');
+                return;
+            }
+
             var frameName = req.params.frameName;
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
-            
+
             var framePath = path.join(frameLibPath, frameName);
 
             if (!fs.existsSync(framePath)) {
