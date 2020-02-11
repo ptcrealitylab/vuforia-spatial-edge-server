@@ -14,7 +14,7 @@ module.exports = {
     },
     'rules': {
         'indent': [
-            'error',
+            'warn',
             4
         ],
         'linebreak-style': [
@@ -26,19 +26,22 @@ module.exports = {
             'single'
         ],
         'semi': [
-            'error',
+            'warn',
             'always'
         ],
         'comma-spacing': [
-          'error', {before: false, after: true}
+          'warn', {before: false, after: true}
         ],
-        'key-spacing': 'error',
-        'keyword-spacing': 'error',
-        'no-trailing-spaces': 'error',
-        'brace-style': 'error',
-        'space-before-blocks': 'error',
-        'space-infix-ops': 'error',
+        'key-spacing': 'warn',
+        'keyword-spacing': 'warn',
+        'no-trailing-spaces': 'warn',
+        'brace-style': 'warn',
+        'space-before-blocks': 'warn',
+        'space-infix-ops': 'warn',
         'no-prototype-builtins': 'off',
-        'no-unused-vars': ['error', {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}],
+        'no-unused-vars': ['warn', {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}],
+        'no-redeclare': 'warn',
+        'no-inner-declarations': 'warn',
+        'no-extra-semi': 'warn',
     }
 };
