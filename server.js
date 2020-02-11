@@ -151,9 +151,9 @@ if (isMobile) {
     var options = {ipVersion: 4};
 
     var interfaceNames = ni.getInterfaces(options);
-    for(var key in interfaceNames){
-        var tempIps = ni.toIps(interfaceNames[key], options);
-        for (key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
+    for(let key in interfaceNames){
+        let tempIps = ni.toIps(interfaceNames[key], options);
+        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
         ips.interfaces[interfaceNames[key]] = tempIps[0];
     }
 }
@@ -987,11 +987,11 @@ function loadObjects() {
 
 var executeSetups = function () {
 
-    for (objectKey in objects) {
-        for (frameKey in objects[objectKey].frames) {
+    for (let objectKey in objects) {
+        for (let frameKey in objects[objectKey].frames) {
             var thisFrame = objects[objectKey].frames[frameKey];
-            for (nodeKey in thisFrame.nodes) {
-                for (blockKey in thisFrame.nodes[nodeKey].blocks) {
+            for (let nodeKey in thisFrame.nodes) {
+                for (let blockKey in thisFrame.nodes[nodeKey].blocks) {
                     var thisBlock = objects[objectKey].frames[frameKey].nodes[nodeKey].blocks[blockKey];
                     if (blockModules[thisBlock.type]) {
                         blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
@@ -2673,6 +2673,7 @@ function objectWebServer() {
                 foundNode.lockPassword = null;
                 foundNode.lockType = null;
 
+                var object = getObject(objectKey);
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadNode: {object: objectKey, frame:frameKey, node: nodeKey}});
 
@@ -2721,6 +2722,7 @@ function objectWebServer() {
                 foundLink.lockPassword = newLockPassword;
                 foundLink.lockType = newLockType;
 
+                var object = getObject(objectKey);
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadLink: {object: object}});
 
@@ -2766,8 +2768,9 @@ function objectWebServer() {
                 foundLink.lockPassword = null;
                 foundLink.lockType = null;
 
+                var object = getObject(objectKey);
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadLink: {object: object}});
+                utilities.actionSender({reloadLink: {object: objectKey}});
 
                 updateStatus = "deleted";
             } else {
@@ -3115,7 +3118,7 @@ function objectWebServer() {
             newFrame.height = frame.height;
 
             // give default values for this node type to each node's public data, if not already assigned
-            for(key in newFrame.nodes){
+            for(let key in newFrame.nodes){
                 if( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
@@ -3717,8 +3720,8 @@ function objectWebServer() {
             var objectId = req.params.objectId;
             console.log('sending zipBackup', objectId);
 
-            if (!fs.existsSync(path.join(objectsPath, objectID))) {
-                res.status(404).send('object directory for ' + objectID + 'does not exist at ' + objectsPath + '/' + objectID);
+            if (!fs.existsSync(path.join(objectsPath, objectId))) {
+                res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
                 return;
             }
 
@@ -4488,7 +4491,7 @@ function objectWebServer() {
                                         }
                                     });
                                 } catch (e) {
-                                    console.warn('error using sharp to load and rezie image from: ' + rawFilepath + ', but trying to continue upload process anyways', err);
+                                    console.warn('error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
                                     continueProcessingUpload();
                                 }
                             
@@ -4753,7 +4756,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
 
-socketHandler = {};
+var socketHandler = {};
 
 socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey, sessionUuid) {
     var node = getNode(objectKey, frameKey, nodeKey);
@@ -4803,7 +4806,7 @@ function socketServer() {
 
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
-                for(key in frame.nodes){
+                for(let key in frame.nodes){
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
@@ -4852,7 +4855,7 @@ function socketServer() {
             var publicData = {};
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
-                for(key in frame.nodes){
+                for (let key in frame.nodes) {
                     if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
