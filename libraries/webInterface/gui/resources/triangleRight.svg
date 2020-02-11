@@ -1,0 +1,11 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ccc;
+      }
+    </style>
+  </defs>
+  <title>triangleRight</title>
+  <polygon class="cls-1" points="99.5 46 24.5 2.7 24.5 89.3 99.5 46"/>
+</svg>

@@ -1,0 +1,8 @@
+MISSION STRUCTURE:
+
+{
+    "mission_id":"guid_number_here",
+    "parameters":[{"input_name":"positionX","value":0},
+                {"input_name":"positionY","value":0},
+                {"input_name":"orientation","value":0}]
+}

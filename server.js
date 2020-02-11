@@ -80,7 +80,8 @@ const globalVariables = {
     // Allow system to save to file system
     saveToDisk : !isMobile,
     // Create an object for attaching frames to the world
-    worldObject : true
+    worldObject : isMobile,
+    listenForHumanPose: false
 };
 
 // ports used to define the server behaviour
@@ -116,12 +117,14 @@ var path = require('path');
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+// The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
+const frameLibPath = isMobile ? path.join(__dirname, 'realityframes') : path.join(path.join(os.homedir(), 'Documents'), 'realityframes');
 // All visual UI representations for IO Points are stored in this folder:
-const nodePath = __dirname + "/libraries/nodes";
-// All visual UI representations for IO Points are stored in this folder:
-const blockPath = __dirname + "/libraries/logicBlocks";
+const nodePath = path.join(__dirname, "/libraries/nodes");
+// All visual UI representations for logic blocks are stored in this folder:
+const blockPath = path.join(__dirname, "./libraries/logicBlocks");
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
-const hardwarePath = __dirname + "/hardwareInterfaces";
+const hardwarePath =  path.join(__dirname, "./hardwareInterfaces");
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = "/";
 
@@ -153,6 +156,10 @@ if(!fs.existsSync(objectsPath)) {
 }
 
 var identityFolderName = '.identity';
+
+// This file hosts the functions related to loading the set of available frames from the realityframes/ directory
+var globalFrames = require('./libraries/globalFrames');
+globalFrames.initialize(frameLibPath, identityFolderName);
 
 // find ips
 var ni = require('network-interfaces');
@@ -196,12 +203,22 @@ const sharp = isMobile ? null : require('sharp');
 // additional files containing project code
 
 // This file hosts all kinds of utilities programmed for the server
-var utilities = require(__dirname + '/libraries/utilities');
+var utilities = require('./libraries/utilities');
 // The web frontend a developer is able to see when creating new user interfaces.
-var webFrontend = require(__dirname + '/libraries/webFrontend');
+var webFrontend = require('./libraries/webFrontend');
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
+
+// This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
+var { HumanPoseObject, humanPoseObjectDependencies } = require('./libraries/HumanPoseObject');
+humanPoseObjectDependencies.inject({ // this is a temporary workaround to inject the HumanPoseObject module with dependencies it needs
+    ips: ips,
+    version: version,
+    protocol: protocol,
+    Frame: Frame,
+    Node: Node
+});
 
 if (isMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
@@ -233,9 +250,9 @@ function Objects() {
     this.objectId = null;
     // The name for the object used for interfaces.
     this.name = "";
+    this.matrix = [];
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    //this.ip = ip.address();
     this.ip = ips.interfaces[ips.activeInterface];
     // The version number of the Object.
     this.version = version;
@@ -268,8 +285,9 @@ function Objects() {
     this.targetSize = {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
-    }
-
+    };
+    this.isWorldObject = false;
+    this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
 function Frame() {
@@ -731,6 +749,7 @@ var socketArray = {};     // all socket connections that are kept alive
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
 var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
+var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -743,7 +762,7 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
-var worldObjectName = '_WORLD_OBJECT_';
+var worldObjectName = '_WORLD_';
 if (isMobile) {
     worldObjectName += 'local';
 }
@@ -818,7 +837,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, worldObject, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, Node, hardwareAPICallbacks);
 
 logger.debug("Done");
 
@@ -849,12 +868,13 @@ if (!isMobile) {
     }
 }
 
-// add all types to the nodeTypeModules object. Iterate backwards because splice works inplace
+// add all types to the hardwareTypeModules object. Iterate backwards because splice works inplace
 for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
-    //check if hardwareInterface is enabled, if it is, add it to the hardwareInterfaceModules
-    if (require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js").enabled) {
-        hardwareInterfaceModules[hardwareAPIFolderList[i]] = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
-    } else {
+
+    var thisHardwareInterface = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
+    hardwareInterfaceModules[hardwareAPIFolderList[i]] = thisHardwareInterface;
+
+    if (!thisHardwareInterface.enabled) {
         hardwareAPIFolderList.splice(i, 1);
     }
 }
@@ -991,17 +1011,16 @@ var executeSetups = function () {
 };
 executeSetups();
 
-
 /**
- * Initialize worldObject to contents of realityobjects/.identity/_WORLD_OBJECT_/.identity/object.json
+ * Initialize worldObject to contents of realityobjects/_WORLD_local/.identity/object.json
  * Create the json file if doesn't already exist
  */
 function loadWorldObject() {
 
     // create the file for it if necessary
-    var folder = objectsPath + '/.identity/' + worldObjectName + '/';
-    var identityPath = folder + identityFolderName + '/';
-    var jsonFilePath = identityPath + 'object.json';
+    var folder = path.join(objectsPath, worldObjectName);
+    var identityPath = path.join(folder, '.identity');
+    var jsonFilePath = path.join(folder, 'object.json');
 
     // create objects folder at objectsPath if necessary
     if(!fs.existsSync(folder)) {
@@ -1009,7 +1028,7 @@ function loadWorldObject() {
         fs.mkdirSync(folder);
     }
 
-    // create a /identity folder within it to hold the object.json data
+    // create a /.identity folder within it to hold the object.json data
     if(!fs.existsSync(identityPath)) {
         logger.debug('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
@@ -1037,28 +1056,13 @@ function loadWorldObject() {
 
     worldObject.ip = ips.interfaces[ips.activeInterface];
 
-    utilities.setWorldObject(worldObjectName, worldObject);
-
-    // if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-    //     delete objects[utilities.readObject(objectLookup, folderVar)];
-    // }
-    // utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-    // objectLookup[folder] = {id: id};
-    // entering the obejct in to the lookup table
-    // ask the object to reinitialize
-    //serialPort.write("ok\n");
-    // todo send init to internal
+    objects[worldObject.objectId] = worldObject;
 
     hardwareAPI.reset();
 
-    // utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
-
-    // write world object to file
-    // var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-
     if (globalVariables.saveToDisk) {
 
-        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, '\t'), function (err) {
+        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4), function (err) {
             if (err) {
                 logger.debug('worldObject save error', err);
             } else {
@@ -1079,9 +1083,6 @@ function loadWorldObject() {
  **/
 
 function startSystem() {
-
-
-
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (var key in objects) {
@@ -1446,8 +1447,8 @@ function objectWebServer() {
 
     webServer.use('/frames', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-
-        var fileName = __dirname + '/libraries' + req.originalUrl;
+        
+        var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
 
         if (!fs.existsSync(fileName)) {
             next();
@@ -1465,29 +1466,29 @@ function objectWebServer() {
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
-        html = html.replace('<script src="resources/object.js"></script>', '');
+        html = html.replace('<script src="../resources/object.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
 
         html = html.replace('<script src="object-frames.js"></script>', '');
-        html = html.replace('<script src="resources/object-frames.js"></script>', '');
+        html = html.replace('<script src="../resources/object-frames.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
 
-        html = html.replace('<script src="resources/pep.min.js"></script>', '');
+        html = html.replace('<script src="../resources/pep.min.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
-
+        
         var level = "../";
         for(var i = 0; i < urlArray.length-3; i++){
             level += "../";
         }
+
+        html = html.replace('objectDefaultFiles/envelope.js', level+'objectDefaultFiles/envelope.js');
+        html = html.replace('objectDefaultFiles/envelopeContents.js', level+'objectDefaultFiles/envelopeContents.js');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
-
-        var objectKey = utilities.readObject(objectLookup,urlArray[0]);
-        var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
-
-        scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
-        scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
+        
+        // inject the server IP address, but don't inject the objectKey and frameKey, as those come from the editor
         scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
@@ -1528,9 +1529,6 @@ function objectWebServer() {
         }
 
         if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
-            if (urlArray[0] === worldObjectName) {
-                urlArray[0] = identityFolderName + '/' + worldObjectName;
-            }
             urlArray[urlArray.length-2] = identityFolderName+"/videos";
         }
 
@@ -1630,23 +1628,12 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object)
      */
     function getObjectAsync(objectKey, callback) {
-
         if (!objects.hasOwnProperty(objectKey)) {
-            if(globalVariables.worldObject) {
-                if (objectKey.indexOf(worldObjectName) > -1) {
-                    callback(null, worldObject);
-                    return;
-                }
-            }
-
             callback({failure: true, error: 'Object ' + objectKey + ' not found'});
             return;
         }
-
         var object = objects[objectKey];
-
         callback(null, object);
-
     }
 
     /**
@@ -1655,24 +1642,18 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getFrameAsync(objectKey, frameKey, callback) {
-
         getObjectAsync(objectKey, function(error, object) {
             if (error) {
                 callback(error);
                 return;
             }
-
             if (!object.frames.hasOwnProperty(frameKey)) {
                 callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
                 return;
             }
-
             var frame = object.frames[frameKey];
-
             callback(null, object, frame);
-
         });
-
     }
 
     /**
@@ -1682,24 +1663,18 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
-
         getFrameAsync(objectKey, frameKey, function(error, object, frame) {
             if (error) {
                 callback(error);
                 return;
             }
-
             if (!frame.nodes.hasOwnProperty(nodeKey)) {
                 callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
                 return;
             }
-
             var node = frame.nodes[nodeKey];
-
             callback(null, object, frame, node);
-
         });
-
     }
 
     /**
@@ -2208,6 +2183,11 @@ function objectWebServer() {
 
     }
 
+    // Responds with the set of global frames that this server is hosting
+    webServer.get('/availableFrames/', function (req, res) {
+        console.log("get available frames");
+        res.json(globalFrames.getFrameList());
+    });
 
     // sends json object for a specific reality object. * is the object name
     // ths is the most relevant for
@@ -2433,10 +2413,6 @@ function objectWebServer() {
         for (var objectKey in objects) {
             if (!objects.hasOwnProperty(objectKey)) continue;
             callback(objects[objectKey], objectKey);
-        }
-
-        if (worldObject) {
-            callback(worldObject, worldObject.objectId);
         }
     }
 
@@ -2888,11 +2864,7 @@ function objectWebServer() {
             }
 
             var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
-            if (objectKey.indexOf(worldObjectName) > -1) {
-                videoDir = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/videos';
-            }
-
-            logger.debug('videoDir is', videoDir);
+            console.log('videoDir is: ' + videoDir);
 
             if (!fs.existsSync(videoDir)) {
                 logger.debug('make videoDir');
@@ -3034,6 +3006,11 @@ function objectWebServer() {
         }
 
         var obj = getObject(objectID);
+        
+        if (obj.isHumanPose) {
+            res.status(404).json({failure: true, error: 'Object ' + objectID + ' has no directory'}).end();
+            return;
+        }
 
         var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
         if (!fs.existsSync(memoryDir)) {
@@ -3320,9 +3297,6 @@ function objectWebServer() {
             var urlArray = videoPath.split('/');
 
             var objectName = urlArray[4];
-            if (videoPath.indexOf(worldObjectName) > -1) {
-                objectName = identityFolderName + '/' + worldObjectName;
-            }
             var videoFilePath = objectsPath + '/' + objectName + '/' + identityFolderName + '/videos/' + urlArray[6];
 
             if (fs.existsSync(videoFilePath)) {
@@ -3651,9 +3625,12 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // logger.debug("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, worldObject));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
-
+        
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:name', function(req, res) {
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.name, hardwareInterfaceModules, version, ips, serverPort));
+        });
         // restart the server from the web frontend to load
 
         webServer.get('/restartServer/', function(req, res) {
@@ -3734,16 +3711,288 @@ function objectWebServer() {
             var objectID = req.params[0];
             logger.debug("++++++++++++++++++++++++++++++++++++++++++++++++");
 
+            if (!fs.existsSync(path.join(objectsPath, objectID))) {
+                res.status(404).send('object directory for ' + objectID + 'does not exist at ' + objectsPath + '/' + objectID);
+                return;
+            }
+
             res.writeHead(200, {
                 'Content-Type': 'application/zip',
                 'Content-disposition': 'attachment; filename=' + objectID + '.zip'
+            });
+            
+            var archiver = require('archiver');
+
+            var zip = archiver('zip');
+            zip.pipe(res);
+            zip.directory(objectsPath + '/' + objectID, objectID + "/");
+            zip.finalize();
+        });
+        
+        webServer.post('/object/:objectKey/generateXml/', function(req, res) {
+            var objectKey = req.params.objectKey;
+            var msgObject = req.body;
+            var objectName = msgObject.name;
+            
+            console.log(objectKey, msgObject);
+            
+            console.log('support inferred aspect ratio of image targets');
+            console.log('support object targets');
+            
+            // var isImageTarget = true;
+            // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
+            
+            var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
+                '   <Tracking>\n' +
+                '   <ImageTarget name="' + objectKey + '" size="' + parseFloat(msgObject.width).toFixed(8) + ' ' + parseFloat(msgObject.height).toFixed(8) + '" />\n' +
+                '   </Tracking>\n' +
+                '   </ARConfig>';
+
+            var xmlOutFile = path.join(objectsPath, objectName, identityFolderName, "/target/target.xml");
+            // if (!fs.existsSync(xmlOutFile)) {
+            fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                if (err) {
+                    res.status(500).send('error writing new target size to .xml file for ' + objectKey);
+                } else {
+                    res.status(200).send('ok');
+                    
+                    // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
+                    var object = getObject(objectKey);
+                    if (object) {
+                        object.targetSize.width = parseFloat(msgObject.width);
+                        object.targetSize.height = parseFloat(msgObject.height);
+                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    }
+                }
+            });
+        });
+        
+        webServer.post('/hardwareInterface/:interfaceName/settings/', function(req, res) {
+            var interfaceName = req.params.interfaceName;
+            
+            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface settings changes to take place'); // TODO: github issue #21
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        /**
+         * Updates the settings.json for a particular hardware interface, based on changes from the webFrontend.
+         * @param {string} interfaceName - the folder name of the hardwareInterface
+         * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
+         * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
+         * @param {function<boolean, string|undefined>} callback - first param is success, second is error message
+         */
+        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
+            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+
+            try {
+                var existingSettings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+
+                console.log('before:', hardwareInterfaceModules[interfaceName]);
+
+                for (var key in settings) {
+                    if (!settings.hasOwnProperty(key)) { continue; }
+                    if (limitToKeys && !limitToKeys.includes(key)) { continue; }
+                    
+                    // update value that will get written to disk
+                    if (typeof settings[key].value !== 'undefined') {
+                        existingSettings[key] = settings[key].value;
+                    } else {
+                        existingSettings[key] = settings[key];
+                    }
+                    console.log('set ' + key + ' to ' + existingSettings[key]);
+
+                    // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
+                    if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
+                        hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
+                    }
+                }
+
+                console.log('after:', hardwareInterfaceModules[interfaceName]);
+
+                if (globalVariables.saveToDisk) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
+                        if (err) {
+                            console.log(err);
+                            callback(false, 'error writing to file');
+                        } else {
+                            console.log('successfully wrote settings hardwareInterface: ' + interfaceName);
+                            callback(true);
+                        }
+                    });
+                } else {
+                    console.log('I am not allowed to save');
+                    callback(false, 'saveToDisk globally disabled for this server');
+                }
+            } catch (e) {
+                console.log('error reading settings.json for ' + interfaceName + '.');
+                callback(false, 'error writing to file');
+            }
+        }
+
+        webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
+            var interfaceName = req.params.interfaceName;
+            
+            setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
+            var interfaceName = req.params.interfaceName;
+
+            setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        /**
+         * Overwrites the 'enabled' property in the realityObjects/.identity/hardwareInterfaceName/settings.json
+         * If the file is new (empty), write a default json blob into it with the new enabled value
+         * @param {string} interfaceName
+         * @param {boolean} shouldBeEnabled
+         * @param callback {function<boolean, string|undefined>} - success, error message
+         */
+        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
+            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+            console.log(interfaceSettingsPath);
+
+            try {
+                var settings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+                settings.enabled = shouldBeEnabled;
+
+                if (globalVariables.saveToDisk) {
+                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4), function (err) {
+                        if (err) {
+                            console.log(err);
+                            callback(false, 'error writing to file');
+                        } else {
+                            console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
+                            callback(true);
+                        }
+                    });
+                } else {
+                    console.log('I am not allowed to save');
+                    callback(false, 'saveToDisk globally disabled for this server');
+                }
+            } catch (e) {
+                console.log('error reading settings.json for ' + interfaceName + '. try reverting to default settings');
+                var defaultSettings = {
+                    enabled: shouldBeEnabled
+                };
+                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4), function (err) {
+                    if (err) {
+                        console.log(err);
+                        callback(false, 'error writing to file');
+                    } else {
+                        console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
+                        callback(true);
+                    }
+                });
+            }
+        }
+
+        webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
+            var frameName = req.params.frameName;
+
+            globalFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
+            var frameName = req.params.frameName;
+
+            globalFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/object/:objectKey/disableFrameSharing/', function (req, res) {
+            var objectKey = req.params.objectKey;
+
+            setFrameSharingEnabled(objectKey, false, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        webServer.get('/object/:objectKey/enableFrameSharing/', function (req, res) {
+            var objectKey = req.params.objectKey;
+
+            setFrameSharingEnabled(objectKey, true, function(success, errorMessage) {
+                if (success) {
+                    res.status(200).send('ok');
+                } else {
+                    res.status(500).send(errorMessage);
+                }
+            });
+        });
+
+        /**
+         * Enable sharing of global frames from this server to objects on other servers
+         * @todo: see github issue #23 - function is currently unimplemented
+         * @param {string} objectKey
+         * @param {boolean} shouldBeEnabled
+         * @param {function<boolean, string|undefined>} callback - success, error message
+         */
+        function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
+            callback(true);
+            console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
+        }
+
+        // request a zip-file with the frame stored inside. *1 is the frameName
+        // ****************************************************************************************************************
+        webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
+            var frameName = req.params.frameName;
+            console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
+            
+            var framePath = path.join(frameLibPath, frameName);
+
+            if (!fs.existsSync(framePath)) {
+                res.status(404).send('frame directory for ' + frameName + 'does not exist at ' + framePath);
+                return;
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'application/zip',
+                'Content-disposition': 'attachment; filename=' + frameName + '.zip'
             });
 
             var archiver = require('archiver');
 
             var zip = archiver('zip');
             zip.pipe(res);
-            zip.directory(objectsPath + '/' + objectID, objectID + "/");
+            zip.directory(framePath, frameName + "/");
             zip.finalize();
         });
 
@@ -3778,27 +4027,21 @@ function objectWebServer() {
         });
 
         /**
-         * Gets the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         * Previously, retrieved the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         * Now it is deprecated, because world objects are discovered using UDP broadcasts
          */
         webServer.get('/worldObject/', function(req, res) {
-
-            if (typeof worldObject === 'undefined') {
-                worldObject = {};
-            }
-
-            res.json(worldObject);
+            res.status(410).send('This API has been removed. World objects should be discovered the same way as any other object.');
         });
-
 
         // use allObjects for TCP/IP object discovery
         // ****************************************************************************************************************
-        // TODO: BEN - should this return world object too?
         webServer.get('/allObjects/', function (req, res) {
 
             var returnJSON = [];
 
-            for (var thisId in objects) { // TODO: possibly change to forEachObject(callback(objectID, object) { ... })
-                if (objects[thisId].deactivated) continue;
+            for (var thisId in objects) {
+                if (objects[thisId].deactivated) continue; // todo: filter by zone, too?
 
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
@@ -3912,9 +4155,9 @@ function objectWebServer() {
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey+ req.body.frame].location);
                     }
                 }
-              //  res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
+                // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
 
-            res.send("ok");
+                res.send("ok");
             }
             if (req.body.action === "delete") {
 
@@ -3958,9 +4201,6 @@ function objectWebServer() {
                 if (frameName !== "") {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
-                    if (thisObject.isWorldObject) {
-                        folderDelFrame = objectsPath + '/.identity/' + worldObjectName + '/' + identityFolderName + '/' + req.body.name + "/" + frameName;
-                    }
 
                     deleteFolderRecursive(folderDelFrame);
 
@@ -4168,7 +4408,7 @@ function objectWebServer() {
                         logger.debug('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
 
-                        if (fileExtension === "jpg") {
+                        if (fileExtension === "jpg" || fileExtension === "dat") {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + "/target/")) {
                                 fs.mkdirSync(folderD + '/' + identityFolderName + "/target/", "0766", function (err) {
                                     if (err) {
@@ -4178,70 +4418,150 @@ function objectWebServer() {
                                 });
                             }
 
-                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target.jpg");
+                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target." + fileExtension);
 
-                            var objectName = req.params.id + utilities.uuidTime();
+                            // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
+                            // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
+                            if (fileExtension === 'jpg') {
 
-                            var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                                '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
-                                '   <Tracking>\n' +
-                                '   <ImageTarget name="' + objectName + '" size="300.000000 300.000000" />\n' +
-                                '   </Tracking>\n' +
-                                '   </ARConfig>';
+                                var rawFilepath         = folderD + '/' + identityFolderName + "/target/target." + fileExtension;
+                                var tempFilepath        = folderD + '/' + identityFolderName + "/target/target-temp." + fileExtension;
+                                var originalFilepath    = folderD + '/' + identityFolderName + "/target/target-original-size." + fileExtension;
+                                
+                                var image;
+                                try {
+                                    image = sharp(rawFilepath);
+                                    image.metadata().then(function(metadata) {
+                                        console.log(metadata);
+                                        var desiredMaxDimension = 1024;
 
-                            var xmlOutFile = folderD + '/' + identityFolderName + "/target/target.xml";
-                            if (!fs.existsSync(xmlOutFile)) {
-                                fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                                    if (err) {
-                                        logger.debug(err);
-                                    } else {
-                                        logger.debug("XML saved to " + xmlOutFile);
-                                    }
-                                });
-                            }
+                                        if (Math.max(metadata.width, metadata.height) <= desiredMaxDimension) {
+                                            console.log('jpg doesnt need resizing');
+                                            continueProcessingUpload();
 
-                            var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
+                                        } else {
+                                            console.log('attempting to resize file to ' + rawFilepath);
 
-                            var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                            var aspectRatio = metadata.width / metadata.height;
+                                            var newWidth = desiredMaxDimension;
+                                            if (metadata.width < metadata.height) {
+                                                newWidth = desiredMaxDimension * aspectRatio;
+                                            }
 
+                                            // copy fullsize file as backup
+                                            if (fs.existsSync(originalFilepath)) {
+                                                console.log('deleted old original file');
+                                                fs.unlinkSync(originalFilepath);
+                                            }
+                                            fs.copyFileSync(rawFilepath, originalFilepath);
 
-                            if (typeof  objects[thisObjectId] !== "undefined") {
-                                var thisObject = objects[thisObjectId];
+                                            // copied file into temp file to be used during the resize operation
+                                            if (fs.existsSync(tempFilepath)) {
+                                                console.log('deleted old temp file');
+                                                fs.unlinkSync(tempFilepath);
+                                            }
+                                            fs.copyFileSync(rawFilepath, tempFilepath);
 
-                                var jpg = false;
-                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
-                                var dat = false;
-                                if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
-
-
-                                var sendObject = {
-                                    id : thisObjectId,
-                                    name: thisObject.name,
-                                    initialized : true,
-                                    jpgExists :jpg,
-                                    targetExists: dat
-                                };
-
-                                thisObject.tcs = utilities.genereateChecksums(objects, fileList);
-
-                                utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
-
-                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
-
-                                res.status(200);
-                                res.json(sendObject);
+                                            sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err, info) {
+                                                if (!err) {
+                                                    console.log('done resizing');
+                                                    if (fs.existsSync(tempFilepath)) {
+                                                        fs.unlinkSync(tempFilepath);
+                                                    }
+                                                    continueProcessingUpload();
+                                                } else {
+                                                    console.warn('error resizing', err);
+                                                    continueProcessingUpload();
+                                                }
+                                            });
+                                        }
+                                    });
+                                } catch (e) {
+                                    console.warn('error using sharp to load and rezie image from: ' + rawFilepath + ', but trying to continue upload process anyways', err);
+                                    continueProcessingUpload();
+                                }
+                            
                             } else {
-                                res.status(200);
+                                continueProcessingUpload();
+                            }
+                            
+                            // Step 2) - Generate a default XML file if needed
+                            function continueProcessingUpload() {
+                                var objectName = req.params.id + utilities.uuidTime();
 
-                                var sendObject = {
-                                    initialized : false
-                                };
+                                var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                                    '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
+                                    '   <Tracking>\n' +
+                                    '   <ImageTarget name="' + objectName + '" size="0.30000000 0.30000000" />\n' +
+                                    '   </Tracking>\n' +
+                                    '   </ARConfig>';
 
-                                res.json("ok");
+                                
+                                var xmlOutFile = path.join(folderD, identityFolderName, "/target/target.xml");
+                                if (!fs.existsSync(xmlOutFile)) {
+                                    fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                                        onXmlVerified(err);
+                                    });
+                                } else {
+                                    onXmlVerified();
+                                }
+                            }
+                            
+                            // create the object data and respond to the webFrontend once the XML file is confirmed to exist
+                            function onXmlVerified(err) {
+                                if (err) {
+                                    logger.debug(err);
+                                } else {
+                                    // create the object if needed / possible
+                                    if (typeof objects[thisObjectId] === "undefined") {
+                                        logger.debug("creating object from target file " + tmpFolderFile);
+                                        // createObjectFromTarget(tmpFolderFile);
+                                        createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+
+                                        //todo send init to internal modules
+                                        logger.debug("have created a new object");
+
+                                        hardwareAPI.reset();
+                                        logger.debug("have initialized the modules");
+                                    }
+                                }
+                                
+                                let jpgPath = path.join(folderD, identityFolderName, "/target/target.jpg");
+                                let datPath = path.join(folderD, identityFolderName, "/target/target.dat");
+                                let xmlPath = path.join(folderD, identityFolderName, "/target/target.xml");
+                                
+                                var fileList = [jpgPath, xmlPath, datPath];
+                                var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+
+                                if (typeof objects[thisObjectId] !== "undefined") {
+                                    var thisObject = objects[thisObjectId];
+                                    var jpg = fs.existsSync(jpgPath);
+                                    var dat = fs.existsSync(datPath);
+                                    var xml = fs.existsSync(xmlPath);
+                                    
+                                    var sendObject = {
+                                        id: thisObjectId,
+                                        name: thisObject.name,
+                                        initialized: ((jpg || dat) && xml),
+                                        jpgExists: jpg,
+                                        xmlExists: xml,
+                                        datExists: dat
+                                    };
+                                    
+                                    thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                                    utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                    objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                    // res.status(200).send('ok');
+                                    res.status(200).json(sendObject);
+                                    
+                                } else {
+                                    // var sendObject = {
+                                    //     initialized : false
+                                    // };
+                                    res.status(200).send('ok');
+                                }
                             }
 
-
-                            //   fs.unlinkSync(folderD + "/" + filename);
                         }
 
                         else if (fileExtension === "zip") {
@@ -4290,7 +4610,7 @@ function objectWebServer() {
                                         if (typeof  objects[thisObjectId] !== "undefined") {
                                             var thisObject = objects[thisObjectId];
 
-                                            thisObject.tcs = utilities.genereateChecksums(objects, fileList);
+                                            thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
                                             utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
 
@@ -4298,19 +4618,17 @@ function objectWebServer() {
 
                                             res.status(200);
 
-
-                                            var jpg = false;
-                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg")) jpg = true;
-                                            var dat = false;
-                                            if(fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) dat = true;
-
+                                            var jpg = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg");
+                                            var dat = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat");
+                                            var xml = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml");
 
                                             var sendObject = {
                                                 id : thisObjectId,
                                                 name: thisObject.name,
-                                                initialized : true,
-                                                jpgExists :jpg,
-                                                targetExists: dat
+                                                initialized: (jpg && xml && dat),
+                                                jpgExists: jpg,
+                                                xmlExists: xml,
+                                                datExists: dat
                                             };
 
                                             res.json(sendObject);
@@ -4359,8 +4677,9 @@ function objectWebServer() {
 }
 
 // TODO this should move to the utilities section
-//createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
-
+/**
+ * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
+ */
 function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
     logger.debug("I can start");
 
@@ -4379,6 +4698,11 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
+                
+                if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+                    objects[objectIDXML].isWorldObject = true;
+                    objects[objectIDXML].timestamp = Date.now();
+                }
 
                 logger.debug("this should be the IP" + objectIDXML);
 
@@ -4420,7 +4744,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
 
 socketHandler = {};
 
-socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey) {
+socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey, sessionUuid) {
     var node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
@@ -4429,7 +4753,8 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
                     object: objectKey,
                     frames: frameKey,
                     node: nodeKey,
-                    publicData: node.publicData
+                    publicData: node.publicData,
+                    sessionUuid: sessionUuid // used to filter out messages received by the original sender
                 }));
 
             }
@@ -4565,7 +4890,6 @@ function socketServer() {
             }));
         });
 
-
         socket.on('object', function (msg) {
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
@@ -4600,7 +4924,8 @@ function socketServer() {
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
 
-            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node);
+            // msg.sessionUuid isused to exclude sending public data to the session that sent it
+            socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node, msg.sessionUuid);
         });
 
         socket.on('block/setup', function (_msg) {
@@ -4666,6 +4991,233 @@ function socketServer() {
 
         });
 
+        socket.on('/subscribe/objectUpdates', function (msg) {
+            var msgContent = JSON.parse(msg);
+            realityEditorObjectMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
+            console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
+            console.log(realityEditorObjectMatrixSocketArray);
+        });
+        
+        socket.on('/update/object/matrix', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            var object = getObject(msgContent.objectKey);
+            if (!object) { return; }
+            if (!msgContent.hasOwnProperty('matrix')) { return; }
+            
+            object.matrix = msgContent.matrix;
+
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    continue; // don't send updates to the editor that triggered it
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    
+                    var updateResponse = {
+                        objectKey: msgContent.objectKey,
+                        propertyPath: 'matrix',
+                        newValue: msgContent.matrix,
+                    };
+                    if (typeof msgContent.editorId !== 'undefined') {
+                        updateResponse.editorId = msgContent.editorId;
+                    }
+                    
+                    thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                }
+            }
+        });
+
+        socket.on('/update/object/position', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            var object = getObject(msgContent.objectKey);
+            if (!object) { return; }
+            
+            var position = msgContent.position;
+            var rotationInRadians;
+            if (typeof msgContent.rotationInRadians !== 'undefined') {
+                rotationInRadians = msgContent.rotationInRadians;
+            } else if (typeof msgContent.rotationInDegrees !== 'undefined') {
+                rotationInRadians = (msgContent.rotationInDegrees / 180) * Math.PI;
+            }
+            
+            var matrix = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+            matrix[0] = Math.cos(rotationInRadians);
+            matrix[1] = -Math.sin(rotationInRadians);
+            matrix[4] = Math.sin(rotationInRadians);
+            matrix[5] = Math.cos(rotationInRadians);
+            matrix[12] = position.x;
+            matrix[13] = position.y;
+            matrix[14] = position.z;
+            
+            object.matrix = matrix;
+
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    continue; // don't send updates to the editor that triggered it
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+
+                    var updateResponse = {
+                        objectKey: msgContent.objectKey,
+                        propertyPath: 'matrix',
+                        newValue: object.matrix,
+                    };
+                    if (typeof msgContent.editorId !== 'undefined') {
+                        updateResponse.editorId = msgContent.editorId;
+                    }
+
+                    thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                }
+            }
+        });
+        
+        // create or update the position of a HumanPoseObject 
+        socket.on('/update/humanPoses', function(msg) {
+            if (!globalVariables.listenForHumanPose) { return; }
+            
+            var msgContent = msg;
+            if (typeof msg === 'string') {
+                msgContent = JSON.parse(msg);
+            }
+            if (!msgContent) { return; }
+            
+            // if no poses changed this frame, don't clog the network with sending the same information
+            var didAnythingChange = false;
+            forEachHumanPoseObject(function(objectKey, thisObject) {
+                thisObject.wasUpdated = false;
+            });
+            
+            msgContent.forEach(function(poseInfo) {
+                var objectId = HumanPoseObject.getObjectId(poseInfo.id);
+                var thisObject = objects[objectId];
+                if (!doesObjectExist(objectId)) {
+                    // create an object if needed
+                    objects[objectId] = new HumanPoseObject(poseInfo.id);
+                    thisObject = objects[objectId];
+                    // advertise to editors
+                    objectBeatSender(beatPort, objectId, thisObject.ip, true);
+                    // currently doesn't writeObjectToFile, because I've found no need for human objects to persist 
+                }
+                // update the position of each frame based on the poseInfo
+                thisObject.updateJointPositions(poseInfo.joints);
+                thisObject.wasUpdated = true; // flags objects to be deleted if they are not updated
+                didAnythingChange = true;
+            });
+            
+            // check if any Human Objects were not contained in msgContent, and delete them
+            forEachHumanPoseObject(function(objectKey, thisObject) {
+                if (!thisObject.wasUpdated) {
+                    console.log('delete human pose object', objectKey);
+                    didAnythingChange = true;
+                    delete objects[objectKey];
+                    // todo: delete folder recursive if necessary?
+                    // ^ might not actually be needed, why would human object need to persist?
+                }
+            });
+
+            if (!didAnythingChange) { return; }
+            
+            // send updated objects / positions to all known editors. right now piggybacks on sockets opened for other realtime communications.
+            for (var socketId in realityEditorObjectMatrixSocketArray) {
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    // sends an array of objectIds for the visible poses in this timestep
+                    var visibleHumanPoseObjects = Object.keys(objects).filter(function(objectKey) {
+                        return objects[objectKey].isHumanPose;
+                    });
+                    var updateResponse = {
+                        visibleHumanPoseObjects: visibleHumanPoseObjects
+                    };
+                    // also sends all object JSON data for each visible pose object
+                    var objectData = {};
+                    visibleHumanPoseObjects.forEach(function(objectKey) {
+                        objectData[objectKey] = objects[objectKey];
+                    });
+                    updateResponse.objectData = objectData;
+
+                    // TODO: we should only need to send object matrix, and each frame.ar (x,y,matrix) for each pose object
+                    // this doesn't work right now because we also need the full JSON to instantly create the object on the client for a newly detected pose
+                    // but there might be a way in the future to only send full data for objects that are newly detected
+                    // to reduce the bandwidth used by constantly sending object/frame/pose information to all clients
+                    // var compressedObjectData = {};
+                    // visibleHumanPoseObjects.forEach(function(objectKey) {
+                    //     compressedObjectData[objectKey] = {
+                    //         ip: objects[objectKey].ip
+                    //         matrix: objects[objectKey].matrix
+                    //     };
+                    //     for (var frameKey in objects[objectKey].frames) {
+                    //         compressedObjectData[frameKey] = objects[objectKey].frames[frameKey].ar;
+                    //     }
+                    // });
+                    // updateResponse.compressedObjectData = compressedObjectData;
+
+                    thisSocket.emit('/update/humanPoses', JSON.stringify(updateResponse));
+                }
+            }
+        });
+        
+        socket.on('node/setup', function(msg) {
+            var msgContent = msg;
+            if (typeof msg === 'string') {
+                msgContent = JSON.parse(msg);
+            }
+            if (!msgContent) { return; }
+            
+            console.log(msgContent);
+            var objectKey = msgContent.object;
+            var frameKey = msgContent.frame;
+            var nodeData = msgContent.nodeData;
+            
+            var frame = getFrame(objectKey, frameKey);
+            if (!frame) {
+                console.warn('could not find frame for node/setup', objectKey, frameKey, nodeData);
+                return;
+            }
+            
+            var nodeKey = frameKey + nodeData.name;
+            
+            // this function can be called multiple times... only set up the new node if it doesnt already exist
+            if (typeof frame.nodes[nodeKey] === 'undefined') {
+                console.log('creating node ' + nodeKey);
+                var newNode = new Node();
+                frame.nodes[nodeKey] = newNode;
+                newNode.objectId = objectKey;
+                newNode.frameId = frameKey;
+                newNode.name = nodeData.name;
+                
+                if (typeof nodeData.type !== 'undefined') {
+                    newNode.type = nodeData.type;
+                }
+                if (typeof nodeData.x !== 'undefined') {
+                    newNode.x = nodeData.x;
+                } else {
+                    newNode.x = utilities.randomIntInc(0, 200) - 100; // nodes are given a random position if not specified
+                }
+                if (typeof nodeData.y !== 'undefined') {
+                    newNode.y = nodeData.y;
+                } else {
+                    newNode.y = utilities.randomIntInc(0, 200) - 100;
+                }
+                if (typeof nodeData.scaleFactor !== 'undefined') {
+                    newNode.scale = nodeData.scaleFactor;
+                }
+                newNode.scale *= 0.25; // TODO fix this without hard coding
+                if (typeof nodeData.defaultValue !== 'undefined') {
+                    newNode.data.value = nodeData.defaultValue;
+                }
+
+                // notify each editor to reload the frame with the new node it has
+                utilities.actionSender({reloadFrame: {object: objectKey, frame: frameKey}, lastEditor: null});
+            }
+        });
+        
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
@@ -4707,29 +5259,28 @@ function sendMessagetoEditors(msgContent, sourceSocketID) {
 /////////
 
 function doesObjectExist(objectKey) {
-    if(globalVariables.worldObject)
-    return objects.hasOwnProperty(objectKey) || objectKey === worldObject.objectId;
-    else
-        return objects.hasOwnProperty(objectKey);
+    return objects.hasOwnProperty(objectKey);
 }
 
 function getObject(objectKey) {
     if (doesObjectExist(objectKey)) {
-        if(globalVariables.worldObject)
-        return objects[objectKey] || worldObject;
-        else
-            return objects[objectKey];
+        return objects[objectKey];
     }
     return null;
 }
 
-// invokes callback(objectID, object) for each object (including world object)
+// invokes callback(objectID, object) for each object
 function forEachObject(callback) {
     for (var objectID in objects) {
         callback(objectID, objects[objectID]);
     }
-    if(globalVariables.worldObject) {
-        callback(worldObject.objectId, worldObject);
+}
+
+function forEachHumanPoseObject(callback) {
+    for (var objectID in objects) {
+        if (objects[objectID].isHumanPose) {
+            callback(objectID, objects[objectID]);
+        }
     }
 }
 
