@@ -106,18 +106,8 @@ test.testE = function (timeStart, timeEnd, counter, intervalls, a, b, c, d){
 };
 
 test.testF = function (timeStart, timeEnd, counter, intervalls, a, b, c, d){
-   var timeStart = timeStart;
-	   var timeEnd = timeEnd;
-		var counter = counter;
-			var intervalls = intervalls;
-		var a = a;
-			var b = b;
-		var c = c;
-		var d = d;
-
-
     timeStart = Date.now();
-    for(counter =0; counter < intervalls; counter++) {
+    for (counter = 0; counter < intervalls; counter++) {
         a = counter;
         b = a;
         a = b * counter;
@@ -127,7 +117,7 @@ test.testF = function (timeStart, timeEnd, counter, intervalls, a, b, c, d){
     console.log("var  "+timeEnd);
 };
 
-a1 = {n :1235};
+var a1 = {n :1235};
 
 function testNumber(n){
     n['n'] = 1111111;

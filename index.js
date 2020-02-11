@@ -28,7 +28,7 @@ if (process.pid) {
 }
 
 process.on('SIGINT', function() {
-    logger.info("Gracefully shutting down \'node forever\' from SIGINT (Ctrl-C)");
+    logger.info("Gracefully shutting down 'node forever' from SIGINT (Ctrl-C)");
     // some other closing procedures go here
     // child.kill('SIGINT');
 
