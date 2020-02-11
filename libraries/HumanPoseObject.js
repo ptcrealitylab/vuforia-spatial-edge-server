@@ -1,5 +1,7 @@
 var DependencyInjector = require(__dirname + '/DependencyInjector');
 var dependencies = new DependencyInjector();
+const Frame = require('../models/Frame.js');
+const Node = require('../models/Node.js');
 
 /**
  * A functional "subclass" of Objects, which automatically generates frames for each pose joint
@@ -135,7 +137,7 @@ HumanPoseObject.prototype.createPoseFrames = function(dontFilterJoints) {
  * @return {Frame}
  */
 HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
-    var newFrame = new dependencies.Frame();
+    var newFrame = new Frame();
     newFrame.objectId = this.objectId;
     newFrame.uuid = this.getFrameKey(jointName);
     newFrame.name = jointName;
@@ -143,7 +145,7 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = new dependencies.Node();
+        var newNode = new Node();
         newNode.objectId = this.objectId;
         newNode.frameId = newFrame.uuid;
         newNode.name = 'value';
