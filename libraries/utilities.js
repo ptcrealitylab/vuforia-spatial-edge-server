@@ -452,7 +452,7 @@ function itob62(i) {
  * @return
  **/
 
-exports.genereateChecksums = function (objects,fileArray) {
+exports.generateChecksums = function (objects,fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {

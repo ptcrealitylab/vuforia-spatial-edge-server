@@ -196,7 +196,7 @@
     realityObject.messageCallBacks.mainCall = function (msgContent) {
 
         if (typeof msgContent.sendMessageToFrame !== 'undefined') {
-            return; // TODO: fix this bug in a cleaner way
+            return; // TODO: fix this bug in a cleaner way (github issue #17)
         }
 
         // Adds the socket.io connection and adds the related API methods

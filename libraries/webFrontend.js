@@ -43,13 +43,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var utilities = require(__dirname+'/utilities');
+var utilities = require('./utilities');
 var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
-var pathUtilities = require('path');
+var path = require('path');
 var readdirp = require('readdirp');
-var hardwareAPI = require(__dirname + '/hardwareInterfaces');
+var hardwareAPI = require('./hardwareInterfaces');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var worldObjectPrefix = '_WORLD_'; // TODO: get this from server.js
@@ -76,9 +76,10 @@ function Frame() {
 exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort) {
     console.log(hardwareInterfaceName, ipAddress, serverPort, hardwareInterfaceModules);
 
-    var path = __dirname.split('libraries')[0];
+    var rootPath = __dirname.split('libraries')[0];
+    console.log(rootPath);
     // loads the index.html content
-    var html = fs.readFileSync( path + 'hardwareInterfaces/' + hardwareInterfaceName + '/config.html', 'utf8');
+    var html = fs.readFileSync( path.join(rootPath, 'hardwareInterfaces/', hardwareInterfaceName, '/config.html'), 'utf8');
 
     // inject the data structure with all the hardware interfaces
     html = html.replace('{/*replace HardwareInterface*/}', JSON.stringify(hardwareInterfaceModules[hardwareInterfaceName], null, 4));
@@ -102,7 +103,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     var newObject = {};
 
     var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory();
+        return fs.statSync(path.join(objectsPath, file)).isDirectory();
     });
     // remove hidden directories
     while (tempFiles.length > 0 && tempFiles[0][0] === ".") {
@@ -127,9 +128,9 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         }
         
         // check if the object is correctly initialized with tracking targets
-        var datExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.dat');
-        var xmlExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.xml');
-        var jpgExists = fs.existsSync(objectsPath + '/' + objectKey + '/' + identityFolderName + '/target/target.jpg');
+        var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
+        var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
+        var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
         
         if (xmlExists && (datExists || jpgExists)) {
             console.log('object files exist: ' + objectKey);
@@ -167,7 +168,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     });
 
     // loads the index.html content
-    var html = fs.readFileSync(__dirname + '/webInterface/gui/index.html', 'utf8');
+    var html = fs.readFileSync(path.join(__dirname, 'webInterface','gui','index.html'), 'utf8');
     
     // update the correct library paths
     html = html.replace(/href="/g, "href=\"../libraries/gui/");
@@ -624,10 +625,10 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
         '';
 
-    var objectPath2 = objectPath2 + '/' + parm;
+    var objectPath2 = path.join(objectPath2, parm);
 
    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory();
+        return fs.statSync(path.join(objectsPath, file)).isDirectory();
     });
 
 
@@ -660,7 +661,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         var results = [];
         var list = fs.readdirSync(dir);
         list.forEach(function (file) {
-            file = dir + '/' + file;
+            file = path.join(dir, file);
             var stat = fs.statSync(file);
             if (stat && stat.isDirectory()) results = results.concat(walk(file));
             else results.push(file)
@@ -914,9 +915,9 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
         '';
 
-    var framePath = objectsPath + '/' + parm + '/';
+    var framePath = path.join(objectsPath, parm);
 
-    var framePath2 = framePath + frame;
+    var framePath2 = path.join(framePath, frame);
 
     // Import the module
 
@@ -956,7 +957,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         var results = [];
         var list = fs.readdirSync(dir);
         list.forEach(function (file) {
-            file = dir + '/' + file;
+            file = path.join(dir, file);
             var stat = fs.statSync(file);
             if (stat && stat.isDirectory()) results = results.concat(walk(file));
             else results.push(file)
@@ -1206,9 +1207,9 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
 exports.editContent = function(req, res) {
     console.log(req.params);
-    var path = req.params[0];
-    // TODO sanitize path for security
-    var file = pathUtilities.basename(path);
-    var context = {id: req.params.id, file: file, backUrl: '/content/' + req.params.id, path: path};
+    var thisPath = req.params[0];
+    // TODO sanitize thisPath for security
+    var file = path.basename(thisPath);
+    var context = {id: req.params.id, file: file, backUrl: '/content/' + req.params.id, path: thisPath};
     res.render('edit', context);
 };

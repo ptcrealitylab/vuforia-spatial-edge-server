@@ -359,19 +359,21 @@
                 if (typeof settings.tagsEnabled[tagInfo.id] === 'undefined') {
                     settings.tagsEnabled[tagInfo.id] = true;
                 }
+                
+                let activeButton = newElement.querySelector('.active');
 
                 if (settings.tagsEnabled[tagInfo.id]) {
-                    newElement.querySelector('.active').classList.remove('yellow');
-                    newElement.querySelector('.active').classList.add('green');
-                    newElement.querySelector('.active').innerText = 'On';
+                    activeButton.classList.remove('yellow');
+                    activeButton.classList.add('green');
+                    activeButton.innerText = 'On';
                 } else {
-                    newElement.querySelector('.active').classList.remove('green');
-                    newElement.querySelector('.active').classList.add('yellow');
-                    newElement.querySelector('.active').innerText = 'Off';
+                    activeButton.classList.remove('green');
+                    activeButton.classList.add('yellow');
+                    activeButton.innerText = 'Off';
                 }
 
                 // implement toggle button
-                newElement.querySelector('.active').addEventListener('click', function() {
+                activeButton.addEventListener('click', function() {
                     var prevValue = settings.tagsEnabled[tagInfo.id];
                     if (!prevValue) {
                         settings.tagsEnabled[tagInfo.id] = true;
