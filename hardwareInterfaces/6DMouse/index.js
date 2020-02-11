@@ -54,7 +54,7 @@ if (exports.enabled) {
     var server = require(__dirname + '/../../libraries/hardwareInterfaces');
     var settings = server.loadHardwareInterface(__dirname);
 
-    sm = require("./3DConnexion.js");
+    var sm = require("./3DConnexion.js");
 
     sm.spaceMice.onData = mouse => {
         // translation
