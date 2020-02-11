@@ -17,116 +17,200 @@
             Reality Server
         </div>
         <div id='subtitle'>Reality Server - V. 3.0. - Server IP: <span id="ip">xxx.xxx.xxx.xxx</span></div>
+        <div id='showHelpButton'></div>
     </div>
-
+    
     <div id='contents'>
-        <!--   <div class='objectGroup'>
-               <div class='unitGroup'>
-                   Reality Server Objects
-                   <br/>
-                   <div id="" class='button white two'>Name</div>
-                   <div id="" class='button blue half'>Info</div>
-                   <div id="" class='button red one'>Target</div>
-                   <div id="" class='button blue one'>Add Frame</div>
-                   <div id="" class='button blue one'>Screen</div>
-                   <div id="" class='button yellow half'>Off</div>
-                   <div id="" class='button blue half'>X</div>
-
-                   <br/>
-                   <div id='' class='button hidden one'></div>
-                   <div id='' class='button white two'>Name</div>
-                   <div id="" class='button blue half'>Info</div>
-                   <div id="" class='button green one'>Content</div>
-                   <div id="" class='button blue one'>Reset</div>
-                   <div id="" class='button blue one'>X</div>
-               </div>
-
-
-               <div class='unitGroup'>
-                   <div id='' class='button white two'>Name</div>
-                   <div id="" class='button blue half'>Info</div>
-                   <div id="" class='button green one'>Target</div>
-                   <div id="" class='button blue one'>Add Frame</div>
-                   <div id="" class='button blue one'>Screen</div>
-                   <div id="" class='button yellow half'>Off</div>
-                   <div id="" class='button blue half'>X</div>
-
-                   <br/>
-                   <div id='' class='button hidden one'></div>
-                   <div id='' class='button white two'>Name</div>
-                   <div id="" class='button blue half'>Info</div>
-                   <div id="" class='button green one'>Content</div>
-                   <div id="" class='button blue one'>Reset</div>
-                   <div id="" class='button blue one'>X</div>
-               </div>
-           </div> -->
+        <div id='commonContents'></div>
+        <div id='manageObjectsContents' class='selectedTab'></div>
+        <div id='manageFramesContents' class='hiddenTab'></div>
+        <div id='manageHardwareInterfacesContents' class='hiddenTab'>
+            <div class="row group"> <!--These get deleted and recreated on each render-->
+                <div class="column"></div>
+                <div class="column"></div>
+            </div>
+        </div>
     </div>
+    
 </div>
 
 <!--- Templates -->
 
 <template id="start">
-    <div class="">
-    <div class="start">
-        <div id="addObject" class='addObject button blue one clickAble' style="cursor: pointer">Add Object
-        </div><div class='space hidden'>
-        </div><div class='singleTarget button yellow two inactive'>Activate Single Target File
-        </div><div class='space hidden'>
-        </div><div class='upload button blue two inactive'>Upload Object File
-    </div><div class='space hidden'>
-    </div><div class='activateHardware button blue two inactive'>Manage Hardware Interfaces</div>
-    </div>
+    <div>
+        <div class="start">
+            <div id="addObject" class='addObject button blue one clickAble' style="cursor: pointer">Add Object</div>
+            <div class='space smallSpace hidden'></div>
+            <div id="addWorldObject" class='addWorldObject button blue two clickAble' style="cursor: pointer">Add World Object</div>
+            <div class='space smallSpace hidden'></div>
+            <div class='singleTarget button yellow two inactive'>Activate Single Target File</div>
+            <div class='space smallSpace hidden'></div>
+            <div class='upload button blue two inactive'>Upload Object File</div>
+        </div>
+        <div id="objectDescription"></div>
+<!--        <div class="serverDescription" id="mainDescription">-->
+<!--            Welcome to the Reality Server web interface. Here in the Object Configuration tab, you can create new objects to be associated with AR targets, add custom HTML content to those targets, and manage which objects will be active and viewable in this network.-->
+<!--        </div>-->
+<!--        <div class="serverDescription" id="createObjectDescription">-->
+<!--            To get started, click the Add Object button and give your new Reality Object a name. It must have a unique name compared to all the other Reality Objects on this server.-->
+<!--        </div>-->
+<!--        <div class="serverDescription" id="addTargetDescription">-->
+<!--            Now you need to add target files to your object. Click on Add Target.-->
+<!--        </div>-->
     </div>
 </template>
 
+<template id="objectTutorial">
+    <div class="tutorial">
+        <div class="serverDescription" id="mainDescription">
+            Welcome to the Reality Server web interface. Here in the Object Configuration tab, you can create new objects to be associated with AR targets, add custom HTML content to those targets, and manage which objects will be active and viewable in this network.
+        </div>
+        <div class="serverDescription" id="createObjectDescription">
+            To get started, click the Add Object button and give your new Reality Object a name. It must have a unique name compared to all the other Reality Objects on this server.
+        </div>
+        <div class="serverDescription" id="addTargetDescription">
+            Now you need to add an Image or Object target to your object. Click on Add Target. To use an image target, drag and drop a .jpg image file onto the drop zone. To use an object target, drag and drop the .dat file generated from the Vuforia Developer portal.
+        </div>
+        <div class="serverDescription" id="addFrameDescription">
+            Your object is now active, and should be visible to a Reality Editor app connected to the same WiFi network, as long as the network supports UDP broadcasting. But there is currently no AR content associated with your object. <br>
+            <br>
+            To add some placeholder content, click on Add Frame, and give your frame a name.
+        </div>
+        <div class="serverDescription" id="frameAddedDescription">
+            Now, when you view the specified image or object target, you should see the default UI appear. You can edit this content by editing the index.html file for this frame, in your realityobjects directory.<br>
+            <br>
+            To toggle additional help messages in the future, click the Show/Hide Help button in the upper right corner.
+        </div>
+    </div>
+</template>
 
+<template id="globalFramesTutorial">
+    <div class="tutorial" style="margin-bottom: 21px">
+        <div class="serverDescription" id="framesDescription">
+            The Global Frames tab lets you see all the reusable frames that you will be able to drop into your environment using any Reality Editor that is connected to the same WiFi network as this server. Just tap on the Pocket button in the app and you will see all of these available frames.
+        </div>
+        <div class="serverDescription" id="noFramesDescription">
+            This list of frames is loaded from your ~/Documents/realityframes directory, which should be automatically generated at the path displayed above. You currently don't have any frames correctly set up in that directory. To download the default set of Global Frames, follow our installation instructions.
+        </div>
+        <div class="serverDescription" id="foundFramesDescription">
+            To preview the application content in this web browser, just click on the Content button. The download button will download a backup of this frame. The On/Off button can be used to hide individual frames from being shown in the Pocket of Reality Editors in this network.
+        </div>
+    </div>
+</template>
+
+<template id="hardwareInterfacesTutorial">
+    <div class="tutorial" style="margin-bottom: 21px">
+        <div class="serverDescription" id="hardwareDescription">
+            The Hardware Interfaces tab lets you manage the adaptors that this server uses to communicate with external hardware systems. Configurable hardware interfaces can be turned on and off here. Hardware Interfaces with a gear icon can be clicked on to further configure their settings.<br>
+            <br>
+            You must restart your server after making any changes for those changes to take effect.
+        </div>
+    </div>
+</template>
+
+<template id="tabs">
+    <div class="">
+        <div class="tabs">
+            <div id="manageObjects" class='addObject button white three clickAble'>Object Configuration</div>
+            <div class='space smallSpace hidden'></div>
+            <div id="manageFrames" class='addObject button white two clickAble'>Global Frames</div>
+            <div class='space smallSpace hidden'></div>
+            <div id="manageHardwareInterfaces" class='addObject button white two clickAble'>Manage Hardware Interfaces</div>
+        </div>
+    </div>
+</template>
 
 <template id="object">
     <div class="">
-    <div class="object">
-        <div class='name item button white two'>Name
-        </div><div class='item space'>
-        </div><div class='textfield zone item button white one' contenteditable
+    <div class="object group adjustedMargin">
+        <div class="item half button noBorder noBackground triangle"></div>
+        <div class='name item button white nameWidthMedium'>Name
+        </div><div class='item space hidden'>
+        </div><div class='textfield zone item button white one textcursor' contenteditable
                onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='target item button yellow one'>Add Target
-        </div><div class='item space'>
-        </div><div class='addFrame item button blue one'>Add Frame
-        </div><div class='item space'>
+<!--        </div><div class='item space hidden spaceAfterTarget'>-->
+        </div>
+        <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
+        <div class='objectIconSpace item hidden space' style="width: 2px"></div>
+        <div class='addFrame item button blue one'>Add Frame
+        </div><div class='item space hidden'>
         </div><div class='visualization item button blue one'>Screen
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='remove item button red half'>X
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
         </div><div class='active item button yellow half'>Off
     </div>
     </div>
     </div>
 </template>
 
+<template id="worldObject">
+    <div class="worldObject group adjustedMargin">
+        <div>
+            <div class="item half button noBorder noBackground triangle hidden"></div>
+            <div class='name item button white nameWidthMedium'>Name</div>
+            <div class='item hidden space smallSpace'></div>
+            <div class='textfield zone item button white one textcursor' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone</div>
+            <div class='item hidden space smallSpace'></div>
+            <div class='target item button yellow one clickAble'>Add Target</div>
+<!--            <div class='item hidden space smallSpace spaceAfterTarget'></div>-->
+            <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
+            <div class='objectIconSpace item hidden space' style="width: 2px"></div>
+            <div class='sharing item button yellow two'>Frame Sharing Off</div>
+            <div class='item hidden space smallSpace'></div>
+            <div class='remove item button red half clickAble'>X</div>
+            <div class='item hidden space smallSpace'></div>
+            <div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px"></div>
+            <div class='item hidden space smallSpace'></div>
+            <div class='active item button yellow half'>Off</div>
+        </div>
+    </div>
+</template>
+
 <template id="frame">
     <div class="">
-    <div class="frame">
+    <div class="frame adjustedMarginLeft">
         <div class='button hidden one'>
-        </div><div class='item space hidden'>
+        </div><div class='item space smallSpace hidden'>
         </div><div class='name item button white two'>Name
-        </div><div class='item space'>
-        </div><div class='content item button green one'>Content
-        </div><div class='item space'>
+        </div><div class='item space hidden'>
+        </div><div class='content item button green one clickAble' style="padding-right: 4px">Content
+        </div><div class='item space hidden'>
         </div><div class='reset item button blue one'>Reset UI
     <!--    </div><div class='item space'>
     </div><div class='item space halfPlus'>-->
-    </div><div class='item space'>
+    </div><div class='item space hidden'>
     </div><div class='hardware item button blue one inactive'>Hardware I/O
 
-    </div><div class='item space'>
-    </div><div class='remove item button red half'>X
+    </div><div class='item space hidden'>
+    </div><div class='remove item button red half clickAble'>X
     </div>
     </div>
         <div class="appendix"><div class = "child"></div></div>
     </div>
+</template>
 
+<template id="globalFrame">
+    <div class="">
+        <div class="globalFrame adjustedMarginLeft">
+            <div class='button hidden one' style="margin-left: -2px"></div>
+<!--            <div class='item space smallSpace'></div>-->
+            <div class='name item button white two'>Name</div>
+            <div class='item space smallSpace'></div>
+            <div class='content item button green one clickAble' style="padding-right: 4px">Content</div>
+            <div class='item space smallSpace'></div>
+            <div class='attachedTo button yellow two hidden'>Object Name</div>
+            <div class='item space smallSpace'></div>
+            <div class='remove item button red half clickAble'>X</div>
+        </div>
+        <div class="appendix">
+            <div class="child"></div>
+        </div>
+    </div>
 </template>
 
 <template id="end">
@@ -154,6 +238,18 @@
             </div><div class='item dropZoneContent space fourAndHalf'></div>
             <div class="dropZoneContentBackground"></div>
         </div>
+        <div class="dropZoneFeedback">
+            <div class='button hidden two'></div>
+            <div class='item space hidden'></div>
+            <div class='hasDat item button red one'>Missing .dat</div>
+            <div class='item space hidden'></div>
+            <div class='hasJpg item button red one'>Missing .jpg</div>
+            <div class='item space hidden'></div>
+            <div class='hasXml item button red one'>Missing .xml</div>
+            <div class='item space hidden'></div>
+            <div class='generateXml item button green one clickAble'>Set Target Size</div>
+            <div class='item space hidden'></div>
+        </div>
     </div>
     </div>
 </template>
@@ -177,6 +273,24 @@
              onclick='if(this.innerText === "Enter Name") {this.innerHTML=""; this.style.fonts = "12pt"}'>Enter Name</div><div class='item space'>
     </div><div class='addButtonFrame item button green one clickAble'>Add</div>
     </div>
+    </div>
+</template>
+
+<template id="textEntryTargetSize">
+    <div class="expandcollapse expand">
+        <div class="textEntry">
+            <div class='button hidden two'></div>
+            <div class='item space hidden'></div>
+            <div class='button hidden one'></div>
+            <div class='item space hidden'></div>
+            <div class='button hidden one'></div>
+            <div class='item space hidden'></div>
+            <div class='textfield sizeWidth item button white one' contenteditable onclick='if(this.innerText === "Width (meters)") {this.innerHTML=""; this.style.fonts = "12pt"}'>Width (meters)</div>
+            <div class='item space hidden'></div>
+            <div class='textfield sizeHeight item button white one' contenteditable onclick='if(this.innerText === "Height (meters)") {this.innerHTML=""; this.style.fonts = "12pt"}'>Height (meters)</div>
+            <div class='item space hidden'></div>
+            <div class='setSizeButton item button green one clickAble'>Update Size</div>
+        </div>
     </div>
 </template>
 
@@ -212,9 +326,9 @@
 
 <template id="fullScreenId">
     <div class="expandcollapse expand">
-    <div class="fullScreenObject">
+    <div class="fullScreenObject adjustedMarginLeft">
         <div class='button hidden one'>
-        </div><div class='item space hidden'>
+        </div><div class='item space smallSpace hidden'>
         </div><div class='fullscreen item button purple fiveAndHalf clickAble'>OPEN USER INTERFACE IN FULLSCREEN
         </div>
     </div>
@@ -281,27 +395,57 @@
 </div><div class='space hidden'>
 </template>
 
-<template id="worldObject">
-    <div>
-        <div class="worldObject">
-            <div class='name item button white two'>Name</div>
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='textfield zone item button white one' contenteditable-->
-                   <!--onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Zone-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='target item button yellow one'>Add Target-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='addFrame item button blue one'>Add Frame-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='visualization item button blue one'>Screen-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='remove item button red half'>X-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='download item button blue half'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px">-->
-            <!--</div><div class='item space'>-->
-            <!--</div><div class='active item button yellow half'>Off-->
-            <!--</div>-->
+<template id="startFrames">
+    <div class="startFrames">
+        <div id="setFramesPath" class='button yellow three inactive'>
+            Choose Global Frames Directory
+<!--            <input type="file" id="pathSelectionInput" webkitdirectory directory multiple/>-->
         </div>
+        <div class='hidden space smallSpace'></div>
+        <div id="framesPath" class='button white four inactive'>
+            /
+            <!--            <input type="file" id="pathSelectionInput" webkitdirectory directory multiple/>-->
+        </div>
+    </div>
+    <div id="globalFramesDescription"></div>
+</template>
+
+<template id="frameManager">
+    <div class="frameManager">
+<!--        <div class='button hidden one'></div>-->
+        <div class='space noBackground half'><img class="frameIcon" style="height: 100%"></div>
+        <div class='item hidden space' style="width: 2px"></div>
+        <div class='name item button white two'>Name</div>
+        <div class='item hidden space'></div>
+        <div class='content item button green one clickAble'>Content</div>
+        <div class='item hidden space'></div>
+        <div class='download item button blue half clickAble'><img src="resources/icondownload.svg" class="downloadIcon" style="margin-top:8px; width: 18px"></div>
+        <div class='item hidden space'></div>
+        <div class='active item button green half clickAble'>On</div>
+    </div>
+    <div class="appendix">
+        <div class="child"></div>
+    </div>
+</template>
+
+<template id="startHardwareInterfaces">
+    <div id="hardwareInterfacesDescription"></div>
+</template>
+
+<template id="hardwareInterface">
+    <div class="hardwareInterface">
+<!--        <div class='button hidden one'></div>-->
+<!--        <div class='item hidden space' style="width: 2px"></div>-->
+        <div class='name item button white two' style="position: relative">
+            <div class='gear yellowGearContent item button yellow half hidden'></div>
+            <div class="nameText">
+                Name
+            </div>
+        </div>
+        <div class='item hidden space'></div>
+        <div class='active item button yellow half'>Off</div>
+<!--        <div class='item hidden space'></div>-->
+<!--        <div class='gear yellowGearContent item button yellow half hidden'></div>-->
     </div>
 </template>
 
@@ -311,10 +455,12 @@
         dropZoneId : "",
         objects: {/*replace Object*/},
         states: {/*replace States*/},
+        globalFrames: {/*replace Frames*/},
+        hardwareInterfaces: {/*replace HardwareInterfaces*/},
+        selectedTab: 'manageObjects',
         domObjects: document.getElementById("contents"),
         templates: document.getElementsByTagName("template")
-    };
-
+    }; // the objects and states get injected from the server webFrontend.js
 </script>
 
 <script src="index.js?33saasdd"></script>

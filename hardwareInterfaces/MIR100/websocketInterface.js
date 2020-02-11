@@ -1,11 +1,16 @@
-// ************************************* WEBSOCKET
 const WebSocket = require('ws');
 
+/*
+*  This class connects to the WebSocket
+*  created by the MIR in order to access
+*  realtime data from the robot.
+*/
 class WebSocketInterface {
 
     constructor(hostIP, port){
 
         const ws_host = "ws://" + hostIP;
+        //const ws_host = "ws://mir.com";
         const ws_port = port;
         this._currentRobotAngle = {x:1, y:1, z:1, w:1};
         this._currentRobotPosition = {x:1, y:1};
@@ -24,8 +29,6 @@ class WebSocketInterface {
 
         });
 
-        const self = this;
-
         // Parse robot pose
         ws.on('message', function incoming(data) {
 
@@ -33,15 +36,14 @@ class WebSocketInterface {
 
             const parsedData = JSON.parse(data);
 
-            self._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']), 
+            this._currentRobotAngle = {x:parseFloat(parsedData['msg']['orientation']['x']),
                                         y:parseFloat(parsedData['msg']['orientation']['y']), 
                                         z:parseFloat(parsedData['msg']['orientation']['z']), 
                                         w:parseFloat(parsedData['msg']['orientation']['w'])};
             
-            self._currentRobotPosition = {x:parseFloat(parsedData['msg']['position']['x']), 
+            this._currentRobotPosition = {x:parseFloat(parsedData['msg']['position']['x']),
                                         y:parseFloat(parsedData['msg']['position']['y'])};
-
-        });
+        }.bind(this));
 
         ws.onerror = function(event) {
             console.error("WebSocket error observed:", event);
@@ -57,6 +59,7 @@ class WebSocketInterface {
 
     get currentRobotPosition(){
         return this._currentRobotPosition;
+
     }
     set currentRobotPosition(currentPos){
         this._currentRobotPosition = currentPos;

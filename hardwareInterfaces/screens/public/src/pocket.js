@@ -56,8 +56,8 @@ createNameSpace("realityEditor.pocket");
             container.id = 'pocket-element';
 
             var urlPrefix = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/';
-            var thisUrl = urlPrefix + 'frames/' + element.name + '.html';
-            var gifUrl = urlPrefix + 'frames/pocketAnimations/' + element.name + '.gif';
+            var thisUrl = urlPrefix + 'frames/' + element.name + '/index.html';
+            var gifUrl = urlPrefix + 'frames/' + element.name + '/icon.gif';
 
             container.dataset.src = thisUrl;
             container.dataset.name = element.name;
@@ -65,17 +65,12 @@ createNameSpace("realityEditor.pocket");
             container.dataset.height = element.height;
             container.dataset.nodes = JSON.stringify(element.nodes);
 
-            var elt = document.createElement('img');
+            var elt = document.createElement('div');
             elt.classList.add('palette-element');
-            elt.src = gifUrl;
+            elt.style.backgroundImage = 'url(\'' + gifUrl + '\')';
 
             container.appendChild(elt);
             pocket.appendChild(container);
-
-            var paletteElementSize = Math.floor(parseFloat(window.getComputedStyle(container).width)) - 6;
-            var ICON_SIZE = 204;
-            var scale = paletteElementSize / ICON_SIZE;
-            elt.style.transform = 'scale(' + scale + ')';
 
             container.addEventListener('pointerdown', pocketContainerDown);
             container.addEventListener('pointermove', addFrameFromPocket);

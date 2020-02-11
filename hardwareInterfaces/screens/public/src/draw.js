@@ -91,7 +91,7 @@ realityEditor.draw.addElement = function(frameKey, nodeKey, vehicle) {
         addIframe.style.visibility = "visible";
         // addIframe.style.pointerEvents = 'none';
         if (isFrame) {
-            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + vehicle.src + '.html';
+            addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/frames/' + vehicle.src + '/index.html';
         } else {
             addIframe.src = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/nodes/' + vehicle.type + '/index.html';
         }

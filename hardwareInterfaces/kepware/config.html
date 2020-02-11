@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kepware Configurator</title>
+    <style>
+        html {
+            background-color: rgb(34,34,34);
+            font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
+            font-size: 12pt;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            color: white;
+        }
+
+        #title {
+            color: rgb(45,255,255);
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-weight: medium;
+            font-size: 28pt;
+        }
+        
+        #tagsTitle {
+            margin-top: 18px;
+            color: rgb(45,255,255);
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 18pt;
+        }
+
+        #contents {
+            color: rgb(255,255,255);
+        }
+
+        .button {
+            padding: 0px;
+            margin: 0px;
+            width: 104px;
+            height: 32px;
+            line-height: 35px;
+            text-align: center;
+            vertical-align: middle;
+            border: 2px solid white;
+            margin-top: 10px;
+            display: inline-block;
+
+        }
+
+        .space {
+            padding: 0;
+            margin: 0;
+            width: 8px;
+            height: 36px;
+            line-height: 32px;
+            text-align: center;
+            vertical-align: middle;
+            margin-top: 10px;
+            display: inline-block;
+            color: rgb(255,255,255);
+            background-color: rgba(255,255,255,0.15);
+            z-index: -1;
+        }
+
+        .smallSpace {
+            width: 1px;
+            background-color: transparent;
+        }
+
+        .clickAble:hover {
+            opacity: 0.75;
+            cursor: pointer;
+        }
+
+        .green {
+            color: rgb(41,253,47);
+            border: 2px solid rgb(41,253,47);
+            background-color: rgba(41,253,47,0.05);
+        }
+
+        .red {
+            color: rgb(242,22,121);
+            border: 2px solid rgb(242,22,121);
+            background-color: rgba(242,22,121,0.05);
+        }
+
+        .blue {
+            color: rgb(45,255,255);
+            border: 2px solid rgb(45,255,255);
+            background-color: rgba(45,255,255,0.05);
+        }
+
+        .purple {
+            color: rgb(210,113,255);
+            border: 2px solid rgb(210,113,255);
+            background-color: rgba(210,113,255,0.05);
+        }
+
+        .yellow {
+            color: rgb(255,255,45);
+            border: 2px solid rgb(255,255,45);
+            background-color: rgba(255,255,45,0.05);
+        }
+
+        .hidden {
+            visibility: hidden;
+            color: rgba(255,255,255,0.0);;
+            background-color: rgba(255,255,255,0.0);
+        }
+
+        .white {
+            color: rgb(255,255,255);
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .zero {
+            margin-left: -12px;
+            width: 0;
+        }
+
+        .half {
+            width: 46px;
+        }
+        
+        .halfPlus {
+            width: 49px;
+        }
+
+        .one {
+            width: 104px;
+        }
+
+        .two {
+            width: 220px;
+        }
+        
+        .twoAndHalf{
+            width: 278px;
+        }
+
+        .three {
+            width: 336px;
+        }
+
+        .four {
+            width: 452px;
+        }
+
+        .fourAndHalf {
+            width: 514px;
+        }
+        
+        .five {
+            width: 568px;
+        }
+
+        .fiveAndHalf  {
+            width: 626px;
+        }
+        
+        .textfield{
+            cursor: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+            font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
+            font-size: 12pt;
+        }
+        
+        .setting {
+            margin-bottom: 10px;
+        }
+        
+        #introduction {
+            margin-bottom: 42px;
+        }
+        
+        a {
+            color: rgba(45,255,255, 0.5);
+        }
+    </style>
+</head>
+
+<template id="setting">
+    <div class="">
+        <div class="helpText four">
+            Help text
+        </div>
+        <div class="setting">
+            <div class='name item button white two'>Setting Name</div>
+            <div class='space smallSpace'></div>
+            <div class='textfield value item button white two' contenteditable>Enter Name</div>
+            <div class='space smallSpace'></div>
+            <div class='reset item button red one clickAble hidden'>Reset</div>
+            <div class='space smallSpace'></div>
+            <div class='save item button green half clickAble hidden'>Save</div>
+        </div>
+        <div class="appendix">
+            <div class="child"></div>
+        </div>
+    </div>
+</template>
+
+<template id="tag">
+    <div class="">
+        <div class="tag">
+            <div class='name item button white three'>Tag Name</div>
+            <div class='space smallSpace'></div>
+            <div class='active item button yellow half clickAble'>Off</div>
+        </div>
+        <div class="appendix">
+            <div class="child"></div>
+        </div>
+    </div>
+</template>
+
+<body>
+
+<div id="introduction">
+    Kepware is a tool to connect with a wide variety of industrial machinery. Visit <a href="https://www.kepware.com">www.kepware.com</a> for more information and to get a license for the software.
+    <br><br>
+    Once you have a kepware server running, you can configure it here:
+</div>
+
+<div id="contents">
+    <!--Contents get deleted and recreated in the realityServer.render()-->
+    <div id="tagsTitle">Configure tags</div>
+    <div id="tags"></div>
+</div>
+
+<script>
+    var realityServer = {
+        myTargetDropzone : {},
+        dropZoneId : "",
+        states: {/*replace States*/},
+        hardwareInterfaceName: {/*replace HardwareInterfaceName*/},
+        hardwareInterface: {/*replace HardwareInterface*/},
+        domObjects: document.getElementById("contents"),
+        templates: document.getElementsByTagName("template")
+    }; // the objects and states get injected from the server webFrontend.js
+    
+    var mockBrowseData = {"browseResults":[{"id":"feederPLC.feederPLC.buzzer"},{"id":"feederPLC.feederPLC.conveyor"},{"id":"feederPLC.feederPLC.green"},{"id":"feederPLC.feederPLC.off"},{"id":"feederPLC.feederPLC.on"},{"id":"feederPLC.feederPLC.red"},{"id":"feederPLC.feederPLC.sensor"}],"succeeded":true,"reason":""};
+    
+    var USE_MOCK_DATA = true; // TODO: test with real kepware server and disable this
+    
+    var defaultSettings = null;
+    
+    window.onload = function() {
+        init();
+    };
+    
+    function init() {
+        console.log(realityServer.hardwareInterface.settings);
+        defaultSettings = JSON.parse(JSON.stringify(realityServer.hardwareInterface.settings));
+        
+        // document.getElementById('title').innerText = realityServer.hardwareInterfaceName + ' settings';
+        realityServer.render();
+    }
+    
+    realityServer.render = function() {
+        var settings = realityServer.hardwareInterface.settings;
+        if (typeof settings === "undefined") {
+            return;
+        }
+        
+        console.log('render');
+        realityServer.domObjects.innerHTML = ''; // reset
+        
+        for (let settingsName in settings) {
+            if (settingsName === 'tagsEnabled') { continue; } // special settings for this one
+            
+            let thisSettings = settings[settingsName];
+            let newElement = this.templates['setting'].content.cloneNode(true);
+            newElement.querySelector('.name').innerText = settingsName;
+            newElement.querySelector('.value').innerText = thisSettings.value;
+            
+            if (typeof thisSettings.helpText !== 'undefined') {
+                newElement.querySelector('.helpText').innerText = thisSettings.helpText;
+            } else {
+                newElement.querySelector('.helpText').remove();
+            }
+            
+            // implement value updated
+            newElement.querySelector('.value').addEventListener('input', function() {
+                console.log('value of ' + settingsName + ' changed to ' + this.innerText);
+                
+                var didChange = false;
+                if (thisSettings.type === 'text') {
+                    if (this.innerText !== thisSettings.value) {
+                        console.log('new text value');
+                        didChange = true;
+                    }
+                }
+                if (thisSettings.type === 'number') {
+                    if (parseFloat(this.innerText) !== thisSettings.value) {
+                        console.log('new number value');
+                        didChange = true;
+                    }
+                }
+                
+                if (didChange) {
+                    this.parentElement.querySelector('.save').classList.remove('hidden');
+                    this.parentElement.querySelector('.reset').classList.remove('hidden');
+                } else {
+                    this.parentElement.querySelector('.save').classList.add('hidden');
+                    this.parentElement.querySelector('.reset').classList.add('hidden');
+                }
+                
+            });
+            
+            // implement reset button
+            newElement.querySelector('.reset').addEventListener('click', function() {
+                realityServer.hardwareInterface.settings[settingsName].value = defaultSettings[settingsName].value;
+                realityServer.render();
+            });
+
+            // implement save button
+            newElement.querySelector('.save').addEventListener('click', function() {
+                if (thisSettings.type === 'text') {
+                    thisSettings.value = this.parentElement.querySelector('.value').innerText;
+                } else if (thisSettings.type === 'number') {
+                    thisSettings.value = parseFloat(this.parentElement.querySelector('.value').innerText);
+                }
+                console.log('new settings for ' + settingsName + ' = ' + thisSettings.value);
+                console.log('TODO: write settings to file');
+
+                realityServer.writeHardwareInterfaceSettings(settings, [settingsName] ,function(res) {
+                    console.log('got response... re-render');
+                    realityServer.render();
+                });
+            });
+            
+            realityServer.domObjects.appendChild(newElement);
+        }
+        
+        // render the tags from the browse data
+        getBrowseResults(function(browseResults) {
+            var tagTitleElement = document.createElement('div');
+            tagTitleElement.id = 'tagsTitle';
+            if (browseResults.length > 0) {
+                tagTitleElement.innerText = 'Configure tags';
+            } else {
+                tagTitleElement.innerText = 'No tags to configure';
+            }
+            realityServer.domObjects.appendChild(tagTitleElement);
+
+            // if (browseResults.length === 0) { return; } // don't add 
+            var tagsContainer = document.createElement('div');
+            tagsContainer.id = 'tags';
+            realityServer.domObjects.appendChild(tagsContainer);
+
+            if (typeof settings.tagsEnabled === 'undefined' || settings.tagsEnabled === 0) {
+                settings.tagsEnabled = {};
+            }
+
+            browseResults.forEach(function(tagInfo) {
+                let newElement = realityServer.templates['tag'].content.cloneNode(true);
+                newElement.querySelector('.name').innerText = tagInfo.id;
+                
+                if (typeof settings.tagsEnabled[tagInfo.id] === 'undefined') {
+                    settings.tagsEnabled[tagInfo.id] = true;
+                }
+                
+                let activeButton = newElement.querySelector('.active');
+
+                if (settings.tagsEnabled[tagInfo.id]) {
+                    activeButton.classList.remove('yellow');
+                    activeButton.classList.add('green');
+                    activeButton.innerText = 'On';
+                } else {
+                    activeButton.classList.remove('green');
+                    activeButton.classList.add('yellow');
+                    activeButton.innerText = 'Off';
+                }
+
+                // implement toggle button
+                activeButton.addEventListener('click', function() {
+                    var prevValue = settings.tagsEnabled[tagInfo.id];
+                    if (!prevValue) {
+                        settings.tagsEnabled[tagInfo.id] = true;
+                    } else {
+                        settings.tagsEnabled[tagInfo.id] = false;
+                    }
+                    
+                    realityServer.writeHardwareInterfaceSettings(settings, ['tagsEnabled'], function(res) {
+                        console.log('got response... re-render');
+                        realityServer.render();
+                    });
+                });
+
+                tagsContainer.appendChild(newElement);
+            });
+        });
+    };
+    
+    function getBrowseResults(completionHandler) {
+        
+        if (USE_MOCK_DATA) {
+            completionHandler(mockBrowseData.browseResults);
+        
+        } else {
+            // TODO: make this dependent on the settings.ip and settings.port, and refresh it when new values for those are submitted
+            realityServer.sendRequest('http://10.10.10.10:39320/iotgateway/browse', 'GET', function(response) {
+                if (response === 'err') {
+                    completionHandler([]); // empty results
+                    return;
+                }
+
+                var msgContent = JSON.parse(response);
+                console.log('real data response: ', msgContent.browseResults);
+                // return msgContent.browseResults;
+                completionHandler(msgContent.browseResults);
+            });
+        }
+    }
+    
+    realityServer.writeHardwareInterfaceSettings = function(settings, limitToKeys, callback) {
+        var body = {
+            settings: settings,
+        };
+        if (limitToKeys) {
+            body.limitToKeys = limitToKeys;
+        }
+        realityServer.sendRequest('/hardwareInterface/' + realityServer.hardwareInterfaceName + '/settings/', 'POST', function (state) {
+            if (state === 'ok') {
+                console.log('successfully wrote settings')
+            }
+            callback(state);
+        }, JSON.stringify(body));
+    };
+
+    realityServer.sendRequest = function(url, httpStyle, callback, body) {
+        if (!body) { body = ""; }
+        var req = new XMLHttpRequest();
+        try {
+            req.open(httpStyle, url, true);
+            if(httpStyle === "POST"){
+                req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            }
+            // Just like regular ol' XHR
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    if (req.status === 200) {
+                        // JSON.parse(req.responseText) etc.
+                        if(req.responseText)
+                            callback(req.responseText);
+                    } else {
+                        // Handle error case
+                        callback("err");
+                        console.log("could not load content");
+                    }
+                }
+            };
+            if(httpStyle === "POST"){
+                req.send(body);
+            } else {
+                req.send();
+            }
+
+        }
+        catch (e) {
+            callback("err");
+            console.log("could not connect to" + url);
+        }
+    };
+    
+</script>
+
+</body>
+</html>

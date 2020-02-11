@@ -22,6 +22,7 @@ body {
 
 #app {
   padding-top: 25px;
+    position: relative;
 }
 
 #header {
@@ -44,6 +45,24 @@ body {
   color: rgb(255,255,255);
 }
 
+#showHelpButton {
+    color: rgba(210,210,210);
+    position: absolute;
+    right: 0;
+    top: 22px;
+    /*font-size: 12;*/
+    cursor: pointer;
+}
+
+#showHelpButton:hover {
+    color: yellow;
+}
+
+.serverDescription {
+    margin-top: 21px;
+    color: rgba(210,210,210);
+}
+
 #contents {
   color: rgb(255,255,255);
 }
@@ -54,6 +73,10 @@ body {
 
 .unitGroup {
   margin-top: 0px;
+}
+
+.group {
+    margin-top: 21px;
 }
 
 .button {
@@ -67,7 +90,6 @@ body {
    border: 2px solid white;
    margin-top: 10px;
    display: inline-block;
-
  }
 
 .expand {
@@ -135,8 +157,8 @@ body {
 }
 
 .space {
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   width: 8px;
   height: 36px;
   line-height: 32px;
@@ -147,6 +169,11 @@ body {
   color: rgb(255,255,255);
   background-color: rgba(255,255,255,0.15);
   z-index: -1;
+}
+
+.smallSpace {
+    width: 1px;
+    background-color: transparent;
 }
 
 .clickAble:hover {
@@ -240,6 +267,11 @@ body {
   border: 2px solid rgba(255,255,255,0);
   background-color: rgba(255,255,255,0.15);
 }
+
+.noBackground {
+    background-color: transparent;
+}
+
 .zero {
   margin-left: -12px;
   width: 0px;
@@ -254,6 +286,10 @@ body {
 
 .one {
   width: 104px;
+}
+
+.oneAndHalf {
+    width: 162px;
 }
 
 .two {
@@ -289,9 +325,14 @@ body {
 
   background-image: url("/libraries/gui/resources/dropZone.svg?2");
   background-repeat: no-repeat, repeat;
+}
 
-
-
+.yellowGearContent {
+    background-image: url("/libraries/gui/resources/yellowgear.svg");
+    /* Center and scale the image nicely */
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
 }
 
 .makeTextSelectAble {
@@ -371,3 +412,122 @@ position: relative;
   color: rgb(255,255,255);
 }
 
+.hiddenTab {
+    display: none;
+}
+
+.selectedTab {
+    display: inline;
+}
+
+.column {
+    float: left;
+    width: 50%;
+}
+
+.columnFortyPercent {
+    width: 35%;
+}
+.columnSixtyPercent {
+    width: 65%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.configFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.triangle {
+    margin-left: -54px;
+    background-image: url("resources/triangleRight.svg");
+    /* Center and scale the image nicely */
+    background-position: center center;
+    background-repeat: no-repeat;
+    /*background-size: contain;*/
+    background-size: 50% 50%;
+}
+
+.triangleDown {
+    background-image: url("resources/triangleDown.svg");
+}
+
+.objectTargetIcon {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 100%;
+}
+
+.objectIcon {
+    overflow: hidden;
+    border: 2px solid rgb(41, 253, 47);
+    border-left: none;
+    width: 36px;
+    height: 32px;
+    margin-left: -6px;
+}
+
+.nameWidthMedium {
+    width: 181px;
+}
+
+.targetWidthMedium {
+    width: 140px;
+}
+
+/* This makes the background extend nicely beyond the edges of the div when it gets highlighted*/
+.adjustedMargin {
+    margin-left: -8px;
+    padding-left: 8px;
+    margin-bottom: -8px;
+    padding-bottom: 8px;
+}
+
+/* This makes the background extend nicely beyond the edges of the div when it gets highlighted*/
+.adjustedMarginLeft {
+    margin-left: -8px;
+    padding-left: 8px;
+}
+
+.textcursor {
+    cursor: text !important;
+}
+
+/*.textcursor:hover {*/
+/*    cursor: pointer;*/
+/*}*/
+
+.selectedButton {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.gear {
+    height: 20px;
+    width: 20px;
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    border: none;
+    margin-top: 0;
+}
+
+.startFrames {
+    margin-bottom: 21px;
+}
+
+.target.green {
+    border-right: none;
+}
+
+.objectIcon:hover {
+    opacity: 1;
+}
