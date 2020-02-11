@@ -21,6 +21,8 @@ var http = require('http');
 var path = require('path');
 var utilities = require('./utilities');
 var _ = require('lodash');
+const Node = require('../models/Node.js');
+const Frame = require('../models/Frame.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -33,7 +35,6 @@ var objectsPath;
 var nodeTypeModules;
 var blockModules;
 var callback;
-var Node;
 var actionCallback;
 var publicDataCallBack;
 var writeObjectCallback;
@@ -68,53 +69,6 @@ function EmptyNode(nodeName, type) {
     this.type = type;
     this.callBack = {};
 }
-
-function Frame() {
-    // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = null;
-    // The name for the object used for interfaces.
-    this.name = "";
-    // which visualization mode it should use right now ("ar" or "screen")
-    this.visualization = "ar";
-    // position data for the ar visualization mode
-    this.ar = {
-        // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
-        x : 0,
-        // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
-        y : 0,
-        // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-        scale : 1,
-        // Unconstrained positioning in 3D space
-        matrix : []
-    };
-    // position data for the screen visualization mode
-    this.screen = {
-        // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
-        x : 0,
-        // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
-        y : 0,
-        // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-        scale : 1
-    };
-    // Used internally from the reality editor to indicate if an object should be rendered or not.
-    this.visible = false;
-    // Used internally from the reality editor to trigger the visibility of naming UI elements.
-    this.visibleText = false;
-    // Used internally from the reality editor to indicate the editing status.
-    this.visibleEditing = false;
-    // every object holds the developer mode variable. It indicates if an object is editable in the Reality Editor.
-    this.developer = true;
-    // Stores all the links that emerge from within the object. If a IOPoint has new data,
-    // the server looks through the Links to find if the data has influence on other IOPoints or Objects.
-    this.links = {};
-    // Stores all IOPoints. These points are used to keep the state of an object and process its data.
-    this.nodes = {};
-    // local or global. If local, node-name is exposed to hardware interface
-    this.location = "local";
-    // source
-    this.src = "editor";
-}
-
 
 /*
  ********** API FUNCTIONS *********
@@ -620,7 +574,6 @@ exports.setup = function (objExp, objLookup, knownObjs, socketArr, glblVars, dir
     objectsPath = objPath;
     nodeTypeModules = types;
     blockModules = blocks;
-    Node = objValue;
     publicDataCallBack = callbacks.publicData;
     actionCallback = callbacks.actions;
     callback = callbacks.data;
