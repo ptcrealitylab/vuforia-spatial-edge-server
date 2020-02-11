@@ -66,7 +66,7 @@ exports.settings = {
 };
 
 if (exports.enabled) {
-    kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"), settings("tagsEnabled"));
+    var kepware1 = new Kepware(settings("ip"), settings("name"),  settings("port"),  settings("updateRate"), settings("tagsEnabled"));
     kepware1.setup();
 
     /*
@@ -116,7 +116,7 @@ if (exports.enabled) {
             this.thisID = {};
             this.remoteDevice.get(this.kepwareAddress + "browse", function (data, _res) {
                 
-                for (i = 0; i < data.browseResults.length; i++) {
+                for (var i = 0; i < data.browseResults.length; i++) {
                     this.thisID = data.browseResults[i].id;
                     this.kepwareInterfaces[this.thisID] = new this.KepwareData();
                     this.kepwareInterfaces[this.thisID].id = data.browseResults[i].id;
@@ -186,7 +186,7 @@ if (exports.enabled) {
             this.remoteDevice.get(this.kepwareAddress + "read"+argstring, function (data, res) {
                 // parsed response body as js object
 
-                for (i = 0; i < data.readResults.length; i++) {
+                for (var i = 0; i < data.readResults.length; i++) {
                     var thisID = data.readResults[i].id;
 
                     if (this.kepwareInterfaces[thisID] && !this.kepwareInterfaces[thisID].enabled) {
