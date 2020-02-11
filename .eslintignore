@@ -2,5 +2,6 @@ pushMe.hyperesources
 dropzone.js
 /libraries/webInterface/js
 /hardwareInterfaces/MIR100/index_old.js
+/hardwareInterfaces/robot
 *.min.js
 /libraries/logicInterfaces.js
