@@ -1,6 +1,6 @@
 var os = require('os');
 var path = require('path');
-var logger = require('../logger');
+
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
 var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
@@ -9,7 +9,7 @@ var git = require('simple-git')(homeDirectory);
 
 
 function saveCommit(object, objects, callback) {
-    logger.debug("git saveCommit");
+    console.log("git saveCommit");
    // Generating historic data for ghost images
    if (object) {
       var objectFolderName = object.name;
@@ -24,7 +24,7 @@ function saveCommit(object, objects, callback) {
                    return;
                }
                git.commit("server identity commit for " + objectFolderName, [objectFolderName + identityFile], function(){
-                   logger.debug("commit for ", objectFolderName);
+                   console.log("commit for ", objectFolderName);
                    utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                    callback();
                })
@@ -34,7 +34,7 @@ function saveCommit(object, objects, callback) {
 }
 
 function resetToLastCommit(object, objects, callback) {
-    logger.debug("git resetToLastCommit");
+    console.log("git resetToLastCommit");
     if (object) {
 
             var objectFolderName = object.name;
@@ -44,7 +44,7 @@ function resetToLastCommit(object, objects, callback) {
                     return;
                 }
                 git.checkout(objectFolderName + identityFile, function () {
-                    logger.debug("reset for ", objectFolderName);
+                    console.log("reset for ", objectFolderName);
                     utilities.updateObject(objectFolderName, objects);
                     utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                     callback();

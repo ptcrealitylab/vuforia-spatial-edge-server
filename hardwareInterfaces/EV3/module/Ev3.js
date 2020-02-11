@@ -1,5 +1,5 @@
 var SP = require("serialport");
-var logger = require('../../../logger');
+
 var SerialPort = SP.SerialPort;
 var util = require('util');
 
@@ -19,7 +19,7 @@ var Sensor = function(port,type,mode){
 		this.request_counter = counter;
 		//construct buffer
 		pull_command = new Buffer("0B00"+counter+"0001009A000"+ (port-1) + type +"0"+ mode +"60","hex");
-		//logger.debug(pull_command.toString("hex"));
+		//console.log(pull_command.toString("hex"));
 		sp.write(pull_command);
 	}
 
@@ -138,14 +138,14 @@ var Ev3_base = function(btport){
 		if(d !== null) body_d = this.OUTPUT_DELIMITER_SEQ + this.getHexOutput(d) + this.OUTPUT_BODY_SEQ + "304000000830400000040";
 
 		//get counter
-		// logger.debug(this.getCounter());
+		// console.log(this.getCounter());
 		var size = ((this.getCounter()+header+body_a+body_b+body_c+body_d).length/2).toString(16); //check this 
 		var prefix = size + "00" + this.getCounter() + header ;
 		var body = prefix + body_a + body_b + body_c + body_d; 
 		try {
 			return new Buffer( body.toUpperCase(), "hex");
 		} catch(e) {
-			logger.debug(body.toUpperCase());
+			console.log(body.toUpperCase());
 			debugger;
 		}
 	};
@@ -154,7 +154,7 @@ var Ev3_base = function(btport){
 		var cstring = counter.toString(16);
 		if(cstring.length ==  1){
 			cstring = "000"+ cstring ;
-			//logger.debug(cstring);
+			//console.log(cstring);
 		} else if (cstring.length ==  2){
 			cstring = "00" + cstring;
 		} else if (cstring.length ==  3){
@@ -162,7 +162,7 @@ var Ev3_base = function(btport){
 		}
 		counter++;
 		if (counter > 0xffff) {
-			logger.debug('fixed everything Kappa');
+			console.log('fixed everything Kappa');
 			counter = 0;
 		}
 		return cstring;
@@ -246,7 +246,7 @@ Ev3_base.prototype.registerSensorListener = function(port,callback){
 }
 
 Ev3_base.prototype.pullReadings = function(){
-	//logger.debug("There are this many sensors: " + this.sensors.length);
+	//console.log("There are this many sensors: " + this.sensors.length);
 	for (var i =0 ; i<this.sensors.length; i++){
 		this.sensors[i].pullReading(this.getCounter(),this.sp);
 	}
@@ -263,10 +263,10 @@ Ev3_base.prototype.connect = function(callback){
 	var main = this;
 
 	connection.on("open", function () {
-		//logger.debug('open');
+		//console.log('open');
 		connection.on('data', function(data) {
-			/*logger.debug('data received: ' + data.toString('hex')); 
-			logger.debug('extract counter: ' + data.toString('hex').substr(4,4)); */
+			/*console.log('data received: ' + data.toString('hex')); 
+			console.log('extract counter: ' + data.toString('hex').substr(4,4)); */
 			main.sensorResponse(data.toString('hex').substr(4,4),data.toString('hex'));
 		});
 		main.pullReadings();
@@ -299,7 +299,7 @@ Ev3_base.prototype.disconnect = function(callback){
 	}
 	catch (e) {
 		// statements to handle any exceptions
-		logger.error('Ev3 error', e); // pass exception object to error handler
+		console.error('Ev3 error', e); // pass exception object to error handler
 	}
 }; 
 

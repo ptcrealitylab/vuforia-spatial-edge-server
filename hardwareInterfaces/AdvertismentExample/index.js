@@ -47,7 +47,7 @@
 /**
  * Set to true to enable the hardware interface
  **/
-var logger = require('../../logger');
+
 var server = require(__dirname + '/../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
@@ -81,7 +81,7 @@ if (exports.enabled) {
     }, false);
 
     serialPort.on('error', function (err) {
-        logger.error("Serial port error", err);
+        console.error("Serial port error", err);
     });
 
     serialPort.open();
@@ -97,23 +97,23 @@ if (exports.enabled) {
             }
             else if(data === "2") {
                 server.advertiseConnection("obj47","light1");
-                logger.debug("advertise light1");
+                console.log("advertise light1");
             }
             else if(data === "1") {
                 server.advertiseConnection("obj47","light2");
-                logger.debug("advertise light2");
+                console.log("advertise light2");
             }
             else if(data === "0") {
                 server.advertiseConnection("obj47","light3");
-                logger.debug("advertise light3");
+                console.log("advertise light3");
             }
             else if(data === "3") {
                 server.advertiseConnection("obj47", "switch");
-                logger.debug("advertise switch");
+                console.log("advertise switch");
             }
 
 
-            logger.debug("this: ", data);
+            console.log("this: ", data);
 
         });
     });

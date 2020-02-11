@@ -1,5 +1,5 @@
 var forever = require('forever-monitor');
-var logger = require('./logger');
+
 
 var child = new (forever.Monitor)('server.js', {
     silent: false,
@@ -7,19 +7,19 @@ var child = new (forever.Monitor)('server.js', {
 });
 
 child.on('watch:restart', function(info) {
-    logger.error('Restaring script because ' + info.file + ' changed');
+    console.error('Restaring script because ' + info.file + ' changed');
 });
 
 child.on('restart', function() {
-    logger.error('Forever restarting script for ' + child.times + ' time');
+    console.error('Forever restarting script for ' + child.times + ' time');
 });
 
 child.on('exit:code', function(code) {
-    logger.error('Forever detected script exited with code ' + code);
+    console.error('Forever detected script exited with code ' + code);
 });
 
 child.on('exit', function () {
-    logger.debug('your-filename.js has exited after 3 restarts');
+    console.log('your-filename.js has exited after 3 restarts');
 });
 
 child.start();

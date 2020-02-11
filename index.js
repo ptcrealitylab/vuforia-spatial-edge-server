@@ -6,7 +6,7 @@
 
 var cmd = ( process.env.DBG ? "node --debug" : "node" );
 
-var logger = require('./logger');
+
 var forever = require('forever');
 
 const child = new forever.Monitor('server.js', {
@@ -24,7 +24,7 @@ child.start();
 forever.startServer( child );
 
 if (process.pid) {
-    logger.debug('Reality Server index.js process is running with PID', process.pid);
+    console.log('Reality Server index.js process is running with PID', process.pid);
 }
 
 process.on('SIGINT', function() {
@@ -35,9 +35,9 @@ process.on('SIGINT', function() {
     try {
         //Killing node process manually that is running "Index.js" file.
         process.kill(child.childData.pid);
-        logger.debug("Child process killed succesfully!!");
+        console.log("Child process killed succesfully!!");
     } catch(err) {
-        logger.error("Child process already stopped!!", err);
+        console.error("Child process already stopped!!", err);
     }
 
     //Killing forever process.
@@ -45,5 +45,5 @@ process.on('SIGINT', function() {
 });
 
 process.on('uncaughtException', function(err) {
-    logger.error('Caught exception in \'node forever\': ', err);
+    console.error('Caught exception in \'node forever\': ', err);
 });

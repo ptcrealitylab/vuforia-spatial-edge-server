@@ -62,7 +62,7 @@ var ip = require("ip");       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
-var logger = require('../logger');
+
 
 var hardwareInterfaces = {};
 
@@ -87,12 +87,12 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
     var folder = objectsPath + '/' + folderVar + '/';
     var hardwareIdentity =   folder + ".identity/";
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (debug) logger.debug("Creating folder: " + folder);
+    if (debug) console.log("Creating folder: " + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, "0766", function (err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
             }
         });
     }
@@ -100,7 +100,7 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
         if (!fs.existsSync(identity)) {
             fs.mkdirSync(identity, "0766", function (err) {
                 if (err) {
-                    logger.error(err);
+                    console.error(err);
                 }
             });
         }
@@ -108,7 +108,7 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
         if (!fs.existsSync(firstFrame)) {
             fs.mkdirSync(firstFrame, "0766", function (err) {
                 if (err) {
-                    logger.error(err);
+                    console.error(err);
                 }
             });
 
@@ -120,7 +120,7 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
             fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
 
         } catch (e) {
-            if (debug) logger.debug("Could not copy source files", e);
+            if (debug) console.log("Could not copy source files", e);
         }
 
         //  writeObjectToFile(tempFolderName);
@@ -135,12 +135,12 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = folder + identityFolderName + '/';
     var firstFrame = folder + frameVar + '/';
-    if (debug) logger.debug("Creating frame folder: " + folder);
+    if (debug) console.log("Creating frame folder: " + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, "0766", function (err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
             }
         });
     }
@@ -148,7 +148,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     if (!fs.existsSync(identity)) {
         fs.mkdirSync(identity, "0766", function (err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
             }
         });
     }
@@ -156,7 +156,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     if (!fs.existsSync(firstFrame)) {
         fs.mkdirSync(firstFrame, "0766", function (err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
             }
         });
 
@@ -168,7 +168,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
             fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
 
         } catch (e) {
-            if (debug) logger.error("Could not copy source files", e);
+            if (debug) console.error("Could not copy source files", e);
         }
 
         //  writeObjectToFile(tempFolderName);
@@ -186,7 +186,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
 exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
 
     function deleteFolderRecursive(path) {
-        logger.debug('deleteFolderRecursive');
+        console.log('deleteFolderRecursive');
         if (fs.existsSync(path)) {
             fs.readdirSync(path).forEach(function(file, index){
                 var curPath = path + "/" + file;
@@ -200,18 +200,18 @@ exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
         }
     }
 
-    logger.debug('objectName', objectName);
-    logger.debug('frameName', frameName);
+    console.log('objectName', objectName);
+    console.log('frameName', frameName);
 
     var folderPath = objectsPath + '/' + objectName + '/' + frameName;
-    logger.debug('delete frame folder', folderPath);
+    console.log('delete frame folder', folderPath);
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
     var isDeletableFrame = false;
     acceptableFrameNames.forEach(function(nameOption) {
         if (frameName.indexOf(nameOption) > -1) {
             isDeletableFrame = true;
-            logger.debug('it is a ' + nameOption + ' frame');
+            console.log('it is a ' + nameOption + ' frame');
         }
     });
 
@@ -331,13 +331,13 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
 
         fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
             if (err) {
-                logger.error(err);
+                console.error(err);
             } else {
-                // logger.debug("JSON saved to " + outputFilename);
+                // console.log("JSON saved to " + outputFilename);
             }
         });
     } else {
-        logger.error("I am not allowed to save");
+        console.error("I am not allowed to save");
     }
 };
 
@@ -460,13 +460,13 @@ exports.generateChecksums = function (objects,fileArray) {
             checksumText = itob62(crc32(fs.readFileSync(fileArray[i])));
         }
     }
-    logger.debug("created Checksum", checksumText);
+    console.log("created Checksum", checksumText);
     return checksumText;
 };
 
 
 exports.updateObject = function(objectName, objects){
-    logger.debug("update ", objectName);
+    console.log("update ", objectName);
 
     var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
         return fs.statSync(homedir + '/' + file).isDirectory();
@@ -477,14 +477,14 @@ exports.updateObject = function(objectName, objects){
             objectFolderList.splice(0, 1);
         }
     } catch (e) {
-        logger.debug("no hidden files");
+        console.log("no hidden files");
     }
 
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
             var tempFolderName = getObjectIdFromTarget(objectFolderList[i], homedir);
-            logger.debug("TempFolderName: " + tempFolderName);
+            console.log("TempFolderName: " + tempFolderName);
 
             if (tempFolderName !== null) {
                 // fill objects with objects named by the folders in objects
@@ -525,17 +525,17 @@ exports.updateObject = function(objectName, objects){
                         }
                     }
 
-                    logger.debug("I found objects that I want to add");
+                    console.log("I found objects that I want to add");
 
 
                 } catch (e) {
                     objects[tempFolderName].ip = ip.address();
                     objects[tempFolderName].objectId = tempFolderName;
-                    logger.debug("No saved data for: " + tempFolderName);
+                    console.log("No saved data for: " + tempFolderName);
                 }
 
             } else {
-                logger.debug(" object " + objectFolderList[i] + " has no marker yet");
+                console.log(" object " + objectFolderList[i] + " has no marker yet");
             }
             return tempFolderName;
         }
@@ -551,7 +551,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     if (!fs.existsSync(hardwareIdentity)) {
         fs.mkdirSync(hardwareIdentity, "0766", function (err) {
             if (err) {
-                logger.debug(err);
+                console.log(err);
             }
         });
     }
@@ -559,7 +559,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     if (!fs.existsSync(hardwareFolder)) {
         fs.mkdirSync(hardwareFolder, "0766", function (err) {
             if (err) {
-                logger.debug(err);
+                console.log(err);
             }
         });
     }
@@ -567,9 +567,9 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     if (!fs.existsSync(hardwareFolder + "settings.json")) {
         fs.writeFile(hardwareFolder + "settings.json", "", function (err) {
             if (err) {
-                logger.debug(err);
+                console.log(err);
             } else {
-                logger.debug("JSON created to " + hardwareFolder + "settings.json");
+                console.log("JSON created to " + hardwareFolder + "settings.json");
             }
         });
     }
@@ -580,7 +580,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
         hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
 
     } catch (e) {
-        logger.debug("Could not Load: " + hardwareInterfaceName);
+        console.log("Could not Load: " + hardwareInterfaceName);
         hardwareInterfaces[hardwareInterfaceName] = {};
     }
 
@@ -607,7 +607,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
 exports.actionSender = function(action, timeToLive, beatport) {
     if(!timeToLive) timeToLive = 2;
     if(!beatport) beatport = 52316;
-    logger.debug(action);
+    console.log(action);
 
     var HOST = '255.255.255.255';
     var message;

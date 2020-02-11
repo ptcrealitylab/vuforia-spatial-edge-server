@@ -21,7 +21,6 @@ var http = require('http');
 var path = require('path');
 var utilities = require('./utilities');
 var _ = require('lodash');
-var logger = require('../logger');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -183,13 +182,13 @@ exports.clearObject = function (objectId, frameID) {
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
-                logger.debug("Deleting: " + objectID + "   "+ objectID + "   " + key);
+                console.log("Deleting: " + objectID + "   "+ objectID + "   " + key);
                 delete objects[objectID].frames[frameID].nodes[key];
             }
         }
     }
     //TODO: clear links too
-    logger.debug("object is all cleared");
+    console.log("object is all cleared");
 };
 
 exports.removeAllNodes = function (objectName, frameName) {
@@ -385,7 +384,7 @@ exports.triggerUDPCallbacks = function(msgContent) {
 exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    logger.debug("hardwareInterfaces.addNode objectID: ", objectID);
+    console.log("hardwareInterfaces.addNode objectID: ", objectID);
 
     var nodeUuid = objectID+frameName+nodeName;
     var frameUuid = objectID+frameName;
@@ -432,7 +431,7 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             thisObject.text = undefined;
             thisObject.type = type;
 
-            logger.debug("added node", {
+            console.log("added node", {
                 node: nodeName,
                 object: objectName,
                 frame: frameName,
@@ -541,7 +540,7 @@ exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, sho
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
 
                     objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
-                    logger.debug("Attached node " + nodeName + " to ground plane");
+                    console.log("Attached node " + nodeName + " to ground plane");
                 }
             }
         }
@@ -564,7 +563,7 @@ exports.activate = function (objectName) {
 
 exports.deactivate = function (objectName) {
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    logger.debug("hardwareInterfaces.deactivate")
+    console.log("hardwareInterfaces.deactivate")
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
@@ -643,7 +642,7 @@ exports.reset = function (){
         }
     }
 
-    logger.debug("hardwareInterfaces.reset calling reset callbacks");
+    console.log("hardwareInterfaces.reset calling reset callbacks");
     for (var i = 0; i < callBacks.resetCallBacks.length; i++) {
         callBacks.resetCallBacks[i]();
     }
@@ -724,7 +723,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
-    logger.debug("Add read listener for objectID: ", objectID);
+    console.log("Add read listener for objectID: ", objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -743,7 +742,7 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
                 }
 
-                logger.debug('Add read listener: ', callBack);
+                console.log('Add read listener: ', callBack);
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
 
             }
@@ -757,7 +756,7 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
     var nodeID = objectID+frameName+nodeName;
     var frameID = objectID+frameName;
 
-    logger.debug("Add publicData listener for objectID: ", objectID);
+    console.log("Add publicData listener for objectID: ", objectID);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -787,16 +786,16 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
 };
 
 exports.connectCall = function (objectID, frameID, nodeID, data) {
-    logger.debug('connectCall');
+    console.log('connectCall');
 
     if (callBacks.hasOwnProperty(objectID)) {
         if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
             if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
-                    logger.debug("Connection callback called");
+                    console.log("Connection callback called");
                 } else {
-                    logger.debug("No connection callback");
+                    console.log("No connection callback");
                 }
             }
         }
@@ -808,7 +807,7 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
     var frameID = objectID + frameName;
     var nodeID = objectID + frameName + nodeName;
 
-    logger.debug("Add connection listener for objectID: ", objectID, frameID, nodeName);
+    console.log("Add connection listener for objectID: ", objectID, frameID, nodeName);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -850,11 +849,11 @@ exports.map = function (x, in_min, in_max, out_min, out_max) {
 
 exports.addEventListener = function (option, callBack){
     if(option === "reset") {
-        logger.debug("Add reset listener");
+        console.log("Add reset listener");
         callBacks.resetCallBacks.push(callBack);
     }
     if(option === "shutdown") {
-        logger.debug("Add reset listener");
+        console.log("Add reset listener");
         callBacks.shutdownCallBacks.push(callBack);
     }
 
@@ -880,7 +879,7 @@ exports.advertiseConnection = function (object, frame, node, logic){
 
 exports.shutdown = function (){
 
-    logger.debug("hardwareInterfaces.shutdown");
+    console.log("hardwareInterfaces.shutdown");
     for (var i = 0; i < callBacks.shutdownCallBacks.length; i++) {
         callBacks.shutdownCallBacks[i]();
     }

@@ -44,7 +44,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var logger = require('../../logger');
+
 var server = require('../../libraries/hardwareInterfaces');
 var settings = server.loadHardwareInterface(__dirname);
 
@@ -73,13 +73,13 @@ if (exports.enabled) {
 
         request(options, function (error, response, body) {
             if (error) throw new Error(error);
-            logger.debug("alexa request body", body);
+            console.log("alexa request body", body);
 
             var actions = JSON.parse(body);
 
             actions.forEach(function(action) {
                 server.write("box", "arduino01", action.color.toLowerCase(), action.value);
-                logger.debug("Wrote value " + action.value + " to node " + action.color.toLowerCase());
+                console.log("Wrote value " + action.value + " to node " + action.color.toLowerCase());
             });
         });
     }

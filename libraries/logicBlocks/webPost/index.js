@@ -60,7 +60,7 @@
  */
 
 var request = require('request');
-var logger = require('../../../logger');
+
 
 var generalProperties = {
     // display name underneath icon in block menu
@@ -104,14 +104,14 @@ exports.render = function (object, frame, node, block, index, thisBlock, callbac
     // BUT ALSO: makes a post request to the server endpoint configured in publicData
     if (index === 0) {
 
-        logger.debug("making post request to", thisBlock.publicData);
+        console.log("making post request to", thisBlock.publicData);
 
         request.post(
             thisBlock.publicData.endpointUrl,
             { json: {blockData: thisBlock.processedData} },
             function (error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    logger.debug(body);
+                    console.log(body);
                 }
             }
         );

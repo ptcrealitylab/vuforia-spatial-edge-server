@@ -92,7 +92,7 @@ if (exports.enabled) {
                          baudRate: 19200
                      });
                      serialPort.on('error', function (err) {
-                         logger.error("Serial port error", err);
+                         console.error("Serial port error", err);
                      });
                      serialServer(serialPort);
                      break;
@@ -108,14 +108,14 @@ if (exports.enabled) {
         const parser = serialPort.pipe(new Readline({ delimiter: '\n' }));
         parser.on('data', function (data){
             // get a buffer of data from the serial port
-            // logger.debug('serial data', data);
+            // console.log('serial data', data);
         });
-        logger.debug('serial opening');
+        console.log('serial opening');
        // serialPort.open();
 
         serialPort.on('open', function () {
 
-            logger.debug('Serial port opened');
+            console.log('Serial port opened');
             serialPortOpen = true;
             var dataSwitch = 0;
             var pos = null;
@@ -131,8 +131,8 @@ if (exports.enabled) {
             //var okCounter = 0;
 
         parser.on('data', function (data) {
-           // logger.debug(data.toString());
-               // logger.debug(data);
+           // console.log(data.toString());
+               // console.log(data);
                 switch (dataSwitch) {
                     case 0:
                         if (data === "f") {
@@ -166,15 +166,15 @@ if (exports.enabled) {
 
                             serialPort.write(" \n");
                             serialPort.write("okbird\n");
-                            logger.debug("serial response ok");
+                            console.log("serial response ok");
                             dataSwitch = 0;
                         }
                         else if (data === "def") {
-                            logger.debug("serial response developer");
+                            console.log("serial response developer");
                             dataSwitch = 40;
                         }
                         else if (data === "c") {
-                            logger.debug("serial response clear");
+                            console.log("serial response clear");
                             dataSwitch = 50;
 
                         }
@@ -205,7 +205,7 @@ if (exports.enabled) {
                         obj = object[1];
                         pos = object[0];
 
-                        logger.debug("Serial add Arduino Yun");
+                        console.log("Serial add Arduino Yun");
 
                         ArduinoLookup[obj + pos] = new ArduinoIndex();
                         ArduinoLookup[obj + pos].objName = obj;
@@ -271,7 +271,7 @@ if (exports.enabled) {
 
                 var index = FullLookup[objName][ioName];
 
-               // logger.debug("check index: ", index);
+               // console.log("check index: ", index);
                 var yunModes = ["f", "d", "p", "n"];
                 if (_.includes(yunModes, mode)) {
                     serialPort.write(mode + "\n");

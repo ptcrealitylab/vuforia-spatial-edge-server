@@ -55,4 +55,14 @@ if (process.env.NODE_ENV === 'production') {
     }
 }
 
+console.log = function() {
+    return logger.debug.apply(logger, arguments);
+};
+
+for (const level of ['debug', 'error', 'info', 'warn']) {
+    console[level] = function() {
+        return logger[level].apply(logger, arguments);
+    };
+}
+
 module.exports = logger;
