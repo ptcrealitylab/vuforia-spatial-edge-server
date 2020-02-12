@@ -2,7 +2,7 @@
  * @desc This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
  **/
-module.exports = function ObjectModel() {
+module.exports = function ObjectModel(ip, version, protocol) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
@@ -10,7 +10,7 @@ module.exports = function ObjectModel() {
     this.matrix = [];
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    this.ip = ips.interfaces[ips.activeInterface];
+    this.ip = ip;
     // The version number of the Object.
     this.version = version;
 

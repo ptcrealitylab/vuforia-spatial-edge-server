@@ -236,14 +236,144 @@ const Block = require('./models/Block.js');
 const BlockLink = require('./models/BlockLink.js');
 const Data = require('./models/Data.js');
 const EdgeBlock = require('./models/EdgeBlock.js');
-const EditorSocket = require('./models/EditorSocket.js');
 const Frame = require('./models/Frame.js');
 const Link = require('./models/Link.js');
 const Logic = require('./models/Logic.js');
 const Node = require('./models/Node.js');
 const ObjectModel = require('./models/ObjectModel.js');
 const ObjectSocket = require('./models/ObjectSocket.js');
-const Protocols = require('./models/Protocols.js');
+
+/**
+ * Various communication protocols used by the reality editor
+ */
+function Protocols() {
+    this.R2 = {
+        objectData :{},
+        buffer : {},
+        blockString : "",
+        send: function (object, frame, node, logic, data) {
+            return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data})
+        },
+        // process the data received by a node
+        receive: function (message) {
+            if (!message) return null;
+            var msgContent = JSON.parse(message);
+            if (!msgContent.object) return null;
+            if (!msgContent.frame) return null;
+            if (!msgContent.node) return null;
+            if (!msgContent.logic && msgContent.logic !== 0) msgContent.logic = false;
+            if (!msgContent.data) return null;
+
+            if (doesObjectExist(msgContent.object)) {
+
+                var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
+                if (foundNode) {
+
+                    // if the node is a Logic Node, process the blocks/links inside of it
+                    if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
+                        this.blockString = "in" + msgContent.logic;
+                        if (foundNode.blocks) {
+                            if (this.blockString in foundNode.blocks) {
+                                this.objectData = foundNode.blocks[this.blockString];
+
+                                for (var key in msgContent.data) {
+                                    this.objectData.data[0][key] = msgContent.data[key];
+                                }
+
+                                this.buffer = foundNode;
+
+                                // this needs to be at the beginning;
+                                if (!this.buffer.routeBuffer)
+                                    this.buffer.routeBuffer = [0, 0, 0, 0];
+
+                                this.buffer.routeBuffer[msgContent.logic] = msgContent.data.value;
+
+                                engine.blockTrigger(msgContent.object, msgContent.frame, msgContent.node, this.blockString, 0, this.objectData);
+                                // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
+                            }
+                        }
+
+                    } else { // otherwise this is a regular node so just continue to send the data to any linked nodes
+                        this.objectData = foundNode;
+
+                        for (var key in msgContent.data) {
+                            this.objectData.data[key] = msgContent.data[key];
+                        }
+                        engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
+                        // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
+                    }
+                }
+
+                return {
+                    object: msgContent.object,
+                    frame: msgContent.frame,
+                    node: msgContent.node,
+                    logic: msgContent.logic,
+                    data: this.objectData.data
+                };
+
+            }
+
+            // return null if we can't even find the object it belongs to
+            return null;
+        }
+    };
+    this.R1 = {
+        send: function (object, node, data) {
+            return JSON.stringify({object: object, node: node, data: data})
+        },
+        receive: function (message) {
+            if (!message) return null;
+            var msgContent = JSON.parse(message);
+            if (!msgContent.object) return null;
+            if (!msgContent.node) return null;
+            if (!msgContent.data) return null;
+
+            var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
+            if (foundNode) {
+                for (var key in foundNode.data) {
+                    foundNode.data[key] = msgContent.data[key];
+                }
+                engine.trigger(msgContent.object, msgContent.object, msgContent.node, foundNode);
+                return {object: msgContent.object, node: msgContent.node, data: foundNode};
+            }
+
+            return null;
+        }
+    };
+    /**
+     * @deprecated - the old protocol hasn't been tested in a long time, might not work
+     */
+    this.R0 = {
+        send: function (object, node, data) {
+            return JSON.stringify({obj: object, pos: node, value: data.value, mode: data.mode})
+        },
+        receive: function (message) {
+            if (!message) return null;
+            var msgContent = JSON.parse(message);
+            if (!msgContent.obj) return null;
+            if (!msgContent.pos) return null;
+            if (!msgContent.value) msgContent.value = 0;
+            if (!msgContent.mode) return null;
+
+            if (msgContent.obj in objects) {
+                if (msgContent.pos in objects[msgContent.obj].nodes) {
+
+                    var objectData = objects[msgContent.obj].frames[msgContent.object].nodes[msgContent.pos];
+
+                    objectData.data.value = msgContent.value;
+                    objectData.data.mode = msgContent.mode;
+
+                    engine.trigger(msgContent.object, msgContent.object, msgContent.node, objectData);
+
+                    return {object: msgContent.obj, node: msgContent.pos, data: objectData};
+                }
+
+            }
+            return null
+        }
+    };
+}
 
 /**********************************************************************************************************************
  ******************************************** Variables and Objects ***************************************************
@@ -444,7 +574,7 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel();
+            objects[tempFolderName] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
             objects[tempFolderName].name = objectFolderList[i];
 
             // create first frame
@@ -555,7 +685,7 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel();
+    worldObject = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
     worldObject.name = worldObjectName;
     if (isMobile) {
         worldObject.objectId = worldObjectName;
@@ -3830,7 +3960,7 @@ function objectWebServer() {
                                 console.log('Finished extracting');
                                 console.log("have created a new object");
                                 //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
-                                createObjectFromTarget(Objects, objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                 //todo add object to the beatsender.
 
@@ -4055,7 +4185,7 @@ function objectWebServer() {
                                     if (typeof objects[thisObjectId] === "undefined") {
                                         console.log("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
-                                        createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                        createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
                                         console.log("have created a new object");
@@ -4134,7 +4264,7 @@ function objectWebServer() {
 
                                         console.log("creating object from target file " + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
-                                        createObjectFromTarget(Objects, objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                        createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
                                         console.log("have created a new object");
@@ -4219,7 +4349,7 @@ function objectWebServer() {
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
  */
-function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
+function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
     console.log("I can start");
 
     var folder = objectsPath + '/' + folderVar + '/';
@@ -4233,7 +4363,7 @@ function createObjectFromTarget(Objects, objects, folderVar, __dirname, objectLo
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
-                objects[objectIDXML] = new ObjectModel();
+                objects[objectIDXML] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
@@ -5176,7 +5306,7 @@ function socketUpdater() {
                     var thisIp = knownObjects[thisLink.objectB].ip;
                     if (!(thisIp in socketArray)) {
                         // console.log("should not show up -----------");
-                        socketArray[thisIp] = new ObjectSocket(socketPort, thisIp);
+                        socketArray[thisIp] = new ObjectSocket(socket, socketPort, thisIp);
                     }
                 }
             }
