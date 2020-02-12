@@ -2,7 +2,7 @@
  * @desc This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
  **/
-module.exports = function Objects() {
+module.exports = function ObjectModel() {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
