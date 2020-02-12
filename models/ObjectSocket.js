@@ -1,7 +1,7 @@
 /**
  * @desc This Constructor is used when a new socket connection is generated.
  */
-module.exports = function ObjectSockets(socketPort, ip) {
+module.exports = function ObjectSocket(socket, socketPort, ip) {
     // keeps the own IP of an object
     this.ip = ip;
     // defines where to connect to
