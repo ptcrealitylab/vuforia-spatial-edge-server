@@ -1091,7 +1091,10 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     if (isMobile) {
-        webServer.use('/userinterface', express.static(path.join(__dirname, '../userinterface/')));
+        let localUserInterfaceApp = express();
+        localUserInterfaceApp.use(cors());
+        localUserInterfaceApp.use(express.static(path.join(__dirname, '../userinterface/')));
+        localUserInterfaceApp.listen(8888);
     }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
