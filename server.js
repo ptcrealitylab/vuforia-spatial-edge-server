@@ -139,9 +139,11 @@ if(!fs.existsSync(objectsPath)) {
 
 var identityFolderName = '.identity';
 
-// This file hosts the functions related to loading the set of available frames from the realityframes/ directory
-var globalFrames = require('./libraries/globalFrames');
-globalFrames.initialize(frameLibPath, identityFolderName);
+// This file hosts the functions related to loading the set of available frames
+// from the each add-ons tools directory
+const AddonFrames = require('./libraries/addons/AddonFrames');
+const addonFrames = new AddonFrames();
+addonFrames.addFramesSource(frameLibPath, identityFolderName);
 
 if (isMobile) {
     ips.interfaces[ips.activeInterface] = "127.0.0.1";
@@ -1846,7 +1848,7 @@ function objectWebServer() {
     // Responds with the set of global frames that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
         console.log("get available frames");
-        res.json(globalFrames.getFrameList());
+        res.json(addonFrames.getFrameList());
     });
 
     // sends json object for a specific reality object. * is the object name
@@ -3295,7 +3297,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // console.log("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, globalFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
         });
         
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:name', function(req, res) {
@@ -3585,7 +3587,7 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
 
-            globalFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
+            addonFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
@@ -3598,7 +3600,7 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
             var frameName = req.params.frameName;
 
-            globalFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
+            addonFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
