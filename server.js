@@ -97,19 +97,25 @@ const netInterface = "en0";
 
 //console.log(parseInt(version.replace(/\./g, "")));
 
-var path = require('path');
+const fs = require('fs');       // Filesystem library
+const path = require('path');
 
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
-const frameLibPath = isMobile ? path.join(__dirname, 'realityframes') : path.join(path.join(os.homedir(), 'Documents'), 'realityframes');
+let frameLibPath = isMobile ? path.join(__dirname, 'addons/vuforia-spatial-core-addon/tools') :
+    path.join(os.homedir(), 'Documents/toolbox/addons/vuforia-spatial-core-addon/tools');
+if (!fs.existsSync(frameLibPath)) {
+    frameLibPath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/tools');
+}
+
 // All visual UI representations for IO Points are stored in this folder:
-const nodePath = path.join(__dirname, "/libraries/nodes");
+const nodePath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/nodes');
 // All visual UI representations for logic blocks are stored in this folder:
-const blockPath = path.join(__dirname, "./libraries/logicBlocks");
+const blockPath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/blocks');
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
-const hardwarePath =  path.join(__dirname, "./hardwareInterfaces");
+const hardwarePath =  path.join(__dirname, 'addons/vuforia-spatial-core-addon/interfaces');
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = "/";
 
@@ -120,7 +126,6 @@ const storage = require('./libraries/storage');
 storage.initSync();
 
 var _ = require('lodash');    // JavaScript utility library
-var fs = require('fs');       // Filesystem library
 var dgram = require('dgram'); // UDP Broadcasting library
 var ips = {activeInterface : "en0", interfaces : {}};
 if(storage.getItemSync('activeNetworkInterface') !== undefined){
