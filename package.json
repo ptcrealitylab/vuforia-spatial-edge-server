@@ -28,7 +28,6 @@
     "readdirp": "^2.2.1",
     "request": "^2.*",
     "serialport": "^8.0.7",
-    "sharp": "^0.24.1",
     "simple-git": "^1.130.0",
     "smtp-server": "^1.16.1",
     "socket.io": "~2.2.0",
@@ -87,5 +86,8 @@
       "email": ""
     }
   ],
-  "license": "MPL-2.0"
+  "license": "MPL-2.0",
+  "optionalDependencies": {
+    "sharp": "^0.24.1"
+  }
 }
