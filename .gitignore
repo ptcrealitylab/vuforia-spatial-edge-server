@@ -43,3 +43,5 @@ realityobjects
 hardwareInterfaces/pass/public/gifs/*
 
 .node-persist
+
+/addons
