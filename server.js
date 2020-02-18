@@ -183,7 +183,14 @@ var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 
 // Image resizing library, not available on mobile
-const sharp = isMobile ? null : require('sharp');
+let sharp = null;
+if (!isMobile) {
+    try {
+        sharp = require('sharp');
+    } catch (e) {
+        console.warn('Image resizing unsupported', e);
+    }
+}
 
 // additional files containing project code
 
