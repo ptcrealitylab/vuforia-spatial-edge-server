@@ -5,3 +5,4 @@ dropzone.js
 /hardwareInterfaces/robot
 *.min.js
 /libraries/logicInterfaces.js
+/addons
