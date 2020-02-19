@@ -19,6 +19,7 @@
     "has-ansi": "^4.0.0",
     "ip": "^0.3.2",
     "lodash": "^4.17.15",
+    "module-alias": "^2.2.2",
     "monaco-editor": "^0.5.1",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.6.0",
@@ -47,6 +48,9 @@
     "test": "npm run lint",
     "lint": "eslint .",
     "start": "node server.js"
+  },
+  "_moduleAliases": {
+    "@libraries": "./libraries"
   },
   "author": {
     "name": "Valentin Heun",
