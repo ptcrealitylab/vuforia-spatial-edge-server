@@ -104,6 +104,18 @@ const path = require('path');
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+
+const addonPaths = [
+    path.join(__dirname, 'addons'),
+    path.join(os.homedir(), 'Documents/toolbox/addons'),
+];
+
+const Addons = require('./libraries/addons/Addons');
+const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
+
+const addons = new Addons(addonPaths);
+const addonFolders = addons.listAddonFolders();
+
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
 let frameLibPath = isMobile ? path.join(__dirname, 'addons/vuforia-spatial-core-addon/tools') :
     path.join(os.homedir(), 'Documents/toolbox/addons/vuforia-spatial-core-addon/tools');
@@ -112,11 +124,11 @@ if (!fs.existsSync(frameLibPath)) {
 }
 
 // All visual UI representations for IO Points are stored in this folder:
-const nodePath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/nodes');
+const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 // All visual UI representations for logic blocks are stored in this folder:
-const blockPath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/blocks');
+const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
-const hardwarePath =  path.join(__dirname, 'addons/vuforia-spatial-core-addon/interfaces');
+const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = "/";
 
@@ -396,8 +408,12 @@ function Protocols() {
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
-var nodeTypeModules = {};   // Will hold all available data point interfaces
-var blockModules = {};   // Will hold all available data point interfaces
+const nodeFolderLoader = new AddonFolderLoader(nodePaths);
+
+const nodeTypeModules = nodeFolderLoader.loadModules();   // Will hold all available data point interfaces
+const blockFolderLoader = new AddonFolderLoader(blockPaths);
+const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
+
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
@@ -439,40 +455,6 @@ var worldObject;
 
 
 console.log("Starting the Server");
-
-// get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
-// Each folder represents on IO-Point.
-var nodeFolderList = fs.readdirSync(nodePath).filter(function (file) {
-    return fs.statSync(nodePath + '/' + file).isDirectory();
-});
-
-// Remove eventually hidden files from the Reality Object list.
-while (nodeFolderList[0][0] === ".") {
-    nodeFolderList.splice(0, 1);
-}
-
-// Create a objects list with all IO-Points code.
-for (var i = 0; i < nodeFolderList.length; i++) {
-    nodeTypeModules[nodeFolderList[i]] = require(nodePath + '/' + nodeFolderList[i] + "/index.js");
-}
-
-
-// get a list with the names for all IO-Points, based on the folder names in the nodeInterfaces folder folder.
-// Each folder represents on IO-Point.
-var blockFolderList = fs.readdirSync(blockPath).filter(function (file) {
-    return fs.statSync(blockPath + '/' + file).isDirectory();
-});
-
-// Remove eventually hidden files from the Reality Object list.
-while (blockFolderList[0][0] === ".") {
-    blockFolderList.splice(0, 1);
-}
-
-// Create an objects list with all IO-Points code.
-for (var i = 0; i < blockFolderList.length; i++) {
-    blockModules[blockFolderList[i]] = require(blockPath + '/' + blockFolderList[i] + "/index.js");
-}
-
 
 console.log("Initialize System: ");
 console.log("Loading Hardware interfaces");
@@ -518,29 +500,16 @@ console.log("Done loading world object");
 startSystem();
 console.log("started");
 
-var hardwareAPIFolderList = [];
-
 // Get the directory names of all available sources for the 3D-UI
 if (!isMobile) {
-    hardwareAPIFolderList = fs.readdirSync(hardwarePath).filter(function (file) {
-        return fs.statSync(hardwarePath + '/' + file).isDirectory();
-    });
-    // remove hidden directories
-    if (hardwareAPIFolderList.length > 0) {
-        while (hardwareAPIFolderList[0][0] === ".") {
-            hardwareAPIFolderList.splice(0, 1);
-        }
-    }
+    hardwareInterfaceModules = new AddonFolderLoader(hardwareInterfacePaths).loadModules();
 }
 
-// add all types to the hardwareTypeModules object. Iterate backwards because splice works inplace
-for (var i = hardwareAPIFolderList.length - 1; i >= 0; i--) {
-
-    var thisHardwareInterface = require(hardwarePath + "/" + hardwareAPIFolderList[i] + "/index.js");
-    hardwareInterfaceModules[hardwareAPIFolderList[i]] = thisHardwareInterface;
-
-    if (!thisHardwareInterface.enabled) {
-        hardwareAPIFolderList.splice(i, 1);
+// Iterate over all keys of hardwareInterfaceModules, removing disabled hardwareInterfaces
+for (const key of Object.keys(hardwareInterfaceModules)) {
+    const hardwareInterface = hardwareInterfaceModules[key];
+    if (!hardwareInterface.enabled) {
+        delete hardwareInterfaceModules[key];
     }
 }
 
@@ -548,7 +517,7 @@ console.log("ready to start internal servers");
 
 hardwareAPI.reset();
 
-console.log("found " + hardwareAPIFolderList.length + " internal server");
+console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
 console.log("starting internal Server.");
 
 /**
@@ -1874,6 +1843,7 @@ function objectWebServer() {
         var blockList = {};
 
         // Create a objects list with all IO-Points code.
+        const blockFolderList = Object.keys(blockModules);
         for (var i = 0; i < blockFolderList.length; i++) {
 
             // make sure that each block contains all default property keys.
@@ -3206,32 +3176,38 @@ function objectWebServer() {
      */
 
     // Version 1
-    webServer.get('/obj/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/obj/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
+        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
     });
 
     // Version 2
-    webServer.get('/dataPointInterfaces/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
+        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
     });
 
     // Version 3 #### Active Version
-    webServer.get('/nodes/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/nodes/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
+        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
     });
 
     // Version 3 #### Active Version
-    webServer.get('/nodes/*/gui/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(nodePath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/nodes/:nodeName/gui/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
+        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
     });
 
     // Version 3 #### Active Version *1 Block *2 file
-    webServer.get('/logicBlock/*/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(blockPath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/logicBlock/:blockName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let blockPath = blockFolderLoader.resolvePath(req.params.blockName);
+        res.sendFile(blockPath + "/" + req.params.blockName + '/gui/' + req.params.fileName);
     });
 
-    webServer.get('/logicBlock/*/gui/*/', function (req, res) {   // watch out that you need to make a "/" behind request.
-        res.sendFile(blockPath + "/" + req.params[0] + '/gui/' + req.params[1]);
+    webServer.get('/logicBlock/:blockName/gui/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
+        let blockPath = blockFolderLoader.resolvePath(req.params.blockName);
+        res.sendFile(blockPath + "/" + req.params.blockName + '/gui/' + req.params.fileName);
     });
 
 
