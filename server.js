@@ -230,19 +230,14 @@ if (isMobile) {
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI;
 
-// This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
-var { HumanPoseObject, humanPoseObjectDependencies } = require('./libraries/HumanPoseObject');
-humanPoseObjectDependencies.inject({ // this is a temporary workaround to inject the HumanPoseObject module with dependencies it needs
-    ips: ips,
-    version: version,
-    protocol: protocol,
-});
-
 if (isMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
     hardwareAPI = require('./libraries/hardwareInterfaces');
 }
+
+// This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
+const HumanPoseObject = require('./libraries/HumanPoseObject');
 
 var git;
 if (isMobile) {
@@ -4766,7 +4761,8 @@ function socketServer() {
                 var thisObject = objects[objectId];
                 if (!doesObjectExist(objectId)) {
                     // create an object if needed
-                    objects[objectId] = new HumanPoseObject(poseInfo.id);
+                    const ip = ips.interfaces[ips.activeInterface];
+                    objects[objectId] = new HumanPoseObject(ip, version, protocol, poseInfo.id);
                     thisObject = objects[objectId];
                     // advertise to editors
                     objectBeatSender(beatPort, objectId, thisObject.ip, true);
