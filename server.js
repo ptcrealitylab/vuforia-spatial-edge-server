@@ -411,6 +411,7 @@ const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
+var hardwareInterfaceLoader = null;
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
 // This list is also used to keep track of the actual IP of an object. If the IP of an object in a network changes,
@@ -498,7 +499,8 @@ console.log("started");
 
 // Get the directory names of all available sources for the 3D-UI
 if (!isMobile) {
-    hardwareInterfaceModules = new AddonFolderLoader(hardwareInterfacePaths).loadModules();
+    hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
+    hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
 }
 
 // Iterate over all keys of hardwareInterfaceModules, removing disabled hardwareInterfaces
@@ -3281,11 +3283,13 @@ function objectWebServer() {
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function(req, res) {
-            let hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
-            hardwareInterfaceLoader.calculatePathResolution();
-            let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
-            let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
-            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, ips, serverPort, configHtmlPath));
+            if (!isMobile) {
+                let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
+                let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
+                res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, ips, serverPort, configHtmlPath));
+            } else {
+                res.status(403).send('You cannot configure a hardware interface from a mobile device server');
+            }
         });
         // restart the server from the web frontend to load
 
