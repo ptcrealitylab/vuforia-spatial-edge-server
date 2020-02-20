@@ -23,7 +23,7 @@ class AddonFolderLoader {
 
             // Update out modules map with all the folders' code
             for (const folder of folderList) {
-                if (this.modules.hasOwnProperty(folder)) {
+                if (this.folderMap.hasOwnProperty(folder)) {
                     continue;
                 }
                 this.modules[folder] = require(path.join(addonFolder, folder, 'index.js'));
@@ -32,6 +32,29 @@ class AddonFolderLoader {
         }
 
         return this.modules;
+    }
+
+    /**
+     * Clone of loadModules that only builds the data for resolvePath
+     */
+    calculatePathResolution() {
+        this.folderMap = {};
+
+        for (let addonFolder of this.addonFolders) {
+            var folderList = fs.readdirSync(addonFolder).filter(function (filename) {
+                const isHidden = filename[0] === '.';
+                return fs.statSync(path.join(addonFolder, filename)).isDirectory() &&
+                    !isHidden;
+            });
+
+            // Update out modules map with all the folders' code
+            for (const folder of folderList) {
+                if (this.folderMap.hasOwnProperty(folder)) {
+                    continue;
+                }
+                this.folderMap[folder] = addonFolder;
+            }
+        }
     }
 
     /**
