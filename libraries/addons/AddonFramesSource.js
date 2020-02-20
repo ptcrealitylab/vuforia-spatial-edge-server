@@ -76,7 +76,7 @@ class AddonFramesSource {
                 let defaultSettings = this.generateDefaultFrameSettings(true);
                 fs.writeFile(settingsPath, JSON.stringify(defaultSettings, null, '\t'), (err) => {
                     if (err) {
-                        console.log(err);
+                        console.log('default frame saving failed', err);
                     } else {
                         console.log('default frame JSON saved to', settingsPath);
                     }
