@@ -1,5 +1,3 @@
-var DependencyInjector = require(__dirname + '/DependencyInjector');
-var dependencies = new DependencyInjector();
 const Frame = require('../models/Frame.js');
 const Node = require('../models/Node.js');
 
@@ -9,18 +7,18 @@ const Node = require('../models/Node.js');
  * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
  * @constructor
  */
-function HumanPoseObject(bodyId) {
+function HumanPoseObject(ip, version, protocol, bodyId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = HumanPoseObject.getObjectId(bodyId);
     // The name for the object used for interfaces.
     this.name = this.getName(bodyId);
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
-    this.ip = dependencies.ips.interfaces[dependencies.ips.activeInterface];
+    this.ip = ip;
     // The version number of the Object.
-    this.version = dependencies.version;
+    this.version = version;
     this.deactivated = false;
-    this.protocol = dependencies.protocol;
+    this.protocol = protocol;
     // The (t)arget (C)eck(S)um is a sum of the checksum values for the target files.
     this.tcs = null;
     // Intended future use is to keep a memory of the last matrix transformation when interacted.
@@ -33,14 +31,14 @@ function HumanPoseObject(bodyId) {
     // keep a memory of the last commit state of the frames.
     this.framesHistory = {};
     // which visualization mode it should use right now ("ar" or "screen")
-    this.visualization = "ar";
-    this.zone = "";
+    this.visualization = 'ar';
+    this.zone = '';
     // taken from target.xml. necessary to make the screens work correctly.
     this.targetSize = { // todo: what should "target size" even mean for a person?
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
     };
-    
+
     this.isHumanPose = true;
     this.isWorldObject = true;
 }
@@ -206,5 +204,4 @@ HumanPoseObject.getObjectId = function(bodyId) {
     return 'humanPoseObject' + bodyId;
 };
 
-exports.HumanPoseObject = HumanPoseObject;
-exports.humanPoseObjectDependencies = dependencies;
+module.exports = HumanPoseObject;
