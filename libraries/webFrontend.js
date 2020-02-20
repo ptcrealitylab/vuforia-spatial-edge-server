@@ -73,13 +73,27 @@ function Frame() {
     this.src = ''; // the frame type, e.g. 'slider-2d' or 'graphUI'
 }
 
-exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort) {
+/**
+ * Injects the specified config.html file for a hardware interface with the relevant state of the server
+ * @param {string} hardwareInterfaceName
+ * @param {Object.<string, {enabled: boolean, configurable: boolean}>} hardwareInterfaceModules
+ * @param {string} version
+ * @param {string} ipAddress
+ * @param {number} serverPort
+ * @param {string} configHtmlPath - absolute path to the config.html file in whatever addon it may belong to
+ * @return {string} - returns the page's HTML as a string
+ */
+exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort, configHtmlPath) {
     console.log(hardwareInterfaceName, ipAddress, serverPort, hardwareInterfaceModules);
 
-    var rootPath = __dirname.split('libraries')[0];
-    console.log(rootPath);
-    // loads the index.html content
-    var html = fs.readFileSync( path.join(rootPath, 'hardwareInterfaces/', hardwareInterfaceName, '/config.html'), 'utf8');
+    let html = '';
+    try {
+        html = fs.readFileSync(configHtmlPath, 'utf8');
+    } catch (e) {
+        let errorMessage = 'Couldn\'t find config.html file for hardwareInterface: ' + hardwareInterfaceName + ' at path: ' + configHtmlPath;
+        console.warn(errorMessage);
+        return errorMessage; // render error message instead of html
+    }
 
     // inject the data structure with all the hardware interfaces
     html = html.replace('{/*replace HardwareInterface*/}', JSON.stringify(hardwareInterfaceModules[hardwareInterfaceName], null, 4));
