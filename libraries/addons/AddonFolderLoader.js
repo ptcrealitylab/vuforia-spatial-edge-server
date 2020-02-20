@@ -4,6 +4,18 @@ const path = require('path');
 class AddonFolderLoader {
     constructor(addonFolders) {
         this.addonFolders = addonFolders;
+        const coreAddon = 'vuforia-spatial-core-addon';
+        this.addonFolders.sort((a, b) => {
+            const aIsCore = a.includes(coreAddon);
+            const bIsCore = b.includes(coreAddon);
+            if (aIsCore && !bIsCore) {
+                return -1;
+            }
+            if (bIsCore && !aIsCore) {
+                return 1;
+            }
+            return a.localeCompare(b);
+        });
     }
 
     /**
