@@ -117,11 +117,7 @@ const addons = new Addons(addonPaths);
 const addonFolders = addons.listAddonFolders();
 
 // The path to all frames types that this server hosts, containing a directory for each frame (containing the html/etc).
-let frameLibPath = isMobile ? path.join(__dirname, 'addons/vuforia-spatial-core-addon/tools') :
-    path.join(os.homedir(), 'Documents/toolbox/addons/vuforia-spatial-core-addon/tools');
-if (!fs.existsSync(frameLibPath)) {
-    frameLibPath = path.join(__dirname, 'addons/vuforia-spatial-core-addon/tools');
-}
+const frameLibPaths = addonFolders.map(folder => path.join(folder, 'tools'));
 
 // All visual UI representations for IO Points are stored in this folder:
 const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
@@ -161,7 +157,12 @@ var identityFolderName = '.identity';
 // from the each add-ons tools directory
 const AddonFrames = require('./libraries/addons/AddonFrames');
 const addonFrames = new AddonFrames();
-addonFrames.addFramesSource(frameLibPath, identityFolderName);
+const frameFolderLoader = new AddonFolderLoader(frameLibPaths);
+frameFolderLoader.calculatePathResolution();
+
+for (const frameLibPath of frameLibPaths) {
+    addonFrames.addFramesSource(frameLibPath, identityFolderName);
+}
 
 if (isMobile) {
     ips.interfaces[ips.activeInterface] = "127.0.0.1";
@@ -1082,9 +1083,10 @@ function objectWebServer() {
     }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
-    webServer.use('/frames', function (req, res, next) {
+    webServer.use('/frames/:frameName', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
-        
+        const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
+        console.log('frame load', frameLibPath, req.originalUrl);
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
 
         if (!fs.existsSync(fileName)) {
@@ -3279,9 +3281,10 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
             // console.log("get 16");
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, frameLibPath));
+            let framePathList = frameLibPaths.join(' ');
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
-        
+
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:name', function(req, res) {
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.name, hardwareInterfaceModules, version, ips, serverPort));
         });
@@ -3639,6 +3642,7 @@ function objectWebServer() {
             var frameName = req.params.frameName;
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
 
+            const frameLibPath = frameFolderLoader.resolvePath(frameName);
             var framePath = path.join(frameLibPath, frameName);
 
             if (!fs.existsSync(framePath)) {
