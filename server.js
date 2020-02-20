@@ -3280,8 +3280,12 @@ function objectWebServer() {
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
-        webServer.get(objectInterfaceFolder + 'hardwareInterface/:name', function(req, res) {
-            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.name, hardwareInterfaceModules, version, ips, serverPort));
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function(req, res) {
+            let hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
+            hardwareInterfaceLoader.calculatePathResolution();
+            let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
+            let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, ips, serverPort, configHtmlPath));
         });
         // restart the server from the web frontend to load
 
