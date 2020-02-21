@@ -1056,11 +1056,15 @@ function objectWebServer() {
             if (remoteIP[0] === 127 && remoteIP[1] === 0 && remoteIP[2] === 0 && remoteIP[3] === 1) {
                 checkThisNetwork = true;
             }
-
-        if (checkThisNetwork) {
-            next();
+        
+        if(ips.activeInterface in ips.interfaces) {
+            if (checkThisNetwork) {
+                next();
+            } else {
+                res.status(403).send('Error 400: Forbidden. The requested page may be only available in a local network.');
+            }
         } else {
-            res.status(403).send('Error 400: Forbidden. The requested page may be only available in a local network.');
+            next();
         }
     });
     // define the body parser
