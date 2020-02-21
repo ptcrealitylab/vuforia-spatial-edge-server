@@ -161,7 +161,9 @@ const frameFolderLoader = new AddonFolderLoader(frameLibPaths);
 frameFolderLoader.calculatePathResolution();
 
 for (const frameLibPath of frameLibPaths) {
-    addonFrames.addFramesSource(frameLibPath, identityFolderName);
+    if (fs.existsSync(frameLibPath)) {
+        addonFrames.addFramesSource(frameLibPath, identityFolderName);
+    }
 }
 
 if (isMobile) {
