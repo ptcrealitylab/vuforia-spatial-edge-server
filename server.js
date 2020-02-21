@@ -1087,7 +1087,11 @@ function objectWebServer() {
     webServer.use('/frames/:frameName', function (req, res, next) {
         var urlArray = req.originalUrl.split("/");
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
-        console.log('frame load', frameLibPath, req.originalUrl);
+        console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
+        if (!frameLibPath) {
+            next();
+            return;
+        }
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
 
         if (!fs.existsSync(fileName)) {
