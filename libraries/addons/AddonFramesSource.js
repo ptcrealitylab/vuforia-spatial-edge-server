@@ -21,16 +21,9 @@ class AddonFramesSource {
     }
 
     /**
-     * Creates the realityframes directory if needed
+     * Creates the .identity directory if needed
      */
     setupDirectories() {
-        // create frames folder at frameLibPath if necessary
-        if (!fs.existsSync(this.frameLibPath)) {
-            console.log('created frames directory at ' + this.frameLibPath);
-            fs.mkdirSync(this.frameLibPath);
-        }
-
-        // create a .identity folder within it if needed
         let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
         if (!fs.existsSync(frameIdentityPath)) {
             console.log('created frames identity directory at ' + frameIdentityPath);

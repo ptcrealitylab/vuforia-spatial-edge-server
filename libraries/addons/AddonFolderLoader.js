@@ -27,6 +27,9 @@ class AddonFolderLoader {
         this.folderMap = {};
 
         for (let addonFolder of this.addonFolders) {
+            if (!fs.existsSync(addonFolder)) {
+                continue;
+            }
             var folderList = fs.readdirSync(addonFolder).filter(function (filename) {
                 const isHidden = filename[0] === '.';
                 return fs.statSync(path.join(addonFolder, filename)).isDirectory() &&
@@ -53,6 +56,9 @@ class AddonFolderLoader {
         this.folderMap = {};
 
         for (let addonFolder of this.addonFolders) {
+            if (!fs.existsSync(addonFolder)) {
+                continue;
+            }
             var folderList = fs.readdirSync(addonFolder).filter(function (filename) {
                 const isHidden = filename[0] === '.';
                 return fs.statSync(path.join(addonFolder, filename)).isDirectory() &&
