@@ -3185,36 +3185,60 @@ function objectWebServer() {
     // Version 1
     webServer.get('/obj/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
-        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
+        if (!nodePath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
     });
 
     // Version 2
     webServer.get('/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
-        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
+        if (!nodePath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
     });
 
     // Version 3 #### Active Version
     webServer.get('/nodes/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
-        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
+        if (!nodePath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
     });
 
     // Version 3 #### Active Version
     webServer.get('/nodes/:nodeName/gui/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
-        res.sendFile(nodePath + "/" + req.params.nodeName + '/gui/' + req.params.fileName);
+        if (!nodePath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
     });
 
     // Version 3 #### Active Version *1 Block *2 file
     webServer.get('/logicBlock/:blockName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let blockPath = blockFolderLoader.resolvePath(req.params.blockName);
-        res.sendFile(blockPath + "/" + req.params.blockName + '/gui/' + req.params.fileName);
+        if (!blockPath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(blockPath, req.params.blockName, 'gui', req.params.fileName));
     });
 
     webServer.get('/logicBlock/:blockName/gui/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let blockPath = blockFolderLoader.resolvePath(req.params.blockName);
-        res.sendFile(blockPath + "/" + req.params.blockName + '/gui/' + req.params.fileName);
+        if (!blockPath) {
+            res.sendStatus(404);
+            return;
+        }
+        res.sendFile(path.join(blockPath, req.params.blockName, 'gui', req.params.fileName));
     });
 
 
@@ -3654,6 +3678,10 @@ function objectWebServer() {
             console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
+            if (!frameLibPath) {
+                res.sendStatus(404);
+                return;
+            }
             var framePath = path.join(frameLibPath, frameName);
 
             if (!fs.existsSync(framePath)) {
