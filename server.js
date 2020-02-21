@@ -1077,9 +1077,9 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     if (isMobile) {
-        let localUserInterfaceApp = express();
-        localUserInterfaceApp.use(cors());
-        localUserInterfaceApp.use(express.static(path.join(__dirname, '../userinterface/')));
+        const LocalUIApp = require('./libraries/LocalUIApp.js');
+        const localUserInterfaceApp = new LocalUIApp(addonFolders);
+        localUserInterfaceApp.setup();
         localUserInterfaceApp.listen(8888);
     }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
