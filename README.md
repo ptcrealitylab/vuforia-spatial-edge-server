@@ -28,6 +28,17 @@ cd vuforia-toolbox-server
 npm install
 ```
 
+Now, download the core add-on package and install its dependencies.
+
+```bash
+mkdir addons
+cd addons
+git clone https://github.com/ptcrealitylab/vuforia-spatial-core-addon
+cd vuforia-spatial-core-addon
+npm install
+cd ../.. # return to the main vuforia-toolbox-server directory
+```
+
 You can now run the server using the following command:
 
 ```bash
