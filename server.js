@@ -2652,10 +2652,10 @@ function objectWebServer() {
      * Upload an image file to the object's metadata folder.
      * The image is stored in a form, which can be parsed and written to the filesystem.
      * @param {string} objectID
-     * @param {*} req
-     * @param {*} res
+     * @param {express.Request} req
+     * @param {express.Response} res
      */
-    function memoryUpload(objectID, req, res){
+    function memoryUpload(objectID, req, res) {
 
         if (!objects.hasOwnProperty(objectID)) {
             res.status(404);
@@ -3484,7 +3484,7 @@ function objectWebServer() {
          * @param {string} interfaceName - the folder name of the hardwareInterface
          * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
          * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
-         * @param {function<boolean, string|undefined>} callback - first param is success, second is error message
+         * @param {successCallback} callback
          */
         function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
@@ -3497,7 +3497,7 @@ function objectWebServer() {
                 for (var key in settings) {
                     if (!settings.hasOwnProperty(key)) { continue; }
                     if (limitToKeys && !limitToKeys.includes(key)) { continue; }
-                    
+
                     // update value that will get written to disk
                     if (typeof settings[key].value !== 'undefined') {
                         existingSettings[key] = settings[key].value;
@@ -3534,9 +3534,15 @@ function objectWebServer() {
             }
         }
 
+        /**
+         * @callback successCallback
+         * @param {boolean} success
+         * @param {string?} error message
+         */
+
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
-            
+
             setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
@@ -3565,7 +3571,7 @@ function objectWebServer() {
          * If the file is new (empty), write a default json blob into it with the new enabled value
          * @param {string} interfaceName
          * @param {boolean} shouldBeEnabled
-         * @param callback {function<boolean, string|undefined>} - success, error message
+         * @param {successCallback} callback
          */
         function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
@@ -3661,7 +3667,7 @@ function objectWebServer() {
          * @todo: see github issue #23 - function is currently unimplemented
          * @param {string} objectKey
          * @param {boolean} shouldBeEnabled
-         * @param {function<boolean, string|undefined>} callback - success, error message
+         * @param {successCallback} callback - success, error message
          */
         function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
             callback(true);
@@ -5393,18 +5399,18 @@ function socketIndicator() {
 }
 
 /**
- * @desc
- * @param
- * @param
- * @return
- **/
-
+ * Runs socketUpdater every socketUpdateInterval milliseconds
+ */
 function socketUpdaterInterval() {
     setInterval(function () {
         socketUpdater();
     }, socketUpdateInterval);
 }
 
+/**
+ * @param {string} id - object id
+ * @return {boolean} whether the object is activated
+ */
 function checkObjectActivation(id) {
     var object = getObject(id);
     if (object) {
