@@ -5,12 +5,24 @@ const path = require('path');
 
 const contentScriptDir = 'content_scripts';
 
+/**
+ * An express app for server a local userinterfaces folder
+ * Additionally supports the add-ons content_scripts API by serving add-on
+ * scripts from the /addons route.
+ */
 class LocalUIApp {
+    /**
+     * @constructor
+     * @param {Array} addonFolders
+     */
     constructor(addonFolders) {
         this.addonFolders = addonFolders;
         this.app = express();
     }
 
+    /**
+     * Set up the LocalUIApp, configuring its express instance
+     */
     setup() {
         this.loadScripts();
 
@@ -31,6 +43,9 @@ class LocalUIApp {
         this.app.use(express.static(path.join(__dirname, '../../userinterface/')));
     }
 
+    /**
+     * Load all the content_scripts specified in the installed add-ons.
+     */
     loadScripts() {
         this.sources = [];
         this.scripts = {};
@@ -56,7 +71,10 @@ class LocalUIApp {
         }
     }
 
-
+    /**
+     * Listen and serve requests on a given port
+     * @param {number} port
+     */
     listen(port) {
         this.app.listen(port);
     }
