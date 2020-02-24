@@ -446,13 +446,12 @@ function itob62(i) {
 }
 
 /**
- * @desc Generates a checksum of all files hand over with fileArray
+ * Generates a checksum of all files hand over with fileArray
  * @param objects hand over the overall object list
  * @param fileArray The array that represents all files that should be checksumed
- * @return
- **/
-
-exports.generateChecksums = function (objects,fileArray) {
+ * @return {string} checksum text
+ */
+exports.generateChecksums = function(objects, fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {
@@ -460,12 +459,12 @@ exports.generateChecksums = function (objects,fileArray) {
             checksumText = itob62(crc32(fs.readFileSync(fileArray[i])));
         }
     }
-    console.log("created Checksum", checksumText);
+    console.log('created Checksum', checksumText);
     return checksumText;
 };
 
 
-exports.updateObject = function(objectName, objects){
+exports.updateObject = function(objectName, objects) {
     console.log("update ", objectName);
 
     var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
