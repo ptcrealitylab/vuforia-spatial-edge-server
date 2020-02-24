@@ -14,7 +14,7 @@
           });
      * 4. To listen for messages from the envelope it belongs to, use:
           envelopeContents.onMessageFromEnvelope(function(message) {
-            if (typeof message.exampleMessageName !== 'undefined') { 
+            if (typeof message.exampleMessageName !== 'undefined') {
               // respond to message.exampleMessageName
             }
           });
@@ -41,7 +41,7 @@
         this.realityInterface = realityInterface;
         this.rootElement = rootElement; // the HTML element to show or hide when the envelope opens and closes
         this.envelopeId = null;
-        
+
         /**
          * Callbacks for various events from contained frames or the reality editor
          * @type {{onOrderUpdated: Array, onMessageFromEnvelope: Array}}
@@ -129,24 +129,34 @@
     {
         /**
          * API to subscribe to arbitrary messages being sent from the envelope this belongs to.
-         * @param {function<Object>} callback
+         * @param {onMessageCallback} callback
          */
         EnvelopeContents.prototype.onMessageFromEnvelope = function(callback) {
             this.addCallback('onMessageFromEnvelope', callback);
         };
 
         /**
+         * @callback onMessageCallback
+         * @param {Object} message
+         */
+
+        /**
          * API to subscribe to updates in what order this frame is in the sequence of contained frames.
          * Only gets triggered if the envelope this was added to has areFramesOrdered=true.
-         * @param {function<{index: number, total: number}>} callback
+         * @param {onOrderUpdatedCallback} callback
          */
         EnvelopeContents.prototype.onOrderUpdated = function(callback) {
             this.addCallback('onOrderUpdated', callback);
         };
 
         /**
+         * @callback onOrderUpdatedCallback
+         * @param {{index: number, total: number}} orderData
+         */
+
+        /**
          * API to respond to the envelope opening.
-         * @param {function<>} callback
+         * @param {function} callback
          */
         EnvelopeContents.prototype.onOpen = function(callback) {
             this.addCallback('onOpen', callback);
@@ -154,7 +164,7 @@
 
         /**
          * API to respond to the envelope closing.
-         * @param {function<>} callback
+         * @param {function} callback
          */
         EnvelopeContents.prototype.onClose = function(callback) {
             this.addCallback('onClose', callback);

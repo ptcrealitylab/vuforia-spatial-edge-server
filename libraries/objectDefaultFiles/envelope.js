@@ -241,7 +241,7 @@
         /**
          * API to subscribe to a compatible frame being added to the envelope.
          * The envelope already automatically adds it to the containedFrames and updates the ordering if needed.
-         * @param {function<{objectId: string, frameId: string, frameType: string}>} callback
+         * @param {onFrameCallback} callback
          */
         Envelope.prototype.onFrameAdded = function(callback) {
             this.addCallback('onFrameAdded', callback);
@@ -250,24 +250,34 @@
         /**
          * API to subscribe to a contained frame being deleted from the envelope.
          * The envelope already automatically removes it from the containedFrames and updates the ordering if needed.
-         * @param {function<{objectId: string, frameId: string, frameType: string}>} callback
+         * @param {onFrameCallback} callback
          */
         Envelope.prototype.onFrameDeleted = function(callback) {
             this.addCallback('onFrameDeleted', callback);
         };
 
         /**
+         * @callback onFrameCallback
+         * @param {{objectId: string, frameId: string, frameType: string}} frame
+         */
+
+        /**
          * API to subscribe to arbitrary messages being sent to the envelope by its contained frames.
-         * @param {function<Object>} callback
+         * @param {onMessageCallback} callback
          */
         Envelope.prototype.onMessageFromContainedFrame = function(callback) {
             this.addCallback('onMessageFromContainedFrame', callback);
         };
 
         /**
+         * @callback onMessageCallback
+         * @param {Object} message
+         */
+
+        /**
          * API to respond to the envelope opening.
          * Its UI already automatically requests fullscreen and changes from rootElementWhenClosed to rootElementWhenOpen.
-         * @param {function<>} callback
+         * @param {function} callback
          */
         Envelope.prototype.onOpen = function(callback) {
             this.addCallback('onOpen', callback);
@@ -276,7 +286,7 @@
         /**
          * API to respond to the envelope closing.
          * Its UI already automatically removes fullscreen and changes from rootElementWhenOpen to rootElementWhenClosed.
-         * @param {function<>} callback
+         * @param {function} callback
          */
         Envelope.prototype.onClose = function(callback) {
             this.addCallback('onClose', callback);
@@ -286,7 +296,7 @@
          * API to be notified when the envelope has fully loaded its publicData.
          * At this point, its containedFrames and frameIdOrdering will be correct.
          * Can be used as an onload method for the envelope.
-         * @param {function<>} callback
+         * @param {function} callback
          */
         Envelope.prototype.onPublicDataLoaded = function(callback) {
             this.addCallback('onPublicDataLoaded', callback);
@@ -615,14 +625,14 @@
         /**
          * Helper function to correctly add a callback function
          * @param {string} callbackName - should match one of the keys in this.callbacks
-         * @param {function<*>} callbackFunction
+         * @param {function} callbackFunction
          */
         Envelope.prototype.addCallback = function(callbackName, callbackFunction) {
             if (typeof this.callbacks[callbackName] === 'undefined') {
                 console.warn('Creating a new envelope callback that wasn\'t defined in the constructor');
                 this.callbacks[callbackName] = [];
             }
-            
+
             this.callbacks[callbackName].push(callbackFunction);
         };
 
@@ -646,13 +656,19 @@
 
         /**
          * Helper function to iterate over all contained frames.
-         * @param {function<string, FrameData>} callback
+         * @param {frameIterator} callback
          */
         Envelope.prototype.forEachFrame = function(callback) {
             for (let frameId in this.containedFrames) {
                 callback(frameId, this.containedFrames[frameId]);
             }
         };
+
+        /**
+         * @callback frameIterator
+         * @param {string} frameId
+         * @param {FrameData} frameData
+         */
     }
 
     /**
