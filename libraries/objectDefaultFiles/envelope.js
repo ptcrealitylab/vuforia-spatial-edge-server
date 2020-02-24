@@ -1,10 +1,9 @@
 (function(exports) {
     /**
-     * @fileOverview
      * How to use:
-     * 
+     *
      * In a frame that you want to be an envelope (a container for other frames that can be opened and closed):
-     * 
+     *
      * 1. instantiate envelope = new Envelope(...) object with a reference to a RealityInterface and other parameters
      * 2. Use envelope APIs like envelope.open(), envelope.close(), envelope.onFrameAdded(...), ...
      * 3. To send a message to frames dropped into this envelope, use:
@@ -14,7 +13,7 @@
           (You can also use sendMessageToFrameWithId or sendMessageToFrameAtIndex to send to a specific one)
      * 4. To listen for messages from contained frames, use:
           envelope.onMessageFromContainedFrame(function(message) {
-            if (typeof message.exampleMessageName !== 'undefined') { 
+            if (typeof message.exampleMessageName !== 'undefined') {
               // respond to message.exampleMessageName
             }
           });
@@ -126,12 +125,12 @@
          * @type {number}
          */
         this.moveDelayBeforeOpen = 400;
-        
+
         // finish setting up the envelope by adding default callbacks and listeners for certain events
-        
+
         // listen to post messages from the editor to trigger certain envelope events
         window.addEventListener('message', this.onWindowMessage.bind(this));
-        
+
         // these keep the list of contained frames and the ordering up-to-date
         // add your own callback to adjust the UI based on frames being added or removed
         this.onFrameAdded(this._defaultOnFrameAdded.bind(this));
@@ -140,13 +139,13 @@
         // these update the UI automatically when the frame is opened or closed to switch between its two container divs
         this.onOpen(this._defaultOnOpen.bind(this));
         this.onClose(this._defaultOnClose.bind(this));
-        
+
         // Uses the RealityInterface frame messaging system to listen for messages from contained frames.
         realityInterface.addFrameMessageListener(this._defaultFrameMessageListener.bind(this));
-        
+
         // read from persistent storage to restore any relationships with contained frames when this loads
         realityInterface.addReadPublicDataListener('storage', 'envelopeContents', this._defaultPublicDataListener.bind(this));
-        
+
         // registers the envelope with the editor
         this.realityInterface.sendEnvelopeMessage({
             isEnvelope: true,
@@ -198,7 +197,7 @@
             this.rootElementWhenOpen.style.display = 'none';
         }
     }
-    
+
     // Envelope API - these methods can / should be called from the frame you build
     {
         /**
@@ -327,7 +326,7 @@
          * API to send a JSON message to the contained frame in a certain index of the ordering.
          * @param {number} index
          * @param {Object} message
-         * @param {string|undefined} category - optionally filter down the set of frames and get the nth frame of this category 
+         * @param {string|undefined} category - optionally filter down the set of frames and get the nth frame of this category
          */
         Envelope.prototype.sendMessageToFrameAtIndex = function(index, message, category) {
             if (!this.areFramesOrdered) {
@@ -370,7 +369,7 @@
             if (typeof msgContent.envelopeMessage === 'undefined') {
                 return;
             }
-            
+
             // if any keys that envelopeMessage contains match the name of any callbacks, those callbacks will be triggered
             for (let callbackKey in msgContent.envelopeMessage) {
                 if (typeof this.callbacks[callbackKey] === 'undefined') { continue; }
@@ -456,7 +455,7 @@
          */
         Envelope.prototype._defaultFrameMessageListener = function(message) {
             if (typeof message.msgContent.containedFrameMessage !== 'undefined') {
-                
+
                 if (typeof message.msgContent.containedFrameMessage.setCategories !== 'undefined') {
                     this.updateContainedFrameCategories(message.sourceFrame, message.msgContent.containedFrameMessage.setCategories);
                 }
@@ -465,7 +464,7 @@
                 if (typeof message.msgContent.containedFrameMessage.sourceFrame === 'undefined') {
                     message.msgContent.containedFrameMessage.sourceFrame = message.sourceFrame;
                 }
-                
+
                 // console.warn('contents received envelope message', msgContent, sourceFrame, destinationFrame);
                 this.triggerCallbacks('onMessageFromContainedFrame', message.msgContent.containedFrameMessage);
             }
@@ -490,7 +489,7 @@
          * Read from persistent storage to restore any relationships with contained frames when this loads.
          * @param {{containedFrames: Object|undefined, frameIdOrdering: Array.<string>|undefined}} savedContents
          */
-        Envelope.prototype._defaultPublicDataListener = function(savedContents) {             
+        Envelope.prototype._defaultPublicDataListener = function(savedContents) {
             console.log('saved envelope contents', savedContents);
             if (typeof savedContents.containedFrames !== 'undefined') {
                 this.containedFrames = savedContents.containedFrames;
@@ -500,7 +499,7 @@
                 this.frameIdOrdering = savedContents.frameIdOrdering;
                 this.orderingUpdated();
             }
-            
+
             this.triggerCallbacks('onPublicDataLoaded', {});
         };
 
@@ -510,7 +509,7 @@
          */
         Envelope.prototype._defaultOpenNodeListener = function(event) {
             if (typeof this.lastOpenValue === 'undefined') {
-                this.lastOpenValue = event.value; 
+                this.lastOpenValue = event.value;
             }
             if (this.lastOpenValue === event.value) {
                 return; // prevents it from closing itself when the node first loads or on duplicate data
@@ -541,9 +540,9 @@
          */
         Envelope.prototype.orderingUpdated = function() {
             if (!this.areFramesOrdered) { return; }
-            
+
             let categoryOrderMap = this.getCategoryOrderMap();
-            
+
             // send a message to each frame with their order
             this.frameIdOrdering.forEach(function(frameId, index) {
                 this.sendMessageToFrameWithId(frameId, {
@@ -552,11 +551,11 @@
                         total: this.frameIdOrdering.length,
                         categories: categoryOrderMap[frameId]
                     }
-                })
+                });
             }.bind(this));
 
         };
-        
+
         /**
          * Returns an object containing each frameId, mapped to the set of categories it is tagged with,
          * and its respective index in each of their orderings.
@@ -591,7 +590,7 @@
                 total: framesOfThisCategory.length
             };
         };
-        
+
         /**
          * Writes the containedFrames and frameIdOrdering to publicData so that the relationships persist across sessions.
          * Gets triggered automatically when frames are added or removed.
@@ -684,7 +683,7 @@
         this.type = type;
         this.categories = [type];
     }
-    
+
     exports.Envelope = Envelope;
 
 })(window);
