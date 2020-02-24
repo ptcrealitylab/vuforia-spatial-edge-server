@@ -4,8 +4,9 @@ const Node = require('../models/Node.js');
 /**
  * A functional "subclass" of Objects, which automatically generates frames for each pose joint
  * and sets other parameters for a human pose object
- * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
+ *
  * @constructor
+ * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
  */
 function HumanPoseObject(ip, version, protocol, bodyId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.

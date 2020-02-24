@@ -27,12 +27,12 @@
     }
 
     /**
-     * @constructor
      * Defines an interface that declares this frame to be an "envelope" frame that can contain other frames to
      * form some form of a relationship between them all. Envelopes have an "open" state, where they take up the
      * fullscreen 2D UI, and a "closed" state, where they are minimized into a small 3D icon in space. Their contained
      * frames are only visible when the envelope is open.
-     * 
+     *
+     * @constructor
      * @param {RealityInterface} realityInterface - reference to the RealityInterface API object
      * @param {Array.<string>} compatibleFrameTypes - array of types of frames that can be added to this envelope
      * @param {HTMLElement} rootElementWhenOpen - a containing div that will be rendered when open (fullscreen 2D)
@@ -656,10 +656,10 @@
     }
 
     /**
-     * @constructor
      * This contains all the necessary information to keep track of a frame that the envelope contains.
      * More params can be added as necessary for more features.
      *
+     * @constructor
      * @param {string} id - the frame uuid, used as an address to send messages to it
      * @param {string} type - the frame type, used to ensure it is a compatible with this envelope or to distinguish between different contained frames' capabilities
      */
