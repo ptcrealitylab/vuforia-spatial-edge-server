@@ -1,6 +1,5 @@
 (function(exports) {
     /**
-     * @fileOverview
      * How to use:
      *
      * In a frame that you want to be able to be added to an envelope:
@@ -87,11 +86,11 @@
          */
         realityInterface.addFrameMessageListener(function(message) {
             if (typeof message.msgContent.envelopeMessage !== 'undefined') {
-                
+
                 if (!this.envelopeId) {
                     this.envelopeId = message.sourceFrame; // received first message from an envelope. you now belong to that one.
                 }
-                
+
                 if (this.envelopeId !== message.sourceFrame) {
                     return; // pre-filter out messages from different envelopes
                 }
@@ -107,12 +106,12 @@
          * Automatically show and hide the rootElement of the frame when its envelope opens or closes
          */
         this.onMessageFromEnvelope(function(envelopeMessage) {
-            
+
             // trigger onOrderUpdated if needed
             if (typeof envelopeMessage.onOrderUpdated !== 'undefined') {
                 this.triggerCallbacks('onOrderUpdated', envelopeMessage.onOrderUpdated);
             }
-            
+
             // show/hide in response to envelope opening/closing
             if (typeof envelopeMessage.showContainedFrame !== 'undefined') {
                 if (envelopeMessage.showContainedFrame) {
@@ -121,7 +120,7 @@
                     this.hide();
                 }
             }
-            
+
         }.bind(this));
     }
 
@@ -188,7 +187,7 @@
             this.sendMessageToEnvelope({
                 setCategories: categories
             });
-        }
+        };
     }
 
     // Internal helper functions, not actually private but don't need to be called from the frame you build
@@ -243,7 +242,7 @@
     }
 
     exports.EnvelopeContents = EnvelopeContents;
-    
+
 })(window);
 
 
