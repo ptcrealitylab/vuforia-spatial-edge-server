@@ -29,11 +29,11 @@
     }
 
     /**
-     * @constructor
      * Defines an interface that declares this frame to be able to be added to envelope frames.
      * By doing so, it will automatically be added to compatible envelopes if they are open when it is created, and
      * if so, it will hide and show when that envelope is opened and closed. A number of events also become available.
-     * 
+     *
+     * @constructor
      * @param {RealityInterface} realityInterface
      * @param {HTMLElement} rootElement
      */
