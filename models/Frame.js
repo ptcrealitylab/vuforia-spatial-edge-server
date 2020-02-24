@@ -1,7 +1,9 @@
 /**
- * @desc A frame is a component of an object with its own UI and nodes
+ * A frame is a component of an object with its own UI and nodes
+ *
+ * @constructor
  */
-module.exports = function Frame() {
+function Frame() {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
@@ -54,4 +56,6 @@ module.exports = function Frame() {
     this.distanceScale = 1.0;
     // Indicates what group the frame belongs to; null if none
     this.groupID = null;
-};
+}
+
+module.exports = Frame;

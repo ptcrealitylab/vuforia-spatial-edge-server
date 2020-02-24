@@ -1,8 +1,13 @@
 /**
- * @desc This is the default constructor for the Reality Object.
+ * This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
- **/
-module.exports = function ObjectModel(ip, version, protocol) {
+ *
+ * @constructor
+ * @param {string} ip - ip address of server
+ * @param {string} version - Version number of server, currently 3.1.0 or 3.2.0
+ * @param {string} protocol - Protocol of object, one of R0, R1, or R2 (current)
+ */
+function ObjectModel(ip, version, protocol) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
@@ -45,5 +50,6 @@ module.exports = function ObjectModel(ip, version, protocol) {
     };
     this.isWorldObject = false;
     this.timestamp = null; // timestamp optionally stores when the object was first created
-};
+}
 
+module.exports = ObjectModel;

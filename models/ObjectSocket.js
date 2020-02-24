@@ -1,7 +1,12 @@
 /**
- * @desc This Constructor is used when a new socket connection is generated.
+ * This Constructor is used when a new socket connection is generated.
+ *
+ * @constructor
+ * @param {Object} socket - instance of socket.io for local server
+ * @param {number} socketPort
+ * @param {string} ip - own ip of object
  */
-module.exports = function ObjectSocket(socket, socketPort, ip) {
+function ObjectSocket(socket, socketPort, ip) {
     // keeps the own IP of an object
     this.ip = ip;
     // defines where to connect to
@@ -27,5 +32,6 @@ module.exports = function ObjectSocket(socket, socketPort, ip) {
             , 'xhr-polling'
             , 'jsonp-polling']
     });
-};
+}
 
+module.exports = ObjectSocket;
