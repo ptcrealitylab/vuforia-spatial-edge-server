@@ -1,12 +1,14 @@
 const Data = require('./Data.js');
 
 /**
- * @desc Constructor used to define every nodes generated in the Object. It does not need to contain its own ID
+ * Constructor used to define every nodes generated in the Object. It does not need to contain its own ID
  * since the object is created within the nodes with the ID as object name.
+ *
+ * @constructor
  */
-module.exports = function Node() {
+function Node() {
     // the name of each link. It is used in the Reality Editor to show the IO name.
-    this.name = "";
+    this.name = '';
     // the ID of the containing object.
     this.objectId = null;
     // the ID of the containing frame.
@@ -23,7 +25,7 @@ module.exports = function Node() {
     this.matrix = [];
     // defines the nodeInterface that is used to process data of this type. It also defines the visual representation
     // in the Reality Editor. Such data points interfaces can be found in the nodeInterface folder.
-    this.type = "node";
+    this.type = 'node';
     // defines the origin Hardware interface of the IO Point. For example if this is arduinoYun the Server associates
     // this IO Point with the Arduino Yun hardware interface.
     //this.type = "arduinoYun"; // todo "arduinoYun", "virtual", "edison", ... make sure to define yours in your internal_module file
@@ -32,4 +34,6 @@ module.exports = function Node() {
 
     this.privateData = {};
     this.publicData = {};
-};
+}
+
+module.exports = Node;

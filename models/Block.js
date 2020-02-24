@@ -1,12 +1,13 @@
 const Data = require('./Data.js');
 
 /**
- * @desc Constructor used to define every block within the logicNode.
+ * Constructor used to define every block within the logicNode.
  * The block does not need to keep its own ID since it is created with the link ID as Object name.
+ * @constructor
  */
-module.exports = function Block() {
+function Block() {
     // name of the block
-    this.name = "";
+    this.name = '';
     // local ID given to a used block.
     this.id = null;
 
@@ -33,13 +34,15 @@ module.exports = function Block() {
     // define how many outputs are active.
     this.activeOutputs = [true, false, false, false];
     // define the names of each active IO
-    this.nameInput = ["", "", "", ""];
-    this.nameOutput = ["", "", "", ""];
+    this.nameInput = ['', '', '', ''];
+    this.nameOutput = ['', '', '', ''];
     // A specific icon for the node, png or jpg.
     this.iconImage = null;
     // Text within the node, if no icon is available.
     // indicates how much calls per second is happening on this block
     this.stress = 0;
     // this is just a compatibility with the original engine. Maybe its here to stay
-    this.type = "default";
-};
+    this.type = 'default';
+}
+
+module.exports = Block;
