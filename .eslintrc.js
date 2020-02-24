@@ -35,7 +35,7 @@ module.exports = {
         'key-spacing': 'warn',
         'keyword-spacing': 'warn',
         'no-trailing-spaces': 'warn',
-        'brace-style': ['warn', {allowSingleLine: true}],
+        'brace-style': ['warn', '1tbs', {allowSingleLine: true}],
         'space-before-blocks': 'warn',
         'space-infix-ops': 'warn',
         'no-prototype-builtins': 'off',
