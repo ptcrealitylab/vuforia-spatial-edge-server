@@ -1,7 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Loader for add-ons. Handles hidden folder logic and wraps the necessary
+ * settings code for nodes/tools/logic blocks.
+ */
 class AddonFolderLoader {
+    /**
+     * @constructor
+     * @param {Array} addonFolders - list of absolute paths to add-on folders
+     */
     constructor(addonFolders) {
         this.addonFolders = addonFolders;
         const coreAddon = 'vuforia-spatial-core-addon';
