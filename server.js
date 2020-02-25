@@ -3472,7 +3472,7 @@ function objectWebServer() {
             setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface settings changes to take place'); // TODO: github issue #21
+                    hardwareAPI.reset();
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3546,7 +3546,7 @@ function objectWebServer() {
             setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                    hardwareAPI.reset();
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3559,7 +3559,7 @@ function objectWebServer() {
             setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    console.log('TODO: restart server for any hardwareInterface changes to take place');
+                    hardwareAPI.reset();
                 } else {
                     res.status(500).send(errorMessage);
                 }
