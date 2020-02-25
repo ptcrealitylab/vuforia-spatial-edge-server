@@ -55,12 +55,58 @@ if (process.env.NODE_ENV === 'production') {
     }
 }
 
+/**
+ * Allows filtering log messages out if they don't come from a file listed in
+ * the LOG_MODULES environment variable.
+ * @return {boolean} True if we want to keep the log message
+ */
+function checkLogModules() {
+    if (!process.env.LOG_MODULES) {
+        return true;
+    }
+
+    const logModules = process.env.LOG_MODULES.split(',');
+
+    const stack = new Error().stack;
+    const filesAt = stack.split('\n');
+    if (filesAt.length < 4 || !filesAt[3]) {
+        return true;
+    }
+
+    // 0 -> "Error"
+    // 1 -> this function
+    // 2 -> console.log
+    // 3 -> caller
+
+    const callerParts = filesAt[3].split('(');
+    if (callerParts.length < 2) {
+        return true;
+    }
+
+    // there will be some line number junk included
+    const callerFile = callerParts[1];
+
+    for (const logModule of logModules) {
+        if (callerFile.includes(logModule)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 console.log = function() {
+    if (!checkLogModules()) {
+        return;
+    }
     return logger.debug.apply(logger, arguments);
 };
 
 for (const level of ['debug', 'error', 'info', 'warn']) {
     console[level] = function() {
+        if (!checkLogModules()) {
+            return;
+        }
         return logger[level].apply(logger, arguments);
     };
 }
