@@ -60,3 +60,24 @@ folder:
 ```bash
 npm run test
 ```
+
+## Debugging
+
+If you encounter a problem while developing, you can specify the LOG_MODULES
+environment variable to filter debug logs to a specific file or directory. For
+example, the following command will only print log messages that originate from
+hardware interfaces:
+
+```bash
+LOG_MODULES=interfaces node server.js
+```
+
+This command would limit messages to the gitInterface.js and envelope.js files:
+
+```bash
+LOG_MODULES=gitInterface,envelope node server.js
+```
+
+LOG_MODULES is a list of comma-separated file names, folder names, or keywords
+that are checked against each log message's originating file's path.
+
