@@ -957,11 +957,11 @@
                 nodeData.defaultValue = defaultValue;
             }
 
-            this.ioObject.emit('node/setup', JSON.stringify({
-                object: realityObject.object,
-                frame: realityObject.frame,
-                nodeData: nodeData
-            }));
+            postDataToParent({
+                initNode: {
+                    nodeData: nodeData
+                }
+            });
         };
 
         /**
