@@ -505,14 +505,6 @@ if (!isMobile) {
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
 }
 
-// Iterate over all keys of hardwareInterfaceModules, removing disabled hardwareInterfaces
-for (const key of Object.keys(hardwareInterfaceModules)) {
-    const hardwareInterface = hardwareInterfaceModules[key];
-    if (!hardwareInterface.enabled) {
-        delete hardwareInterfaceModules[key];
-    }
-}
-
 console.log("ready to start internal servers");
 
 hardwareAPI.reset();
