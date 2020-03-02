@@ -3553,6 +3553,8 @@ function objectWebServer() {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
+                    // Manually reload interface to pick up disabled -> enabled transition
+                    hardwareInterfaceLoader.reloadModule(interfaceName);
                 } else {
                     res.status(500).send(errorMessage);
                 }
