@@ -44,7 +44,7 @@ class AddonFolderLoader {
                     !isHidden;
             });
 
-            // Update out modules map with all the folders' code
+            // Update our modules map with all the folders' code
             for (const folder of folderList) {
                 if (this.folderMap.hasOwnProperty(folder)) {
                     continue;
