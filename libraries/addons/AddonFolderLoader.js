@@ -58,6 +58,19 @@ class AddonFolderLoader {
     }
 
     /**
+     * Reload a single module
+     * @param {string} folder
+     */
+    reloadModule(folder) {
+        const addonFolder = this.folderMap[folder];
+        const fullPath = path.join(addonFolder, folder, 'index.js');
+        // Deleting the require cache makes Node reevaluate the index.js file,
+        // allowing the required module to change based on its new settings
+        delete require.cache[require.resolve(fullPath)];
+        this.modules[folder] = require(fullPath);
+    }
+
+    /**
      * Clone of loadModules that only builds the data for resolvePath
      */
     calculatePathResolution() {
