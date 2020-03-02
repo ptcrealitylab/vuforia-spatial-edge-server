@@ -1080,7 +1080,8 @@ function objectWebServer() {
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     if (isMobile) {
         const LocalUIApp = require('./libraries/LocalUIApp.js');
-        const localUserInterfaceApp = new LocalUIApp(addonFolders);
+        const uiPath = path.join(__dirname, '../userinterface');
+        const localUserInterfaceApp = new LocalUIApp(uiPath, addonFolders);
         localUserInterfaceApp.setup();
         localUserInterfaceApp.listen(8888);
     }

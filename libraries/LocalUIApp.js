@@ -13,9 +13,11 @@ const contentScriptDir = 'content_scripts';
 class LocalUIApp {
     /**
      * @constructor
+     * @param {string} userinterfacePath
      * @param {Array} addonFolders
      */
-    constructor(addonFolders) {
+    constructor(userinterfacePath, addonFolders) {
+        this.userinterfacePath = userinterfacePath;
         this.addonFolders = addonFolders;
         this.app = express();
     }
@@ -40,7 +42,7 @@ class LocalUIApp {
             }
             res.sendFile(path.join(scriptsInfo.folder, file));
         });
-        this.app.use(express.static(path.join(__dirname, '../../userinterface/')));
+        this.app.use(express.static(this.userinterfacePath));
     }
 
     /**
