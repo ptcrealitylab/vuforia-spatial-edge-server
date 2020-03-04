@@ -1,5 +1,5 @@
 {
-  "name": "RealityServer",
+  "name": "Vuforia Spatial Edge Server",
   "version": "0.3.1",
   "description": "",
   "main": "server.js",
@@ -22,7 +22,9 @@
     "module-alias": "^2.2.2",
     "monaco-editor": "^0.5.1",
     "network-interfaces": "^1.1.0",
+    "node-fetch": "^2.6.0",
     "node-persist": "^2.1.0",
+    "node-rest-client": "^3.1.0",
     "readdirp": "^2.2.1",
     "request": "^2.*",
     "simple-git": "^1.131.0",
@@ -33,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/realityEditor/object"
+    "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
