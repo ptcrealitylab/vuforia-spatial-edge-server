@@ -314,7 +314,7 @@ function RealityLogic() {
             this.ioObject.emit('block/privateData', JSON.stringify({
                 object: realityObject.object,
                 frame: realityObject.frame,
-                logic: realityObject.logic,
+                node: realityObject.logic,
                 block: realityObject.block,
                 privateData: thisItem
             }));
