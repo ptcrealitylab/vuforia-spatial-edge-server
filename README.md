@@ -63,13 +63,20 @@ npm run test
 
 ## Debugging
 
-If you encounter a problem while developing, you can specify the LOG_MODULES
-environment variable to filter debug logs to a specific file or directory. For
-example, the following command will only print log messages that originate from
-hardware interfaces:
+If you encounter a problem while developing, you can specify the LOG_MODULES or
+LOG_LEVEL environment variables. LOG_MODULES will filter debug logs to a
+specific file or directory. LOG_LEVEL will set the minimum console level to be
+logged. For example, the following command will only print log messages that
+originate from hardware interfaces:
 
 ```bash
 LOG_MODULES=interfaces node server.js
+```
+
+This command hides all console messages except for those made using `console.error`:
+
+```bash
+LOG_LEVEL=error node server.js
 ```
 
 This command would limit messages to the gitInterface.js and envelope.js files:

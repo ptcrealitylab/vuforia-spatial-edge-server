@@ -40,7 +40,7 @@ const colorizedFormat = format.combine(
 );
 
 const logger = createLogger({
-    level: 'debug',
+    level: process.env.LOG_LEVEL || 'debug',
     format: isMobile ? monochromeFormat : colorizedFormat,
     transports: [new transports.Console()]
 });
