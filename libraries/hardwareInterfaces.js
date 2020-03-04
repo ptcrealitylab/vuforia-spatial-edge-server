@@ -52,6 +52,7 @@ var _this = this;
 function ObjectCallbacks() {
     this.resetCallBacks = [];
     this.shutdownCallBacks = [];
+    this.initializeCallBacks = [];
 }
 
 function EmptyObject(objectName) {
@@ -813,6 +814,11 @@ exports.addEventListener = function (option, callBack){
         console.log("Add reset listener");
         callBacks.shutdownCallBacks.push(callBack);
     }
+    if(option === "initialize") {
+        console.log("Add initialize listener");
+        callBacks.initializeCallBacks.push(callBack);
+    }
+
 
 };
 
@@ -839,6 +845,15 @@ exports.shutdown = function (){
     console.log("hardwareInterfaces.shutdown");
     for (var i = 0; i < callBacks.shutdownCallBacks.length; i++) {
         callBacks.shutdownCallBacks[i]();
+    }
+};
+
+
+exports.initialize = function (){
+
+    console.log("hardwareInterfaces.initialize");
+    for (var i = 0; i < callBacks.initializeCallBacks.length; i++) {
+        callBacks.initializeCallBacks[i]();
     }
 };
 

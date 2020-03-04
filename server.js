@@ -512,6 +512,10 @@ hardwareAPI.reset();
 console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
 console.log("starting internal Server.");
 
+// This function calls an initialization callback that will help hardware interfaces to start after the entire system
+// is initialized.
+hardwareAPI.initialize();
+
 /**
  * Returns the file extension (portion after the last dot) of the given filename.
  * If a file name starts with a dot, returns an empty string.
