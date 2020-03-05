@@ -851,7 +851,7 @@ exports.shutdown = function (){
 
 exports.initialize = function (){
 
-    console.log("hardwareInterfaces.initialize");
+    console.log('server initialized. Every initialization from now on should come from interface addons only');
     for (var i = 0; i < callBacks.initializeCallBacks.length; i++) {
         callBacks.initializeCallBacks[i]();
     }
