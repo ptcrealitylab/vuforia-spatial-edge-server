@@ -19,6 +19,8 @@ module.exports = {
     },
     shutdown: function() {
     },
+    initialize: function() {
+    },
     triggerMatrixCallbacks: function() {
     },
     triggerUDPCallbacks: function() {

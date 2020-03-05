@@ -67,7 +67,12 @@ const globalVariables = {
     saveToDisk : !isMobile,
     // Create an object for attaching frames to the world
     worldObject : isMobile,
-    listenForHumanPose: false
+    listenForHumanPose: false,
+    initializations : {
+        udp : false,
+        web : false,
+        system : false
+    }
 };
 
 // ports used to define the server behaviour
@@ -198,6 +203,7 @@ if (!isMobile) {
 
 var http = require('http').createServer(webServer).listen(serverPort, function () {
     console.log('webserver + socket.io is listening on port', serverPort);
+    checkInit("web");
 });
 var io = require('socket.io')(http); // Websocket library
 var socket = require('socket.io-client'); // websocket client source
@@ -511,6 +517,9 @@ hardwareAPI.reset();
 
 console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
 console.log("starting internal Server.");
+
+// This function calls an initialization callback that will help hardware interfaces to start after the entire system
+// is initialized.
 
 /**
  * Returns the file extension (portion after the last dot) of the given filename.
@@ -968,6 +977,7 @@ function objectBeatServer() {
     udpServer.on("listening", function () {
         var address = udpServer.address();
         console.log("UDP listening on port: " + address.port);
+        checkInit("udp");
     });
 
     // bind the udp server to the udp beatPort
@@ -5413,3 +5423,17 @@ function checkObjectActivation(id) {
     }
     return false;
 }
+
+checkInit("system");
+
+function checkInit(init){
+   var initializations = globalVariables.initializations;
+    if(init == "web") initializations.web= true;
+    if(init == "udp") initializations.udp= true;
+    if(init == "system") initializations.system= true;
+
+    if(initializations.web && initializations.udp && initializations.system) {
+        hardwareAPI.initialize();
+    }
+};
+
