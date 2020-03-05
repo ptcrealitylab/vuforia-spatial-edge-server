@@ -521,8 +521,6 @@ console.log("starting internal Server.");
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
 // is initialized.
 
-
-
 /**
  * Returns the file extension (portion after the last dot) of the given filename.
  * If a file name starts with a dot, returns an empty string.
@@ -5434,7 +5432,7 @@ function checkInit(init){
     if(init == "udp") initializations.udp= true;
     if(init == "system") initializations.system= true;
 
-    if(initializations.web == true && initializations.udp == true && initializations.system == true) {
+    if(initializations.web && initializations.udp && initializations.system) {
         hardwareAPI.initialize();
     }
 };
