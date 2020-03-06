@@ -63,15 +63,15 @@ const globalVariables = {
     developer: true,
     // Send more debug messages to console
     debug: false,
-    // Allow system to save to file system
-    saveToDisk : !isMobile,
+    // Prohibit saving to file system if we're on mobile or just running tests
+    saveToDisk: !isMobile && process.env.NODE_ENV !== 'test',
     // Create an object for attaching frames to the world
-    worldObject : isMobile,
+    worldObject: isMobile,
     listenForHumanPose: false,
-    initializations : {
-        udp : false,
-        web : false,
-        system : false
+    initializations: {
+        udp: false,
+        web: false,
+        system: false
     }
 };
 
