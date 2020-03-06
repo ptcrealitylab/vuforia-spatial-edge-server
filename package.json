@@ -43,7 +43,8 @@
     "minami": "^1.2.3"
   },
   "scripts": {
-    "test": "npm run lint",
+    "test": "npm run lint && npm run execution-test-only",
+    "execution-test-only": "node test.js",
     "lint": "eslint .",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
     "start": "node server.js"
