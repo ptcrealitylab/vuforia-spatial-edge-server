@@ -124,7 +124,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         tempFiles.splice(0, 1);
     }
     
-    // populate the data for each object template on the frontend, using data from each directory found in the realityobjects
+    // populate the data for each object template on the frontend, using data from each directory found in the Spatial Toolbox
     tempFiles.forEach(function(objectKey) {
         
         var thisObjectKey = objectKey;

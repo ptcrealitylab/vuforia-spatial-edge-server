@@ -67,7 +67,7 @@ var path = require('path');
 var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
-var homedir = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+var homedir = path.join(path.join(os.homedir(), 'Documents'), 'spatialToolbox');
 var hardwareIdentity = homedir + '/.identity';
 
 exports.writeObject = function (objectLookup, folder, id) {
