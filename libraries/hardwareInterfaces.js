@@ -337,8 +337,10 @@ exports.triggerUDPCallbacks = function(msgContent) {
  * @param {object} position - an optional {x: float, y: float} object for the node's starting position. otherwise random
  **/
 
-exports.addNode = function (objectName, frameName, nodeName, type, position) {
-
+exports.addNode = function (objectName, frameName, nodeName, type, position, dirName, tool) {
+    dirName = dirName || null;
+    tool = tool || null;
+    
     var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
     console.log("hardwareInterfaces.addNode objectID: ", objectID);
 
@@ -352,9 +354,9 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame();
-                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, "local");
+                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, "local", dirName, tool);
             } else {
-                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
+                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location, dirName, tool);
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty("nodes")) {
                 objects[objectID].frames[frameUuid].nodes = {};
