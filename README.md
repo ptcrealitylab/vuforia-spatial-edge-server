@@ -11,7 +11,7 @@ Android](https://github.com/ptcrealitylab/vuforia-toolbox-android)
 repositories.
 
 # Read First
-The Vuforia Spatial Edge Server is a shared research platform for exploring spatial computing as a community. It is not an out of the box production-ready enterprise solution. Please read the [MPL 2.0 license](LICENSE before use, and we want to welcome you to our community [forum.spatialtoolbox.vuforia.com](https://forum.spatialtoolbox.vuforia.com).
+The Vuforia Spatial Toolbox and Vuforia Spatial Edge Serve make up a shared research platform for exploring spatial computing as a community. We want to welcome you to join our community [forum.spatialtoolbox.vuforia.com](https://forum.spatialtoolbox.vuforia.com). Use this forum for all your open questions, ideas and collaborations. This research platform is not an out of the box production-ready enterprise solution. Please read the [MPL 2.0 license](LICENSE) before use.
 
 ## Installation
 
