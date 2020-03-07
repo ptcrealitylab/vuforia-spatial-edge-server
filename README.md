@@ -1,6 +1,6 @@
-# vuforia-toolbox-server
+# Vuforia Spatial Edge Server
 
-The vuforia-toolbox-server is the backbone of the Vuforia Toolbox system. Every
+The Spatial Edge Server is the backbone of the Vuforia Toolbox system. Every
 device in the system, from an iPhone to an industrial robot arm, will run an
 instance of this server. This README outlines how to install the server on
 larger scale devices with command line access like laptops or desktops. Running
@@ -9,6 +9,8 @@ can be found in the [Vuforia Toolbox
 iOS](https://github.com/ptcrealitylab/vuforia-toolbox-ios) or [Vuforia Toolbox
 Android](https://github.com/ptcrealitylab/vuforia-toolbox-android)
 repositories.
+
+The Vuforia Spatial Edge Server is intended as a shared research platform. We want to explore spatial computing together with you! It is not intended as an out of the box production ready enterpise solution. Please read the [MPL 2.0 lincese](LICENSE) before use and feel free to join our community via [forum.spatialtoolbox.vuforia.com](https://forum.spatialtoolbox.vuforia.com).
 
 ## Installation
 
