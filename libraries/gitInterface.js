@@ -3,7 +3,7 @@ var path = require('path');
 
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
-var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'spatialToolbox');
 var git = require('simple-git')(homeDirectory);
 
 

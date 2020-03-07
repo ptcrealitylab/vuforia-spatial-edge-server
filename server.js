@@ -108,7 +108,7 @@ const path = require('path');
 
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
-var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'spatialToolbox');
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
@@ -647,7 +647,7 @@ var executeSetups = function () {
 executeSetups();
 
 /**
- * Initialize worldObject to contents of realityobjects/_WORLD_local/.identity/object.json
+ * Initialize worldObject to contents of spatialToolbox/_WORLD_local/.identity/object.json
  * Create the json file if doesn't already exist
  */
 function loadWorldObject() {
@@ -3572,7 +3572,7 @@ function objectWebServer() {
         });
 
         /**
-         * Overwrites the 'enabled' property in the realityObjects/.identity/hardwareInterfaceName/settings.json
+         * Overwrites the 'enabled' property in the spatialToolbox/.identity/hardwareInterfaceName/settings.json
          * If the file is new (empty), write a default json blob into it with the new enabled value
          * @param {string} interfaceName
          * @param {boolean} shouldBeEnabled
@@ -3746,7 +3746,7 @@ function objectWebServer() {
         });
 
         /**
-         * Previously, retrieved the worldObject from the realityobjects/.identity/_WORLD_OBJECT_/ folder
+         * Previously, retrieved the worldObject from the spatialToolbox/.identity/_WORLD_OBJECT_/ folder
          * Now it is deprecated, because world objects are discovered using UDP broadcasts
          */
         webServer.get('/worldObject/', function(req, res) {
