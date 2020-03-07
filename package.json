@@ -16,6 +16,7 @@
     "forever": "^2.0.0",
     "forever-monitor": "^2.0.0",
     "formidable": "^1.2.1",
+    "fs-extra": "^8.1.0",
     "has-ansi": "^4.0.0",
     "ip": "^0.3.2",
     "lodash": "^4.17.15",
