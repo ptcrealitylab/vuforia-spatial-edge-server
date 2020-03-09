@@ -191,7 +191,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     // inject the data structure with all objects
     html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
 
-    // inject the data structure with all the possible global frames
+    // inject the data structure with all the possible Spatial Tools
     html = html.replace('{/*replace Frames*/}', JSON.stringify(frameTypeModules, null, 4));
 
     // inject the data structure with all the hardware interfaces
