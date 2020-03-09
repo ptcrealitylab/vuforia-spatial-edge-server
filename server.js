@@ -1832,7 +1832,7 @@ function objectWebServer() {
 
     }
 
-    // Responds with the set of global frames that this server is hosting
+    // Responds with the set of Spatial Tools that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
         console.log("get available frames");
         res.json(addonFrames.getFrameList());
@@ -3668,7 +3668,7 @@ function objectWebServer() {
         });
 
         /**
-         * Enable sharing of global frames from this server to objects on other servers
+         * Enable sharing of Spatial Tools from this server to objects on other servers
          * @todo: see github issue #23 - function is currently unimplemented
          * @param {string} objectKey
          * @param {boolean} shouldBeEnabled
