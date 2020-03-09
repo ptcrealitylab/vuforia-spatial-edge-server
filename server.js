@@ -252,7 +252,7 @@ if (isMobile) {
 const HumanPoseObject = require('./libraries/HumanPoseObject');
 
 var git;
-if (isMobile) {
+if (isMobile || process.env.NODE_ENV === 'test') {
     git = null;
 } else {
     git = require('./libraries/gitInterface');
