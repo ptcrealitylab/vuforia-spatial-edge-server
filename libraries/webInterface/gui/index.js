@@ -858,14 +858,8 @@ realityServer.gotClick = function (event) {
     var buttonClassList = thisEventObject.classList;
     var objectKey = thisEventObject.getAttribute("objectid");
     var frameKey = thisEventObject.getAttribute("frameid");
-
-    let thisObject = {};
-
-    if (frameKey) {
-        thisObject = realityServer.objects[objectKey].frames[frameKey];
-    } else {
-        thisObject = realityServer.objects[objectKey];
-    }
+    
+    let thisObject = realityServer.objects[objectKey];
 
     if (buttonClassList.contains("download")) {
         window.location.href= "/object/" + thisObject.name + "/zipBackup/";
