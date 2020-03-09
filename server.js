@@ -108,7 +108,11 @@ const path = require('path');
 
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
-var objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+let objectsPath = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
+
+if (process.env.NODE_ENV === 'test') {
+    objectsPath = path.join(__dirname, 'realityobjects');
+}
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
