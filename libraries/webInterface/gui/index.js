@@ -61,7 +61,7 @@ realityServer.initialize = function () {
         }
     }
 
-    document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
+    document.getElementById("subtitle").innerText = "Version: "+ realityServer.states.version +" - Server IP: " +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
 
     // set up objects with default properties
@@ -766,7 +766,7 @@ realityServer.update = function (thisItem2) {
     if(!thisItem2) thisItem2 = "";
 
     // update the header
-    document.getElementById("subtitle").innerText = "Reality Server - V. "+ realityServer.states.version +" - Server IP: " +
+    document.getElementById("subtitle").innerText = "Version: "+ realityServer.states.version +" - Server IP: " +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface]+":"+realityServer.states.serverPort;
     
     // update the tab bar that is common to all
