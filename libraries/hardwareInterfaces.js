@@ -183,9 +183,9 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
                     // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
 
                     var checkIfIpIsUsed = false;
-                    for (var otherObjectKey in objects) {
-                        for (var otherFrameKey in objects[otherObjectKey].frames) {
-                            var otherFrameLinks = objects[otherObjectKey].frames[otherFrameKey].links;
+                    for (var otherOtherObjectKey in objects) {
+                        for (var otherOtherFrameKey in objects[otherOtherObjectKey].frames) {
+                            var otherFrameLinks = objects[otherOtherObjectKey].frames[otherOtherFrameKey].links;
                             for (var otherLinkKey in otherFrameLinks) {
                                 var otherLink = otherFrameLinks[otherLinkKey];
                                 if (otherLink.objectB === thatLink.objectB) {
