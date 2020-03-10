@@ -44,6 +44,6 @@ hardwareInterfaces/pass/public/gifs/*
 
 .node-persist
 
-/addons
+/addons/*
 
 /docs
