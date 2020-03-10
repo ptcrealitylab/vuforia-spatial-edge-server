@@ -3,63 +3,63 @@
  * of each logic block, so that the html can communicate with the server backend without importing all of object.js
  */
 var realityObject = {
-    node: "",
-    frame: "",
-    object: "",
-    logic: "",
-    block: "",
+    node: '',
+    frame: '',
+    object: '',
+    logic: '',
+    block: '',
     publicData: {},
     modelViewMatrix: [],
-    matrices:{
-        modelView : [],
-        projection : [],
-        groundPlane : [],
-        devicePose : [],
-        allObjects : {},
+    matrices: {
+        modelView: [],
+        projection: [],
+        groundPlane: [],
+        devicePose: [],
+        allObjects: {},
     },
     projectionMatrix: [],
-    visibility: "visible",
+    visibility: 'visible',
     sendMatrix: false,
     sendMatrices: {
-        modelView : false,
-        devicePose : false,
-        groundPlane : false,
-        allObjects : false
+        modelView: false,
+        devicePose: false,
+        groundPlane: false,
+        allObjects: false
     },
     sendAcceleration: false,
     sendFullScreen: false,
-    sendScreenObject : false,
+    sendScreenObject: false,
     fullscreenZPosition: 0,
-    sendSticky : false,
-    height: "100%",
-    width: "100%",
+    sendSticky: false,
+    height: '100%',
+    width: '100%',
     socketIoScript: {},
     socketIoRequest: {},
     pointerEventsScript: {},
     pointerEventsRequest: {},
     style: document.createElement('style'),
     messageCallBacks: {},
-    interface : "gui",
+    interface: 'gui',
     version: 200,
     moveDelay: 400,
-    eventObject : {
-        version : null,
+    eventObject: {
+        version: null,
         object: null,
-        frame : null,
-        node : null,
+        frame: null,
+        node: null,
         x: 0,
         y: 0,
         type: null,
-        touches:[
+        touches: [
             {
                 screenX: 0,
                 screenY: 0,
-                type:null
+                type: null
             },
             {
                 screenX: 0,
                 screeny: 0,
-                type:null
+                type: null
             }
         ]
     },
@@ -81,11 +81,11 @@ function loadScriptSync(url, requestObject, scriptObject) {
     //Only add script if fetch was successful
     if (requestObject.status === 200) {
         scriptObject = document.createElement('script');
-        scriptObject.type = "text/javascript";
+        scriptObject.type = 'text/javascript';
         scriptObject.text = requestObject.responseText;
         document.getElementsByTagName('head')[0].appendChild(scriptObject);
     } else {
-        console.log("Error XMLHttpRequest HTTP status: " + requestObject.status);
+        console.log('Error XMLHttpRequest HTTP status: ' + requestObject.status);
     }
 }
 
@@ -94,7 +94,7 @@ loadScriptSync('/objectDefaultFiles/pep.min.js', realityObject.pointerEventsRequ
 
 // function for resizing the windows.
 
-window.addEventListener("message", function (MSG) {
+window.addEventListener('message', function (MSG) {
 
     var msgContent = JSON.parse(MSG.data);
     for (var key in realityObject.messageCallBacks) {
@@ -107,7 +107,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     // console.log("------------------------------");
     // console.log(msgContent);
 
-    if (typeof msgContent.node !== "undefined") {
+    if (typeof msgContent.node !== 'undefined') {
 
         if (realityObject.sendFullScreen === false) {
             realityObject.height = document.body.scrollHeight;
@@ -129,9 +129,9 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 stickiness: realityObject.sendSticky,
                 moveDelay: realityObject.moveDelay
             }
-            )
-            // this needs to contain the final interface source
-            , "*");
+        )
+        // this needs to contain the final interface source
+        , '*');
 
         var alreadyLoaded = !!realityObject.node;
         realityObject.node = msgContent.node;
@@ -147,8 +147,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         if (realityObject.sendScreenObject) {
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
         }
-    }
-    else if (typeof msgContent.logic !== "undefined") {
+    } else if (typeof msgContent.logic !== 'undefined') {
 
 
         parent.postMessage(JSON.stringify(
@@ -160,9 +159,9 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                 object: msgContent.object,
                 publicData: msgContent.publicData
             }
-            )
-            // this needs to contain the final interface source
-            , "*");
+        )
+        // this needs to contain the final interface source
+        , '*');
 
         realityObject.block = msgContent.block;
         realityObject.logic = msgContent.logic;
@@ -175,37 +174,37 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         }
     }
 
-    if (typeof msgContent.modelViewMatrix !== "undefined") {
+    if (typeof msgContent.modelViewMatrix !== 'undefined') {
         realityObject.matrices.modelView = msgContent.modelViewMatrix;
     }
-    if (typeof msgContent.projectionMatrix !== "undefined") {
+    if (typeof msgContent.projectionMatrix !== 'undefined') {
         realityObject.matrices.projection = msgContent.projectionMatrix;
     }
 
-    if (typeof msgContent.matrices !== "undefined") {
-        if (typeof msgContent.matrices.allObjects !== "undefined") {
+    if (typeof msgContent.matrices !== 'undefined') {
+        if (typeof msgContent.matrices.allObjects !== 'undefined') {
             realityObject.matrices.allObjects = msgContent.matrices.allObjects;
         }
 
-        if (typeof msgContent.matrices.devicePose !== "undefined") {
+        if (typeof msgContent.matrices.devicePose !== 'undefined') {
             realityObject.matrices.devicePose = msgContent.matrices.devicePose;
         }
 
-        if (typeof msgContent.matrices.groundPlane !== "undefined") {
+        if (typeof msgContent.matrices.groundPlane !== 'undefined') {
             realityObject.matrices.groundPlane = msgContent.matrices.groundPlane;
         }
     }
 
 
 
-    if (typeof msgContent.visibility !== "undefined") {
+    if (typeof msgContent.visibility !== 'undefined') {
         realityObject.visibility = msgContent.visibility;
 
         // TODO: implement public data subscription in the same way as in object-frames.js
 
-        if(realityObject.visibility === "visible"){
-            if (typeof realityObject.node !== "undefined") {
-                if(realityObject.sendSticky) {
+        if (realityObject.visibility === 'visible') {
+            if (typeof realityObject.node !== 'undefined') {
+                if (realityObject.sendSticky) {
                     parent.postMessage(JSON.stringify(
                         {
                             version: realityObject.version,
@@ -218,15 +217,15 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
                             sendAcceleration: realityObject.sendAcceleration,
                             fullScreen: realityObject.sendFullScreen,
                             stickiness: realityObject.sendSticky,
-                            sendScreenObject : realityObject.sendScreenObject
-                        }), "*");
+                            sendScreenObject: realityObject.sendScreenObject
+                        }), '*');
                 }
             }
         }
     }
 
-    if (typeof msgContent.interface !== "undefined") {
-        realityObject.interface = msgContent.interface
+    if (typeof msgContent.interface !== 'undefined') {
+        realityObject.interface = msgContent.interface;
     }
 };
 
@@ -238,7 +237,7 @@ function RealityLogic() {
     this.readPublicData = function (valueName, value) {
         if (!value)  value = 0;
 
-        if (typeof realityObject.publicData[valueName] === "undefined") {
+        if (typeof realityObject.publicData[valueName] === 'undefined') {
             realityObject.publicData[valueName] = value;
             return value;
         } else {
@@ -246,17 +245,17 @@ function RealityLogic() {
         }
     };
 
-    if (typeof io !== "undefined") {
+    if (typeof io !== 'undefined') {
         var _this = this;
 
         this.ioObject = io.connect();
         this.oldValueList = {};
 
         this.addReadPublicDataListener = function (valueName, callback) {
-            _this.ioObject.on("block", function (msg) {
+            _this.ioObject.on('block', function (msg) {
                 var thisMsg = JSON.parse(msg);
-                if (typeof thisMsg.publicData !== "undefined") {
-                    if (typeof thisMsg.publicData[valueName] !== "undefined") {
+                if (typeof thisMsg.publicData !== 'undefined') {
+                    if (typeof thisMsg.publicData[valueName] !== 'undefined') {
                         callback(thisMsg.publicData[valueName]);
                     }
                 }
@@ -303,7 +302,7 @@ function RealityLogic() {
                     frame: realityObject.frame,
                     publicData: realityObject.publicData
                 }
-            ), "*");
+            ), '*');
         };
 
         this.writePrivateData = function (valueName, value) {
@@ -320,15 +319,14 @@ function RealityLogic() {
             }));
         };
 
-        console.log("socket.io is loaded");
-    }
-    else {
+        console.log('socket.io is loaded');
+    } else {
 
         this.addReadPublicDataListener = function (valueName, callback) {
 
             realityObject.messageCallBacks.updateLogicGUI = function (msgContent) {
-                if (typeof msgContent.publicData !== "undefined") {
-                    if (typeof msgContent.publicData[valueName] !== "undefined") {
+                if (typeof msgContent.publicData !== 'undefined') {
+                    if (typeof msgContent.publicData[valueName] !== 'undefined') {
                         callback(msgContent.publicData[valueName]);
                     }
                 }
@@ -355,7 +353,7 @@ function RealityLogic() {
         this.writePublicData = function (valueName, value) {
         };
 
-        console.log("socket.io is not working. This is normal when you work offline.");
+        console.log('socket.io is not working. This is normal when you work offline.');
     }
 
 }
