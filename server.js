@@ -93,13 +93,13 @@ const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 
 // The version of this server
-const version = isMobile ? "3.2.0" : "3.1.0";
+const version = isMobile ? '3.2.0' : '3.1.0';
 // The protocol of this server
-const protocol = "R2";
-const netmask = "255.255.0.0"; // define the network scope from which this server is accessable.
+const protocol = 'R2';
+const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
-const netInterface = "en0";
+const netInterface = 'en0';
 
 //console.log(parseInt(version.replace(/\./g, "")));
 
@@ -135,7 +135,7 @@ const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
-const objectInterfaceFolder = "/";
+const objectInterfaceFolder = '/';
 
 /**********************************************************************************************************************
  ******************************************** Requirements ************************************************************
@@ -145,17 +145,17 @@ storage.initSync();
 
 var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
-var ips = {activeInterface : "en0", interfaces : {}};
-if(storage.getItemSync('activeNetworkInterface') !== undefined){
+var ips = {activeInterface: 'en0', interfaces: {}};
+if (storage.getItemSync('activeNetworkInterface') !== undefined) {
     //console.log( storage.getItemSync('activeNetworkInterface'));
     ips.activeInterface = storage.getItemSync('activeNetworkInterface');
-};
+}
 
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
 
 // create objects folder at objectsPath if necessary
-if(!fs.existsSync(objectsPath)) {
+if (!fs.existsSync(objectsPath)) {
     console.log('created objects directory at ' + objectsPath);
     fs.mkdirSync(objectsPath);
 }
@@ -176,16 +176,16 @@ for (const frameLibPath of frameLibPaths) {
 }
 
 if (isMobile) {
-    ips.interfaces[ips.activeInterface] = "127.0.0.1";
+    ips.interfaces[ips.activeInterface] = '127.0.0.1';
 } else {
     // find ips
     var ni = require('network-interfaces');
     var options = {ipVersion: 4};
 
     var interfaceNames = ni.getInterfaces(options);
-    for(let key in interfaceNames){
+    for (let key in interfaceNames) {
         let tempIps = ni.toIps(interfaceNames[key], options);
-        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2,1);
+        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
         ips.interfaces[interfaceNames[key]] = tempIps[0];
     }
 }
@@ -207,7 +207,7 @@ if (!isMobile) {
 
 var http = require('http').createServer(webServer).listen(serverPort, function () {
     console.log('webserver + socket.io is listening on port', serverPort);
-    checkInit("web");
+    checkInit('web');
 });
 var io = require('socket.io')(http); // Websocket library
 var socket = require('socket.io-client'); // websocket client source
@@ -258,8 +258,8 @@ if (isMobile || process.env.NODE_ENV === 'test') {
     git = require('./libraries/gitInterface');
 }
 
-var util = require("util"); // node.js utility functionality
-var events = require("events"); // node.js events used for the socket events.
+var util = require('util'); // node.js utility functionality
+var events = require('events'); // node.js events used for the socket events.
 
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
@@ -283,11 +283,11 @@ const ObjectSocket = require('./models/ObjectSocket.js');
  */
 function Protocols() {
     this.R2 = {
-        objectData :{},
-        buffer : {},
-        blockString : "",
+        objectData: {},
+        buffer: {},
+        blockString: '',
         send: function (object, frame, node, logic, data) {
-            return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data})
+            return JSON.stringify({object: object, frame: frame, node: node, logic: logic, data: data});
         },
         // process the data received by a node
         receive: function (message) {
@@ -306,7 +306,7 @@ function Protocols() {
 
                     // if the node is a Logic Node, process the blocks/links inside of it
                     if (msgContent.logic === 0 || msgContent.logic === 1 || msgContent.logic === 2 || msgContent.logic === 3) {
-                        this.blockString = "in" + msgContent.logic;
+                        this.blockString = 'in' + msgContent.logic;
                         if (foundNode.blocks) {
                             if (this.blockString in foundNode.blocks) {
                                 this.objectData = foundNode.blocks[this.blockString];
@@ -355,7 +355,7 @@ function Protocols() {
     };
     this.R1 = {
         send: function (object, node, data) {
-            return JSON.stringify({object: object, node: node, data: data})
+            return JSON.stringify({object: object, node: node, data: data});
         },
         receive: function (message) {
             if (!message) return null;
@@ -381,7 +381,7 @@ function Protocols() {
      */
     this.R0 = {
         send: function (object, node, data) {
-            return JSON.stringify({obj: object, pos: node, value: data.value, mode: data.mode})
+            return JSON.stringify({obj: object, pos: node, value: data.value, mode: data.mode});
         },
         receive: function (message) {
             if (!message) return null;
@@ -405,7 +405,7 @@ function Protocols() {
                 }
 
             }
-            return null
+            return null;
         }
     };
 }
@@ -463,51 +463,51 @@ var worldObject;
  **********************************************************************************************************************/
 
 
-console.log("Starting the Server");
+console.log('Starting the Server');
 
-console.log("Initialize System: ");
-console.log("Loading Hardware interfaces");
+console.log('Initialize System: ');
+console.log('Loading Hardware interfaces');
 
 
 var hardwareAPICallbacks = {
-    publicData : function (objectKey, frameKey, nodeKey){
-       socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
+    publicData: function (objectKey, frameKey, nodeKey) {
+        socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
     },
-    actions : function(thisAction){
+    actions: function(thisAction) {
         utilities.actionSender(thisAction);
     },
-    data : function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules){
-            //these are the calls that come from the objects before they get processed by the object engine.
-            // send the saved value before it is processed
-            sendMessagetoEditors({
-                object: objectKey,
-                frame: frameKey,
-                node: nodeKey,
-                data: data
-            });
-            hardwareAPI.readCall(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey).data);
-            engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
+    data: function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
+        //these are the calls that come from the objects before they get processed by the object engine.
+        // send the saved value before it is processed
+        sendMessagetoEditors({
+            object: objectKey,
+            frame: frameKey,
+            node: nodeKey,
+            data: data
+        });
+        hardwareAPI.readCall(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey).data);
+        engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
-    write : function (objectID){
+    write: function (objectID) {
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, hardwareAPICallbacks);
 
-console.log("Done");
+console.log('Done');
 
-console.log("Loading Objects");
+console.log('Loading Objects');
 // This function will load all the Objects
 loadObjects();
-console.log("Done loading objects");
-if(globalVariables.worldObject) {
+console.log('Done loading objects');
+if (globalVariables.worldObject) {
     loadWorldObject();
 }
-console.log("Done loading world object");
+console.log('Done loading world object');
 
 startSystem();
-console.log("started");
+console.log('started');
 
 // Get the directory names of all available sources for the 3D-UI
 if (!isMobile) {
@@ -515,12 +515,12 @@ if (!isMobile) {
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
 }
 
-console.log("ready to start internal servers");
+console.log('ready to start internal servers');
 
 hardwareAPI.reset();
 
 console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
-console.log("starting internal Server.");
+console.log('starting internal Server.');
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
 // is initialized.
@@ -534,14 +534,14 @@ console.log("starting internal Server.");
  * @return {string} The lowercase extension of the file, such has "zip"
  */
 function getFileExtension(fileName) {
-    return fileName.substr((~-fileName.lastIndexOf(".") >>> 0) + 2).toLowerCase();
+    return fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2).toLowerCase();
 }
 
 /**
  * @desc Add objects from the objects folder to the system
  **/
 function loadObjects() {
-    console.log("Enter loadObjects");
+    console.log('Enter loadObjects');
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
     var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
@@ -550,16 +550,16 @@ function loadObjects() {
 
     // remove hidden directories
     try {
-        while (objectFolderList[0][0] === ".") {
+        while (objectFolderList[0][0] === '.') {
             objectFolderList.splice(0, 1);
         }
     } catch (e) {
-        console.log("no hidden files");
+        console.log('no hidden files');
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
         var tempFolderName = utilities.getObjectIdFromTarget(objectFolderList[i], objectsPath);
-        console.log("TempFolderName: " + tempFolderName);
+        console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -568,7 +568,7 @@ function loadObjects() {
 
             // create first frame
             // todo this need to be checked in the system
-           // objects[tempFolderName].frames[tempFolderName] = new Frame();
+            // objects[tempFolderName].frames[tempFolderName] = new Frame();
             //objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
@@ -576,25 +576,25 @@ function loadObjects() {
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + "/object.json", "utf8"));
+                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
                 objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; // ip.address();
 
                 // this is for transforming old lists to new lists
-                if (typeof objects[tempFolderName].objectValues !== "undefined") {
+                if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
                     delete  objects[tempFolderName].objectValues;
                 }
-                if (typeof objects[tempFolderName].objectLinks !== "undefined") {
+                if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
                     delete  objects[tempFolderName].objectLinks;
                 }
 
 
-                if (typeof objects[tempFolderName].nodes !== "undefined") {
+                if (typeof objects[tempFolderName].nodes !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
                     delete  objects[tempFolderName].nodes;
                 }
-                if (typeof objects[tempFolderName].links !== "undefined") {
+                if (typeof objects[tempFolderName].links !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
                     delete  objects[tempFolderName].links;
                 }
@@ -603,24 +603,24 @@ function loadObjects() {
                 if (objects[tempFolderName].frames[tempFolderName]) {
                     for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
 
-                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
+                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
                             var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
                             objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
                         }
                     }
                 }
 
-                console.log("I found objects that I want to add");
+                console.log('I found objects that I want to add');
 
 
             } catch (e) {
                 objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
-                console.log("No saved data for: " + tempFolderName);
+                console.log('No saved data for: ' + tempFolderName);
             }
 
         } else {
-            console.log(" object " + objectFolderList[i] + " has no marker yet");
+            console.log(' object ' + objectFolderList[i] + ' has no marker yet');
         }
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
@@ -641,7 +641,7 @@ var executeSetups = function () {
                         blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
                             function (object, frame, node, block, index, thisBlock) {
                                 engine.processBlockLinks(object, frame, node, block, index, thisBlock);
-                            })
+                            });
                     }
                 }
             }
@@ -662,13 +662,13 @@ function loadWorldObject() {
     var jsonFilePath = path.join(folder, 'object.json');
 
     // create objects folder at objectsPath if necessary
-    if(globalVariables.saveToDisk && !fs.existsSync(folder)) {
+    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
         console.log('created worldObject directory at ' + folder);
         fs.mkdirSync(folder);
     }
 
     // create a /.identity folder within it to hold the object.json data
-    if(globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
+    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
         console.log('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
     }
@@ -786,26 +786,26 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         return;
     }
 
-    if (typeof oneTimeOnly === "undefined") {
+    if (typeof oneTimeOnly === 'undefined') {
         oneTimeOnly = false;
     }
 
     var HOST = '255.255.255.255';
 
-    console.log("creating beat for object: " + thisId);
+    console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
 
-    var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ""));
+    var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
-    if (typeof objects[thisId].tcs === "undefined") {
+    if (typeof objects[thisId].tcs === 'undefined') {
         objects[thisId].tcs = 0;
     }
 
     // Objects
-    console.log("with version number: " + thisVersionNumber);
-    var zone = "";
-    if(objects[thisId].zone) zone = objects[thisId].zone;
+    console.log('with version number: ' + thisVersionNumber);
+    var zone = '';
+    if (objects[thisId].zone) zone = objects[thisId].zone;
 
     // json string to be send
     var message = new Buffer(JSON.stringify({
@@ -817,8 +817,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         zone: zone
     }));
 
-    if (globalVariables.debug) console.log("UDP broadcasting on port: " + PORT);
-    if (globalVariables.debug) console.log("Sending beats... Content: " + JSON.stringify({
+    if (globalVariables.debug) console.log('UDP broadcasting on port: ' + PORT);
+    if (globalVariables.debug) console.log('Sending beats... Content: ' + JSON.stringify({
         id: thisId,
         ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
@@ -826,8 +826,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         tcs: objects[thisId].tcs,
         zone: zone
     }));
-    console.log("UDP broadcasting on port: " + PORT);
-    console.log("Sending beats... Content: " + JSON.stringify({
+    console.log('UDP broadcasting on port: ' + PORT);
+    console.log('Sending beats... Content: ' + JSON.stringify({
         id: thisId,
         ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
@@ -849,8 +849,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
-                var zone = "";
-                if(objects[thisId].zone) zone = objects[thisId].zone;
+                var zone = '';
+                if (objects[thisId].zone) zone = objects[thisId].zone;
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
@@ -861,7 +861,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     zone: zone
                 }));
 
-// this is an uglly trick to sync each object with being a developer object
+                // this is an uglly trick to sync each object with being a developer object
                 /*
                 if (globalVariables.developer) {
                     objects[thisId].developer = true;
@@ -879,16 +879,15 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 });
             }
         }, beatInterval + _.random(-250, 250));
-    }
-    else {
+    } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
         setTimeout(function () {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
 
-                var zone = "";
-                if(objects[thisId].zone) zone = objects[thisId].zone;
+                var zone = '';
+                if (objects[thisId].zone) zone = objects[thisId].zone;
 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
@@ -896,7 +895,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
-                    zone : zone
+                    zone: zone
                 }));
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
@@ -927,13 +926,13 @@ function objectBeatServer() {
     }
 
     // creating the udp server
-    var udpServer = dgram.createSocket("udp4");
-    udpServer.on("error", function (err) {
+    var udpServer = dgram.createSocket('udp4');
+    udpServer.on('error', function (err) {
         console.log('server error', err);
         udpServer.close();
     });
 
-    udpServer.on("message", function (msg) {
+    udpServer.on('message', function (msg) {
 
         var msgContent;
         // check if object ping
@@ -951,26 +950,26 @@ function objectBeatServer() {
             if (msgContent.pr)
                 knownObjects[msgContent.id].protocol = msgContent.pr;
             else {
-                knownObjects[msgContent.id].protocol = "R0";
+                knownObjects[msgContent.id].protocol = 'R0';
             }
 
             if (msgContent.ip)
                 knownObjects[msgContent.id].ip = msgContent.ip;
 
-            console.log("I found new Objects: " + JSON.stringify(knownObjects[msgContent.id]));
+            console.log('I found new Objects: ' + JSON.stringify(knownObjects[msgContent.id]));
         }
         // check if action 'ping'
-        if (msgContent.action === "ping") {
+        if (msgContent.action === 'ping') {
             console.log(msgContent.action);
             for (var key in objects) {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
 
-        if (typeof msgContent.matrixBroadcast !== "undefined") {
+        if (typeof msgContent.matrixBroadcast !== 'undefined') {
             // if (Object.keys(msgContent.matrixBroadcast).length > 0) {
-                // console.log(msgContent.matrixBroadcast);
-                hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
+            // console.log(msgContent.matrixBroadcast);
+            hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
             // }
         } else {
             hardwareAPI.triggerUDPCallbacks(msgContent);
@@ -978,10 +977,10 @@ function objectBeatServer() {
 
     });
 
-    udpServer.on("listening", function () {
+    udpServer.on('listening', function () {
         var address = udpServer.address();
-        console.log("UDP listening on port: " + address.port);
-        checkInit("udp");
+        console.log('UDP listening on port: ' + address.port);
+        checkInit('udp');
     });
 
     // bind the udp server to the udp beatPort
@@ -1014,14 +1013,13 @@ var parseIpSpace = function (ip_string) {
     var ip_parts = ip_regex.exec(ip_string);
     var ip_parts2 = ip_regex2.exec(ip_string);
     // Set ip address if the regex executed successfully
-    var thisresult = "";
+    var thisresult = '';
 
     if (ip_parts && ip_parts.length > 6) {
         thisresult = [parseInt(ip_parts[1]), parseInt(ip_parts[2]), parseInt(ip_parts[3]), parseInt(ip_parts[4])];
     } else if (ip_parts2 && ip_parts2.length > 3) {
         thisresult = [parseInt(ip_parts2[1]), parseInt(ip_parts2[2]), parseInt(ip_parts2[3]), parseInt(ip_parts2[4])];
-    }
-    else if (ip_string === "::1") {
+    } else if (ip_string === '::1') {
         thisresult = [127, 0, 0, 1];
     }
     // Return object
@@ -1035,7 +1033,7 @@ function objectWebServer() {
     // check all sever requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
 
-    webServer.use("*", function (req, res, next) {
+    webServer.use('*', function (req, res, next) {
 
 
         var remoteIP = parseIpSpace(req.ip);
@@ -1064,8 +1062,8 @@ function objectWebServer() {
             if (remoteIP[0] === 127 && remoteIP[1] === 0 && remoteIP[2] === 0 && remoteIP[3] === 1) {
                 checkThisNetwork = true;
             }
-        
-        if(ips.activeInterface in ips.interfaces) {
+
+        if (ips.activeInterface in ips.interfaces) {
             if (checkThisNetwork) {
                 next();
             } else {
@@ -1094,7 +1092,7 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
-        var urlArray = req.originalUrl.split("/");
+        var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
         if (!frameLibPath) {
@@ -1109,7 +1107,7 @@ function objectWebServer() {
         }
 
         // Non HTML files just get sent normally
-        if (urlArray[urlArray.length-1].indexOf('html') === -1) {
+        if (urlArray[urlArray.length - 1].indexOf('html') === -1) {
             res.sendFile(fileName);
             return;
         }
@@ -1128,21 +1126,21 @@ function objectWebServer() {
 
         html = html.replace('<script src="../resources/pep.min.js"></script>', '');
         html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
-        
-        var level = "../";
-        for(var i = 0; i < urlArray.length-3; i++){
-            level += "../";
+
+        var level = '../';
+        for (var i = 0; i < urlArray.length - 3; i++) {
+            level += '../';
         }
 
-        html = html.replace('objectDefaultFiles/envelope.js', level+'objectDefaultFiles/envelope.js');
-        html = html.replace('objectDefaultFiles/envelopeContents.js', level+'objectDefaultFiles/envelopeContents.js');
+        html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
+        html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
 
         var loadedHtml = cheerio.load(html);
-        var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
-        scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
-        
+        var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
+        scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
+
         // inject the server IP address, but don't inject the objectKey and frameKey, as those come from the editor
-        scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
+        scriptNode += '<script> realityObject.serverIp = "' + ips.interfaces[ips.activeInterface] + '"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
 
@@ -1151,7 +1149,7 @@ function objectWebServer() {
 
 
     webServer.use('/logicNodeIcon', function (req, res, next) {
-        var urlArray = req.originalUrl.split("/");
+        var urlArray = req.originalUrl.split('/');
         console.log('logicNodeIcon urlArray', urlArray);
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
@@ -1162,50 +1160,50 @@ function objectWebServer() {
         res.sendFile(fileName);
     });
 
-    webServer.use("/obj", function (req, res, next) {
+    webServer.use('/obj', function (req, res, next) {
 
-        var urlArray = req.originalUrl.split("/");
+        var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
-        if(urlArray[1] === "frames") {
+        if (urlArray[1] === 'frames') {
             urlArray.splice(1, 1);
         }
 
-        if((urlArray[urlArray.length-1] === "target.dat" || urlArray[urlArray.length-1] === "target.jpg"|| urlArray[urlArray.length-1] === "target.xml")
-            && urlArray[urlArray.length-2] === "target"){
-            urlArray[urlArray.length-2] = identityFolderName+"/target";
+        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml')
+            && urlArray[urlArray.length - 2] === 'target') {
+            urlArray[urlArray.length - 2] = identityFolderName + '/target';
         }
 
-        if ((urlArray[urlArray.length-1] === "memory.jpg" || urlArray[urlArray.length-1] === "memoryThumbnail.jpg")
-            && urlArray[urlArray.length-2] === "memory") {
-            urlArray[urlArray.length-2] = identityFolderName+"/memory";
+        if ((urlArray[urlArray.length - 1] === 'memory.jpg' || urlArray[urlArray.length - 1] === 'memoryThumbnail.jpg')
+            && urlArray[urlArray.length - 2] === 'memory') {
+            urlArray[urlArray.length - 2] = identityFolderName + '/memory';
         }
 
-        if ((urlArray[urlArray.length-2] === "videos") && urlArray[urlArray.length-1].split('.').pop() === "mp4") {
-            urlArray[urlArray.length-2] = identityFolderName+"/videos";
+        if ((urlArray[urlArray.length - 2] === 'videos') && urlArray[urlArray.length - 1].split('.').pop() === 'mp4') {
+            urlArray[urlArray.length - 2] = identityFolderName + '/videos';
         }
 
-        var newUrl = "";
-        for(var i = 0; i< urlArray.length; i++){
-                newUrl += "/"+ urlArray[i];
+        var newUrl = '';
+        for (var i = 0; i < urlArray.length; i++) {
+            newUrl += '/' + urlArray[i];
         }
 
-        if(newUrl.slice(-1) === "/"){
-            newUrl += "index.html";
-            urlArray.push("index.html");
+        if (newUrl.slice(-1) === '/') {
+            newUrl += 'index.html';
+            urlArray.push('index.html');
         }
         //console.log(newUrl);
 
         // TODO: ben - may need to update objectsPath if the object is a world object
 
-        if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.html?$/))) {
+        if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.html?$/))) {
             var fileName = objectsPath + newUrl;
 
-            if (urlArray[urlArray.length-1] !== "index.html" && urlArray[urlArray.length-1] !== "index.htm") {
-                if (fs.existsSync(fileName + "index.html")) {
-                    fileName = fileName + "index.html";
-                } else if (fs.existsSync(fileName + "index.htm")) {
-                    fileName = fileName + "index.htm";
+            if (urlArray[urlArray.length - 1] !== 'index.html' && urlArray[urlArray.length - 1] !== 'index.htm') {
+                if (fs.existsSync(fileName + 'index.html')) {
+                    fileName = fileName + 'index.html';
+                } else if (fs.existsSync(fileName + 'index.htm')) {
+                    fileName = fileName + 'index.htm';
                 }
             }
 
@@ -1220,26 +1218,25 @@ function objectWebServer() {
             html = html.replace('<script src="objectIO.js"></script>', '');
             html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
 
-            var level = "../";
-            for(var i = 0; i < urlArray.length; i++){
-                level += "../";
+            var level = '../';
+            for (var i = 0; i < urlArray.length; i++) {
+                level += '../';
             }
             var loadedHtml = cheerio.load(html);
-            var scriptNode = '<script src="'+level+'objectDefaultFiles/object.js"></script>';
-            scriptNode += '<script src="'+level+'objectDefaultFiles/pep.min.js"></script>';
+            var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
+            scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
 
-            var objectKey = utilities.readObject(objectLookup,urlArray[0]);
-            var frameKey = utilities.readObject(objectLookup,urlArray[0])+urlArray[1];
+            var objectKey = utilities.readObject(objectLookup, urlArray[0]);
+            var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[1];
 
-            scriptNode += '\n<script> realityObject.object = "'+objectKey+'";</script>\n';
-            scriptNode += '<script> realityObject.frame = "'+frameKey+'";</script>\n';
-            scriptNode += '<script> realityObject.serverIp = "'+ ips.interfaces[ips.activeInterface]+'"</script>';//ip.address()
+            scriptNode += '\n<script> realityObject.object = "' + objectKey + '";</script>\n';
+            scriptNode += '<script> realityObject.frame = "' + frameKey + '";</script>\n';
+            scriptNode += '<script> realityObject.serverIp = "' + ips.interfaces[ips.activeInterface] + '"</script>';//ip.address()
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
-        }
-        else if ((req.method === "GET") && (req.url.slice(-1) === "/" || urlArray[urlArray.length-1].match(/\.json?$/))) {
+        } else if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.json?$/))) {
 
-            var fileName = objectsPath + req.url + identityFolderName + "/object.json";
+            var fileName = objectsPath + req.url + identityFolderName + '/object.json';
 
             if (!fs.existsSync(fileName)) {
                 next();
@@ -1248,7 +1245,7 @@ function objectWebServer() {
 
 
 
-            var json = JSON.parse(fs.readFileSync(fileName, "utf8"));
+            var json = JSON.parse(fs.readFileSync(fileName, 'utf8'));
 
             // todo check if the data is still filtered with the new frames system
             for (var thisKey in json.logic) {
@@ -1264,8 +1261,8 @@ function objectWebServer() {
     });
 
     if (globalVariables.developer === true) {
-        webServer.use("/libraries", express.static(__dirname + '/libraries/webInterface/'));
-        webServer.use("/libraries/monaco-editor/", express.static(__dirname + '/node_modules/monaco-editor/'));
+        webServer.use('/libraries', express.static(__dirname + '/libraries/webInterface/'));
+        webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
     // use the cors cross origin REST model
@@ -1382,7 +1379,7 @@ function objectWebServer() {
 
     function deleteLogicLink(objectID, frameID, nodeID, linkID, lastEditor) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
@@ -1391,8 +1388,8 @@ function objectWebServer() {
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            console.log("deleted link: " + linkID);
-            updateStatus = "deleted: " + linkID + " in logic " + nodeID + " in frame: " + frameID + " from object: " + objectID;
+            console.log('deleted link: ' + linkID);
+            updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;
         }
 
         return updateStatus;
@@ -1424,7 +1421,7 @@ function objectWebServer() {
      */
     function addLogicLink(objectID, frameID, nodeID, linkID, body) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
@@ -1449,10 +1446,10 @@ function objectWebServer() {
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-                console.log("added link: " + linkID);
-                updateStatus = "added";
+                console.log('added link: ' + linkID);
+                updateStatus = 'added';
             } else {
-                updateStatus = "found endless Loop";
+                updateStatus = 'found endless Loop';
             }
         }
 
@@ -1484,7 +1481,7 @@ function objectWebServer() {
      */
     function addNewBlock(objectID, frameID, nodeID, blockID, body) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectID, frameID, nodeID);
         if (foundNode) {
@@ -1523,7 +1520,7 @@ function objectWebServer() {
             thisBlocks[blockID] = body;
 
             // todo this can be removed once the system runs smoothly
-            if (typeof thisBlocks[blockID].type === "undefined") {
+            if (typeof thisBlocks[blockID].type === 'undefined') {
                 thisBlocks[blockID].type = thisBlocks[blockID].name;
             }
 
@@ -1531,8 +1528,8 @@ function objectWebServer() {
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            console.log("added block: " + blockID);
-            updateStatus = "added";
+            console.log('added block: ' + blockID);
+            updateStatus = 'added';
         }
 
         return updateStatus;
@@ -1559,14 +1556,14 @@ function objectWebServer() {
      */
     function deleteBlock(objectID, frameID, nodeID, blockID, lastEditor) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectID, frameID, nodeID);
 
         if (foundNode) {
 
             delete foundNode.blocks[blockID];
-            console.log("deleted block: " + blockID);
+            console.log('deleted block: ' + blockID);
 
             var thisLinks = foundNode.links;
             // Make sure that no links are connected to deleted blocks
@@ -1579,7 +1576,7 @@ function objectWebServer() {
 
             utilities.actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            updateStatus = "deleted: " + blockID + " in blocks for object: " + objectID;
+            updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
         }
 
         return updateStatus;
@@ -1604,9 +1601,9 @@ function objectWebServer() {
      */
     function postBlockPosition(objectID, frameID, nodeID, blockID, body) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
-        console.log("changing Position for :" + objectID + " : " + nodeID + " : " + blockID);
+        console.log('changing Position for :' + objectID + ' : ' + nodeID + ' : ' + blockID);
 
         var foundNode = getNode(objectID, frameID, nodeID);
 
@@ -1614,14 +1611,14 @@ function objectWebServer() {
             var foundBlock = foundNode.blocks[blockID];
             if (foundBlock) {
                 // check that the numbers are valid numbers..
-                if (typeof body.x === "number" && typeof body.y === "number") {
+                if (typeof body.x === 'number' && typeof body.y === 'number') {
 
                     foundBlock.x = body.x;
                     foundBlock.y = body.y;
 
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
-                    updateStatus = "ok";
+                    updateStatus = 'ok';
                 }
             }
         }
@@ -1699,7 +1696,7 @@ function objectWebServer() {
      * @return {string}
      */
     function addLogicNode(objectID, frameID, nodeID, body) {
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
@@ -1709,24 +1706,24 @@ function objectWebServer() {
 
             // edge blocks are used to transition data between node links going into the red/yellow/green/blue ports...
             // ...and the corresponding blocks / block links within the crafting board
-            newNode.blocks["in0"] = new EdgeBlock();
-            newNode.blocks["in1"] = new EdgeBlock();
-            newNode.blocks["in2"] = new EdgeBlock();
-            newNode.blocks["in3"] = new EdgeBlock();
+            newNode.blocks['in0'] = new EdgeBlock();
+            newNode.blocks['in1'] = new EdgeBlock();
+            newNode.blocks['in2'] = new EdgeBlock();
+            newNode.blocks['in3'] = new EdgeBlock();
 
-            newNode.blocks["out0"] = new EdgeBlock();
-            newNode.blocks["out1"] = new EdgeBlock();
-            newNode.blocks["out2"] = new EdgeBlock();
-            newNode.blocks["out3"] = new EdgeBlock();
+            newNode.blocks['out0'] = new EdgeBlock();
+            newNode.blocks['out1'] = new EdgeBlock();
+            newNode.blocks['out2'] = new EdgeBlock();
+            newNode.blocks['out3'] = new EdgeBlock();
 
-            newNode.type = "logic";
+            newNode.type = 'logic';
 
             // call an action that asks all devices to reload their links, once the links are changed.
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
 
-            console.log("added logic node: " + nodeID);
-            updateStatus = "added";
+            console.log('added logic node: ' + nodeID);
+            updateStatus = 'added';
         }
 
         return updateStatus;
@@ -1752,12 +1749,12 @@ function objectWebServer() {
      */
     function deleteLogicNode(objectID, frameID, nodeID, lastEditor) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
             delete foundFrame.nodes[nodeID];
-            console.log("deleted node: " + nodeID);
+            console.log('deleted node: ' + nodeID);
 
             //todo check all links as well in object
             // Make sure that no links are connected to deleted objects
@@ -1774,7 +1771,7 @@ function objectWebServer() {
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
 
-            updateStatus = "deleted: " + nodeID + " in frame: " + frameID + " of object: " + objectID;
+            updateStatus = 'deleted: ' + nodeID + ' in frame: ' + frameID + ' of object: ' + objectID;
         }
 
         return updateStatus;
@@ -1802,9 +1799,9 @@ function objectWebServer() {
      */
     function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
-        console.log("changing Size for :" + objectID + " : " + nodeID);
+        console.log('changing Size for :' + objectID + ' : ' + nodeID);
 
         getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
             if (error) {
@@ -1813,20 +1810,20 @@ function objectWebServer() {
             }
 
             // check that the numbers are valid numbers..
-            if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
+            if (typeof body.x === 'number' && typeof body.y === 'number' && typeof body.scale === 'number') {
                 node.x = body.x;
                 node.y = body.y;
                 node.scale = body.scale;
-                updateStatus = "ok";
+                updateStatus = 'ok';
             }
 
-            if (typeof body.matrix === "object") {
+            if (typeof body.matrix === 'object') {
                 node.matrix = body.matrix;
-                updateStatus = "ok";
+                updateStatus = 'ok';
             }
 
             // if anything updated, write to disk and broadcast updates to editors
-            if (updateStatus === "ok") {
+            if (updateStatus === 'ok') {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
             }
@@ -1838,7 +1835,7 @@ function objectWebServer() {
 
     // Responds with the set of Spatial Tools that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
-        console.log("get available frames");
+        console.log('get available frames');
         res.json(addonFrames.getFrameList());
     });
 
@@ -1846,8 +1843,8 @@ function objectWebServer() {
     // ths is the most relevant for
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
-        console.log("get available logic blocks");
-        res.json(getLogicBlockList())
+        console.log('get available logic blocks');
+        res.json(getLogicBlockList());
     });
 
     /**
@@ -2027,19 +2024,19 @@ function objectWebServer() {
         if (fullEntry) {
             console.log('getLinkData', fullEntry);
 
-            var linkObjectA = fullEntry["objectA"];
-            var linkObjectB = fullEntry["objectB"];
-            var linkFrameA = fullEntry["frameA"];
-            var linkFrameB = fullEntry["frameB"];
-            var linkNodeA = fullEntry["nodeA"];
-            var linkNodeB = fullEntry["nodeB"];
+            var linkObjectA = fullEntry['objectA'];
+            var linkObjectB = fullEntry['objectB'];
+            var linkFrameA = fullEntry['frameA'];
+            var linkFrameB = fullEntry['frameB'];
+            var linkNodeA = fullEntry['nodeA'];
+            var linkNodeB = fullEntry['nodeB'];
 
-            var objectAName = fullEntry["namesA"][0];
-            var objectBName = fullEntry["namesB"][0];
-            var frameAName = fullEntry["namesA"][1];
-            var frameBName = fullEntry["namesB"][1];
-            var nodeAName = fullEntry["namesA"][2]; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
-            var nodeBName = fullEntry["namesB"][2];
+            var objectAName = fullEntry['namesA'][0];
+            var objectBName = fullEntry['namesB'][0];
+            var frameAName = fullEntry['namesA'][1];
+            var frameBName = fullEntry['namesB'][1];
+            var nodeAName = fullEntry['namesA'][2]; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
+            var nodeBName = fullEntry['namesB'][2];
 
             linkAddedData = {
                 added: wasAdded,
@@ -2058,7 +2055,7 @@ function objectWebServer() {
             };
 
         } else {
-            console.log("thisObject does not exist");
+            console.log('thisObject does not exist');
         }
         return linkAddedData;
     }
@@ -2092,9 +2089,9 @@ function objectWebServer() {
      * @param {string} linkKey
      * @param {string} editorID
      */
-    function deleteLink(objectKey, frameKey, linkKey, editorID){
+    function deleteLink(objectKey, frameKey, linkKey, editorID) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectKey, frameKey);
 
@@ -2132,8 +2129,8 @@ function objectWebServer() {
                 delete socketArray[destinationIp];
             }
 
-            console.log("deleted link: " + linkKey);
-            updateStatus = "deleted: " + linkKey + " in object: " + objectKey + " frame: " + frameKey;
+            console.log('deleted link: ' + linkKey);
+            updateStatus = 'deleted: ' + linkKey + ' in object: ' + objectKey + ' frame: ' + frameKey;
         }
 
         return updateStatus;
@@ -2145,12 +2142,12 @@ function objectWebServer() {
     // ****************************************************************************************************************
 
     webServer.post('/object/:objectID/frame/:frameID/link/:linkID/addLink/', function (req, res) {
-        console.log("routed by 2");
+        console.log('routed by 2');
         res.status(200).send(newLink(req.params.objectID, req.params.frameID, req.params.linkID, req.body));
     });
 
     webServer.post('/object/*/link/*/', function (req, res) {
-        console.log("routed by 1");
+        console.log('routed by 1');
         res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
     });
 
@@ -2163,12 +2160,12 @@ function objectWebServer() {
      */
     function newLink(objectID, frameID, linkID, body) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectID, frameID);
         if (foundFrame) {
 
-            console.log("found frame to add link to");
+            console.log('found frame to add link to');
 
             // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
             // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
@@ -2179,7 +2176,7 @@ function objectWebServer() {
             foundFrame.links[linkID] = body;
 
             if (!body.loop) {
-                console.log("added link: " + linkID);
+                console.log('added link: ' + linkID);
                 // write the object state to the permanent storage.
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
@@ -2195,11 +2192,11 @@ function objectWebServer() {
                 }
 
                 // call an action that asks all devices to reload their links, once the links are changed.
-                utilities.actionSender({reloadLink: {object: objectID, frame:frameID}, lastEditor: body.lastEditor});
+                utilities.actionSender({reloadLink: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
 
-                updateStatus = "added";
+                updateStatus = 'added';
             } else {
-                updateStatus = "found endless Loop";
+                updateStatus = 'found endless Loop';
             }
 
         }
@@ -2225,7 +2222,7 @@ function objectWebServer() {
      * @param {*} res
      * @todo don't pass in req and res, instead callback that triggers status code / err / res
      */
-    function addNodeToFrame(objectKey, frameKey, nodeKey, req, res){
+    function addNodeToFrame(objectKey, frameKey, nodeKey, req, res) {
 
         var errorMessage = null;
 
@@ -2270,7 +2267,7 @@ function objectWebServer() {
      */
     function addNodeLock (objectKey, frameKey, nodeKey, body) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectKey, frameKey, nodeKey);
         if (foundNode) {
@@ -2289,13 +2286,13 @@ function objectWebServer() {
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
-                updateStatus = "added";
+                updateStatus = 'added';
 
             } else {
                 if (previousLockPassword === newLockPassword) {
-                    updateStatus = "already locked by this user";
+                    updateStatus = 'already locked by this user';
                 } else {
-                    updateStatus = "not authorized to add";
+                    updateStatus = 'not authorized to add';
                 }
             }
 
@@ -2324,21 +2321,21 @@ function objectWebServer() {
      */
     function deleteNodeLock(objectKey, frameKey, nodeKey, password) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundNode = getNode(objectKey, frameKey, nodeKey);
         if (foundNode) {
-            if (password === foundNode.lockPassword || (globalVariables.debug && password === "DEBUG")) { // TODO: remove DEBUG mode
+            if (password === foundNode.lockPassword || (globalVariables.debug && password === 'DEBUG')) { // TODO: remove DEBUG mode
                 foundNode.lockPassword = null;
                 foundNode.lockType = null;
 
                 var object = getObject(objectKey);
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadNode: {object: objectKey, frame:frameKey, node: nodeKey}});
+                utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
-                updateStatus = "deleted";
+                updateStatus = 'deleted';
             } else {
-                updateStatus = "not authorized to delete"
+                updateStatus = 'not authorized to delete';
             }
         }
 
@@ -2362,8 +2359,8 @@ function objectWebServer() {
      * @param {string} linkKey
      * @param {{lockPassword: string, lockType: string}} body
      */
-    function addLinkLock(objectKey, frameKey, linkKey, body){
-        var updateStatus = "nothing happened";
+    function addLinkLock(objectKey, frameKey, linkKey, body) {
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
@@ -2385,13 +2382,13 @@ function objectWebServer() {
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadLink: {object: object}});
 
-                updateStatus = "added";
+                updateStatus = 'added';
 
             } else {
                 if (previousLockPassword === newLockPassword) {
-                    updateStatus = "already locked by this user";
+                    updateStatus = 'already locked by this user';
                 } else {
-                    updateStatus = "not authorized to add";
+                    updateStatus = 'not authorized to add';
                 }
             }
         }
@@ -2402,11 +2399,11 @@ function objectWebServer() {
     // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
     // ****************************************************************************************************************
     webServer.delete('/object/*/linkLock/*/password/*/', function (req, res) {
-        res.send(deleteLinkLock(req.params[0],req.params[0],req.params[1],req.params[2]));
+        res.send(deleteLinkLock(req.params[0], req.params[0], req.params[1], req.params[2]));
     });
 
     webServer.delete('/object/*/frame/*/link/*/password/*/deleteLock', function (req, res) {
-        res.send(deleteLinkLock(req.params[0],req.params[1],req.params[2],req.params[3]));
+        res.send(deleteLinkLock(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
     /**
@@ -2416,14 +2413,14 @@ function objectWebServer() {
      * @param {string} linkKey
      * @param {string} password
      */
-    function deleteLinkLock(objectKey, frameKey, linkKey, password){
+    function deleteLinkLock(objectKey, frameKey, linkKey, password) {
 
-        var updateStatus = "nothing happened";
+        var updateStatus = 'nothing happened';
 
         var foundFrame = getFrame(objectKey, frameKey);
         if (foundFrame) {
             var foundLink = foundFrame.links[linkKey];
-            if (password === foundLink.lockPassword || password === "DEBUG") { // TODO: remove DEBUG mode
+            if (password === foundLink.lockPassword || password === 'DEBUG') { // TODO: remove DEBUG mode
                 foundLink.lockPassword = null;
                 foundLink.lockType = null;
 
@@ -2431,9 +2428,9 @@ function objectWebServer() {
                 utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadLink: {object: objectKey}});
 
-                updateStatus = "deleted";
+                updateStatus = 'deleted';
             } else {
-                updateStatus = "not authorized to delete"
+                updateStatus = 'not authorized to delete';
             }
         }
 
@@ -2577,7 +2574,7 @@ function objectWebServer() {
                         var endpoint = '/obj/' + rawFilepath
                             .split(/\\|\//)
                             .slice(5)
-                            .filter(function(i){
+                            .filter(function(i) {
                                 return i !== '.identity';
                             })
                             .join('/');
@@ -2671,7 +2668,7 @@ function objectWebServer() {
         }
 
         var obj = getObject(objectID);
-        
+
         if (obj.isHumanPose) {
             res.status(404).json({failure: true, error: 'Object ' + objectID + ' has no directory'}).end();
             return;
@@ -2777,8 +2774,8 @@ function objectWebServer() {
             newFrame.height = frame.height;
 
             // give default values for this node type to each node's public data, if not already assigned
-            for(let key in newFrame.nodes){
-                if( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
+            for (let key in newFrame.nodes) {
+                if ( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
             }
@@ -2979,8 +2976,8 @@ function objectWebServer() {
         function deleteFolderRecursive(path) {
             console.log('deleteFolderRecursive');
             if (fs.existsSync(path)) {
-                fs.readdirSync(path).forEach(function(file, index){
-                    var curPath = path + "/" + file;
+                fs.readdirSync(path).forEach(function(file, index) {
+                    var curPath = path + '/' + file;
                     if (fs.lstatSync(curPath).isDirectory()) { // recurse
                         deleteFolderRecursive(curPath);
                     } else { // delete file
@@ -3079,7 +3076,7 @@ function objectWebServer() {
          */
         function changeSize(objectID, frameID, nodeID, body, callback) {
 
-            console.log("changing Size for :" + objectID + " : " + frameID + " : " + nodeID);
+            console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
 
             var activeVehicle = null;
 
@@ -3094,7 +3091,7 @@ function objectWebServer() {
                 // console.log('really changing size for ... ' + activeVehicle.uuid, body);
 
                 // console.log("post 2");
-                var updateStatus = "nothing happened";
+                var updateStatus = 'nothing happened';
 
                 // the reality editor will overwrite all properties from the new frame except these.
                 // useful to not overwrite AR position when sending pos or scale from screen.
@@ -3103,11 +3100,11 @@ function objectWebServer() {
                 // TODO: this is a hack to fix ar/screen synchronization, fix it
                 // for frames, the position data is inside "ar" or "screen"
                 if (activeVehicle.hasOwnProperty('visualization')) {
-                    if (activeVehicle.visualization === "ar") {
+                    if (activeVehicle.visualization === 'ar') {
                         activeVehicle = activeVehicle.ar;
                         propertiesToIgnore.push('screen');
-                    } else if (activeVehicle.visualization === "screen") {
-                        if (typeof body.scale === "number" && typeof body.scaleARFactor === "number") {
+                    } else if (activeVehicle.visualization === 'screen') {
+                        if (typeof body.scale === 'number' && typeof body.scaleARFactor === 'number') {
                             activeVehicle.ar.scale = body.scale / body.scaleARFactor;
                         }
                         activeVehicle = activeVehicle.screen;
@@ -3118,14 +3115,14 @@ function objectWebServer() {
                 var didUpdate = false;
 
                 // check that the numbers are valid numbers..
-                if (typeof body.x === "number" && typeof body.y === "number" && typeof body.scale === "number") {
+                if (typeof body.x === 'number' && typeof body.y === 'number' && typeof body.scale === 'number') {
 
                     // if the object is equal the datapoint id, the item is actually the object it self.
                     activeVehicle.x = body.x;
                     activeVehicle.y = body.y;
                     activeVehicle.scale = body.scale;
 
-                    if (typeof body.arX === "number" && typeof body.arY === "number") {
+                    if (typeof body.arX === 'number' && typeof body.arY === 'number') {
                         frame.ar.x = body.arX;
                         frame.ar.y = body.arY;
                     }
@@ -3135,7 +3132,7 @@ function objectWebServer() {
                     didUpdate = true;
                 }
 
-                if (typeof body.matrix === "object" && activeVehicle.hasOwnProperty('matrix')) {
+                if (typeof body.matrix === 'object' && activeVehicle.hasOwnProperty('matrix')) {
                     activeVehicle.matrix = body.matrix;
                     didUpdate = true;
                 }
@@ -3143,7 +3140,7 @@ function objectWebServer() {
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
-                    updateStatus = "updated position and/or scale";
+                    updateStatus = 'updated position and/or scale';
                 }
 
                 callback(200, updateStatus);
@@ -3274,9 +3271,9 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
             console.log('get frameFolder', req.params.object, req.params.frame);
             const dirTree = require('directory-tree');
-            var objectPath = objectsPath + '/' + req.params.object +"/" + req.params.frame;
-            var tree = dirTree(objectPath, {exclude:/\.DS_Store/}, function (item){
-                item.path = item.path.replace(objectsPath, "/obj");
+            var objectPath = objectsPath + '/' + req.params.object + '/' + req.params.frame;
+            var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
+                item.path = item.path.replace(objectsPath, '/obj');
             });
             res.json(tree);
         });
@@ -3343,7 +3340,7 @@ function objectWebServer() {
             ips.activeInterface = req.params[0];
             res.json(ips);
 
-            storage.setItemSync('activeNetworkInterface',req.params[0]);
+            storage.setItemSync('activeNetworkInterface', req.params[0]);
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
             // res.redirect(req.get('referer'));
         });
@@ -3353,9 +3350,9 @@ function objectWebServer() {
             getObject(objectID).deactivated = true;
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            res.send("ok");
-          //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-           // res.redirect(req.get('referer'));
+            res.send('ok');
+            //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+            // res.redirect(req.get('referer'));
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
@@ -3363,26 +3360,26 @@ function objectWebServer() {
             getObject(objectID).deactivated = false;
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
-            res.send("ok");
-           // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-           // res.redirect(req.get('referer'));
+            res.send('ok');
+            // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+            // res.redirect(req.get('referer'));
         });
 
 
         webServer.get('/object/*/screen/', function (req, res) {
             var objectID = req.params[0];
-            getObject(objectID).visualization = "screen";
+            getObject(objectID).visualization = 'screen';
             console.log('screen', objectID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send("ok");
+            res.send('ok');
         });
 
         webServer.get('/object/*/ar/', function (req, res) {
             var objectID = req.params[0];
-            getObject(objectID).visualization = "ar";
+            getObject(objectID).visualization = 'ar';
             console.log('ar', objectID);
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send("ok");
+            res.send('ok');
         });
 
         webServer.get('/object/*/*/reset/', function (req, res) {
@@ -3390,20 +3387,20 @@ function objectWebServer() {
             var frameID = req.params[1];
             var frame = getFrame(objectID, frameID);
             frame.ar = {
-                x : 0,
-                y : 0,
-                scale : 1,
-                matrix : []
+                x: 0,
+                y: 0,
+                scale: 1,
+                matrix: []
             };
             // position data for the screen visualization mode
             frame.screen = {
-                x : 0,
-                y : 0,
-                scale : 1,
-                matrix : []
+                x: 0,
+                y: 0,
+                scale: 1,
+                matrix: []
             };
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send("ok");
+            res.send('ok');
         });
 
         // request a zip-file with the object stored inside
@@ -3425,28 +3422,28 @@ function objectWebServer() {
                 'Content-Type': 'application/zip',
                 'Content-disposition': 'attachment; filename=' + objectId + '.zip'
             });
-            
+
             var archiver = require('archiver');
 
             var zip = archiver('zip');
             zip.pipe(res);
-            zip.directory(objectsPath + '/' + objectId, objectId + "/");
+            zip.directory(objectsPath + '/' + objectId, objectId + '/');
             zip.finalize();
         });
-        
+
         webServer.post('/object/:objectKey/generateXml/', function(req, res) {
             var objectKey = req.params.objectKey;
             var msgObject = req.body;
             var objectName = msgObject.name;
-            
+
             console.log(objectKey, msgObject);
-            
+
             console.log('support inferred aspect ratio of image targets');
             console.log('support object targets');
-            
+
             // var isImageTarget = true;
             // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
-            
+
             var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                 '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                 '   <Tracking>\n' +
@@ -3454,14 +3451,14 @@ function objectWebServer() {
                 '   </Tracking>\n' +
                 '   </ARConfig>';
 
-            var xmlOutFile = path.join(objectsPath, objectName, identityFolderName, "/target/target.xml");
+            var xmlOutFile = path.join(objectsPath, objectName, identityFolderName, '/target/target.xml');
             // if (!fs.existsSync(xmlOutFile)) {
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
                 if (err) {
                     res.status(500).send('error writing new target size to .xml file for ' + objectKey);
                 } else {
                     res.status(200).send('ok');
-                    
+
                     // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
                     var object = getObject(objectKey);
                     if (object) {
@@ -3472,10 +3469,10 @@ function objectWebServer() {
                 }
             });
         });
-        
+
         webServer.post('/hardwareInterface/:interfaceName/settings/', function(req, res) {
             var interfaceName = req.params.interfaceName;
-            
+
             setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
@@ -3692,7 +3689,7 @@ function objectWebServer() {
             }
 
             var frameName = req.params.frameName;
-            console.log("++++++++++++++++++++++++++++++++++++++++++++++++");
+            console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
             if (!frameLibPath) {
@@ -3715,7 +3712,7 @@ function objectWebServer() {
 
             var zip = archiver('zip');
             zip.pipe(res);
-            zip.directory(framePath, frameName + "/");
+            zip.directory(framePath, frameName + '/');
             zip.finalize();
         });
 
@@ -3769,9 +3766,9 @@ function objectWebServer() {
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
 
-                var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ""));
+                var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
-                if (typeof objects[thisId].tcs === "undefined") {
+                if (typeof objects[thisId].tcs === 'undefined') {
                     objects[thisId].tcs = 0;
                 }
                 returnJSON.push({
@@ -3789,14 +3786,14 @@ function objectWebServer() {
         // ****************************************************************************************************************
         // post interfaces
         // ****************************************************************************************************************
-        webServer.post(objectInterfaceFolder + "contentDelete/:object/:frame", function (req, res) {
-            if (req.body.action === "delete") {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
+            if (req.body.action === 'delete') {
                 var folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
                         if (fs.existsSync(folderDel)) {
                             fs.readdirSync(folderDel).forEach(function (file, index) {
-                                var curPath = folderDel + "/" + file;
+                                var curPath = folderDel + '/' + file;
                                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                     deleteFolderRecursive(curPath);
                                 } else { // delete file
@@ -3808,25 +3805,24 @@ function objectWebServer() {
                     };
 
                     deleteFolderRecursive(folderDel);
-                }
-                else {
+                } else {
                     fs.unlinkSync(folderDel);
                 }
 
-                res.send("ok");
+                res.send('ok');
 
             }
         });
 
-        webServer.post(objectInterfaceFolder + "contentDelete/:id", function (req, res) {
-            if (req.body.action === "delete") {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
+            if (req.body.action === 'delete') {
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
                         if (fs.existsSync(folderDel)) {
                             fs.readdirSync(folderDel).forEach(function (file, index) {
-                                var curPath = folderDel + "/" + file;
+                                var curPath = folderDel + '/' + file;
                                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                     deleteFolderRecursive(curPath);
                                 } else { // delete file
@@ -3838,8 +3834,7 @@ function objectWebServer() {
                     };
 
                     deleteFolderRecursive(folderDel);
-                }
-                else {
+                } else {
                     fs.unlinkSync(folderDel);
                 }
 
@@ -3851,43 +3846,43 @@ function objectWebServer() {
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
 
-            if (req.body.action === "zone") {
+            if (req.body.action === 'zone') {
                 var objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-                res.send("ok");
+                res.send('ok');
             }
 
-            if (req.body.action === "new") {
-                console.log("got NEW", req.body.name);
+            if (req.body.action === 'new') {
+                console.log('got NEW', req.body.name);
                 // console.log(req.body);
-                if (req.body.name !== "" && !req.body.frame) {
-                   // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
+                if (req.body.name !== '' && !req.body.frame) {
+                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
-                } else if(req.body.name !== "" && req.body.frame !== ""){
+                } else if (req.body.name !== '' && req.body.frame !== '') {
                     var objectKey = utilities.readObject(objectLookup, req.body.name);
 
-                    if(!objects[objectKey].frames[objectKey+ req.body.frame]) {
+                    if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, "local");
-                        objects[objectKey].frames[objectKey+ req.body.frame] = new Frame();
-                        objects[objectKey].frames[objectKey+ req.body.frame].name = req.body.frame;
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, 'local');
+                        objects[objectKey].frames[objectKey + req.body.frame] = new Frame();
+                        objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey+ req.body.frame].location);
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
 
-                res.send("ok");
+                res.send('ok');
             }
-            if (req.body.action === "delete") {
+            if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {
                     if (fs.existsSync(folderDel)) {
                         fs.readdirSync(folderDel).forEach(function (file, index) {
-                            var curPath = folderDel + "/" + file;
+                            var curPath = folderDel + '/' + file;
                             if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                 deleteFolderRecursive(curPath);
                             } else { // delete file
@@ -3915,20 +3910,20 @@ function objectWebServer() {
                     }
                 }
 
-                if(pathKey && pathKey !== ""){
-                   fs.unlinkSync(objectsPath + pathKey.substring(4));
-                    res.send("ok");
+                if (pathKey && pathKey !== '') {
+                    fs.unlinkSync(objectsPath + pathKey.substring(4));
+                    res.send('ok');
                     return;
-                };
+                }
 
-                if (frameName !== "") {
+                if (frameName !== '') {
 
-                    var folderDelFrame = objectsPath + '/' + req.body.name + "/" + frameName;
+                    var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
                     deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
-                        if(thisObject) {
+                        if (thisObject) {
                             delete thisObject.frames[frameNameKey];
                         }
                     }
@@ -3936,7 +3931,7 @@ function objectWebServer() {
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
-                    res.send("ok");
+                    res.send('ok');
 
                 } else {
 
@@ -3948,7 +3943,7 @@ function objectWebServer() {
                     if (tempFolderName2 !== null) {
 
                         // remove object from tree
-                        if(objects[tempFolderName2]) {
+                        if (objects[tempFolderName2]) {
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
                             delete objectLookup[req.body.name];
@@ -3956,16 +3951,16 @@ function objectWebServer() {
 
                     }
 
-                    console.log("i deleted: " + tempFolderName2);
+                    console.log('i deleted: ' + tempFolderName2);
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
-                    res.send("ok");
+                    res.send('ok');
                 }
             }
             //delete end
         });
 
-        var tmpFolderFile = "";
+        var tmpFolderFile = '';
 
         // this is all used just for the backup folder
         //*************************************************************************************
@@ -3973,14 +3968,14 @@ function objectWebServer() {
             function (req, res) {
                 // console.log("post 23");
 
-                console.log("komm ich hier hin?");
+                console.log('komm ich hier hin?');
 
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath,  // don't forget the __dirname here
                     keepExtensions: true
                 });
 
-                var filename = "";
+                var filename = '';
 
                 form.on('error', function (err) {
                     throw err;
@@ -3989,7 +3984,7 @@ function objectWebServer() {
                 form.on('fileBegin', function (name, file) {
                     filename = file.name;
                     //rename the incoming file to the file's name
-                    file.path = form.uploadDir + "/" + file.name;
+                    file.path = form.uploadDir + '/' + file.name;
                 });
 
                 form.parse(req);
@@ -3998,13 +3993,13 @@ function objectWebServer() {
                     var folderD = form.uploadDir;
                     // console.log("------------" + form.uploadDir + " " + filename);
 
-                    if (getFileExtension(filename) === "zip") {
+                    if (getFileExtension(filename) === 'zip') {
 
-                        console.log("I found a zip file");
+                        console.log('I found a zip file');
 
                         try {
                             var DecompressZip = require('decompress-zip');
-                            var unzipper = new DecompressZip(folderD + "/" + filename);
+                            var unzipper = new DecompressZip(folderD + '/' + filename);
 
                             unzipper.on('error', function (err) {
                                 console.log('Caught an error');
@@ -4012,17 +4007,17 @@ function objectWebServer() {
 
                             unzipper.on('extract', function (log) {
                                 console.log('Finished extracting');
-                                console.log("have created a new object");
+                                console.log('have created a new object');
                                 //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
                                 createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                 //todo add object to the beatsender.
 
-                                console.log("have created a new object");
-                                fs.unlinkSync(folderD + "/" + filename);
+                                console.log('have created a new object');
+                                fs.unlinkSync(folderD + '/' + filename);
 
                                 res.status(200);
-                                res.send("done");
+                                res.send('done');
 
                             });
 
@@ -4031,16 +4026,16 @@ function objectWebServer() {
                             });
 
                             unzipper.extract({
-                                path: folderD + "/",
+                                path: folderD + '/',
                                 filter: function (file) {
-                                    return file.type !== "SymbolicLink";
+                                    return file.type !== 'SymbolicLink';
                                 }
                             });
 
-                            console.log("extracting: " + filename + "  " + folderD);
+                            console.log('extracting: ' + filename + '  ' + folderD);
 
                         } catch (err) {
-                            console.log("could not unzip file");
+                            console.log('could not unzip file');
                         }
                     }
                 });
@@ -4052,11 +4047,11 @@ function objectWebServer() {
         webServer.post(objectInterfaceFolder + 'content/:id',
             function (req, res) {
 
-                console.log("object is: " + req.params.id);
+                console.log('object is: ' + req.params.id);
 
                 tmpFolderFile = req.params.id;
 
-                if (req.body.action === "delete") {
+                if (req.body.action === 'delete') {
                     var folderDel = objectsPath + '/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
@@ -4064,7 +4059,7 @@ function objectWebServer() {
                             var deleteFolderRecursive = function (folderDel) {
                                 if (fs.existsSync(folderDel)) {
                                     fs.readdirSync(folderDel).forEach(function (file, index) {
-                                        var curPath = folderDel + "/" + file;
+                                        var curPath = folderDel + '/' + file;
                                         if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                             deleteFolderRecursive(curPath);
                                         } else { // delete file
@@ -4076,8 +4071,7 @@ function objectWebServer() {
                             };
 
                             deleteFolderRecursive(folderDel);
-                        }
-                        else {
+                        } else {
                             fs.unlinkSync(folderDel);
                         }
                     }
@@ -4089,7 +4083,7 @@ function objectWebServer() {
                         delete knownObjects[tempFolderName2];
                     }
 
-                    console.log("i deleted: " + tempFolderName2);
+                    console.log('i deleted: ' + tempFolderName2);
 
                     res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
                 }
@@ -4099,7 +4093,7 @@ function objectWebServer() {
                     keepExtensions: true
                 });
 
-                var filename = "";
+                var filename = '';
 
                 form.on('error', function (err) {
                     throw err;
@@ -4108,15 +4102,15 @@ function objectWebServer() {
                 form.on('fileBegin', function (name, file) {
                     filename = file.name;
                     //rename the incoming file to the file's name
-                    if (req.headers.type === "targetUpload") {
-                        file.path = form.uploadDir + "/" + file.name;
-                    } else if(req.headers.type === "fileUpload") {
+                    if (req.headers.type === 'targetUpload') {
+                        file.path = form.uploadDir + '/' + file.name;
+                    } else if (req.headers.type === 'fileUpload') {
                         console.log('upload begins', form.uploadDir, req.headers.folder);
 
-                        if(typeof req.headers.folder !== "undefined"){
-                            file.path = form.uploadDir + "/" + req.headers.frame +"/"+ req.headers.folder +"/" +file.name;
+                        if (typeof req.headers.folder !== 'undefined') {
+                            file.path = form.uploadDir + '/' + req.headers.frame + '/' + req.headers.folder + '/' + file.name;
                         } else {
-                            file.path = form.uploadDir + "/" + req.headers.frame +"/"+ file.name;
+                            file.path = form.uploadDir + '/' + req.headers.frame + '/' + file.name;
                         }
                     }
                 });
@@ -4125,32 +4119,32 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
-                    console.log("------------" + form.uploadDir + "/" + filename);
+                    console.log('------------' + form.uploadDir + '/' + filename);
 
-                    if (req.headers.type === "targetUpload") {
+                    if (req.headers.type === 'targetUpload') {
                         console.log('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
 
-                        if (fileExtension === "jpg" || fileExtension === "dat") {
-                            if (!fs.existsSync(folderD + '/' + identityFolderName + "/target/")) {
-                                fs.mkdirSync(folderD + '/' + identityFolderName + "/target/", "0766", function (err) {
+                        if (fileExtension === 'jpg' || fileExtension === 'dat') {
+                            if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
+                                fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
                                     if (err) {
                                         console.log(err);
-                                        res.send("ERROR! Can't make the directory! \n");    // echo the result back
+                                        res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
                                     }
                                 });
                             }
 
-                            fs.renameSync(folderD + "/" + filename, folderD + '/' + identityFolderName + "/target/target." + fileExtension);
+                            fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
 
                             // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                             // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
                             if (fileExtension === 'jpg') {
 
-                                var rawFilepath         = folderD + '/' + identityFolderName + "/target/target." + fileExtension;
-                                var tempFilepath        = folderD + '/' + identityFolderName + "/target/target-temp." + fileExtension;
-                                var originalFilepath    = folderD + '/' + identityFolderName + "/target/target-original-size." + fileExtension;
-                                
+                                var rawFilepath         = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
+                                var tempFilepath        = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
+                                var originalFilepath    = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
+
                                 var image;
                                 try {
                                     image = sharp(rawFilepath);
@@ -4203,11 +4197,11 @@ function objectWebServer() {
                                     console.warn('error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
                                     continueProcessingUpload();
                                 }
-                            
+
                             } else {
                                 continueProcessingUpload();
                             }
-                            
+
                             // Step 2) - Generate a default XML file if needed
                             function continueProcessingUpload() {
                                 var objectName = req.params.id + utilities.uuidTime();
@@ -4219,8 +4213,8 @@ function objectWebServer() {
                                     '   </Tracking>\n' +
                                     '   </ARConfig>';
 
-                                
-                                var xmlOutFile = path.join(folderD, identityFolderName, "/target/target.xml");
+
+                                var xmlOutFile = path.join(folderD, identityFolderName, '/target/target.xml');
                                 if (!fs.existsSync(xmlOutFile)) {
                                     fs.writeFile(xmlOutFile, documentcreate, function (err) {
                                         onXmlVerified(err);
@@ -4229,39 +4223,39 @@ function objectWebServer() {
                                     onXmlVerified();
                                 }
                             }
-                            
+
                             // create the object data and respond to the webFrontend once the XML file is confirmed to exist
                             function onXmlVerified(err) {
                                 if (err) {
                                     console.log(err);
                                 } else {
                                     // create the object if needed / possible
-                                    if (typeof objects[thisObjectId] === "undefined") {
-                                        console.log("creating object from target file " + tmpFolderFile);
+                                    if (typeof objects[thisObjectId] === 'undefined') {
+                                        console.log('creating object from target file ' + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
-                                        console.log("have created a new object");
+                                        console.log('have created a new object');
 
                                         hardwareAPI.reset();
-                                        console.log("have initialized the modules");
+                                        console.log('have initialized the modules');
                                     }
                                 }
-                                
-                                let jpgPath = path.join(folderD, identityFolderName, "/target/target.jpg");
-                                let datPath = path.join(folderD, identityFolderName, "/target/target.dat");
-                                let xmlPath = path.join(folderD, identityFolderName, "/target/target.xml");
-                                
+
+                                let jpgPath = path.join(folderD, identityFolderName, '/target/target.jpg');
+                                let datPath = path.join(folderD, identityFolderName, '/target/target.dat');
+                                let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
+
                                 var fileList = [jpgPath, xmlPath, datPath];
                                 var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
-                                if (typeof objects[thisObjectId] !== "undefined") {
+                                if (typeof objects[thisObjectId] !== 'undefined') {
                                     var thisObject = objects[thisObjectId];
                                     var jpg = fs.existsSync(jpgPath);
                                     var dat = fs.existsSync(datPath);
                                     var xml = fs.existsSync(xmlPath);
-                                    
+
                                     var sendObject = {
                                         id: thisObjectId,
                                         name: thisObject.name,
@@ -4270,13 +4264,13 @@ function objectWebServer() {
                                         xmlExists: xml,
                                         datExists: dat
                                     };
-                                    
+
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
                                     res.status(200).json(sendObject);
-                                    
+
                                 } else {
                                     // var sendObject = {
                                     //     initialized : false
@@ -4285,52 +4279,50 @@ function objectWebServer() {
                                 }
                             }
 
-                        }
+                        } else if (fileExtension === 'zip') {
 
-                        else if (fileExtension === "zip") {
-
-                            console.log("I found a zip file");
+                            console.log('I found a zip file');
 
                             try {
                                 var DecompressZip = require('decompress-zip');
-                                var unzipper = new DecompressZip(folderD + "/" + filename);
+                                var unzipper = new DecompressZip(folderD + '/' + filename);
 
                                 unzipper.on('error', function (err) {
                                     console.log('Caught an error in unzipper');
                                 });
 
                                 unzipper.on('extract', function (log) {
-                                    var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + "/target");
+                                    var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
                                     var folderFileType;
 
                                     for (var i = 0; i < folderFile.length; i++) {
                                         console.log(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
-                                        if (folderFileType === "xml" || folderFileType === "dat") {
-                                            fs.renameSync(folderD + '/' + identityFolderName + "/target/" + folderFile[i], folderD + '/' + identityFolderName + "/target/target." + folderFileType);
+                                        if (folderFileType === 'xml' || folderFileType === 'dat') {
+                                            fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                         }
                                     }
-                                    fs.unlinkSync(folderD + "/" + filename);
+                                    fs.unlinkSync(folderD + '/' + filename);
 
                                     // evnetually create the object.
 
-                                    if (fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml")) {
+                                    if (fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml')) {
 
-                                        console.log("creating object from target file " + tmpFolderFile);
+                                        console.log('creating object from target file ' + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                         //todo send init to internal modules
-                                        console.log("have created a new object");
+                                        console.log('have created a new object');
 
                                         hardwareAPI.reset();
-                                        console.log("have initialized the modules");
+                                        console.log('have initialized the modules');
 
-                                        var fileList = [folderD + '/' + identityFolderName + "/target/target.jpg", folderD + '/' + identityFolderName + "/target/target.xml", folderD + '/' + identityFolderName + "/target/target.dat"];
+                                        var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat'];
 
                                         var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
-                                        if (typeof  objects[thisObjectId] !== "undefined") {
+                                        if (typeof  objects[thisObjectId] !== 'undefined') {
                                             var thisObject = objects[thisObjectId];
 
                                             thisObject.tcs = utilities.generateChecksums(objects, fileList);
@@ -4341,12 +4333,12 @@ function objectWebServer() {
 
                                             res.status(200);
 
-                                            var jpg = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.jpg");
-                                            var dat = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.dat");
-                                            var xml = fs.existsSync(folderD + '/' + identityFolderName + "/target/target.xml");
+                                            var jpg = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.jpg');
+                                            var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
+                                            var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
 
                                             var sendObject = {
-                                                id : thisObjectId,
+                                                id: thisObjectId,
                                                 name: thisObject.name,
                                                 initialized: (jpg && xml && dat),
                                                 jpgExists: jpg,
@@ -4360,7 +4352,7 @@ function objectWebServer() {
                                     }
 
                                     var sendObject = {
-                                        initialized : false
+                                        initialized: false
                                     };
                                     res.status(200);
                                     res.json(sendObject);
@@ -4371,22 +4363,22 @@ function objectWebServer() {
                                 });
 
                                 unzipper.extract({
-                                    path: folderD + '/' + identityFolderName + "/target",
+                                    path: folderD + '/' + identityFolderName + '/target',
                                     filter: function (file) {
-                                        return file.type !== "SymbolicLink";
+                                        return file.type !== 'SymbolicLink';
                                     }
                                 });
                             } catch (err) {
-                                console.log("could not unzip file");
+                                console.log('could not unzip file');
                             }
                         } else {
                             res.status(200);
-                            res.send("done");
+                            res.send('done');
                         }
 
                     } else {
                         res.status(200);
-                        res.send("done");
+                        res.send('done');
                     }
 
                 });
@@ -4394,7 +4386,7 @@ function objectWebServer() {
     } else {
         webServer.get(objectInterfaceFolder, function (req, res) {
             //   console.log("GET 21");
-            res.send("Objects<br>Developer functions are off");
+            res.send('Objects<br>Developer functions are off');
         });
     }
 }
@@ -4404,16 +4396,16 @@ function objectWebServer() {
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
  */
 function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
-    console.log("I can start");
+    console.log('I can start');
 
     var folder = objectsPath + '/' + folderVar + '/';
     console.log(folder);
 
     if (fs.existsSync(folder)) {
-        console.log("folder exists");
+        console.log('folder exists');
         var objectIDXML = utilities.getObjectIdFromTarget(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
-        console.log("got ID: objectIDXML");
+        console.log('got ID: objectIDXML');
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
@@ -4421,22 +4413,22 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
-                
+
                 if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
                     objects[objectIDXML].isWorldObject = true;
                     objects[objectIDXML].timestamp = Date.now();
                 }
 
-                console.log("this should be the IP" + objectIDXML);
+                console.log('this should be the IP' + objectIDXML);
 
                 try {
-                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + "/object.json", "utf8"));
+                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
                     objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
-                    console.log("testing: " + objects[objectIDXML].ip);
+                    console.log('testing: ' + objects[objectIDXML].ip);
                 } catch (e) {
                     objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
-                    console.log("testing: " + objects[objectIDXML].ip);
-                    console.log("No saved data for: " + objectIDXML);
+                    console.log('testing: ' + objects[objectIDXML].ip);
+                    console.log('No saved data for: ' + objectIDXML);
                 }
 
                 if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
@@ -4451,7 +4443,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
                 hardwareAPI.reset();
 
-                console.log("weiter im text " + objectIDXML);
+                console.log('weiter im text ' + objectIDXML);
                 utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
 
                 objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
@@ -4496,16 +4488,16 @@ function socketServer() {
         socket.on('/subscribe/realityEditor', function (msg) {
 
             var msgContent = JSON.parse(msg);
-            var thisProtocol = "R1";
+            var thisProtocol = 'R1';
 
             if (!msgContent.object) {
                 msgContent.object = msgContent.obj;
-                thisProtocol = "R0";
+                thisProtocol = 'R0';
             }
 
             if (doesObjectExist(msgContent.object)) {
-                console.log("reality editor subscription for object: " + msgContent.object);
-                console.log("the latest socket has the ID: " + socket.id);
+                console.log('reality editor subscription for object: ' + msgContent.object);
+                console.log('the latest socket has the ID: ' + socket.id);
 
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 console.log(realityEditorSocketArray);
@@ -4515,8 +4507,8 @@ function socketServer() {
 
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
-                for(let key in frame.nodes){
-                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                for (let key in frame.nodes) {
+                    if (typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
                     //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
@@ -4540,22 +4532,22 @@ function socketServer() {
                 }
             }
 
-          
+
 
         });
 
         socket.on('/subscribe/realityEditorPublicData', function (msg) {
             var msgContent = JSON.parse(msg);
-            var thisProtocol = "R1";
+            var thisProtocol = 'R1';
 
             if (!msgContent.object) {
                 msgContent.object = msgContent.obj;
-                thisProtocol = "R0";
+                thisProtocol = 'R0';
             }
 
             if (doesObjectExist(msgContent.object)) {
-                console.log("reality editor subscription for object: " + msgContent.object);
-                console.log("the latest socket has the ID: " + socket.id);
+                console.log('reality editor subscription for object: ' + msgContent.object);
+                console.log('the latest socket has the ID: ' + socket.id);
 
                 realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
                 console.log(realityEditorSocketArray);
@@ -4565,7 +4557,7 @@ function socketServer() {
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for (let key in frame.nodes) {
-                    if(typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    if (typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
                     //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
@@ -4573,21 +4565,21 @@ function socketServer() {
                     io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
-                        node : key,
+                        node: key,
                         publicData: frame.nodes[key].publicData
                     }));
                 }
             }
 
-        
+
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
             var msgContent = JSON.parse(msg);
 
             if (doesObjectExist(msgContent.object)) {
-                console.log("reality editor block: " + msgContent.object);
-                console.log("the latest socket has the ID: " + socket.id);
+                console.log('reality editor block: ' + msgContent.object);
+                console.log('the latest socket has the ID: ' + socket.id);
 
                 realityEditorBlockSocketArray[socket.id] = {object: msgContent.object};
                 console.log(realityEditorBlockSocketArray);
@@ -4616,7 +4608,7 @@ function socketServer() {
         socket.on('object', function (msg) {
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
-                msgContent = protocols["R0"].receive(msg);
+                msgContent = protocols['R0'].receive(msg);
             }
 
             if (msgContent !== null) {
@@ -4635,8 +4627,8 @@ function socketServer() {
             var msg = JSON.parse(_msg);
 
             var node = getNode(msg.object, msg.frame, msg.node);
-            if (node && msg && typeof msg.publicData !== "undefined") {
-                if (typeof node.publicData === "undefined") {
+            if (node && msg && typeof msg.publicData !== 'undefined') {
+                if (typeof node.publicData === 'undefined') {
                     node.publicData = {};
                 }
                 var thisPublicData = node.publicData;
@@ -4656,10 +4648,10 @@ function socketServer() {
 
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
-                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisBlock = node.blocks[msg.block];
                     blockModules[thisBlock.type].setup(msg.object, msg.frame, msg.node, msg.block, thisBlock,
-                        function(object, frame, node, block, index, thisBlock){
+                        function(object, frame, node, block, index, thisBlock) {
                             engine.processBlockLinks(object, frame, node, block, index, thisBlock);
                         });
                 }
@@ -4671,7 +4663,7 @@ function socketServer() {
 
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
-                if (msg.block in node.blocks && typeof msg.block !== "undefined" && typeof node.blocks[msg.block].publicData !== "undefined") {
+                if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisPublicData = node.blocks[msg.block].publicData;
                     for (var key in msg.publicData) {
                         thisPublicData[key] = msg.publicData[key];
@@ -4701,7 +4693,7 @@ function socketServer() {
 
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
-                  //  console.log('dont send updates to the editor that triggered it');
+                    //  console.log('dont send updates to the editor that triggered it');
                     continue;
                 }
 
@@ -4720,14 +4712,14 @@ function socketServer() {
             console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
             console.log(realityEditorObjectMatrixSocketArray);
         });
-        
+
         socket.on('/update/object/matrix', function (msg) {
             var msgContent = JSON.parse(msg);
 
             var object = getObject(msgContent.objectKey);
             if (!object) { return; }
             if (!msgContent.hasOwnProperty('matrix')) { return; }
-            
+
             object.matrix = msgContent.matrix;
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
@@ -4738,7 +4730,7 @@ function socketServer() {
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
                     // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
-                    
+
                     var updateResponse = {
                         objectKey: msgContent.objectKey,
                         propertyPath: 'matrix',
@@ -4747,7 +4739,7 @@ function socketServer() {
                     if (typeof msgContent.editorId !== 'undefined') {
                         updateResponse.editorId = msgContent.editorId;
                     }
-                    
+
                     thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                 }
             }
@@ -4758,7 +4750,7 @@ function socketServer() {
 
             var object = getObject(msgContent.objectKey);
             if (!object) { return; }
-            
+
             var position = msgContent.position;
             var rotationInRadians;
             if (typeof msgContent.rotationInRadians !== 'undefined') {
@@ -4766,8 +4758,8 @@ function socketServer() {
             } else if (typeof msgContent.rotationInDegrees !== 'undefined') {
                 rotationInRadians = (msgContent.rotationInDegrees / 180) * Math.PI;
             }
-            
-            var matrix = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+
+            var matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
             matrix[0] = Math.cos(rotationInRadians);
             matrix[1] = -Math.sin(rotationInRadians);
             matrix[4] = Math.sin(rotationInRadians);
@@ -4775,7 +4767,7 @@ function socketServer() {
             matrix[12] = position.x;
             matrix[13] = position.y;
             matrix[14] = position.z;
-            
+
             object.matrix = matrix;
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
@@ -4800,23 +4792,23 @@ function socketServer() {
                 }
             }
         });
-        
-        // create or update the position of a HumanPoseObject 
+
+        // create or update the position of a HumanPoseObject
         socket.on('/update/humanPoses', function(msg) {
             if (!globalVariables.listenForHumanPose) { return; }
-            
+
             var msgContent = msg;
             if (typeof msg === 'string') {
                 msgContent = JSON.parse(msg);
             }
             if (!msgContent) { return; }
-            
+
             // if no poses changed this frame, don't clog the network with sending the same information
             var didAnythingChange = false;
             forEachHumanPoseObject(function(objectKey, thisObject) {
                 thisObject.wasUpdated = false;
             });
-            
+
             msgContent.forEach(function(poseInfo) {
                 var objectId = HumanPoseObject.getObjectId(poseInfo.id);
                 var thisObject = objects[objectId];
@@ -4827,14 +4819,14 @@ function socketServer() {
                     thisObject = objects[objectId];
                     // advertise to editors
                     objectBeatSender(beatPort, objectId, thisObject.ip, true);
-                    // currently doesn't writeObjectToFile, because I've found no need for human objects to persist 
+                    // currently doesn't writeObjectToFile, because I've found no need for human objects to persist
                 }
                 // update the position of each frame based on the poseInfo
                 thisObject.updateJointPositions(poseInfo.joints);
                 thisObject.wasUpdated = true; // flags objects to be deleted if they are not updated
                 didAnythingChange = true;
             });
-            
+
             // check if any Human Objects were not contained in msgContent, and delete them
             forEachHumanPoseObject(function(objectKey, thisObject) {
                 if (!thisObject.wasUpdated) {
@@ -4847,7 +4839,7 @@ function socketServer() {
             });
 
             if (!didAnythingChange) { return; }
-            
+
             // send updated objects / positions to all known editors. right now piggybacks on sockets opened for other realtime communications.
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 var thisSocket = io.sockets.connected[socketId];
@@ -4886,27 +4878,27 @@ function socketServer() {
                 }
             }
         });
-        
+
         socket.on('node/setup', function(msg) {
             var msgContent = msg;
             if (typeof msg === 'string') {
                 msgContent = JSON.parse(msg);
             }
             if (!msgContent) { return; }
-            
+
             console.log(msgContent);
             var objectKey = msgContent.object;
             var frameKey = msgContent.frame;
             var nodeData = msgContent.nodeData;
-            
+
             var frame = getFrame(objectKey, frameKey);
             if (!frame) {
                 console.warn('could not find frame for node/setup', objectKey, frameKey, nodeData);
                 return;
             }
-            
+
             var nodeKey = frameKey + nodeData.name;
-            
+
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
                 console.log('creating node ' + nodeKey);
@@ -4915,7 +4907,7 @@ function socketServer() {
                 newNode.objectId = objectKey;
                 newNode.frameId = frameKey;
                 newNode.name = nodeData.name;
-                
+
                 if (typeof nodeData.type !== 'undefined') {
                     newNode.type = nodeData.type;
                 }
@@ -4941,19 +4933,19 @@ function socketServer() {
                 utilities.actionSender({reloadFrame: {object: objectKey, frame: frameKey}, lastEditor: null});
             }
         });
-        
+
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
-                console.log("GUI for " + socket.id + " has disconnected");
+                console.log('GUI for ' + socket.id + ' has disconnected');
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
                 utilities.writeObjectToFile(objects, realityEditorBlockSocketArray[socket.id].object, objectsPath, globalVariables.saveToDisk);
                 utilities.actionSender({reloadObject: {object: realityEditorBlockSocketArray[socket.id].object}});
                 delete realityEditorBlockSocketArray[socket.id];
-                console.log("Settings for " + socket.id + " has disconnected");
+                console.log('Settings for ' + socket.id + ' has disconnected');
             }
 
             //utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
@@ -5062,7 +5054,7 @@ function messagetoSend(msgContent, socketID) {
 }
 
 
-hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffsetX, touchOffsetY){
+hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffsetX, touchOffsetY) {
     for (var thisEditor in realityEditorSocketArray) {
         io.sockets.connected[thisEditor].emit('/object/screenObject', JSON.stringify({
             object: object,
@@ -5119,8 +5111,7 @@ var engine = {
             if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame ) {
                 if (!checkObjectActivation(this.link.objectB)) {
                     socketSender(object, frame, linkKey, thisNode.processedData);
-                }
-                else {
+                } else {
 
                     if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
@@ -5128,11 +5119,11 @@ var engine = {
 
                     // if this is a regular node, not a logic node, process normally
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
-                        this.computeProcessedData(thisNode, this.link, this.internalObjectDestination)
+                        this.computeProcessedData(thisNode, this.link, this.internalObjectDestination);
                     }
                     // otherwise process as logic node by triggering its internal blocks connected to each input
                     else {
-                        this.blockKey = "in" + this.link.logicB;
+                        this.blockKey = 'in' + this.link.logicB;
 
                         if (this.internalObjectDestination && this.blockKey) {
                             if (this.internalObjectDestination.blocks) {
@@ -5186,7 +5177,7 @@ var engine = {
     },
     // this is when a logic block is triggered.
     blockTrigger: function (object, frame, node, block, index, thisBlock) {
-      //  console.log(objects[object].frames[frame].nodes[node].blocks[block]);
+        //  console.log(objects[object].frames[frame].nodes[node].blocks[block]);
         if (!thisBlock.processedData)
             thisBlock.processedData = [{}, {}, {}, {}];
 
@@ -5204,14 +5195,14 @@ var engine = {
         for (var i = 0; i < 4; i++) {
 
             // check if there is data to be processed
-            if (typeof thisBlock.processedData[i].value === "number") {
+            if (typeof thisBlock.processedData[i].value === 'number') {
 
                 this.router = null;
 
-                if (block === "out0") this.router = 0;
-                if (block === "out1") this.router = 1;
-                if (block === "out2") this.router = 2;
-                if (block === "out3") this.router = 3;
+                if (block === 'out0') this.router = 0;
+                if (block === 'out1') this.router = 1;
+                if (block === 'out2') this.router = 2;
+                if (block === 'out3') this.router = 3;
 
                 var linkKey;
 
@@ -5225,18 +5216,16 @@ var engine = {
                         if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame && this.link.logicA === this.router) {
                             if (!(checkObjectActivation(this.link.objectB))) {
                                 socketSender(object, frame, linkKey, thisBlock.processedData[i]);
-                            }
-                            else {
+                            } else {
                                 this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
 
                                 if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
-                                    this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination)
+                                    this.computeProcessedBlockData(thisBlock, this.link, i, this.internalObjectDestination);
                                 }
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     this.logic = getNode(object, frame, node);
                     // process all links in the block
                     for (linkKey in this.logic.links) {
@@ -5289,30 +5278,28 @@ function socketSender(object, frame, link, data) {
     var foundFrame = getFrame(object, frame);
     var thisLink = foundFrame.links[link];
 
-    var msg = "";
+    var msg = '';
 
     if (thisLink.objectB in knownObjects) {
         if (knownObjects[thisLink.objectB].protocol) {
             var thisProtocol = knownObjects[thisLink.objectB].protocol;
             if (thisProtocol in protocols) {
                 msg = protocols[thisProtocol].send(thisLink.objectB, thisLink.frameB, thisLink.nodeB, thisLink.logicB, data);
-            }
-            else {
-                msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
+            } else {
+                msg = protocols['R0'].send(thisLink.objectB, thisLink.nodeB, data);
             }
         } else {
-            msg = protocols["R0"].send(thisLink.objectB, thisLink.nodeB, data);
+            msg = protocols['R0'].send(thisLink.objectB, thisLink.nodeB, data);
         }
 
         try {
             var thisIp = knownObjects[thisLink.objectB].ip;
             var presentObjectConnection = socketArray[thisIp].io;
             if (presentObjectConnection.connected) {
-                presentObjectConnection.emit("object", msg);
+                presentObjectConnection.emit('object', msg);
             }
-        }
-        catch (e) {
-            console.log("can not emit from link ID:" + link + "and object: " + object);
+        } catch (e) {
+            console.log('can not emit from link ID:' + link + 'and object: ' + object);
         }
 
     }
@@ -5375,13 +5362,13 @@ function socketUpdater() {
             if (!socketArray[socketKey].io.connected) {
                 for (var objectKey in knownObjects) {
                     if (knownObjects[objectKey] === socketKey) {
-                        console.log("Looking for: " + objectKey + " with the ip: " + socketKey);
+                        console.log('Looking for: ' + objectKey + ' with the ip: ' + socketKey);
                     }
                 }
             }
         }
 
-        console.log(sockets.sockets + " connections; " + sockets.connected + " connected and " + sockets.notConnected + " not connected");
+        console.log(sockets.sockets + ' connections; ' + sockets.connected + ' connected and ' + sockets.notConnected + ' not connected');
 
     }
     sockets.socketsOld = sockets.sockets;
@@ -5428,16 +5415,16 @@ function checkObjectActivation(id) {
     return false;
 }
 
-checkInit("system");
+checkInit('system');
 
-function checkInit(init){
-   var initializations = globalVariables.initializations;
-    if(init == "web") initializations.web= true;
-    if(init == "udp") initializations.udp= true;
-    if(init == "system") initializations.system= true;
+function checkInit(init) {
+    var initializations = globalVariables.initializations;
+    if (init == 'web') initializations.web = true;
+    if (init == 'udp') initializations.udp = true;
+    if (init == 'system') initializations.system = true;
 
-    if(initializations.web && initializations.udp && initializations.system) {
+    if (initializations.web && initializations.udp && initializations.system) {
         hardwareAPI.initialize();
     }
-};
+}
 
