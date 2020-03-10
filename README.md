@@ -24,13 +24,13 @@ software on Node 6, 8, and 10 with 10 being our recommended platform.
 Second, clone this repository into your desired directory:
 
 ```bash
-git clone https://github.com/ptcrealitylab/vuforia-toolbox-server.git
+git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
 ```
 
 Next, enter the vuforia-toolbox-server directory and install all dependencies.
 
 ```bash
-cd vuforia-toolbox-server
+cd vuforia-spatial-edge-server
 npm install
 ```
 
