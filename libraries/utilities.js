@@ -55,7 +55,6 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var debug = false;
 var xml2js = require('xml2js');
 var fs = require('fs');
 var ip = require('ip');       // get the device IP address library
@@ -85,7 +84,6 @@ exports.readObject = function (objectLookup, folder) {
 exports.createFolder = function (folderVar, objectsPath, debug) {
 
     var folder = objectsPath + '/' + folderVar + '/';
-    var hardwareIdentity =   folder + '.identity/';
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
     if (debug) console.log('Creating folder: ' + folder);
 
@@ -188,7 +186,7 @@ exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
     function deleteFolderRecursive(path) {
         console.log('deleteFolderRecursive');
         if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach(function(file, index) {
+            fs.readdirSync(path).forEach(function(file) {
                 var curPath = path + '/' + file;
                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                     deleteFolderRecursive(curPath);
