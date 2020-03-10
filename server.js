@@ -99,7 +99,6 @@ const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
-const netInterface = 'en0';
 
 //console.log(parseInt(version.replace(/\./g, "")));
 
@@ -258,9 +257,6 @@ if (isMobile || process.env.NODE_ENV === 'test') {
     git = require('./libraries/gitInterface');
 }
 
-var util = require('util'); // node.js utility functionality
-var events = require('events'); // node.js events used for the socket events.
-
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
 
@@ -268,12 +264,8 @@ webFrontend.debug = globalVariables.debug;
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
 const Block = require('./models/Block.js');
-const BlockLink = require('./models/BlockLink.js');
-const Data = require('./models/Data.js');
 const EdgeBlock = require('./models/EdgeBlock.js');
 const Frame = require('./models/Frame.js');
-const Link = require('./models/Link.js');
-const Logic = require('./models/Logic.js');
 const Node = require('./models/Node.js');
 const ObjectModel = require('./models/ObjectModel.js');
 const ObjectSocket = require('./models/ObjectSocket.js');
@@ -311,7 +303,7 @@ function Protocols() {
                             if (this.blockString in foundNode.blocks) {
                                 this.objectData = foundNode.blocks[this.blockString];
 
-                                for (var key in msgContent.data) {
+                                for (let key in msgContent.data) {
                                     this.objectData.data[0][key] = msgContent.data[key];
                                 }
 
@@ -331,7 +323,7 @@ function Protocols() {
                     } else { // otherwise this is a regular node so just continue to send the data to any linked nodes
                         this.objectData = foundNode;
 
-                        for (var key in msgContent.data) {
+                        for (let key in msgContent.data) {
                             this.objectData.data[key] = msgContent.data[key];
                         }
                         engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
@@ -366,7 +358,7 @@ function Protocols() {
 
             var foundNode = getNode(msgContent.object, msgContent.frame, msgContent.node);
             if (foundNode) {
-                for (var key in foundNode.data) {
+                for (let key in foundNode.data) {
                     foundNode.data[key] = msgContent.data[key];
                 }
                 engine.trigger(msgContent.object, msgContent.object, msgContent.node, foundNode);
@@ -476,7 +468,7 @@ var hardwareAPICallbacks = {
     actions: function(thisAction) {
         utilities.actionSender(thisAction);
     },
-    data: function (objectKey, frameKey, nodeKey, data, objects, nodeTypeModules) {
+    data: function (objectKey, frameKey, nodeKey, data, _objects, _nodeTypeModules) {
         //these are the calls that come from the objects before they get processed by the object engine.
         // send the saved value before it is processed
         sendMessagetoEditors({
@@ -724,7 +716,7 @@ function loadWorldObject() {
 function startSystem() {
 
     // generating a udp heartbeat signal for every object that is hosted in this device
-    for (var key in objects) {
+    for (let key in objects) {
         if (!objects[key].deactivated) {
             objectBeatSender(beatPort, key, objects[key].ip);
         }
@@ -754,8 +746,6 @@ function startSystem() {
  **********************************************************************************************************************/
 
 function exit() {
-    var mod;
-
     hardwareAPI.shutdown();
 
     process.exit();
@@ -807,34 +797,18 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     var zone = '';
     if (objects[thisId].zone) zone = objects[thisId].zone;
 
-    // json string to be send
-    var message = new Buffer(JSON.stringify({
+    // json string to be sent
+    const messageStr = JSON.stringify({
         id: thisId,
         ip: ips.interfaces[ips.activeInterface],
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
         zone: zone
-    }));
+    });
 
-    if (globalVariables.debug) console.log('UDP broadcasting on port: ' + PORT);
-    if (globalVariables.debug) console.log('Sending beats... Content: ' + JSON.stringify({
-        id: thisId,
-        ip: ips.interfaces[ips.activeInterface],
-        vn: thisVersionNumber,
-        pr: protocol,
-        tcs: objects[thisId].tcs,
-        zone: zone
-    }));
-    console.log('UDP broadcasting on port: ' + PORT);
-    console.log('Sending beats... Content: ' + JSON.stringify({
-        id: thisId,
-        ip: ips.interfaces[ips.activeInterface],
-        vn: thisVersionNumber,
-        pr: protocol,
-        tcs: objects[thisId].tcs,
-        zone: zone
-    }));
+    if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
+    if (globalVariables.debug) console.log('Sending beats... Content', messageStr);
 
     // creating the datagram
     var client = dgram.createSocket('udp4');
@@ -849,10 +823,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
-                var zone = '';
+                let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
 
-                var message = new Buffer(JSON.stringify({
+                const message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: ips.interfaces[ips.activeInterface],
                     vn: thisVersionNumber,
@@ -860,15 +834,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-
-                // this is an uglly trick to sync each object with being a developer object
-                /*
-                if (globalVariables.developer) {
-                    objects[thisId].developer = true;
-                } else {
-                    objects[thisId].developer = false;
-                }
-                */
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
@@ -961,7 +926,7 @@ function objectBeatServer() {
         // check if action 'ping'
         if (msgContent.action === 'ping') {
             console.log(msgContent.action);
-            for (var key in objects) {
+            for (let key in objects) {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
         }
@@ -988,21 +953,6 @@ function objectBeatServer() {
     udpServer.bind(beatPort);
 }
 
-/**
- * @desc A static Server that serves the user, handles the links and
- * additional provides active modification for objectDefinition.
- **/
-
-function existsSync(filename) {
-    try {
-        fs.accessSync(filename);
-        return true;
-    } catch (ex) {
-        return false;
-    }
-}
-
-// REGEX to break an ip address into parts
 var ip_regex = /(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?::(\d+))?/ig;
 var ip_regex2 = /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
 
@@ -1148,7 +1098,7 @@ function objectWebServer() {
 
 
 
-    webServer.use('/logicNodeIcon', function (req, res, next) {
+    webServer.use('/logicNodeIcon', function (req, res) {
         var urlArray = req.originalUrl.split('/');
         console.log('logicNodeIcon urlArray', urlArray);
         var objectName = urlArray[2];
@@ -1184,7 +1134,7 @@ function objectWebServer() {
         }
 
         var newUrl = '';
-        for (var i = 0; i < urlArray.length; i++) {
+        for (let i = 0; i < urlArray.length; i++) {
             newUrl += '/' + urlArray[i];
         }
 
@@ -1197,7 +1147,7 @@ function objectWebServer() {
         // TODO: ben - may need to update objectsPath if the object is a world object
 
         if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.html?$/))) {
-            var fileName = objectsPath + newUrl;
+            let fileName = objectsPath + newUrl;
 
             if (urlArray[urlArray.length - 1] !== 'index.html' && urlArray[urlArray.length - 1] !== 'index.htm') {
                 if (fs.existsSync(fileName + 'index.html')) {
@@ -1219,7 +1169,7 @@ function objectWebServer() {
             html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
 
             var level = '../';
-            for (var i = 0; i < urlArray.length; i++) {
+            for (let i = 0; i < urlArray.length; i++) {
                 level += '../';
             }
             var loadedHtml = cheerio.load(html);
@@ -1236,7 +1186,7 @@ function objectWebServer() {
             res.send(loadedHtml.html());
         } else if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.json?$/))) {
 
-            var fileName = objectsPath + req.url + identityFolderName + '/object.json';
+            let fileName = objectsPath + req.url + identityFolderName + '/object.json';
 
             if (!fs.existsSync(fileName)) {
                 next();
@@ -1857,14 +1807,14 @@ function objectWebServer() {
 
         // Create a objects list with all IO-Points code.
         const blockFolderList = Object.keys(blockModules);
-        for (var i = 0; i < blockFolderList.length; i++) {
+        for (let i = 0; i < blockFolderList.length; i++) {
 
             // make sure that each block contains all default property keys.
             blockList[blockFolderList[i]] = new Block();
 
             // overwrite the properties of that block with those stored in the matching blockModule
             var thisBlock = blockModules[blockFolderList[i]].properties;
-            for (var key in thisBlock) {
+            for (let key in thisBlock) {
                 blockList[blockFolderList[i]][key] = thisBlock[key];
             }
             // this makes sure that the type of the block is set.
@@ -2973,21 +2923,6 @@ function objectWebServer() {
         // remove the frame directory from the object
         utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
-        function deleteFolderRecursive(path) {
-            console.log('deleteFolderRecursive');
-            if (fs.existsSync(path)) {
-                fs.readdirSync(path).forEach(function(file, index) {
-                    var curPath = path + '/' + file;
-                    if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                        deleteFolderRecursive(curPath);
-                    } else { // delete file
-                        fs.unlinkSync(curPath);
-                    }
-                });
-                fs.rmdirSync(path);
-            }
-        }
-
         // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
         var deletedNodes = {};
         for (var nodeId in object.nodes) {
@@ -3074,11 +3009,9 @@ function objectWebServer() {
          * Updates the x, y, scale, and/or matrix for the specified frame or node
          * @todo this function is a mess, fix it up
          */
-        function changeSize(objectID, frameID, nodeID, body, callback) {
+        function changeSize(objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
 
             console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
-
-            var activeVehicle = null;
 
             getFrameOrNode(objectID, frameID, nodeID, function(error, object, frame, node) {
                 if (error) {
@@ -3160,7 +3093,7 @@ function objectWebServer() {
          * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
          * @param res
          */
-        function changeVisualization(objectKey, frameKey, body, res) {
+        function changeVisualization(objectKey, frameKey, body, res) { // eslint-disable-line no-inner-declarations
             var newVisualization = body.visualization;
             var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
@@ -3331,7 +3264,7 @@ function objectWebServer() {
         });
         // restart the server from the web frontend to load
 
-        webServer.get('/restartServer/', function(req, res) {
+        webServer.get('/restartServer/', function() {
             exit();
         });
 
@@ -3490,7 +3423,7 @@ function objectWebServer() {
          * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
          * @param {successCallback} callback
          */
-        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
+        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
 
             try {
@@ -3498,7 +3431,7 @@ function objectWebServer() {
 
                 console.log('before:', hardwareInterfaceModules[interfaceName]);
 
-                for (var key in settings) {
+                for (let key in settings) {
                     if (!settings.hasOwnProperty(key)) { continue; }
                     if (limitToKeys && !limitToKeys.includes(key)) { continue; }
 
@@ -3579,7 +3512,7 @@ function objectWebServer() {
          * @param {boolean} shouldBeEnabled
          * @param {successCallback} callback
          */
-        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
+        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
             console.log(interfaceSettingsPath);
 
@@ -3675,7 +3608,7 @@ function objectWebServer() {
          * @param {boolean} shouldBeEnabled
          * @param {successCallback} callback - success, error message
          */
-        function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) {
+        function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
             callback(true);
             console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
         }
@@ -3792,7 +3725,7 @@ function objectWebServer() {
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
                         if (fs.existsSync(folderDel)) {
-                            fs.readdirSync(folderDel).forEach(function (file, index) {
+                            fs.readdirSync(folderDel).forEach(function (file) {
                                 var curPath = folderDel + '/' + file;
                                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                     deleteFolderRecursive(curPath);
@@ -3821,7 +3754,7 @@ function objectWebServer() {
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
                         if (fs.existsSync(folderDel)) {
-                            fs.readdirSync(folderDel).forEach(function (file, index) {
+                            fs.readdirSync(folderDel).forEach(function (file) {
                                 var curPath = folderDel + '/' + file;
                                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                     deleteFolderRecursive(curPath);
@@ -3847,7 +3780,7 @@ function objectWebServer() {
         webServer.post(objectInterfaceFolder, function (req, res) {
 
             if (req.body.action === 'zone') {
-                var objectKey = utilities.readObject(objectLookup, req.body.name);
+                let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                 res.send('ok');
@@ -3861,7 +3794,7 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
-                    var objectKey = utilities.readObject(objectLookup, req.body.name);
+                    let objectKey = utilities.readObject(objectLookup, req.body.name);
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
@@ -3881,7 +3814,7 @@ function objectWebServer() {
 
                 var deleteFolderRecursive = function (folderDel) {
                     if (fs.existsSync(folderDel)) {
-                        fs.readdirSync(folderDel).forEach(function (file, index) {
+                        fs.readdirSync(folderDel).forEach(function (file) {
                             var curPath = folderDel + '/' + file;
                             if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                 deleteFolderRecursive(curPath);
@@ -4002,10 +3935,10 @@ function objectWebServer() {
                             var unzipper = new DecompressZip(folderD + '/' + filename);
 
                             unzipper.on('error', function (err) {
-                                console.log('Caught an error');
+                                console.log('Caught an error', err);
                             });
 
-                            unzipper.on('extract', function (log) {
+                            unzipper.on('extract', function () {
                                 console.log('Finished extracting');
                                 console.log('have created a new object');
                                 //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
@@ -4058,7 +3991,7 @@ function objectWebServer() {
                         if (fs.lstatSync(folderDel).isDirectory()) {
                             var deleteFolderRecursive = function (folderDel) {
                                 if (fs.existsSync(folderDel)) {
-                                    fs.readdirSync(folderDel).forEach(function (file, index) {
+                                    fs.readdirSync(folderDel).forEach(function (file) {
                                         var curPath = folderDel + '/' + file;
                                         if (fs.lstatSync(curPath).isDirectory()) { // recurse
                                             deleteFolderRecursive(curPath);
@@ -4179,7 +4112,7 @@ function objectWebServer() {
                                             }
                                             fs.copyFileSync(rawFilepath, tempFilepath);
 
-                                            sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err, info) {
+                                            sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err) {
                                                 if (!err) {
                                                     console.log('done resizing');
                                                     if (fs.existsSync(tempFilepath)) {
@@ -4203,7 +4136,7 @@ function objectWebServer() {
                             }
 
                             // Step 2) - Generate a default XML file if needed
-                            function continueProcessingUpload() {
+                            function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
                                 var objectName = req.params.id + utilities.uuidTime();
 
                                 var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
@@ -4225,7 +4158,7 @@ function objectWebServer() {
                             }
 
                             // create the object data and respond to the webFrontend once the XML file is confirmed to exist
-                            function onXmlVerified(err) {
+                            function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
                                 if (err) {
                                     console.log(err);
                                 } else {
@@ -4288,10 +4221,10 @@ function objectWebServer() {
                                 var unzipper = new DecompressZip(folderD + '/' + filename);
 
                                 unzipper.on('error', function (err) {
-                                    console.log('Caught an error in unzipper');
+                                    console.log('Caught an error in unzipper', err);
                                 });
 
-                                unzipper.on('extract', function (log) {
+                                unzipper.on('extract', function () {
                                     var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
                                     var folderFileType;
 
@@ -4337,7 +4270,7 @@ function objectWebServer() {
                                             var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
                                             var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
 
-                                            var sendObject = {
+                                            let sendObject = {
                                                 id: thisObjectId,
                                                 name: thisObject.name,
                                                 initialized: (jpg && xml && dat),
@@ -4351,7 +4284,7 @@ function objectWebServer() {
 
                                     }
 
-                                    var sendObject = {
+                                    let sendObject = {
                                         initialized: false
                                     };
                                     res.status(200);
@@ -4395,7 +4328,7 @@ function objectWebServer() {
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
  */
-function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, debug) {
+function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
     console.log('I can start');
 
     var folder = objectsPath + '/' + folderVar + '/';
@@ -4553,7 +4486,6 @@ function socketServer() {
                 console.log(realityEditorSocketArray);
             }
 
-            var publicData = {};
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for (let key in frame.nodes) {
@@ -4632,7 +4564,7 @@ function socketServer() {
                     node.publicData = {};
                 }
                 var thisPublicData = node.publicData;
-                for (var key in msg.publicData) {
+                for (let key in msg.publicData) {
                     thisPublicData[key] = msg.publicData[key];
                 }
             }
@@ -4665,7 +4597,7 @@ function socketServer() {
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisPublicData = node.blocks[msg.block].publicData;
-                    for (var key in msg.publicData) {
+                    for (let key in msg.publicData) {
                         thisPublicData[key] = msg.publicData[key];
                     }
                 }
@@ -5120,16 +5052,15 @@ var engine = {
                     // if this is a regular node, not a logic node, process normally
                     if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
                         this.computeProcessedData(thisNode, this.link, this.internalObjectDestination);
-                    }
-                    // otherwise process as logic node by triggering its internal blocks connected to each input
-                    else {
+                    } else {
+                        // otherwise process as logic node by triggering its internal blocks connected to each input
                         this.blockKey = 'in' + this.link.logicB;
 
                         if (this.internalObjectDestination && this.blockKey) {
                             if (this.internalObjectDestination.blocks) {
                                 this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
-                                for (var key in thisNode.processedData) {
+                                for (let key in thisNode.processedData) {
                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
                                 }
 
@@ -5156,7 +5087,7 @@ var engine = {
         }
 
         // save data in local destination object;
-        var key;
+        let key;
         for (key in thisNode.processedData) {
             internalObjectDestination.data[key] = thisNode.processedData[key];
         }
@@ -5234,7 +5165,7 @@ var engine = {
                             this.link = this.logic.links[linkKey];
 
                             this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
-                            var key;
+                            let key;
                             for (key in thisBlock.processedData[i]) {
                                 this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
                             }
@@ -5248,8 +5179,7 @@ var engine = {
 
     computeProcessedBlockData: function (thisNode, thisLink, index, internalObjectDestination) {
         // save data in local destination object;
-        var key1;
-        for (key1 in thisNode.processedData[index]) {
+        for (let key1 in thisNode.processedData[index]) {
             internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
         }
 
@@ -5317,9 +5247,7 @@ function socketSender(object, frame, link, data) {
 function socketUpdater() {
     // console.log(knownObjects);
     // delete unconnected connections
-    var sockKey, objectKey, nodeKey, frameKey;
-
-    for (sockKey in socketArray) {
+    for (let sockKey in socketArray) {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
