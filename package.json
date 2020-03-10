@@ -22,7 +22,7 @@
     "monaco-editor": "^0.5.1",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.6.0",
-    "node-persist": "^2.1.0",
+    "node-persist": "^3.0.5",
     "node-rest-client": "^3.1.0",
     "readdirp": "^2.2.1",
     "request": "^2.*",
