@@ -48,7 +48,6 @@ var fs = require('fs');
 var changeCase = require('change-case');
 var debug = false;
 var path = require('path');
-var readdirp = require('readdirp');
 var hardwareAPI = require('./hardwareInterfaces');
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
@@ -209,17 +208,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     return html;
 };
 
-exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
-    var objectName = utilities.readObject(objectLookup, parm); //parm + thisMacAddress;
-
-    var ArduinoINstance = 0;
-
-    for (var subKey in objects) {
-        if (subKey === objectName) {
-            break;
-        }
-        ArduinoINstance++;
-    }
+exports.uploadInfoText = function (parm) {
     var text = '<html>\n' +
         '<head>\n' +
         '<head>' +
@@ -281,16 +270,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     var uploadInfoTexttempArray = objects[objectName];
     var uploadInfoTexttempArrayValue = objects[objectName];
 
-    var ArduinoINstance = 0;
-
     // objects[objectName]
 
-    for (subKey in objects) {
-        if (subKey === objectName) {
-            break;
-        }
-        ArduinoINstance++;
-    }
     var text =
         '<div id="actions" class="row">\n' +
         '    <div class="col-xs-6">\n' +
@@ -317,7 +298,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         }
 
 
-        for (var subKey in uploadInfoTexttempArrayValue.frames[frameKey].nodes) {
+        for (let subKey in uploadInfoTexttempArrayValue.frames[frameKey].nodes) {
 
             var thisHtmlNode = uploadInfoTexttempArrayValue.frames[frameKey].nodes[subKey];
 
@@ -404,7 +385,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
     infoCount = 0;
-    for (subKey in knownObjects) {
+    for (let subKey in knownObjects) {
         text += '<tr><td><small><small><small>' + subKey + '</small></small></small></td>' +
             '<td><small><small><small>' + knownObjects[subKey].version + ' &nbsp; &nbsp; ' + knownObjects[subKey].ip +  ' &nbsp; &nbsp; ' + knownObjects[subKey].protocol +  '</small></small></small></td></tr>';
         infoCount++;
@@ -450,7 +431,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         }
 
 
-        for (var subKey in uploadInfoTexttempArray.frames[framekey].links) {
+        for (let subKey in uploadInfoTexttempArray.frames[framekey].links) {
             if (uploadInfoTexttempArray.frames[framekey].links[subKey].hasOwnProperty('namesA'))
                 text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[1] + '</font></td></tr>\n';
             else
@@ -635,42 +616,11 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
     if (debug) console.log('interface content');
-    var text =
-
-        '';
+    var text = '';
 
     var objectPath2 = path.join(objectPath2, parm);
 
-    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-
-
-    var fileList;
     // List all files in a directory in Node.js recursively in a synchronous fashion
-    /*  var walkSync = function(dir, filelist) {
-     var fs = fs || require('fs'),
-     files = fs.readdirSync(dir);
-     filelist = filelist || [];
-     files.forEach(function(file) {
-     if (fs.statSync(dir + '/' + file).isDirectory()) {
-     filelist = walkSync(dir +'/'+ file + '/', filelist);
-     folderDepth++;
-     filelist.push("<");
-     filelist.push(file);
-     }
-     else {
-     if(file[0] !== "." )
-     filelist.push(file);
-     }
-     }
-     );
-     if(folderDepth !==0){
-     filelist.push(">");}
-
-     return filelist;
-     };*/
-
     var walk = function (dir) {
         var results = [];
         var list = fs.readdirSync(dir);
@@ -684,14 +634,6 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
     };
 
     var listeliste = walk(objectPath2);
-
-    //  var folderContent = walkSync(objectsPath,fileList);
-    var nameSpace = '';
-
-
-    var nameOrigin = '/obj/';
-
-    var llist;
 
     var nameOld = '';
 
@@ -739,7 +681,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0];
+                let dateiTobeRemoved = parm + '/' + content[0];
                 text += '<form id=\'2delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
@@ -773,7 +715,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
                 text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
+                let dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
                 text += '<form id=\'1delete' + i + content[1] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
@@ -805,7 +747,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
                 text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0];
+                let dateiTobeRemoved = parm + '/' + content[0];
                 text += '<form id=\'1delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
@@ -936,36 +878,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
 
 
-    var tempFiles = fs.readdirSync(framePath).filter(function (file) {
-        return fs.statSync(framePath + file).isDirectory();
-    });
-
-
-    var fileList;
     // List all files in a directory in Node.js recursively in a synchronous fashion
-    /*  var walkSync = function(dir, filelist) {
-     var fs = fs || require('fs'),
-     files = fs.readdirSync(dir);
-     filelist = filelist || [];
-     files.forEach(function(file) {
-     if (fs.statSync(dir + '/' + file).isDirectory()) {
-     filelist = walkSync(dir +'/'+ file + '/', filelist);
-     folderDepth++;
-     filelist.push("<");
-     filelist.push(file);
-     }
-     else {
-     if(file[0] !== "." )
-     filelist.push(file);
-     }
-     }
-     );
-     if(folderDepth !==0){
-     filelist.push(">");}
-
-     return filelist;
-     };*/
-
     var walk = function (dir) {
         var results = [];
         var list = fs.readdirSync(dir);
@@ -979,14 +892,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
     };
 
     var listeliste = walk(framePath2);
-
-    //  var folderContent = walkSync(framePath,fileList);
-    var nameSpace = '';
-
-
-    var nameOrigin = '/obj/';
-
-    var llist;
 
     var nameOld = '';
 
@@ -1034,7 +939,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0];
+                let dateiTobeRemoved = parm + '/' + content[0];
                 text += '<form id=\'2delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '/' + frame + '/x\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
@@ -1068,7 +973,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
                 text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
+                let dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
                 text += '<form id=\'1delete' + i + content[1] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
@@ -1100,7 +1005,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
                 text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
 
-                var dateiTobeRemoved = parm + '/' + content[0];
+                let dateiTobeRemoved = parm + '/' + content[0];
                 text += '<form id=\'1delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
                     '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
