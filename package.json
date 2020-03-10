@@ -92,6 +92,6 @@
   ],
   "license": "MPL-2.0",
   "optionalDependencies": {
-    "sharp": "^0.24.1"
+    "sharp": "^0.25.1"
   }
 }
