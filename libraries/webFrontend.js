@@ -45,7 +45,6 @@
 
 var utilities = require('./utilities');
 var fs = require('fs');
-var changeCase = require('change-case');
 var debug = false;
 var path = require('path');
 var hardwareAPI = require('./hardwareInterfaces');
@@ -694,7 +693,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
-                var fileTypeF = changeCase.lowerCase(content[1].split('.')[1]);
+                var fileTypeF = content[1].split('.')[1].toLowerCase();
 
                 text += '<tr ';
                 if (content[1] === 'target.dat' || content[1] === 'target.xml' || content[1] === 'target.jpg') {
@@ -727,7 +726,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
             nameOld = content[0];
         } else {
             if (content[0][0] !== '.' && content[0][0] !== '_') {
-                var fileTypeF2 = changeCase.lowerCase(content[0].split('.')[1]);//.toLowerCase();
+                var fileTypeF2 = content[0].split('.')[1].toLowerCase();
                 text += '<tr ';
                 if (fileTypeF2 === 'html' || fileTypeF2 === 'htm') {
                     text += 'class="success"';
@@ -952,7 +951,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
-                var fileTypeF = changeCase.lowerCase(content[1].split('.')[1]);
+                var fileTypeF = content[1].split('.')[1].toLowerCase();
 
                 text += '<tr ';
                 if (content[1] === 'target.dat' || content[1] === 'target.xml' || content[1] === 'target.jpg') {
@@ -985,7 +984,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
             nameOld = content[0];
         } else {
             if (content[0][0] !== '.' && content[0][0] !== '_') {
-                var fileTypeF2 = changeCase.lowerCase(content[0].split('.')[1]);//.toLowerCase();
+                var fileTypeF2 = content[0].split('.')[1].toLowerCase();
                 text += '<tr ';
                 if (fileTypeF2 === 'html' || fileTypeF2 === 'htm') {
                     text += 'class="success"';
