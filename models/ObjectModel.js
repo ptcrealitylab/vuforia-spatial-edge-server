@@ -11,7 +11,7 @@ function ObjectModel(ip, version, protocol) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
-    this.name = "";
+    this.name = '';
     this.matrix = [];
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
@@ -40,9 +40,9 @@ function ObjectModel(ip, version, protocol) {
     // keep a memory of the last commit state of the frames.
     this.framesHistory = {};
     // which visualization mode it should use right now ("ar" or "screen")
-    this.visualization = "ar";
+    this.visualization = 'ar';
 
-    this.zone = "";
+    this.zone = '';
     // taken from target.xml. necessary to make the screens work correctly.
     this.targetSize = {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size

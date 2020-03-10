@@ -7,28 +7,28 @@ function Frame() {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
-    this.name = "";
+    this.name = '';
     // which visualization mode it should use right now ("ar" or "screen")
-    this.visualization = "ar";
+    this.visualization = 'ar';
     // position data for the ar visualization mode
     this.ar = {
         // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
-        x : 0,
+        x: 0,
         // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
-        y : 0,
+        y: 0,
         // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-        scale : 1,
+        scale: 1,
         // Unconstrained positioning in 3D space
-        matrix : []
+        matrix: []
     };
     // position data for the screen visualization mode
     this.screen = {
         // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.
-        x : 0,
+        x: 0,
         // Reality Editor: This is used to position the UI element within its y axis in 3D Space. Relative to Marker origin.
-        y : 0,
+        y: 0,
         // Reality Editor: This is used to scale the UI element in 3D Space. Default scale is 1.
-        scale : 1
+        scale: 1
     };
     // Used internally from the reality editor to indicate if an object should be rendered or not.
     this.visible = false;
@@ -44,9 +44,9 @@ function Frame() {
     // Stores all IOPoints. These points are used to keep the state of an object and process its data.
     this.nodes = {};
     // local or global. If local, node-name is exposed to hardware interface
-    this.location = "local";
+    this.location = 'local';
     // source
-    this.src = "editor";
+    this.src = 'editor';
 
     this.privateData = {};
     this.publicData = {};

@@ -99,20 +99,20 @@ exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardw
     html = html.replace('{/*replace HardwareInterface*/}', JSON.stringify(hardwareInterfaceModules[hardwareInterfaceName], null, 4));
 
     html = html.replace('{/*replace HardwareInterfaceName*/}', JSON.stringify(hardwareInterfaceName, null, 4));
-    
+
     // inject the server information
     var states = {
-        version : version,
+        version: version,
         ipAdress: ipAddress,
-        serverPort : serverPort
+        serverPort: serverPort
     };
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
-    
+
     return html;
 };
 
 exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
-    
+
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
 
@@ -120,32 +120,32 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         return fs.statSync(path.join(objectsPath, file)).isDirectory();
     });
     // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === ".") {
+    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
         tempFiles.splice(0, 1);
     }
-    
+
     // populate the data for each object template on the frontend, using data from each directory found in the realityobjects
     tempFiles.forEach(function(objectKey) {
-        
+
         var thisObjectKey = objectKey;
         var tempKey = utilities.getObjectIdFromTarget(objectKey, objectsPath); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         }
-        
+
         // create a data structure for the information to create the DOM elements representing this object
         newObject[thisObjectKey] = new ThisObjects();
-        
+
         // TODO: more robust way to keep track of world objects that haven't been fully initialized with a target (for now, the name is the only way to tell)
         if (thisObjectKey.indexOf(worldObjectPrefix) > -1) {
             newObject[thisObjectKey].isWorldObject = true;
         }
-        
+
         // check if the object is correctly initialized with tracking targets
         var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
         var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
         var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
-        
+
         if (xmlExists && (datExists || jpgExists)) {
             console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
@@ -154,16 +154,16 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
             newObject[thisObjectKey].initialized = false;
             newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime(); // generates a suggested uuid for the target
         }
-        
+
         newObject[thisObjectKey].targetsExist = {
             datExists: datExists,
             xmlExists: xmlExists,
             jpgExists: jpgExists
         };
-        
+
         // if the object has been correctly created (with tracking targets), populate the DOM with its frames and other data
         if (newObject[thisObjectKey].initialized && objects[thisObjectKey]) {
-            
+
             newObject[thisObjectKey].active = !objects[thisObjectKey].deactivated;
             newObject[thisObjectKey].visualization = objects[thisObjectKey].visualization;
             newObject[thisObjectKey].zone = objects[thisObjectKey].zone;
@@ -182,12 +182,12 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     });
 
     // loads the index.html content
-    var html = fs.readFileSync(path.join(__dirname, 'webInterface','gui','index.html'), 'utf8');
-    
+    var html = fs.readFileSync(path.join(__dirname, 'webInterface', 'gui', 'index.html'), 'utf8');
+
     // update the correct library paths
-    html = html.replace(/href="/g, "href=\"../libraries/gui/");
-    html = html.replace(/src="/g, "src=\"../libraries/gui/");
-    
+    html = html.replace(/href="/g, 'href="../libraries/gui/');
+    html = html.replace(/src="/g, 'src="../libraries/gui/');
+
     // inject the data structure with all objects
     html = html.replace('{/*replace Object*/}', JSON.stringify(newObject, null, 4));
 
@@ -199,13 +199,13 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
 
     // inject the server information
     var states = {
-        version : version,
+        version: version,
         ipAdress: ipAddress,
-        serverPort : serverPort,
+        serverPort: serverPort,
         globalFramesPath: globalFramesPath
     };
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
-    
+
     return html;
 };
 
@@ -222,7 +222,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
     }
     var text = '<html>\n' +
         '<head>\n' +
-        '<head>'+
+        '<head>' +
         '    <link rel="stylesheet" href="../libraries/css/bootstrap.min.css">\n' +
         '    <link rel="stylesheet" href="../libraries/css/bootstrap-adjustments.css">\n' +
         '</head>\n' +
@@ -233,30 +233,30 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
         '<h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - Info&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n' +
         '      </div>\n' +
         '</div>\n' +
-'<div id="changeContent"></div>'+
+'<div id="changeContent"></div>' +
 
 '<script>' +
 
         '/*var myVar = setInterval(loadInfoContent, 100);*/' +
-        'loadInfoContent();'+
-        'function loadInfoContent () {console.log("newtick");'+
+        'loadInfoContent();' +
+        'function loadInfoContent () {console.log("newtick");' +
 
-   'var con = document.getElementById("changeContent")'+
-    '    ,   xhr = new XMLHttpRequest();'+
+   'var con = document.getElementById("changeContent")' +
+    '    ,   xhr = new XMLHttpRequest();' +
 
-    'xhr.onreadystatechange = function (e) {'+
-     '   if (xhr.readyState == 4 && xhr.status == 200) {'+
+    'xhr.onreadystatechange = function (e) {' +
+     '   if (xhr.readyState == 4 && xhr.status == 200) {' +
       '      con.innerHTML = xhr.responseText;' +
-        'setTimeout(loadInfoContent, 100);'+
+        'setTimeout(loadInfoContent, 100);' +
 
-       ' }'+
+       ' }' +
     '}; ' +
-        'xhr.open("GET", "/infoLoadData/'+parm+'", true);'+
- '   xhr.setRequestHeader("Content-type", "text/html");'+
-  '  xhr.send();'+
-'}'+
+        'xhr.open("GET", "/infoLoadData/' + parm + '", true);' +
+ '   xhr.setRequestHeader("Content-type", "text/html");' +
+  '  xhr.send();' +
+'}' +
 
-        '</script>'+
+        '</script>' +
         '</div>\n' +
         '</body>\n' +
         '</html>\n' +
@@ -271,7 +271,7 @@ exports.uploadInfoText = function (parm, objectLookup, objects, knownObjects, so
     // fill objects with objects named by the folders in objects
     // objects[tempFolderName] = new ObjectExp();
     // objects[tempFolderName].name = tempFiles[i];
-}
+};
 
 
 exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects, socketsInfo) {
@@ -304,13 +304,13 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '        </thead>\n' +
         '        <tbody>\n';
 
-    var protocolText = "";
-    if(objects[objectName].protocol === "R0") protocolText = "R0 over WebSocket";
-    if(objects[objectName].protocol === "R1") protocolText = "R1 over WebSocket";
+    var protocolText = '';
+    if (objects[objectName].protocol === 'R0') protocolText = 'R0 over WebSocket';
+    if (objects[objectName].protocol === 'R1') protocolText = 'R1 over WebSocket';
 
     var infoCount = 0;
     for (var frameKey in uploadInfoTexttempArrayValue.frames) {
-        if( Object.keys(uploadInfoTexttempArrayValue.frames).length >1) {
+        if ( Object.keys(uploadInfoTexttempArrayValue.frames).length > 1) {
             text += '          <tr>\n' +
                 '            <td  colspan="3"><b>Frame: ' + uploadInfoTexttempArrayValue.frames[frameKey].name + '</b></td>\n' +
                 '        </tr>\n';
@@ -322,19 +322,19 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
             var thisHtmlNode = uploadInfoTexttempArrayValue.frames[frameKey].nodes[subKey];
 
 
-            if (thisHtmlNode.name === "") thisHtmlNode.name = "LOGIC";
+            if (thisHtmlNode.name === '') thisHtmlNode.name = 'LOGIC';
 
-            if (typeof thisHtmlNode.routeBuffer !== "undefined" && thisHtmlNode.routeBuffer !== null && thisHtmlNode.type === "logic") {
+            if (typeof thisHtmlNode.routeBuffer !== 'undefined' && thisHtmlNode.routeBuffer !== null && thisHtmlNode.type === 'logic') {
 
-                text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.routeBuffer[0] + "<br>" +
-                    "" + thisHtmlNode.routeBuffer[1] + "<br>" +
-                    "" + thisHtmlNode.routeBuffer[2] + "<br>" +
-                    "" + thisHtmlNode.routeBuffer[3] + "<br></td></tr>";
+                text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.name + '</td><td>' + thisHtmlNode.routeBuffer[0] + '<br>' +
+                    '' + thisHtmlNode.routeBuffer[1] + '<br>' +
+                    '' + thisHtmlNode.routeBuffer[2] + '<br>' +
+                    '' + thisHtmlNode.routeBuffer[3] + '<br></td></tr>';
             } else {
                 if (!thisHtmlNode.text) {
-                    text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.name + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.name + '</td><td>' + thisHtmlNode.data.value + '</td></tr>';
                 } else {
-                    text += "<tr> <td>" + infoCount + "</td><td>" + thisHtmlNode.text + "</td><td>" + thisHtmlNode.data.value + "</td></tr>";
+                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.text + '</td><td>' + thisHtmlNode.data.value + '</td></tr>';
                 }
 
             }
@@ -347,7 +347,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     }
 
     if (infoCount === 0) {
-        text += "<tr> <td> - </td><td> - </td></tr>";
+        text += '<tr> <td> - </td><td> - </td></tr>';
     }
 
     text +=
@@ -377,7 +377,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '        </tr>\n' +
         '        <tr>\n' +
         '            <th scope="row">Protocol</th>\n' +
-        '            <td>' + protocolText+ '</td>\n' +
+        '            <td>' + protocolText + '</td>\n' +
         '        </tr>\n' +
         '        <tr>\n' +
         '            <th scope="row">Amount of Sockets</th>\n' +
@@ -401,17 +401,17 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
         '        </tr>\n' +
         '        </thead>\n' +
         '        <tbody>\n';
-    
+
 
     infoCount = 0;
     for (subKey in knownObjects) {
         text += '<tr><td><small><small><small>' + subKey + '</small></small></small></td>' +
-            '<td><small><small><small>' + knownObjects[subKey].version+ ' &nbsp; &nbsp; ' +knownObjects[subKey].ip+  ' &nbsp; &nbsp; ' +knownObjects[subKey].protocol+  '</small></small></small></td></tr>';
+            '<td><small><small><small>' + knownObjects[subKey].version + ' &nbsp; &nbsp; ' + knownObjects[subKey].ip +  ' &nbsp; &nbsp; ' + knownObjects[subKey].protocol +  '</small></small></small></td></tr>';
         infoCount++;
     }
 
     if (infoCount === 0) {
-        text += "<tr> <td><small>no Object found</small></td><td> </td></tr>";
+        text += '<tr> <td><small>no Object found</small></td><td> </td></tr>';
     }
 
     text +=
@@ -443,7 +443,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
     infoCount = 0;
     for (var framekey in uploadInfoTexttempArray.frames) {
-        if( Object.keys(uploadInfoTexttempArray.frames).length >1) {
+        if ( Object.keys(uploadInfoTexttempArray.frames).length > 1) {
             text += '          <tr>\n' +
                 '            <td  colspan="5"><b>Frame: ' + uploadInfoTexttempArrayValue.frames[frameKey].name + '</b></td>\n' +
                 '        </tr>\n';
@@ -451,7 +451,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
         for (var subKey in uploadInfoTexttempArray.frames[framekey].links) {
-            if (uploadInfoTexttempArray.frames[framekey].links[subKey].hasOwnProperty("namesA"))
+            if (uploadInfoTexttempArray.frames[framekey].links[subKey].hasOwnProperty('namesA'))
                 text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesA[1] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[0] + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].namesB[1] + '</font></td></tr>\n';
             else
                 text += '<tr> <td><font size="2">' + subKey + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].objectA + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].nodeA + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].objectB + '</font></td><td><font size="2">' + uploadInfoTexttempArray.frames[framekey].links[subKey].nodeB + '</font></td></tr>\n';
@@ -461,7 +461,7 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
     }
 
     if (infoCount === 0) {
-        text += "<tr> <td>no Link found</td><td>  </td><td>  </td><td>  </td><td>  </td></tr>";
+        text += '<tr> <td>no Link found</td><td>  </td><td>  </td><td>  </td><td>  </td></tr>';
     }
 
     text +=
@@ -485,8 +485,8 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
 
 
 exports.uploadTargetText = function (parm, objectLookup, objects) {
-    if(debug) console.log("target content");
-    var objectName = "";
+    if (debug) console.log('target content');
+    var objectName = '';
     if (objects.hasOwnProperty(utilities.readObject(objectLookup, parm))) {
 
         objectName = utilities.readObject(objectLookup, parm);
@@ -513,7 +513,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '    <div class="panel panel-primary">\n' +
         '        <div class="panel-heading">\n';
 
-    if (parm !== "allTargetsPlaceholder") {
+    if (parm !== 'allTargetsPlaceholder') {
         text +=
             '            <h3 class="panel-title"><font size="6">Reality Object - ' + parm + ' - Target&nbsp;&nbsp;&nbsp;&nbsp;<a href="../" style=" color: #ffffff; text-decoration: underline;">back</a></font></h3>\n';
     } else {
@@ -526,7 +526,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '    <div id="actions" class="row">\n' +
         '        <div class="col-xs-7">\n';
 
-    if (parm !== "allTargetsPlaceholder") {
+    if (parm !== 'allTargetsPlaceholder') {
         text +=
             '  <b>1. Upload your target source image (jpg only, < 0.5 MB)</b><br>' +
             '            2. Login to the Vuforia Target Manager.<br>' +
@@ -544,7 +544,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
             '            (You can just drag and drop the files anywhere in the striped area)';
     }
 
-     text +=
+    text +=
         '        </div>' +
         '        <div class="col-xs-5">' +
         '            ' +
@@ -580,7 +580,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '            autoProcessQueue: true,' +
         '            thumbnailWidth: 80,' +
         '            thumbnailHeight: 80,' +
-        'headers: { "type": "targetUpload" },'+
+        'headers: { "type": "targetUpload" },' +
         '            parallelUploads: 20,' +
         '            createImageThumbnails: false,' +
         '            previewTemplate: previewTemplate,' +
@@ -614,7 +614,7 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
         '       myDropzone.on("success", function (file, responseText) {' +
         '   if(responseText  === "done") {      document.querySelector("#total-progress").style.opacity = "0"; ' +
         '        document.getElementById("targetButton").className = "btn btn-success fileinput-button";' +
-            // 'location.reload();' +
+        // 'location.reload();' +
         '}' +
         '    });' +
         '    </script>' +
@@ -628,20 +628,20 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
     return text;
 
-}
+};
 
 
 
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
-    if(debug) console.log("interface content");
+    if (debug) console.log('interface content');
     var text =
 
         '';
 
     var objectPath2 = path.join(objectPath2, parm);
 
-   var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
+    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
         return fs.statSync(path.join(objectsPath, file)).isDirectory();
     });
 
@@ -678,22 +678,22 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
             file = path.join(dir, file);
             var stat = fs.statSync(file);
             if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file)
+            else results.push(file);
         });
-        return results
+        return results;
     };
 
     var listeliste = walk(objectPath2);
 
     //  var folderContent = walkSync(objectsPath,fileList);
-    var nameSpace = "";
+    var nameSpace = '';
 
 
-    var nameOrigin = "/obj/";
+    var nameOrigin = '/obj/';
 
     var llist;
 
-   var nameOld = "";
+    var nameOld = '';
 
     text +=
         '<html>\n' +
@@ -730,7 +730,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
     for (var i = 0; i < listeliste.length; i++) {
 
-        var content = listeliste[i].replace(objectPath2 + '/', '').split("/");
+        var content = listeliste[i].replace(objectPath2 + '/', '').split('/');
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
@@ -740,9 +740,9 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'2delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
@@ -750,21 +750,21 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
             // console.log("-"+content[0]);
             //  console.log(content[0]+" / "+content[1]);
 
-            if (content[1][0] !== "." && content[1][0] !== "_") {
+            if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
-                var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
+                var fileTypeF = changeCase.lowerCase(content[1].split('.')[1]);
 
                 text += '<tr ';
-                if (content[1] === "target.dat" || content[1] === "target.xml" || content[1] === "target.jpg") {
+                if (content[1] === 'target.dat' || content[1] === 'target.xml' || content[1] === 'target.jpg') {
                     text += 'class="success"';
                 }
 
 
                 text += '><td><font size="2">';
-                text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                 text += '<span class="';
 
-                if (fileTypeF === "jpg" || fileTypeF === "png" || fileTypeF === "gif" || fileTypeF === "jpeg") {
+                if (fileTypeF === 'jpg' || fileTypeF === 'png' || fileTypeF === 'gif' || fileTypeF === 'jpeg') {
                     text += 'glyphicon glyphicon-picture';
                 } else {
                     text += 'glyphicon glyphicon-file';
@@ -774,9 +774,9 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
-                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'1delete' + i + content[1] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
                 if (debug) console.log(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
@@ -784,19 +784,19 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
             nameOld = content[0];
         } else {
-            if (content[0][0] !== "." && content[0][0] !== "_") {
-                var fileTypeF2 = changeCase.lowerCase(content[0].split(".")[1]);//.toLowerCase();
+            if (content[0][0] !== '.' && content[0][0] !== '_') {
+                var fileTypeF2 = changeCase.lowerCase(content[0].split('.')[1]);//.toLowerCase();
                 text += '<tr ';
-                if (fileTypeF2 === "html" || fileTypeF2 === "htm") {
+                if (fileTypeF2 === 'html' || fileTypeF2 === 'htm') {
                     text += 'class="success"';
-                } else if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                } else if (content[0] === 'object.json' || content[0] === 'object.css' || content[0] === 'object.js') {
                     text += 'class="active"';
                 }
 
 
                 text += '><td><font size="2">';
                 text += '<span class="';
-                if (fileTypeF2 === "jpg" || fileTypeF2 === "png" || fileTypeF2 === "gif" || fileTypeF2 === "jpeg") {
+                if (fileTypeF2 === 'jpg' || fileTypeF2 === 'png' || fileTypeF2 === 'gif' || fileTypeF2 === 'jpeg') {
                     text += 'glyphicon glyphicon-picture';
                 } else {
                     text += 'glyphicon glyphicon-file';
@@ -806,19 +806,19 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'1delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
 
-                if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                if (content[0] === 'object.json' || content[0] === 'object.css' || content[0] === 'object.js') {
                     text += '<span class="badge">delete</span></form></td></tr>';
 
                 } else {
                     text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
                 }
             }
-         
+
         }
 
     }
@@ -841,25 +841,24 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(objectsPath + parm + '/' + identityFolderName + "/target/target.dat");
-    if (fs.existsSync(objectsPath + parm + "/index.htm") || fs.existsSync(objectsPath + '/' + parm + "/index.html")) {
-        if (fs.existsSync(objectsPath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
-            text += "btn-success";
-        }
-        else {
-            text += "btn-warning";
+    if (debug)console.log(objectsPath + parm + '/' + identityFolderName + '/target/target.dat');
+    if (fs.existsSync(objectsPath + parm + '/index.htm') || fs.existsSync(objectsPath + '/' + parm + '/index.html')) {
+        if (fs.existsSync(objectsPath + parm + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + '/target/target.xml') && fs.existsSync(objectsPath + '/' + parm + '/' + identityFolderName + '/target/target.jpg')) {
+            text += 'btn-success';
+        } else {
+            text += 'btn-warning';
         }
     } else {
-        text += "btn-primary";
+        text += 'btn-primary';
     }
-    ;
+
 
 
     text += ' fileinput-button" id="targetButton">' +
         '            <span>' +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-        "Add Interface Files" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
+        'Add Interface Files' +
+        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
         '               </span>' +
         '        </span>' +
 
@@ -878,7 +877,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
         '            thumbnailWidth: 80,' +
         '            thumbnailHeight: 80,' +
         '            parallelUploads: 20,' +
-        'headers: { "type": "contentUpload" },'+
+        'headers: { "type": "contentUpload" },' +
         '            createImageThumbnails: false,' +
         '            previewTemplate: previewTemplate,' +
         '            autoQueue: true,' +
@@ -924,7 +923,7 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 };
 
 exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInterfaceName) {
-    if(debug) console.log("interface content");
+    if (debug) console.log('interface content');
     var text =
 
         '';
@@ -974,22 +973,22 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
             file = path.join(dir, file);
             var stat = fs.statSync(file);
             if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file)
+            else results.push(file);
         });
-        return results
+        return results;
     };
 
     var listeliste = walk(framePath2);
 
     //  var folderContent = walkSync(framePath,fileList);
-    var nameSpace = "";
+    var nameSpace = '';
 
 
-    var nameOrigin = "/obj/";
+    var nameOrigin = '/obj/';
 
     var llist;
 
-    var nameOld = "";
+    var nameOld = '';
 
     text +=
         '<html>\n' +
@@ -1026,7 +1025,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
     for (var i = 0; i < listeliste.length; i++) {
 
-        var content = listeliste[i].replace(framePath2 + '/', '').split("/");
+        var content = listeliste[i].replace(framePath2 + '/', '').split('/');
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
@@ -1036,9 +1035,9 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='2delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "/"+frame+"/x' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'2delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '/' + frame + '/x\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
@@ -1046,21 +1045,21 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
             // console.log("-"+content[0]);
             //  console.log(content[0]+" / "+content[1]);
 
-            if (content[1][0] !== "." && content[1][0] !== "_") {
+            if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
-                var fileTypeF = changeCase.lowerCase(content[1].split(".")[1]);
+                var fileTypeF = changeCase.lowerCase(content[1].split('.')[1]);
 
                 text += '<tr ';
-                if (content[1] === "target.dat" || content[1] === "target.xml" || content[1] === "target.jpg") {
+                if (content[1] === 'target.dat' || content[1] === 'target.xml' || content[1] === 'target.jpg') {
                     text += 'class="success"';
                 }
 
 
                 text += '><td><font size="2">';
-                text += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                text += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                 text += '<span class="';
 
-                if (fileTypeF === "jpg" || fileTypeF === "png" || fileTypeF === "gif" || fileTypeF === "jpeg") {
+                if (fileTypeF === 'jpg' || fileTypeF === 'png' || fileTypeF === 'gif' || fileTypeF === 'jpeg') {
                     text += 'glyphicon glyphicon-picture';
                 } else {
                     text += 'glyphicon glyphicon-file';
@@ -1070,9 +1069,9 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += ' aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '/' + content[1] + '">' + content[1] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0] + '/' + content[1];
-                text += "<form id='1delete" + i + content[1] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'1delete' + i + content[1] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
                 if (debug) console.log(dateiTobeRemoved);
                 text += '<a href="#"  onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
             }
@@ -1080,19 +1079,19 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
             nameOld = content[0];
         } else {
-            if (content[0][0] !== "." && content[0][0] !== "_") {
-                var fileTypeF2 = changeCase.lowerCase(content[0].split(".")[1]);//.toLowerCase();
+            if (content[0][0] !== '.' && content[0][0] !== '_') {
+                var fileTypeF2 = changeCase.lowerCase(content[0].split('.')[1]);//.toLowerCase();
                 text += '<tr ';
-                if (fileTypeF2 === "html" || fileTypeF2 === "htm") {
+                if (fileTypeF2 === 'html' || fileTypeF2 === 'htm') {
                     text += 'class="success"';
-                } else if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                } else if (content[0] === 'object.json' || content[0] === 'object.css' || content[0] === 'object.js') {
                     text += 'class="active"';
                 }
 
 
                 text += '><td><font size="2">';
                 text += '<span class="';
-                if (fileTypeF2 === "jpg" || fileTypeF2 === "png" || fileTypeF2 === "gif" || fileTypeF2 === "jpeg") {
+                if (fileTypeF2 === 'jpg' || fileTypeF2 === 'png' || fileTypeF2 === 'gif' || fileTypeF2 === 'jpeg') {
                     text += 'glyphicon glyphicon-picture';
                 } else {
                     text += 'glyphicon glyphicon-file';
@@ -1102,12 +1101,12 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                 text += '" aria-hidden="true"></span>&nbsp;&nbsp;<a href = "/obj/' + parm + '/' + content[0] + '">' + content[0] + '</a></font></td><td>';
 
                 var dateiTobeRemoved = parm + '/' + content[0];
-                text += "<form id='1delete" + i + content[0] + "' action='" + objectInterfaceName + "content/" + parm + "' method='post' style='margin: 0px; padding: 0px'>" +
-                    "<input type='hidden' name='name' value='" + dateiTobeRemoved + "'>" +
-                    "<input type='hidden' name='action' value='delete'>";
+                text += '<form id=\'1delete' + i + content[0] + '\' action=\'' + objectInterfaceName + 'content/' + parm + '\' method=\'post\' style=\'margin: 0px; padding: 0px\'>' +
+                    '<input type=\'hidden\' name=\'name\' value=\'' + dateiTobeRemoved + '\'>' +
+                    '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
 
-                if (content[0] === "object.json" || content[0] === "object.css" || content[0] === "object.js") {
+                if (content[0] === 'object.json' || content[0] === 'object.css' || content[0] === 'object.js') {
                     text += '<span class="badge">delete</span></form></td></tr>';
 
                 } else {
@@ -1137,25 +1136,24 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '          </div>' +
         '        </span>' +
         '        <span class="btn ';
-    if (debug)console.log(framePath + parm + '/' + identityFolderName + "/target/target.dat");
-    if (fs.existsSync(framePath + parm + "/index.htm") || fs.existsSync(framePath + '/' + parm + "/index.html")) {
-        if (fs.existsSync(framePath + parm + '/' + identityFolderName + "/target/target.dat") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.xml") && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + "/target/target.jpg")) {
-            text += "btn-success";
-        }
-        else {
-            text += "btn-warning";
+    if (debug)console.log(framePath + parm + '/' + identityFolderName + '/target/target.dat');
+    if (fs.existsSync(framePath + parm + '/index.htm') || fs.existsSync(framePath + '/' + parm + '/index.html')) {
+        if (fs.existsSync(framePath + parm + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + '/target/target.xml') && fs.existsSync(framePath + '/' + parm + '/' + identityFolderName + '/target/target.jpg')) {
+            text += 'btn-success';
+        } else {
+            text += 'btn-warning';
         }
     } else {
-        text += "btn-primary";
+        text += 'btn-primary';
     }
-    ;
+
 
 
     text += ' fileinput-button" id="targetButton">' +
         '            <span>' +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-        "Add Interface Files" +
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
+        'Add Interface Files' +
+        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
         '               </span>' +
         '        </span>' +
 
@@ -1174,7 +1172,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
         '            thumbnailWidth: 80,' +
         '            thumbnailHeight: 80,' +
         '            parallelUploads: 20,' +
-        'headers: { "type": "contentUpload" },'+
+        'headers: { "type": "contentUpload" },' +
         '            createImageThumbnails: false,' +
         '            previewTemplate: previewTemplate,' +
         '            autoQueue: true,' +

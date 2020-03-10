@@ -58,7 +58,7 @@
 var debug = false;
 var xml2js = require('xml2js');
 var fs = require('fs');
-var ip = require("ip");       // get the device IP address library
+var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
@@ -68,7 +68,7 @@ var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
-var hardwareIdentity = homedir +"/.identity";
+var hardwareIdentity = homedir + '/.identity';
 
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -85,25 +85,25 @@ exports.readObject = function (objectLookup, folder) {
 exports.createFolder = function (folderVar, objectsPath, debug) {
 
     var folder = objectsPath + '/' + folderVar + '/';
-    var hardwareIdentity =   folder + ".identity/";
+    var hardwareIdentity =   folder + '.identity/';
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (debug) console.log("Creating folder: " + folder);
+    if (debug) console.log('Creating folder: ' + folder);
 
     if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, "0766", function (err) {
+        fs.mkdirSync(folder, '0766', function (err) {
             if (err) {
                 console.error(err);
             }
         });
     }
 
-        if (!fs.existsSync(identity)) {
-            fs.mkdirSync(identity, "0766", function (err) {
-                if (err) {
-                    console.error(err);
-                }
-            });
-        }
+    if (!fs.existsSync(identity)) {
+        fs.mkdirSync(identity, '0766', function (err) {
+            if (err) {
+                console.error(err);
+            }
+        });
+    }
 /*
         if (!fs.existsSync(firstFrame)) {
             fs.mkdirSync(firstFrame, "0766", function (err) {
@@ -131,14 +131,14 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
 
 
 exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath, debug, location) {
-    if(location === "global") return;
+    if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = folder + identityFolderName + '/';
     var firstFrame = folder + frameVar + '/';
-    if (debug) console.log("Creating frame folder: " + folder);
+    if (debug) console.log('Creating frame folder: ' + folder);
 
     if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, "0766", function (err) {
+        fs.mkdirSync(folder, '0766', function (err) {
             if (err) {
                 console.error(err);
             }
@@ -146,7 +146,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     }
 
     if (!fs.existsSync(identity)) {
-        fs.mkdirSync(identity, "0766", function (err) {
+        fs.mkdirSync(identity, '0766', function (err) {
             if (err) {
                 console.error(err);
             }
@@ -154,7 +154,7 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     }
 
     if (!fs.existsSync(firstFrame)) {
-        fs.mkdirSync(firstFrame, "0766", function (err) {
+        fs.mkdirSync(firstFrame, '0766', function (err) {
             if (err) {
                 console.error(err);
             }
@@ -164,11 +164,11 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
             //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(objectsPath + '/' + folderVar + "/" + frameVar + "/bird.png"));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/bird.png'));
 
         } catch (e) {
-            if (debug) console.error("Could not copy source files", e);
+            if (debug) console.error('Could not copy source files', e);
         }
 
         //  writeObjectToFile(tempFolderName);
@@ -188,8 +188,8 @@ exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
     function deleteFolderRecursive(path) {
         console.log('deleteFolderRecursive');
         if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach(function(file, index){
-                var curPath = path + "/" + file;
+            fs.readdirSync(path).forEach(function(file, index) {
+                var curPath = path + '/' + file;
                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                     deleteFolderRecursive(curPath);
                 } else { // delete file
@@ -234,34 +234,34 @@ exports.randomIntInc = function (min, max) {
  */
 exports.uuidTime = function () {
     var dateUuidTime = new Date();
-    var abcUuidTime = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + "" + dateUuidTime.getTime()).toString(36);
+    var abcUuidTime = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + '' + dateUuidTime.getTime()).toString(36);
     while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
     return stampUuidTime;
 };
 
 var getObjectIdFromTarget = function (folderName, objectsPath) {
 
-    if(folderName === "allTargetsPlaceholder"){
-        return "allTargetsPlaceholder000000000000";
+    if (folderName === 'allTargetsPlaceholder') {
+        return 'allTargetsPlaceholder000000000000';
     }
 
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
 
     if (fs.existsSync(xmlFile)) {
-        var resultXML = "";
+        var resultXML = '';
         xml2js.
             Parser().
-            parseString(fs.readFileSync(xmlFile, "utf8"),
-            function (err, result) {
-                for (var first in result) {
-                    for(var secondFirst in result[first].Tracking[0]){
-                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                    break;
-                }
-                    break;
-                }
-            });
+            parseString(fs.readFileSync(xmlFile, 'utf8'),
+                function (err, result) {
+                    for (var first in result) {
+                        for (var secondFirst in result[first].Tracking[0]) {
+                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                            break;
+                        }
+                        break;
+                    }
+                });
 
         return resultXML;
     } else {
@@ -278,33 +278,33 @@ exports.getObjectIdFromTarget = getObjectIdFromTarget;
  */
 exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
 
-    if(folderName === "allTargetsPlaceholder"){
-        return "allTargetsPlaceholder000000000000";
+    if (folderName === 'allTargetsPlaceholder') {
+        return 'allTargetsPlaceholder000000000000';
     }
 
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
 
     if (fs.existsSync(xmlFile)) {
-        var resultXML = "";
+        var resultXML = '';
         xml2js.
-        Parser().
-        parseString(fs.readFileSync(xmlFile, "utf8"),
-            function (err, result) {
-                for (var first in result) {
-                    for(var secondFirst in result[first].Tracking[0]){
-                        var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                        var sizeFloatArray = sizeString.split(' ').map(function(elt){
-                            return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-                        });
-                        resultXML = {
-                            width: sizeFloatArray[0],
-                            height: sizeFloatArray[1]
-                        };
+            Parser().
+            parseString(fs.readFileSync(xmlFile, 'utf8'),
+                function (err, result) {
+                    for (var first in result) {
+                        for (var secondFirst in result[first].Tracking[0]) {
+                            var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                            var sizeFloatArray = sizeString.split(' ').map(function(elt) {
+                                return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
+                            });
+                            resultXML = {
+                                width: sizeFloatArray[0],
+                                height: sizeFloatArray[1]
+                            };
+                            break;
+                        }
                         break;
                     }
-                    break;
-                }
-            });
+                });
 
         return resultXML;
     } else {
@@ -337,7 +337,7 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
             }
         });
     } else {
-        console.error("I am not allowed to save");
+        console.error('I am not allowed to save');
     }
 };
 
@@ -410,29 +410,26 @@ var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 var crc = 0xffffffff;
 
 function crc32(data) {
-    for(var i=0, l=data.length; i<l; i++)
-    {
+    for (var i = 0, l = data.length; i < l; i++) {
         crc = crc >>> 8 ^ crcTable[ crc & 255 ^ data[i] ];
     }
     return (crc ^ -1) >>> 0;
 }
 
 
-function crc16reset(){
+function crc16reset() {
     crc = 0xffffffff;
 }
 
 function itob62(i) {
     var u = i;
-    var b32 = "";
-    do
-    {
+    var b32 = '';
+    do {
         var d = Math.floor(u % 62);
         if (d < 10) {
 
             b32 = String.fromCharCode('0'.charCodeAt(0) + d) + b32;
-        }
-        else if (d < 36) {
+        } else if (d < 36) {
             b32 = String.fromCharCode('a'.charCodeAt(0) + d - 10) + b32;
         } else {
             b32 = String.fromCharCode('A'.charCodeAt(0) + d - 36) + b32;
@@ -465,25 +462,25 @@ exports.generateChecksums = function(objects, fileArray) {
 
 
 exports.updateObject = function(objectName, objects) {
-    console.log("update ", objectName);
+    console.log('update ', objectName);
 
     var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
         return fs.statSync(homedir + '/' + file).isDirectory();
     });
 
     try {
-        while (objectFolderList[0][0] === ".") {
+        while (objectFolderList[0][0] === '.') {
             objectFolderList.splice(0, 1);
         }
     } catch (e) {
-        console.log("no hidden files");
+        console.log('no hidden files');
     }
 
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
             var tempFolderName = getObjectIdFromTarget(objectFolderList[i], homedir);
-            console.log("TempFolderName: " + tempFolderName);
+            console.log('TempFolderName: ' + tempFolderName);
 
             if (tempFolderName !== null) {
                 // fill objects with objects named by the folders in objects
@@ -492,25 +489,25 @@ exports.updateObject = function(objectName, objects) {
 
                 // try to read a saved previous state of the object
                 try {
-                    objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + "/object.json", "utf8"));
+                    objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
                     objects[tempFolderName].ip = ip.address();
 
                     // this is for transforming old lists to new lists
-                    if (typeof objects[tempFolderName].objectValues !== "undefined") {
+                    if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
                         delete  objects[tempFolderName].objectValues;
                     }
-                    if (typeof objects[tempFolderName].objectLinks !== "undefined") {
+                    if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
                         delete  objects[tempFolderName].objectLinks;
                     }
 
 
-                    if (typeof objects[tempFolderName].nodes !== "undefined") {
+                    if (typeof objects[tempFolderName].nodes !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
                         delete  objects[tempFolderName].nodes;
                     }
-                    if (typeof objects[tempFolderName].links !== "undefined") {
+                    if (typeof objects[tempFolderName].links !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
                         delete  objects[tempFolderName].links;
                     }
@@ -518,23 +515,23 @@ exports.updateObject = function(objectName, objects) {
 
                     for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
 
-                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== "undefined") {
+                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
                             var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
                             objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
                         }
                     }
 
-                    console.log("I found objects that I want to add");
+                    console.log('I found objects that I want to add');
 
 
                 } catch (e) {
                     objects[tempFolderName].ip = ip.address();
                     objects[tempFolderName].objectId = tempFolderName;
-                    console.log("No saved data for: " + tempFolderName);
+                    console.log('No saved data for: ' + tempFolderName);
                 }
 
             } else {
-                console.log(" object " + objectFolderList[i] + " has no marker yet");
+                console.log(' object ' + objectFolderList[i] + ' has no marker yet');
             }
             return tempFolderName;
         }
@@ -542,13 +539,13 @@ exports.updateObject = function(objectName, objects) {
     return null;
 };
 
-exports.loadHardwareInterface = function(hardwareInterfaceName){
+exports.loadHardwareInterface = function(hardwareInterfaceName) {
 
-    var hardwareFolder = hardwareIdentity +"/"+hardwareInterfaceName+"/";
+    var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
 
 
     if (!fs.existsSync(hardwareIdentity)) {
-        fs.mkdirSync(hardwareIdentity, "0766", function (err) {
+        fs.mkdirSync(hardwareIdentity, '0766', function (err) {
             if (err) {
                 console.log(err);
             }
@@ -556,37 +553,36 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
     }
 
     if (!fs.existsSync(hardwareFolder)) {
-        fs.mkdirSync(hardwareFolder, "0766", function (err) {
+        fs.mkdirSync(hardwareFolder, '0766', function (err) {
             if (err) {
                 console.log(err);
             }
         });
     }
 
-    if (!fs.existsSync(hardwareFolder + "settings.json")) {
-        fs.writeFile(hardwareFolder + "settings.json", "", function (err) {
+    if (!fs.existsSync(hardwareFolder + 'settings.json')) {
+        fs.writeFile(hardwareFolder + 'settings.json', '', function (err) {
             if (err) {
                 console.log(err);
             } else {
-                console.log("JSON created to " + hardwareFolder + "settings.json");
+                console.log('JSON created to ' + hardwareFolder + 'settings.json');
             }
         });
     }
 
     try {
-        var fileContents = fs.readFileSync(hardwareFolder + "settings.json", "utf8");
+        var fileContents = fs.readFileSync(hardwareFolder + 'settings.json', 'utf8');
         var fileContentsJson = JSON.parse(fileContents);
         hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
 
     } catch (e) {
-        console.log("Could not Load: " + hardwareInterfaceName);
+        console.log('Could not Load: ' + hardwareInterfaceName);
         hardwareInterfaces[hardwareInterfaceName] = {};
     }
 
     this.read = function (settingsName, defaultvalue) {
-     if (typeof  hardwareInterfaces[hardwareInterfaceName][settingsName] === "undefined")
-        {
-            if (typeof defaultvalue !== "undefined")
+        if (typeof  hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
+            if (typeof defaultvalue !== 'undefined')
                 hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
             else {
                 hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
@@ -604,8 +600,8 @@ exports.loadHardwareInterface = function(hardwareInterfaceName){
  * @param {number|undefined} beatport
  */
 exports.actionSender = function(action, timeToLive, beatport) {
-    if(!timeToLive) timeToLive = 2;
-    if(!beatport) beatport = 52316;
+    if (!timeToLive) timeToLive = 2;
+    if (!beatport) beatport = 52316;
     console.log(action);
 
     var HOST = '255.255.255.255';
