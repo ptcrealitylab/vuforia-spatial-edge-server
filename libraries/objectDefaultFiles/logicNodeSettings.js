@@ -145,6 +145,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         }
 
         if (realityObject.sendScreenObject) {
+            // eslint-disable-next-line no-undef
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
         }
     } else if (typeof msgContent.logic !== 'undefined') {
@@ -170,6 +171,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         realityObject.publicData = msgContent.publicData;
 
         if (realityObject.sendScreenObject) {
+            // eslint-disable-next-line no-undef
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
         }
     }
@@ -231,7 +233,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
 
 // these are functions used for the setup of logic blocks
 
-function RealityLogic() {
+function RealityLogic() { // eslint-disable-line no-unused-vars
     this.publicData = realityObject.publicData;
 
     this.readPublicData = function (valueName, value) {
@@ -337,20 +339,20 @@ function RealityLogic() {
          ************************************************************
          */
         this.ioObject = {
-            on: function (x, cb) {
+            on: function (_x, _cb) {
             }
         };
 
         /**
          ************************************************************
          */
-        this.writePrivateData = function (valueName, value) {
+        this.writePrivateData = function (_valueName, _value) {
         };
 
         /**
          ************************************************************
          */
-        this.writePublicData = function (valueName, value) {
+        this.writePublicData = function (_valueName, _value) {
         };
 
         console.log('socket.io is not working. This is normal when you work offline.');
