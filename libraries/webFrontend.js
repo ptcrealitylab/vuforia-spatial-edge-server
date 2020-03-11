@@ -153,6 +153,11 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
             newObject[thisObjectKey].targetName = objectKey + utilities.uuidTime(); // generates a suggested uuid for the target
         }
 
+        // world objects are always initialized true regardless of target data
+        if (newObject[thisObjectKey].isWorldObject) {
+            newObject[thisObjectKey].initialized = true;
+        }
+
         newObject[thisObjectKey].targetsExist = {
             datExists: datExists,
             xmlExists: xmlExists,

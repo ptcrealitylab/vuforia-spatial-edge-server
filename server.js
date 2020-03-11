@@ -3319,24 +3319,25 @@ function objectWebServer() {
 
         webServer.get('/object/*/deactivate/', function (req, res) {
             var objectID = req.params[0];
-            getObject(objectID).deactivated = true;
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            res.send('ok');
-            //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-            // res.redirect(req.get('referer'));
+            try {
+                getObject(objectID).deactivated = true;
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                res.status(200).send("ok");
+            } catch (e) {
+                res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
+            }
         });
 
         webServer.get('/object/*/activate/', function (req, res) {
             var objectID = req.params[0];
-            getObject(objectID).deactivated = false;
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            res.send('ok');
-            // res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-            // res.redirect(req.get('referer'));
+            try {
+                getObject(objectID).deactivated = false;
+                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                res.status(200).send("ok");
+            } catch (e) {
+                res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
+            }
         });
-
 
         webServer.get('/object/*/screen/', function (req, res) {
             var objectID = req.params[0];
@@ -3423,8 +3424,14 @@ function objectWebServer() {
                 '   </Tracking>\n' +
                 '   </ARConfig>';
 
-            var xmlOutFile = path.join(objectsPath, objectName, identityFolderName, '/target/target.xml');
-            // if (!fs.existsSync(xmlOutFile)) {
+            let targetDir = path.join(objectsPath, objectName, identityFolderName, "target");
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir);
+                console.log('created directory: ' + targetDir);
+            }
+
+            var xmlOutFile = path.join(targetDir, "target.xml");
+
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
                 if (err) {
                     res.status(500).send('error writing new target size to .xml file for ' + objectKey);
@@ -3831,6 +3838,30 @@ function objectWebServer() {
                 if (req.body.name !== '' && !req.body.frame) {
                     // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
+
+                    // immediately create world object rather than wait for target data to instantiate
+                    if (typeof req.body.isWorld !== 'undefined') {
+                        let isWorldObject = JSON.parse(req.body.isWorld);
+                        if (isWorldObject) {
+                            let objectId = req.body.name + utilities.uuidTime();
+                            objects[objectId] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
+                            objects[objectId].name = req.body.name;
+                            objects[objectId].objectId = objectId;
+                            objects[objectId].isWorldObject = true;
+                            utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+
+                            var sendObject = {
+                                id: objectId,
+                                name: req.body.name,
+                                initialized: true,
+                                jpgExists: false,
+                                xmlExists: false,
+                                datExists: false
+                            };
+                            res.status(200).json(sendObject);
+                            return;
+                        }
+                    }
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
