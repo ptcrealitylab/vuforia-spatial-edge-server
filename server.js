@@ -1042,6 +1042,7 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
+      
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1111,44 +1112,79 @@ function objectWebServer() {
     });
 
     webServer.use('/obj', function (req, res, next) {
-
+        
+       
+     
         var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
         if (urlArray[1] === 'frames') {
+            var objectKey = utilities.readObject(objectLookup, urlArray[0]);
+            var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[2];
+            var thisFrame = getFrame(objectKey, frameKey);
+            
+            var toolpath = null;
+            
+            if(thisFrame !== null){
+                if(thisFrame.hasOwnProperty('tool')){
+                    if(thisFrame.tool.hasOwnProperty('addon') && thisFrame.tool.hasOwnProperty('interface') && thisFrame.tool.hasOwnProperty('tool')){
+                        toolpath =  __dirname+'/addons/'+thisFrame.tool.addon+'/interfaces/'+thisFrame.tool.interface+'/tools/'+thisFrame.tool.tool;
+                    }
+                }
+            }
+
             urlArray.splice(1, 1);
         }
+        
+        var switchToInteraceTool = true;
+        if(!toolpath) switchToInteraceTool = false;
 
         if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml')
             && urlArray[urlArray.length - 2] === 'target') {
             urlArray[urlArray.length - 2] = identityFolderName + '/target';
+            switchToInteraceTool = false;
         }
 
         if ((urlArray[urlArray.length - 1] === 'memory.jpg' || urlArray[urlArray.length - 1] === 'memoryThumbnail.jpg')
             && urlArray[urlArray.length - 2] === 'memory') {
             urlArray[urlArray.length - 2] = identityFolderName + '/memory';
+            switchToInteraceTool = false;
         }
 
         if ((urlArray[urlArray.length - 2] === 'videos') && urlArray[urlArray.length - 1].split('.').pop() === 'mp4') {
             urlArray[urlArray.length - 2] = identityFolderName + '/videos';
+            switchToInteraceTool = false;
         }
 
         var newUrl = '';
+        var newToolUrl = '';
         for (let i = 0; i < urlArray.length; i++) {
             newUrl += '/' + urlArray[i];
+            
         }
 
+        if(toolpath !== null) {
+            for (let i = 2; i < urlArray.length; i++) {
+                newToolUrl += '/' + urlArray[i];
+            }
+        }
+        
         if (newUrl.slice(-1) === '/') {
             newUrl += 'index.html';
+            if(toolpath !== null) {
+                newToolUrl += 'index.html'; 
+            }
             urlArray.push('index.html');
         }
-        //console.log(newUrl);
 
         // TODO: ben - may need to update objectsPath if the object is a world object
 
         if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.html?$/))) {
             let fileName = objectsPath + newUrl;
+            let fileName2 = toolpath + newToolUrl;
 
+            if (toolpath && switchToInteraceTool && fs.existsSync(fileName2)) fileName = fileName2;
+                
             if (urlArray[urlArray.length - 1] !== 'index.html' && urlArray[urlArray.length - 1] !== 'index.htm') {
                 if (fs.existsSync(fileName + 'index.html')) {
                     fileName = fileName + 'index.html';
@@ -1193,8 +1229,6 @@ function objectWebServer() {
                 return;
             }
 
-
-
             var json = JSON.parse(fs.readFileSync(fileName, 'utf8'));
 
             // todo check if the data is still filtered with the new frames system
@@ -1205,8 +1239,13 @@ function objectWebServer() {
             }
             res.json(json);
         } else {
-            //console.log("end: "+newUrl);
-            res.sendFile(newUrl, {root: objectsPath});
+
+            let fileName2 = toolpath + newToolUrl;
+            if(toolpath && switchToInteraceTool && fs.existsSync(fileName2)){
+                res.sendFile(newToolUrl, {root: toolpath});
+            } else {
+                res.sendFile(newUrl, {root: objectsPath});
+            }
         }
     });
 
