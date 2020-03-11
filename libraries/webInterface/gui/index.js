@@ -283,10 +283,6 @@ realityServer.updateManageObjects = function(thisItem2) {
                     // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
-                    let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                    thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
-
-
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
@@ -314,9 +310,30 @@ realityServer.updateManageObjects = function(thisItem2) {
                     });
 
                     // make Add Target button turn green when fully initialized
-                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
-                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
-                    thisObject.dom.querySelector('.target').innerText = 'Edit Target';
+                    if (thisObject.targetsExist.datExists || thisObject.targetsExist.jpgExists) {
+                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
+                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
+                        thisObject.dom.querySelector('.target').innerText = 'Edit Origin';
+
+                        if (thisObject.targetsExist.jpgExists) {
+                            let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                        }
+
+                    } else {
+                        function updateTargetButtonAfterDelay(thisObjectKey) {
+                            setTimeout(function() {
+                                let thisObjectElement = document.getElementById('object' + thisObjectKey)
+                                if (thisObjectElement) {
+                                    console.log('remove objectIcon for ' + thisObjectKey);
+                                    thisObjectElement.querySelector('.objectIcon').remove();
+                                    realityServer.switchClass(thisObjectElement.querySelector('.target'), 'one', 'targetWidthMedium');
+                                    thisObjectElement.querySelector('.target').innerText = 'Add Origin Target';
+                                }
+                            }, 10);
+                        }
+                        updateTargetButtonAfterDelay(objectKey); // interferes with other layout if happens immediately
+                    }
 
                     // make Frame Sharing button turn green or yellow depending on state
                     if (thisObject.sharingEnabled) {
@@ -999,9 +1016,8 @@ realityServer.gotClick = function (event) {
                         realityServer.update();
 
                     } else {
-
-                        // update initialized
-                        thisObject.initialized = responseText.initialized;
+                        // update initialized - except world objects are always initialized true
+                        thisObject.initialized = responseText.initialized || thisObject.isWorldObject;
 
                         // update targetsExist
                         thisObject.targetsExist.jpgExists = responseText.jpgExists;
@@ -1424,17 +1440,48 @@ realityServer.gotClick = function (event) {
 
                 realityServer.sendRequest('/', 'POST', function(state) {
                     if (state === 'ok') {
+                        // this is how non-world objects get set up so they can be initialized later when they receive target data
                         realityServer.objects[objectName] = new Objects();
                         realityServer.objects[objectName].name = objectName;
 
                         if (shouldAddWorldObject) {
                             realityServer.objects[objectName].isWorldObject = true;
                         }
+                    } else {
+                        // this is how world objects get instantly initialized
+                        try {
+                            let msgContent = JSON.parse(state);
+                            // generate a placeholder xml file for this object
+                            let defaultSize = 0.3;
+                            realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (state) {
+                                if (state === 'ok') {
+                                    console.log('successfully generated xml for world object');
+
+                                    realityServer.objects[msgContent.id] = new Objects();
+                                    realityServer.objects[msgContent.id].name = msgContent.name;
+                                    realityServer.objects[msgContent.id].isWorldObject = true;
+                                    realityServer.objects[msgContent.id].initialized = true;
+
+                                    // make them automatically activate after a slight delay
+                                    setTimeout(function() {
+                                        realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
+                                            if (state === 'ok') {
+                                                realityServer.objects[msgContent.id].active = true;
+                                            }
+                                            realityServer.update();
+                                        });
+                                    }, 100);
+                                }
+                            }, 'name='+msgContent.name+'&width='+defaultSize+'&height='+defaultSize);
+
+                        } catch (e) {
+                            console.warn('json parse error for (action=new&name=\''+objectName+'\') response: ' + state);
+                        }
                     }
 
                     // realityServer.objects = realityServer.sortObject(realityServer.objects);
                     realityServer.update();
-                }, 'action=new&name=' + objectName);
+                }, 'action=new&name='+objectName+'&isWorld='+shouldAddWorldObject);
             }
         }
     }
