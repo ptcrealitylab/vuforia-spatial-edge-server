@@ -1042,6 +1042,7 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
+      
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1111,11 +1112,37 @@ function objectWebServer() {
     });
 
     webServer.use('/obj', function (req, res, next) {
-
+        
+       
+     
         var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
         if (urlArray[1] === 'frames') {
+            var objectKey = utilities.readObject(objectLookup, urlArray[0]);
+            var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[1];
+            
+            var addonName = '';
+            var interfaceName = '';
+            var toolName = '';
+
+            var thisFrame = getFrame(objectKey, frameKey);
+            
+            if(thisFrame !== null){
+                if(thisFrame.tools)
+                
+                
+                
+            }
+            
+            console.log(__dirname+'/addons/'+addonName+'/interfaces/'+interfaceName+'/tools/'+toolname);
+            console.log("###################################################################is this what I get?",urlArray);
+         
+            
+            if(objects[objectKey].frames[frameKey].tools){
+                
+            }
+            
             urlArray.splice(1, 1);
         }
 
