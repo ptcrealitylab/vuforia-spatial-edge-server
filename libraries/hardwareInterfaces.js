@@ -328,6 +328,64 @@ exports.triggerUDPCallbacks = function(msgContent) {
     });
 };
 
+exports.clearTool = function(objectName, frameName){
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    console.log('remove set tool');
+
+    var frameUuid = objectID + frameName;
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+            if (objects[objectID].frames.hasOwnProperty(frameUuid)) {
+                if (objects[objectID].frames[frameUuid].hasOwnProperty('tool')) {
+                    delete objects[objectID].frames[frameUuid].tool;
+                }
+            }
+        }
+    }
+}
+
+exports.setTool = function(objectName, frameName, tool, dirName){
+  
+    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    console.log('set new tool: ', tool);
+
+    var frameUuid = objectID + frameName;
+
+    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+        if (objects.hasOwnProperty(objectID)) {
+
+            if (dirName) {
+
+                var addonName = '';
+                var interfaceName = '';
+
+                var dirArray = dirName.split('/');
+                var dirLength = dirArray.length;
+
+                if (dirArray[dirLength - 2] === 'interfaces') {
+                    addonName = dirArray[dirLength - 3];
+                    interfaceName = dirArray[dirLength - 1];
+                } else {
+                    var dirArray = dirName.split('\\');
+                    var dirLength = dirArray.length;
+
+                    if (dirArray[dirLength - 2] === 'interfaces') {
+                        addonName = dirArray[dirLength - 3];
+                        interfaceName = dirArray[dirLength - 1];
+
+                    }
+                }
+                if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
+                    objects[objectID].frames[frameUuid] = new Frame();
+                }
+                //define the tool that is used with this frame
+                objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: tool};
+            }
+        }
+    }
+}
+
 /**
  * @desc addIO() a new IO point to the specified RealityInterface
  * @param {string} objectName The name of the RealityInterface
