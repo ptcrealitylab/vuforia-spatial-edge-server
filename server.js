@@ -3322,7 +3322,7 @@ function objectWebServer() {
             try {
                 getObject(objectID).deactivated = true;
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                res.status(200).send("ok");
+                res.status(200).send('ok');
             } catch (e) {
                 res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
             }
@@ -3333,7 +3333,7 @@ function objectWebServer() {
             try {
                 getObject(objectID).deactivated = false;
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                res.status(200).send("ok");
+                res.status(200).send('ok');
             } catch (e) {
                 res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
             }
