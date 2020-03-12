@@ -309,30 +309,30 @@ realityServer.updateManageObjects = function(thisItem2) {
                         window.location.href = '/object/' + realityServer.objects[objectKey].name + '/zipBackup/';
                     });
 
-                    // make Add Target button turn green when fully initialized
+                    // world objects with targets should have a green "Edit Origin" button when fully initialized
                     if (thisObject.targetsExist.datExists || thisObject.targetsExist.jpgExists) {
                         realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
                         realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
                         thisObject.dom.querySelector('.target').innerText = 'Edit Origin';
 
+                        // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                             thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
-                        function updateTargetButtonAfterDelay(thisObjectKey) {
-                            setTimeout(function() {
-                                let thisObjectElement = document.getElementById('object' + thisObjectKey)
-                                if (thisObjectElement) {
-                                    console.log('remove objectIcon for ' + thisObjectKey);
+                        // world objects without targets should have an "Add Origin Target" button instead
+                        setTimeout(function(thisObjectKey) {
+                            let thisObjectElement = document.getElementById('object' + thisObjectKey);
+                            if (thisObjectElement) {
+                                if (thisObjectElement.querySelector('.objectIcon')) {
                                     thisObjectElement.querySelector('.objectIcon').remove();
-                                    realityServer.switchClass(thisObjectElement.querySelector('.target'), 'one', 'targetWidthMedium');
-                                    thisObjectElement.querySelector('.target').innerText = 'Add Origin Target';
                                 }
-                            }, 10);
-                        }
-                        updateTargetButtonAfterDelay(objectKey); // interferes with other layout if happens immediately
+                                realityServer.switchClass(thisObjectElement.querySelector('.target'), 'one', 'targetWidthMedium');
+                                thisObjectElement.querySelector('.target').innerText = 'Add Origin Target';
+                            }
+                        }, 10, objectKey); // interferes with other layout in Safari if happens immediately
                     }
 
                     // make Frame Sharing button turn green or yellow depending on state
