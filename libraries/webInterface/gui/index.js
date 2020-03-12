@@ -1472,16 +1472,16 @@ realityServer.gotClick = function (event) {
                                         });
                                     }, 100);
                                 }
-                            }, 'name='+msgContent.name+'&width='+defaultSize+'&height='+defaultSize);
+                            }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
 
                         } catch (e) {
-                            console.warn('json parse error for (action=new&name=\''+objectName+'\') response: ' + state);
+                            console.warn('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
                         }
                     }
 
                     // realityServer.objects = realityServer.sortObject(realityServer.objects);
                     realityServer.update();
-                }, 'action=new&name='+objectName+'&isWorld='+shouldAddWorldObject);
+                }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject);
             }
         }
     }
