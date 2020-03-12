@@ -3424,13 +3424,13 @@ function objectWebServer() {
                 '   </Tracking>\n' +
                 '   </ARConfig>';
 
-            let targetDir = path.join(objectsPath, objectName, identityFolderName, "target");
+            let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
             if (!fs.existsSync(targetDir)) {
                 fs.mkdirSync(targetDir);
                 console.log('created directory: ' + targetDir);
             }
 
-            var xmlOutFile = path.join(targetDir, "target.xml");
+            var xmlOutFile = path.join(targetDir, 'target.xml');
 
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
                 if (err) {
