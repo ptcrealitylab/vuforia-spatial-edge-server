@@ -338,11 +338,11 @@ realityServer.updateManageObjects = function(thisItem2) {
                     // make Frame Sharing button turn green or yellow depending on state
                     if (thisObject.sharingEnabled) {
                         realityServer.switchClass(thisObject.dom.querySelector('.sharing'), 'yellow', 'green');
-                        thisObject.dom.querySelector('.sharing').innerText = 'Frame Sharing On';
+                        thisObject.dom.querySelector('.sharing').innerText = 'Tool Sharing On';
 
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector('.sharing'), 'green', 'yellow');
-                        thisObject.dom.querySelector('.sharing').innerText = 'Frame Sharing Off';
+                        thisObject.dom.querySelector('.sharing').innerText = 'Tool Sharing Off';
                     }
 
                     addEnabledToggle(thisObject.dom.querySelector('.active'), objectKey, thisObject); // create inside closure so interfaceInfo doesn't change after definition
