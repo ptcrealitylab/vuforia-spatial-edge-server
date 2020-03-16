@@ -61,7 +61,7 @@ realityServer.initialize = function () {
         }
     }
 
-    // clicking on header should refresh
+    // clicking on header refreshes -> goes back to objects tab
     document.getElementById('logo').addEventListener('click', function() {
         window.location.reload();
     });
