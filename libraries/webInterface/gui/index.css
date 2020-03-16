@@ -38,6 +38,7 @@ body {
 
 #logo {
   width: 400pt;
+  cursor: pointer;
 }
 
 #subtitle {
