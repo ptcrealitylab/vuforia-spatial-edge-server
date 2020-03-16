@@ -553,12 +553,6 @@ realityServer.updateManageFrames = function() {
 
     this.getDomContents().appendChild(this.templates['startFrames'].content.cloneNode(true));
 
-    // this.getDomContents().querySelector('#pathSelectionInput').addEventListener('change', function(e) {
-    //     console.log(e);
-    // });
-
-    this.getDomContents().querySelector('#framesPath').innerText = realityServer.states.globalFramesPath || '';
-
     /////// Tutorial ///////
     document.getElementById('globalFramesDescription').appendChild(this.templates['globalFramesTutorial'].content.cloneNode(true));
 
