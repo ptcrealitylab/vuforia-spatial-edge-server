@@ -61,6 +61,11 @@ realityServer.initialize = function () {
         }
     }
 
+    // clicking on header should refresh
+    document.getElementById('logo').addEventListener('click', function() {
+        window.location.reload();
+    });
+
     document.getElementById('subtitle').innerText = 'Version: ' + realityServer.states.version + ' - Server IP: ' +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + realityServer.states.serverPort;
 
