@@ -45,6 +45,7 @@ var frameAddedCallbacks = [];
 var resetCallbacks = [];
 var matrixStreamCallbacks = [];
 var udpMessageCallbacks = [];
+var interfaceSettingsCallbacks = {};
 var screenPortMap = {};
 var _this = this;
 
@@ -896,6 +897,22 @@ exports.advertiseConnection = function (object, frame, node, logic) {
         names: [object, node]
     }};
     actionCallback(message);
+};
+
+exports.addSettingsCallback = function(interfaceName, callback) {
+    if (typeof interfaceSettingsCallbacks[interfaceName] === 'undefined') {
+        interfaceSettingsCallbacks[interfaceName] = [];
+    }
+    interfaceSettingsCallbacks[interfaceName].push(callback);
+};
+
+exports.pushSettingsToGui = function(interfaceName, currentSettings) {
+    console.log('pushSettingsToGui for ' + interfaceName);
+    if (typeof interfaceSettingsCallbacks[interfaceName] !== 'undefined') {
+        interfaceSettingsCallbacks[interfaceName].forEach(function(callback) {
+            callback(interfaceName, currentSettings);
+        });
+    }
 };
 
 exports.shutdown = function () {
