@@ -1097,8 +1097,6 @@ function objectWebServer() {
 
     });
 
-
-
     webServer.use('/logicNodeIcon', function (req, res) {
         var urlArray = req.originalUrl.split('/');
         console.log('logicNodeIcon urlArray', urlArray);
@@ -4480,7 +4478,6 @@ socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nod
     }
 };
 
-
 function socketServer() {
 
     io.on('connection', function (socket) {
@@ -4605,6 +4602,22 @@ function socketServer() {
                 block: msgContent.block,
                 publicData: publicData
             }));
+        });
+
+        socket.on('/subscribe/interfaceSettings', function (msg) {
+            console.log('recieved /subscribe/interfaceSettings');
+            let msgContent = JSON.parse(msg);
+            if (msgContent.interfaceName) {
+                console.log('/subscribe/interfaceSettings for ' + msgContent.interfaceName);
+                hardwareAPI.addSettingsCallback(msgContent.interfaceName, function(interfaceName, currentSettings) {
+                    if (io.sockets.connected[socket.id]) {
+                        io.sockets.connected[socket.id].emit('interfaceSettings', JSON.stringify({
+                            interfaceName: interfaceName,
+                            currentSettings: currentSettings
+                        }));
+                    }
+                });
+            }
         });
 
         socket.on('object', function (msg) {
