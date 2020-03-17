@@ -1,3 +1,11 @@
+/**
+ * @fileOverview
+ * This is a library that should be included in hardware interface's config.html pages in order
+ * to automatically add a websocket to the page and give them access to teh InterfaceConfig
+ * APIs, which will allow them to subscribe to realtime updates to the settings from the
+ * hardware interface's index.js
+ */
+
 let socketIoScript = {};
 let socketIoRequest = {};
 
@@ -21,8 +29,8 @@ function loadScriptSync(url, requestObject, scriptObject) {
 loadScriptSync('../../socket.io/socket.io.js', socketIoRequest, socketIoScript);
 
 /**
- * This is used to allow the config.html pages for hardware interfaces to subscribe to new values
- * @param interfaceName
+ * This is used to allow the config.html pages for hardware interfaces to subscribe to new settings
+ * @param {string} interfaceName - exact name of the hardware interface
  * @constructor
  */
 function InterfaceConfig(interfaceName) { // eslint-disable-line no-unused-vars
