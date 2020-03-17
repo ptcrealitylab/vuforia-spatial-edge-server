@@ -4604,6 +4604,10 @@ function socketServer() {
             }));
         });
 
+        /**
+         * A hardware interface's config.html makes use of this to subscribe to
+         * realtime settings updates from the hardware interface's index.js
+         */
         socket.on('/subscribe/interfaceSettings', function (msg) {
             console.log('recieved /subscribe/interfaceSettings');
             let msgContent = JSON.parse(msg);

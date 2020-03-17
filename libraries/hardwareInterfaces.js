@@ -899,6 +899,11 @@ exports.advertiseConnection = function (object, frame, node, logic) {
     actionCallback(message);
 };
 
+/**
+ * Used by the server to emit a socket message when settings change
+ * @param {string} interfaceName - exact name of the hardware interface
+ * @param {function} callback
+ */
 exports.addSettingsCallback = function(interfaceName, callback) {
     if (typeof interfaceSettingsCallbacks[interfaceName] === 'undefined') {
         interfaceSettingsCallbacks[interfaceName] = [];
@@ -906,6 +911,11 @@ exports.addSettingsCallback = function(interfaceName, callback) {
     interfaceSettingsCallbacks[interfaceName].push(callback);
 };
 
+/**
+ * Public API for hardware interfaces to trigger when they update any settings
+ * @param {string} interfaceName - exact name of the hardware interface
+ * @param {JSON} currentSettings - should be the exports.settings
+ */
 exports.pushSettingsToGui = function(interfaceName, currentSettings) {
     console.log('pushSettingsToGui for ' + interfaceName);
     if (typeof interfaceSettingsCallbacks[interfaceName] !== 'undefined') {
