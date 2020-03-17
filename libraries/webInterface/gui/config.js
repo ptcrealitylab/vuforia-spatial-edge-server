@@ -6,54 +6,84 @@
  * hardware interface's index.js
  */
 
-let socketIoScript = {};
-let socketIoRequest = {};
-
-// Load socket.io.js synchronous so that it is available by the time the rest of the code is executed.
-function loadScriptSync(url, requestObject, scriptObject) {
-    requestObject = new XMLHttpRequest();
-    requestObject.open('GET', url, false);
-    requestObject.send();
-
-    // Only add script if fetch was successful
-    if (requestObject.status === 200) {
-        scriptObject = document.createElement('script');
-        scriptObject.type = 'text/javascript';
-        scriptObject.text = requestObject.responseText;
-        document.getElementsByTagName('head')[0].appendChild(scriptObject);
-    } else {
-        console.log('Error XMLHttpRequest HTTP status: ' + requestObject.status);
-    }
-}
-
-loadScriptSync('../../socket.io/socket.io.js', socketIoRequest, socketIoScript);
-
 /**
  * This is used to allow the config.html pages for hardware interfaces to subscribe to new settings
  * @param {string} interfaceName - exact name of the hardware interface
  * @constructor
  */
 function InterfaceConfig(interfaceName) { // eslint-disable-line no-unused-vars
+    this.interfaceName = interfaceName;
+    this.pendingIos = [];
+    let self = this;
+
     if (typeof io !== 'undefined') {
-        var _this = this;
-
-        this.ioObject = io.connect();
-
-        this.addSettingsUpdateListener = function (callback) {
-            console.log('added interfaceSettings socket listener');
-
-            _this.ioObject.emit('/subscribe/interfaceSettings', JSON.stringify({
-                interfaceName: interfaceName
-            }));
-
-            _this.ioObject.on('interfaceSettings', function (msg) {
-                var thisMsg = JSON.parse(msg);
-                callback(thisMsg);
-            });
-        };
-
-        console.log('socket.io is loaded');
+        this.injectSocketIoAPI();
     } else {
-        console.warn('socket.io is not working. This is normal when you work offline.');
+        this.ioObject = {
+            on: function() {
+                console.log('ioObject.on stub called, please don\'t');
+            }
+        };
+        this.addSettingsUpdateListener = makeIoStub('addSettingsUpdateListener');
+
+        this.loadObjectSocketIo();
+    }
+
+    /**
+     * If you call a SocketIO API function before that API has been initialized, it will get queued up as a stub
+     * and executed as soon as that API is fully loaded
+     * @param {string} name - the name of the function that should be called
+     * @return {Function}
+     */
+    function makeIoStub(name) {
+        return function() {
+            console.log('makeIoStub for ' + name);
+            self.pendingIos.push({name: name, args: arguments});
+        };
     }
 }
+
+InterfaceConfig.prototype.injectSocketIoAPI = function() {
+    let self = this;
+
+    this.ioObject = io.connect();
+
+    this.addSettingsUpdateListener = function (callback) {
+        console.log('added interfaceSettings socket listener');
+
+        self.ioObject.emit('/subscribe/interfaceSettings', JSON.stringify({
+            interfaceName: self.interfaceName
+        }));
+
+        self.ioObject.on('interfaceSettings', function (msg) {
+            var thisMsg = JSON.parse(msg);
+            callback(thisMsg);
+        });
+    };
+
+    console.log('socket.io is loaded and injected into the config.js API');
+
+    for (var i = 0; i < this.pendingIos.length; i++) {
+        var pendingIo = this.pendingIos[i];
+        this[pendingIo.name].apply(this, pendingIo.args);
+    }
+    this.pendingIos = [];
+};
+
+/**
+ * automatically injects the socket.io script into the page
+ */
+InterfaceConfig.prototype.loadObjectSocketIo = function() {
+    let self = this;
+
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = '../../socket.io/socket.io.js';
+
+    script.addEventListener('load', function () {
+        // adds the API methods related to sending/receiving socket messages
+        self.injectSocketIoAPI();
+    });
+
+    document.body.appendChild(script);
+};
