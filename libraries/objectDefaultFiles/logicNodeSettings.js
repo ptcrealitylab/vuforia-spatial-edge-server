@@ -2,7 +2,7 @@
  * This is a much-simplified version of object.js intended to be included by the settings index.html
  * of each logic block, so that the html can communicate with the server backend without importing all of object.js
  */
-var realityObject = {
+var spatialObject = {
     node: '',
     frame: '',
     object: '',
@@ -68,9 +68,9 @@ var realityObject = {
 };
 
 // adding css styles nessasary for acurate 3D transformations.
-realityObject.style.type = 'text/css';
-realityObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0;}';
-document.getElementsByTagName('head')[0].appendChild(realityObject.style);
+spatialObject.style.type = 'text/css';
+spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0;}';
+document.getElementsByTagName('head')[0].appendChild(spatialObject.style);
 
 // Load socket.io.js and pep.min.js synchronous so that it is available by the time the rest of the code is executed.
 function loadScriptSync(url, requestObject, scriptObject) {
@@ -89,62 +89,62 @@ function loadScriptSync(url, requestObject, scriptObject) {
     }
 }
 
-loadScriptSync('../../socket.io/socket.io.js', realityObject.socketIoRequest, realityObject.socketIoScript);
-loadScriptSync('/objectDefaultFiles/pep.min.js', realityObject.pointerEventsRequest, realityObject.pointerEventsScript);
+loadScriptSync('../../socket.io/socket.io.js', spatialObject.socketIoRequest, spatialObject.socketIoScript);
+loadScriptSync('/objectDefaultFiles/pep.min.js', spatialObject.pointerEventsRequest, spatialObject.pointerEventsScript);
 
 // function for resizing the windows.
 
 window.addEventListener('message', function (MSG) {
 
     var msgContent = JSON.parse(MSG.data);
-    for (var key in realityObject.messageCallBacks) {
-        realityObject.messageCallBacks[key](msgContent);
+    for (var key in spatialObject.messageCallBacks) {
+        spatialObject.messageCallBacks[key](msgContent);
     }
 }, false);
 
-realityObject.messageCallBacks.mainCall = function (msgContent) {
+spatialObject.messageCallBacks.mainCall = function (msgContent) {
 
     // console.log("------------------------------");
     // console.log(msgContent);
 
     if (typeof msgContent.node !== 'undefined') {
 
-        if (realityObject.sendFullScreen === false) {
-            realityObject.height = document.body.scrollHeight;
-            realityObject.width = document.body.scrollWidth;
+        if (spatialObject.sendFullScreen === false) {
+            spatialObject.height = document.body.scrollHeight;
+            spatialObject.width = document.body.scrollWidth;
         }
 
         parent.postMessage(JSON.stringify(
             {
-                version: realityObject.version,
+                version: spatialObject.version,
                 node: msgContent.node,
                 frame: msgContent.frame,
                 object: msgContent.object,
-                height: realityObject.height,
-                width: realityObject.width,
-                sendMatrix: realityObject.sendMatrix,
-                sendMatrices: realityObject.sendMatrices,
-                sendAcceleration: realityObject.sendAcceleration,
-                fullScreen: realityObject.sendFullScreen,
-                stickiness: realityObject.sendSticky,
-                moveDelay: realityObject.moveDelay
+                height: spatialObject.height,
+                width: spatialObject.width,
+                sendMatrix: spatialObject.sendMatrix,
+                sendMatrices: spatialObject.sendMatrices,
+                sendAcceleration: spatialObject.sendAcceleration,
+                fullScreen: spatialObject.sendFullScreen,
+                stickiness: spatialObject.sendSticky,
+                moveDelay: spatialObject.moveDelay
             }
         )
         // this needs to contain the final interface source
         , '*');
 
-        var alreadyLoaded = !!realityObject.node;
-        realityObject.node = msgContent.node;
-        realityObject.frame = msgContent.frame;
-        realityObject.object = msgContent.object;
+        var alreadyLoaded = !!spatialObject.node;
+        spatialObject.node = msgContent.node;
+        spatialObject.frame = msgContent.frame;
+        spatialObject.object = msgContent.object;
 
         if (!alreadyLoaded) {
-            if (realityObject.onload) {
-                realityObject.onload();
+            if (spatialObject.onload) {
+                spatialObject.onload();
             }
         }
 
-        if (realityObject.sendScreenObject) {
+        if (spatialObject.sendScreenObject) {
             // eslint-disable-next-line no-undef
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
         }
@@ -153,7 +153,7 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
 
         parent.postMessage(JSON.stringify(
             {
-                version: realityObject.version,
+                version: spatialObject.version,
                 block: msgContent.block,
                 logic: msgContent.logic,
                 frame: msgContent.frame,
@@ -164,62 +164,62 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
         // this needs to contain the final interface source
         , '*');
 
-        realityObject.block = msgContent.block;
-        realityObject.logic = msgContent.logic;
-        realityObject.frame = msgContent.frame;
-        realityObject.object = msgContent.object;
-        realityObject.publicData = msgContent.publicData;
+        spatialObject.block = msgContent.block;
+        spatialObject.logic = msgContent.logic;
+        spatialObject.frame = msgContent.frame;
+        spatialObject.object = msgContent.object;
+        spatialObject.publicData = msgContent.publicData;
 
-        if (realityObject.sendScreenObject) {
+        if (spatialObject.sendScreenObject) {
             // eslint-disable-next-line no-undef
             reality.activateScreenObject(); // make sure it gets sent with updated object,frame,node
         }
     }
 
     if (typeof msgContent.modelViewMatrix !== 'undefined') {
-        realityObject.matrices.modelView = msgContent.modelViewMatrix;
+        spatialObject.matrices.modelView = msgContent.modelViewMatrix;
     }
     if (typeof msgContent.projectionMatrix !== 'undefined') {
-        realityObject.matrices.projection = msgContent.projectionMatrix;
+        spatialObject.matrices.projection = msgContent.projectionMatrix;
     }
 
     if (typeof msgContent.matrices !== 'undefined') {
         if (typeof msgContent.matrices.allObjects !== 'undefined') {
-            realityObject.matrices.allObjects = msgContent.matrices.allObjects;
+            spatialObject.matrices.allObjects = msgContent.matrices.allObjects;
         }
 
         if (typeof msgContent.matrices.devicePose !== 'undefined') {
-            realityObject.matrices.devicePose = msgContent.matrices.devicePose;
+            spatialObject.matrices.devicePose = msgContent.matrices.devicePose;
         }
 
         if (typeof msgContent.matrices.groundPlane !== 'undefined') {
-            realityObject.matrices.groundPlane = msgContent.matrices.groundPlane;
+            spatialObject.matrices.groundPlane = msgContent.matrices.groundPlane;
         }
     }
 
 
 
     if (typeof msgContent.visibility !== 'undefined') {
-        realityObject.visibility = msgContent.visibility;
+        spatialObject.visibility = msgContent.visibility;
 
         // TODO: implement public data subscription in the same way as in object-frames.js
 
-        if (realityObject.visibility === 'visible') {
-            if (typeof realityObject.node !== 'undefined') {
-                if (realityObject.sendSticky) {
+        if (spatialObject.visibility === 'visible') {
+            if (typeof spatialObject.node !== 'undefined') {
+                if (spatialObject.sendSticky) {
                     parent.postMessage(JSON.stringify(
                         {
-                            version: realityObject.version,
-                            node: realityObject.node,
-                            frame: realityObject.frame,
-                            object: realityObject.object,
-                            height: realityObject.height,
-                            width: realityObject.width,
-                            sendMatrix: realityObject.sendMatrix,
-                            sendAcceleration: realityObject.sendAcceleration,
-                            fullScreen: realityObject.sendFullScreen,
-                            stickiness: realityObject.sendSticky,
-                            sendScreenObject: realityObject.sendScreenObject
+                            version: spatialObject.version,
+                            node: spatialObject.node,
+                            frame: spatialObject.frame,
+                            object: spatialObject.object,
+                            height: spatialObject.height,
+                            width: spatialObject.width,
+                            sendMatrix: spatialObject.sendMatrix,
+                            sendAcceleration: spatialObject.sendAcceleration,
+                            fullScreen: spatialObject.sendFullScreen,
+                            stickiness: spatialObject.sendSticky,
+                            sendScreenObject: spatialObject.sendScreenObject
                         }), '*');
                 }
             }
@@ -227,23 +227,23 @@ realityObject.messageCallBacks.mainCall = function (msgContent) {
     }
 
     if (typeof msgContent.interface !== 'undefined') {
-        realityObject.interface = msgContent.interface;
+        spatialObject.interface = msgContent.interface;
     }
 };
 
 // these are functions used for the setup of logic blocks
 
-function RealityLogic() { // eslint-disable-line no-unused-vars
-    this.publicData = realityObject.publicData;
+function SpatialLogic() { // eslint-disable-line no-unused-vars
+    this.publicData = spatialObject.publicData;
 
     this.readPublicData = function (valueName, value) {
         if (!value)  value = 0;
 
-        if (typeof realityObject.publicData[valueName] === 'undefined') {
-            realityObject.publicData[valueName] = value;
+        if (typeof spatialObject.publicData[valueName] === 'undefined') {
+            spatialObject.publicData[valueName] = value;
             return value;
         } else {
-            return realityObject.publicData[valueName];
+            return spatialObject.publicData[valueName];
         }
     };
 
@@ -267,13 +267,13 @@ function RealityLogic() { // eslint-disable-line no-unused-vars
 
 
         this.sendRealityEditorSubscribe = setInterval(function () {
-            if (realityObject.object) {
+            if (spatialObject.object) {
                 _this.ioObject.emit('/subscribe/realityEditorBlock', JSON.stringify(
                     {
-                        object: realityObject.object,
-                        frame: realityObject.frame,
-                        node: realityObject.logic,
-                        block: realityObject.block
+                        object: spatialObject.object,
+                        frame: spatialObject.frame,
+                        node: spatialObject.logic,
+                        block: spatialObject.block
                     }));
                 clearInterval(_this.sendRealityEditorSubscribe);
             }
@@ -285,24 +285,24 @@ function RealityLogic() { // eslint-disable-line no-unused-vars
 
         this.writePublicData = function (valueName, value) {
 
-            realityObject.publicData[valueName] = value;
+            spatialObject.publicData[valueName] = value;
 
             this.ioObject.emit('block/publicData', JSON.stringify({
-                object: realityObject.object,
-                frame: realityObject.frame,
-                node: realityObject.logic,
-                block: realityObject.block,
-                publicData: realityObject.publicData
+                object: spatialObject.object,
+                frame: spatialObject.frame,
+                node: spatialObject.logic,
+                block: spatialObject.block,
+                publicData: spatialObject.publicData
             }));
 
             parent.postMessage(JSON.stringify(
                 {
-                    version: realityObject.version,
-                    block: realityObject.block,
-                    node: realityObject.logic,
-                    object: realityObject.object,
-                    frame: realityObject.frame,
-                    publicData: realityObject.publicData
+                    version: spatialObject.version,
+                    block: spatialObject.block,
+                    node: spatialObject.logic,
+                    object: spatialObject.object,
+                    frame: spatialObject.frame,
+                    publicData: spatialObject.publicData
                 }
             ), '*');
         };
@@ -313,10 +313,10 @@ function RealityLogic() { // eslint-disable-line no-unused-vars
             thisItem[valueName] = value;
 
             this.ioObject.emit('block/privateData', JSON.stringify({
-                object: realityObject.object,
-                frame: realityObject.frame,
-                node: realityObject.logic,
-                block: realityObject.block,
+                object: spatialObject.object,
+                frame: spatialObject.frame,
+                node: spatialObject.logic,
+                block: spatialObject.block,
                 privateData: thisItem
             }));
         };
@@ -326,7 +326,7 @@ function RealityLogic() { // eslint-disable-line no-unused-vars
 
         this.addReadPublicDataListener = function (valueName, callback) {
 
-            realityObject.messageCallBacks.updateLogicGUI = function (msgContent) {
+            spatialObject.messageCallBacks.updateLogicGUI = function (msgContent) {
                 if (typeof msgContent.publicData !== 'undefined') {
                     if (typeof msgContent.publicData[valueName] !== 'undefined') {
                         callback(msgContent.publicData[valueName]);
@@ -359,3 +359,6 @@ function RealityLogic() { // eslint-disable-line no-unused-vars
     }
 
 }
+
+var RealityLogic = SpatialLogic;
+var realityObject = spatialObject;
