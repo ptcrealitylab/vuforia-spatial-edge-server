@@ -83,18 +83,18 @@ function EmptyNode(nodeName, type) {
  * @param {value} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
-exports.write = function (objectName, frameName, nodeName, value, mode, unit, unitMin, unitMax) {
+exports.write = function (object, tool, node, value, mode, unit, unitMin, unitMax) {
 
-    if (typeof mode === 'undefined')  mode = 'f';
-    if (typeof unit === 'undefined')  unit = false;
-    if (typeof unitMin === 'undefined')  unitMin = 0;
-    if (typeof unitMax === 'undefined')  unitMax = 1;
+    if (typeof mode === 'undefined') mode = 'f';
+    if (typeof unit === 'undefined') unit = false;
+    if (typeof unitMin === 'undefined') unitMin = 0;
+    if (typeof unitMax === 'undefined') unitMax = 1;
 
-    var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
+    var objectKey = utilities.readObject(objectLookup, object); //get globally unique object id
     //  var valueKey = nodeName + objKey2;
 
-    var nodeUuid = objectKey + frameName + nodeName;
-    var frameUuid = objectKey + frameName;
+    var nodeUuid = objectKey + tool + node;
+    var frameUuid = objectKey + tool;
 
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
@@ -112,10 +112,10 @@ exports.write = function (objectName, frameName, nodeName, value, mode, unit, un
     }
 };
 
-exports.writePublicData = function (objectName, frameName, nodeName, dataObject, data) {
-    var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
-    var nodeUuid = objectKey + frameName + nodeName;
-    var frameUuid = objectKey + frameName;
+exports.writePublicData = function (object, tool, node, dataObject, data) {
+    var objectKey = utilities.readObject(objectLookup, object); //get globally unique object id
+    var nodeUuid = objectKey + tool + node;
+    var frameUuid = objectKey + tool;
 
     if (objects.hasOwnProperty(objectKey)) {
         if (objects[objectKey].frames.hasOwnProperty(frameUuid)) {
@@ -133,13 +133,13 @@ exports.writePublicData = function (objectName, frameName, nodeName, dataObject,
  * @desc clearIO() removes IO points which are no longer needed. It should be called in your hardware interface after all addIO() calls have finished.
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
-exports.clearObject = function (objectId, frameID) {
-    var objectID = utilities.getObjectIdFromTarget(objectId, objectsPath);
+exports.clearObject = function (objectUuid, toolUuid) {
+    var objectID = utilities.getObjectIdFromTarget(objectUuid, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].frames[objectID].nodes) {
-            if (!hardwareObjects[objectId].nodes.hasOwnProperty(key)) {
+            if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
                 console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
-                delete objects[objectID].frames[frameID].nodes[key];
+                delete objects[objectID].frames[toolUuid].nodes[key];
             }
         }
     }
@@ -147,9 +147,9 @@ exports.clearObject = function (objectId, frameID) {
     console.log('object is all cleared');
 };
 
-exports.removeAllNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
+exports.removeAllNodes = function (object, tool) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -164,7 +164,7 @@ exports.removeAllNodes = function (objectName, frameName) {
 };
 
 // delete links to and from the node, including deleting the socket if it isn't used anymore
-var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
+var deleteLinksToAndFromNode = function (objectUuid, toolUuid, nodeUuid) {
 
     // loop over all nodes in all frames in all objects to see if they need to be deleted
     for (var otherObjectKey in objects) {
@@ -175,8 +175,8 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
                 var thatLink = thatFrameLinks[linkKey];
                 var destinationIp = knownObjects[thatLink.objectB];
 
-                if ( (thatLink.objectA === objectKey && thatLink.frameA === frameKey && thatLink.nodeA === nodeKey) ||
-                     (thatLink.objectB === objectKey && thatLink.frameB === frameKey && thatLink.nodeB === nodeKey) ) {
+                if ((thatLink.objectA === objectUuid && thatLink.frameA === toolUuid && thatLink.nodeA === nodeUuid) ||
+                    (thatLink.objectB === objectUuid && thatLink.frameB === toolUuid && thatLink.nodeB === nodeUuid)) {
 
                     // this link includes the node that we are deleting, delete the link too
                     delete thatFrameLinks[linkKey];
@@ -209,8 +209,8 @@ var deleteLinksToAndFromNode = function(objectKey, frameKey, nodeKey) {
 
 };
 
-exports.reloadNodeUI = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.reloadNodeUI = function (object) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
 };
@@ -223,23 +223,27 @@ exports.getKnownObjects = function () {
     return knownObjects;
 };
 
-exports.getAllFrames = function (objectName) {
-    var objectID = utilities.readObject(objectLookup, objectName);
+
+var getAllTools_ = function (object) {
+    var objectID = utilities.readObject(objectLookup, object);
 
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var frames = objects[objectID].frames;
-            return frames;
+            var tools = objects[objectID].frames;
+            return tools;
         }
     }
 
     return {};
 };
 
-exports.getAllNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
+exports.getAllTools = getAllTools_;
+exports.getAllFrames = getAllTools_;
+
+exports.getAllNodes = function (object, tool) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
 
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
@@ -256,9 +260,9 @@ exports.getAllNodes = function (objectName, frameName) {
     return {};
 };
 
-exports.getAllLinksToNodes = function (objectName, frameName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
+exports.getAllLinksToNodes = function (object, tool) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
 
     // lookup object properties using name
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
@@ -275,8 +279,9 @@ exports.getAllLinksToNodes = function (objectName, frameName) {
     return {};
 };
 
-exports.subscribeToNewFramesAdded = function (objectName, callback) {
-    var objectID = utilities.readObject(objectLookup, objectName);
+
+var subscribeToNewToolsAdded_ = function (object, callback) {
+    var objectID = utilities.readObject(objectLookup, object);
 
     frameAddedCallbacks.push({
         objectID: objectID,
@@ -284,16 +289,30 @@ exports.subscribeToNewFramesAdded = function (objectName, callback) {
     });
 };
 
-exports.runFrameAddedCallbacks = function(objectKey, thisFrame) {
-    frameAddedCallbacks.forEach(function(callbackObject) {
-        if (callbackObject.objectID === objectKey) {
-            callbackObject.callback(thisFrame);
+exports.subscribeToNewToolsAdded = subscribeToNewToolsAdded_;
+exports.subscribeToNewFramesAdded = subscribeToNewToolsAdded_;
+
+exports.runToolAddedCallbacks = function (objectUuid, thisTool) {
+    frameAddedCallbacks.forEach(function (callbackObject) {
+        if (callbackObject.objectID === objectUuid) {
+            callbackObject.callback(thisTool);
         }
     });
 };
 
-exports.subscribeToReset = function (objectName, callback) {
-    var objectID = utilities.readObject(objectLookup, objectName);
+var runFrameAddedCallbacks_ = function (objectUuid, thisTool) {
+    frameAddedCallbacks.forEach(function (callbackObject) {
+        if (callbackObject.objectID === objectUuid) {
+            callbackObject.callback(thisTool);
+        }
+    });
+};
+
+exports.runFrameAddedCallbacks = runFrameAddedCallbacks_;
+exports.runToolAddedCallbacks = runFrameAddedCallbacks_;
+
+exports.subscribeToReset = function (object, callback) {
+    var objectID = utilities.readObject(objectLookup, object);
 
     resetCallbacks.push({
         objectID: objectID,
@@ -301,39 +320,39 @@ exports.subscribeToReset = function (objectName, callback) {
     });
 };
 
-exports.runResetCallbacks = function(objectKey) {
-    resetCallbacks.forEach(function(callbackObject) {
-        if (callbackObject.objectID === objectKey) {
+exports.runResetCallbacks = function (objectUuid) {
+    resetCallbacks.forEach(function (callbackObject) {
+        if (callbackObject.objectID === objectUuid) {
             callbackObject.callback();
         }
     });
 };
 
-exports.subscribeToMatrixStream = function(callback) {
+exports.subscribeToMatrixStream = function (callback) {
     matrixStreamCallbacks.push(callback);
 };
 
-exports.triggerMatrixCallbacks = function(visibleObjects) {
-    matrixStreamCallbacks.forEach(function(callback) {
+exports.triggerMatrixCallbacks = function (visibleObjects) {
+    matrixStreamCallbacks.forEach(function (callback) {
         callback(visibleObjects);
     });
 };
 
-exports.subscribeToUDPMessages = function(callback) {
+exports.subscribeToUDPMessages = function (callback) {
     udpMessageCallbacks.push(callback);
 };
 
-exports.triggerUDPCallbacks = function(msgContent) {
-    udpMessageCallbacks.forEach(function(callback) {
+exports.triggerUDPCallbacks = function (msgContent) {
+    udpMessageCallbacks.forEach(function (callback) {
         callback(msgContent);
     });
 };
 
-exports.clearTool = function(objectName, frameName){
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.clearTool = function (object, tool) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     console.log('remove set tool');
 
-    var frameUuid = objectID + frameName;
+    var frameUuid = objectID + tool;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -344,14 +363,14 @@ exports.clearTool = function(objectName, frameName){
             }
         }
     }
-}
+};
 
-exports.setTool = function(objectName, frameName, tool, dirName){
-  
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    console.log('set new tool: ', tool);
+exports.setTool = function (object, tool, newTool, dirName) {
 
-    var frameUuid = objectID + frameName;
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    console.log('set new tool: ', newTool);
+
+    var frameUuid = objectID + tool;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -381,11 +400,11 @@ exports.setTool = function(objectName, frameName, tool, dirName){
                     objects[objectID].frames[frameUuid] = new Frame();
                 }
                 //define the tool that is used with this frame
-                objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: tool};
+                objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: newTool};
             }
         }
     }
-}
+};
 
 /**
  * @desc addIO() a new IO point to the specified RealityInterface
@@ -396,30 +415,30 @@ exports.setTool = function(objectName, frameName, tool, dirName){
  * @param {object} position - an optional {x: float, y: float} object for the node's starting position. otherwise random
  **/
 
-exports.addNode = function (objectName, frameName, nodeName, type, position) {
+exports.addNode = function (object, tool, node, type, position) {
 
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     console.log('hardwareInterfaces.addNode objectID: ', objectID);
 
-    var nodeUuid = objectID + frameName + nodeName;
-    var frameUuid = objectID + frameName;
+    var nodeUuid = objectID + tool + node;
+    var frameUuid = objectID + tool;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
-            objects[objectID].name = objectName;
+            objects[objectID].name = object;
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame();
-                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, 'local');
+                utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, 'local');
             } else {
-                utilities.createFrameFolder(objectName, frameName, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
+                utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty('nodes')) {
                 objects[objectID].frames[frameUuid].nodes = {};
             }
 
-            objects[objectID].frames[frameUuid].name = frameName;
+            objects[objectID].frames[frameUuid].name = tool;
             objects[objectID].frames[frameUuid].objectId = objectID;
 
             var thisObject;
@@ -440,44 +459,44 @@ exports.addNode = function (objectName, frameName, nodeName, type, position) {
             }
 
             thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            thisObject.name = nodeName;
+            thisObject.name = node;
             thisObject.frameId = frameUuid;
             thisObject.objectId = objectID;
             thisObject.text = undefined;
             thisObject.type = type;
 
             console.log('added node', {
-                node: nodeName,
-                object: objectName,
-                frame: frameName,
+                node: node,
+                object: object,
+                frame: tool,
                 name: thisObject.name,
             });
 
-            if (!hardwareObjects.hasOwnProperty(objectName)) {
-                hardwareObjects[objectName] = new EmptyObject(objectName);
+            if (!hardwareObjects.hasOwnProperty(object)) {
+                hardwareObjects[object] = new EmptyObject(object);
             }
 
-            if (!hardwareObjects[objectName].frames.hasOwnProperty(frameUuid)) {
-                hardwareObjects[objectName].frames[frameUuid] = new EmptyFrame(frameName);
+            if (!hardwareObjects[object].rames.hasOwnProperty(frameUuid)) {
+                hardwareObjects[object].frames[frameUuid] = new EmptyFrame(tool);
             }
 
-            if (!hardwareObjects[objectName].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-                hardwareObjects[objectName].frames[frameUuid].nodes[nodeUuid] = new EmptyNode(nodeName);
-                hardwareObjects[objectName].frames[frameUuid].nodes[nodeUuid].type = type;
+            if (!hardwareObjects[object].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                hardwareObjects[object].frames[frameUuid].nodes[nodeUuid] = new EmptyNode(node);
+                hardwareObjects[object].frames[frameUuid].nodes[nodeUuid].type = type;
             }
         }
     }
 };
 
-exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.renameNode = function (object, tool, oldNode, newNode) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
-            var frameUUID = objectID + frameName;
-            var nodeUUID = objectID + frameName + oldNodeName;
+            var frameUUID = objectID + tool;
+            var nodeUUID = objectID + tool + oldNode;
 
             if (nodeUUID in objects[objectID].frames[frameUUID].nodes) {
-                objects[objectID].frames[frameUUID].nodes[nodeUUID].text = newNodeName;
+                objects[objectID].frames[frameUUID].nodes[nodeUUID].text = newNode;
                 // return
             } /*else {
                 for (var key in objects[objectID].nodes) {
@@ -493,7 +512,7 @@ exports.renameNode = function (objectName, frameName, oldNodeName, newNodeName) 
     objectID = undefined;
 };
 
-exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matrix, loyalty) {
+exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     var thisMatrix = null;
     var thisScale = null;
     var thisLoyalty = null;
@@ -502,9 +521,9 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
     if (loyalty !== undefined) thisLoyalty = 'object';
 
 
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
-    var nodeID = objectID + frameName + nodeName;
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
+    var nodeID = objectID + tool + node;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -528,10 +547,10 @@ exports.moveNode = function (objectName, frameName, nodeName, x, y, scale, matri
     }
 };
 
-exports.removeNode = function (objectName, frameName, nodeName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
-    var nodeID = objectID + frameName + nodeName;
+exports.removeNode = function (object, tool, node) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
+    var nodeID = objectID + tool + node;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -544,10 +563,10 @@ exports.removeNode = function (objectName, frameName, nodeName) {
     }
 };
 
-exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, shouldAttachToGroundPlane) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
-    var frameID = objectID + frameName;
-    var nodeID = objectID + frameName + nodeName;
+exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGroundPlane) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var frameID = objectID + tool;
+    var nodeID = objectID + tool + node;
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -555,20 +574,20 @@ exports.attachNodeToGroundPlane = function (objectName, frameName, nodeName, sho
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
 
                     objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
-                    console.log('Attached node ' + nodeName + ' to ground plane');
+                    console.log('Attached node ' + node + ' to ground plane');
                 }
             }
         }
     }
 };
 
-exports.pushUpdatesToDevices = function(object) {
+exports.pushUpdatesToDevices = function (object) {
     var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
 };
 
-exports.activate = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.activate = function (object) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
@@ -576,8 +595,8 @@ exports.activate = function (objectName) {
     }
 };
 
-exports.deactivate = function (objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.deactivate = function (object) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     console.log('hardwareInterfaces.deactivate');
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -588,14 +607,12 @@ exports.deactivate = function (objectName) {
 };
 
 
-
-
-exports.getObjectIdFromObjectName = function (objectName) {
-    return utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.getObjectIdFromObjectName = function (object) {
+    return utilities.getObjectIdFromTarget(object, objectsPath);
 };
 
-exports.getMarkerSize = function(objectName) {
-    var objectID = utilities.getObjectIdFromTarget(objectName, objectsPath);
+exports.getMarkerSize = function (object) {
+    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
     return objects[objectID].targetSize;
 };
 
@@ -665,25 +682,25 @@ exports.reset = function () {
     }
 };
 
-exports.readCall = function (objectID, frameID, nodeID, data) {
-    if (callBacks.hasOwnProperty(objectID)) {
-        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
-            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                if (callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty('callBack')) {
-                    callBacks[objectID].frames[frameID].nodes[nodeID].callBack(data);
+exports.readCall = function (objectUuid, toolUuid, nodeUuid, data) {
+    if (callBacks.hasOwnProperty(objectUuid)) {
+        if (callBacks[objectUuid].frames.hasOwnProperty(toolUuid)) {
+            if (callBacks[objectUuid].frames[toolUuid].nodes.hasOwnProperty(nodeUuid)) {
+                if (callBacks[objectUuid].frames[toolUuid].nodes[nodeUuid].hasOwnProperty('callBack')) {
+                    callBacks[objectUuid].frames[toolUuid].nodes[nodeUuid].callBack(data);
                 }
             }
         }
     }
 };
 
-exports.readPublicDataCall = function (objectID, frameID, nodeID, data) {
-    if (callBacks.hasOwnProperty(objectID)) {
-        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
-            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                if (callBacks[objectID].frames[frameID].nodes[nodeID].hasOwnProperty('publicCallBacks')) {
-                    var allCallbacks = callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks;
-                    allCallbacks.forEach(function(thisCB) {
+exports.readPublicDataCall = function (objectUuid, toolUuid, nodeUuid, data) {
+    if (callBacks.hasOwnProperty(objectUuid)) {
+        if (callBacks[objectUuid].frames.hasOwnProperty(toolUuid)) {
+            if (callBacks[objectUuid].frames[toolUuid].nodes.hasOwnProperty(nodeUuid)) {
+                if (callBacks[objectUuid].frames[toolUuid].nodes[nodeUuid].hasOwnProperty('publicCallBacks')) {
+                    var allCallbacks = callBacks[objectUuid].frames[toolUuid].nodes[nodeUuid].publicCallBacks;
+                    allCallbacks.forEach(function (thisCB) {
                         if (data.hasOwnProperty(thisCB.dataObject)) {
                             thisCB.cb(data[thisCB.dataObject]);
                         }
@@ -700,34 +717,35 @@ exports.screenObjectCall = function (data) {
     }
 };
 
-var screenObjectServerCallBackObject = function (_x, _y, _z, _a, _b) {};
+var screenObjectServerCallBackObject = function (_x, _y, _z, _a, _b) {
+};
 exports.screenObjectServerCallBack = function (callback) {
     screenObjectServerCallBackObject = callback;
 };
 
 // TODO These are the two calls for the page
-exports.addScreenObjectListener = function (objectName, callBack) {
-    var objectID = utilities.readObject(objectLookup, objectName);
+exports.addScreenObjectListener = function (object, callBack) {
+    var objectID = utilities.readObject(objectLookup, object);
     if (!_.isUndefined(objectID)) {
         screenObjectCallBacks[objectID] = callBack;
     }
 };
 
-exports.writeScreenObjects = function (object, frame, node, touchOffsetX, touchOffsetY) {
+exports.writeScreenObjects = function (object, tool, node, touchOffsetX, touchOffsetY) {
     if (!object) object = null;
-    if (!frame) frame = null;
+    if (!tool) tool = null;
     if (!node || node === 'null') node = null;
 
     var objectKey = utilities.readObject(objectLookup, object); //get globally unique object id
     if (objectKey) object = objectKey;
-    if (node && !node.includes(object)) node = object + frame + node;
-    if (frame && !frame.includes(object)) frame = object + frame;
+    if (node && !node.includes(object)) node = object + tool + node;
+    if (tool && !tool.includes(object)) tool = object + tool;
 
-    screenObjectServerCallBackObject(object, frame, node, touchOffsetX, touchOffsetY);
+    screenObjectServerCallBackObject(object, tool, node, touchOffsetX, touchOffsetY);
 };
 
-exports.activateScreen = function (objectName, port) {
-    var objectID = utilities.readObject(objectLookup, objectName);
+exports.activateScreen = function (object, port) {
+    var objectID = utilities.readObject(objectLookup, object);
     screenPortMap[objectID] = port;
 };
 
@@ -735,10 +753,10 @@ exports.getScreenPort = function (objectID) {
     return screenPortMap[objectID];
 };
 
-exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
-    var objectID = utilities.readObject(objectLookup, objectName);
-    var nodeID = objectID + frameName + nodeName;
-    var frameID = objectID + frameName;
+exports.addReadListener = function (object, tool, node, callBack) {
+    var objectID = utilities.readObject(objectLookup, object);
+    var nodeID = objectID + tool + node;
+    var frameID = objectID + tool;
 
     console.log('Add read listener for objectID: ', objectID);
 
@@ -752,11 +770,11 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
                 }
 
                 if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
-                    callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
+                    callBacks[objectID].frames[frameID] = new EmptyFrame(tool);
                 }
 
                 if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(node);
                 }
 
                 console.log('Add read listener: ', callBack);
@@ -768,10 +786,10 @@ exports.addReadListener = function (objectName, frameName, nodeName, callBack) {
 };
 
 
-exports.addPublicDataListener = function (objectName, frameName, nodeName, dataObject, callBack) {
-    var objectID = utilities.readObject(objectLookup, objectName);
-    var nodeID = objectID + frameName + nodeName;
-    var frameID = objectID + frameName;
+exports.addPublicDataListener = function (object, tool, node, dataObject, callBack) {
+    var objectID = utilities.readObject(objectLookup, object);
+    var nodeID = objectID + tool + node;
+    var frameID = objectID + tool;
 
     console.log('Add publicData listener for objectID: ', objectID);
 
@@ -785,31 +803,34 @@ exports.addPublicDataListener = function (objectName, frameName, nodeName, dataO
                 }
 
                 if (!callBacks[objectID].frames.hasOwnProperty(frameID)) {
-                    callBacks[objectID].frames[frameID] = new EmptyFrame(frameName);
+                    callBacks[objectID].frames[frameID] = new EmptyFrame(tool);
                 }
 
                 if (!callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                    callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(node);
                 }
 
                 if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks === 'undefined') {
                     callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks = [];
                 }
 
-                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push( {cb: callBack, dataObject: dataObject} );
+                callBacks[objectID].frames[frameID].nodes[nodeID].publicCallBacks.push({
+                    cb: callBack,
+                    dataObject: dataObject
+                });
             }
         }
     }
 };
 
-exports.connectCall = function (objectID, frameID, nodeID, data) {
+exports.connectCall = function (objectUuid, frameUuid, nodeUuid, data) {
     console.log('connectCall');
 
-    if (callBacks.hasOwnProperty(objectID)) {
-        if (callBacks[objectID].frames.hasOwnProperty(frameID)) {
-            if (callBacks[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                if (typeof callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack === 'function') {
-                    callBacks[objectID].frames[frameID].nodes[nodeID].connectionCallBack(data);
+    if (callBacks.hasOwnProperty(objectUuid)) {
+        if (callBacks[objectUuid].frames.hasOwnProperty(frameUuid)) {
+            if (callBacks[objectUuid].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
+                if (typeof callBacks[objectUuid].frames[frameUuid].nodes[nodeUuid].connectionCallBack === 'function') {
+                    callBacks[objectUuid].frames[frameUuid].nodes[nodeUuid].connectionCallBack(data);
                     console.log('Connection callback called');
                 } else {
                     console.log('No connection callback');
@@ -819,12 +840,12 @@ exports.connectCall = function (objectID, frameID, nodeID, data) {
     }
 };
 
-exports.addConnectionListener = function (objectName, frameName, nodeName, callBack) {
-    var objectID = utilities.readObject(objectLookup, objectName);
-    var frameID = objectID + frameName;
-    var nodeID = objectID + frameName + nodeName;
+exports.addConnectionListener = function (object, tool, node, callBack) {
+    var objectID = utilities.readObject(objectLookup, object);
+    var frameID = objectID + tool;
+    var nodeID = objectID + tool + node;
 
-    console.log('Add connection listener for objectID: ', objectID, frameID, nodeName);
+    console.log('Add connection listener for objectID: ', objectID, frameID, node);
 
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
 
@@ -837,11 +858,11 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
             var callbackObject = callBacks[objectID];
 
             if (!callbackObject.frames.hasOwnProperty(frameID)) {
-                callbackObject.frames[frameID] = new EmptyFrame(frameName);
+                callbackObject.frames[frameID] = new EmptyFrame(tool);
             }
 
             if (!callbackObject.frames[frameID].nodes.hasOwnProperty(nodeID)) {
-                callbackObject.frames[frameID].nodes[nodeID] = new EmptyNode(nodeName);
+                callbackObject.frames[frameID].nodes[nodeID] = new EmptyNode(node);
             }
 
             callbackObject.frames[frameID].nodes[nodeID].connectionCallBack = callBack;
@@ -850,9 +871,9 @@ exports.addConnectionListener = function (objectName, frameName, nodeName, callB
     }
 };
 
-exports.removeReadListeners = function (objectName, frameName) {
-    var objectID = utilities.readObject(objectLookup, objectName);
-    var frameID = objectID + frameName;
+exports.removeReadListeners = function (object, tool) {
+    var objectID = utilities.readObject(objectLookup, object);
+    var frameID = objectID + tool;
     if (callBacks[objectID].frames[frameID])
         delete callBacks[objectID].frames[frameID];
 };
@@ -881,21 +902,23 @@ exports.addEventListener = function (option, callBack) {
 
 };
 
-exports.advertiseConnection = function (object, frame, node, logic) {
+exports.advertiseConnection = function (object, tool, node, logic) {
     if (typeof logic === 'undefined') {
         logic = false;
     }
     var objectID = utilities.readObject(objectLookup, object);
-    var nodeID = objectID + frame + node;
-    var frameID = objectID + frame;
+    var nodeID = objectID + tool + node;
+    var frameID = objectID + tool;
 
-    var message = {advertiseConnection: {
-        object: objectID,
-        frame: frameID,
-        node: nodeID,
-        logic: logic,
-        names: [object, node]
-    }};
+    var message = {
+        advertiseConnection: {
+            object: objectID,
+            frame: frameID,
+            node: nodeID,
+            logic: logic,
+            names: [object, node]
+        }
+    };
     actionCallback(message);
 };
 
@@ -904,11 +927,11 @@ exports.advertiseConnection = function (object, frame, node, logic) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {function} callback
  */
-exports.addSettingsCallback = function(interfaceName, callback) {
-    if (typeof interfaceSettingsCallbacks[interfaceName] === 'undefined') {
-        interfaceSettingsCallbacks[interfaceName] = [];
+exports.addSettingsCallback = function (interface, callback) {
+    if (typeof interfaceSettingsCallbacks[interface] === 'undefined') {
+        interfaceSettingsCallbacks[interface] = [];
     }
-    interfaceSettingsCallbacks[interfaceName].push(callback);
+    interfaceSettingsCallbacks[interface].push(callback);
 };
 
 /**
@@ -916,11 +939,11 @@ exports.addSettingsCallback = function(interfaceName, callback) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {JSON} currentSettings - should be the exports.settings
  */
-exports.pushSettingsToGui = function(interfaceName, currentSettings) {
-    console.log('pushSettingsToGui for ' + interfaceName);
-    if (typeof interfaceSettingsCallbacks[interfaceName] !== 'undefined') {
-        interfaceSettingsCallbacks[interfaceName].forEach(function(callback) {
-            callback(interfaceName, currentSettings);
+exports.pushSettingsToGui = function (interface, currentSettings) {
+    console.log('pushSettingsToGui for ' + interface);
+    if (typeof interfaceSettingsCallbacks[interface] !== 'undefined') {
+        interfaceSettingsCallbacks[interface].forEach(function (callback) {
+            callback(interface, currentSettings);
         });
     }
 };
@@ -942,6 +965,6 @@ exports.initialize = function () {
     }
 };
 
-exports.loadHardwareInterface = function (hardwareInterfaceName) {
-    return utilities.loadHardwareInterface(hardwareInterfaceName.split(path.sep).pop());
+exports.loadHardwareInterface = function (hardwareInterface) {
+    return utilities.loadHardwareInterface(hardwareInterface.split(path.sep).pop());
 };
