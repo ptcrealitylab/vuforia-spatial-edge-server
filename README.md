@@ -34,13 +34,11 @@ cd vuforia-spatial-edge-server
 npm install
 ```
 
-Now, download the core add-on package and install its dependencies.
+Now, initialize the core add-on git submodule and install its dependencies.
 
 ```bash
-mkdir addons
-cd addons
-git clone https://github.com/ptcrealitylab/vuforia-spatial-core-addon
-cd vuforia-spatial-core-addon
+git submodule update --init --recursive
+cd addons/vuforia-spatial-core-addon
 npm install
 cd ../.. # return to the main vuforia-toolbox-server directory
 ```
