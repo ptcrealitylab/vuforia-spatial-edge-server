@@ -476,7 +476,7 @@ exports.addNode = function (object, tool, node, type, position) {
                 hardwareObjects[object] = new EmptyObject(object);
             }
 
-            if (!hardwareObjects[object].rames.hasOwnProperty(frameUuid)) {
+            if (!hardwareObjects[object].frames.hasOwnProperty(frameUuid)) {
                 hardwareObjects[object].frames[frameUuid] = new EmptyFrame(tool);
             }
 
