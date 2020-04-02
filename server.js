@@ -286,10 +286,10 @@ var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 
 // Image resizing library, not available on mobile
-let sharp = null;
+let Jimp = null;
 if (!isMobile) {
     try {
-        sharp = require('sharp');
+        Jimp = require('jimp');
     } catch (e) {
         console.warn('Image resizing unsupported', e);
     }
@@ -2048,26 +2048,25 @@ function objectWebServer() {
                 // copied fullsize file into resized image file as backup, in case resize operation fails
                 fs.copyFileSync(rawFilepath, resizedFilepath);
 
-                if (sharp) {
-                    sharp(rawFilepath).resize(200).toFile(resizedFilepath, function(err, info) {
-                        if (!err) {
-                            console.log('done resizing', info);
+                if (Jimp) {
+                    Jimp.read(rawFilepath).then(image => {
+                        return image.resize(200, 200).write(resizedFilepath);
+                    }).then(() => {
+                        console.log('done resizing');
 
-                            if (node) {
-                                node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                                utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
-                            }
-
-                            res.status(200);
-                            res.json({success: true}).end();
-
-                        } else {
-                            console.log('error resizing', err);
-                            res.status(500);
-                            res.send(err);
-                            throw err;
+                        if (node) {
+                            node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
+                            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                            utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
                         }
+
+                        res.status(200);
+                        res.json({success: true}).end();
+                    }).catch(err => {
+                        console.log('error resizing', err);
+                        res.status(500);
+                        res.send(err);
+                        throw err;
                     });
                 }
 
@@ -4236,23 +4235,20 @@ function objectWebServer() {
                                 var tempFilepath        = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
                                 var originalFilepath    = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
 
-                                var image;
                                 try {
-                                    image = sharp(rawFilepath);
-                                    image.metadata().then(function(metadata) {
-                                        console.log(metadata);
+                                    Jimp.read(rawFilepath).then(image => {
                                         var desiredMaxDimension = 1024;
 
-                                        if (Math.max(metadata.width, metadata.height) <= desiredMaxDimension) {
+                                        if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
                                             console.log('jpg doesnt need resizing');
                                             continueProcessingUpload();
 
                                         } else {
                                             console.log('attempting to resize file to ' + rawFilepath);
 
-                                            var aspectRatio = metadata.width / metadata.height;
+                                            var aspectRatio = image.bitmap.width / image.bitmap.height;
                                             var newWidth = desiredMaxDimension;
-                                            if (metadata.width < metadata.height) {
+                                            if (image.bitmap.width < image.bitmap.height) {
                                                 newWidth = desiredMaxDimension * aspectRatio;
                                             }
 
@@ -4270,17 +4266,17 @@ function objectWebServer() {
                                             }
                                             fs.copyFileSync(rawFilepath, tempFilepath);
 
-                                            sharp(tempFilepath).resize(Math.floor(newWidth)).toFile(rawFilepath, function(err) {
-                                                if (!err) {
-                                                    console.log('done resizing');
-                                                    if (fs.existsSync(tempFilepath)) {
-                                                        fs.unlinkSync(tempFilepath);
-                                                    }
-                                                    continueProcessingUpload();
-                                                } else {
-                                                    console.warn('error resizing', err);
-                                                    continueProcessingUpload();
+                                            Jimp.read(tempFilepath).then(tempImage => {
+                                                return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
+                                            }).then(() => {
+                                                console.log('done resizing');
+                                                if (fs.existsSync(tempFilepath)) {
+                                                    fs.unlinkSync(tempFilepath);
                                                 }
+                                                continueProcessingUpload();
+                                            }).catch(err => {
+                                                console.warn('error resizing', err);
+                                                continueProcessingUpload();
                                             });
                                         }
                                     });
