@@ -39,6 +39,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - run: npm run build --if-present
-    - run: npm run execution-test-only
+    - run: npm run test-node-six-mobile
       env:
         CI: true

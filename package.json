@@ -41,8 +41,8 @@
     "minami": "^1.2.3"
   },
   "scripts": {
-    "test": "npm run lint && npm run execution-test-only",
-    "execution-test-only": "NODE_ENV=test node test.js",
+    "test": "npm run lint && NODE_ENV=test node test.js",
+    "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
     "lint": "eslint .",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
     "start": "node server.js"
