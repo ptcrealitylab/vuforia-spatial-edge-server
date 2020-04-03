@@ -418,7 +418,13 @@ exports.setTool = function (object, tool, newTool, dirName) {
 exports.addNode = function (object, tool, node, type, position) {
 
     var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
-    console.log('hardwareInterfaces.addNode objectID: ', objectID);
+    console.log('hardwareInterfaces.addNode objectID: ', objectID, object, objectsPath);
+
+    if (!objectID) {
+        utilities.createFolder(object, objectsPath, globalVariables.debug);
+        console.warn('Creating empty folder and giving up');
+        return;
+    }
 
     var nodeUuid = objectID + tool + node;
     var frameUuid = objectID + tool;
