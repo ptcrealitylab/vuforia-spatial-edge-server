@@ -12,8 +12,6 @@
     "directory-tree": "^2.2.4",
     "express": "^4.17.1",
     "express-handlebars": "^4.0.1",
-    "forever": "^2.0.0",
-    "forever-monitor": "^2.0.0",
     "formidable": "^1.2.2",
     "has-ansi": "^4.0.0",
     "ip": "^1.1.5",
@@ -45,7 +43,7 @@
     "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
     "lint": "eslint .",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "_moduleAliases": {
     "@libraries": "./libraries"
