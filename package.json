@@ -11,7 +11,7 @@
     "decompress-zip": "^0.3.2",
     "directory-tree": "^2.2.4",
     "express": "^4.17.1",
-    "express-handlebars": "^4.0.1",
+    "express-handlebars": "^4.0.2",
     "formidable": "^1.2.2",
     "has-ansi": "^4.0.0",
     "ip": "^1.1.5",
