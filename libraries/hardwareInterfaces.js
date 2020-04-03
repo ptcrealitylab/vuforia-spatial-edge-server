@@ -634,9 +634,32 @@ exports.getDebug = function () {
     return globalVariables.debug;
 };
 
+let setHardwareInterfaceSettingsImpl = null;
+/**
+ * Updates the settings.json for a particular hardware interface, based on
+ * changes from the webFrontend.  Uses setHardwareInterfaceSettingsImpl to cut
+ * through a bunch of abstraction into the heart of the server
+ *
+ * @param {string} interfaceName - the folder name of the hardwareInterface
+ * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
+ * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
+ * @param {successCallback} callback
+ */
+exports.setHardwareInterfaceSettings = function(interfaceName, settings, limitToKeys, callback) {
+    return setHardwareInterfaceSettingsImpl(interfaceName, settings, limitToKeys, callback);
+};
+
 /*
  ********** END API FUNCTIONS *********
  */
+
+/**
+ * Complement to setup() which is necessary due to the unique positioning of
+ * the setHardwareInterfaceSettings function
+ */
+exports.setHardwareInterfaceSettingsImpl = function(setHardwareInterfaceSettings) {
+    setHardwareInterfaceSettingsImpl = setHardwareInterfaceSettings;
+};
 
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
