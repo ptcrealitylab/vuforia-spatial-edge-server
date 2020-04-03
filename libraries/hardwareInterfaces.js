@@ -387,8 +387,8 @@ exports.setTool = function (object, tool, newTool, dirName) {
                     addonName = dirArray[dirLength - 3];
                     interfaceName = dirArray[dirLength - 1];
                 } else {
-                    var dirArray = dirName.split('\\');
-                    var dirLength = dirArray.length;
+                    dirArray = dirName.split('\\');
+                    dirLength = dirArray.length;
 
                     if (dirArray[dirLength - 2] === 'interfaces') {
                         addonName = dirArray[dirLength - 3];
