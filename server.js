@@ -4348,6 +4348,7 @@ function objectWebServer() {
                                             };
 
                                             res.json(sendObject);
+                                            return;
                                         }
 
                                     }
