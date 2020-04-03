@@ -45,7 +45,7 @@
     "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
     "lint": "eslint .",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "_moduleAliases": {
     "@libraries": "./libraries"

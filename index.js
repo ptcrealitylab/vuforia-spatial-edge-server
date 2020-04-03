@@ -1,49 +1,34 @@
 'use strict';
 
-/**
- * Starts server.js using forever, so that it restarts upon exiting
- */
+const fork = require('child_process').fork;
+const path = require('path');
 
-var cmd = ( process.env.DBG ? 'node --debug' : 'node' );
+const program = path.resolve('server.js');
+const parameters = [];
+const options = {
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc']
+};
 
+let child = null;
 
-var forever = require('forever');
-
-const child = new forever.Monitor('server.js', {
-    command: cmd
-});
-
-child.on('exit', function() {
-    console.info('server.js has exited!');
-} );
-child.on('restart', function() {
-    console.info( 'server.js has restarted.' );
-} );
-
-child.start();
-forever.startServer( child );
-
-if (process.pid) {
-    console.log('Reality Server index.js process is running with PID', process.pid);
+function startNewChild() {
+    child = fork(program, parameters, options);
+    child.on('message', onChildMessage);
+    child.on('exit', onChildCrash);
 }
 
-process.on('SIGINT', function() {
-    console.info('Gracefully shutting down \'node forever\' from SIGINT (Ctrl-C)');
-    // some other closing procedures go here
-    // child.kill('SIGINT');
-
-    try {
-        //Killing node process manually that is running 'index.js' file.
-        process.kill(child.childData.pid);
-        console.log('Child process killed succesfully!!');
-    } catch (err) {
-        console.error('Child process already stopped!!', err);
+function onChildMessage(message) {
+    console.log('message from child:', message);
+    if (message === 'restart') {
+        child.removeListener('exit', onChildCrash);
+        child.kill();
+        startNewChild();
     }
+}
 
-    //Killing forever process.
-    process.exit();
-});
+function onChildCrash() {
+    console.info('server.js has exited unexpectedly, restarting');
+    child = fork(program, parameters, options);
+}
 
-process.on('uncaughtException', function(err) {
-    console.error('Caught exception in \'node forever\': ', err);
-});
+startNewChild();
