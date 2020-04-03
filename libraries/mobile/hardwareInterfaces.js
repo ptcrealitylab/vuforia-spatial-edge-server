@@ -37,4 +37,8 @@ module.exports = {
     },
     screenObjectServerCallBack: function() {
     },
+    setHardwareInterfaceSettings: function() {
+    },
+    setHardwareInterfaceSettingsImpl: function() {
+    },
 };
