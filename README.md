@@ -46,7 +46,7 @@ cd ../.. # return to the main vuforia-toolbox-server directory
 You can now run the server using the following command:
 
 ```bash
-node server.js
+node index.js
 ```
 
 ## Contributing
@@ -74,19 +74,19 @@ logged. For example, the following command will only print log messages that
 originate from hardware interfaces:
 
 ```bash
-LOG_MODULES=interfaces node server.js
+LOG_MODULES=interfaces node index.js
 ```
 
 This command hides all console messages except for those made using `console.error`:
 
 ```bash
-LOG_LEVEL=error node server.js
+LOG_LEVEL=error node index.js
 ```
 
 This command would limit messages to the gitInterface.js and envelope.js files:
 
 ```bash
-LOG_MODULES=gitInterface,envelope node server.js
+LOG_MODULES=gitInterface,envelope node index.js
 ```
 
 LOG_MODULES is a list of comma-separated file names, folder names, or keywords
