@@ -54,7 +54,7 @@ require('module-alias/register');
 const _logger = require('./logger');
 
 const os = require('os');
-const isMobile = os.platform() === 'android' || os.platform() === 'ios';
+const isMobile = os.platform() === 'android' || os.platform() === 'ios' || process.env.FORCE_MOBILE;
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
