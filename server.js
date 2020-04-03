@@ -3313,6 +3313,10 @@ function objectWebServer() {
             storage.setItemSync('activeNetworkInterface', req.params[0]);
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
             // res.redirect(req.get('referer'));
+
+            if (process.send) {
+                process.send('restart');
+            }
         });
 
         webServer.get('/object/*/deactivate/', function (req, res) {
