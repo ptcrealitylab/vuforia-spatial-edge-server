@@ -61,13 +61,23 @@ var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
-
+const { spawn } = require('child_process');
 
 var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 var hardwareIdentity = homedir + '/.identity';
+
+exports.restartServer = function () {
+  spawn("node", ["server"], {
+    detached: true,
+    stdio: 'inherit'  // [process.stdin, process.stdout, process.stderr]
+  }).unref()
+
+  process.kill(process.pid);
+  process.exit();
+};
 
 exports.writeObject = function (objectLookup, folder, id) {
     objectLookup[folder] = {id: id};

@@ -753,6 +753,18 @@ function exit() {
 
 process.on('SIGINT', exit);
 
+
+const readline = require('readline');
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+process.stdin.on('keypress', (str, key) => {
+    if (key.ctrl && key.name == 'c') {
+        hardwareAPI.shutdown();
+        console.log("System is now shutting down. You might need to press ctrl+c again");
+        process.kill(process.pid);
+      }
+})
+
 if (process.pid) {
     console.log('Reality Server server.js process is running with PID ' + process.pid);
 }
@@ -1042,7 +1054,7 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
-      
+
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1110,9 +1122,9 @@ function objectWebServer() {
     });
 
     webServer.use('/obj', function (req, res, next) {
-        
-       
-     
+
+
+
         var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
@@ -1120,9 +1132,9 @@ function objectWebServer() {
             var objectKey = utilities.readObject(objectLookup, urlArray[0]);
             var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[2];
             var thisFrame = getFrame(objectKey, frameKey);
-            
+
             var toolpath = null;
-            
+
             if(thisFrame !== null){
                 if(thisFrame.hasOwnProperty('tool')){
                     if(thisFrame.tool.hasOwnProperty('addon') && thisFrame.tool.hasOwnProperty('interface') && thisFrame.tool.hasOwnProperty('tool')){
@@ -1133,7 +1145,7 @@ function objectWebServer() {
 
             urlArray.splice(1, 1);
         }
-        
+
         var switchToInteraceTool = true;
         if(!toolpath) switchToInteraceTool = false;
 
@@ -1158,7 +1170,7 @@ function objectWebServer() {
         var newToolUrl = '';
         for (let i = 0; i < urlArray.length; i++) {
             newUrl += '/' + urlArray[i];
-            
+
         }
 
         if(toolpath !== null) {
@@ -1166,11 +1178,11 @@ function objectWebServer() {
                 newToolUrl += '/' + urlArray[i];
             }
         }
-        
+
         if (newUrl.slice(-1) === '/') {
             newUrl += 'index.html';
             if(toolpath !== null) {
-                newToolUrl += 'index.html'; 
+                newToolUrl += 'index.html';
             }
             urlArray.push('index.html');
         }
@@ -1182,7 +1194,7 @@ function objectWebServer() {
             let fileName2 = toolpath + newToolUrl;
 
             if (toolpath && switchToInteraceTool && fs.existsSync(fileName2)) fileName = fileName2;
-                
+
             if (urlArray[urlArray.length - 1] !== 'index.html' && urlArray[urlArray.length - 1] !== 'index.htm') {
                 if (fs.existsSync(fileName + 'index.html')) {
                     fileName = fileName + 'index.html';
@@ -3311,6 +3323,9 @@ function objectWebServer() {
             res.json(ips);
 
             storage.setItemSync('activeNetworkInterface', req.params[0]);
+
+          utilities.restartServer();
+
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
             // res.redirect(req.get('referer'));
         });
@@ -5442,4 +5457,3 @@ function checkInit(init) {
         hardwareAPI.initialize();
     }
 }
-
