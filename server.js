@@ -608,7 +608,8 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel(services.ip, serverPort, version, protocol);
+            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
+            objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
 
             // create first frame
@@ -719,7 +720,8 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel(services.ip, serverPort, version, protocol);
+    worldObject = new ObjectModel(services.ip, version, protocol);
+    worldObject.port = serverPort;
     worldObject.name = worldObjectName;
     if (isMobile) {
         worldObject.objectId = worldObjectName;
@@ -839,6 +841,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
+    objects[thisId].port = serverPort;
 
     var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
@@ -924,7 +927,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     ip: services.ip,
                     port: serverPort,
                     vn: thisVersionNumber,
-                    port: protocol,
+                    pr: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
@@ -3812,6 +3815,7 @@ function objectWebServer() {
 
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
+                objects[thisId].port = serverPort;
 
                 var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
@@ -3821,6 +3825,7 @@ function objectWebServer() {
                 returnJSON.push({
                     id: thisId,
                     ip: objects[thisId].ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs
@@ -3912,7 +3917,7 @@ function objectWebServer() {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         if (isWorldObject) {
                             let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(services.ip, serverPort, version, protocol);
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol);
                             objects[objectId].name = req.body.name;
                             objects[objectId].objectId = objectId;
                             objects[objectId].port = serverPort;
@@ -4483,6 +4488,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             if (objectIDXML.length > 13) {
 
                 objects[objectIDXML] = new ObjectModel(services.ip, serverPort, version, protocol);
+                objects[objectIDXML].port = serverPort;
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
