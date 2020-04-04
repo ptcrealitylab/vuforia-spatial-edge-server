@@ -102,7 +102,7 @@
         script.type = 'text/javascript';
 
         let defaultPort = "8080";
-        if(object.hasOwnProperty(port)) defaultPort = object.port;
+        if(object.hasOwnProperty("port")) defaultPort = object.port;
         
         var url = 'http://' + object.ip + ':'+defaultPort;
         spatialObject.socketIoUrl = url;
