@@ -7,7 +7,7 @@
  * @param {string} version - Version number of server, currently 3.1.0 or 3.2.0
  * @param {string} protocol - Protocol of object, one of R0, R1, or R2 (current)
  */
-function ObjectModel(ip, port, version, protocol) {
+function ObjectModel(ip, version, protocol) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
     this.objectId = null;
     // The name for the object used for interfaces.
@@ -16,7 +16,6 @@ function ObjectModel(ip, port, version, protocol) {
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
     this.ip = ip;
-    this.port = port
     // The version number of the Object.
     this.version = version;
 
