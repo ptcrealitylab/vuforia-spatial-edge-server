@@ -147,7 +147,9 @@ var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
 
 var services = {};
-services.networkInterface = require('network-interfaces');
+if (!isMobile) {
+    services.networkInterface = require('network-interfaces');
+}
 services.options = {ipVersion: 4};
 services.ips = {activeInterface: null, tempActiveInterface: null, interfaces: {}};
 services.ip = null
