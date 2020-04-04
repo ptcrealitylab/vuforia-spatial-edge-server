@@ -101,7 +101,10 @@
         var script = document.createElement('script');
         script.type = 'text/javascript';
 
-        var url = 'http://' + object.ip + ':8080';
+        let defaultPort = "8080";
+        if(object.hasOwnProperty(port)) defaultPort = object.port;
+        
+        var url = 'http://' + object.ip + ':'+defaultPort;
         spatialObject.socketIoUrl = url;
         script.src = url + '/socket.io/socket.io.js';
 

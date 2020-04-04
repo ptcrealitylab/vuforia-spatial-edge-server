@@ -85,12 +85,14 @@ const globalVariables = {
 
  */
 
-const serverPort = 8080;
+var serverPort = isMobile ? 49369 : 8080 ;
+const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
+
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server. 
 // The version of this server
@@ -606,7 +608,7 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
+            objects[tempFolderName] = new ObjectModel(services.ip, serverPort, version, protocol);
             objects[tempFolderName].name = objectFolderList[i];
 
             // create first frame
@@ -717,7 +719,7 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel(services.ip, version, protocol);
+    worldObject = new ObjectModel(services.ip, serverPort, version, protocol);
     worldObject.name = worldObjectName;
     if (isMobile) {
         worldObject.objectId = worldObjectName;
@@ -737,6 +739,7 @@ function loadWorldObject() {
     }
 
     worldObject.ip = services.ip;
+    worldObject.port = serverPort;
 
     objects[worldObject.objectId] = worldObject;
 
@@ -852,6 +855,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     const messageStr = JSON.stringify({
         id: thisId,
         ip: services.ip,
+        port: serverPort,
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
@@ -876,12 +880,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
                 let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
+                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
                 
                 const message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
@@ -909,14 +915,16 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 var zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
+                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
                 
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
-                    pr: protocol,
+                    port: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
@@ -1095,7 +1103,7 @@ function objectWebServer() {
         const uiPath = path.join(__dirname, '../userinterface');
         const localUserInterfaceApp = new LocalUIApp(uiPath, addonFolders);
         localUserInterfaceApp.setup();
-        localUserInterfaceApp.listen(8888);
+        localUserInterfaceApp.listen(serverUserInterfaceAppPort);
     }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
@@ -3904,9 +3912,10 @@ function objectWebServer() {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         if (isWorldObject) {
                             let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(services.ip, version, protocol);
+                            objects[objectId] = new ObjectModel(services.ip, serverPort, version, protocol);
                             objects[objectId].name = req.body.name;
                             objects[objectId].objectId = objectId;
+                            objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
@@ -4473,7 +4482,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
-                objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
+                objects[objectIDXML] = new ObjectModel(services.ip, serverPort, version, protocol);
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
