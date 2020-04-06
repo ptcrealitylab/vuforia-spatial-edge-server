@@ -85,13 +85,16 @@ const globalVariables = {
 
  */
 
-const serverPort = 8080;
+var serverPort = isMobile ? 49369 : 8080 ;
+const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
 const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 
+
+// todo why would you alter the version of the server for mobile. There should only be one version of the server. 
 // The version of this server
 const version = isMobile ? '3.2.0' : '3.1.0';
 // The protocol of this server
@@ -144,11 +147,76 @@ storage.initSync();
 
 var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
-var ips = {activeInterface: 'en0', interfaces: {}};
-if (storage.getItemSync('activeNetworkInterface') !== undefined) {
-    //console.log( storage.getItemSync('activeNetworkInterface'));
-    ips.activeInterface = storage.getItemSync('activeNetworkInterface');
+
+var services = {};
+if (!isMobile) {
+    services.networkInterface = require('network-interfaces');
 }
+
+services.ips = {activeInterface: null, tempActiveInterface: null, interfaces: {}};
+services.ip = null
+services.updateAllObjcts = function (ip){
+    console.log("updating all objects with new IP: ", ip);
+    for (let key in objects){
+        objects[key].ip = ip;
+    }
+};
+services.getIP = function (){
+    this.ips.interfaces = {};
+    // if this is mobile, only allow local interfaces
+    if (isMobile) {
+        this.ips.interfaces["mobile"] = '127.0.0.1';
+        this.ips.activeInterface = "mobile";
+        return '127.0.0.1';
+    }
+    
+    // Get All available interfaces
+        var interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+        for (let key in interfaceNames) {
+            let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
+            for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
+            this.ips.interfaces[interfaceNames[key]] = tempIps[0];
+        }
+
+        // if activeInterface is empty, read from storage and check if it exists in found interfaces
+    if (storage.getItemSync('activeNetworkInterface') !== undefined && this.ips.activeInterface === null) {
+        var storedIPS = null;
+        storedIPS = storage.getItemSync('activeNetworkInterface');
+        if (storedIPS in this.ips.interfaces) {
+            this.ips.activeInterface = storedIPS;
+        }
+    }
+    
+    // if it is still empty give it a default
+    if(this.ips.activeInterface === null) {
+        this.ips.activeInterface = 'en0';
+        // make sure all objects got the memo
+        this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
+    }
+    
+    // if activeInterface is not available, get the first available one and refresh all objects
+    if (!(this.ips.activeInterface in this.ips.interfaces)){
+        this.ips.tempActiveInterface = this.ips.activeInterface;
+        for (var tempKey in this.ips.interfaces) {
+            this.ips.activeInterface = tempKey;
+            // make sure all objects got the memo
+            this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
+            break;
+        }
+    }
+    
+    // check if active interface is back
+    if(this.ips.tempActiveInterface) {
+    if (this.ips.tempActiveInterface in this.ips.interfaces){
+        this.ips.activeInterface = this.ips.tempActiveInterface;
+        this.ips.tempActiveInterface = null;
+    }
+    }
+    // return active IP
+    return this.ips.interfaces[this.ips.activeInterface];
+}
+
+services.ip = services.getIP(); //ip.address();
 
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
@@ -171,21 +239,6 @@ frameFolderLoader.calculatePathResolution();
 for (const frameLibPath of frameLibPaths) {
     if (fs.existsSync(frameLibPath)) {
         addonFrames.addFramesSource(frameLibPath, identityFolderName);
-    }
-}
-
-if (isMobile) {
-    ips.interfaces[ips.activeInterface] = '127.0.0.1';
-} else {
-    // find ips
-    var ni = require('network-interfaces');
-    var options = {ipVersion: 4};
-
-    var interfaceNames = ni.getInterfaces(options);
-    for (let key in interfaceNames) {
-        let tempIps = ni.toIps(interfaceNames[key], options);
-        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
-        ips.interfaces[interfaceNames[key]] = tempIps[0];
     }
 }
 
@@ -555,7 +608,8 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
+            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
+            objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
 
             // create first frame
@@ -569,7 +623,7 @@ function loadObjects() {
             // try to read a saved previous state of the object
             try {
                 objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
-                objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; // ip.address();
+                objects[tempFolderName].ip = services.ip; // ip.address();
 
                 // this is for transforming old lists to new lists
                 if (typeof objects[tempFolderName].objectValues !== 'undefined') {
@@ -606,7 +660,7 @@ function loadObjects() {
 
 
             } catch (e) {
-                objects[tempFolderName].ip = ips.interfaces[ips.activeInterface]; //ip.address();
+                objects[tempFolderName].ip = services.ip; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
                 console.log('No saved data for: ' + tempFolderName);
             }
@@ -666,7 +720,8 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
+    worldObject = new ObjectModel(services.ip, version, protocol);
+    worldObject.port = serverPort;
     worldObject.name = worldObjectName;
     if (isMobile) {
         worldObject.objectId = worldObjectName;
@@ -679,13 +734,14 @@ function loadWorldObject() {
     if (globalVariables.saveToDisk) {
         try {
             worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-            console.log('Loaded world object for server: ' + ips.interfaces[ips.activeInterface]);
+            console.log('Loaded world object for server: ' + services.ip);
         } catch (e) {
-            console.log('No saved data for world object on server: ' + ips.interfaces[ips.activeInterface]);
+            console.log('No saved data for world object on server: ' + services.ip);
         }
     }
 
-    worldObject.ip = ips.interfaces[ips.activeInterface];
+    worldObject.ip = services.ip;
+    worldObject.port = serverPort;
 
     objects[worldObject.objectId] = worldObject;
 
@@ -785,6 +841,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
+    objects[thisId].port = serverPort;
 
     var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
@@ -800,7 +857,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     // json string to be sent
     const messageStr = JSON.stringify({
         id: thisId,
-        ip: ips.interfaces[ips.activeInterface],
+        ip: services.ip,
+        port: serverPort,
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
@@ -825,10 +883,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
                 let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
+                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
 
+                services.ip = services.getIP();
+                
                 const message = new Buffer(JSON.stringify({
                     id: thisId,
-                    ip: ips.interfaces[ips.activeInterface],
+                    ip: services.ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
@@ -837,8 +899,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
-                        console.log('error in beatSender', err);
+                        console.log("Your not on a network. Can't send anything");
                         //throw err;
+                        for(var key in objects){
+                            objects[key].ip = services.ip;
+                        }
                     }
                     // client is not being closed, as the beat is send ongoing
                 });
@@ -853,10 +918,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 var zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
+                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
 
+                services.ip = services.getIP();
+                
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
-                    ip: ips.interfaces[ips.activeInterface],
+                    ip: services.ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
@@ -883,7 +952,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
  * @note if action "ping" is received, the object calls a heartbeat that is send one time.
  **/
 
-var thisIP = ips.interfaces[ips.activeInterface]; //ip.address();
+services.ip = services.getIP(); //ip.address();
 
 function objectBeatServer() {
     if (isMobile) {
@@ -977,7 +1046,7 @@ var parseIpSpace = function (ip_string) {
 };
 
 function objectWebServer() {
-    thisIP = ips.interfaces[ips.activeInterface]; // ip.address();
+    services.ip = services.getIP(); // ip.address();
     // security implemented
 
     // check all sever requests for being inside the netmask parameters.
@@ -987,7 +1056,7 @@ function objectWebServer() {
 
 
         var remoteIP = parseIpSpace(req.ip);
-        var localIP = parseIpSpace(thisIP);
+        var localIP = parseIpSpace(services.ip);
         var thisNetmask = parseIpSpace(netmask);
 
         var checkThisNetwork = true;
@@ -1013,7 +1082,7 @@ function objectWebServer() {
                 checkThisNetwork = true;
             }
 
-        if (ips.activeInterface in ips.interfaces) {
+        if (services.ips.activeInterface in services.ips.interfaces) {
             if (checkThisNetwork) {
                 next();
             } else {
@@ -1037,7 +1106,7 @@ function objectWebServer() {
         const uiPath = path.join(__dirname, '../userinterface');
         const localUserInterfaceApp = new LocalUIApp(uiPath, addonFolders);
         localUserInterfaceApp.setup();
-        localUserInterfaceApp.listen(8888);
+        localUserInterfaceApp.listen(serverUserInterfaceAppPort);
     }
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
@@ -1091,7 +1160,7 @@ function objectWebServer() {
         scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
 
         // inject the server IP address, but don't inject the objectKey and frameKey, as those come from the editor
-        scriptNode += '<script> realityObject.serverIp = "' + ips.interfaces[ips.activeInterface] + '"</script>';//ip.address()
+        scriptNode += '<script> realityObject.serverIp = "' + services.ip + '"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
 
@@ -1215,7 +1284,7 @@ function objectWebServer() {
 
             scriptNode += '\n<script> realityObject.object = "' + objectKey + '";</script>\n';
             scriptNode += '<script> realityObject.frame = "' + frameKey + '";</script>\n';
-            scriptNode += '<script> realityObject.serverIp = "' + ips.interfaces[ips.activeInterface] + '"</script>';//ip.address()
+            scriptNode += '<script> realityObject.serverIp = "' + services.ip + '"</script>';//ip.address()
             loadedHtml('head').prepend(scriptNode);
             res.send(loadedHtml.html());
         } else if ((req.method === 'GET') && (req.url.slice(-1) === '/' || urlArray[urlArray.length - 1].match(/\.json?$/))) {
@@ -3287,14 +3356,14 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder, function (req, res) {
             // console.log("get 16");
             let framePathList = frameLibPaths.join(' ');
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
+            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function(req, res) {
             if (!isMobile) {
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
-                res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, ips, serverPort, configHtmlPath));
+                res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
             } else {
                 res.status(403).send('You cannot configure a hardware interface from a mobile device server');
             }
@@ -3306,9 +3375,9 @@ function objectWebServer() {
         });
 
         webServer.get('/server/networkInterface/*/', function (req, res) {
-            console.log('get networkInterface', req.params[0]);
-            ips.activeInterface = req.params[0];
-            res.json(ips);
+            console.log('--------------------------------------------------------get networkInterface', req.params[0]);
+            services.ips.activeInterface = req.params[0];
+            res.json(services.ips);
 
             storage.setItemSync('activeNetworkInterface', req.params[0]);
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -3605,7 +3674,7 @@ function objectWebServer() {
             addonFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: services.ip, frameName: frameName}, lastEditor: null});
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3618,7 +3687,7 @@ function objectWebServer() {
             addonFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    utilities.actionSender({reloadAvailableFrames: {serverIP: ips.interfaces[ips.activeInterface], frameName: frameName}, lastEditor: null});
+                    utilities.actionSender({reloadAvailableFrames: {serverIP: services.ip, frameName: frameName}, lastEditor: null});
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3746,6 +3815,7 @@ function objectWebServer() {
 
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
+                objects[thisId].port = serverPort;
 
                 var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
@@ -3755,6 +3825,7 @@ function objectWebServer() {
                 returnJSON.push({
                     id: thisId,
                     ip: objects[thisId].ip,
+                    port: serverPort,
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs
@@ -3846,9 +3917,10 @@ function objectWebServer() {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         if (isWorldObject) {
                             let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol);
                             objects[objectId].name = req.body.name;
                             objects[objectId].objectId = objectId;
+                            objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
@@ -4415,7 +4487,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
-                objects[objectIDXML] = new ObjectModel(ips.interfaces[ips.activeInterface], version, protocol);
+                objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
+                objects[objectIDXML].port = serverPort;
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
@@ -4429,10 +4502,10 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
                 try {
                     objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
-                    objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
+                    objects[objectIDXML].ip = services.ip; //ip.address();
                     console.log('testing: ' + objects[objectIDXML].ip);
                 } catch (e) {
-                    objects[objectIDXML].ip = ips.interfaces[ips.activeInterface]; //ip.address();
+                    objects[objectIDXML].ip = services.ip; //ip.address();
                     console.log('testing: ' + objects[objectIDXML].ip);
                     console.log('No saved data for: ' + objectIDXML);
                 }
@@ -4838,7 +4911,7 @@ function socketServer() {
                 var thisObject = objects[objectId];
                 if (!doesObjectExist(objectId)) {
                     // create an object if needed
-                    const ip = ips.interfaces[ips.activeInterface];
+                    const ip = services.ip;
                     objects[objectId] = new HumanPoseObject(ip, version, protocol, poseInfo.id);
                     thisObject = objects[objectId];
                     // advertise to editors
@@ -5315,8 +5388,8 @@ function socketSender(object, frame, link, data) {
         }
 
         try {
-            var thisIp = knownObjects[thisLink.objectB].ip;
-            var presentObjectConnection = socketArray[thisIp].io;
+            var thisOtherIp = knownObjects[thisLink.objectB].ip;
+            var presentObjectConnection = socketArray[thisOtherIp].io;
             if (presentObjectConnection.connected) {
                 presentObjectConnection.emit('object', msg);
             }
@@ -5365,10 +5438,10 @@ function socketUpdater() {
                 var thisLink = object.frames[frameKey].links[linkKey];
 
                 if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
-                    var thisIp = knownObjects[thisLink.objectB].ip;
-                    if (!(thisIp in socketArray)) {
+                    var thisOtherIp = knownObjects[thisLink.objectB].ip;
+                    if (!(thisOtherIp in socketArray)) {
                         // console.log("should not show up -----------");
-                        socketArray[thisIp] = new ObjectSocket(socket, socketPort, thisIp);
+                        socketArray[thisOtherIp] = new ObjectSocket(socket, socketPort, thisOtherIp);
                     }
                 }
             }
