@@ -617,7 +617,7 @@ exports.actionSender = function(action, timeToLive, beatport) {
     // send the datagram
     client.send(message, 0, message.length, beatport, HOST, function (err) {
         if (err) {
-            throw err;
+           console.log("Your not on a network. Can't send anything");
         }
         client.close();
     });
