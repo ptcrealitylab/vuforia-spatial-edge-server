@@ -152,7 +152,7 @@ var services = {};
 if (!isMobile) {
     services.networkInterface = require('network-interfaces');
 }
-services.options = {ipVersion: 4};
+
 services.ips = {activeInterface: null, tempActiveInterface: null, interfaces: {}};
 services.ip = null
 services.updateAllObjcts = function (ip){
@@ -171,9 +171,9 @@ services.getIP = function (){
     }
     
     // Get All available interfaces
-        var interfaceNames = this.networkInterface.getInterfaces(this.options);
+        var interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
         for (let key in interfaceNames) {
-            let tempIps = this.networkInterface.toIps(interfaceNames[key], this.options);
+            let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
             for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
             this.ips.interfaces[interfaceNames[key]] = tempIps[0];
         }
@@ -4487,7 +4487,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
             if (objectIDXML.length > 13) {
 
-                objects[objectIDXML] = new ObjectModel(services.ip, serverPort, version, protocol);
+                objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
                 objects[objectIDXML].port = serverPort;
                 objects[objectIDXML].name = folderVar;
                 objects[objectIDXML].objectId = objectIDXML;
