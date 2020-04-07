@@ -3520,6 +3520,17 @@ function objectWebServer() {
             });
         });
 
+        webServer.get('/hardwareInterface/:interfaceName/settings/', function(req, res) {
+            const interfaceName = req.params.interfaceName;
+
+            if (!hardwareInterfaceModules.hasOwnProperty(interfaceName)) {
+                res.sendStatus(404);
+                return;
+            }
+
+            res.json(hardwareInterfaceModules[interfaceName].settings);
+        });
+
         webServer.post('/hardwareInterface/:interfaceName/settings/', function(req, res) {
             var interfaceName = req.params.interfaceName;
 
