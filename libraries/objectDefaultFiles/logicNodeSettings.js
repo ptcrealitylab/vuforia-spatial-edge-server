@@ -360,5 +360,5 @@ function SpatialLogic() { // eslint-disable-line no-unused-vars
 
 }
 
-var RealityLogic = SpatialLogic;
-var realityObject = spatialObject;
+var RealityLogic = SpatialLogic; // eslint-disable-line
+var realityObject = spatialObject; // eslint-disable-line
