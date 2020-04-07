@@ -282,35 +282,32 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
 
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
 
-    if (fs.existsSync(xmlFile)) {
-        var resultXML = '';
-        xml2js.
-            Parser().
-            parseString(fs.readFileSync(xmlFile, 'utf8'),
-                function (err, result) {
-                    for (var first in result) {
-                        for (var secondFirst in result[first].Tracking[0]) {
-                            var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                            var sizeFloatArray = sizeString.split(' ').map(function(elt) {
-                                return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-                            });
-                            resultXML = {
-                                width: sizeFloatArray[0],
-                                height: sizeFloatArray[1]
-                            };
-                            break;
-                        }
-                        break;
-                    }
-                });
+    var resultXML = {
+        width: 0.3, // default width and height so it doesn't crash if there isn't a size in the xml
+        height: 0.3
+    };
 
-        return resultXML;
-    } else {
-        return {
-            width: 0.3, // default width and height so it doesn't crash if there isn't a size in the xml
-            height: 0.3
-        };
+    if (fs.existsSync(xmlFile)) {
+        try {
+            xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'), function (err, result) {
+                let first = Object.keys(result)[0];
+                let secondFirst = Object.keys(result[first].Tracking[0])[0];
+                var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                var sizeFloatArray = sizeString.split(' ').map(function(elt) {
+                    // TODO: this assumption makes it backwards compatible but might cause problems in the future
+                    return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
+                });
+                resultXML = {
+                    width: sizeFloatArray[0],
+                    height: sizeFloatArray[1]
+                };
+            });
+        } catch (e) {
+            console.warn('error parsing xml, returning default size');
+        }
     }
+
+    return resultXML;
 };
 
 /**
@@ -617,7 +614,7 @@ exports.actionSender = function(action, timeToLive, beatport) {
     // send the datagram
     client.send(message, 0, message.length, beatport, HOST, function (err) {
         if (err) {
-           console.log("Your not on a network. Can't send anything");
+            console.log('You\'re not on a network. Can\'t send anything');
         }
         client.close();
     });
