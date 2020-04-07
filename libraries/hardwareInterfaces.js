@@ -77,7 +77,8 @@ function EmptyNode(nodeName, type) {
  */
 
 /**
- * @desc This function writes the values passed from the hardware interface to the RealityObjects server.
+ * This function writes the values passed from the hardware interface to the
+ * Spatial Toolbox server.
  * @param {string} objectName The name of the RealityInterface
  * @param {string} nodeName The name of the IO point
  * @param {value} value The value to be passed on
