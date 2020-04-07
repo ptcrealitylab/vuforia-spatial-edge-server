@@ -505,7 +505,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                 function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
                     buttonDiv.addEventListener('click', function() { // put in a closure so it references don't mutate
                         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open('http://' + ipAddress + ':'+realityServer.states.serverPort+'/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
+                        window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
                 if (thisFrame.location === 'global') {
@@ -587,7 +587,7 @@ realityServer.updateManageFrames = function() {
             buttonDiv.addEventListener('click', function() {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
-                window.open('http://' + ipAddress + ':'+realityServer.states.serverPort+'/frames/' + frameType + '/index.html', '_blank');
+                window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
             });
         }
         let contentButton = frameInfo.dom.querySelector('.content');

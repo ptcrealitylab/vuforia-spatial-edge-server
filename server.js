@@ -94,7 +94,7 @@ const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 
 
-// todo why would you alter the version of the server for mobile. There should only be one version of the server. 
+// todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
 const version = isMobile ? '3.2.0' : '3.1.0';
 // The protocol of this server
@@ -154,31 +154,31 @@ if (!isMobile) {
 }
 
 services.ips = {activeInterface: null, tempActiveInterface: null, interfaces: {}};
-services.ip = null
-services.updateAllObjcts = function (ip){
-    console.log("updating all objects with new IP: ", ip);
-    for (let key in objects){
+services.ip = null;
+services.updateAllObjcts = function (ip) {
+    console.log('updating all objects with new IP: ', ip);
+    for (let key in objects) {
         objects[key].ip = ip;
     }
 };
-services.getIP = function (){
+services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
     if (isMobile) {
-        this.ips.interfaces["mobile"] = '127.0.0.1';
-        this.ips.activeInterface = "mobile";
+        this.ips.interfaces['mobile'] = '127.0.0.1';
+        this.ips.activeInterface = 'mobile';
         return '127.0.0.1';
     }
-    
-    // Get All available interfaces
-        var interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
-        for (let key in interfaceNames) {
-            let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
-            for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
-            this.ips.interfaces[interfaceNames[key]] = tempIps[0];
-        }
 
-        // if activeInterface is empty, read from storage and check if it exists in found interfaces
+    // Get All available interfaces
+    var interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+    for (let key in interfaceNames) {
+        let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
+        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
+        this.ips.interfaces[interfaceNames[key]] = tempIps[0];
+    }
+
+    // if activeInterface is empty, read from storage and check if it exists in found interfaces
     if (storage.getItemSync('activeNetworkInterface') !== undefined && this.ips.activeInterface === null) {
         var storedIPS = null;
         storedIPS = storage.getItemSync('activeNetworkInterface');
@@ -186,16 +186,16 @@ services.getIP = function (){
             this.ips.activeInterface = storedIPS;
         }
     }
-    
+
     // if it is still empty give it a default
-    if(this.ips.activeInterface === null) {
+    if (this.ips.activeInterface === null) {
         this.ips.activeInterface = 'en0';
         // make sure all objects got the memo
         this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
     }
-    
+
     // if activeInterface is not available, get the first available one and refresh all objects
-    if (!(this.ips.activeInterface in this.ips.interfaces)){
+    if (!(this.ips.activeInterface in this.ips.interfaces)) {
         this.ips.tempActiveInterface = this.ips.activeInterface;
         for (var tempKey in this.ips.interfaces) {
             this.ips.activeInterface = tempKey;
@@ -204,17 +204,17 @@ services.getIP = function (){
             break;
         }
     }
-    
+
     // check if active interface is back
-    if(this.ips.tempActiveInterface) {
-    if (this.ips.tempActiveInterface in this.ips.interfaces){
-        this.ips.activeInterface = this.ips.tempActiveInterface;
-        this.ips.tempActiveInterface = null;
-    }
+    if (this.ips.tempActiveInterface) {
+        if (this.ips.tempActiveInterface in this.ips.interfaces) {
+            this.ips.activeInterface = this.ips.tempActiveInterface;
+            this.ips.tempActiveInterface = null;
+        }
     }
     // return active IP
     return this.ips.interfaces[this.ips.activeInterface];
-}
+};
 
 services.ip = services.getIP(); //ip.address();
 
@@ -883,10 +883,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
                 let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
-                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
+                if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
-                
+
                 const message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
@@ -899,9 +899,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
-                        console.log("Your not on a network. Can't send anything");
+                        console.log('Your not on a network. Can\'t send anything');
                         //throw err;
-                        for(var key in objects){
+                        for (var key in objects) {
                             objects[key].ip = services.ip;
                         }
                     }
@@ -918,10 +918,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 var zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
-                if (!objects[thisId].hasOwnProperty("port")) objects[thisId].port = serverPort;
+                if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
-                
+
                 var message = new Buffer(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
@@ -1111,7 +1111,7 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
-      
+
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1179,32 +1179,32 @@ function objectWebServer() {
     });
 
     webServer.use('/obj', function (req, res, next) {
-        
-       
-     
+
+
+
         var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
         if (urlArray[1] === 'frames') {
-            var objectKey = utilities.readObject(objectLookup, urlArray[0]);
-            var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[2];
-            var thisFrame = getFrame(objectKey, frameKey);
-            
+            let objectKey = utilities.readObject(objectLookup, urlArray[0]);
+            let frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[2];
+            let thisFrame = getFrame(objectKey, frameKey);
+
             var toolpath = null;
-            
-            if(thisFrame !== null){
-                if(thisFrame.hasOwnProperty('tool')){
-                    if(thisFrame.tool.hasOwnProperty('addon') && thisFrame.tool.hasOwnProperty('interface') && thisFrame.tool.hasOwnProperty('tool')){
-                        toolpath =  __dirname+'/addons/'+thisFrame.tool.addon+'/interfaces/'+thisFrame.tool.interface+'/tools/'+thisFrame.tool.tool;
+
+            if (thisFrame !== null) {
+                if (thisFrame.hasOwnProperty('tool')) {
+                    if (thisFrame.tool.hasOwnProperty('addon') && thisFrame.tool.hasOwnProperty('interface') && thisFrame.tool.hasOwnProperty('tool')) {
+                        toolpath =  __dirname + '/addons/' + thisFrame.tool.addon + '/interfaces/' + thisFrame.tool.interface + '/tools/' + thisFrame.tool.tool;
                     }
                 }
             }
 
             urlArray.splice(1, 1);
         }
-        
+
         var switchToInteraceTool = true;
-        if(!toolpath) switchToInteraceTool = false;
+        if (!toolpath) switchToInteraceTool = false;
 
         if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml')
             && urlArray[urlArray.length - 2] === 'target') {
@@ -1227,19 +1227,19 @@ function objectWebServer() {
         var newToolUrl = '';
         for (let i = 0; i < urlArray.length; i++) {
             newUrl += '/' + urlArray[i];
-            
+
         }
 
-        if(toolpath !== null) {
+        if (toolpath !== null) {
             for (let i = 2; i < urlArray.length; i++) {
                 newToolUrl += '/' + urlArray[i];
             }
         }
-        
+
         if (newUrl.slice(-1) === '/') {
             newUrl += 'index.html';
-            if(toolpath !== null) {
-                newToolUrl += 'index.html'; 
+            if (toolpath !== null) {
+                newToolUrl += 'index.html';
             }
             urlArray.push('index.html');
         }
@@ -1251,7 +1251,7 @@ function objectWebServer() {
             let fileName2 = toolpath + newToolUrl;
 
             if (toolpath && switchToInteraceTool && fs.existsSync(fileName2)) fileName = fileName2;
-                
+
             if (urlArray[urlArray.length - 1] !== 'index.html' && urlArray[urlArray.length - 1] !== 'index.htm') {
                 if (fs.existsSync(fileName + 'index.html')) {
                     fileName = fileName + 'index.html';
@@ -1279,8 +1279,8 @@ function objectWebServer() {
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
             scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
 
-            var objectKey = utilities.readObject(objectLookup, urlArray[0]);
-            var frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[1];
+            let objectKey = utilities.readObject(objectLookup, urlArray[0]);
+            let frameKey = utilities.readObject(objectLookup, urlArray[0]) + urlArray[1];
 
             scriptNode += '\n<script> realityObject.object = "' + objectKey + '";</script>\n';
             scriptNode += '<script> realityObject.frame = "' + frameKey + '";</script>\n';
@@ -1308,7 +1308,7 @@ function objectWebServer() {
         } else {
 
             let fileName2 = toolpath + newToolUrl;
-            if(toolpath && switchToInteraceTool && fs.existsSync(fileName2)){
+            if (toolpath && switchToInteraceTool && fs.existsSync(fileName2)) {
                 res.sendFile(newToolUrl, {root: toolpath});
             } else {
                 res.sendFile(newUrl, {root: objectsPath});
