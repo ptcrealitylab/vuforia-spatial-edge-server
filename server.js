@@ -1180,8 +1180,6 @@ function objectWebServer() {
 
     webServer.use('/obj', function (req, res, next) {
 
-
-
         var urlArray = req.originalUrl.split('/');
         urlArray.splice(0, 1);
         urlArray.splice(0, 1);
@@ -1219,7 +1217,13 @@ function objectWebServer() {
         }
 
         if ((urlArray[urlArray.length - 2] === 'videos') && urlArray[urlArray.length - 1].split('.').pop() === 'mp4') {
-            urlArray[urlArray.length - 2] = identityFolderName + '/videos';
+            // videoDir differs on mobile due to inability to call mkdir
+            if (!isMobile) {
+                urlArray[urlArray.length - 2] = identityFolderName + '/videos';
+            } else {
+                urlArray.splice(urlArray.length - 2, 1);
+            }
+
             switchToInteraceTool = false;
         }
 
@@ -1227,7 +1231,6 @@ function objectWebServer() {
         var newToolUrl = '';
         for (let i = 0; i < urlArray.length; i++) {
             newUrl += '/' + urlArray[i];
-
         }
 
         if (toolpath !== null) {
@@ -2558,6 +2561,28 @@ function objectWebServer() {
     });
 
     /**
+     * Helper function to return the absolute path to the directory that should contain all
+     * video files for the provided object name. (makes dir if necessary)
+     * @param objectName
+     * @return {string}
+     */
+    function getVideoDir(objectName) {
+        var videoDir = path.join(objectsPath, objectName);
+
+        // directory differs on mobile due to inability to call mkdir
+        if (!isMobile) {
+            videoDir = path.join(videoDir, identityFolderName, 'videos');
+
+            if (!fs.existsSync(videoDir)) {
+                console.log('make videoDir');
+                fs.mkdirSync(videoDir);
+            }
+        }
+
+        return videoDir;
+    }
+
+    /**
      * Upload a video file to the object's metadata folder.
      * The video is stored in a form, which can be parsed and written to the filesystem.
      * @todo compress video
@@ -2573,13 +2598,7 @@ function objectWebServer() {
                 return;
             }
 
-            var videoDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/videos';
-            console.log('videoDir is: ' + videoDir);
-
-            if (!fs.existsSync(videoDir)) {
-                console.log('make videoDir');
-                fs.mkdirSync(videoDir);
-            }
+            var videoDir = getVideoDir(object.name);
 
             var form = new formidable.IncomingForm({
                 uploadDir: videoDir,
@@ -2601,11 +2620,9 @@ function objectWebServer() {
             }
 
             form.on('fileBegin', function (name, file) {
-                console.log('fileBegin loading', name, file);
                 file.path = rawFilepath;
+                console.log('fileBegin loading', name, file);
             });
-
-            console.log('about to parse');
 
             form.parse(req, function (err, fields) {
 
@@ -2656,13 +2673,8 @@ function objectWebServer() {
                 }
 
             });
-
-            console.log('parse called');
-
         });
-
     });
-
 
     /**
      *
@@ -3014,7 +3026,8 @@ function objectWebServer() {
             var urlArray = videoPath.split('/');
 
             var objectName = urlArray[4];
-            var videoFilePath = objectsPath + '/' + objectName + '/' + identityFolderName + '/videos/' + urlArray[6];
+            var videoDir = getVideoDir(objectName);
+            var videoFilePath = path.join(videoDir, urlArray[6]);
 
             if (fs.existsSync(videoFilePath)) {
                 fs.unlinkSync(videoFilePath);
