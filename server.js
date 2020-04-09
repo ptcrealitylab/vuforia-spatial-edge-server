@@ -2572,7 +2572,7 @@ function objectWebServer() {
      * @return {string}
      */
     function getVideoDir(objectName) {
-        let videoDir = objectsPath; //os.homedir(); // on mobile, put them directly in app home dir
+        let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
         // directory differs on mobile due to inability to call mkdir
         if (!isMobile) {
