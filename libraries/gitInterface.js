@@ -1,12 +1,19 @@
-var os = require('os');
-var path = require('path');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
-var homeDirectory = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-var git = require('simple-git')(homeDirectory);
+let homeDirectory = path.join(os.homedir(), 'Documents', 'spatialToolbox');
+const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 
+// Default back to old realityObjects dir if it exists
+if (!fs.existsSync(homeDirectory) &&
+    fs.existsSync(oldHomeDirectory)) {
+    homeDirectory = oldHomeDirectory;
+}
 
+const git = require('simple-git')(homeDirectory);
 
 function saveCommit(object, objects, callback) {
     console.log('git saveCommit');
