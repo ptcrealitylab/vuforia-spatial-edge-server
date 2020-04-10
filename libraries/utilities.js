@@ -67,6 +67,14 @@ var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir =  path.join(os.homedir(), 'Documents', 'spatialToolbox');
+const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
+
+// Default back to old realityObjects dir if it exists
+if (!fs.existsSync(homedir) &&
+    fs.existsSync(oldHomeDirectory)) {
+    homedir = oldHomeDirectory;
+}
+
 var hardwareIdentity = homedir + '/.identity';
 
 exports.writeObject = function (objectLookup, folder, id) {
