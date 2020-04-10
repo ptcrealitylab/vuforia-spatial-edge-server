@@ -108,9 +108,12 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 const fs = require('fs');       // Filesystem library
 const path = require('path');
 
+const spatialToolboxPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
+const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjects');
+
 // All objects are stored in this folder:
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
-let objectsPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
+let objectsPath = spatialToolboxPath;
 
 if (process.env.NODE_ENV === 'test') {
     objectsPath = path.join(__dirname, 'spatialToolbox');
@@ -220,6 +223,14 @@ services.ip = services.getIP(); //ip.address();
 
 var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
+
+// Default back to old realityObjects dir if it exists
+if (!fs.existsSync(objectsPath) &&
+    objectsPath === spatialToolboxPath &&
+    fs.existsSync(oldRealityObjectsPath)) {
+    console.warn('Please rename your realityobjects directory to spatialToolbox');
+    objectsPath = oldRealityObjectsPath;
+}
 
 // create objects folder at objectsPath if necessary
 if (!fs.existsSync(objectsPath)) {
