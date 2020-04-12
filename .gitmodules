@@ -1,3 +1,3 @@
 [submodule "addons/vuforia-spatial-core-addon"]
 	path = addons/vuforia-spatial-core-addon
-	url = git@github.com:ptcrealitylab/vuforia-spatial-core-addon
+	url = https://github.com/ptcrealitylab/vuforia-spatial-core-addon.git
