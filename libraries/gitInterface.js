@@ -4,8 +4,8 @@ const path = require('path');
 
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
-let homeDirectory = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
+var homeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'spatialToolbox');
+var oldHomeDirectory = path.join(path.join(os.homedir(), 'Documents'), 'realityobjects');
 
 // Default back to old realityObjects dir if it exists
 if (!fs.existsSync(homeDirectory) &&
