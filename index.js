@@ -18,11 +18,14 @@ function startNewChild() {
 }
 
 function onChildMessage(message) {
-    console.log('message from child:', message);
     if (message === 'restart') {
+        console.log('message from child:', message);
         child.removeListener('exit', onChildCrash);
         child.kill();
         startNewChild();
+    } else  if (message === 'exit') {
+        child.removeListener('exit', onChildCrash);
+        child.kill();
     }
 }
 
