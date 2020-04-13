@@ -4110,7 +4110,7 @@ function objectWebServer() {
                             });
 
                             unzipper.extract({
-                                path: folderD + '/',
+                                path: folderD,
                                 filter: function (file) {
                                     return file.type !== 'SymbolicLink';
                                 }
@@ -4448,7 +4448,7 @@ function objectWebServer() {
                                 });
 
                                 unzipper.extract({
-                                    path: folderD + '/' + identityFolderName + '/target',
+                                    path: path.join(folderD, identityFolderName, 'target'),
                                     filter: function (file) {
                                         return file.type !== 'SymbolicLink';
                                     }
