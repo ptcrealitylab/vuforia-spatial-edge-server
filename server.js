@@ -69,7 +69,8 @@ try {
         process.send('exit');
     }
 
-    while (true) {
+    let keepRunning = true;
+    while (keepRunning) {
         // Since process.send is async, just hold the server for preventing more errors
     }
 }
