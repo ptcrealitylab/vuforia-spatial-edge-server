@@ -4083,7 +4083,7 @@ function objectWebServer() {
 
                         try {
                             var DecompressZip = require('decompress-zip');
-                            var unzipper = new DecompressZip(folderD + '/' + filename);
+                            var unzipper = new DecompressZip(path.join(folderD, filename));
 
                             unzipper.on('error', function (err) {
                                 console.log('Caught an error', err);
@@ -4369,7 +4369,7 @@ function objectWebServer() {
 
                             try {
                                 var DecompressZip = require('decompress-zip');
-                                var unzipper = new DecompressZip(folderD + '/' + filename);
+                                var unzipper = new DecompressZip(path.join(folderD, filename));
 
                                 unzipper.on('error', function (err) {
                                     console.log('Caught an error in unzipper', err);
