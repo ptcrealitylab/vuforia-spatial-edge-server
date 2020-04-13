@@ -4083,7 +4083,7 @@ function objectWebServer() {
 
                         try {
                             var DecompressZip = require('decompress-zip');
-                            var unzipper = new DecompressZip(folderD + '/' + filename);
+                            var unzipper = new DecompressZip(path.join(folderD, filename));
 
                             unzipper.on('error', function (err) {
                                 console.log('Caught an error', err);
@@ -4110,7 +4110,7 @@ function objectWebServer() {
                             });
 
                             unzipper.extract({
-                                path: folderD + '/',
+                                path: folderD,
                                 filter: function (file) {
                                     return file.type !== 'SymbolicLink';
                                 }
@@ -4369,7 +4369,7 @@ function objectWebServer() {
 
                             try {
                                 var DecompressZip = require('decompress-zip');
-                                var unzipper = new DecompressZip(folderD + '/' + filename);
+                                var unzipper = new DecompressZip(path.join(folderD, filename));
 
                                 unzipper.on('error', function (err) {
                                     console.log('Caught an error in unzipper', err);
@@ -4448,7 +4448,7 @@ function objectWebServer() {
                                 });
 
                                 unzipper.extract({
-                                    path: folderD + '/' + identityFolderName + '/target',
+                                    path: path.join(folderD, identityFolderName, 'target'),
                                     filter: function (file) {
                                         return file.type !== 'SymbolicLink';
                                     }
