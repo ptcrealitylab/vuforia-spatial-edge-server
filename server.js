@@ -50,7 +50,30 @@
  ******************************************** constant settings *******************************************************
  **********************************************************************************************************************/
 
-require('module-alias/register');
+try {
+    require('module-alias/register');
+}
+catch(err) {
+    console.clear()
+    console.log("\x1b[33mYour not done with the installation! You need to execute the following commands:")
+    console.log("\x1b[0m1.\x1b[32m npm install");
+    console.log( "\x1b[0m2.\x1b[32m git submodule update --init --recursive");
+    console.log( "\x1b[0m3.\x1b[32m cd addons/vuforia-spatial-core-addon");
+    console.log( "\x1b[0m4.\x1b[32m npm install","\x1b[0m");
+    console.log( "");
+    console.log( "");
+    console.log( "\x1b[33mWhenever you install a new addon make sure to:","\x1b[0m");
+    console.log( "\x1b[0m3.\x1b[32m cd addons/<new addon folder>");
+    console.log( "\x1b[0m4.\x1b[32m npm install","\x1b[0m");
+
+    if (process.send) {
+        process.send('exit');
+    }
+
+    while(true){
+        // Since process.send is async, just hold the server for preventing more errors
+    }
+}
 const _logger = require('./logger');
 
 const os = require('os');
