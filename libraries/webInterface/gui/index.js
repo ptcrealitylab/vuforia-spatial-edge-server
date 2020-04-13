@@ -739,16 +739,18 @@ realityServer.updateCommonContents = function(thisItem2) {
         for (let key in realityServer.states.ipAdress.interfaces) {
             console.log(key);
             let thisSubObject = this.templates['networkInterfacelets'].content.cloneNode(true);
-            thisSubObject.querySelector('.netInterface').innerText = key;
+            const netInterfaceElt = thisSubObject.querySelector('.netInterface');
+            netInterfaceElt.innerText = key;
+            netInterfaceElt.setAttribute('title', key);
 
             if (key === realityServer.states.ipAdress.activeInterface) {
-                realityServer.switchClass( thisSubObject.querySelector('.netInterface'), 'yellow', 'green');
+                realityServer.switchClass(netInterfaceElt, 'yellow', 'green');
             } else {
-                realityServer.switchClass( thisSubObject.querySelector('.netInterface'), 'green', 'yellow');
+                realityServer.switchClass(netInterfaceElt, 'green', 'yellow');
             }
 
 
-            thisSubObject.querySelector('.netInterface').addEventListener('click', realityServer.gotClick, false);
+            netInterfaceElt.addEventListener('click', realityServer.gotClick, false);
 
             thisNode.getElementById('subNetInterface').appendChild(thisSubObject);
         }

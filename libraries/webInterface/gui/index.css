@@ -531,3 +531,9 @@ position: relative;
 .objectIcon:hover {
     opacity: 1;
 }
+
+.netInterface {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
