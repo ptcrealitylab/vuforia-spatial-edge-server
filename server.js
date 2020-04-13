@@ -174,7 +174,14 @@ services.getIP = function () {
     }
 
     // Get All available interfaces
-    var interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+    let interfaceNames;
+    try {
+        interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+    } catch (e) {
+        console.error('getInterfaces failed', e);
+        return this.ip;
+    }
+
     for (let key in interfaceNames) {
         let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
         for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
