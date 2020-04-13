@@ -96,7 +96,7 @@ const socketUpdateInterval = 2000; // how often the system checks if the socket 
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
-const version = isMobile ? '3.2.0' : '3.1.0';
+const version =  '3.2.0';
 // The protocol of this server
 const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
