@@ -52,25 +52,24 @@
 
 try {
     require('module-alias/register');
-}
-catch(err) {
-    console.clear()
-    console.log("\x1b[33mYour not done with the installation! You need to execute the following commands:")
-    console.log("\x1b[0m1.\x1b[32m npm install");
-    console.log( "\x1b[0m2.\x1b[32m git submodule update --init --recursive");
-    console.log( "\x1b[0m3.\x1b[32m cd addons/vuforia-spatial-core-addon");
-    console.log( "\x1b[0m4.\x1b[32m npm install","\x1b[0m");
-    console.log( "");
-    console.log( "");
-    console.log( "\x1b[33mWhenever you install a new addon make sure to:","\x1b[0m");
-    console.log( "\x1b[0m3.\x1b[32m cd addons/<new addon folder>");
-    console.log( "\x1b[0m4.\x1b[32m npm install","\x1b[0m");
+} catch (err) {
+    console.clear();
+    console.log('\x1b[33mYour not done with the installation! You need to execute the following commands:');
+    console.log('\x1b[0m1.\x1b[32m npm install');
+    console.log('\x1b[0m2.\x1b[32m git submodule update --init --recursive');
+    console.log('\x1b[0m3.\x1b[32m cd addons/vuforia-spatial-core-addon');
+    console.log('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
+    console.log('');
+    console.log('');
+    console.log('\x1b[33mWhenever you install a new addon make sure to:', '\x1b[0m');
+    console.log('\x1b[0m3.\x1b[32m cd addons/<new addon folder>');
+    console.log('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
 
     if (process.send) {
         process.send('exit');
     }
 
-    while(true){
+    while (true) {
         // Since process.send is async, just hold the server for preventing more errors
     }
 }
@@ -108,7 +107,7 @@ const globalVariables = {
 
  */
 
-var serverPort = isMobile ? 49369 : 8080 ;
+var serverPort = isMobile ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
@@ -119,7 +118,7 @@ const socketUpdateInterval = 2000; // how often the system checks if the socket 
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
-const version =  '3.2.0';
+const version = '3.2.0';
 // The protocol of this server
 const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
@@ -559,7 +558,7 @@ var hardwareAPICallbacks = {
     publicData: function (objectKey, frameKey, nodeKey) {
         socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
     },
-    actions: function(thisAction) {
+    actions: function (thisAction) {
         utilities.actionSender(thisAction);
     },
     data: function (objectKey, frameKey, nodeKey, data, _objects, _nodeTypeModules) {
@@ -669,21 +668,21 @@ function loadObjects() {
                 // this is for transforming old lists to new lists
                 if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
-                    delete  objects[tempFolderName].objectValues;
+                    delete objects[tempFolderName].objectValues;
                 }
                 if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
-                    delete  objects[tempFolderName].objectLinks;
+                    delete objects[tempFolderName].objectLinks;
                 }
 
 
                 if (typeof objects[tempFolderName].nodes !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
-                    delete  objects[tempFolderName].nodes;
+                    delete objects[tempFolderName].nodes;
                 }
                 if (typeof objects[tempFolderName].links !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
-                    delete  objects[tempFolderName].links;
+                    delete objects[tempFolderName].links;
                 }
 
 
@@ -1234,7 +1233,7 @@ function objectWebServer() {
             if (thisFrame !== null) {
                 if (thisFrame.hasOwnProperty('tool')) {
                     if (thisFrame.tool.hasOwnProperty('addon') && thisFrame.tool.hasOwnProperty('interface') && thisFrame.tool.hasOwnProperty('tool')) {
-                        toolpath =  __dirname + '/addons/' + thisFrame.tool.addon + '/interfaces/' + thisFrame.tool.interface + '/tools/' + thisFrame.tool.tool;
+                        toolpath = __dirname + '/addons/' + thisFrame.tool.addon + '/interfaces/' + thisFrame.tool.interface + '/tools/' + thisFrame.tool.tool;
                     }
                 }
             }
@@ -1397,7 +1396,7 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getFrameAsync(objectKey, frameKey, callback) {
-        getObjectAsync(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function (error, object) {
             if (error) {
                 callback(error);
                 return;
@@ -1418,7 +1417,7 @@ function objectWebServer() {
      * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
      */
     function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
-        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1441,7 +1440,7 @@ function objectWebServer() {
      */
     function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
 
-        getFrameAsync(objectKey, frameKey, function(error, object, frame) {
+        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
             if (error) {
                 callback(error);
                 return;
@@ -1490,7 +1489,10 @@ function objectWebServer() {
         if (foundNode) {
             delete foundNode.links[linkID];
 
-            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+            utilities.actionSender({
+                reloadNode: {object: objectID, frame: frameID, node: nodeID},
+                lastEditor: lastEditor
+            });
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             console.log('deleted link: ' + linkID);
@@ -1630,7 +1632,10 @@ function objectWebServer() {
             }
 
             // call an action that asks all devices to reload their links, once the links are changed.
-            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+            utilities.actionSender({
+                reloadNode: {object: objectID, frame: frameID, node: nodeID},
+                lastEditor: body.lastEditor
+            });
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
             console.log('added block: ' + blockID);
@@ -1679,7 +1684,10 @@ function objectWebServer() {
                 }
             }
 
-            utilities.actionSender({reloadNode: {object: objectID, frame: nodeID, node: nodeID}, lastEditor: lastEditor});
+            utilities.actionSender({
+                reloadNode: {object: objectID, frame: nodeID, node: nodeID},
+                lastEditor: lastEditor
+            });
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
             updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
         }
@@ -1722,7 +1730,10 @@ function objectWebServer() {
                     foundBlock.y = body.y;
 
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+                    utilities.actionSender({
+                        reloadNode: {object: objectID, frame: frameID, node: nodeID},
+                        lastEditor: body.lastEditor
+                    });
                     updateStatus = 'ok';
                 }
             }
@@ -1741,9 +1752,9 @@ function objectWebServer() {
     webServer.post('/triggerBlock/:blockID', function (req, res) {
 
         var foundBlock = false;
-        forEachObject(function(object, objectKey) {
-            forEachFrameInObject(object, function(frame, frameKey) {
-                forEachNodeInFrame(frame, function(node, nodeKey) {
+        forEachObject(function (object, objectKey) {
+            forEachFrameInObject(object, function (frame, frameKey) {
+                forEachNodeInFrame(frame, function (node, nodeKey) {
                     if (typeof node.blocks !== 'undefined') {
                         var block = node.blocks[req.params.blockID];
                         // keep iterating until you find a block with that ID
@@ -1768,7 +1779,7 @@ function objectWebServer() {
         if (foundNode) {
             var block = foundNode.blocks[blockID];
             console.log('block', block);
-            console.log('set block ' +  block.type + ' (' + blockID + ') to ' + body.value);
+            console.log('set block ' + block.type + ' (' + blockID + ') to ' + body.value);
 
             block.data[0].value = body.value;
             engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
@@ -1825,7 +1836,10 @@ function objectWebServer() {
 
             // call an action that asks all devices to reload their links, once the links are changed.
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+            utilities.actionSender({
+                reloadNode: {object: objectID, frame: frameID, node: nodeID},
+                lastEditor: body.lastEditor
+            });
 
             console.log('added logic node: ' + nodeID);
             updateStatus = 'added';
@@ -1874,7 +1888,10 @@ function objectWebServer() {
               }*/
 
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadNode: {object: objectID, frame: frameID, node: nodeID}, lastEditor: lastEditor});
+            utilities.actionSender({
+                reloadNode: {object: objectID, frame: frameID, node: nodeID},
+                lastEditor: lastEditor
+            });
 
             updateStatus = 'deleted: ' + nodeID + ' in frame: ' + frameID + ' of object: ' + objectID;
         }
@@ -1883,13 +1900,13 @@ function objectWebServer() {
     }
 
     webServer.post('/logic/*/*/nodeSize/', function (req, res) {
-        changeNodeSize(req.params[0], req.params[0], req.params[1], req.body, function(statusCode, responseContents) {
+        changeNodeSize(req.params[0], req.params[0], req.params[1], req.body, function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
 
     webServer.post('/object/*/frame/*/node/*/nodeSize/', function (req, res) {
-        changeNodeSize(req.params[0], req.params[1], req.params[2], req.body, function(statusCode, responseContents) {
+        changeNodeSize(req.params[0], req.params[1], req.params[2], req.body, function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
@@ -1908,7 +1925,7 @@ function objectWebServer() {
 
         console.log('changing Size for :' + objectID + ' : ' + nodeID);
 
-        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
             if (error) {
                 callback(404, error);
                 return;
@@ -1930,7 +1947,10 @@ function objectWebServer() {
             // if anything updated, write to disk and broadcast updates to editors
             if (updateStatus === 'ok') {
                 utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadObject: {object: objectID, frame: frameID, node: nodeID}, lastEditor: body.lastEditor});
+                utilities.actionSender({
+                    reloadObject: {object: objectID, frame: frameID, node: nodeID},
+                    lastEditor: body.lastEditor
+                });
             }
 
             callback(200, updateStatus);
@@ -1989,7 +2009,7 @@ function objectWebServer() {
 
         console.log('received name for', objectID, frameID, nodeID);
 
-        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -2008,7 +2028,7 @@ function objectWebServer() {
 
     // uploads a new iconImage for a logic block
     // ****************************************************************************************************************
-    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function(req, res) {
+    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function (req, res) {
 
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
@@ -2016,7 +2036,7 @@ function objectWebServer() {
 
         console.log('received icon image for', objectID, frameID, nodeID);
 
-        getNodeAsync(objectID, frameID, nodeID, function(error, object, frame, node) {
+        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
             if (error) {
                 res.status(404);
                 res.json(error).end();
@@ -2080,7 +2100,15 @@ function objectWebServer() {
                         if (node) {
                             node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
                             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                            utilities.actionSender({loadLogicIcon: {object: objectID, frame: frameID, node: nodeID, ip: object.ip, iconImage: node.iconImage}}); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
+                            utilities.actionSender({
+                                loadLogicIcon: {
+                                    object: objectID,
+                                    frame: frameID,
+                                    node: nodeID,
+                                    ip: object.ip,
+                                    iconImage: node.iconImage
+                                }
+                            }); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
                         }
 
                         res.status(200);
@@ -2218,8 +2246,8 @@ function objectWebServer() {
 
             // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
             var checkIfIpIsUsed = false;
-            forEachObject(function(thisObject) {
-                forEachFrameInObject(thisObject, function(thisFrame) {
+            forEachObject(function (thisObject) {
+                forEachFrameInObject(thisObject, function (thisFrame) {
                     for (var linkCheckerKey in thisFrame.links) {
                         if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
                             checkIfIpIsUsed = true;
@@ -2355,11 +2383,11 @@ function objectWebServer() {
     // ****************************************************************************************************************
 
     webServer.post('/object/*/nodeLock/*/', function (req, res) {
-        res.send(addNodeLock(req.params[0],  req.params[0],  req.params[1],  req.body));
+        res.send(addNodeLock(req.params[0], req.params[0], req.params[1], req.body));
     });
 
     webServer.post('/object/*/frame/*/node/*/addLock/', function (req, res) {
-        res.send(addNodeLock(req.params[0],  req.params[1],  req.params[2],  req.body));
+        res.send(addNodeLock(req.params[0], req.params[1], req.params[2], req.body));
     });
 
     /**
@@ -2369,7 +2397,7 @@ function objectWebServer() {
      * @param {string} nodeKey
      * @param {{lockPassword: string, lockType: string}} body
      */
-    function addNodeLock (objectKey, frameKey, nodeKey, body) {
+    function addNodeLock(objectKey, frameKey, nodeKey, body) {
 
         var updateStatus = 'nothing happened';
 
@@ -2409,11 +2437,11 @@ function objectWebServer() {
     // TODO: add robust security to the "password" field
     // ****************************************************************************************************************
     webServer.delete('/object/*/frame/*/node/*/password/*/deleteLock', function (req, res) {
-        res.send(deleteNodeLock(req.params[0],  req.params[1],  req.params[2],  req.params[3]));
+        res.send(deleteNodeLock(req.params[0], req.params[1], req.params[2], req.params[3]));
     });
 
     webServer.delete('/object/*/nodeLock/*/password/*/', function (req, res) {
-        res.send(deleteNodeLock(req.params[0],  req.params[0],  req.params[1],  req.params[2]));
+        res.send(deleteNodeLock(req.params[0], req.params[0], req.params[1], req.params[2]));
     });
 
     /**
@@ -2449,11 +2477,11 @@ function objectWebServer() {
     // adding a new lock to an object link. *1 is the object *2 is the link id
     // ****************************************************************************************************************
     webServer.post('/object/*/linkLock/*/', function (req, res) {
-        res.send(addLinkLock(req.params[0],  req.params[0],  req.params[1], req.body));
+        res.send(addLinkLock(req.params[0], req.params[0], req.params[1], req.body));
     });
 
     webServer.post('/object/*/frame/*/link/*/addLock', function (req, res) {
-        res.send(addLinkLock(req.params[0],  req.params[1],  req.params[2], req.body));
+        res.send(addLinkLock(req.params[0], req.params[1], req.params[2], req.body));
     });
 
     /**
@@ -2550,14 +2578,14 @@ function objectWebServer() {
     webServer.delete('/object/:objectID/frame/:frameID/publicData', function (req, res) {
 
         // locate the containing frame in a safe way
-        getFrameAsync(req.params.objectID, req.params.frameID, function(error, object, frame) {
+        getFrameAsync(req.params.objectID, req.params.frameID, function (error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
             }
 
             // reset the publicData of each node
-            forEachNodeInFrame(frame, function(node) {
+            forEachNodeInFrame(frame, function (node) {
                 node.publicData = {};
             });
 
@@ -2698,7 +2726,7 @@ function objectWebServer() {
         }
         var object = getObject(req.params.id);
         if (object) {
-            git.saveCommit(object, objects, function() {
+            git.saveCommit(object, objects, function () {
                 res.status(200);
                 res.json({success: true}).end();
             });
@@ -2712,7 +2740,7 @@ function objectWebServer() {
         }
         var object = getObject(req.params.id);
         if (object) {
-            git.resetToLastCommit(object, objects, function() {
+            git.resetToLastCommit(object, objects, function () {
                 res.status(200);
                 res.json({success: true}).end();
                 hardwareAPI.runResetCallbacks(req.params.id);
@@ -2800,7 +2828,7 @@ function objectWebServer() {
     });
 
     // Create a frame for an object. Uses its existing UUID
-    webServer.post('/object/*/addFrame/', function(req, res) {
+    webServer.post('/object/*/addFrame/', function (req, res) {
         var frame = req.body;
         addFrameToObject(req.params[0], frame.uuid, frame, res);
     });
@@ -2814,7 +2842,7 @@ function objectWebServer() {
      */
     function addFrameToObject(objectKey, frameKey, frame, res) {
 
-        getObjectAsync(objectKey, function(error, object) {
+        getObjectAsync(objectKey, function (error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -2822,7 +2850,7 @@ function objectWebServer() {
             }
 
             if (!frame.src) {
-                res.status(500).json({ failure: true, error: 'frame must have src' }).end();
+                res.status(500).json({failure: true, error: 'frame must have src'}).end();
                 return;
             }
 
@@ -2852,7 +2880,7 @@ function objectWebServer() {
 
             // give default values for this node type to each node's public data, if not already assigned
             for (let key in newFrame.nodes) {
-                if ( (!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
+                if ((!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
                     newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
                 }
             }
@@ -2873,12 +2901,12 @@ function objectWebServer() {
     /**
      * Creates a copy of the frame (happens when you pull an instance from a staticCopy frame)
      */
-    webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function(req, res) {
+    webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function (req, res) {
         var objectID = req.params.objectID;
         var frameID = req.params.frameID;
         console.log('making a copy of frame', frameID);
 
-        getFrameAsync(objectID, frameID, function(error, object, frame) {
+        getFrameAsync(objectID, frameID, function (error, object, frame) {
             if (error) {
                 res.status(404).json(error).end();
                 return;
@@ -2942,7 +2970,10 @@ function objectWebServer() {
 
             // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
             // utilities.actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
-            utilities.actionSender({reloadFrame: {object: objectID, frame: newFrameKey}, lastEditor: req.body.lastEditor});
+            utilities.actionSender({
+                reloadFrame: {object: objectID, frame: newFrameKey},
+                lastEditor: req.body.lastEditor
+            });
 
             hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
 
@@ -2958,7 +2989,7 @@ function objectWebServer() {
         var objectId = req.params[0];
         var frameId = req.params[1];
 
-        getObjectAsync(objectId, function(error, object) {
+        getObjectAsync(objectId, function (error, object) {
 
             if (error) {
                 res.status(404).json(error).end();
@@ -3018,19 +3049,21 @@ function objectWebServer() {
 
         //delete any videos associated with the frame, if necessary
         // var isPublicDataOnFrame = frame.publicData.hasOwnProperty('data');
-        var publicDataOnAllNodes = Object.keys(frame.nodes).map(function(nodeKey) { return frame.nodes[nodeKey].publicData; });
-        var videoPaths = publicDataOnAllNodes.filter(function(publicData) {
+        var publicDataOnAllNodes = Object.keys(frame.nodes).map(function (nodeKey) {
+            return frame.nodes[nodeKey].publicData;
+        });
+        var videoPaths = publicDataOnAllNodes.filter(function (publicData) {
             if (publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
                 if (publicData.data.indexOf('http') > -1 && publicData.data.indexOf('.mp4') > -1) {
                     return true;
                 }
             }
             return false;
-        }).map(function(publicData) {
+        }).map(function (publicData) {
             return publicData.data;
         });
         console.log('frame being deleted contains these video paths: ', videoPaths);
-        videoPaths.forEach(function(videoPath) {
+        videoPaths.forEach(function (videoPath) {
             // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
             var urlArray = videoPath.split('/');
 
@@ -3062,7 +3095,7 @@ function objectWebServer() {
         }
 
         // Delete links involving frame's nodes
-        forEachObject(function(linkObject, linkObjectId) {
+        forEachObject(function (linkObject, linkObjectId) {
             var linkObjectHasChanged = false;
 
             for (var linkId in linkObject.links) { // TODO: this isn't updated for frames either
@@ -3089,7 +3122,7 @@ function objectWebServer() {
     });
 
     // sets the groupID of the specified frame
-    webServer.post('/object/:objectID/frame/:frameID/group/', function(req, res) {
+    webServer.post('/object/:objectID/frame/:frameID/group/', function (req, res) {
 
         var frame = getFrame(req.params.objectID, req.params.frameID);
         if (frame) {
@@ -3097,7 +3130,10 @@ function objectWebServer() {
             if (newGroupID !== frame.groupID) {
                 frame.groupID = newGroupID;
                 utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadFrame: {object: req.params.objectID, frame: req.params.frameID}, lastEditor: req.body.lastEditor});
+                utilities.actionSender({
+                    reloadFrame: {object: req.params.objectID, frame: req.params.frameID},
+                    lastEditor: req.body.lastEditor
+                });
                 res.status(200).json({success: true}).end();
                 return;
             }
@@ -3115,13 +3151,13 @@ function objectWebServer() {
     if (globalVariables.developer === true) {
 
         webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
-            changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function(statusCode, responseContents) {
+            changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function (statusCode, responseContents) {
                 res.status(statusCode).send({status: responseContents});
             });
         });
 
         webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
-            changeSize(req.params.objectID, req.params.frameID, null, req.body, function(statusCode, responseContents) {
+            changeSize(req.params.objectID, req.params.frameID, null, req.body, function (statusCode, responseContents) {
                 res.status(statusCode).send({status: responseContents});
             });
         });
@@ -3141,7 +3177,7 @@ function objectWebServer() {
 
             console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
 
-            getFrameOrNode(objectID, frameID, nodeID, function(error, object, frame, node) {
+            getFrameOrNode(objectID, frameID, nodeID, function (error, object, frame, node) {
                 if (error) {
                     callback(404, error);
                     return;
@@ -3200,7 +3236,14 @@ function objectWebServer() {
 
                 if (didUpdate) {
                     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    utilities.actionSender({reloadFrame: {object: objectID, frame: frameID, propertiesToIgnore: propertiesToIgnore, wasTriggeredFromEditor: body.wasTriggeredFromEditor}, lastEditor: body.lastEditor});
+                    utilities.actionSender({
+                        reloadFrame: {
+                            object: objectID,
+                            frame: frameID,
+                            propertiesToIgnore: propertiesToIgnore,
+                            wasTriggeredFromEditor: body.wasTriggeredFromEditor
+                        }, lastEditor: body.lastEditor
+                    });
                     updateStatus = 'updated position and/or scale';
                 }
 
@@ -3381,7 +3424,7 @@ function objectWebServer() {
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
-        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function(req, res) {
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function (req, res) {
             if (!isMobile) {
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
@@ -3392,7 +3435,7 @@ function objectWebServer() {
         });
         // restart the server from the web frontend to load
 
-        webServer.get('/restartServer/', function() {
+        webServer.get('/restartServer/', function () {
             exit();
         });
 
@@ -3497,7 +3540,7 @@ function objectWebServer() {
             zip.finalize();
         });
 
-        webServer.post('/object/:objectKey/generateXml/', function(req, res) {
+        webServer.post('/object/:objectKey/generateXml/', function (req, res) {
             var objectKey = req.params.objectKey;
             var msgObject = req.body;
             var objectName = msgObject.name;
@@ -3542,7 +3585,7 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/hardwareInterface/:interfaceName/settings/', function(req, res) {
+        webServer.get('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             const interfaceName = req.params.interfaceName;
 
             if (!hardwareInterfaceModules.hasOwnProperty(interfaceName)) {
@@ -3553,10 +3596,10 @@ function objectWebServer() {
             res.json(hardwareInterfaceModules[interfaceName].settings);
         });
 
-        webServer.post('/hardwareInterface/:interfaceName/settings/', function(req, res) {
+        webServer.post('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
-            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function(success, errorMessage) {
+            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -3582,8 +3625,12 @@ function objectWebServer() {
                 console.log('before:', hardwareInterfaceModules[interfaceName]);
 
                 for (let key in settings) {
-                    if (!settings.hasOwnProperty(key)) { continue; }
-                    if (limitToKeys && !limitToKeys.includes(key)) { continue; }
+                    if (!settings.hasOwnProperty(key)) {
+                        continue;
+                    }
+                    if (limitToKeys && !limitToKeys.includes(key)) {
+                        continue;
+                    }
 
                     // update value that will get written to disk
                     if (typeof settings[key].value !== 'undefined') {
@@ -3633,7 +3680,7 @@ function objectWebServer() {
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
-            setHardwareInterfaceEnabled(interfaceName, false, function(success, errorMessage) {
+            setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -3646,7 +3693,7 @@ function objectWebServer() {
         webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
-            setHardwareInterfaceEnabled(interfaceName, true, function(success, errorMessage) {
+            setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -3707,10 +3754,13 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
 
-            addonFrames.setFrameEnabled(frameName, false, function(success, errorMessage) {
+            addonFrames.setFrameEnabled(frameName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    utilities.actionSender({reloadAvailableFrames: {serverIP: services.ip, frameName: frameName}, lastEditor: null});
+                    utilities.actionSender({
+                        reloadAvailableFrames: {serverIP: services.ip, frameName: frameName},
+                        lastEditor: null
+                    });
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3720,10 +3770,13 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
             var frameName = req.params.frameName;
 
-            addonFrames.setFrameEnabled(frameName, true, function(success, errorMessage) {
+            addonFrames.setFrameEnabled(frameName, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
-                    utilities.actionSender({reloadAvailableFrames: {serverIP: services.ip, frameName: frameName}, lastEditor: null});
+                    utilities.actionSender({
+                        reloadAvailableFrames: {serverIP: services.ip, frameName: frameName},
+                        lastEditor: null
+                    });
                 } else {
                     res.status(500).send(errorMessage);
                 }
@@ -3733,7 +3786,7 @@ function objectWebServer() {
         webServer.get('/object/:objectKey/disableFrameSharing/', function (req, res) {
             var objectKey = req.params.objectKey;
 
-            setFrameSharingEnabled(objectKey, false, function(success, errorMessage) {
+            setFrameSharingEnabled(objectKey, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                 } else {
@@ -3745,7 +3798,7 @@ function objectWebServer() {
         webServer.get('/object/:objectKey/enableFrameSharing/', function (req, res) {
             var objectKey = req.params.objectKey;
 
-            setFrameSharingEnabled(objectKey, true, function(success, errorMessage) {
+            setFrameSharingEnabled(objectKey, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                 } else {
@@ -3823,7 +3876,10 @@ function objectWebServer() {
                 return;
             }
 
-            res.status(404).json({failure: true, error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'}).end();
+            res.status(404).json({
+                failure: true,
+                error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'
+            }).end();
         });
 
         // sends json object for a specific reality object
@@ -3836,7 +3892,7 @@ function objectWebServer() {
          * Previously, retrieved the worldObject from the spatialToolbox/.identity/_WORLD_OBJECT_/ folder
          * Now it is deprecated, because world objects are discovered using UDP broadcasts
          */
-        webServer.get('/worldObject/', function(req, res) {
+        webServer.get('/worldObject/', function (req, res) {
             res.status(410).send('This API has been removed. World objects should be discovered the same way as any other object.');
         });
 
@@ -4254,9 +4310,9 @@ function objectWebServer() {
                             // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
                             if (fileExtension === 'jpg') {
 
-                                var rawFilepath         = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
-                                var tempFilepath        = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
-                                var originalFilepath    = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
+                                var rawFilepath = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
+                                var tempFilepath = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
+                                var originalFilepath = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
 
                                 try {
                                     Jimp.read(rawFilepath).then(image => {
@@ -4432,7 +4488,7 @@ function objectWebServer() {
 
                                         var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
-                                        if (typeof  objects[thisObjectId] !== 'undefined') {
+                                        if (typeof objects[thisObjectId] !== 'undefined') {
                                             var thisObject = objects[thisObjectId];
 
                                             thisObject.tcs = utilities.generateChecksums(objects, fileList);
@@ -4571,7 +4627,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
 var socketHandler = {};
 
-socketHandler.sendPublicDataToAllSubscribers = function(objectKey, frameKey, nodeKey, sessionUuid) {
+socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid) {
     var node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
@@ -4610,7 +4666,11 @@ function socketServer() {
                 console.log('reality editor subscription for object: ' + msgContent.object);
                 console.log('the latest socket has the ID: ' + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {
+                    object: msgContent.object,
+                    frame: msgContent.frame,
+                    protocol: thisProtocol
+                };
                 console.log(realityEditorSocketArray);
             }
 
@@ -4644,7 +4704,6 @@ function socketServer() {
             }
 
 
-
         });
 
         socket.on('/subscribe/realityEditorPublicData', function (msg) {
@@ -4660,7 +4719,11 @@ function socketServer() {
                 console.log('reality editor subscription for object: ' + msgContent.object);
                 console.log('the latest socket has the ID: ' + socket.id);
 
-                realityEditorSocketArray[socket.id] = {object: msgContent.object, frame: msgContent.frame, protocol: thisProtocol};
+                realityEditorSocketArray[socket.id] = {
+                    object: msgContent.object,
+                    frame: msgContent.frame,
+                    protocol: thisProtocol
+                };
                 console.log(realityEditorSocketArray);
             }
 
@@ -4724,7 +4787,7 @@ function socketServer() {
             let msgContent = JSON.parse(msg);
             if (msgContent.interfaceName) {
                 console.log('/subscribe/interfaceSettings for ' + msgContent.interfaceName);
-                hardwareAPI.addSettingsCallback(msgContent.interfaceName, function(interfaceName, currentSettings) {
+                hardwareAPI.addSettingsCallback(msgContent.interfaceName, function (interfaceName, currentSettings) {
                     if (io.sockets.connected[socket.id]) {
                         io.sockets.connected[socket.id].emit('interfaceSettings', JSON.stringify({
                             interfaceName: interfaceName,
@@ -4781,7 +4844,7 @@ function socketServer() {
                 if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisBlock = node.blocks[msg.block];
                     blockModules[thisBlock.type].setup(msg.object, msg.frame, msg.node, msg.block, thisBlock,
-                        function(object, frame, node, block, index, thisBlock) {
+                        function (object, frame, node, block, index, thisBlock) {
                             engine.processBlockLinks(object, frame, node, block, index, thisBlock);
                         });
                 }
@@ -4847,8 +4910,12 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
 
             var object = getObject(msgContent.objectKey);
-            if (!object) { return; }
-            if (!msgContent.hasOwnProperty('matrix')) { return; }
+            if (!object) {
+                return;
+            }
+            if (!msgContent.hasOwnProperty('matrix')) {
+                return;
+            }
 
             object.matrix = msgContent.matrix;
 
@@ -4879,7 +4946,9 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
 
             var object = getObject(msgContent.objectKey);
-            if (!object) { return; }
+            if (!object) {
+                return;
+            }
 
             var position = msgContent.position;
             var rotationInRadians;
@@ -4924,22 +4993,26 @@ function socketServer() {
         });
 
         // create or update the position of a HumanPoseObject
-        socket.on('/update/humanPoses', function(msg) {
-            if (!globalVariables.listenForHumanPose) { return; }
+        socket.on('/update/humanPoses', function (msg) {
+            if (!globalVariables.listenForHumanPose) {
+                return;
+            }
 
             var msgContent = msg;
             if (typeof msg === 'string') {
                 msgContent = JSON.parse(msg);
             }
-            if (!msgContent) { return; }
+            if (!msgContent) {
+                return;
+            }
 
             // if no poses changed this frame, don't clog the network with sending the same information
             var didAnythingChange = false;
-            forEachHumanPoseObject(function(objectKey, thisObject) {
+            forEachHumanPoseObject(function (objectKey, thisObject) {
                 thisObject.wasUpdated = false;
             });
 
-            msgContent.forEach(function(poseInfo) {
+            msgContent.forEach(function (poseInfo) {
                 var objectId = HumanPoseObject.getObjectId(poseInfo.id);
                 var thisObject = objects[objectId];
                 if (!doesObjectExist(objectId)) {
@@ -4958,7 +5031,7 @@ function socketServer() {
             });
 
             // check if any Human Objects were not contained in msgContent, and delete them
-            forEachHumanPoseObject(function(objectKey, thisObject) {
+            forEachHumanPoseObject(function (objectKey, thisObject) {
                 if (!thisObject.wasUpdated) {
                     console.log('delete human pose object', objectKey);
                     didAnythingChange = true;
@@ -4968,14 +5041,16 @@ function socketServer() {
                 }
             });
 
-            if (!didAnythingChange) { return; }
+            if (!didAnythingChange) {
+                return;
+            }
 
             // send updated objects / positions to all known editors. right now piggybacks on sockets opened for other realtime communications.
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
                     // sends an array of objectIds for the visible poses in this timestep
-                    var visibleHumanPoseObjects = Object.keys(objects).filter(function(objectKey) {
+                    var visibleHumanPoseObjects = Object.keys(objects).filter(function (objectKey) {
                         return objects[objectKey].isHumanPose;
                     });
                     var updateResponse = {
@@ -4983,7 +5058,7 @@ function socketServer() {
                     };
                     // also sends all object JSON data for each visible pose object
                     var objectData = {};
-                    visibleHumanPoseObjects.forEach(function(objectKey) {
+                    visibleHumanPoseObjects.forEach(function (objectKey) {
                         objectData[objectKey] = objects[objectKey];
                     });
                     updateResponse.objectData = objectData;
@@ -5009,12 +5084,14 @@ function socketServer() {
             }
         });
 
-        socket.on('node/setup', function(msg) {
+        socket.on('node/setup', function (msg) {
             var msgContent = msg;
             if (typeof msg === 'string') {
                 msgContent = JSON.parse(msg);
             }
-            if (!msgContent) { return; }
+            if (!msgContent) {
+                return;
+            }
 
             console.log(msgContent);
             var objectKey = msgContent.object;
@@ -5184,7 +5261,7 @@ function messagetoSend(msgContent, socketID) {
 }
 
 
-hardwareAPI.screenObjectServerCallBack(function(object, frame, node, touchOffsetX, touchOffsetY) {
+hardwareAPI.screenObjectServerCallBack(function (object, frame, node, touchOffsetX, touchOffsetY) {
     for (var thisEditor in realityEditorSocketArray) {
         io.sockets.connected[thisEditor].emit('/object/screenObject', JSON.stringify({
             object: object,
@@ -5238,7 +5315,7 @@ var engine = {
 
             this.link = thisFrame.links[linkKey];
 
-            if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame ) {
+            if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame) {
                 if (!checkObjectActivation(this.link.objectB)) {
                     socketSender(object, frame, linkKey, thisNode.processedData);
                 } else {
@@ -5449,7 +5526,7 @@ function socketUpdater() {
         var socketIsUsed = false;
 
         // check if the link is used somewhere. if it is not used delete it.
-        forEachObject(function(objectKey, object) {
+        forEachObject(function (objectKey, object) {
             for (var frameKey in object.frames) {
                 var frame = getFrame(objectKey, frameKey);
                 for (var linkKey in frame.links) {
@@ -5465,7 +5542,7 @@ function socketUpdater() {
         }
     }
 
-    forEachObject(function(objectKey, object) {
+    forEachObject(function (objectKey, object) {
         for (var frameKey in object.frames) {
             for (var linkKey in object.frames[frameKey].links) {
                 var thisLink = object.frames[frameKey].links[linkKey];
