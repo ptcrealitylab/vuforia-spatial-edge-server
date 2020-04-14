@@ -4461,12 +4461,14 @@ function objectWebServer() {
                                 unzipper.on('extract', function () {
                                     var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
                                     var folderFileType;
+                                    let anyTargetsUploaded = false;
 
                                     for (var i = 0; i < folderFile.length; i++) {
                                         console.log(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
                                         if (folderFileType === 'xml' || folderFileType === 'dat') {
                                             fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                            anyTargetsUploaded = true;
                                         }
                                     }
                                     fs.unlinkSync(folderD + '/' + filename);
@@ -4522,8 +4524,13 @@ function objectWebServer() {
                                     let sendObject = {
                                         initialized: false
                                     };
-                                    res.status(200);
-                                    res.json(sendObject);
+                                    if (anyTargetsUploaded) {
+                                        res.status(200).json(sendObject);
+                                    } else {
+                                        res.status(400).json({
+                                            error: 'Unable to extract any target data from provided zip'
+                                        });
+                                    }
                                 });
 
                                 unzipper.on('progress', function (fileIndex, fileCount) {
