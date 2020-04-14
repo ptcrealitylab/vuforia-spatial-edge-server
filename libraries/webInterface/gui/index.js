@@ -1116,6 +1116,12 @@ realityServer.gotClick = function (event) {
                 }
 
             });
+
+            realityServer.myTargetDropzone.on('error', function(file, message) {
+                if (typeof message.error !== 'undefined') {
+                    showErrorNotification(message.error);
+                }
+            });
         } else {
             realityServer.dropZoneId = '';
             let removeNode = document.getElementById('targetDropZone' + objectKey);
