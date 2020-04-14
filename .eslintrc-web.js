@@ -59,6 +59,7 @@ module.exports = {
         'secondMouseDown': 'writable',
         'showErrorNotification': 'writable',
         'showMessageNotification': 'writable',
+        'showSuccessNotification': 'writable',
         'targetDownloadStates': 'writable',
         'timeCorrection': 'writable',
         'timeForContentLoaded': 'writable',

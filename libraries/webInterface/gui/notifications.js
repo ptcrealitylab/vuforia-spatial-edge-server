@@ -51,6 +51,17 @@
         notificationList.showMessageNotification(displayText, timeToLive);
     }
 
+    /**
+     * Show a green success message at the top of the screen
+     * See showErrorNotification for additional documentation
+     * @param {string} displayText
+     * @param {number?} timeToLive - in milliseconds
+     */
+    function showSuccessNotification(displayText, timeToLive) {
+        addNotificationListIfNecessary();
+        notificationList.showSuccessNotification(displayText, timeToLive);
+    }
+
     function Notification(messageText, type, onClose) {
         this.messageText = messageText;
         this.type = type;
@@ -67,6 +78,8 @@
         element.className = 'notification';
         if (this.type === 'error') {
             element.classList.add('notificationError');
+        } else if (this.type === 'success') {
+            element.classList.add('notificationSuccess');
         }
         element.innerText = this.messageText;
 
@@ -131,6 +144,10 @@
         this.showNotification(messageText, 'message', timeToLive);
     };
 
+    NotificationList.prototype.showSuccessNotification = function(messageText, timeToLive) {
+        this.showNotification(messageText, 'success', timeToLive);
+    };
+
     NotificationList.prototype.showNotification = function(messageText, type, timeToLive) {
         let notification = new Notification(messageText, type, function() {
             console.log('notificationList removed notification with text: ' + messageText);
@@ -145,5 +162,6 @@
 
     exports.showErrorNotification = showErrorNotification;
     exports.showMessageNotification = showMessageNotification;
+    exports.showSuccessNotification = showSuccessNotification;
 
 })(window);
