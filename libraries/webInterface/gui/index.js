@@ -1121,7 +1121,7 @@ realityServer.gotClick = function (event) {
 
             realityServer.myTargetDropzone.on('error', function(file, message) {
                 if (typeof message.error !== 'undefined') {
-                    showErrorNotification(message.error);
+                    showErrorNotification(message.error, 10000); // show for 10 seconds
                 }
             });
         } else {
