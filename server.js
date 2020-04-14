@@ -4295,7 +4295,7 @@ function objectWebServer() {
                         console.log('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
 
-                        if (fileExtension === 'jpg' || fileExtension === 'dat') {
+                        if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml') {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
                                 fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
                                     if (err) {
@@ -4547,8 +4547,12 @@ function objectWebServer() {
                                 console.log('could not unzip file');
                             }
                         } else {
-                            res.status(200);
-                            res.send('done');
+                            let errorString = 'File type is not recognized target data. ' +
+                                'You uploaded .' + fileExtension + ' but only ' +
+                                '.dat, .jpg, .xml, and .zip are supported.';
+                            res.status(400).send({
+                                error: errorString
+                            });
                         }
 
                     } else {
