@@ -1442,8 +1442,6 @@ realityServer.gotClick = function (event) {
             objectName = '_WORLD_' + textContent;
         }
 
-        // TODO: sanitize object names before creating, for example prevent _WORLD_local (github issue #20)
-
         realityServer.sendRequest('/', 'POST', function(state) {
             if (state === 'ok') {
                 // this is how non-world objects get set up so they can be initialized later when they receive target data
@@ -1582,7 +1580,7 @@ function isNameOk(textContent) {
     if (textContent === '') {
         return false;
     }
-    let isAlphanumeric = /^[a-z0-9]+$/i.test(textContent);
+    let isAlphanumeric = /^[a-zA-Z0-9]+$/i.test(textContent);
     if (!isAlphanumeric) {
         showErrorNotification('Name must be alphanumeric');
     }
