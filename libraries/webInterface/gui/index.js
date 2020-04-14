@@ -1429,88 +1429,85 @@ realityServer.gotClick = function (event) {
 
         let textContent = document.getElementById('textEntryObject').querySelector('.textfield').innerText;
 
-        if (textContent === 'Enter Name') {
+        if (!isNameOk(textContent)) {
             return;
-        } else {
-            console.log(textContent);
-            let removeNode = document.getElementById('textEntryObject');
-            realityServer.removeAnimated(removeNode);
-
-            if (textContent !== '') {
-
-                let objectName = textContent;
-                if (shouldAddWorldObject) {
-                    objectName = '_WORLD_' + textContent;
-                }
-
-                // TODO: sanitize object names before creating, for example prevent _WORLD_local (github issue #20)
-
-                realityServer.sendRequest('/', 'POST', function(state) {
-                    if (state === 'ok') {
-                        // this is how non-world objects get set up so they can be initialized later when they receive target data
-                        realityServer.objects[objectName] = new Objects();
-                        realityServer.objects[objectName].name = objectName;
-
-                        if (shouldAddWorldObject) {
-                            realityServer.objects[objectName].isWorldObject = true;
-                        }
-                    } else {
-                        // this is how world objects get instantly initialized
-                        try {
-                            let msgContent = JSON.parse(state);
-                            // generate a placeholder xml file for this object
-                            let defaultSize = 0.3;
-                            realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (state) {
-                                if (state === 'ok') {
-                                    console.log('successfully generated xml for world object');
-
-                                    realityServer.objects[msgContent.id] = new Objects();
-                                    realityServer.objects[msgContent.id].name = msgContent.name;
-                                    realityServer.objects[msgContent.id].isWorldObject = true;
-                                    realityServer.objects[msgContent.id].initialized = true;
-
-                                    // make them automatically activate after a slight delay
-                                    setTimeout(function() {
-                                        realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
-                                            if (state === 'ok') {
-                                                realityServer.objects[msgContent.id].active = true;
-                                            }
-                                            realityServer.update();
-                                        });
-                                    }, 100);
-                                }
-                            }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
-
-                        } catch (e) {
-                            console.warn('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
-                        }
-                    }
-
-                    // realityServer.objects = realityServer.sortObject(realityServer.objects);
-                    realityServer.update();
-                }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject);
-            }
         }
+
+        console.log(textContent);
+        let removeNode = document.getElementById('textEntryObject');
+        realityServer.removeAnimated(removeNode);
+
+        let objectName = textContent;
+        if (shouldAddWorldObject) {
+            objectName = '_WORLD_' + textContent;
+        }
+
+        // TODO: sanitize object names before creating, for example prevent _WORLD_local (github issue #20)
+
+        realityServer.sendRequest('/', 'POST', function(state) {
+            if (state === 'ok') {
+                // this is how non-world objects get set up so they can be initialized later when they receive target data
+                realityServer.objects[objectName] = new Objects();
+                realityServer.objects[objectName].name = objectName;
+
+                if (shouldAddWorldObject) {
+                    realityServer.objects[objectName].isWorldObject = true;
+                }
+            } else {
+                // this is how world objects get instantly initialized
+                try {
+                    let msgContent = JSON.parse(state);
+                    // generate a placeholder xml file for this object
+                    let defaultSize = 0.3;
+                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (state) {
+                        if (state === 'ok') {
+                            console.log('successfully generated xml for world object');
+
+                            realityServer.objects[msgContent.id] = new Objects();
+                            realityServer.objects[msgContent.id].name = msgContent.name;
+                            realityServer.objects[msgContent.id].isWorldObject = true;
+                            realityServer.objects[msgContent.id].initialized = true;
+
+                            // make them automatically activate after a slight delay
+                            setTimeout(function() {
+                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
+                                    if (state === 'ok') {
+                                        realityServer.objects[msgContent.id].active = true;
+                                    }
+                                    realityServer.update();
+                                });
+                            }, 100);
+                        }
+                    }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+
+                } catch (e) {
+                    console.warn('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
+                }
+            }
+
+            // realityServer.objects = realityServer.sortObject(realityServer.objects);
+            realityServer.update();
+        }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject);
     }
 
     if (buttonClassList.contains('addButtonFrame')) {
         let textContent = document.querySelector('.textEntryFrame').querySelector('.textfield').innerText;
-        if (textContent === 'Enter Name') {return;} else {
-            console.log(textContent);
-            let removeNode = document.querySelector('.textEntryFrame');
-            realityServer.removeAnimated(removeNode);
-            // removeNode.remove();
 
-            if (textContent !== '') {
-                realityServer.sendRequest('/', 'POST', function(state) {
-                    if (state === 'ok') {
-                        thisObject.frames[textContent] = new Objects();
-                        thisObject.frames[textContent].name = textContent;
-                    }
-                    realityServer.update();
-                }, 'action=new&name=' + thisObject.name + '&frame=' + textContent);
+        if (!isNameOk(textContent)) {
+            return;
+        }
+
+        console.log(textContent);
+        let removeNode = document.querySelector('.textEntryFrame');
+        realityServer.removeAnimated(removeNode);
+
+        realityServer.sendRequest('/', 'POST', function(state) {
+            if (state === 'ok') {
+                thisObject.frames[textContent] = new Objects();
+                thisObject.frames[textContent].name = textContent;
             }
-        }//
+            realityServer.update();
+        }, 'action=new&name=' + thisObject.name + '&frame=' + textContent);
     }
 
     /**
@@ -1570,6 +1567,27 @@ realityServer.gotClick = function (event) {
         }
     }
 };
+
+/**
+ * Verifies that the name of a new object or frame meets certain criteria
+ * (e.g. alphanumeric)
+ * Also shows an error message if the name doesn't qualify for a non-obvious reason
+ * @param textContent
+ * @return {boolean}
+ */
+function isNameOk(textContent) {
+    if (textContent === 'Enter Name') {
+        return false;
+    }
+    if (textContent === '') {
+        return false;
+    }
+    let isAlphanumeric = /^[a-z0-9]+$/i.test(textContent);
+    if (!isAlphanumeric) {
+        showErrorNotification('Name must be alphanumeric');
+    }
+    return isAlphanumeric;
+}
 
 realityServer.onTextFieldKeyPress = function(event) {
     if (event.key !== 'Enter') {
