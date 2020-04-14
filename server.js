@@ -4426,7 +4426,7 @@ function objectWebServer() {
                                     var sendObject = {
                                         id: thisObjectId,
                                         name: thisObject.name,
-                                        initialized: ((jpg || dat) && xml),
+                                        initialized: (jpg && xml),
                                         jpgExists: jpg,
                                         xmlExists: xml,
                                         datExists: dat

@@ -982,11 +982,13 @@ realityServer.gotClick = function (event) {
 
             realityServer.myTargetDropzone.on('success', function (file, responseText) {
                 console.log(responseText);
-                // let conText = JSON.parse(responseText);
+
+                let notificationText = 'Successfully uploaded ' + file.name + ' to the object' +
+                    ' named ' + responseText.name;
+                showSuccessNotification(notificationText, 5000);
 
                 thisObject = realityServer.objects[objectKey];
 
-                console.log('test');
                 realityServer.getDomContents().querySelector('.dropZoneContentBackground').style.width = '0px';
 
                 if (typeof responseText.initialized !== 'undefined') {
@@ -1120,6 +1122,8 @@ realityServer.gotClick = function (event) {
             });
 
             realityServer.myTargetDropzone.on('error', function(file, message) {
+                realityServer.getDomContents().querySelector('.dropZoneContentBackground').style.width = '0px';
+
                 if (typeof message.error !== 'undefined') {
                     showErrorNotification(message.error, 10000); // show for 10 seconds
                 }
