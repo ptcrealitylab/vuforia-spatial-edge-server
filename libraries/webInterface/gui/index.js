@@ -257,6 +257,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                             realityServer.sendRequest('/', 'POST', function(state) {
                                 if (state === 'ok') {
                                     delete realityServer.objects[thisObjectKey];
+                                    window.location.reload();
                                     realityServer.update();
                                 }
                                 realityServer.update();
@@ -323,7 +324,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                         // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                             thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
@@ -401,7 +402,12 @@ realityServer.updateManageObjects = function(thisItem2) {
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
                     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                    thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                  // add Image for Target
+                    if (thisObject.targetsExist.jpgExists) {
+                        thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                    } else if(thisObject.isAnchor){
+                        thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
+                    }
                     thisObject.dom.querySelector('.target').innerText = 'Edit Target';
 
                 } else {
@@ -920,7 +926,8 @@ realityServer.gotClick = function (event) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
                     visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
                 } else if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'yellow');
+                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
+                    visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
                 }
                 if (thisObject.targetsExist.xmlExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
@@ -1016,6 +1023,7 @@ realityServer.gotClick = function (event) {
                             realityServer.switchClass(document.getElementById('object' + responseText.id).querySelector('.target'), 'yellow', 'green');
                             realityServer.switchClass(document.getElementById('object' + responseText.id).querySelector('.target'), 'targetWidthMedium', 'one');
                         }
+                        window.location.reload();
                         realityServer.update();
 
                     } else {
@@ -1071,6 +1079,7 @@ realityServer.gotClick = function (event) {
 
                             // re-render after a slight delay, so the user can acknowledge what happened
                             setTimeout(function() {
+                                window.location.reload();
                                 realityServer.update();
                             }, 300);
                         }
@@ -1114,6 +1123,7 @@ realityServer.gotClick = function (event) {
                             thisObject.active = true;
                             realityServer.switchClass(document.getElementById('object' + objectKey).querySelector('.target'), 'yellow', 'green');
                             realityServer.switchClass(document.getElementById('object' + objectKey).querySelector('.target'), 'targetWidthMedium', 'one');
+                            window.location.reload();
                             realityServer.update();
                         }
                     }
@@ -1468,13 +1478,13 @@ realityServer.gotClick = function (event) {
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
                             realityServer.objects[msgContent.id].isWorldObject = true;
-                            realityServer.objects[msgContent.id].initialized = true;
+                        //    realityServer.objects[msgContent.id].initialized = true;
 
                             // make them automatically activate after a slight delay
                             setTimeout(function() {
                                 realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
                                     if (state === 'ok') {
-                                        realityServer.objects[msgContent.id].active = true;
+                                     //   realityServer.objects[msgContent.id].active = true;
                                     }
                                     realityServer.update();
                                 });
