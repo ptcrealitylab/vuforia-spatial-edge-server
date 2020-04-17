@@ -920,7 +920,8 @@ realityServer.gotClick = function (event) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
                     visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
                 } else if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'yellow');
+                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
+                    visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
                 }
                 if (thisObject.targetsExist.xmlExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
