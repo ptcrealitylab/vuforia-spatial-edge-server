@@ -246,13 +246,14 @@ exports.uuidTime = function () {
     return stampUuidTime;
 };
 
-var getObjectIdFromTarget = function (folderName, objectsPath) {
+var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
     }
 
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
+    var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
     if (fs.existsSync(xmlFile)) {
         var resultXML = '';
@@ -270,11 +271,18 @@ var getObjectIdFromTarget = function (folderName, objectsPath) {
                 });
 
         return resultXML;
+    } else if (fs.existsSync(jsonFile)) {
+      let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+      if(thisObject.hasOwnProperty("objectId")){
+          return thisObject.objectId;
+      } else {
+      return null;
+      }
     } else {
         return null;
     }
 };
-exports.getObjectIdFromTarget = getObjectIdFromTarget;
+exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
 /**
  *
@@ -482,7 +490,7 @@ exports.updateObject = function(objectName, objects) {
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
-            var tempFolderName = getObjectIdFromTarget(objectFolderList[i], homedir);
+            var tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i], homedir);
             console.log('TempFolderName: ' + tempFolderName);
 
             if (tempFolderName !== null) {

@@ -1499,6 +1499,8 @@ realityServer.gotClick = function (event) {
 
             // realityServer.objects = realityServer.sortObject(realityServer.objects);
             realityServer.update();
+            // todo this needs to be changed to a proper read response for the latest objects
+            window.location.reload();
         }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject);
     }
 

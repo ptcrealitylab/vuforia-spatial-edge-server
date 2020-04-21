@@ -644,7 +644,7 @@ function loadObjects() {
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTarget(objectFolderList[i], objectsPath);
+        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i], objectsPath);
         console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -891,7 +891,7 @@ function setAnchors(){
         if (objectKey.indexOf('_WORLD_') === -1){
             
         let thisObjectKey = null;
-        let tempKey = utilities.getObjectIdFromTarget(objectKey, objectsPath); // gets the object id from the xml target file
+        let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         } else {
@@ -1114,7 +1114,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-                console.log(message);
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) throw err;
                     // close the socket as the function is only called once.
@@ -4728,7 +4727,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
     if (fs.existsSync(folder)) {
         console.log('folder exists');
-        var objectIDXML = utilities.getObjectIdFromTarget(folderVar, objectsPath);
+        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         console.log('got ID: objectIDXML');
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
