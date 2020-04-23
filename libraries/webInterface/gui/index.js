@@ -101,7 +101,7 @@ realityServer.activeUiElement = function() {
         let nodeID = item.getAttribute("nodeid")
         if(!nodeID) nodeID ="";
         
-        console.log("allItems:",item, item.getAttribute("objectid"), item.getAttribute("frameid"));
+       // console.log("allItems:",item, item.getAttribute("objectid"), item.getAttribute("frameid"));
 
         item.onmouseover = function(){
             sendState( objectID,toolID, nodeID, true);
@@ -114,11 +114,8 @@ realityServer.activeUiElement = function() {
     });
 
 
-function sendState(objectId, frameId, nodeId, state) {
-    let jsonBody = {objectId:objectId, toolId: frameId, nodeId: nodeId, state: state};
-
-    let messageBody = "objectId="+objectId+"&toolId="+frameId+"&nodeId="+nodeId+"&state="+state;// encodeURIComponent(JSON.stringify(jsonBody));
-    console.log("!",objectId);
+function sendState(objectId, frameId, nodeId, locateMe) {
+    let messageBody = "objectID="+objectId+"&toolID="+frameId+"&nodeID="+nodeId+"&locateMe="+locateMe;
     realityServer.sendRequest('/webUI/whereIs/objectToolNode', 'POST', function (state) {
     }, messageBody);
 }
