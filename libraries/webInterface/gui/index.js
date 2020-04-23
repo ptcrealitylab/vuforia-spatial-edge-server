@@ -85,6 +85,46 @@ realityServer.initialize = function () {
     this.initializeHelp();
 };
 
+
+realityServer.activeUiElement = function() {
+
+    let allItems = document.querySelectorAll('.name');
+
+    allItems.forEach(function (item, index) {
+        
+        let objectID = item.getAttribute("objectid")
+        if(!objectID) objectID ="";
+
+        let toolID = item.getAttribute("frameid")
+        if(!toolID) toolID ="";
+
+        let nodeID = item.getAttribute("nodeid")
+        if(!nodeID) nodeID ="";
+        
+        console.log("allItems:",item, item.getAttribute("objectid"), item.getAttribute("frameid"));
+
+        item.onmouseover = function(){
+            sendState( objectID,toolID, nodeID, true);
+        };
+
+        item.onmouseout = function(){
+            sendState( objectID,toolID, nodeID, false);
+        };
+        
+    });
+
+
+function sendState(objectId, frameId, nodeId, state) {
+    let jsonBody = {objectId:objectId, toolId: frameId, nodeId: nodeId, state: state};
+
+    let messageBody = "objectId="+objectId+"&toolId="+frameId+"&nodeId="+nodeId+"&state="+state;// encodeURIComponent(JSON.stringify(jsonBody));
+    console.log("!",objectId);
+    realityServer.sendRequest('/webUI/whereIs/objectToolNode', 'POST', function (state) {
+    }, messageBody);
+}
+
+};
+
 let showHelpText = 'Show Help';
 let hideHelpText = 'Hide Help';
 
@@ -815,6 +855,7 @@ realityServer.update = function (thisItem2) {
     document.getElementById(this.selectedTab).classList.add('selectedButton');
 
     // this.updateHelp();
+    this.activeUiElement();
 };
 
 realityServer.printFiles = function(item) {
