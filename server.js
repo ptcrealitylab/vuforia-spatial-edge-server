@@ -2890,6 +2890,24 @@ function objectWebServer() {
         }
     });
 
+    webServer.post('/object/:id/matrix', function(req, res) {
+        let object = getObject(req.params.id);
+        if (!object) {
+            res.status(404).json({
+                failure: true,
+                error: 'Object ' + req.params.id + ' not found'
+            }).end();
+            return;
+        }
+
+        object.matrix = req.body.matrix;
+        console.log('set matrix for ' + req.params.id + ' to ' + object.matrix.toString());
+
+        utilities.writeObjectToFile(objects, req.params.id, objectsPath, globalVariables.saveToDisk);
+
+        res.json({success: true}).end();
+    });
+
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
         memoryUpload(req.params.id, /*req.params.id,*/ req, res);
