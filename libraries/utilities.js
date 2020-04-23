@@ -613,7 +613,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName) {
 exports.actionSender = function(action, timeToLive, beatport) {
     if (!timeToLive) timeToLive = 2;
     if (!beatport) beatport = 52316;
-    console.log(action);
+  //  console.log(action);
 
     var HOST = '255.255.255.255';
     var message;
