@@ -17,6 +17,17 @@ function Objects() {
     };
 }
 
+function SpatialLocator(objectID, toolID, nodeID) {
+    this.objectID = objectID;
+    this.toolID = toolID;
+    this.nodeID = nodeID;
+}
+
+let spatialLocator = {
+    whereIs: {},
+    howFarIs: {}
+};
+
 // Constructor with subset of frame information necessary for the web frontend
 function Frame() { // eslint-disable-line no-unused-vars
     this.name = '';
@@ -28,7 +39,7 @@ let collapsedObjects = {};
 let objectKeyToHighlight = null;
 let defaultHardwareInterfaceSelected = 'kepware';
 
-realityServer.hideAllTabs = function() {
+realityServer.hideAllTabs = function () {
     this.domObjects.querySelector('#manageObjectsContents').classList.remove('selectedTab');
     this.domObjects.querySelector('#manageFramesContents').classList.remove('selectedTab');
     this.domObjects.querySelector('#manageHardwareInterfacesContents').classList.remove('selectedTab');
@@ -38,11 +49,11 @@ realityServer.hideAllTabs = function() {
     this.domObjects.querySelector('#manageHardwareInterfacesContents').classList.add('hiddenTab');
 };
 
-realityServer.getDomContents = function() {
+realityServer.getDomContents = function () {
     return this.domObjects.querySelector('#' + realityServer.selectedTab + 'Contents');
 };
 
-realityServer.getCommonContents = function() {
+realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
@@ -62,7 +73,7 @@ realityServer.initialize = function () {
     }
 
     // clicking on header refreshes -> goes back to objects tab
-    document.getElementById('logo').addEventListener('click', function() {
+    document.getElementById('logo').addEventListener('click', function () {
         window.location.reload();
     });
 
@@ -85,47 +96,10 @@ realityServer.initialize = function () {
     this.initializeHelp();
 };
 
-
-realityServer.activeUiElement = function() {
-
-    let allItems = document.querySelectorAll('.name');
-
-    allItems.forEach(function (item, index) {
-        
-        let objectID = item.getAttribute("objectid")
-        if(!objectID) objectID ="";
-
-        let toolID = item.getAttribute("frameid")
-        if(!toolID) toolID ="";
-
-        let nodeID = item.getAttribute("nodeid")
-        if(!nodeID) nodeID ="";
-        
-       // console.log("allItems:",item, item.getAttribute("objectid"), item.getAttribute("frameid"));
-
-        item.onmouseover = function(){
-            sendState( objectID,toolID, nodeID, true);
-        };
-
-        item.onmouseout = function(){
-            sendState( objectID,toolID, nodeID, false);
-        };
-        
-    });
-
-
-function sendState(objectId, frameId, nodeId, locateMe) {
-    let messageBody = "objectID="+objectId+"&toolID="+frameId+"&nodeID="+nodeId+"&locateMe="+locateMe;
-    realityServer.sendRequest('/webUI/whereIs/objectToolNode', 'POST', function (state) {
-    }, messageBody);
-}
-
-};
-
 let showHelpText = 'Show Help';
 let hideHelpText = 'Hide Help';
 
-realityServer.initializeHelp = function() {
+realityServer.initializeHelp = function () {
     // if there are no objects, show help by default. otherwise hide help by default.
     if (Object.keys(realityServer.objects).length === 0) {
         showHelp();
@@ -133,7 +107,7 @@ realityServer.initializeHelp = function() {
         hideHelp();
     }
 
-    document.getElementById('showHelpButton').addEventListener('click', function() {
+    document.getElementById('showHelpButton').addEventListener('click', function () {
         // toggle the help text
         let isHelpActive = document.getElementById('showHelpButton').innerText === hideHelpText;
         if (isHelpActive) {
@@ -190,14 +164,14 @@ function updateVisibilityOfTutorials() {
     }
 }
 
-realityServer.forEachSortedObjectKey = function(callback) {
+realityServer.forEachSortedObjectKey = function (callback) {
     let sorted = realityServer.sortObject(realityServer.objects);
-    sorted.forEach(function(sortedKey) {
+    sorted.forEach(function (sortedKey) {
         callback(sortedKey[1]);
     });
 };
 
-realityServer.updateManageObjects = function(thisItem2) {
+realityServer.updateManageObjects = function (thisItem2) {
 
     this.getDomContents().appendChild(this.templates['start'].content.cloneNode(true));
     //  this.domObjects.appendChild(document.getElementById("textEntryFrame").content.cloneNode(true));
@@ -211,22 +185,22 @@ realityServer.updateManageObjects = function(thisItem2) {
     if (objectKeys.length === 0) { // if there are no objects
         tutorialStateNumber = 1;
 
-    } else if (objectKeys.filter(function(key) {
+    } else if (objectKeys.filter(function (key) {
         return realityServer.objects[key].initialized; // if there are objects initialized with targets
     }).length === 0) {
         tutorialStateNumber = 2;
 
-    } else if (objectKeys.filter(function(key) {
+    } else if (objectKeys.filter(function (key) {
         return Object.keys(realityServer.objects[key].frames).length > 0;
     }).length === 0) { // if there are no objects with frames
         tutorialStateNumber = 3;
 
     } else {
-        let isExactlyOneObject = objectKeys.filter(function(key) {
+        let isExactlyOneObject = objectKeys.filter(function (key) {
             return realityServer.objects[key].initialized; // if there are objects initialized with targets
         }).length === 1;
 
-        let hasExactlyOneFrame = objectKeys.filter(function(key) {
+        let hasExactlyOneFrame = objectKeys.filter(function (key) {
             return Object.keys(realityServer.objects[key].frames).length === 1;
         }).length === 1;
 
@@ -255,17 +229,20 @@ realityServer.updateManageObjects = function(thisItem2) {
     /////// ^ Tutorial ^ ///////
 
     document.getElementById('addObject').addEventListener('click', realityServer.gotClick, false);
-
     document.getElementById('addWorldObject').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('whereIs').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('howFarIs').addEventListener('click', realityServer.gotClick, false);
 
-    realityServer.forEachSortedObjectKey( function(objectKey) {
-        if (objectKey === 'allTargetsPlaceholder000000000000') { return; }
+    realityServer.forEachSortedObjectKey(function (objectKey) {
+        if (objectKey === 'allTargetsPlaceholder000000000000') {
+            return;
+        }
 
         let thisObject = this.objects[objectKey];
 
         console.log('--------' + thisItem2);
 
-        if (!thisItem2 || thisItem2 === objectKey)  {
+        if (!thisItem2 || thisItem2 === objectKey) {
 
             if (thisObject.isWorldObject) {
 
@@ -278,7 +255,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                 thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
 
                 function addDeleteListener(button, container, thisObjectKey) { // eslint-disable-line no-inner-declarations
-                    button.addEventListener('click', function() {
+                    button.addEventListener('click', function () {
                         // add a expandcollapse div with Sure? Yes
                         let alreadyOpen = container.querySelector('.expandcollapse');
                         if (alreadyOpen) {
@@ -288,10 +265,10 @@ realityServer.updateManageObjects = function(thisItem2) {
                         let deleteConfirmation = realityServer.templates['deleteOKId'].content.cloneNode(true);
                         container.appendChild(deleteConfirmation);
 
-                        container.querySelector('.deleteYes').addEventListener('click', function() {
+                        container.querySelector('.deleteYes').addEventListener('click', function () {
                             realityServer.removeAnimated(container.querySelector('.deleteOK'));
 
-                            realityServer.sendRequest('/', 'POST', function(state) {
+                            realityServer.sendRequest('/', 'POST', function (state) {
                                 if (state === 'ok') {
                                     delete realityServer.objects[thisObjectKey];
                                     window.location.reload();
@@ -302,6 +279,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                         });
                     });
                 }
+
                 addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.worldObject'), objectKey);
 
                 if (Object.keys(thisObject.frames).length > 0) {
@@ -348,7 +326,7 @@ realityServer.updateManageObjects = function(thisItem2) {
                     }
 
                     // download zip file if click on download button
-                    thisObject.dom.querySelector('.download').addEventListener('click', function(_e) {
+                    thisObject.dom.querySelector('.download').addEventListener('click', function (_e) {
                         window.location.href = '/object/' + realityServer.objects[objectKey].name + '/zipBackup/';
                     });
 
@@ -361,12 +339,12 @@ realityServer.updateManageObjects = function(thisItem2) {
                         // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                             thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
                         // world objects without targets should have an "Add Origin Target" button instead
-                        setTimeout(function(thisObjectKey) {
+                        setTimeout(function (thisObjectKey) {
                             let thisObjectElement = document.getElementById('object' + thisObjectKey);
                             if (thisObjectElement) {
                                 if (thisObjectElement.querySelector('.objectIcon')) {
@@ -439,10 +417,10 @@ realityServer.updateManageObjects = function(thisItem2) {
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
                     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                  // add Image for Target
+                    // add Image for Target
                     if (thisObject.targetsExist.jpgExists) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
-                    } else if(thisObject.isAnchor){
+                    } else if (thisObject.isAnchor) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
                     }
                     thisObject.dom.querySelector('.target').innerText = 'Edit Target';
@@ -534,7 +512,9 @@ realityServer.updateManageObjects = function(thisItem2) {
             }
 
             for (let frameKey in this.objects[objectKey].frames) {
-                if (!this.objects[objectKey].isExpanded) { continue; }
+                if (!this.objects[objectKey].isExpanded) {
+                    continue;
+                }
 
                 let thisFrame = this.objects[objectKey].frames[frameKey];
 
@@ -546,11 +526,12 @@ realityServer.updateManageObjects = function(thisItem2) {
 
                 // clicking on the "Content" button opens the html for that frame
                 function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
-                    buttonDiv.addEventListener('click', function() { // put in a closure so it references don't mutate
+                    buttonDiv.addEventListener('click', function () { // put in a closure so it references don't mutate
                         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                         window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
+
                 if (thisFrame.location === 'global') {
                     addLinkToContent(thisFrame.dom.querySelector('.content'), thisFrame.src);
 
@@ -596,7 +577,7 @@ realityServer.updateManageObjects = function(thisItem2) {
     console.log(realityServer.objects);
 };
 
-realityServer.updateManageFrames = function() {
+realityServer.updateManageFrames = function () {
     console.log('updateManageFrames');
 
     this.getDomContents().appendChild(this.templates['startFrames'].content.cloneNode(true));
@@ -627,12 +608,13 @@ realityServer.updateManageFrames = function() {
         console.log('frameInfo: ', frameInfo);
 
         function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
-            buttonDiv.addEventListener('click', function() {
+            buttonDiv.addEventListener('click', function () {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                 // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
                 window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
             });
         }
+
         let contentButton = frameInfo.dom.querySelector('.content');
         addLinkToContent(contentButton, frameKey);
 
@@ -665,7 +647,7 @@ realityServer.updateManageFrames = function() {
     }
 };
 
-realityServer.selectHardwareInterfaceSettings = function(interfaceName) {
+realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
     let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
     let configFrame = document.querySelector('.configFrame');
@@ -677,7 +659,7 @@ realityServer.selectHardwareInterfaceSettings = function(interfaceName) {
     }
 };
 
-realityServer.updateManageHardwareInterfaces = function() {
+realityServer.updateManageHardwareInterfaces = function () {
     console.log('updateManageHardwareInterfaces');
 
     /////// Tutorial ///////
@@ -727,7 +709,7 @@ realityServer.updateManageHardwareInterfaces = function() {
             interfaceInfo.dom.querySelector('.gear').classList.add('clickAble');
 
             // interfaceInfo.dom.querySelector('.name').classList.add('clickAble');
-            interfaceInfo.dom.querySelector('.gear').addEventListener('click', function() {
+            interfaceInfo.dom.querySelector('.gear').addEventListener('click', function () {
                 realityServer.selectHardwareInterfaceSettings(interfaceName);
             });
         }
@@ -744,7 +726,7 @@ realityServer.updateManageHardwareInterfaces = function() {
         }
 
         function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 if (hardwareInterfaceInfo.enabled) {
                     realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/disable/', 'GET', function (state) {
                         if (state === 'ok') {
@@ -762,6 +744,7 @@ realityServer.updateManageHardwareInterfaces = function() {
                 }
             });
         }
+
         addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
 
         firstColumn.appendChild(interfaceInfo.dom, true);
@@ -772,7 +755,7 @@ realityServer.updateManageHardwareInterfaces = function() {
     secondColumn.appendChild(configFrame, true);
 };
 
-realityServer.updateCommonContents = function(thisItem2) {
+realityServer.updateCommonContents = function (thisItem2) {
 
     if (thisItem2 === '') {
         realityServer.getCommonContents().innerHTML = '';
@@ -806,7 +789,7 @@ realityServer.updateCommonContents = function(thisItem2) {
 
         // tabName is manageObjects, manageFrames, or manageHardwareInterfaces
         function addTabListener(tabName) { // eslint-disable-line no-inner-declarations
-            realityServer.getCommonContents().querySelector('#' + tabName).addEventListener('click', function() {
+            realityServer.getCommonContents().querySelector('#' + tabName).addEventListener('click', function () {
                 realityServer.selectedTab = tabName;
                 realityServer.update();
 
@@ -852,10 +835,9 @@ realityServer.update = function (thisItem2) {
     document.getElementById(this.selectedTab).classList.add('selectedButton');
 
     // this.updateHelp();
-    this.activeUiElement();
 };
 
-realityServer.printFiles = function(item) {
+realityServer.printFiles = function (item) {
     let returnList = {
         files: {},
         folders: {}
@@ -882,11 +864,11 @@ function showGenerateXml(parentElement, objectKey) {
     let visualFeedback = parentElement;
     let generateXmlButton = visualFeedback.querySelector('.generateXml');
     console.log('generateXmlButton', generateXmlButton);
-    generateXmlButton.addEventListener('click', function() {
+    generateXmlButton.addEventListener('click', function () {
         if (!visualFeedback.querySelector('.textEntry')) {
             let textEntryElements = document.getElementById('textEntryTargetSize').content.cloneNode(true);
 
-            textEntryElements.querySelector('.setSizeButton').addEventListener('click', function() {
+            textEntryElements.querySelector('.setSizeButton').addEventListener('click', function () {
 
                 let newWidth = parseFloat(this.parentElement.querySelector('.sizeWidth').innerText);
                 let newHeight = parseFloat(this.parentElement.querySelector('.sizeHeight').innerText);
@@ -915,6 +897,12 @@ function showGenerateXml(parentElement, objectKey) {
     });
 }
 
+realityServer.spatialButtonState = {
+    whereIs: false,
+    howFarIs: false
+};
+
+
 realityServer.gotClick = function (event) {
     let thisEventObject = event.currentTarget;
     let buttonClassList = thisEventObject.classList;
@@ -926,6 +914,146 @@ realityServer.gotClick = function (event) {
     if (buttonClassList.contains('download')) {
         window.location.href = '/object/' + thisObject.name + '/zipBackup/';
     }
+
+
+    /**
+     *  SPATIAL QUESTIONS ..
+     */
+
+    if (buttonClassList.contains('whereIs')) {
+        if (realityServer.spatialButtonState.whereIs) {
+            let element = document.getElementById('whereIs');
+            element.classList.remove('selectedButton');
+
+            document.querySelectorAll('.name').forEach(function (item, index) {
+                let objectID = item.getAttribute('objectid');
+                let toolID = item.getAttribute('frameid');
+                let thisKey = objectID;
+                if (toolID) thisKey = toolID;
+                if (spatialLocator.whereIs[thisKey]) delete spatialLocator.whereIs[thisKey];
+            });
+
+
+            realityServer.spatialButtonState.whereIs = false;
+        } else {
+            let element = document.getElementById('whereIs');
+            element.classList.add('selectedButton');
+            realityServer.spatialButtonState.whereIs = true;
+        }
+    }
+/*
+    if (buttonClassList.contains('howFarIs')) {
+        if (realityServer.spatialButtonState.howFarIs) {
+            let element = document.getElementById('howFarIs');
+            element.classList.remove('selectedButton');
+
+            document.querySelectorAll('.name').forEach(function (item, index) {
+                let objectID = item.getAttribute('objectid');
+                let toolID = item.getAttribute('frameid');
+                let thisKey = objectID;
+                if (toolID) thisKey = toolID;
+                if (spatialLocator.howFarIs[thisKey]) delete spatialLocator.howFarIs[thisKey];
+            });
+
+            realityServer.spatialButtonState.howFarIs = false;
+        } else {
+            let element = document.getElementById('howFarIs');
+            element.classList.add('selectedButton');
+
+            realityServer.spatialButtonState.howFarIs = true;
+        }
+    }*/
+
+    if (realityServer.spatialButtonState.howFarIs || realityServer.spatialButtonState.whereIs) {
+        focusOnNames();
+        if (buttonClassList.contains('name')) {
+            if (thisEventObject.classList.contains('selectedButton')) {
+                thisEventObject.classList.remove('selectedButton');
+                let thisKey = objectKey;
+                if (frameKey) thisKey = frameKey;
+            } else {
+                thisEventObject.classList.add('selectedButton');
+                console.log(objectKey, frameKey, '');
+            }
+        }
+
+
+        let allItems = document.querySelectorAll('.name');
+        allItems.forEach(function (item, index) {
+
+            let objectID = item.getAttribute('objectid');
+            if (!objectID) objectID = '';
+
+            console.log(item);
+            let toolID = item.getAttribute('frameid');
+            if (!toolID) toolID = '';
+
+            let nodeID = item.getAttribute('nodeid');
+            if (!nodeID) nodeID = '';
+
+            let thisKey = objectID;
+            if (toolID) thisKey = toolID;
+
+            if (item.classList.contains('selectedButton')) {
+                console.log(objectKey, frameKey, '');
+
+                if (realityServer.spatialButtonState.whereIs)
+                    spatialLocator.whereIs[thisKey] = new SpatialLocator(objectKey, toolID, '');
+
+                if (realityServer.spatialButtonState.howFarIs)
+                    spatialLocator.howFarIs[thisKey] = new SpatialLocator(objectKey, toolID, '');
+
+            } else {
+                console.log(thisKey);
+                if (spatialLocator.whereIs[thisKey]) delete spatialLocator.whereIs[thisKey];
+                if (spatialLocator.howFarIs[thisKey]) delete spatialLocator.howFarIs[thisKey];
+            }
+        });
+
+        if (buttonClassList.contains('name')) {
+            sendSpatialState();
+        }
+
+        if (buttonClassList.contains('howFarIs') || (buttonClassList.contains('whereIs'))) {
+            sendSpatialState();
+        }
+        return;
+    } else {
+        unFocusNames();
+    }
+
+    function sendSpatialState() {
+        let messageBody = 'locator=' + JSON.stringify(spatialLocator);
+        realityServer.sendRequest('/webUI/spatial/locator', 'POST', function (state) {
+        }, messageBody);
+    }
+
+    function focusOnNames() {
+
+        let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
+
+        allItems.forEach(function (item, index) {
+            item.querySelectorAll('div').forEach(function (button, index) {
+                realityServer.switchClass(button, 'clickAble', 'inactive');
+            });
+            item.querySelectorAll('.name').forEach(function (name, index) {
+                realityServer.switchClass(name, 'inactive', 'clickAble');
+            });
+        });
+    }
+
+    function unFocusNames() {
+
+        let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
+
+        allItems.forEach(function (item, index) {
+            item.querySelectorAll('div').forEach(function (button, index) {
+                realityServer.switchClass(button, 'inactive', 'clickAble');
+                button.classList.remove('selectedButton');
+            });
+        });
+    }
+
 
     /**
      *  TARGET..
@@ -995,7 +1123,7 @@ realityServer.gotClick = function (event) {
             realityServer.myTargetDropzone = new Dropzone(document.getElementById('targetDropZone' + objectKey), {
                 url: '/content/' + thisObject.name,
                 autoProcessQueue: true,
-                headers: { 'type': 'targetUpload' },
+                headers: {'type': 'targetUpload'},
                 parallelUploads: 20,
                 createImageThumbnails: false,
                 previewTemplate: previewTemplate,
@@ -1042,7 +1170,7 @@ realityServer.gotClick = function (event) {
 
                         if (realityServer.objects[responseText.name]) {
                             realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
-                            let thisObject  = document.getElementById('object' + responseText.name);
+                            let thisObject = document.getElementById('object' + responseText.name);
                             thisObject.id = 'object' + responseText.id;
                             let objectList = thisObject.querySelectorAll('button');
 
@@ -1116,7 +1244,7 @@ realityServer.gotClick = function (event) {
                             }
 
                             // re-render after a slight delay, so the user can acknowledge what happened
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 window.location.reload();
                                 realityServer.update();
                             }, 300);
@@ -1169,7 +1297,7 @@ realityServer.gotClick = function (event) {
 
             });
 
-            realityServer.myTargetDropzone.on('error', function(file, message) {
+            realityServer.myTargetDropzone.on('error', function (file, message) {
                 realityServer.getDomContents().querySelector('.dropZoneContentBackground').style.width = '0px';
 
                 if (typeof message.error !== 'undefined') {
@@ -1321,18 +1449,18 @@ realityServer.gotClick = function (event) {
 
             //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
 
-            realityServer.sendRequest('/object/' + thisObject.name + '/' + thisObject.frames[frameKey].name    + '/frameFolder', 'GET', function (state) {
+            realityServer.sendRequest('/object/' + thisObject.name + '/' + thisObject.frames[frameKey].name + '/frameFolder', 'GET', function (state) {
 
                 console.log('got here');
                 console.log('-----------------------------xx---------------------');
                 console.log(state);
 
                 if (state) {
-                    let tree =  JSON.parse(state);
+                    let tree = JSON.parse(state);
                     // console.log(tree.children);
                     let newNode = {};
                     let thisLevel = realityServer.printFiles(tree);
-                    getLevels (thisLevel, 0);
+                    getLevels(thisLevel, 0);
 
                     newNode = document.getElementById('contentDropZoneId').content.cloneNode(true);
                     referenceNode.before(newNode);
@@ -1368,7 +1496,9 @@ realityServer.gotClick = function (event) {
                             newNode.querySelector('.fileName').innerText = fileKey;
                             realityServer.switchClass(newNode.querySelector('.nameSpace'), 'two', nameDepth);
                             realityServer.switchClass(newNode.querySelector('.removeSpace'), 'two', xDepth);
-                            newNode.querySelector('.fileName').addEventListener('click', function () {window.location.href = this.getAttribute('file');}, false);
+                            newNode.querySelector('.fileName').addEventListener('click', function () {
+                                window.location.href = this.getAttribute('file');
+                            }, false);
 
                             referenceNode.appendChild(newNode);
                         }
@@ -1430,7 +1560,7 @@ realityServer.gotClick = function (event) {
     if (buttonClassList.contains('deleteYes')) {
 
         if (!frameKey) frameKey = '';
-        realityServer.sendRequest('/', 'POST', function(state) {
+        realityServer.sendRequest('/', 'POST', function (state) {
             if (state === 'ok') {
                 if (frameKey !== '') {
                     delete thisObject.frames[frameKey];
@@ -1494,7 +1624,7 @@ realityServer.gotClick = function (event) {
             objectName = '_WORLD_' + textContent;
         }
 
-        realityServer.sendRequest('/', 'POST', function(state) {
+        realityServer.sendRequest('/', 'POST', function (state) {
             if (state === 'ok') {
                 // this is how non-world objects get set up so they can be initialized later when they receive target data
                 realityServer.objects[objectName] = new Objects();
@@ -1516,13 +1646,13 @@ realityServer.gotClick = function (event) {
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
                             realityServer.objects[msgContent.id].isWorldObject = true;
-                        //    realityServer.objects[msgContent.id].initialized = true;
+                            //    realityServer.objects[msgContent.id].initialized = true;
 
                             // make them automatically activate after a slight delay
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
                                     if (state === 'ok') {
-                                     //   realityServer.objects[msgContent.id].active = true;
+                                        //   realityServer.objects[msgContent.id].active = true;
                                     }
                                     realityServer.update();
                                 });
@@ -1553,7 +1683,7 @@ realityServer.gotClick = function (event) {
         let removeNode = document.querySelector('.textEntryFrame');
         realityServer.removeAnimated(removeNode);
 
-        realityServer.sendRequest('/', 'POST', function(state) {
+        realityServer.sendRequest('/', 'POST', function (state) {
             if (state === 'ok') {
                 thisObject.frames[textContent] = new Objects();
                 thisObject.frames[textContent].name = textContent;
@@ -1569,7 +1699,7 @@ realityServer.gotClick = function (event) {
     if (buttonClassList.contains('zone')) {
         thisEventObject.style.color = 'rgb(255,255,255)';
 
-        realityServer.sendRequest('/', 'POST', function(state) {
+        realityServer.sendRequest('/', 'POST', function (state) {
             if (state === 'ok') {
                 thisEventObject.style.color = 'rgb(41,253,47)';
                 thisObject.zone = thisEventObject.innerText;
@@ -1600,7 +1730,6 @@ realityServer.gotClick = function (event) {
             newNode.querySelector('.addButtonFrame').setAttribute('frameID', frameKey);
             referenceNode.after(newNode);
         }
-
 
 
         /*
@@ -1641,7 +1770,7 @@ function isNameOk(textContent) {
     return isAlphanumeric;
 }
 
-realityServer.onTextFieldKeyPress = function(event) {
+realityServer.onTextFieldKeyPress = function (event) {
     if (event.key !== 'Enter') {
         return;
     }
@@ -1654,8 +1783,10 @@ realityServer.onTextFieldKeyPress = function(event) {
     }
 };
 
-realityServer.sendRequest = function(url, httpStyle, callback, body) {
-    if (!body) { body = ''; }
+realityServer.sendRequest = function (url, httpStyle, callback, body) {
+    if (!body) {
+        body = '';
+    }
     let req = new XMLHttpRequest();
     try {
         req.open(httpStyle, url, true);
@@ -1700,7 +1831,7 @@ realityServer.changeActiveState = function (thisObjectDom, activate, objectKey, 
             this.switchClass(allItems[x], 'inactive');
 
         if ((!activate && !allItems[x].classList.contains('remove') && !allItems[x].classList.contains('triangle')) && (!allItems[x].classList.contains('target') || objectInfo.initialized)) {
-            realityServer.setDeactive (allItems[x]);
+            realityServer.setDeactive(allItems[x]);
         } else if (!allItems[x].classList.contains('hardware')) {
             realityServer.setActive(allItems[x]);
         }
@@ -1728,7 +1859,7 @@ realityServer.switchClass = function (item, classNameOld, classNameNew) {
     }
 };
 
-realityServer.setDeactive = function(item) {
+realityServer.setDeactive = function (item) {
     item.classList.add('inactive');
     if (item.classList.contains('clickAble'))
         item.classList.remove('clickAble');
@@ -1741,7 +1872,7 @@ realityServer.setDeactive = function(item) {
     }
 };
 
-realityServer.setActive = function(item) {
+realityServer.setActive = function (item) {
     if (item.classList.contains('inactive'))
         item.classList.remove('inactive');
     // if (!item.classList.contains("name")) {
@@ -1816,7 +1947,7 @@ realityServer.removeAnimated = function (item, target, expand, collapse) {
             parent.classList.remove(expand);
         }
         parent.classList.add(collapse);
-        setTimeout(function() {
+        setTimeout(function () {
             parent.remove();
         }, 500);
     } else {
@@ -1829,39 +1960,41 @@ realityServer.sortObject = function (objects) {
     let worldObjectInfo = [];
 
     for (let objectKey in objects) {
-        if (!objects.hasOwnProperty(objectKey)) { continue; }
+        if (!objects.hasOwnProperty(objectKey)) {
+            continue;
+        }
 
         if (objects[objectKey].isWorldObject) {
-            worldObjectInfo.push([ objects[objectKey].name, objectKey ]);
+            worldObjectInfo.push([objects[objectKey].name, objectKey]);
         } else {
-            objectInfo.push([ objects[objectKey].name, objectKey ]);
+            objectInfo.push([objects[objectKey].name, objectKey]);
         }
     }
 
     // sort alphabetically for non-world objects, and for world objects, and then combine them
-    objectInfo.sort(function(a, b) {
+    objectInfo.sort(function (a, b) {
         return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
     });
-    worldObjectInfo.sort(function(a, b) {
+    worldObjectInfo.sort(function (a, b) {
         return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
     });
 
     return objectInfo.concat(worldObjectInfo);
 };
 
-realityServer.sortHardwareInterfaces = function(interfaceNames) {
+realityServer.sortHardwareInterfaces = function (interfaceNames) {
     let keysToPrioritize = ['kepware'];
     let result = [];
 
     // adds each prioritized hardware interface first
-    keysToPrioritize.forEach(function(name) {
+    keysToPrioritize.forEach(function (name) {
         if (interfaceNames.indexOf(name) > -1) {
             result.push(name);
         }
     });
 
     // adds unprioritized hardware interfaces afterwards
-    interfaceNames.forEach(function(name) {
+    interfaceNames.forEach(function (name) {
         if (keysToPrioritize.indexOf(name) === -1) {
             result.push(name);
         }
@@ -1880,7 +2013,7 @@ realityServer.uuidTime = function () {
 
 // toggle between activated and deactivated
 function addEnabledToggle(button, objectKey, thisObject) {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         if (thisObject.active) {
             realityServer.sendRequest('/object/' + objectKey + '/deactivate/', 'GET', function (state) {
                 if (state === 'ok') {
@@ -1901,7 +2034,7 @@ function addEnabledToggle(button, objectKey, thisObject) {
 
 // toggle between enabled and disabled frame
 function addFrameEnabledToggle(button, frameName, frameInfo) {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         if (frameInfo.metadata.enabled) {
             realityServer.sendRequest('/globalFrame/' + frameName + '/disable/', 'GET', function (state) {
                 if (state === 'ok') {
@@ -1922,7 +2055,7 @@ function addFrameEnabledToggle(button, frameName, frameInfo) {
 
 // toggle between frame sharing enabled/disabled
 function addSharingToggle(button, objectKey, thisObject) {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         if (thisObject.sharingEnabled) {
             realityServer.sendRequest('/object/' + objectKey + '/disableFrameSharing/', 'GET', function (state) {
                 if (state === 'ok') {
@@ -1944,7 +2077,7 @@ function addSharingToggle(button, objectKey, thisObject) {
 }
 
 function addExpandedToggle(button, objectKey, thisObject) {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         console.log('toggle expanded');
         thisObject.isExpanded = !thisObject.isExpanded;
 
@@ -1955,13 +2088,13 @@ function addExpandedToggle(button, objectKey, thisObject) {
         realityServer.update();
     });
 
-    button.addEventListener('pointerenter', function() {
+    button.addEventListener('pointerenter', function () {
         // console.log('enter ' + objectKey);
         objectKeyToHighlight = objectKey;
         highlightObject(objectKey, true);
     });
 
-    button.addEventListener('pointerleave', function() {
+    button.addEventListener('pointerleave', function () {
         // console.log('leave ' + objectKey);
         highlightObject(objectKey, false);
         objectKeyToHighlight = null;
@@ -1976,7 +2109,7 @@ function highlightObject(objectKey, shouldHighlight) {
     }
     // highlight the frame rows, if there are any
     let thisObject = realityServer.objects[objectKey];
-    Object.keys(thisObject.frames).forEach(function(frameKey) {
+    Object.keys(thisObject.frames).forEach(function (frameKey) {
         let frameDom = document.getElementById('frame' + objectKey + frameKey);
         if (frameDom) {
             frameDom.style.backgroundColor = shouldHighlight ? 'rgba(255,255,255,0.1)' : '';
@@ -1991,7 +2124,7 @@ function highlightObject(objectKey, shouldHighlight) {
 
 // download zip of global frame directory
 function addZipDownload(button, frameName) {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         window.location.href = '/frame/' + frameName + '/zipBackup/';
     });
 }

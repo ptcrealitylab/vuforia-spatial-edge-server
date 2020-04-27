@@ -803,7 +803,6 @@ function loadWorldObject() {
 }
 
 
-
 function loadAnchor(anchorName) {
 
     // create the file for it if necessary
@@ -830,7 +829,7 @@ function loadAnchor(anchorName) {
         try {
             let anchor = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
             anchorUuid = anchor.objectId;
-            if(anchorUuid) {
+            if (anchorUuid) {
                 objects[anchorUuid] = anchor;
             }
             console.log('Loaded anchor object for server: ' + services.ip);
@@ -839,14 +838,14 @@ function loadAnchor(anchorName) {
             console.log('No saved data for anchor object on server: ' + services.ip);
         }
     }
-    
+
     // create a new anchor object
     objects[anchorUuid] = new ObjectModel(services.ip, version, protocol);
     objects[anchorUuid].port = serverPort;
     objects[anchorUuid].name = anchorName;
     objects[anchorUuid].ip = services.ip;
     objects[anchorUuid].objectId = anchorUuid;
-    
+
     objects[anchorUuid].isAnchor = false;
     objects[anchorUuid].matrix = [
         1, 0, 0, 0,
@@ -873,9 +872,9 @@ function loadAnchor(anchorName) {
     }
 }
 
-function setAnchors(){
+function setAnchors() {
     let worldObject = false;
-    
+
     // load all object folders
     let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
         return fs.statSync(path.join(objectsPath, file)).isDirectory();
@@ -884,34 +883,34 @@ function setAnchors(){
     while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
         tempFiles.splice(0, 1);
     }
-    
-    // populate all objects folders with object.json files.
-    tempFiles.forEach(function(objectKey) {
 
-        if (objectKey.indexOf('_WORLD_') === -1){
-            
-        let thisObjectKey = null;
-        let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
-        if (tempKey) {
-            thisObjectKey = tempKey;
-        } else {
-            thisObjectKey = objectKey;
-        }
-        
-        if(!(thisObjectKey in objects)) {
-            loadAnchor(objectKey);
-        }
+    // populate all objects folders with object.json files.
+    tempFiles.forEach(function (objectKey) {
+
+        if (objectKey.indexOf('_WORLD_') === -1) {
+
+            let thisObjectKey = null;
+            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
+            if (tempKey) {
+                thisObjectKey = tempKey;
+            } else {
+                thisObjectKey = objectKey;
+            }
+
+            if (!(thisObjectKey in objects)) {
+                loadAnchor(objectKey);
+            }
         }
     });
-    
-    
+
+
     // check if there is an initialized World Object
-    for(let key in objects){
-        if(objects[key].isWorldObject){
+    for (let key in objects) {
+        if (objects[key].isWorldObject) {
             // check if the object is correctly initialized with tracking targets
             let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath,  objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath,  objects[key].name, identityFolderName, '/target/target.jpg'));
+            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
                 worldObject = true;
@@ -919,18 +918,18 @@ function setAnchors(){
             break;
         }
     }
-    
+
     // check if there are uninitialized objects and turn them into anchors if an initialized world object exists. 
-    for(let key in objects){
+    for (let key in objects) {
         objects[key].isAnchor = false;
-        if(!objects[key].isWorldObject){
+        if (!objects[key].isWorldObject) {
             // check if the object is correctly initialized with tracking targets
             let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath,  objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath,  objects[key].name, identityFolderName, '/target/target.jpg'));
+            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if (!(xmlExists && (datExists || jpgExists))) {
-                if(worldObject){
+                if (worldObject) {
                     objects[key].isAnchor = true;
                     objects[key].tcs = 0;
                     continue;
@@ -952,7 +951,7 @@ function startSystem() {
 
     // make sure that the system knows about the state of anchors.
     setAnchors();
-    
+
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (let key in objects) {
         if (!objects[key].deactivated) {
@@ -1078,18 +1077,18 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-               if(objects[thisId].tcs || objects[thisId].isAnchor) {
-                   client.send(message, 0, message.length, PORT, HOST, function (err) {
-                       if (err) {
-                           console.log('Your not on a network. Can\'t send anything');
-                           //throw err;
-                           for (var key in objects) {
-                               objects[key].ip = services.ip;
-                           }
-                       }
-                       // client is not being closed, as the beat is send ongoing
-                   });
-               }
+                if (objects[thisId].tcs || objects[thisId].isAnchor) {
+                    client.send(message, 0, message.length, PORT, HOST, function (err) {
+                        if (err) {
+                            console.log('Your not on a network. Can\'t send anything');
+                            //throw err;
+                            for (var key in objects) {
+                                objects[key].ip = services.ip;
+                            }
+                        }
+                        // client is not being closed, as the beat is send ongoing
+                    });
+                }
             }
         }, beatInterval + _.random(-250, 250));
     } else {
@@ -2890,7 +2889,7 @@ function objectWebServer() {
         }
     });
 
-    webServer.post('/object/:id/matrix', function(req, res) {
+    webServer.post('/object/:id/matrix', function (req, res) {
         let object = getObject(req.params.id);
         if (!object) {
             res.status(404).json({
@@ -3702,16 +3701,16 @@ function objectWebServer() {
         });
 
         // webFrontend realtime messaging
-        webServer.post('/webUI/whereIs/objectToolNode', function (req, res) {
+        webServer.post('/webUI/spatial/locator', function (req, res) {
+            console.log(JSON.parse(req.body.locator));
             utilities.actionSender({
-                whereIs: {locator: req.body},
+                spatial: {locator: JSON.parse(req.body.locator)},
                 lastEditor: null
             });
             res.status(200).send('ok');
         });
-        
-        
-        
+
+
         webServer.post('/object/:objectKey/generateXml/', function (req, res) {
             var objectKey = req.params.objectKey;
             var msgObject = req.body;
@@ -3737,8 +3736,8 @@ function objectWebServer() {
                 fs.mkdirSync(targetDir);
                 console.log('created directory: ' + targetDir);
             }
-            
-            console.log("am I here!");
+
+            console.log('am I here!');
             var xmlOutFile = path.join(targetDir, 'target.xml');
 
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
