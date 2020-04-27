@@ -272,7 +272,6 @@ realityServer.updateManageObjects = function (thisItem2) {
                                 if (state === 'ok') {
                                     delete realityServer.objects[thisObjectKey];
                                     window.location.reload();
-                                    realityServer.update();
                                 }
                                 realityServer.update();
                             }, 'action=delete&name=' + realityServer.objects[thisObjectKey].name + '&frame=');
