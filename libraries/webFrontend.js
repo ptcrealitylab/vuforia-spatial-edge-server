@@ -163,9 +163,9 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
 
         // world objects are always initialized true regardless of target data
 
-            if (newObject[thisObjectKey].isWorldObject) {
+           // if (newObject[thisObjectKey].isWorldObject) {
              //   newObject[thisObjectKey].initialized = true;
-            }
+           // }
             
         if (thisObjectKey in objects) {
             if (objects[thisObjectKey].isAnchor) {
