@@ -40,7 +40,6 @@ startNewChild();
 
 // Modules to control application life and create native browser window
 
-
 console.log('******* APP: ', app, BrowserWindow);
 
 function createWindow () {
@@ -51,7 +50,7 @@ function createWindow () {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
         }
-    })
+    });
 
     // and load the index.html of the app.
     mainWindow.loadURL('http://localhost:8080');
