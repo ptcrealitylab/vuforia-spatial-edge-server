@@ -43,8 +43,6 @@ startNewChild();
 
 console.log('******* APP: ', app, BrowserWindow);
 
-process.env.NODE_ENV = 'production';
-
 function createWindow () {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
