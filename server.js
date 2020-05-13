@@ -138,7 +138,7 @@ const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjec
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 let objectsPath = spatialToolboxPath;
 
-if (process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android') {
     objectsPath = path.join(__dirname, 'spatialToolbox');
 }
 
