@@ -4,8 +4,12 @@ const fork = require('child_process').fork;
 const path = require('path');
 const {app, BrowserWindow} = require('electron');
 
+
+
 const program = path.resolve('server.js');
-const parameters = [];
+const parameters = [
+//    '--inspect-brk'
+];
 const options = {
     stdio: ['inherit', 'inherit', 'inherit', 'ipc']
 };
@@ -52,11 +56,11 @@ function createWindow() {
         }
     });
 
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+
     // and load the index.html of the app.
     mainWindow.loadURL('http://localhost:8080');
-
-    // Open the DevTools.
-    // mainWindow.webContents.openDevTools()
 }
 
 if (app) {

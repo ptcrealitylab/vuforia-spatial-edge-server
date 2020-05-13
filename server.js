@@ -169,7 +169,15 @@ const objectInterfaceFolder = '/';
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
 const storage = require('./libraries/storage');
-storage.initSync();
+let dir = path.join(require('os').homedir(), 'vst-edge-server');
+//fs.mkdirSync('/Users/Anna/my-test-dir');
+console.log('**** DIR: ', dir);
+
+try{
+    storage.initSync({dir: dir});
+} catch (e) {
+    console.log('Something went wrong with initSync ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
+}
 
 var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
