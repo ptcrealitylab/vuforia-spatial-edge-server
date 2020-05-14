@@ -329,23 +329,54 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
  * @param {boolean}   writeToFile  - Give permission to write to file.
  **/
+
+let writeBufferList = {};
+let isWriting = false;
+
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
-        // console.log("start saving");
-        var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-        var objectData = objects[object];
-
-        fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
-            if (err) {
-                console.error(err);
-            } else {
-                // console.log("JSON saved to " + outputFilename);
-            }
-        });
-    } else {
-        console.error('I am not allowed to save');
+        writeBufferList[object] = objectsPath;
     }
+    // trigger write process
+    executeWrite(objects);
 };
+
+function executeWrite(objects) {
+    console.log("execute write");
+    // if write Buffer is empty, stop.
+    if (Object.keys(writeBufferList).length === 0) return;
+
+    if (isWriting) {
+        // come back later;
+        setTimeout(function () {
+            executeWrite(objects);
+        }, 20);
+        return;
+    }
+    // block function from re-execution
+    isWriting = true;
+
+    // copy the first item and delete it from the buffer list
+    let firstKey = Object.keys(writeBufferList)[0];
+    let objectsPath = writeBufferList[firstKey];
+    let obj = firstKey;
+    delete writeBufferList[firstKey];
+
+    // prepare to write
+    var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
+    var objectData = objects[obj];
+    console.log("writing:" +obj);
+    // write file
+    fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
+        // once writeFile is done, unblock writing and loop again
+        isWriting = false;
+        executeWrite(objects);
+
+        if (err) {
+            console.error(err);
+        }
+    });
+}
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
     0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
