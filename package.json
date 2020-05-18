@@ -26,9 +26,9 @@
     "simple-git": "^2.5.0",
     "socket.io": "~2.2.0",
     "socket.io-client": "~2.3.0",
+    "wedoboostpoweredup": "^2.1.2",
     "winston": "^3.2.1",
-    "xml2js": "^0.4.23",
-    "wedoboostpoweredup": "^2.1.2"
+    "xml2js": "^0.4.23"
   },
   "repository": {
     "type": "git",
@@ -43,10 +43,17 @@
     "minami": "^1.2.3"
   },
   "build": {
-    "appId": "com.electron.vstedgeserver",
+    "appId": "com.electron.${name}",
+    "productName": "Vuforia Spatial Edge Server",
+    "copyright": "MPL 2.0 © 2020 ${author}",
     "mac": {
-      "category": "public.app-category.developer-tools"
-    }
+      "category": "public.app-category.developer-tools",
+      "identity": "Anna Fusté Lleixà (94Q7QTRR7N)"
+    },
+    "win": {},
+    "linux": {},
+    "buildVersion": "0",
+    "nodeVersion": "current"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
