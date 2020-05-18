@@ -50,7 +50,9 @@
       "category": "public.app-category.developer-tools",
       "identity": "Anna Fusté Lleixà (94Q7QTRR7N)"
     },
-    "win": {},
+    "win": {
+      
+    },
     "linux": {},
     "buildVersion": "0",
     "nodeVersion": "current"
