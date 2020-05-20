@@ -20,10 +20,20 @@ Windows: https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-
 Then insert the SD Card into the Raspberry Pi and plug in the power adapter. This image is the Ubuntu Server and you need to install a desktop for it. 
 After downloading the specific version of Ubuntu for your raspberry Pi, the webiste will direct you to the instructions on installing the server and the desktop.
 
-We installed the main Ubuntu gnome desktop using the command: `sudo apt-get install ubuntu-desktop`
+We installed the main Ubuntu gnome desktop using the command: 
+`sudo apt-get install ubuntu-desktop`
 
-When the OS is installed, make sure you install
-git: sudo apt install git
-You can install Node.js from: https://nodejs.org/en/download/ and click on Linux Binaries(ARM)
+When the OS is installed, make sure you install git: 
+`sudo apt install git`
 
-When the OS is installed you can download the Vuforia Edge Server by running the following command: `git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git`
+You can install Node.js v14.x by running the following commands:
+`curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -`
+`sudo apt-get install -y nodejs`
+
+For other versions of Node.js refer to the github page: https://github.com/nodesource/distributions/blob/master/README.md
+
+When the OS is installed you can download the Vuforia Edge Server by following the instructions in the github page: https://github.com/SainaRez/vuforia-spatial-edge-server
+
+
+
+
