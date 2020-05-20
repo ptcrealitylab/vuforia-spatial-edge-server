@@ -35,8 +35,10 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
+    "dotenv": "^8.2.0",
     "electron": "^8.2.5",
     "electron-builder": "^22.6.0",
+    "electron-notarize": "^0.3.0",
     "eslint": "^6.8.0",
     "jsdoc": "^3.6.4",
     "minami": "^1.2.3"
@@ -45,13 +47,18 @@
     "appId": "com.electron.${name}",
     "productName": "Vuforia Spatial Edge Server",
     "copyright": "MPL 2.0 © 2020 ${author}",
+    "afterSign": "scripts/notarize.js",
+    "dmg": {
+      "sign": false
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
-      "identity": "Anna Fusté Lleixà (94Q7QTRR7N)"
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
-    "win": {
-      
-    },
+    "win": {},
     "linux": {},
     "buildVersion": "0",
     "nodeVersion": "current"
@@ -113,7 +120,6 @@
       "name": "Anna Fuste",
       "email": ""
     }
-    
   ],
   "license": "MPL-2.0",
   "optionalDependencies": {}
