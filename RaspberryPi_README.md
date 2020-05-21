@@ -52,7 +52,7 @@ For other versions of Node.js refer to the [Github Page](https://github.com/node
 
 Now you can download the Vuforia Edge Server by cloning the respository first: 
 ```
-git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
+$ git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
 ```
 
 Enter the vuforia-spatial-edge-server directory and install the required dependencies:
