@@ -323,6 +323,8 @@ if (!isMobile) {
 // This file hosts all kinds of utilities programmed for the server
 var utilities = require('./libraries/utilities');
 
+var recorder = require('./libraries/recorder');
+
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend;
 if (isMobile) {
@@ -919,7 +921,7 @@ function setAnchors() {
         }
     }
 
-    // check if there are uninitialized objects and turn them into anchors if an initialized world object exists. 
+    // check if there are uninitialized objects and turn them into anchors if an initialized world object exists.
     for (let key in objects) {
         objects[key].isAnchor = false;
         if (!objects[key].isWorldObject) {
@@ -976,6 +978,7 @@ function startSystem() {
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
 
+    recorder.initRecorder(objects);
 }
 
 /**********************************************************************************************************************
@@ -3707,6 +3710,18 @@ function objectWebServer() {
                 spatial: {locator: JSON.parse(req.body.locator)},
                 lastEditor: null
             });
+            res.status(200).send('ok');
+        });
+
+        webServer.post('/webUI/REC/START', function (req, res) {
+            console.log('Starting LOG Recording');
+            recorder.start();
+            res.status(200).send('ok');
+        });
+
+        webServer.post('/webUI/REC/STOP', function (req, res) {
+            console.log('Stop LOG Recording and save file');
+            recorder.stop();
             res.status(200).send('ok');
         });
 

@@ -25,8 +25,12 @@ function SpatialLocator(objectID, toolID, nodeID) {
 
 let spatialLocator = {
     whereIs: {},
-    howFarIs: {}
+    howFarIs: {},
+    whereWas: {},
+    velocityOf: {}
 };
+
+let recordState = true;
 
 // Constructor with subset of frame information necessary for the web frontend
 function Frame() { // eslint-disable-line no-unused-vars
@@ -231,8 +235,12 @@ realityServer.updateManageObjects = function (thisItem2) {
     document.getElementById('addObject').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('addWorldObject').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('whereIs').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('whereWas').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('howFarIs').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('velocityOf').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('rec').addEventListener('click', realityServer.gotClick, false);
 
+    
     realityServer.forEachSortedObjectKey(function (objectKey) {
         if (objectKey === 'allTargetsPlaceholder000000000000') {
             return;
@@ -898,7 +906,9 @@ function showGenerateXml(parentElement, objectKey) {
 
 realityServer.spatialButtonState = {
     whereIs: false,
-    howFarIs: false
+    howFarIs: false,
+    whereWas: false,
+    velocityOf: false
 };
 
 
@@ -919,51 +929,56 @@ realityServer.gotClick = function (event) {
      *  SPATIAL QUESTIONS ..
      */
 
-    if (buttonClassList.contains('whereIs')) {
-        if (realityServer.spatialButtonState.whereIs) {
-            let element = document.getElementById('whereIs');
-            element.classList.remove('selectedButton');
+    
+    function buttonSwitch(name){
 
-            document.querySelectorAll('.name').forEach(function (item, index) {
-                let objectID = item.getAttribute('objectid');
-                let toolID = item.getAttribute('frameid');
-                let thisKey = objectID;
-                if (toolID) thisKey = toolID;
-                if (spatialLocator.whereIs[thisKey]) delete spatialLocator.whereIs[thisKey];
-            });
+        if (buttonClassList.contains(name)) {
+            if (realityServer.spatialButtonState[name]) {
+                let element = document.getElementById(name);
+                element.classList.remove('selectedButton');
+
+                document.querySelectorAll('.name').forEach(function (item, index) {
+                    let objectID = item.getAttribute('objectid');
+                    let toolID = item.getAttribute('frameid');
+                    let thisKey = objectID;
+                    if (toolID) thisKey = toolID;
+                    if (spatialLocator[name][thisKey]) delete spatialLocator[name][thisKey];
+                });
 
 
-            realityServer.spatialButtonState.whereIs = false;
-        } else {
-            let element = document.getElementById('whereIs');
-            element.classList.add('selectedButton');
-            realityServer.spatialButtonState.whereIs = true;
+                realityServer.spatialButtonState[name] = false;
+            } else {
+                let element = document.getElementById(name);
+                element.classList.add('selectedButton');
+                realityServer.spatialButtonState[name] = true;
+            }
         }
     }
-/*
-    if (buttonClassList.contains('howFarIs')) {
-        if (realityServer.spatialButtonState.howFarIs) {
-            let element = document.getElementById('howFarIs');
-            element.classList.remove('selectedButton');
 
-            document.querySelectorAll('.name').forEach(function (item, index) {
-                let objectID = item.getAttribute('objectid');
-                let toolID = item.getAttribute('frameid');
-                let thisKey = objectID;
-                if (toolID) thisKey = toolID;
-                if (spatialLocator.howFarIs[thisKey]) delete spatialLocator.howFarIs[thisKey];
-            });
-
-            realityServer.spatialButtonState.howFarIs = false;
+    if (buttonClassList.contains('rec')) {
+        if (recordState) {
+            recordState = false;
+            let element = document.getElementById('rec');
+            element.classList.remove('white');
+            element.classList.add('red');
+            realityServer.sendRequest('/webUI/REC/START', 'POST', function (state) {
+            }, '');
         } else {
-            let element = document.getElementById('howFarIs');
-            element.classList.add('selectedButton');
-
-            realityServer.spatialButtonState.howFarIs = true;
+            recordState = true;
+            let element = document.getElementById('rec');
+            element.classList.remove('red');
+            element.classList.add('white');
+            realityServer.sendRequest('/webUI/REC/STOP', 'POST', function (state) {
+            }, '');
         }
-    }*/
+    }
+    
+    buttonSwitch('whereIs');
+    buttonSwitch('whereWas');
+    buttonSwitch('howFarIs');
+    buttonSwitch('velocityOf');
 
-    if (realityServer.spatialButtonState.howFarIs || realityServer.spatialButtonState.whereIs) {
+    if (realityServer.spatialButtonState.howFarIs || realityServer.spatialButtonState.whereIs || realityServer.spatialButtonState.whereWas || realityServer.spatialButtonState.velocityOf) {
         focusOnNames();
         if (buttonClassList.contains('name')) {
             if (thisEventObject.classList.contains('selectedButton')) {
@@ -997,15 +1012,22 @@ realityServer.gotClick = function (event) {
                 console.log(objectKey, frameKey, '');
 
                 if (realityServer.spatialButtonState.whereIs)
-                    spatialLocator.whereIs[thisKey] = new SpatialLocator(objectKey, toolID, '');
+                    spatialLocator.whereIs[thisKey] = new SpatialLocator(objectID, toolID, '');
 
+                if (realityServer.spatialButtonState.whereWas)
+                    spatialLocator.whereWas[thisKey] = new SpatialLocator(objectID, toolID, '');
+                
                 if (realityServer.spatialButtonState.howFarIs)
-                    spatialLocator.howFarIs[thisKey] = new SpatialLocator(objectKey, toolID, '');
+                    spatialLocator.howFarIs[thisKey] = new SpatialLocator(objectID, toolID, '');
 
+                if (realityServer.spatialButtonState.velocityOf)
+                    spatialLocator.velocityOf[thisKey] = new SpatialLocator(objectID, toolID, '');
+                
             } else {
-                console.log(thisKey);
                 if (spatialLocator.whereIs[thisKey]) delete spatialLocator.whereIs[thisKey];
+                if (spatialLocator.whereWas[thisKey]) delete spatialLocator.whereWas[thisKey];
                 if (spatialLocator.howFarIs[thisKey]) delete spatialLocator.howFarIs[thisKey];
+                if (spatialLocator.velocityOf[thisKey]) delete spatialLocator.velocityOf[thisKey];
             }
         });
 
@@ -1013,7 +1035,7 @@ realityServer.gotClick = function (event) {
             sendSpatialState();
         }
 
-        if (buttonClassList.contains('howFarIs') || (buttonClassList.contains('whereIs'))) {
+        if (buttonClassList.contains('howFarIs') || (buttonClassList.contains('whereWas')) || (buttonClassList.contains('velocityOf')) || (buttonClassList.contains('whereIs'))) {
             sendSpatialState();
         }
         return;
