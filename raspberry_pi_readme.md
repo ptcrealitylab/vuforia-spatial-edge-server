@@ -1,11 +1,7 @@
 
 ## Starting the Vuforia Spatial Edge Server on Raspberry Pi
 
-###### Author: Saina Rezvani
-###### Date: 05/21/2020
-
 This toolbox has been tested for Ubuntu 20.04, Ubuntu 18.04 and the Raspian operating system on a Raspberry Pi 4 model B.
-
 
 
 ### Ubuntu:
@@ -72,4 +68,7 @@ Return to the main directory and install the dependencies one more time. The ser
 `$ node server `
 
 Note: Every time you add an add-on folder, make sure to run `$ npm install` in the folder and then in the main direcotry
+
+###### Author: Saina Rezvani
+###### Date: 05/21/2020
 
