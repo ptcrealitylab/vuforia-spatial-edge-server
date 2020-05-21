@@ -1,7 +1,7 @@
 
 ## Starting the Vuforia Spatial Edge Server on Raspberry Pi
 
-##### Author: Saina Rezvani
+###### Author: Saina Rezvani
 ###### Date: 05/21/2020
 
 This toolbox has been tested for Ubuntu 20.04, Ubuntu 18.04 and the Raspian operating system on a Raspberry Pi 4 model B.
