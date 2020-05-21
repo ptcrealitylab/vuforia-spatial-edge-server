@@ -9,7 +9,7 @@ This toolbox has been tested for Ubuntu 20.04, Ubuntu 18.04 and the Raspian oper
 You can install Ubuntu on the Raspberry Pi using a MicroSD Card.
 First you need to download the OS image that will be written to the SD Card. 
 
-Different versions of Ubuntu 20.04 LTS and 18.04 can be found here: https://ubuntu.com/download/raspberry-pi
+Different versions of Ubuntu 20.04 LTS and 18.04 can be found [here](https://ubuntu.com/download/raspberry-pi)
 
 In order to write the image of Ubuntu, you need to write the OS image onto the MicroSD Card. We used the Win32 Disk Imager softwre for windows. 
 You can find instructions for writing the OS image into the SD Card for each of the operating sytems here: 
