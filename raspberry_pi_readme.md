@@ -1,11 +1,11 @@
 
-### Starting the Vuforia Spatial Edge Server on Raspberry Pi
+## Starting the Vuforia Spatial Edge Server on Raspberry Pi
 
 This toolbox has been tested for Ubuntu 20.04, Ubuntu 18.04 and the Raspian operating systems on a Raspberry Pi 4 model B.
 
 
 
-## Ubuntu:
+### Ubuntu:
 
 You can install Ubuntu on the Raspberry Pi using a MicroSD Card.
 First you need to download the OS image that will be written to the SD Card. 
@@ -26,7 +26,7 @@ After downloading the specific version of Ubuntu for your raspberry Pi, the webi
 
 
 
-## Raspian:
+### Raspian:
 
 You can install the Raspberry Pi Imager to write the OS image to your SD Card. The imager already has the the different Raspian images, so there is no need to download it. You can open the software and write the image. The imager can be downloaded from here: https://www.raspberrypi.org/downloads/
  
