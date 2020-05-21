@@ -43,3 +43,11 @@ macOS and Windows code signing is supported. Windows is dual code-signed (SHA1 &
 On a macOS development machine, a valid and appropriate identity from your keychain will be automatically used.
 
 See article [Notarizing your Electron application](https://kilianvalkhof.com/2019/electron/notarizing-your-electron-application/).
+
+The file notarize.js is in charge of notarizing your app.
+You will have to create an .env file with your apple ID credentials:
+
+APPLEID=abc@abc.com
+APPLEIDPASS=xxxxxxxxxxx
+
+This file will be ignored by gitignore when pushing the code.
