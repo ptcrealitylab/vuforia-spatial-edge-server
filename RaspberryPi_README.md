@@ -48,9 +48,12 @@ $ curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
 $ sudo apt-get install -y nodejs
 ```
 
-For other versions of Node.js refer to the [Github Page](ttps://github.com/nodesource/distributions/blob/master/README.md).
+For other versions of Node.js refer to the [Github Page](https://github.com/nodesource/distributions/blob/master/README.md).
 
-Now you can download the Vuforia Edge Server by cloning the respository first: git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
+Now you can download the Vuforia Edge Server by cloning the respository first: 
+```
+git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
+```
 
 Enter the vuforia-spatial-edge-server directory and install the required dependencies:
 
