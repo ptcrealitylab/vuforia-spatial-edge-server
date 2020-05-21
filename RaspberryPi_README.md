@@ -94,6 +94,5 @@ $ npm run test
 ### Support
 If you encounter any problems you can make a post in the [Vuforia Spatial Toolbox Forum](https://forum.spatialtoolbox.vuforia.com/).
 
-###### Author: Saina Rezvani
 ###### Date: 05/21/2020
 
