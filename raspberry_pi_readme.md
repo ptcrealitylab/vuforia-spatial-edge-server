@@ -33,7 +33,7 @@ You can install the Raspberry Pi Imager to write the OS image to your SD Card. T
 Insert the SD Card into your Raspberry Pi and enter the Raspian enviornment. 
 
 
-The Following Steps are the same for Ubuntu and Raspian:
+#### The Following Steps are the same for Ubuntu and Raspian:
 
 When the OS is installed, make sure you install git: 
 
