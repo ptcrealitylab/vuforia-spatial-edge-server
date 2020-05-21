@@ -20,7 +20,9 @@ You can find instructions for writing the OS image into the SD Card for each of 
 After writing the image to the SD Card, insert the Card into your Raspberry Pi and plug in the power adapter. If you used the link above, the image is the Ubuntu Server and you need to install a desktop for it. 
 After downloading the specific version of Ubuntu for your raspberry Pi, the webiste will direct you to the instructions on installing the server and the desktop. Although the recommended desktops are xubuntu, lubuntu and kubuntu, we installed the main Ubuntu gnome desktop since our system has 4GB of RAM using the following command: 
 
-`$ sudo apt-get install ubuntu-desktop `
+```
+$ sudo apt-get install ubuntu-desktop
+```
 
 
 
