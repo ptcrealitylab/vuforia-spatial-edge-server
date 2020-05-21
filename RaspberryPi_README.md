@@ -37,36 +37,47 @@ Insert the SD Card into your Raspberry Pi and enter the Raspian enviornment.
 
 When the OS is installed, make sure you install git: 
 
-`$ sudo apt install git`
+```
+$ sudo apt install git
+```
 
 You can install Node.js v14.x by running the following commands:
 
-`$ curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash - `
-`$ sudo apt-get install -y nodejs `
+```
+$ curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+$ sudo apt-get install -y nodejs
+```
 
 For other versions of Node.js refer to the [Github Page](ttps://github.com/nodesource/distributions/blob/master/README.md).
 
 Node js also installs npm which a package manager. You can update the version of npm using:
-`$ sudo npm install -g npm `
+```
+$ sudo npm install -g npm
+```
 
 Now you can download the Vuforia Edge Server by cloning the respository first: git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
 
 Enter the vuforia-spatial-edge-server directory and install the required dependencies:
 
-`$ cd vuforia-spatial-edge-server `
-`$ npm install `
+```
+$ cd vuforia-spatial-edge-server
+$ npm install
+```
 
 The next step is to initialize the core add-on submodule:
 
-`$ git submodule update --init --recursive `
-`$ cd addons/vuforia-spatial-core-addon `
-`$ npm install `
+```$ git submodule update --init --recursive
+$ cd addons/vuforia-spatial-core-addon
+$ npm install
+```
 
 Return to the main directory and install the dependencies one more time. The server should be ready! You can run the server now:
 
-`$ cd ../.. `
-`$ npm install `
-`$ node server `
+```
+$ cd ../..
+$ npm install
+$ node server
+```
 
 Note: Every time you add an add-on folder, make sure to run `$ npm install` in the folder and then in the main direcotry.
 
@@ -76,7 +87,9 @@ In order to contribute to this toolbox, fork the repository in the top right cor
 
 You can also run our automated tests wich ensures the code is functional:
 
-`$ npm run test `
+```
+$ npm run test
+```
 
 ### Support
 If you encounter any problems you can make a post in the [Vuforia Spatial Toolbox Forum](https://forum.spatialtoolbox.vuforia.com/).
