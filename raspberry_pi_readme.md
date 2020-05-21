@@ -1,11 +1,11 @@
 
-Starting the Vuforia Spatial Edge Server on Raspberry Pi
+### Starting the Vuforia Spatial Edge Server on Raspberry Pi
 
 This toolbox has been tested for Ubuntu 20.04, Ubuntu 18.04 and the Raspian operating systems on a Raspberry Pi 4 model B.
 
 
 
-Ubuntu:
+## Ubuntu:
 
 You can install Ubuntu on the Raspberry Pi using a MicroSD Card.
 First you need to download the OS image that will be written to the SD Card. 
@@ -21,25 +21,26 @@ Windows: https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-
 
 After writing the image to the SD Card, insert the Card into your Raspberry Pi and plug in the power adapter. If you used the link above, the image is the Ubuntu Server and you need to install a desktop for it. 
 After downloading the specific version of Ubuntu for your raspberry Pi, the webiste will direct you to the instructions on installing the server and the desktop. Although the recommended desktops are xubuntu, lubuntu and kubuntu, we installed the main Ubuntu gnome desktop since our system has 4GB of RAM using the following command: 
+
 `$ sudo apt-get install ubuntu-desktop `
 
 
 
-Raspian:
+## Raspian:
 
 You can install the Raspberry Pi Imager to write the OS image to your SD Card. The imager already has the the different Raspian images, so there is no need to download it. You can open the software and write the image. The imager can be downloaded from here: https://www.raspberrypi.org/downloads/
  
 Insert the SD Card into your Raspberry Pi and enter the Raspian enviornment. 
 
 
-
-
 The Following Steps are the same for Ubuntu and Raspian:
 
 When the OS is installed, make sure you install git: 
+
 `$ sudo apt install git`
 
 You can install Node.js v14.x by running the following commands:
+
 `$ curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash - `
 `$ sudo apt-get install -y nodejs `
 
@@ -51,6 +52,7 @@ Node js also installs npm which a package manager. You can update the version of
 Now you can download the Vuforia Edge Server by cloning the respository first: git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
 
 Enter the vuforia-spatial-edge-server directory and install the required dependencies:
+
 `$ cd vuforia-spatial-edge-server `
 `$ npm install `
 
