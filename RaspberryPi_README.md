@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: Robotic Add-on
-permalink: /docs/vuforia-spatial-robotic-addon
+title: Install on Raspberry Pi
+permalink: /docs/vuforia-spatial-server/raspberry-pi
 ---
 
 ## Starting the Vuforia Spatial Edge Server on Raspberry Pi
