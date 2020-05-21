@@ -50,11 +50,6 @@ $ sudo apt-get install -y nodejs
 
 For other versions of Node.js refer to the [Github Page](ttps://github.com/nodesource/distributions/blob/master/README.md).
 
-Node js also installs npm which a package manager. You can update the version of npm using:
-```
-$ sudo npm install -g npm
-```
-
 Now you can download the Vuforia Edge Server by cloning the respository first: git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
 
 Enter the vuforia-spatial-edge-server directory and install the required dependencies:
