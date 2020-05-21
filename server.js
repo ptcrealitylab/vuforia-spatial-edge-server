@@ -173,7 +173,7 @@ let dir = path.join(require('os').homedir(), 'vst-edge-server');
 //fs.mkdirSync('/Users/Anna/my-test-dir');
 console.log('**** DIR: ', dir);
 
-try{
+try {
     storage.initSync({dir: dir});
 } catch (e) {
     console.log('Something went wrong with initSync ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^');
