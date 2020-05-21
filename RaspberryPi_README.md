@@ -11,7 +11,7 @@ First you need to download the OS image that will be written to the SD Card.
 
 Different versions of Ubuntu 20.04 LTS and 18.04 can be found [here](https://ubuntu.com/download/raspberry-pi).
 
-In order to write the image of Ubuntu, you need to write the OS image onto the MicroSD Card. We used the Win32 Disk Imager softwre for windows. 
+In order to write the image of Ubuntu, you need to write the OS image onto the MicroSD Card. We used the Win32 Disk Imager software for windows. 
 You can find instructions for writing the OS image into the SD Card for each of the operating sytems here: 
 [Ubuntu](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-ubuntu#1-overview), 
 [MacOS](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-macos#1-overview), 
