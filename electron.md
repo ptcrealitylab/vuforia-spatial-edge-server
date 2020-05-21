@@ -32,3 +32,14 @@ yarn dist
 ```
 
 This command will generate a folder called dist with the application files.
+
+
+## Notarization and Code Signing
+
+Check out [electron-builder code signing](https://www.electron.build/code-signing).
+
+macOS and Windows code signing is supported. Windows is dual code-signed (SHA1 & SHA256 hashing algorithms).
+
+On a macOS development machine, a valid and appropriate identity from your keychain will be automatically used.
+
+See article [Notarizing your Electron application](https://kilianvalkhof.com/2019/electron/notarizing-your-electron-application/).
