@@ -15,7 +15,7 @@ In order to write the image of Ubuntu, you need to write the OS image onto the M
 You can find instructions for writing the OS image into the SD Card for each of the operating sytems here: 
 [Ubuntu](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-ubuntu#1-overview), 
 [MacOS](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-macos#1-overview), 
-[Windows](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-windows#1-overview)
+[Windows](https://ubuntu.com/tutorials/create-an-ubuntu-image-for-a-raspberry-pi-on-windows#1-overview).
 
 After writing the image to the SD Card, insert the Card into your Raspberry Pi and plug in the power adapter. If you used the link above, the image is the Ubuntu Server and you need to install a desktop for it. 
 After downloading the specific version of Ubuntu for your raspberry Pi, the webiste will direct you to the instructions on installing the server and the desktop. Although the recommended desktops are xubuntu, lubuntu and kubuntu, we installed the main Ubuntu gnome desktop since our system has 4GB of RAM using the following command: 
