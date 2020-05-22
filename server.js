@@ -3705,7 +3705,10 @@ function objectWebServer() {
 
         // webFrontend realtime messaging
         webServer.post('/webUI/spatial/locator', function (req, res) {
-            console.log(JSON.parse(req.body.locator));
+            console.log({
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                lastEditor: null
+            });
             utilities.actionSender({
                 spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
                 lastEditor: null
