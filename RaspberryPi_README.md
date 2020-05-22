@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: Install on Raspberry Pi
+title: Install the Server on Raspberry Pi
 permalink: /docs/vuforia-spatial-server/raspberry-pi
 ---
 
