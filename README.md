@@ -70,8 +70,8 @@ npm run test
 If you encounter a problem while developing, you can specify the LOG_MODULES or
 LOG_LEVEL environment variables. LOG_MODULES will filter debug logs to a
 specific file or directory. LOG_LEVEL will set the minimum console level to be
-logged. For example, the following command will only print log messages that
-originate from hardware interfaces:
+logged. For example, on Mac/Linux the following command will only print log
+messages that originate from hardware interfaces:
 
 ```bash
 LOG_MODULES=interfaces node index.js
@@ -92,3 +92,12 @@ LOG_MODULES=gitInterface,envelope node index.js
 LOG_MODULES is a list of comma-separated file names, folder names, or keywords
 that are checked against each log message's originating file's path.
 
+### Windows
+
+To specify environmental variables like LOG_MODULES and LOG_LEVEL use the
+following in PowerShell:
+
+```
+$env:LOG_MODULES="interfaces"
+node index.js
+```
