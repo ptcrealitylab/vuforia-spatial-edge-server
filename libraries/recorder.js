@@ -1,7 +1,7 @@
 var fs = require('fs');
 
 let recorder = {};
-recorder.frameRate = 15;
+recorder.frameRate = 10;
 recorder.object = {};
 recorder.objectOld = {};
 recorder.timeObject = {};
