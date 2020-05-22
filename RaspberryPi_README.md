@@ -69,7 +69,8 @@ $ npm install
 
 The next step is to initialize the core add-on submodule:
 
-```$ git submodule update --init --recursive
+```
+$ git submodule update --init --recursive
 $ cd addons/vuforia-spatial-core-addon
 $ npm install
 ```
