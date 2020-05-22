@@ -3707,7 +3707,7 @@ function objectWebServer() {
         webServer.post('/webUI/spatial/locator', function (req, res) {
             console.log(JSON.parse(req.body.locator));
             utilities.actionSender({
-                spatial: {locator: JSON.parse(req.body.locator)},
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
                 lastEditor: null
             });
             res.status(200).send('ok');
