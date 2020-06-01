@@ -240,7 +240,7 @@ realityServer.updateManageObjects = function (thisItem2) {
     document.getElementById('velocityOf').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('rec').addEventListener('click', realityServer.gotClick, false);
 
-    
+
     realityServer.forEachSortedObjectKey(function (objectKey) {
         if (objectKey === 'allTargetsPlaceholder000000000000') {
             return;
@@ -929,8 +929,8 @@ realityServer.gotClick = function (event) {
      *  SPATIAL QUESTIONS ..
      */
 
-    
-    function buttonSwitch(name){
+
+    function buttonSwitch(name) {
 
         if (buttonClassList.contains(name)) {
             if (realityServer.spatialButtonState[name]) {
@@ -972,7 +972,7 @@ realityServer.gotClick = function (event) {
             }, '');
         }
     }
-    
+
     buttonSwitch('whereIs');
     buttonSwitch('whereWas');
     buttonSwitch('howFarIs');
@@ -1016,13 +1016,13 @@ realityServer.gotClick = function (event) {
 
                 if (realityServer.spatialButtonState.whereWas)
                     spatialLocator.whereWas[thisKey] = new SpatialLocator(objectID, toolID, '');
-                
+
                 if (realityServer.spatialButtonState.howFarIs)
                     spatialLocator.howFarIs[thisKey] = new SpatialLocator(objectID, toolID, '');
 
                 if (realityServer.spatialButtonState.velocityOf)
                     spatialLocator.velocityOf[thisKey] = new SpatialLocator(objectID, toolID, '');
-                
+
             } else {
                 if (spatialLocator.whereIs[thisKey]) delete spatialLocator.whereIs[thisKey];
                 if (spatialLocator.whereWas[thisKey]) delete spatialLocator.whereWas[thisKey];
