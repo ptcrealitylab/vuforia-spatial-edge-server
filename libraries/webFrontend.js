@@ -131,14 +131,14 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
             thisObjectKey = tempKey;
         }
 
-        for(let key in objects){
-            if(objects[key].name === objectKey){
-                if(objects[key].isAnchor || thisObjectKey === objectKey){
+        for (let key in objects) {
+            if (objects[key].name === objectKey) {
+                if (objects[key].isAnchor || thisObjectKey === objectKey) {
                     thisObjectKey = key;
                 }
             }
         }
-        
+
         // create a data structure for the information to create the DOM elements representing this object
         newObject[thisObjectKey] = new ThisObjects();
 
@@ -151,7 +151,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
         var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
         var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
-        
+
         if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
             console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
@@ -163,17 +163,17 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
 
         // world objects are always initialized true regardless of target data
 
-           // if (newObject[thisObjectKey].isWorldObject) {
-             //   newObject[thisObjectKey].initialized = true;
-           // }
-            
+        // if (newObject[thisObjectKey].isWorldObject) {
+        //   newObject[thisObjectKey].initialized = true;
+        // }
+
         if (thisObjectKey in objects) {
             if (objects[thisObjectKey].isAnchor) {
                 newObject[thisObjectKey].initialized = objects[thisObjectKey].isAnchor;
             }
-            newObject[thisObjectKey].isAnchor = objects[thisObjectKey].isAnchor
+            newObject[thisObjectKey].isAnchor = objects[thisObjectKey].isAnchor;
         }
-        
+
         newObject[thisObjectKey].targetsExist = {
             datExists: datExists,
             xmlExists: xmlExists,

@@ -109,28 +109,25 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
             }
         });
     }
-    /*
-            if (!fs.existsSync(firstFrame)) {
-                fs.mkdirSync(firstFrame, "0766", function (err) {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-    
-    
-            try {
-                //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-              //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-                fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
-                fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
-    
-            } catch (e) {
-                if (debug) console.log("Could not copy source files", e);
+/**
+    if (!fs.existsSync(firstFrame)) {
+        fs.mkdirSync(firstFrame, '0766', function (err) {
+            if (err) {
+                console.error(err);
             }
-    
-            //  writeObjectToFile(tempFolderName);
+        });
+        try {
+            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
+            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/index.html'));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/bird.png'));
+
+        } catch (e) {
+            if (debug) console.log('Could not copy source files', e);
         }
-        */
+        //  writeObjectToFile(tempFolderName);
+    }
+**/
 };
 
 
