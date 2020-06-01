@@ -81,10 +81,10 @@ recorder.recurse = function (obj, objectInTime, keyString) {
     }
 };
 
-recorder.getItemFromArray = function (object, array, save) {
+recorder.getItemFromArray = function (object, array) {
     let item = object;
     let returnItem = {};
-    array.forEach(function (data, index) {
+    array.forEach(function (data) {
         if (data !== '') {
             if (data.charAt(0) === '#') {
                 data = data.substr(1);
@@ -101,16 +101,6 @@ recorder.getItemFromArray = function (object, array, save) {
     });
 
     return returnItem;
-};
-
-recorder.checkDifferences = function () {
-    for (let oKey in this.object) {
-        for (let tKey in this.object[oKey].frames) {
-            for (let nKey in this.object[oKey].frames[tKey].nodes) {
-
-            }
-        }
-    }
 };
 
 module.exports = recorder;
