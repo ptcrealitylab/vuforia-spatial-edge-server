@@ -44,9 +44,9 @@
     "minami": "^1.2.3"
   },
   "build": {
-    "appId": "com.electron.${name}",
+    "appId": "com.vuforia.spatialtoolbox",
     "productName": "Vuforia Spatial Edge Server",
-    "copyright": "MPL 2.0 © 2020 ${author}",
+    "copyright": "MPL 2.0 © 2020 PTC Reality Lab",
     "afterSign": "scripts/notarize.js",
     "dmg": {
       "sign": false
