@@ -1,12 +1,11 @@
 'use strict';
 
 
-const path = require('path');
 const {app, BrowserWindow} = require('electron');
+const path = require('path');
+const process = require('process');
 
-/*
 // This code tries to use node to open the server via command line and that won't work in electron.
-
 const fork = require('child_process').fork;
 const program = path.resolve('server.js');
 const parameters = [
@@ -36,14 +35,22 @@ function onChildMessage(message) {
     }
 }
 
-function onChildCrash() {
+function onChildCrash(code, signal) {
+    if (code > 0 || signal) {
+        console.info('server.js has exited expectedly');
+        return;
+    }
     console.info('server.js has exited unexpectedly, restarting');
     child = fork(program, parameters, options);
 }
-startNewChild();
-*/
 
-require('./server');
+if (!app) {
+    process.on('exit', () => {
+        child.kill();
+    });
+
+    startNewChild();
+}
 
 // Modules to control application life and create native browser window
 
@@ -62,6 +69,16 @@ function createWindow() {
 
     // and load the index.html of the app.
     mainWindow.loadURL('http://localhost:8080');
+}
+
+function onElectronChildMessage(message) {
+    if (message === 'restart') {
+        console.log('message from child:', message);
+        app.relaunch();
+        app.exit(0);
+    } else  if (message === 'exit') {
+        app.exit(0);
+    }
 }
 
 if (app) {
@@ -87,6 +104,8 @@ if (app) {
         }
     });
 
+    process.send = onElectronChildMessage; // hack
+    const _server = require('./server.js');
 } else {
     console.log('Electron unavailable on this platform');
 }
