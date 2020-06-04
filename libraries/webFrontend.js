@@ -126,9 +126,17 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     tempFiles.forEach(function(objectKey) {
 
         var thisObjectKey = objectKey;
-        var tempKey = utilities.getObjectIdFromTarget(objectKey, objectsPath); // gets the object id from the xml target file
+        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
+        }
+
+        for (let key in objects) {
+            if (objects[key].name === objectKey) {
+                if (objects[key].isAnchor || thisObjectKey === objectKey) {
+                    thisObjectKey = key;
+                }
+            }
         }
 
         // create a data structure for the information to create the DOM elements representing this object
@@ -144,7 +152,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
         var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
 
-        if (xmlExists && (datExists || jpgExists)) {
+        if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
             console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
             newObject[thisObjectKey].targetName = thisObjectKey; // obtained earlier from the xml file
@@ -154,8 +162,16 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         }
 
         // world objects are always initialized true regardless of target data
-        if (newObject[thisObjectKey].isWorldObject) {
-            newObject[thisObjectKey].initialized = true;
+
+        // if (newObject[thisObjectKey].isWorldObject) {
+        //   newObject[thisObjectKey].initialized = true;
+        // }
+
+        if (thisObjectKey in objects) {
+            if (objects[thisObjectKey].isAnchor) {
+                newObject[thisObjectKey].initialized = objects[thisObjectKey].isAnchor;
+            }
+            newObject[thisObjectKey].isAnchor = objects[thisObjectKey].isAnchor;
         }
 
         newObject[thisObjectKey].targetsExist = {

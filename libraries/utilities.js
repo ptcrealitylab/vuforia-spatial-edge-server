@@ -44,7 +44,6 @@
  */
 
 
-
 /**
  * @desc prototype for a source. This prototype is called when a value should be changed.
  * It defines how this value should be transformed before sending it to the destination.
@@ -66,7 +65,7 @@ var path = require('path');
 var hardwareInterfaces = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
-var homedir =  path.join(os.homedir(), 'Documents', 'spatialToolbox');
+var homedir = path.join(os.homedir(), 'Documents', 'spatialToolbox');
 const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 
 // Default back to old realityObjects dir if it exists
@@ -110,30 +109,26 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
             }
         });
     }
-/*
-        if (!fs.existsSync(firstFrame)) {
-            fs.mkdirSync(firstFrame, "0766", function (err) {
-                if (err) {
-                    console.error(err);
-                }
-            });
-
-
+/**
+    if (!fs.existsSync(firstFrame)) {
+        fs.mkdirSync(firstFrame, '0766', function (err) {
+            if (err) {
+                console.error(err);
+            }
+        });
         try {
             //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-          //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/index.html").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/index.html"));
-            fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/bird.png").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/frames/"+frameVar+"/bird.png"));
+            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/index.html'));
+            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/bird.png'));
 
         } catch (e) {
-            if (debug) console.log("Could not copy source files", e);
+            if (debug) console.log('Could not copy source files', e);
         }
-
         //  writeObjectToFile(tempFolderName);
     }
-    */
+**/
 };
-
 
 
 exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath, debug, location) {
@@ -182,19 +177,18 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
 };
 
 
-
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
  * @param objectKey
  * @param frameKey
  * @param dirname0
  */
-exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
+exports.deleteFrameFolder = function (objectName, frameName, objectsPath) {
 
     function deleteFolderRecursive(path) {
         console.log('deleteFolderRecursive');
         if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach(function(file) {
+            fs.readdirSync(path).forEach(function (file) {
                 var curPath = path + '/' + file;
                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                     deleteFolderRecursive(curPath);
@@ -214,7 +208,7 @@ exports.deleteFrameFolder = function(objectName, frameName, objectsPath) {
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
     var isDeletableFrame = false;
-    acceptableFrameNames.forEach(function(nameOption) {
+    acceptableFrameNames.forEach(function (nameOption) {
         if (frameName.indexOf(nameOption) > -1) {
             isDeletableFrame = true;
             console.log('it is a ' + nameOption + ' frame');
@@ -246,35 +240,41 @@ exports.uuidTime = function () {
     return stampUuidTime;
 };
 
-var getObjectIdFromTarget = function (folderName, objectsPath) {
+var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
     }
 
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
+    var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
     if (fs.existsSync(xmlFile)) {
         var resultXML = '';
-        xml2js.
-            Parser().
-            parseString(fs.readFileSync(xmlFile, 'utf8'),
-                function (err, result) {
-                    for (var first in result) {
-                        for (var secondFirst in result[first].Tracking[0]) {
-                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                            break;
-                        }
+        xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'),
+            function (err, result) {
+                for (var first in result) {
+                    for (var secondFirst in result[first].Tracking[0]) {
+                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
                         break;
                     }
-                });
+                    break;
+                }
+            });
 
         return resultXML;
+    } else if (fs.existsSync(jsonFile)) {
+        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+        if (thisObject.hasOwnProperty('objectId')) {
+            return thisObject.objectId;
+        } else {
+            return null;
+        }
     } else {
         return null;
     }
 };
-exports.getObjectIdFromTarget = getObjectIdFromTarget;
+exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
 /**
  *
@@ -301,7 +301,7 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
                 let first = Object.keys(result)[0];
                 let secondFirst = Object.keys(result[first].Tracking[0])[0];
                 var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                var sizeFloatArray = sizeString.split(' ').map(function(elt) {
+                var sizeFloatArray = sizeString.split(' ').map(function (elt) {
                     // TODO: this assumption makes it backwards compatible but might cause problems in the future
                     return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
                 });
@@ -326,23 +326,54 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
  * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
  * @param {boolean}   writeToFile  - Give permission to write to file.
  **/
+
+let writeBufferList = {};
+let isWriting = false;
+
 exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
     if (writeToFile) {
-        // console.log("start saving");
-        var outputFilename = objectsPath + '/' + objects[object].name + '/' + identityFolderName + '/object.json';
-        var objectData = objects[object];
-
-        fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
-            if (err) {
-                console.error(err);
-            } else {
-                // console.log("JSON saved to " + outputFilename);
-            }
-        });
-    } else {
-        console.error('I am not allowed to save');
+        writeBufferList[object] = objectsPath;
     }
+    // trigger write process
+    executeWrite(objects);
 };
+
+function executeWrite(objects) {
+    console.log("execute write");
+    // if write Buffer is empty, stop.
+    if (Object.keys(writeBufferList).length === 0) return;
+
+    if (isWriting) {
+        // come back later;
+        setTimeout(function () {
+            executeWrite(objects);
+        }, 20);
+        return;
+    }
+    // block function from re-execution
+    isWriting = true;
+
+    // copy the first item and delete it from the buffer list
+    let firstKey = Object.keys(writeBufferList)[0];
+    let objectsPath = writeBufferList[firstKey];
+    let obj = firstKey;
+    delete writeBufferList[firstKey];
+
+    // prepare to write
+    var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
+    var objectData = objects[obj];
+    console.log("writing:" +obj);
+    // write file
+    fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
+        // once writeFile is done, unblock writing and loop again
+        isWriting = false;
+        executeWrite(objects);
+
+        if (err) {
+            console.error(err);
+        }
+    });
+}
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
     0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -414,7 +445,7 @@ var crc = 0xffffffff;
 
 function crc32(data) {
     for (var i = 0, l = data.length; i < l; i++) {
-        crc = crc >>> 8 ^ crcTable[ crc & 255 ^ data[i] ];
+        crc = crc >>> 8 ^ crcTable[crc & 255 ^ data[i]];
     }
     return (crc ^ -1) >>> 0;
 }
@@ -451,7 +482,7 @@ function itob62(i) {
  * @param fileArray The array that represents all files that should be checksumed
  * @return {string} checksum text
  */
-exports.generateChecksums = function(objects, fileArray) {
+exports.generateChecksums = function (objects, fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {
@@ -464,7 +495,7 @@ exports.generateChecksums = function(objects, fileArray) {
 };
 
 
-exports.updateObject = function(objectName, objects) {
+exports.updateObject = function (objectName, objects) {
     console.log('update ', objectName);
 
     var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
@@ -482,7 +513,7 @@ exports.updateObject = function(objectName, objects) {
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
-            var tempFolderName = getObjectIdFromTarget(objectFolderList[i], homedir);
+            var tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i], homedir);
             console.log('TempFolderName: ' + tempFolderName);
 
             if (tempFolderName !== null) {
@@ -498,21 +529,21 @@ exports.updateObject = function(objectName, objects) {
                     // this is for transforming old lists to new lists
                     if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
-                        delete  objects[tempFolderName].objectValues;
+                        delete objects[tempFolderName].objectValues;
                     }
                     if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
-                        delete  objects[tempFolderName].objectLinks;
+                        delete objects[tempFolderName].objectLinks;
                     }
 
 
                     if (typeof objects[tempFolderName].nodes !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
-                        delete  objects[tempFolderName].nodes;
+                        delete objects[tempFolderName].nodes;
                     }
                     if (typeof objects[tempFolderName].links !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
-                        delete  objects[tempFolderName].links;
+                        delete objects[tempFolderName].links;
                     }
 
 
@@ -542,7 +573,7 @@ exports.updateObject = function(objectName, objects) {
     return null;
 };
 
-exports.loadHardwareInterface = function(hardwareInterfaceName) {
+exports.loadHardwareInterface = function (hardwareInterfaceName) {
 
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
 
@@ -584,7 +615,7 @@ exports.loadHardwareInterface = function(hardwareInterfaceName) {
     }
 
     this.read = function (settingsName, defaultvalue) {
-        if (typeof  hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
+        if (typeof hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
             if (typeof defaultvalue !== 'undefined')
                 hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
             else {
@@ -602,10 +633,10 @@ exports.loadHardwareInterface = function(hardwareInterfaceName) {
  * @param {number|undefined} timeToLive
  * @param {number|undefined} beatport
  */
-exports.actionSender = function(action, timeToLive, beatport) {
+exports.actionSender = function (action, timeToLive, beatport) {
     if (!timeToLive) timeToLive = 2;
     if (!beatport) beatport = 52316;
-    console.log(action);
+    //  console.log(action);
 
     var HOST = '255.255.255.255';
     var message;

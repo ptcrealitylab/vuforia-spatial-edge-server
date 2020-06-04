@@ -323,6 +323,8 @@ if (!isMobile) {
 // This file hosts all kinds of utilities programmed for the server
 var utilities = require('./libraries/utilities');
 
+var recorder = require('./libraries/recorder');
+
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend;
 if (isMobile) {
@@ -644,7 +646,7 @@ function loadObjects() {
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTarget(objectFolderList[i], objectsPath);
+        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i], objectsPath);
         console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -802,6 +804,143 @@ function loadWorldObject() {
     }
 }
 
+
+function loadAnchor(anchorName) {
+
+    // create the file for it if necessary
+    var folder = path.join(objectsPath, anchorName);
+    var identityPath = path.join(folder, '.identity');
+    var jsonFilePath = path.join(folder, 'object.json');
+    let anchorUuid = anchorName + utilities.uuidTime();
+
+    // create objects folder at objectsPath if necessary
+    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
+        console.log('created anchor directory at ' + folder);
+        fs.mkdirSync(folder);
+    }
+
+    // create a /.identity folder within it to hold the object.json data
+    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
+        console.log('created anchor identity at ' + identityPath);
+        fs.mkdirSync(identityPath);
+    }
+
+
+    // try to read previously saved data to overwrite the default anchor object
+    if (globalVariables.saveToDisk) {
+        try {
+            let anchor = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            anchorUuid = anchor.objectId;
+            if (anchorUuid) {
+                objects[anchorUuid] = anchor;
+            }
+            console.log('Loaded anchor object for server: ' + services.ip);
+            return;
+        } catch (e) {
+            console.log('No saved data for anchor object on server: ' + services.ip);
+        }
+    }
+
+    // create a new anchor object
+    objects[anchorUuid] = new ObjectModel(services.ip, version, protocol);
+    objects[anchorUuid].port = serverPort;
+    objects[anchorUuid].name = anchorName;
+    objects[anchorUuid].ip = services.ip;
+    objects[anchorUuid].objectId = anchorUuid;
+
+    objects[anchorUuid].isAnchor = false;
+    objects[anchorUuid].matrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ];
+    objects[anchorUuid].tcs = 0;
+
+    objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+    hardwareAPI.reset();
+
+    if (globalVariables.saveToDisk) {
+
+        fs.writeFile(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4), function (err) {
+            if (err) {
+                console.log('anchor object save error', err);
+            } else {
+                //console.log('JSON saved to ' + jsonFilePath);
+            }
+        });
+    } else {
+        console.log('I am not allowed to save');
+    }
+}
+
+function setAnchors() {
+    let worldObject = false;
+
+    // load all object folders
+    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
+        return fs.statSync(path.join(objectsPath, file)).isDirectory();
+    });
+    // remove hidden directories
+    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
+        tempFiles.splice(0, 1);
+    }
+
+    // populate all objects folders with object.json files.
+    tempFiles.forEach(function (objectKey) {
+
+        if (objectKey.indexOf('_WORLD_') === -1) {
+
+            let thisObjectKey = null;
+            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
+            if (tempKey) {
+                thisObjectKey = tempKey;
+            } else {
+                thisObjectKey = objectKey;
+            }
+
+            if (!(thisObjectKey in objects)) {
+                loadAnchor(objectKey);
+            }
+        }
+    });
+
+
+    // check if there is an initialized World Object
+    for (let key in objects) {
+        if (objects[key].isWorldObject) {
+            // check if the object is correctly initialized with tracking targets
+            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+
+            if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
+                worldObject = true;
+            }
+            break;
+        }
+    }
+
+    // check if there are uninitialized objects and turn them into anchors if an initialized world object exists.
+    for (let key in objects) {
+        objects[key].isAnchor = false;
+        if (!objects[key].isWorldObject) {
+            // check if the object is correctly initialized with tracking targets
+            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+
+            if (!(xmlExists && (datExists || jpgExists))) {
+                if (worldObject) {
+                    objects[key].isAnchor = true;
+                    objects[key].tcs = 0;
+                    continue;
+                }
+            }
+        }
+    }
+}
+
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
  **********************************************************************************************************************/
@@ -811,6 +950,9 @@ function loadWorldObject() {
  **/
 
 function startSystem() {
+
+    // make sure that the system knows about the state of anchors.
+    setAnchors();
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (let key in objects) {
@@ -836,6 +978,7 @@ function startSystem() {
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
 
+    recorder.initRecorder(objects);
 }
 
 /**********************************************************************************************************************
@@ -937,17 +1080,18 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-
-                client.send(message, 0, message.length, PORT, HOST, function (err) {
-                    if (err) {
-                        console.log('Your not on a network. Can\'t send anything');
-                        //throw err;
-                        for (var key in objects) {
-                            objects[key].ip = services.ip;
+                if (objects[thisId].tcs || objects[thisId].isAnchor) {
+                    client.send(message, 0, message.length, PORT, HOST, function (err) {
+                        if (err) {
+                            console.log('Your not on a network. Can\'t send anything');
+                            //throw err;
+                            for (var key in objects) {
+                                objects[key].ip = services.ip;
+                            }
                         }
-                    }
-                    // client is not being closed, as the beat is send ongoing
-                });
+                        // client is not being closed, as the beat is send ongoing
+                    });
+                }
             }
         }, beatInterval + _.random(-250, 250));
     } else {
@@ -972,7 +1116,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) throw err;
                     // close the socket as the function is only called once.
@@ -2749,6 +2892,24 @@ function objectWebServer() {
         }
     });
 
+    webServer.post('/object/:id/matrix', function (req, res) {
+        let object = getObject(req.params.id);
+        if (!object) {
+            res.status(404).json({
+                failure: true,
+                error: 'Object ' + req.params.id + ' not found'
+            }).end();
+            return;
+        }
+
+        object.matrix = req.body.matrix;
+        console.log('set matrix for ' + req.params.id + ' to ' + object.matrix.toString());
+
+        utilities.writeObjectToFile(objects, req.params.id, objectsPath, globalVariables.saveToDisk);
+
+        res.json({success: true}).end();
+    });
+
     // Handler of new memory uploads
     webServer.post('/object/:id/memory', function (req, res) {
         memoryUpload(req.params.id, /*req.params.id,*/ req, res);
@@ -3422,6 +3583,7 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder, function (req, res) {
             // console.log("get 16");
             let framePathList = frameLibPaths.join(' ');
+            setAnchors();
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
@@ -3541,6 +3703,32 @@ function objectWebServer() {
             zip.finalize();
         });
 
+        // webFrontend realtime messaging
+        webServer.post('/webUI/spatial/locator', function (req, res) {
+            console.log({
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                lastEditor: null
+            });
+            utilities.actionSender({
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                lastEditor: null
+            });
+            res.status(200).send('ok');
+        });
+
+        webServer.post('/webUI/REC/START', function (req, res) {
+            console.log('Starting LOG Recording');
+            recorder.start();
+            res.status(200).send('ok');
+        });
+
+        webServer.post('/webUI/REC/STOP', function (req, res) {
+            console.log('Stop LOG Recording and save file');
+            recorder.stop();
+            res.status(200).send('ok');
+        });
+
+
         webServer.post('/object/:objectKey/generateXml/', function (req, res) {
             var objectKey = req.params.objectKey;
             var msgObject = req.body;
@@ -3567,6 +3755,7 @@ function objectWebServer() {
                 console.log('created directory: ' + targetDir);
             }
 
+            console.log('am I here!');
             var xmlOutFile = path.join(targetDir, 'target.xml');
 
             fs.writeFile(xmlOutFile, documentcreate, function (err) {
@@ -4122,6 +4311,7 @@ function objectWebServer() {
                     }
 
                     console.log('i deleted: ' + tempFolderName2);
+                    setAnchors();
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
                     res.send('ok');
@@ -4434,6 +4624,7 @@ function objectWebServer() {
 
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                    setAnchors();
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
                                     res.status(200).json(sendObject);
@@ -4497,7 +4688,7 @@ function objectWebServer() {
                                             thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
                                             utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
-
+                                            setAnchors();
                                             objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                             res.status(200);
@@ -4582,7 +4773,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
     if (fs.existsSync(folder)) {
         console.log('folder exists');
-        var objectIDXML = utilities.getObjectIdFromTarget(folderVar, objectsPath);
+        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         console.log('got ID: objectIDXML');
         if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {

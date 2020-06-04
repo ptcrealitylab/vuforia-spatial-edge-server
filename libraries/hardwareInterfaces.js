@@ -135,7 +135,7 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
-    var objectID = utilities.getObjectIdFromTarget(objectUuid, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
@@ -149,7 +149,7 @@ exports.clearObject = function (objectUuid, toolUuid) {
 };
 
 exports.removeAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -211,7 +211,7 @@ var deleteLinksToAndFromNode = function (objectUuid, toolUuid, nodeUuid) {
 };
 
 exports.reloadNodeUI = function (object) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
 };
@@ -243,7 +243,7 @@ exports.getAllTools = getAllTools_;
 exports.getAllFrames = getAllTools_;
 
 exports.getAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -262,7 +262,7 @@ exports.getAllNodes = function (object, tool) {
 };
 
 exports.getAllLinksToNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -350,7 +350,7 @@ exports.triggerUDPCallbacks = function (msgContent) {
 };
 
 exports.clearTool = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('remove set tool');
 
     var frameUuid = objectID + tool;
@@ -368,7 +368,7 @@ exports.clearTool = function (object, tool) {
 
 exports.setTool = function (object, tool, newTool, dirName) {
 
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('set new tool: ', newTool);
 
     var frameUuid = objectID + tool;
@@ -418,7 +418,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
 
 exports.addNode = function (object, tool, node, type, position) {
 
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.addNode objectID: ', objectID, object, objectsPath);
 
     if (!objectID) {
@@ -496,7 +496,7 @@ exports.addNode = function (object, tool, node, type, position) {
 };
 
 exports.renameNode = function (object, tool, oldNode, newNode) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + tool;
@@ -528,7 +528,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     if (loyalty !== undefined) thisLoyalty = 'object';
 
 
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -555,7 +555,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
 };
 
 exports.removeNode = function (object, tool, node) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
@@ -571,7 +571,7 @@ exports.removeNode = function (object, tool, node) {
 };
 
 exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGroundPlane) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -589,12 +589,12 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
 };
 
 exports.pushUpdatesToDevices = function (object) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     actionCallback({reloadObject: {object: objectID}});
 };
 
 exports.activate = function (object) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
@@ -603,7 +603,7 @@ exports.activate = function (object) {
 };
 
 exports.deactivate = function (object) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.deactivate');
     if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
         if (objects.hasOwnProperty(objectID)) {
@@ -615,11 +615,11 @@ exports.deactivate = function (object) {
 
 
 exports.getObjectIdFromObjectName = function (object) {
-    return utilities.getObjectIdFromTarget(object, objectsPath);
+    return utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
 };
 
 exports.getMarkerSize = function (object) {
-    var objectID = utilities.getObjectIdFromTarget(object, objectsPath);
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     return objects[objectID].targetSize;
 };
 

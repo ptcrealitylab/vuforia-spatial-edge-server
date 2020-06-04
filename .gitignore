@@ -41,6 +41,7 @@ realityobjects
 
 # RealityZoneGifs
 hardwareInterfaces/pass/public/gifs/*
+libraries/objectLogs/*
 
 .node-persist
 
