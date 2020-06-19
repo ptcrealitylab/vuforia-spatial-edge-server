@@ -641,7 +641,7 @@ exports.actionSender = function (action, timeToLive, beatport) {
     var HOST = '255.255.255.255';
     var message;
 
-    message = new Buffer(JSON.stringify({action: action}));
+    message = Buffer.from(JSON.stringify({action: action}));
 
     // creating the datagram
     var client = dgram.createSocket('udp4');

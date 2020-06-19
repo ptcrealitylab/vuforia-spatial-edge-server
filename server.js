@@ -169,7 +169,7 @@ const objectInterfaceFolder = '/';
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
 const storage = require('./libraries/storage');
-let dir = path.join(require('os').homedir(), 'vst-edge-server');
+let dir = path.join(require('os').homedir(), 'Documents/vst-edge-server');
 //fs.mkdirSync('/Users/Anna/my-test-dir');
 console.log('**** DIR: ', dir);
 
@@ -1079,7 +1079,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                const message = new Buffer(JSON.stringify({
+                const message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1115,7 +1115,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                var message = new Buffer(JSON.stringify({
+                var message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
