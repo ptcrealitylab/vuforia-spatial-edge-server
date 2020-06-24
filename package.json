@@ -15,7 +15,7 @@
     "formidable": "^1.2.2",
     "has-ansi": "^4.0.0",
     "ip": "^1.1.5",
-    "jimp": "^0.10.3",
+    "jimp": "^0.13.0",
     "lodash": "^4.17.15",
     "module-alias": "^2.2.2",
     "monaco-editor": "^0.20.0",
