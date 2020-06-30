@@ -365,6 +365,12 @@
          * @param {string} msg - stringified JSON message
          */
         Envelope.prototype.onWindowMessage = function(msg) {
+            if (typeof msg === 'string') {
+                return;
+            }
+            if (typeof msg.data !== 'string') {
+                return;
+            }
             let msgContent = JSON.parse(msg.data);
             if (typeof msgContent.envelopeMessage === 'undefined') {
                 return;
