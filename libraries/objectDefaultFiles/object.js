@@ -443,6 +443,11 @@
             }
         }
 
+        // can be triggered by real-time system to refresh public data when editor received a message from another client
+        if (typeof msgContent.workerId !== 'undefined') {
+            console.log('set workerId to ' + msgContent.workerId);
+            workerId = msgContent.workerId;
+        }
     };
 
     /**
@@ -580,6 +585,7 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1478,6 +1484,12 @@
             });
 
         };
+        
+        this.useWebGlWorker = function() {
+            postDataToParent({
+                useWebGlWorker: true
+            });
+        }
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
