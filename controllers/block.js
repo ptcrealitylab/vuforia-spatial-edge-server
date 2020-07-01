@@ -1,6 +1,12 @@
 const utilities = require('../libraries/utilities');
 const Block = require('../models/Block');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var engine;
+var objectsPath;
+
 /**
  * Adds a new block with the provided blockID to the specified node.
  * @param {string} objectID
@@ -10,7 +16,7 @@ const Block = require('../models/Block');
  * @param {Block} body
  * @return {string}
  */
-const addNewBlock = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, blockID, body) {
+const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
@@ -77,7 +83,7 @@ const addNewBlock = function (objects, globalVariables, objectsPath, objectID, f
  * @param {string} lastEditor
  * @return {string}
  */
-const deleteBlock = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, blockID, lastEditor) {
+const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
@@ -115,7 +121,7 @@ const deleteBlock = function (objects, globalVariables, objectsPath, objectID, f
  * @param {{x: number, y: number, lastEditor: string}} body
  * @return {string}
  */
-const postBlockPosition = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, blockID, body) {
+const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
     var updateStatus = 'nothing happened';
 
     console.log('changing Position for :' + objectID + ' : ' + nodeID + ' : ' + blockID);
@@ -143,7 +149,28 @@ const postBlockPosition = function (objects, globalVariables, objectsPath, objec
     return updateStatus;
 }
 
-const triggerBlock = function (objects, engine, objectID, frameID, nodeID, blockID, body) {
+const triggerBlockSearch = function (blockID, body, callback) {
+    var foundBlock = false;
+    utilities.forEachObject(objects, function (object, objectKey) {
+        utilities.forEachFrameInObject(object, function (frame, frameKey) {
+            utilities.forEachNodeInFrame(frame, function (node, nodeKey) {
+                if (typeof node.blocks !== 'undefined') {
+                    var block = node.blocks[blockID];
+                    // keep iterating until you find a block with that ID
+                    if (block) {
+                        foundBlock = true;
+                        callback(200, triggerBlock(objectKey, frameKey, nodeKey, blockID, body));
+                    }
+                }
+            });
+        });
+    });
+    if (!foundBlock) {
+        callback(404, {success: false, error: 'no block with ID ' + blockID + ' exists'});
+    }
+}
+
+const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
     console.log('triggerBlock', objectID, frameID, nodeID, blockID, body);
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
     if (foundNode) {
@@ -157,9 +184,18 @@ const triggerBlock = function (objects, engine, objectID, frameID, nodeID, block
     return {success: true, error: null};
 }
 
+const setup = function (objects_, globalVariables_, engine_, objectsPath_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    engine = engine_;
+    objectsPath = objectsPath_;
+}
+
 module.exports = {
     addNewBlock: addNewBlock,
     deleteBlock: deleteBlock,
     postBlockPosition: postBlockPosition,
-    triggerBlock: triggerBlock
+    triggerBlockSearch: triggerBlockSearch,
+    triggerBlock: triggerBlock,
+    setup: setup
 };
