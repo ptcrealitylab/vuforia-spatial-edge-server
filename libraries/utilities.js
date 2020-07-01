@@ -686,3 +686,193 @@ exports.actionSender = function (action, timeToLive, beatport) {
     });
 
 };
+
+const doesObjectExist = function(objects, objectKey) {
+    return objects.hasOwnProperty(objectKey);
+}
+exports.doesObjectExist = doesObjectExist;
+
+const getObject = function(objects, objectKey) {
+    if (doesObjectExist(objects, objectKey)) {
+        return objects[objectKey];
+    }
+    return null;
+}
+exports.getObject = getObject;
+
+const doesFrameExist = function(objects, objectKey, frameKey) {
+    if (doesObjectExist(objects, objectKey)) {
+        var foundObject = getObject(objects, objectKey);
+        if (foundObject) {
+            return foundObject.frames.hasOwnProperty(frameKey);
+        }
+    }
+    return false;
+}
+exports.doesFrameExist = doesFrameExist;
+
+const getFrame = function(objects, objectKey, frameKey) {
+    if (doesFrameExist(objects, objectKey, frameKey)) {
+        var foundObject = getObject(objects, objectKey);
+        if (foundObject) {
+            return foundObject.frames[frameKey];
+        }
+    }
+    return null;
+}
+exports.getFrame = getFrame;
+
+const doesNodeExist = function(objects, objectKey, frameKey, nodeKey) {
+    if (doesFrameExist(objects, objectKey, frameKey)) {
+        var foundFrame = getFrame(objects, objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes.hasOwnProperty(nodeKey);
+        }
+    }
+    return false;
+}
+exports.doesNodeExist = doesNodeExist;
+
+const getNode = function(objects, objectKey, frameKey, nodeKey) {
+    if (doesNodeExist(objects, objectKey, frameKey, nodeKey)) {
+        var foundFrame = getFrame(objects, objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes[nodeKey];
+        }
+    }
+    return null;
+}
+exports.getNode = getNode;
+
+/**
+ * @param objectKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object)
+ */
+const getObjectAsync = function (objects, objectKey, callback) {
+    if (!objects.hasOwnProperty(objectKey)) {
+        callback({failure: true, error: 'Object ' + objectKey + ' not found'});
+        return;
+    }
+    var object = objects[objectKey];
+    callback(null, object);
+}
+exports.getObjectAsync = getObjectAsync;
+
+/**
+ * @param objectKey
+ * @param frameKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+ */
+const getFrameAsync = function (objects, objectKey, frameKey, callback) {
+    getObjectAsync(objects, objectKey, function (error, object) {
+        if (error) {
+            callback(error);
+            return;
+        }
+        if (!object.frames.hasOwnProperty(frameKey)) {
+            callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
+            return;
+        }
+        var frame = object.frames[frameKey];
+        callback(null, object, frame);
+    });
+}
+exports.getFrameAsync = getFrameAsync;
+
+/**
+ * @param objectKey
+ * @param frameKey
+ * @param nodeKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+ */
+const getNodeAsync = function (objects, objectKey, frameKey, nodeKey, callback) {
+    getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
+        if (error) {
+            callback(error);
+            return;
+        }
+        if (!frame.nodes.hasOwnProperty(nodeKey)) {
+            callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+            return;
+        }
+        var node = frame.nodes[nodeKey];
+        callback(null, object, frame, node);
+    });
+}
+exports.getNodeAsync = getNodeAsync;
+
+/**
+ * Returns node if a nodeKey is provided, otherwise the frame
+ * @param objectKey
+ * @param frameKey
+ * @param nodeKey
+ * @param callback
+ */
+const getFrameOrNode = function (objects, objectKey, frameKey, nodeKey, callback) {
+    getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
+        if (error) {
+            callback(error);
+            return;
+        }
+
+        var node = null;
+
+        if (nodeKey && nodeKey !== 'null') {
+            if (!frame.nodes.hasOwnProperty(nodeKey)) {
+                callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+                return;
+            }
+            node = frame.nodes[nodeKey];
+        }
+
+        callback(null, object, frame, node);
+    });
+}
+exports.getFrameOrNode = getFrameOrNode;
+
+const forEachObject = function (objects, callback) {
+    for (var objectKey in objects) {
+        if (!objects.hasOwnProperty(objectKey)) continue;
+        callback(objects[objectKey], objectKey);
+    }
+}
+exports.forEachObject = forEachObject;
+
+const forEachFrameInObject = function (object, callback) {
+    for (var frameKey in object.frames) {
+        if (!object.frames.hasOwnProperty(frameKey)) continue;
+        callback(object.frames[frameKey], frameKey);
+    }
+}
+exports.forEachFrameInObject = forEachFrameInObject;
+
+const forEachNodeInFrame = function (frame, callback) {
+    for (var nodeKey in frame.nodes) {
+        if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+        callback(frame.nodes[nodeKey], nodeKey);
+    }
+}
+exports.forEachNodeInFrame = forEachNodeInFrame;
+
+/**
+ * Helper function to return the absolute path to the directory that should contain all
+ * video files for the provided object name. (makes dir if necessary)
+ * @param objectName
+ * @return {string}
+ */
+const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectName) {
+    let videoDir = objectsPath; // on mobile, put videos directly in object home dir
+
+    // directory differs on mobile due to inability to call mkdir
+    if (!isMobile) {
+        videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
+
+        if (!fs.existsSync(videoDir)) {
+            console.log('make videoDir');
+            fs.mkdirSync(videoDir);
+        }
+    }
+
+    return videoDir;
+}
+exports.getVideoDir = getVideoDir;
