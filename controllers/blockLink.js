@@ -1,5 +1,10 @@
 const utilities = require('../libraries/utilities');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var objectsPath;
+
 /**
  * Adds a new link with the provided linkID to the specified node.
  * Doesn't add it if it detects an infinite loop.
@@ -10,7 +15,7 @@ const utilities = require('../libraries/utilities');
  * @param {Link} body
  * @return {string}
  */
-const addLogicLink = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, linkID, body) {
+const addLogicLink = function (objectID, frameID, nodeID, linkID, body) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
@@ -44,7 +49,7 @@ const addLogicLink = function (objects, globalVariables, objectsPath, objectID, 
     return updateStatus;
 }
 
-const deleteLogicLink = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, linkID, lastEditor) {
+const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
@@ -63,7 +68,14 @@ const deleteLogicLink = function (objects, globalVariables, objectsPath, objectI
     return updateStatus;
 }
 
+const setup = function (objects_, globalVariables_, objectsPath_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    objectsPath = objectsPath_;
+}
+
 module.exports = {
     addLogicLink: addLogicLink,
-    deleteLogicLink: deleteLogicLink
+    deleteLogicLink: deleteLogicLink,
+    setup: setup
 };

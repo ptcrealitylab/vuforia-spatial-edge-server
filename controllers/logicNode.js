@@ -3,6 +3,13 @@ const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const EdgeBlock = require('../models/EdgeBlock');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var objectsPath;
+var identityFolderName;
+var Jimp;
+
 /**
  * Adds the Logic Node contained in the body to the specified frame.
  * Creates some state (edge blocks) necessary for the server data processing that doesn't exist in the client.
@@ -12,7 +19,7 @@ const EdgeBlock = require('../models/EdgeBlock');
  * @param {Node} body
  * @return {string}
  */
-const addLogicNode = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, body) {
+const addLogicNode = function (objectID, frameID, nodeID, body) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
@@ -56,7 +63,7 @@ const addLogicNode = function (objects, globalVariables, objectsPath, objectID, 
  * @param {string} lastEditor
  * @return {string}
  */
-const deleteLogicNode = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, lastEditor) {
+const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
@@ -95,7 +102,7 @@ const deleteLogicNode = function (objects, globalVariables, objectsPath, objectI
  * @param {{x: number|undefined, y: number|undefined, scale: number|undefined, matrix: Array.<number>|undefined}} body
  * @param {function} callback
  */
-function changeNodeSize(objects, globalVariables, objectsPath, objectID, frameID, nodeID, body, callback) {
+function changeNodeSize(objectID, frameID, nodeID, body, callback) {
     var updateStatus = 'nothing happened';
 
     console.log('changing Size for :' + objectID + ' : ' + nodeID);
@@ -132,7 +139,7 @@ function changeNodeSize(objects, globalVariables, objectsPath, objectID, frameID
     });
 }
 
-function rename(objects, globalVariables, objectsPath, objectID, frameID, nodeID, body, callback) {
+function rename(objectID, frameID, nodeID, body, callback) {
     console.log('received name for', objectID, frameID, nodeID);
 
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
@@ -149,7 +156,7 @@ function rename(objects, globalVariables, objectsPath, objectID, frameID, nodeID
     });
 }
 
-function uploadIconImage(objects, globalVariables, objectsPath, identityFolderName, Jimp, objectID, frameID, nodeID, req, callback) {
+function uploadIconImage(objectID, frameID, nodeID, req, callback) {
     console.log('received icon image for', objectID, frameID, nodeID);
 
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
@@ -233,10 +240,19 @@ function uploadIconImage(objects, globalVariables, objectsPath, identityFolderNa
     });
 }
 
+const setup = function(objects_, globalVariables_, objectsPath_, identityFolderName_, Jimp_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    objectsPath = objectsPath_;
+    identityFolderName = identityFolderName_;
+    Jimp = Jimp_;
+}
+
 module.exports = {
     addLogicNode: addLogicNode,
     deleteLogicNode: deleteLogicNode,
     changeNodeSize: changeNodeSize,
     rename: rename,
-    uploadIconImage: uploadIconImage
+    uploadIconImage: uploadIconImage,
+    setup: setup
 };

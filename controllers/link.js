@@ -1,5 +1,14 @@
 const utilities = require('../libraries/utilities');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var knownObjects = {};
+var socketArray = {};
+var globalVariables;
+var hardwareAPI;
+var objectsPath;
+var socketUpdater;
+
 /**
  * Extracts a nicely structured set of data about the link
  * @param {Link} fullEntry
@@ -55,7 +64,7 @@ function getLinkData(fullEntry, wasAdded) {
  * @param {string} linkID
  * @param {Link} body
  */
-const newLink = function (objects, globalVariables, objectsPath, hardwareAPI, socketUpdater, objectID, frameID, linkID, body) {
+const newLink = function (objectID, frameID, linkID, body) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
@@ -105,7 +114,7 @@ const newLink = function (objects, globalVariables, objectsPath, hardwareAPI, so
  * @param {string} linkKey
  * @param {string} editorID
  */
-const deleteLink = function (objects, knownObjects, socketArray, globalVariables, objectsPath, hardwareAPI, objectKey, frameKey, linkKey, editorID) {
+const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
@@ -156,7 +165,7 @@ const deleteLink = function (objects, knownObjects, socketArray, globalVariables
  * @param {string} linkKey
  * @param {{lockPassword: string, lockType: string}} body
  */
-const addLinkLock = function (objects, globalVariables, objectsPath, objectKey, frameKey, linkKey, body) {
+const addLinkLock = function (objectKey, frameKey, linkKey, body) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
@@ -199,7 +208,7 @@ const addLinkLock = function (objects, globalVariables, objectsPath, objectKey, 
  * @param {string} linkKey
  * @param {string} password
  */
-const deleteLinkLock = function (objects, globalVariables, objectsPath, objectKey, frameKey, linkKey, password) {
+const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
@@ -221,9 +230,20 @@ const deleteLinkLock = function (objects, globalVariables, objectsPath, objectKe
     return updateStatus;
 }
 
+const setup = function(objects_, knownObjects_, socketArray_, globalVariables_, hardwareAPI_, objectsPath_, socketUpdater_) {
+    objects = objects_;
+    knownObjects = knownObjects_;
+    socketArray = socketArray_;
+    globalVariables = globalVariables_;
+    hardwareAPI = hardwareAPI_;
+    objectsPath = objectsPath_;
+    socketUpdater = socketUpdater_;
+}
+
 module.exports = {
     newLink: newLink,
     deleteLink: deleteLink,
     addLinkLock: addLinkLock,
-    deleteLinkLock: deleteLinkLock
+    deleteLinkLock: deleteLinkLock,
+    setup: setup
 };
