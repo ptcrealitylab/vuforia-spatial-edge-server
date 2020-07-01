@@ -4,14 +4,22 @@ const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 
-const uploadVideo = function(objects, objectsPath, identityFolderName, isMobile, objectID, videoID, callback) {
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var hardwareAPI;
+var objectsPath;
+var identityFolderName;
+var git;
+
+const uploadVideo = function(objectID, videoID, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'Object ' + objectID + ' not found');
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(objectsPath, identityFolderName, isMobile, object.name);
+        var videoDir = utilities.getVideoDir(objectsPath, identityFolderName, globalVariables.isMobile, object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -54,8 +62,8 @@ const uploadVideo = function(objects, objectsPath, identityFolderName, isMobile,
     }
 }
 
-const saveCommit = function(objects, isMobile, git, objectID, callback) {
-    if (isMobile) {
+const saveCommit = function(objectID, callback) {
+    if (globalVariables.isMobile) {
         callback(500, 'saveCommit unavailable on mobile');
         return;
     }
@@ -67,8 +75,8 @@ const saveCommit = function(objects, isMobile, git, objectID, callback) {
     }
 }
 
-const resetToLastCommit = function(objects, isMobile, hardwareAPI, git, objectID, callback) {
-    if (isMobile) {
+const resetToLastCommit = function(objectID, callback) {
+    if (globalVariables.isMobile) {
         callback(500, 'resetToLastCommit unavailable on mobile');
         return;
     }
@@ -81,7 +89,7 @@ const resetToLastCommit = function(objects, isMobile, hardwareAPI, git, objectID
     }
 }
 
-const setMatrix = function(objects, globalVariables, objectsPath, objectID, body, callback) {
+const setMatrix = function(objectID, body, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
@@ -103,7 +111,7 @@ const setMatrix = function(objects, globalVariables, objectsPath, objectID, body
  * @param {express.Request} req
  * @param {express.Response} res
  */
-const memoryUpload = function(objects, globalVariables, objectsPath, identityFolderName, objectID, req, callback) {
+const memoryUpload = function(objectID, req, callback) {
     if (!objects.hasOwnProperty(objectID)) {
         callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
         return;
@@ -156,7 +164,7 @@ const memoryUpload = function(objects, globalVariables, objectsPath, identityFol
     });
 }
 
-const deactivate = function(objects, globalVariables, objectsPath, objectID, callback) {
+const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
@@ -166,7 +174,7 @@ const deactivate = function(objects, globalVariables, objectsPath, objectID, cal
     }
 }
 
-const activate = function(objects, globalVariables, objectsPath, objectID, callback) {
+const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
@@ -176,7 +184,7 @@ const activate = function(objects, globalVariables, objectsPath, objectID, callb
     }
 }
 
-const setVisualization = function(objects, globalVariables, objectsPath, objectID, vis, callback) {
+const setVisualization = function(objectID, vis, callback) {
     utilities.getObject(objects, objectID).visualization = vis;
     console.log(vis, objectID);
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
@@ -185,8 +193,8 @@ const setVisualization = function(objects, globalVariables, objectsPath, objectI
 
 // request a zip-file with the object stored inside
 // ****************************************************************************************************************
-const zipBackup = function(objectsPath, isMobile, objectId, req, res) {
-    if (isMobile) {
+const zipBackup = function(objectId, req, res) {
+    if (globalVariables.isMobile) {
         res.status(500).send('zipBackup unavailable on mobile');
         return;
     }
@@ -209,7 +217,7 @@ const zipBackup = function(objectsPath, isMobile, objectId, req, res) {
     zip.finalize();
 }
 
-const generateXml = function(objects, globalVariables, objectsPath, identityFolderName, objectID, body, callback) {
+const generateXml = function(objectID, body, callback) {
     var msgObject = body;
     var objectName = msgObject.name;
 
@@ -266,8 +274,17 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 }
 
-const getObject = function (objects, objectID) {
+const getObject = function (objectID) {
     return utilities.getObject(objects, objectID);
+}
+
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    hardwareAPI = hardwareAPI_;
+    objectsPath = objectsPath_;
+    identityFolderName = identityFolderName_;
+    git = git_;
 }
 
 module.exports = {
@@ -281,5 +298,7 @@ module.exports = {
     setVisualization: setVisualization,
     zipBackup: zipBackup,
     generateXml: generateXml,
-    getObject: getObject
+    setFrameSharingEnabled: setFrameSharingEnabled,
+    getObject: getObject,
+    setup: setup
 };

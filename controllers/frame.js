@@ -2,6 +2,14 @@ const utilities = require('../libraries/utilities');
 const Frame = require('../models/Frame');
 const Node = require('../models/Node');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var hardwareAPI;
+var dirname;
+var objectsPath;
+var nodeTypeModules;
+
 /**
  * Adds a provided frame to the specified object
  * @param {string} objectKey
@@ -9,7 +17,7 @@ const Node = require('../models/Node');
  * @param {Frame} frame
  * @param {*} res
  */
-const addFrameToObject = function (objects, globalVariables, dirname, objectsPath, hardwareAPI, nodeTypeModules, objectKey, frameKey, frame, callback) {
+const addFrameToObject = function (objectKey, frameKey, frame, callback) {
     utilities.getObjectAsync(objects, objectKey, function (error, object) {
 
         if (error) {
@@ -65,7 +73,7 @@ const addFrameToObject = function (objects, globalVariables, dirname, objectsPat
     });
 }
 
-const deletePublicData = function(objects, globalVariables, objectsPath, objectID, frameID, callback) {
+const deletePublicData = function(objectID, frameID, callback) {
     // locate the containing frame in a safe way
     utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
         if (error) {
@@ -85,7 +93,7 @@ const deletePublicData = function(objects, globalVariables, objectsPath, objectI
     });
 }
 
-const addPublicData = function(objects, globalVariables, objectsPath, objectID, frameID, body, callback) {
+const addPublicData = function(objectID, frameID, body, callback) {
     var publicData = body.publicData;
 
     // locate the containing frame in a safe way
@@ -116,7 +124,7 @@ const addPublicData = function(objects, globalVariables, objectsPath, objectID, 
     });
 }
 
-const copyFrame = function(objects, globalVariables, objectsPath, hardwareAPI, objectID, frameID, body, callback) {
+const copyFrame = function(objectID, frameID, body, callback) {
     console.log('making a copy of frame', frameID);
 
     utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
@@ -194,7 +202,7 @@ const copyFrame = function(objects, globalVariables, objectsPath, hardwareAPI, o
     });
 }
 
-const updateFrame = function(objects, globalVariables, objectsPath, objectID, frameID, body, callback) {
+const updateFrame = function(objectID, frameID, body, callback) {
     utilities.getObjectAsync(objects, objectID, function (error, object) {
         if (error) {
             callback(404, error);
@@ -228,7 +236,7 @@ const updateFrame = function(objects, globalVariables, objectsPath, objectID, fr
     });
 }
 
-const deleteFrame = function(objects, globalVariables, objectsPath, objectId, frameId, body, callback) {
+const deleteFrame = function(objectId, frameId, body, callback) {
     console.log('delete frame from server', objectId, frameId);
 
     var object = utilities.getObject(objects, objectId);
@@ -317,7 +325,7 @@ const deleteFrame = function(objects, globalVariables, objectsPath, objectId, fr
     callback(200, {success: true});
 }
 
-const setGroup = function(objects, globalVariables, objectsPath, objectID, frameID, body, callback) {
+const setGroup = function(objectID, frameID, body, callback) {
     var frame = utilities.getFrame(objects, objectID, frameID);
     if (frame) {
         var newGroupID = body.group;
@@ -340,7 +348,7 @@ const setGroup = function(objects, globalVariables, objectsPath, objectID, frame
  * Updates the x, y, scale, and/or matrix for the specified frame or node
  * @todo this function is a mess, fix it up
  */
-const changeSize = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
+const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
     console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
 
     utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
@@ -423,7 +431,7 @@ const changeSize = function (objects, globalVariables, objectsPath, objectID, fr
  * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
  * @param res
  */
-const changeVisualization = function(objects, globalVariables, objectsPath, objectKey, frameKey, body, callback) {
+const changeVisualization = function(objectKey, frameKey, body, callback) {
     console.log('change visualization');
     
     var newVisualization = body.visualization;
@@ -447,7 +455,7 @@ const changeVisualization = function(objects, globalVariables, objectsPath, obje
     }
 }
 
-const resetPositioning = function(objects, globalVariables, objectsPath, objectID, frameID, callback) {
+const resetPositioning = function(objectID, frameID, callback) {
     var frame = utilities.getFrame(objects, objectID, frameID);
     frame.ar = {
         x: 0,
@@ -466,8 +474,17 @@ const resetPositioning = function(objects, globalVariables, objectsPath, objectI
     callback(200, 'ok');
 }
 
-const getFrame = function(objects, objectID, frameID) {
+const getFrame = function(objectID, frameID) {
     return utilities.getFrame(objects, objectID, frameID);
+}
+
+const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, nodeTypeModules_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    hardwareAPI = hardwareAPI_;
+    dirname = dirname_;
+    objectsPath = objectsPath_;
+    nodeTypeModules = nodeTypeModules_;
 }
 
 module.exports = {
@@ -481,5 +498,6 @@ module.exports = {
     changeSize: changeSize,
     changeVisualization: changeVisualization,
     resetPositioning: resetPositioning,
-    getFrame: getFrame
+    getFrame: getFrame,
+    setup: setup
 };

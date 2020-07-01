@@ -357,6 +357,15 @@ if (isMobile || process.env.NODE_ENV === 'test') {
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
 
+// Controller imports
+const blockController = require('./controllers/block.js');
+const blockLinkController = require('./controllers/blockLink.js');
+const frameController = require('./controllers/frame.js');
+const linkController = require('./controllers/link.js');
+const logicNodeController = require('./controllers/logicNode.js');
+const nodeController = require('./controllers/node.js');
+const objectController = require('./controllers/object.js');
+
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
@@ -1609,84 +1618,17 @@ function objectWebServer() {
     
     // Express router routes
     const objectRouter = require('./routers/object');
-    objectRouter.setup(objects, knownObjects, socketArray, globalVariables, engine, hardwareAPI, __dirname, objectsPath, identityFolderName, Jimp, socketUpdater, git, nodeTypeModules);
+    const logicRouter = require('./routers/logic');
+    objectRouter.setup(globalVariables);
+    logicRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
-
-    // Controller imports
-    const blockController = require('./controllers/block.js');
-    const blockLinkController = require('./controllers/blockLink.js');
-    const logicNodeController = require('./controllers/logicNode.js');
-    
-    // logic node handling
-    /**
-     * Logic Links
-     **/
-    // delete a logic link. *1 is the object *2 is the logic *3 is the link id
-    webServer.delete('/logic/*/*/link/*/lastEditor/*/', function (req, res) {
-        res.send(blockLinkController.deleteLogicLink(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-    
-    // adding a new logic link to an object. *1 is the object *2 is the logic *3 is the link id
-    webServer.post('/logic/*/*/link/*/', function (req, res) {
-        res.send(blockLinkController.addLogicLink(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    /**
-     * Logic Blocks
-     **/
-    // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
-    webServer.post('/logic/*/*/block/*/', function (req, res) {
-        res.send(blockController.addNewBlock(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
-    // webServer.delete('/logic/*/*/*/block/*/lastEditor/*/', function (req, res) {
-    //     res.send(blockController.deleteBlock(objects, globalVariables, objectsPath, req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
-    // });
-
-    webServer.post('/logic/*/*/blockPosition/*/', function (req, res) {
-        res.send(blockController.postBlockPosition(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
+    webServer.use('/logic', logicRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
     webServer.post('/triggerBlock/:blockID', function (req, res) {
-        var foundBlock = false;
-        forEachObject(function (object, objectKey) {
-            forEachFrameInObject(object, function (frame, frameKey) {
-                forEachNodeInFrame(frame, function (node, nodeKey) {
-                    if (typeof node.blocks !== 'undefined') {
-                        var block = node.blocks[req.params.blockID];
-                        // keep iterating until you find a block with that ID
-                        if (block) {
-                            foundBlock = true;
-                            res.status(200).json(blockController.triggerBlock(objects, engine, objectKey, frameKey, nodeKey, req.params.blockID, req.body)).end();
-                        }
-                    }
-                });
-            });
-        });
-        if (!foundBlock) {
-            res.status(404).json({success: false, error: 'no block with ID ' + req.params.blockID + ' exists'}).end();
-        }
-    });
-
-    /**
-     * Logic Nodes
-     **/
-    // adding a new logic node block to an object. *1 is the object *2 is the logic *3 is the link id
-    webServer.post('/logic/*/*/node/', function (req, res) {
-        res.send(logicNodeController.addLogicNode(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.body));
-    });
-    
-    // delete a logic node from the logic. *1 is the object *2 is the logic *3 is the link id
-    webServer.delete('/logic/*/*/node/lastEditor/*/', function (req, res) {
-        res.send(logicNodeController.deleteLogicNode(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.params[2]));
-    });
-
-    webServer.post('/logic/*/*/nodeSize/', function (req, res) {
-        logicNodeController.changeNodeSize(objects, globalVariables, objectsPath, req.params[0], req.params[0], req.params[1], req.body, function (statusCode, responseContents) {
-            res.status(statusCode).send(responseContents);
+        blockController.triggerBlockSearch(req.params.blockID, req.body, function (statusCode, responseContents) {
+            res.status(statusCode).json(responseContents).end();
         });
     });
 
@@ -3953,6 +3895,19 @@ function checkObjectActivation(id) {
         return !object.deactivated;
     }
     return false;
+}
+
+// sets up controllers with access to various objects
+setupControllers();
+
+function setupControllers() {
+    blockController.setup(objects, globalVariables, engine, objectsPath);
+    blockLinkController.setup(objects, globalVariables, objectsPath);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, nodeTypeModules);
+    linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
+    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
+    nodeController.setup(objects, globalVariables, objectsPath);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git);
 }
 
 checkInit('system');

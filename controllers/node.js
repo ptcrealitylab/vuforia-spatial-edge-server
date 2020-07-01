@@ -1,5 +1,10 @@
 const utilities = require('../libraries/utilities');
 
+// Variables populated from server.js with setup()
+var objects = {};
+var globalVariables;
+var objectsPath;
+
 /**
  * Creates a node on the frame specified frame.
  * @param {string} objectKey
@@ -9,7 +14,7 @@ const utilities = require('../libraries/utilities');
  * @param {*} res
  * @todo don't pass in req and res, instead callback that triggers status code / err / res
  */
-const addNodeToFrame = function (objects, globalVariables, objectsPath, objectKey, frameKey, nodeKey, body, callback) {
+const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     var errorMessage = null;
 
     var foundObject = utilities.getObject(objects, objectKey);
@@ -40,7 +45,7 @@ const addNodeToFrame = function (objects, globalVariables, objectsPath, objectKe
  * @param {string} nodeKey
  * @param {{lockPassword: string, lockType: string}} body
  */
-const addNodeLock = function (objects, globalVariables, objectsPath, objectKey, frameKey, nodeKey, body) {
+const addNodeLock = function (objectKey, frameKey, nodeKey, body) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectKey, frameKey, nodeKey);
@@ -79,7 +84,7 @@ const addNodeLock = function (objects, globalVariables, objectsPath, objectKey, 
  * @param {string} nodeKey
  * @param {string} password
  */
-const deleteNodeLock = function (objects, globalVariables, objectsPath, objectKey, frameKey, nodeKey, password) {
+const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
     var updateStatus = 'nothing happened';
 
     var foundNode = utilities.getNode(objects, objectKey, frameKey, nodeKey);
@@ -105,7 +110,7 @@ const deleteNodeLock = function (objects, globalVariables, objectsPath, objectKe
  * Updates the x, y, scale, and/or matrix for the specified frame or node
  * @todo this function is a mess, fix it up
  */
-const changeSize = function (objects, globalVariables, objectsPath, objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
+const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
     console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
 
     utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
@@ -181,8 +186,14 @@ const changeSize = function (objects, globalVariables, objectsPath, objectID, fr
     });
 }
 
-const getNode = function (objects, objectID, frameID, nodeID) {
+const getNode = function (objectID, frameID, nodeID) {
     return utilities.getNode(objects, objectID, frameID, nodeID);
+}
+
+const setup = function (objects_, globalVariables_, objectsPath_) {
+    objects = objects_;
+    globalVariables = globalVariables_;
+    objectsPath = objectsPath_;
 }
 
 module.exports = {
@@ -190,5 +201,6 @@ module.exports = {
     addNodeLock: addNodeLock,
     deleteNodeLock: deleteNodeLock,
     changeSize: changeSize,
-    getNode: getNode
+    getNode: getNode,
+    setup: setup
 };
