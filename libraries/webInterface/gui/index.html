@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="index.css?32">
     <link rel="stylesheet" type="text/css" href="../css/notifications.css">
     <script src="resources/dropzone.js"></script>
+    <script src="resources/d3-delaunay.min.js"></script>
 </head>
 <body>
 <div id='app' style="  margin: 0 auto;
@@ -252,8 +253,11 @@
             </div><div class='item space hidden'>
             </div><div class='name item button white twoAndHalf makeTextSelectAble'>Name
             </div><div class='item space'>
-            </div><div class='content item button green two fileinput-button clickAble'>Upload Target
-            </div>
+            </div><div class='content item button green one fileinput-button clickAble'>Upload Target
+            </div><div class='item space'>
+            </div><canvas class='imagegen-canvas' hidden>
+            </canvas><a class='content item button blue one imagegen-button clickAble' onclick='downloadGeneratedTarget(this)'>Generate
+            </a>
         </div>
         <div class="targetDropZone">
             <div class='button hidden two'>

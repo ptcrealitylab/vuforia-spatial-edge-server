@@ -2150,4 +2150,72 @@ function addZipDownload(button, frameName) {
     });
 }
 
+function voronoiTarget(canvas) {
+  const width = 128 * 16;
+  const height = 128 * 9;
+  const targetCellSize = 60;
+  const count = Math.floor(width * height / (targetCellSize * targetCellSize));
+  const topCount = Math.floor(count / 12);
+  const lineWidth = 8;
+  const topLineWidth = 16;
+  
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  const gfx = canvas.getContext('2d');
+  canvas.width = gfx.width = width;
+  canvas.height = gfx.height = height;
+  
+  const points = [];
+  const topPoints = [];
+
+  for (let i = 0; i < count; i++) {
+    points.push([
+      Math.random() * (width - lineWidth) + lineWidth / 2,
+      Math.random() * (height - lineWidth) + lineWidth / 2
+    ]);
+  }
+
+  for (let i = 0; i < topCount; i++) {
+    topPoints.push([
+      Math.random() * (width - topLineWidth) + topLineWidth / 2,
+      Math.random() * (height - topLineWidth) + topLineWidth / 2
+    ]);
+  }
+
+  const del = d3.Delaunay.from(points);
+  const topDel = d3.Delaunay.from(topPoints);
+  const vor = del.voronoi([0, 0, width, height]);
+  const topVor = topDel.voronoi([0, 0, width, height]);
+  
+  // Background fill
+  gfx.fillStyle = '#3A3A3A';
+  gfx.fillRect(0, 0, width, height);
+
+  // Background lines
+  gfx.strokeStyle = '#474747';
+  gfx.lineWidth = lineWidth;
+  gfx.beginPath();
+  vor.render(gfx);
+  gfx.stroke();
+  
+  // Top lines
+  gfx.strokeStyle = '#666666';
+  gfx.lineWidth = topLineWidth;
+  gfx.beginPath();
+  topVor.render(gfx);
+  gfx.stroke();
+  
+  // Marker border
+  gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
+  
+  return canvas.toDataURL('image/jpeg');
+}
+
+function downloadGeneratedTarget(clickedElem) {
+  const data = voronoiTarget(document.querySelector('.imagegen-canvas'));
+  clickedElem.href = data;
+  clickedElem.download = 'autogen-target.jpg';
+}
+
+
 realityServer.initialize();

@@ -90,6 +90,7 @@ body {
    border: 2px solid white;
    margin-top: 10px;
    display: inline-block;
+   text-decoration: none;
  }
 
 .expand {
