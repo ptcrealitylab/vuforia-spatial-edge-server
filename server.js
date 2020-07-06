@@ -2515,6 +2515,10 @@ function objectWebServer() {
                     if (req.headers.type === 'targetUpload') {
                         console.log('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
+                        
+                        if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
+                            fileExtension = 'jpg';
+                        }
 
                         if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml') {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
