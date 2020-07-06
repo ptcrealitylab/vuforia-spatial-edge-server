@@ -276,27 +276,6 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
 };
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
-var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
-
-    if (folderName === 'allTargetsPlaceholder') {
-        return 'allTargetsPlaceholder000000000000';
-    }
-
-    var jsonFile = objectsPath + '/' + folderName + '/object.json';
-
-    if (fs.existsSync(jsonFile)) {
-        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        if (thisObject.hasOwnProperty('objectId')) {
-            return thisObject.objectId;
-        } else {
-            return null;
-        }
-    } else {
-        return null;
-    }
-};
-exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
-
 /**
  *
  * @param folderName

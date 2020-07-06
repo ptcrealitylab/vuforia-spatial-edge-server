@@ -529,8 +529,6 @@ var realityEditorBlockSocketArray = {};     // all socket connections that are k
 var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
 var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
 
-var activeHeartbeats = {}; // Prevents multiple recurring beats for the same object
-
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
 var sockets = {
@@ -1021,11 +1019,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (typeof oneTimeOnly === 'undefined') {
         oneTimeOnly = false;
     }
-    
-    if (!oneTimeOnly && activeHeartbeats[thisId]) {
-      console.log('already created beat for object: ' + thisId);
-      return;
-    }
 
     var HOST = '255.255.255.255';
 
@@ -1068,7 +1061,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     });
 
     if (!oneTimeOnly) {
-        activeHeartbeats[thisId] = setInterval(function () {
+        setInterval(function () {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
@@ -4310,10 +4303,6 @@ function objectWebServer() {
 
                         // remove object from tree
                         if (objects[tempFolderName2]) {
-                            if (activeHeartbeats[tempFolderName2]) {
-                                clearInterval(activeHeartbeats[tempFolderName2]);
-                                delete activeHeartbeats[tempFolderName2];
-                            }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
                             delete objectLookup[req.body.name];
@@ -4450,10 +4439,6 @@ function objectWebServer() {
                     var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);//req.body.name + thisMacAddress;
                     // remove object from tree
                     if (tempFolderName2 !== null) {
-                        if (activeHeartbeats[tempFolderName2]) {
-                            clearInterval(activeHeartbeats[tempFolderName2]);
-                            delete activeHeartbeats[tempFolderName2];
-                        }
                         delete objects[tempFolderName2];
                         delete knownObjects[tempFolderName2];
                     }
@@ -4640,16 +4625,6 @@ function objectWebServer() {
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
                                     setAnchors();
-                                    
-                                    // Removes old heartbeat if it used to be an anchor
-                                    var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
-                                    if (oldObjectId && oldObjectId != thisObjectId) {
-                                      console.log('removed old heartbeat for', oldObjectId);
-                                      clearInterval(activeHeartbeats[oldObjectId]);
-                                      delete activeHeartbeats[oldObjectId];
-                                      delete objects[oldObjectId];
-                                    }
-                                    
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
                                     res.status(200).json(sendObject);
