@@ -3,6 +3,7 @@ const Block = require('../models/Block');
 
 // Variables populated from server.js with setup()
 var objects = {};
+var blockModules;
 var globalVariables;
 var engine;
 var objectsPath;
@@ -184,8 +185,35 @@ const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
     return {success: true, error: null};
 }
 
-const setup = function (objects_, globalVariables_, engine_, objectsPath_) {
+/**
+ * Utility function that traverses all the blockModules and creates a new entry for each.
+ * @return {Object.<string, Block>}
+ */
+const getLogicBlockList = function () {
+    var blockList = {};
+
+    // Create a objects list with all IO-Points code.
+    const blockFolderList = Object.keys(blockModules);
+    for (let i = 0; i < blockFolderList.length; i++) {
+
+        // make sure that each block contains all default property keys.
+        blockList[blockFolderList[i]] = new Block();
+
+        // overwrite the properties of that block with those stored in the matching blockModule
+        var thisBlock = blockModules[blockFolderList[i]].properties;
+        for (let key in thisBlock) {
+            blockList[blockFolderList[i]][key] = thisBlock[key];
+        }
+        // this makes sure that the type of the block is set.
+        blockList[blockFolderList[i]].type = blockFolderList[i];
+
+    }
+    return blockList;
+}
+
+const setup = function (objects_, blockModules_, globalVariables_, engine_, objectsPath_) {
     objects = objects_;
+    blockModules = blockModules_;
     globalVariables = globalVariables_;
     engine = engine_;
     objectsPath = objectsPath_;
@@ -197,5 +225,6 @@ module.exports = {
     postBlockPosition: postBlockPosition,
     triggerBlockSearch: triggerBlockSearch,
     triggerBlock: triggerBlock,
+    getLogicBlockList: getLogicBlockList,
     setup: setup
 };
