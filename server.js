@@ -1432,7 +1432,7 @@ function objectWebServer() {
                 urlArray[urlArray.length - 2] = identityFolderName + '/videos';
             } else {
                 try {
-                    res.sendFile(urlArray[urlArray.length - 1], {root: getVideoDir()});
+                    res.sendFile(urlArray[urlArray.length - 1], {root: utilities.getVideoDir(objectsPath, identityFolderName, isMobile)});
                 } catch (e) {
                     console.warn('error sending video file', e);
                 }
@@ -1659,95 +1659,22 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
         console.log('get available logic blocks');
-        res.json(getLogicBlockList());
+        res.json(blockController.getLogicBlockList());
     });
-
-    /**
-     * Utility function that traverses all the blockModules and creates a new entry for each.
-     * @return {Object.<string, Block>}
-     */
-    function getLogicBlockList() {
-
-        var blockList = {};
-
-        // Create a objects list with all IO-Points code.
-        const blockFolderList = Object.keys(blockModules);
-        for (let i = 0; i < blockFolderList.length; i++) {
-
-            // make sure that each block contains all default property keys.
-            blockList[blockFolderList[i]] = new Block();
-
-            // overwrite the properties of that block with those stored in the matching blockModule
-            var thisBlock = blockModules[blockFolderList[i]].properties;
-            for (let key in thisBlock) {
-                blockList[blockFolderList[i]][key] = thisBlock[key];
-            }
-            // this makes sure that the type of the block is set.
-            blockList[blockFolderList[i]].type = blockFolderList[i];
-
-        }
-        return blockList;
-    }
-
-    function forEachObject(callback) {
-        for (var objectKey in objects) {
-            if (!objects.hasOwnProperty(objectKey)) continue;
-            callback(objects[objectKey], objectKey);
-        }
-    }
-
-    function forEachFrameInObject(object, callback) {
-        for (var frameKey in object.frames) {
-            if (!object.frames.hasOwnProperty(frameKey)) continue;
-            callback(object.frames[frameKey], frameKey);
-        }
-    }
-
-    function forEachNodeInFrame(frame, callback) {
-        for (var nodeKey in frame.nodes) {
-            if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
-            callback(frame.nodes[nodeKey], nodeKey);
-        }
-    }
-
-    /**
-     * Helper function to return the absolute path to the directory that should contain all
-     * video files for the provided object name. (makes dir if necessary)
-     * @param objectName
-     * @return {string}
-     */
-    function getVideoDir(objectName) {
-        let videoDir = objectsPath; // on mobile, put videos directly in object home dir
-
-        // directory differs on mobile due to inability to call mkdir
-        if (!isMobile) {
-            videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
-
-            if (!fs.existsSync(videoDir)) {
-                console.log('make videoDir');
-                fs.mkdirSync(videoDir);
-            }
-        }
-
-        return videoDir;
-    }
 
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
-
         // // TODO: ask Valentin what this route was used for?
         // webServer.post('/object/*/size/*', function (req, res) {
         //     console.log("post 1");
         //     console.log(req.params);
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
-
     }
 
     /**
      * Send the programming interface static web content [This is the older form. Consider it deprecated.
      */
-
     // Version 1
     webServer.get('/obj/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
@@ -3939,9 +3866,9 @@ function checkObjectActivation(id) {
 setupControllers();
 
 function setupControllers() {
-    blockController.setup(objects, globalVariables, engine, objectsPath);
+    blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
     blockLinkController.setup(objects, globalVariables, objectsPath);
-    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, nodeTypeModules);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath);
