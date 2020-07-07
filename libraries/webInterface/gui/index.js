@@ -510,6 +510,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 if (thisObject.visualization === 'screen' && thisObject.active && thisObject.isExpanded) {
                     let thisFullScreen = document.getElementById('fullScreenId').content.cloneNode(true);
                     thisFullScreen.querySelector('.fullscreen').id = 'fullscreen' + objectKey;
+                    thisFullScreen.querySelector('#fullscreen' + objectKey).dataset.objectName = thisObject.name;
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
                     }
@@ -1092,6 +1093,7 @@ realityServer.gotClick = function (event) {
 
             let newNode = document.getElementById('targetId').content.cloneNode(true);
             newNode.querySelector('.dropZoneElement').id = 'targetDropZone' + objectKey;
+            newNode.querySelector('.imagegen-button').dataset.objectName = thisObject.name;
 
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
@@ -1923,7 +1925,6 @@ realityServer.setActive = function (item) {
 
 
 realityServer.toggleFullScreen = function (item) {
-
     let thisIframe = document.getElementById('fullscreenIframe');
 
     if (!thisIframe) {
@@ -1935,13 +1936,24 @@ realityServer.toggleFullScreen = function (item) {
         document.body.appendChild(thisIframe);
     }
 
-    let screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
-    thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + screenPort;
-
     let thisScreen = thisIframe;
     // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
+        thisIframe.src = "about:blank"; // Clear iframe before loading
+        const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
+        const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
+        fetch(targetUrl).then((response) => {
+            if (response.ok) {
+                thisIframe.contentDocument.write(iframeContents);
+                thisIframe.contentDocument.close();  
+            } else {
+                setGeneratedTarget(item, () => {
+                    thisIframe.contentDocument.write(iframeContents);
+                    thisIframe.contentDocument.close();    
+                });
+            }
+        });
         if (thisScreen.mozRequestFullScreen) {
             thisScreen.mozRequestFullScreen();
         } else {
@@ -2150,7 +2162,7 @@ function addZipDownload(button, frameName) {
     });
 }
 
-function voronoiTarget(canvas) {
+function voronoiTarget(canvas, callback) {
   const width = 128 * 16;
   const height = 128 * 9;
   const targetCellSize = 60;
@@ -2208,14 +2220,32 @@ function voronoiTarget(canvas) {
   // Marker border
   gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
   
-  return canvas.toDataURL('image/jpeg');
+  canvas.toBlob(callback, 'image/jpeg');
 }
 
-function downloadGeneratedTarget(clickedElem) {
-  const data = voronoiTarget(document.querySelector('.imagegen-canvas'));
-  clickedElem.href = data;
-  clickedElem.download = 'autogen-target.jpg';
+function setGeneratedTarget(clickedElem, callback) {
+    const objectName = clickedElem.dataset.objectName;
+    voronoiTarget(document.querySelector('.imagegen-canvas'), (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob, 'autogen-target.jpg');
+        fetch(`/content/${objectName}`, {
+            body: formData,
+            headers: {
+                "type": "targetUpload"
+            },
+            method: "post"
+        }).then((response) => {
+            callback();
+        });
+    });
 }
+
+// Useful if you want to generate a target image and download it to the user's computer
+// function downloadGeneratedTarget(clickedElem) {
+//   const data = voronoiTarget(document.querySelector('.imagegen-canvas'));
+//   clickedElem.href = data;
+//   clickedElem.download = 'autogen-target.jpg';
+// }
 
 
 realityServer.initialize();
