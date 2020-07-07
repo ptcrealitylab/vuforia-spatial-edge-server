@@ -138,7 +138,7 @@ const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjec
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 let objectsPath = spatialToolboxPath;
 
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android') {
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
     objectsPath = path.join(__dirname, 'spatialToolbox');
 }
 
@@ -1266,6 +1266,7 @@ function objectWebServer() {
                 checkThisNetwork = true;
             }
 
+         checkThisNetwork = true;
         if (services.ips.activeInterface in services.ips.interfaces) {
             if (checkThisNetwork) {
                 next();

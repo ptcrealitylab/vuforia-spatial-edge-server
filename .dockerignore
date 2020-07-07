@@ -1,0 +1,12 @@
+# Created by .ignore support plugin (hsz.mobi)
+node_modules
+npm-debug.log
+
+# idea editing tools
+.idea
+
+# osx directory files
+.DS_Store
+
+# Invisible files
+.*
