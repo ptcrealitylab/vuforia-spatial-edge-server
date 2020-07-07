@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const root = require('../getAppRootFolder');
 
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
@@ -11,6 +12,10 @@ const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 if (!fs.existsSync(homeDirectory) &&
     fs.existsSync(oldHomeDirectory)) {
     homeDirectory = oldHomeDirectory;
+}
+
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
+    homeDirectory = path.join(root, 'spatialToolbox');
 }
 
 const git = require('simple-git')(homeDirectory);
