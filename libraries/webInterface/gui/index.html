@@ -32,6 +32,7 @@
             </div>
         </div>
     </div>
+    <canvas class='imagegen-canvas' hidden></canvas>
     
 </div>
 
@@ -255,8 +256,7 @@
             </div><div class='item space'>
             </div><div class='content item button green one fileinput-button clickAble'>Upload Target
             </div><div class='item space'>
-            </div><canvas class='imagegen-canvas' hidden>
-            </canvas><a class='content item button blue one imagegen-button clickAble' onclick='downloadGeneratedTarget(this)'>Generate
+            </div><a class='content item button blue one imagegen-button clickAble' onclick='setGeneratedTarget(this, window.location.reload.bind(window.location))'>Generate
             </a>
         </div>
         <div class="targetDropZone">
