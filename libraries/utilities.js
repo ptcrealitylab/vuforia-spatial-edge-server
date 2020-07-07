@@ -74,6 +74,12 @@ if (!fs.existsSync(homedir) &&
     homedir = oldHomeDirectory;
 }
 
+const root = require('../getAppRootFolder');
+
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
+    homedir = path.join(root, 'spatialToolbox');
+}
+
 var hardwareIdentity = homedir + '/.identity';
 
 exports.writeObject = function (objectLookup, folder, id) {
