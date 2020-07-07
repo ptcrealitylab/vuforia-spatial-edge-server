@@ -119,7 +119,7 @@ const socketUpdateInterval = 2000; // how often the system checks if the socket 
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
-const version = '3.2.0';
+const version = '3.2.2';
 // The protocol of this server
 const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
@@ -169,7 +169,15 @@ const objectInterfaceFolder = '/';
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
 const storage = require('./libraries/storage');
-storage.initSync();
+let dir = path.join(require('os').homedir(), 'vst-edge-server');
+//fs.mkdirSync('/Users/Anna/my-test-dir');
+console.log('**** DIR: ', dir);
+
+try {
+    storage.initSync({dir: dir});
+} catch (e) {
+    console.log('Something went wrong with initSync');
+}
 
 var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
@@ -1078,7 +1086,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                const message = new Buffer(JSON.stringify({
+                const message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1114,7 +1122,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                var message = new Buffer(JSON.stringify({
+                var message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
