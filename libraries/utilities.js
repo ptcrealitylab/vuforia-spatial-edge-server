@@ -74,6 +74,12 @@ if (!fs.existsSync(homedir) &&
     homedir = oldHomeDirectory;
 }
 
+const root = require('../getAppRootFolder');
+
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
+    homedir = path.join(root, 'spatialToolbox');
+}
+
 var hardwareIdentity = homedir + '/.identity';
 
 exports.writeObject = function (objectLookup, folder, id) {
@@ -662,7 +668,7 @@ exports.actionSender = function (action, timeToLive, beatport) {
     var HOST = '255.255.255.255';
     var message;
 
-    message = new Buffer(JSON.stringify({action: action}));
+    message = Buffer.from(JSON.stringify({action: action}));
 
     // creating the datagram
     var client = dgram.createSocket('udp4');
