@@ -583,7 +583,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
 
 console.log('Done');
 
@@ -812,7 +812,7 @@ function loadAnchor(anchorName) {
     // create the file for it if necessary
     var folder = path.join(objectsPath, anchorName);
     var identityPath = path.join(folder, '.identity');
-    var jsonFilePath = path.join(folder, 'object.json');
+    var jsonFilePath = path.join(identityPath, 'object.json');
     let anchorUuid = anchorName + utilities.uuidTime();
 
     // create objects folder at objectsPath if necessary
@@ -859,20 +859,20 @@ function loadAnchor(anchorName) {
     ];
     objects[anchorUuid].tcs = 0;
 
-    objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
-    hardwareAPI.reset();
-
     if (globalVariables.saveToDisk) {
-
-        fs.writeFile(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4), function (err) {
+        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4), function (err) {
             if (err) {
                 console.log('anchor object save error', err);
             } else {
-                //console.log('JSON saved to ' + jsonFilePath);
+                // console.log('JSON saved to ' + jsonFilePath);
+                objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+                hardwareAPI.reset();
             }
         });
     } else {
         console.log('I am not allowed to save');
+        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        hardwareAPI.reset();
     }
 }
 
