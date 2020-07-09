@@ -47,7 +47,7 @@ const addLogicLink = function (objectID, frameID, nodeID, linkID, body) {
         }
     }
     return updateStatus;
-}
+};
 
 const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor) {
     var updateStatus = 'nothing happened';
@@ -66,13 +66,13 @@ const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor)
         updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;
     }
     return updateStatus;
-}
+};
 
 const setup = function (objects_, globalVariables_, objectsPath_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
-}
+};
 
 module.exports = {
     addLogicLink: addLogicLink,

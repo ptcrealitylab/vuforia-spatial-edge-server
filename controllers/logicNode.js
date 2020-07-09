@@ -53,7 +53,7 @@ const addLogicNode = function (objectID, frameID, nodeID, body) {
         updateStatus = 'added';
     }
     return updateStatus;
-}
+};
 
 /**
  * Deletes the specified Logic Node.
@@ -92,7 +92,7 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
         updateStatus = 'deleted: ' + nodeID + ' in frame: ' + frameID + ' of object: ' + objectID;
     }
     return updateStatus;
-}
+};
 
 /**
  * Updates the position and size of a specified node.
@@ -134,7 +134,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
                 lastEditor: body.lastEditor
             });
         }
-        
+
         callback(200, updateStatus);
     });
 }
@@ -246,7 +246,7 @@ const setup = function(objects_, globalVariables_, objectsPath_, identityFolderN
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     Jimp = Jimp_;
-}
+};
 
 module.exports = {
     addLogicNode: addLogicNode,

@@ -72,7 +72,7 @@ const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
         updateStatus = 'added';
     }
     return updateStatus;
-}
+};
 
 /**
  * Deletes a block with the provided blockID from the specified node.
@@ -111,7 +111,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
         updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
     }
     return updateStatus;
-}
+};
 
 /**
  * Sets a new grid position for the specified block
@@ -148,7 +148,7 @@ const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
         }
     }
     return updateStatus;
-}
+};
 
 const triggerBlockSearch = function (blockID, body, callback) {
     var foundBlock = false;
@@ -169,7 +169,7 @@ const triggerBlockSearch = function (blockID, body, callback) {
     if (!foundBlock) {
         callback(404, {success: false, error: 'no block with ID ' + blockID + ' exists'});
     }
-}
+};
 
 const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
     console.log('triggerBlock', objectID, frameID, nodeID, blockID, body);
@@ -183,7 +183,7 @@ const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
         engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
     }
     return {success: true, error: null};
-}
+};
 
 /**
  * Utility function that traverses all the blockModules and creates a new entry for each.
@@ -209,7 +209,7 @@ const getLogicBlockList = function () {
 
     }
     return blockList;
-}
+};
 
 const setup = function (objects_, blockModules_, globalVariables_, engine_, objectsPath_) {
     objects = objects_;
@@ -217,7 +217,7 @@ const setup = function (objects_, blockModules_, globalVariables_, engine_, obje
     globalVariables = globalVariables_;
     engine = engine_;
     objectsPath = objectsPath_;
-}
+};
 
 module.exports = {
     addNewBlock: addNewBlock,

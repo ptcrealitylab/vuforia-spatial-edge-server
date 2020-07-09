@@ -104,7 +104,7 @@ const newLink = function (objectID, frameID, linkID, body) {
         }
     }
     return updateStatus;
-}
+};
 
 /**
  * Deletes a regular link from the frame it begins from.
@@ -156,7 +156,7 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
         updateStatus = 'deleted: ' + linkKey + ' in object: ' + objectKey + ' frame: ' + frameKey;
     }
     return updateStatus;
-}
+};
 
 /**
  * Sets a lock password on the specified link.
@@ -199,7 +199,7 @@ const addLinkLock = function (objectKey, frameKey, linkKey, body) {
         }
     }
     return updateStatus;
-}
+};
 
 /**
  * Removes the lock on the specified link if using the correct password.
@@ -228,7 +228,7 @@ const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
         }
     }
     return updateStatus;
-}
+};
 
 const setup = function(objects_, knownObjects_, socketArray_, globalVariables_, hardwareAPI_, objectsPath_, socketUpdater_) {
     objects = objects_;
@@ -238,7 +238,7 @@ const setup = function(objects_, knownObjects_, socketArray_, globalVariables_, 
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
     socketUpdater = socketUpdater_;
-}
+};
 
 module.exports = {
     newLink: newLink,

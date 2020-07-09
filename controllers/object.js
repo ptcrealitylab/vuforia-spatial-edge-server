@@ -60,7 +60,7 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     } catch (e) {
         console.warn('error parsing video upload', e);
     }
-}
+};
 
 const saveCommit = function(objectID, callback) {
     if (globalVariables.isMobile) {
@@ -73,7 +73,7 @@ const saveCommit = function(objectID, callback) {
             callback(200, {success: true});
         });
     }
-}
+};
 
 const resetToLastCommit = function(objectID, callback) {
     if (globalVariables.isMobile) {
@@ -87,7 +87,7 @@ const resetToLastCommit = function(objectID, callback) {
             hardwareAPI.runResetCallbacks(objectID);
         });
     }
-}
+};
 
 const setMatrix = function(objectID, body, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -102,7 +102,7 @@ const setMatrix = function(objectID, body, callback) {
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
     callback(200, {success: true});
-}
+};
 
 /**
  * Upload an image file to the object's metadata folder.
@@ -162,7 +162,7 @@ const memoryUpload = function(objectID, req, callback) {
 
         callback(200, {success: true});
     });
-}
+};
 
 const deactivate = function(objectID, callback) {
     try {
@@ -172,7 +172,7 @@ const deactivate = function(objectID, callback) {
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
     }
-}
+};
 
 const activate = function(objectID, callback) {
     try {
@@ -182,14 +182,14 @@ const activate = function(objectID, callback) {
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
     }
-}
+};
 
 const setVisualization = function(objectID, vis, callback) {
     utilities.getObject(objects, objectID).visualization = vis;
     console.log(vis, objectID);
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
     callback(200, 'ok');
-}
+};
 
 // request a zip-file with the object stored inside
 // ****************************************************************************************************************
@@ -214,7 +214,7 @@ const zipBackup = function(objectId, req, res) {
     zip.pipe(res);
     zip.directory(objectsPath + '/' + objectId, objectId + '/');
     zip.finalize();
-}
+};
 
 const generateXml = function(objectID, body, callback) {
     var msgObject = body;
@@ -259,7 +259,7 @@ const generateXml = function(objectID, body, callback) {
             }
         }
     });
-}
+};
 
 /**
  * Enable sharing of Spatial Tools from this server to objects on other servers
@@ -271,11 +271,11 @@ const generateXml = function(objectID, body, callback) {
 const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     callback(true);
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
-}
+};
 
 const getObject = function (objectID) {
     return utilities.getObject(objects, objectID);
-}
+};
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_) {
     objects = objects_;
@@ -284,7 +284,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     git = git_;
-}
+};
 
 module.exports = {
     uploadVideo: uploadVideo,
