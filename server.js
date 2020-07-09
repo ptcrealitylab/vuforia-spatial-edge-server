@@ -1821,7 +1821,11 @@ function objectWebServer() {
         // restart the server from the web frontend to load
 
         webServer.get('/restartServer/', function () {
-            exit();
+            if (process.send) {
+                process.send('restart');
+            } else {
+                exit();
+            }
         });
 
         webServer.get('/server/networkInterface/*/', function (req, res) {
