@@ -36,7 +36,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     } else {
         callback(200, {success: 'true'});
     }
-}
+};
 
 /**
  * Sets a lock password on the specified node.
@@ -75,7 +75,7 @@ const addNodeLock = function (objectKey, frameKey, nodeKey, body) {
         }
     }
     return updateStatus;
-}
+};
 
 /**
  * Removes the lock on the specified node if using the correct password.
@@ -104,7 +104,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
     }
 
     return updateStatus;
-}
+};
 
 /**
  * Updates the x, y, scale, and/or matrix for the specified frame or node
@@ -184,17 +184,17 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
         callback(200, updateStatus);
     });
-}
+};
 
 const getNode = function (objectID, frameID, nodeID) {
     return utilities.getNode(objects, objectID, frameID, nodeID);
-}
+};
 
 const setup = function (objects_, globalVariables_, objectsPath_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
-}
+};
 
 module.exports = {
     addNodeToFrame: addNodeToFrame,

@@ -42,7 +42,7 @@ router.post('/*/*/nodeSize/', function (req, res) {
 
 const setup = function(globalVariables_) {
     globalVariables = globalVariables_;
-}
+};
 
 module.exports = {
     router: router,

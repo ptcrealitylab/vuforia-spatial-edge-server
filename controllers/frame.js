@@ -75,7 +75,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         callback(200, {success: true, frameId: frameKey});
     });
-}
+};
 
 const deletePublicData = function(objectID, frameID, callback) {
     // locate the containing frame in a safe way
@@ -95,7 +95,7 @@ const deletePublicData = function(objectID, frameID, callback) {
 
         callback(200, {success: true});
     });
-}
+};
 
 const addPublicData = function(objectID, frameID, body, callback) {
     var publicData = body.publicData;
@@ -126,7 +126,7 @@ const addPublicData = function(objectID, frameID, body, callback) {
 
         callback(200, {success: true});
     });
-}
+};
 
 const copyFrame = function(objectID, frameID, body, callback) {
     console.log('making a copy of frame', frameID);
@@ -204,7 +204,7 @@ const copyFrame = function(objectID, frameID, body, callback) {
 
         callback(200, {success: true, frameId: newFrameKey, frame: newFrame});
     });
-}
+};
 
 const updateFrame = function(objectID, frameID, body, callback) {
     utilities.getObjectAsync(objects, objectID, function (error, object) {
@@ -238,7 +238,7 @@ const updateFrame = function(objectID, frameID, body, callback) {
 
         callback(200, {success: true});
     });
-}
+};
 
 const deleteFrame = function(objectId, frameId, body, callback) {
     console.log('delete frame from server', objectId, frameId);
@@ -327,7 +327,7 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     utilities.actionSender({reloadObject: {object: objectId}, lastEditor: body.lastEditor});
 
     callback(200, {success: true});
-}
+};
 
 const setGroup = function(objectID, frameID, body, callback) {
     var frame = utilities.getFrame(objects, objectID, frameID);
@@ -346,7 +346,7 @@ const setGroup = function(objectID, frameID, body, callback) {
     }
 
     callback(404, {success: false, error: 'Couldn\'t find frame ' + frameID + ' to set groupID'});
-}
+};
 
 /**
  * Updates the x, y, scale, and/or matrix for the specified frame or node
@@ -426,7 +426,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
         callback(200, updateStatus);
     });
-}
+};
 
 /**
  * Sets the visualization to
@@ -437,7 +437,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
  */
 const changeVisualization = function(objectKey, frameKey, body, callback) {
     console.log('change visualization');
-    
+
     var newVisualization = body.visualization;
     var oldVisualizationPositionData = body.oldVisualizationPositionData;
 
@@ -457,7 +457,7 @@ const changeVisualization = function(objectKey, frameKey, body, callback) {
     } else {
         callback(404, {failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey});
     }
-}
+};
 
 const resetPositioning = function(objectID, frameID, callback) {
     var frame = utilities.getFrame(objects, objectID, frameID);
@@ -476,11 +476,11 @@ const resetPositioning = function(objectID, frameID, callback) {
     };
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
     callback(200, 'ok');
-}
+};
 
 const getFrame = function(objectID, frameID) {
     return utilities.getFrame(objects, objectID, frameID);
-}
+};
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, identityFolderName_, nodeTypeModules_) {
     objects = objects_;
@@ -490,7 +490,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, obje
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     nodeTypeModules = nodeTypeModules_;
-}
+};
 
 module.exports = {
     addFrameToObject: addFrameToObject,

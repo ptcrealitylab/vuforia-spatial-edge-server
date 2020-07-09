@@ -265,7 +265,7 @@ const setupDeveloperRoutes = function() {
             error: 'Object: ' + req.params[0] + ', frame: ' + req.params[1] + ' not found'
         }).end();
     });
-    
+
     // objects
     router.get('/*/deactivate/', function (req, res) {
         objectController.deactivate(req.params[0], function (statusCode, responseContents) {
@@ -324,7 +324,7 @@ const setupDeveloperRoutes = function() {
     router.get('/:objectID/', function (req, res) {
         res.json(objectController.getObject(req.params.objectID)).end();
     });
-}
+};
 
 const setup = function(globalVariables_) {
     globalVariables = globalVariables_;
@@ -332,7 +332,7 @@ const setup = function(globalVariables_) {
     if (globalVariables.developer === true) {
         setupDeveloperRoutes();
     }
-}
+};
 
 module.exports = {
     router: router,
