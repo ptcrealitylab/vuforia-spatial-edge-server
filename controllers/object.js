@@ -12,7 +12,7 @@ var objectsPath;
 var identityFolderName;
 var git;
 
-const uploadVideo = function(objectID, videoID, callback) {
+const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'Object ' + objectID + ' not found');
@@ -45,7 +45,7 @@ const uploadVideo = function(objectID, videoID, callback) {
             console.log('fileBegin loading', name, file);
         });
 
-        form.parse(req, function (err, fields) {
+        form.parse(reqForForm, function (err, fields) {
 
             if (err) {
                 console.log('error parsing', err);
@@ -198,7 +198,6 @@ const zipBackup = function(objectId, req, res) {
         res.status(500).send('zipBackup unavailable on mobile');
         return;
     }
-    var objectId = objectId;
     console.log('sending zipBackup', objectId);
 
     if (!fs.existsSync(path.join(objectsPath, objectId))) {
@@ -269,7 +268,7 @@ const generateXml = function(objectID, body, callback) {
  * @param {boolean} shouldBeEnabled
  * @param {successCallback} callback - success, error message
  */
-const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
+const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     callback(true);
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 }

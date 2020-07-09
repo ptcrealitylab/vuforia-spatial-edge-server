@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const utilities = require('../libraries/utilities');
 const Frame = require('../models/Frame');
 const Node = require('../models/Node');

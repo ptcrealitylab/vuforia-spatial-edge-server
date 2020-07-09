@@ -135,7 +135,7 @@ router.delete('/*/nodeLock/*/password/*/', function (req, res) {
  * @todo compress video
  */
 router.post('/:objectID/video/:videoId', function (req, res) {
-    objectController.uploadVideo(req.params.objectID, req.params.videoID, function (statusCode, responseContents) {
+    objectController.uploadVideo(req.params.objectID, req.params.videoID, req, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
