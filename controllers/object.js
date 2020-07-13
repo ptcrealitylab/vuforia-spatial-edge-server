@@ -1,4 +1,4 @@
-const archiver = require('archiver');
+
 const fs = require('fs');
 const path = require('path');
 const formidable = require('formidable');
@@ -210,6 +210,8 @@ const zipBackup = function(objectId, req, res) {
         'Content-disposition': 'attachment; filename=' + objectId + '.zip'
     });
 
+    // this require needs to be placed here for mobile compatibility
+    var archiver = require('archiver');
     var zip = archiver('zip');
     zip.pipe(res);
     zip.directory(objectsPath + '/' + objectId, objectId + '/');
