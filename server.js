@@ -231,6 +231,7 @@ services.getIP = function () {
 
     // if it is still empty give it a default
     if (this.ips.activeInterface === null) {
+        console.warn('No active interface found, defaulting to "en0"');
         this.ips.activeInterface = 'en0';
         // make sure all objects got the memo
         this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
@@ -238,8 +239,13 @@ services.getIP = function () {
 
     // if activeInterface is not available, get the first available one and refresh all objects
     if (!(this.ips.activeInterface in this.ips.interfaces)) {
+        console.warn(`Current activeInterface "${this.ips.activeInterface}" not found`);
         this.ips.tempActiveInterface = this.ips.activeInterface;
         for (var tempKey in this.ips.interfaces) {
+            if (!this.ips.interfaces[tempKey]) {
+                continue;
+            }
+            console.warn(`Selecting "${tempKey}" from`, this.ips.interfaces);
             this.ips.activeInterface = tempKey;
             // make sure all objects got the memo
             this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
@@ -250,6 +256,7 @@ services.getIP = function () {
     // check if active interface is back
     if (this.ips.tempActiveInterface) {
         if (this.ips.tempActiveInterface in this.ips.interfaces) {
+            console.warn(`Activating temp interface "${this.ips.tempActiveInterface}"`);
             this.ips.activeInterface = this.ips.tempActiveInterface;
             this.ips.tempActiveInterface = null;
         }
