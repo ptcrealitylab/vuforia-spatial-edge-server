@@ -173,8 +173,8 @@ const copyFrame = function(objectID, frameID, body, callback) {
         newFrame.nodes = {}; // adjust node keys, etc, for copy
         for (var oldNodeKey in frame.nodes) {
             if (!frame.nodes.hasOwnProperty(oldNodeKey)) continue;
-            var newNode = new Node();
             var oldNode = frame.nodes[oldNodeKey];
+            var newNode = utilities.createNode(oldNode.name, oldNode.type);
             for (var propertyKey in oldNode) {
                 if (!oldNode.hasOwnProperty(propertyKey)) continue;
                 newNode[propertyKey] = oldNode[propertyKey];

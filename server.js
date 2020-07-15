@@ -572,7 +572,6 @@ var worldObject;
 
 
 console.log('Starting the Server');
-
 console.log('Initialize System: ');
 console.log('Loading Hardware interfaces');
 
@@ -602,6 +601,8 @@ var hardwareAPICallbacks = {
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
+
+utilities.setupNodeTypes(nodeTypeModules);
 
 console.log('Done');
 
@@ -3357,15 +3358,11 @@ function socketServer() {
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
                 console.log('creating node ' + nodeKey);
-                var newNode = new Node();
+                var newNode = utilities.createNode(nodeData.name, nodeData.type);
                 frame.nodes[nodeKey] = newNode;
                 newNode.objectId = objectKey;
                 newNode.frameId = frameKey;
-                newNode.name = nodeData.name;
 
-                if (typeof nodeData.type !== 'undefined') {
-                    newNode.type = nodeData.type;
-                }
                 if (typeof nodeData.x !== 'undefined') {
                     newNode.x = nodeData.x;
                 } else {
