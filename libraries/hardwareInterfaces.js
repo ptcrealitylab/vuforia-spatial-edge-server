@@ -488,7 +488,7 @@ exports.addNode = function (object, tool, node, type, position) {
             var thisObject;
 
             if (!objects[objectID].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-                objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
+                objects[objectID].frames[frameUuid].nodes[nodeUuid] = utilities.createNode(node, type);
                 thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
@@ -503,11 +503,9 @@ exports.addNode = function (object, tool, node, type, position) {
             }
 
             thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            thisObject.name = node;
             thisObject.frameId = frameUuid;
             thisObject.objectId = objectID;
             thisObject.text = undefined;
-            thisObject.type = type;
 
             console.log('added node', {
                 node: node,
