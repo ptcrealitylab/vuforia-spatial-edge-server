@@ -522,11 +522,16 @@ function Protocols() {
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
-const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 
+const availableModules = require('./libraries/availableModules');
+
+const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 const nodeTypeModules = nodeFolderLoader.loadModules();   // Will hold all available data point interfaces
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
+
+availableModules.setNodes(nodeTypeModules);
+availableModules.setBlocks(blockModules);
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
@@ -602,8 +607,6 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
 
-utilities.setupNodeTypes(nodeTypeModules);
-
 console.log('Done');
 
 console.log('Loading Objects');
@@ -622,6 +625,7 @@ console.log('started');
 if (!isMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
+    availableModules.setHardwareInterfaces(hardwareInterfaceModules);
 }
 
 console.log('ready to start internal servers');
@@ -3358,7 +3362,7 @@ function socketServer() {
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
                 console.log('creating node ' + nodeKey);
-                var newNode = utilities.createNode(nodeData.name, nodeData.type);
+                var newNode = new Node(nodeData.name, nodeData.type);
                 frame.nodes[nodeKey] = newNode;
                 newNode.objectId = objectKey;
                 newNode.frameId = frameKey;
