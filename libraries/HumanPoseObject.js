@@ -1,5 +1,6 @@
 const Frame = require('../models/Frame.js');
 const Node = require('../models/Node.js');
+const utilities = require('./utilities');
 
 /**
  * A functional "subclass" of Objects, which automatically generates frames for each pose joint
@@ -144,10 +145,9 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = new Node();
+        var newNode = utilities.createNode('value', 'node');
         newNode.objectId = this.objectId;
         newNode.frameId = newFrame.uuid;
-        newNode.name = 'value';
         newNode.uuid = newFrame.uuid + newNode.name;
         newFrame.nodes[newNode.uuid] = newNode;
         newNode.scale = 0.2; // nodes currently have a problem of being rendered too large by default, so decrease scale

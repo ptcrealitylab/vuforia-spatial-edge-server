@@ -21,7 +21,23 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     if (foundObject) {
         var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
-            foundFrame.nodes[nodeKey] = body;
+            let node = utilities.createNode(body.name, body.type);
+
+            // copy over any additionally-defined properties (node position)
+            if (typeof body.x !== 'undefined') {
+                node.x = body.x;
+            }
+            if (typeof body.y !== 'undefined') {
+                node.y = body.y;
+            }
+            if (typeof body.scale !== 'undefined') {
+                node.scale = body.scale;
+            }
+            if (typeof body.matrix !== 'undefined') {
+                node.matrix = body.matrix;
+            }
+
+            foundFrame.nodes[nodeKey] = node;
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
         } else {
