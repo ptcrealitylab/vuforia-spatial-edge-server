@@ -527,10 +527,10 @@ const availableModules = require('./libraries/availableModules');
 
 const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 const nodeTypeModules = nodeFolderLoader.loadModules();   // Will hold all available data point interfaces
+availableModules.setNodes(nodeTypeModules);
+
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
-
-availableModules.setNodes(nodeTypeModules);
 availableModules.setBlocks(blockModules);
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
