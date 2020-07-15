@@ -1,6 +1,5 @@
 const Frame = require('../models/Frame.js');
 const Node = require('../models/Node.js');
-const utilities = require('./utilities');
 
 /**
  * A functional "subclass" of Objects, which automatically generates frames for each pose joint
@@ -145,7 +144,7 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = utilities.createNode('value', 'node');
+        var newNode = new Node('value', 'node');
         newNode.objectId = this.objectId;
         newNode.frameId = newFrame.uuid;
         newNode.uuid = newFrame.uuid + newNode.name;
