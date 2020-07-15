@@ -61,10 +61,7 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
 
-const Node = require('../models/Node.js');
-
 var hardwareInterfaces = {};
-var nodeTypes = {};
 
 var identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir = path.join(os.homedir(), 'Documents', 'spatialToolbox');
@@ -878,22 +875,3 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
     return videoDir;
 }
 exports.getVideoDir = getVideoDir;
-
-exports.setupNodeTypes = function(nodeTypeModules) {
-    nodeTypes = nodeTypeModules;
-};
-
-const createNode = function(name, type) {
-    if (typeof nodeTypes[type] === 'undefined') {
-        console.warn('Trying to create an unsupported node type (' + type + ')');
-        return;
-    }
-    let nodeTemplate = nodeTypes[type];
-    let node = new Node();
-    node.name = name;
-    node.type = type;
-    node.privateData = nodeTemplate.properties.privateData;
-    node.publicData = nodeTemplate.properties.publicData;
-    return node;
-};
-exports.createNode = createNode;

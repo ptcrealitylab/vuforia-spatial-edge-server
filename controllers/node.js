@@ -1,4 +1,5 @@
 const utilities = require('../libraries/utilities');
+const Node = require('../models/Node');
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -21,7 +22,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     if (foundObject) {
         var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
-            let node = utilities.createNode(body.name, body.type);
+            let node = new Node(body.name, body.type);
 
             // copy over any additionally-defined properties (node position)
             if (typeof body.x !== 'undefined') {
