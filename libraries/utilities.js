@@ -61,6 +61,7 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
 
+const Node = require('../models/Node.js');
 
 var hardwareInterfaces = {};
 
@@ -876,3 +877,19 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
     return videoDir;
 }
 exports.getVideoDir = getVideoDir;
+
+const createNode = function(name, type, nodeTypeModules) {
+    if (typeof nodeTypeModules[type] === 'undefined') {
+        console.warn('Trying to create an unsupported node type (' + type + ')');
+        return;
+    }
+    let nodeTemplate = nodeTypeModules[type];
+    let node = new Node();
+    node.name = name;
+    node.type = type;
+    node.privateData = nodeTemplate.properties.privateData;
+    node.publicData = nodeTemplate.properties.publicData;
+    console.log('successfully created node of type ' + type);
+    return node;
+};
+exports.createNode = createNode;
