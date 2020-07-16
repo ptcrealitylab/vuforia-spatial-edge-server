@@ -2323,6 +2323,9 @@ function objectWebServer() {
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
+                            
+                            // deconstruct the nodes on this frame, if needed
+                            
                             delete thisObject.frames[frameNameKey];
                         }
                     }
