@@ -598,6 +598,8 @@ exports.removeNode = function (object, tool, node) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeID);
+                    let thisNode = objects[objectID].frames[frameID].nodes[nodeID];
+                    thisNode.deconstruct();
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }

@@ -43,7 +43,24 @@ function Node(name, type) {
         let nodeTemplate = nodeTypes[type];
         this.privateData = nodeTemplate.properties.privateData || {};
         this.publicData = nodeTemplate.properties.publicData || {};
+
+        // trigger the node module's setup function
+        if (typeof nodeTemplate.setup === 'function') {
+            nodeTemplate.setup(this);
+        }
     }
-}
+};
+
+Node.prototype.deconstruct = function() {
+    let nodeTypes = availableModules.getNodes();
+    if (typeof nodeTypes[this.type] === 'undefined') {
+        console.warn('Trying to deconstruct an unsupported node type (' + this.type + ')');
+    } else {
+        let nodeTemplate = nodeTypes[this.type];
+        if (typeof nodeTemplate.onRemove === 'function') {
+            nodeTemplate.onRemove(this);
+        }
+    }
+};
 
 module.exports = Node;
