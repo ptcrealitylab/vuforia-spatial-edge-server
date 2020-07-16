@@ -134,7 +134,7 @@ router.delete('/*/nodeLock/*/password/*/', function (req, res) {
  * The video is stored in a form, which can be parsed and written to the filesystem.
  * @todo compress video
  */
-router.post('/:objectID/video/:videoId', function (req, res) {
+router.post('/:objectID/video/:videoID', function (req, res) {
     objectController.uploadVideo(req.params.objectID, req.params.videoID, req, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
