@@ -58,4 +58,20 @@ function Frame() {
     this.groupID = null;
 }
 
+// Gives all this frame's nodes the chance to deconstruct when the frame is deconstructed
+Frame.prototype.deconstruct = function() {
+    console.log('Deconstructing frame (' + this.name + ')');
+    for (let nodeKey in this.nodes) {
+        if (typeof this.nodes[nodeKey].deconstruct === 'function') {
+            this.nodes[nodeKey].deconstruct();
+        } else {
+            console.warn('Node exists without proper prototype: ' + nodeKey);
+        }
+    }
+};
+
+Frame.prototype.foo = function() {
+    console.log('foo foo frame');
+};
+
 module.exports = Frame;

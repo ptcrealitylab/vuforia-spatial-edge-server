@@ -53,4 +53,16 @@ function ObjectModel(ip, version, protocol) {
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
+// Gives all this object's frames the chance to deconstruct when the object is deconstructed
+ObjectModel.prototype.deconstruct = function() {
+    console.log('Deconstructing object (' + this.name + ')');
+    for (let frameKey in this.frames) {
+        if (typeof this.frames[frameKey].deconstruct === 'function') {
+            this.frames[frameKey].deconstruct();
+        } else {
+            console.warn('Frame exists without proper prototype: ' + frameKey);
+        }
+    }
+};
+
 module.exports = ObjectModel;

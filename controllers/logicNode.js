@@ -68,6 +68,11 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
     if (foundFrame) {
+        try {
+            foundFrame.nodes[nodeID].deconstruct();
+        } catch (e) {
+            console.warn('(Logic) Node exists without proper prototype: ' + nodeID);
+        }
         delete foundFrame.nodes[nodeID];
         console.log('deleted node: ' + nodeID);
 

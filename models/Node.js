@@ -43,8 +43,17 @@ function Node(name, type) {
         let nodeTemplate = nodeTypes[type];
         this.privateData = nodeTemplate.properties.privateData || {};
         this.publicData = nodeTemplate.properties.publicData || {};
+    }
 
-        // trigger the node module's setup function
+    this.setupProgram();
+};
+
+Node.prototype.setupProgram = function() {
+    let nodeTypes = availableModules.getNodes();
+    if (typeof nodeTypes[this.type] === 'undefined') {
+        console.warn('Trying to setup an unsupported node type (' + this.type + ')');
+    } else {
+        let nodeTemplate = nodeTypes[this.type];
         if (typeof nodeTemplate.setup === 'function') {
             nodeTemplate.setup(this);
         }
@@ -52,6 +61,7 @@ function Node(name, type) {
 };
 
 Node.prototype.deconstruct = function() {
+    console.log('Deconstructing node (' + this.name + ')');
     let nodeTypes = availableModules.getNodes();
     if (typeof nodeTypes[this.type] === 'undefined') {
         console.warn('Trying to deconstruct an unsupported node type (' + this.type + ')');

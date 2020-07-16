@@ -146,6 +146,11 @@ exports.clearObject = function (objectUuid, toolUuid) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
                 console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
+                try {
+                    objects[objectID].frames[toolUuid].nodes[key].deconstruct();
+                } catch (e) {
+                    console.warn('Node exists without proper prototype: ' + key);
+                }
                 delete objects[objectID].frames[toolUuid].nodes[key];
             }
         }
@@ -163,6 +168,11 @@ exports.removeAllNodes = function (object, tool) {
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeKey);
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
+                    try {
+                        objects[objectID].frames[frameID].nodes[nodeKey].deconstruct();
+                    } catch (e) {
+                        console.warn('Node exists without proper prototype: ' + nodeKey);
+                    }
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
                 }
             }
@@ -599,7 +609,11 @@ exports.removeNode = function (object, tool, node) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeID);
                     let thisNode = objects[objectID].frames[frameID].nodes[nodeID];
-                    thisNode.deconstruct();
+                    try {
+                        thisNode.deconstruct();
+                    } catch (e) {
+                        console.warn('Node exists without proper prototype: ' + nodeID);
+                    }
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
