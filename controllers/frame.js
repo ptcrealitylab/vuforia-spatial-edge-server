@@ -287,18 +287,20 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     var objectName = object.name;
     var frameName = object.frames[frameId].name;
 
+    try {
+        console.log(typeof object.frames[frameId].deconstruct);
+        object.frames[frameId].deconstruct();
+    } catch (e) {
+        console.warn('Frame exists without proper prototype: ' + frameId);
+    }
     delete object.frames[frameId];
 
     // remove the frame directory from the object
     utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
-    // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
+    // Delete frame's nodes
     var deletedNodes = {};
     for (var nodeId in frame.nodes) {
-        var thisNode = frame.nodes[nodeId];
-        if (typeof thisNode.deconstruct === 'function') {
-            thisNode.deconstruct();
-        }
         deletedNodes[nodeId] = true;
         delete frame.nodes[nodeId];
     }
