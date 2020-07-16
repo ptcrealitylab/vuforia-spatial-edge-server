@@ -692,6 +692,8 @@ function loadObjects() {
             objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
             objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
+            
+            console.log('Create ObjectModel for detected object: ' + tempFolderName);
 
             // create first frame
             // todo this need to be checked in the system
@@ -736,6 +738,87 @@ function loadObjects() {
                         }
                     }
                 }
+
+                console.log('Overwrote ObjectModel with JSON for detected object: ' + tempFolderName);
+
+                // using setPrototypeOf (misses constructor behavior but that's mostly ok)
+                // Object.setPrototypeOf(objects[tempFolderName], ObjectModel.prototype);
+                // for (var frameKey in objects[tempFolderName].frames) {
+                //     Object.setPrototypeOf(objects[tempFolderName].frames[frameKey], Frame.prototype);
+                //     objects[tempFolderName].frames[frameKey].foo();
+                //
+                //     for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                //         Object.setPrototypeOf(objects[tempFolderName].frames[frameKey].nodes[nodeKey], Node.prototype);
+                //         // constructor isn't called, so manually call setup
+                //         objects[tempFolderName].frames[frameKey].nodes[nodeKey].setupProgram();
+                //     }
+                // }
+
+                // using assign
+                // let newObj = Object.assign(new ObjectModel(), objects[tempFolderName]);
+                // for (var frameKey in newObj.frames) {
+                //     let newFrame = Object.assign(new Frame(), newObj.frames[frameKey]);
+                //     newFrame.foo();
+                //     for (var nodeKey in newFrame.nodes) {
+                //         let name = newFrame.nodes[nodeKey].name;
+                //         let type = newFrame.nodes[nodeKey].type;
+                //         let newNode = Object.assign(new Node(name, type), newFrame.nodes[nodeKey]);
+                //         newFrame.nodes[nodeKey] = newNode;
+                //     }
+                //     newObj.frames[frameKey] = newFrame;
+                // }
+                // objects[tempFolderName] = newObj;
+
+                // this works but doesn't copy all the properties
+                // let newObj = new ObjectModel();
+                // newObj.name = objects[tempFolderName].name;
+                // for (var frameKey in objects[tempFolderName].frames) {
+                //     let newFrame = new Frame();
+                //     newFrame.name = objects[tempFolderName].frames[frameKey].name;
+                //     newFrame.foo();
+                //     for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                //         let name = objects[tempFolderName].frames[frameKey].nodes[nodeKey].name;
+                //         let type = objects[tempFolderName].frames[frameKey].nodes[nodeKey].type;
+                //         let newNode = new Node(name, type);
+                //         newFrame.nodes[nodeKey] = newNode;
+                //     }
+                //     newObj.frames[frameKey] = newFrame;
+                // }
+                // objects[tempFolderName] = newObj;
+
+
+                // var a = {}; // or anything else
+                //
+                // var b = Object.create(
+                //     Object.getPrototypeOf(a)
+                // );
+                //
+                // Object.getOwnPropertyNames(a).forEach(function (k) {
+                //     Object.defineProperty(b, k, Object.getOwnPropertyDescriptor(a, k));
+                // });
+
+                let newObj = new ObjectModel();
+                console.log(Object.getOwnPropertyNames(newObj));
+                utilities.assignProperties(newObj, objects[tempFolderName]);
+                for (var frameKey in newObj.frames) {
+                    let newFrame = new Frame();
+                    // console.log('asdf ' + typeof newFrame.foo);
+                    utilities.assignProperties(newFrame, newObj.frames[frameKey]);
+                    // console.log('asdf ' + typeof newFrame.foo);
+                    for (var nodeKey in newFrame.nodes) {
+                        let name = newFrame.nodes[nodeKey].name;
+                        let type = newFrame.nodes[nodeKey].type;
+                        let newNode = new Node(name, type);
+                        // console.log('asdfn ' + typeof newNode.deconstruct);
+                        utilities.assignProperties(newNode, newFrame.nodes[nodeKey]);
+                        // console.log('asdfn ' + typeof newNode.deconstruct);
+                        newFrame.nodes[nodeKey] = newNode;
+                    }
+                    newObj.frames[frameKey] = newFrame;
+                }
+                objects[tempFolderName] = newObj;
+
+                objects[tempFolderName].deconstruct();
 
                 console.log('I found objects that I want to add');
 
@@ -2299,6 +2382,9 @@ function objectWebServer() {
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
                 var pathKey = req.body.path;
+                
+                let thisFrame = getFrame(objectKey, frameNameKey);
+                // console.log(typeof thisFrame.foo);
 
                 var thisObject = getObject(objectKey);
                 if (thisObject) {
@@ -2323,9 +2409,14 @@ function objectWebServer() {
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
-                            
-                            // deconstruct the nodes on this frame, if needed
-                            
+                            try {
+                                // deconstructs the nodes on this frame too, if needed
+                                let thisFrame = thisObject.frames[frameNameKey];
+                                thisFrame.foo();
+                                thisFrame.deconstruct();
+                            } catch (e) {
+                                console.warn('Frame exists without proper prototype: ' + frameNameKey);
+                            }
                             delete thisObject.frames[frameNameKey];
                         }
                     }
@@ -2349,6 +2440,12 @@ function objectWebServer() {
                             if (activeHeartbeats[tempFolderName2]) {
                                 clearInterval(activeHeartbeats[tempFolderName2]);
                                 delete activeHeartbeats[tempFolderName2];
+                            }
+                            try {
+                                // deconstructs frames and nodes of this object, too
+                                objects[tempFolderName2].deconstruct();
+                            } catch (e) {
+                                console.warn('Object exists without proper prototype: ' + tempFolderName2);
                             }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
@@ -2489,6 +2586,12 @@ function objectWebServer() {
                         if (activeHeartbeats[tempFolderName2]) {
                             clearInterval(activeHeartbeats[tempFolderName2]);
                             delete activeHeartbeats[tempFolderName2];
+                        }
+                        try {
+                            // deconstructs frames and nodes of this object, too
+                            objects[tempFolderName2].deconstruct();
+                        } catch (e) {
+                            console.warn('Object exists without proper prototype: ' + tempFolderName2);
                         }
                         delete objects[tempFolderName2];
                         delete knownObjects[tempFolderName2];
@@ -2680,16 +2783,22 @@ function objectWebServer() {
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
                                     setAnchors();
-                                    
+
                                     // Removes old heartbeat if it used to be an anchor
                                     var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
                                     if (oldObjectId && oldObjectId != thisObjectId) {
-                                      console.log('removed old heartbeat for', oldObjectId);
-                                      clearInterval(activeHeartbeats[oldObjectId]);
-                                      delete activeHeartbeats[oldObjectId];
-                                      delete objects[oldObjectId];
+                                        console.log('removed old heartbeat for', oldObjectId);
+                                        clearInterval(activeHeartbeats[oldObjectId]);
+                                        delete activeHeartbeats[oldObjectId];
+                                        try {
+                                            // deconstructs frames and nodes of this object, too
+                                            objects[oldObjectId].deconstruct();
+                                        } catch (e) {
+                                            console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                                        }
+                                        delete objects[oldObjectId];
                                     }
-                                    
+
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
                                     res.status(200).json(sendObject);
@@ -2868,7 +2977,13 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
                 }
 
                 if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                    delete objects[utilities.readObject(objectLookup, folderVar)];
+                    let objectId = utilities.readObject(objectLookup, folderVar);
+                    try {
+                        objects[objectId].deconstruct();
+                    } catch (e) {
+                        console.warn('Object exists without proper prototype: ' + objectId);
+                    }
+                    delete objects[objectId];
                 }
                 utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
                 // entering the obejct in to the lookup table
@@ -3303,6 +3418,11 @@ function socketServer() {
                 if (!thisObject.wasUpdated) {
                     console.log('delete human pose object', objectKey);
                     didAnythingChange = true;
+                    try {
+                        objects[objectKey].deconstruct();
+                    } catch (e) {
+                        console.warn('(Human) Object exists without proper prototype: ' + objectKey);
+                    }
                     delete objects[objectKey];
                     // todo: delete folder recursive if necessary?
                     // ^ might not actually be needed, why would human object need to persist?

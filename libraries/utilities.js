@@ -552,6 +552,9 @@ exports.updateObject = function (objectName, objects) {
                     objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
                     objects[tempFolderName].ip = ip.address();
 
+                    // TODO: properly parse the JSON data into each constructor (Object,Frame,Node)
+                    console.log('SHOULD PARSE OBJECT: ' +  tempFolderName);
+
                     // this is for transforming old lists to new lists
                     if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
@@ -875,3 +878,18 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
     return videoDir;
 }
 exports.getVideoDir = getVideoDir;
+
+// copies over properties without interfering with prototype
+exports.assignProperties = function(newInstance, jsonData) {
+    Object.getOwnPropertyNames(newInstance).forEach(function (k) {
+        if (jsonData.hasOwnProperty(k)) {
+            Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
+        }
+    });
+
+    // Object.getOwnPropertyNames(jsonData).forEach(function (k) {
+    //     if (Object.getOwnPropertyNames(newInstance).includes(k)) {
+    //         Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
+    //     }
+    // });
+};
