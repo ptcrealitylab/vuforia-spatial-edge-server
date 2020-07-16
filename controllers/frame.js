@@ -294,12 +294,13 @@ const deleteFrame = function(objectId, frameId, body, callback) {
 
     // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
     var deletedNodes = {};
-    for (var nodeId in object.nodes) {
-        var node = object.nodes[nodeId];
-        if (node.frame === frameId) {
-            deletedNodes[nodeId] = true;
-            delete object.nodes[nodeId];
+    for (var nodeId in frame.nodes) {
+        var thisNode = frame.nodes[nodeId];
+        if (typeof thisNode.deconstruct === 'function') {
+            thisNode.deconstruct();
         }
+        deletedNodes[nodeId] = true;
+        delete frame.nodes[nodeId];
     }
 
     // Delete links involving frame's nodes
