@@ -9,10 +9,11 @@ const Frame = require('./Frame.js'); // needs reference to Frame constructor
  * @param {string} ip - ip address of server
  * @param {string} version - Version number of server, currently 3.1.0 or 3.2.0
  * @param {string} protocol - Protocol of object, one of R0, R1, or R2 (current)
+ * @param {string} objectId - Stores its own UUID
  */
-function ObjectModel(ip, version, protocol) {
+function ObjectModel(ip, version, protocol, objectId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = null;
+    this.objectId = objectId;
     // The name for the object used for interfaces.
     this.name = '';
     this.matrix = [];
@@ -88,7 +89,7 @@ ObjectModel.prototype.setFromJson = function(object) {
 ObjectModel.prototype.setFramesFromJson = function(frames) {
     this.frames = {};
     for (var frameKey in frames) {
-        let newFrame = new Frame();
+        let newFrame = new Frame(this.objectId, frameKey);
         utilities.assignProperties(newFrame, frames[frameKey]);
         newFrame.setNodesFromJson(frames[frameKey].nodes);
         this.frames[frameKey] = newFrame;

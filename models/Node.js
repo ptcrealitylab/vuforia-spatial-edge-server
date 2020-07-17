@@ -7,13 +7,15 @@ const availableModules = require('../libraries/availableModules');
  *
  * @constructor
  */
-function Node(name, type) {
+function Node(name, type, objectId, frameId, nodeId) {
     // the name of each link. It is used in the Reality Editor to show the IO name.
     this.name = name || '';
     // the ID of the containing object.
-    this.objectId = null;
+    this.objectId = objectId;
     // the ID of the containing frame.
-    this.frameId = null;
+    this.frameId = frameId;
+    // the ID of this node.
+    this.uuid = nodeId;
     // the actual data of the node
     this.data = new Data();
     // Reality Editor: This is used to position the UI element within its x axis in 3D Space. Relative to Marker origin.

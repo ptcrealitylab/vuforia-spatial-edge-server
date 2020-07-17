@@ -22,7 +22,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     if (foundObject) {
         var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
-            let node = new Node(body.name, body.type);
+            let node = new Node(body.name, body.type, objectKey, frameKey, nodeKey);
 
             // copy over any additionally-defined properties (node position)
             if (typeof body.x !== 'undefined') {
