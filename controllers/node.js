@@ -37,6 +37,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
             if (typeof body.matrix !== 'undefined') {
                 node.matrix = body.matrix;
             }
+
             foundFrame.nodes[nodeKey] = node;
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});

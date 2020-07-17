@@ -1,5 +1,5 @@
 const utilities = require('../libraries/utilities.js');
-const Node = require('./Node.js'); // needs reference to Node constructor
+const Node = require('./Node.js');
 
 /**
  * A frame is a component of an object with its own UI and nodes
@@ -61,9 +61,11 @@ function Frame() {
     this.groupID = null;
 }
 
-// Gives all this frame's nodes the chance to deconstruct when the frame is deconstructed
+/**
+ * Should be called before deleting the frame in order to properly destroy it
+ * Gives all this frame's nodes the chance to deconstruct when the frame is deconstructed
+ */
 Frame.prototype.deconstruct = function() {
-    console.log('Deconstructing frame (' + this.name + ')');
     for (let nodeKey in this.nodes) {
         if (typeof this.nodes[nodeKey].deconstruct === 'function') {
             this.nodes[nodeKey].deconstruct();
@@ -73,6 +75,11 @@ Frame.prototype.deconstruct = function() {
     }
 };
 
+/**
+ * Parses a json blob of a set of nodes' data into properly constructed Nodes attached to this frame
+ * Should be used instead of frame.nodes = nodes
+ * @param {JSON} nodes
+ */
 Frame.prototype.setNodesFromJson = function(nodes) {
     this.nodes = {};
     for (let nodeKey in nodes) {
@@ -82,10 +89,6 @@ Frame.prototype.setNodesFromJson = function(nodes) {
         utilities.assignProperties(newNode, nodes[nodeKey]);
         this.nodes[nodeKey] = newNode;
     }
-};
-
-Frame.prototype.foo = function() {
-    console.log('foo foo frame');
 };
 
 module.exports = Frame;
