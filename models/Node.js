@@ -46,7 +46,7 @@ function Node(name, type) {
     }
 
     this.setupProgram();
-};
+}
 
 Node.prototype.setupProgram = function() {
     let nodeTypes = availableModules.getNodes();

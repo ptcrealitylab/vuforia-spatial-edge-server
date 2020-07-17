@@ -1,5 +1,5 @@
-let utilities = require('../libraries/utilities.js');
-let Node = require('./Node.js'); // needs reference to Node constructor
+const utilities = require('../libraries/utilities.js');
+const Node = require('./Node.js'); // needs reference to Node constructor
 
 /**
  * A frame is a component of an object with its own UI and nodes
@@ -79,9 +79,7 @@ Frame.prototype.setNodesFromJson = function(nodes) {
         let name = nodes[nodeKey].name;
         let type = nodes[nodeKey].type;
         let newNode = new Node(name, type);
-        // console.log('asdfn ' + typeof newNode.deconstruct);
         utilities.assignProperties(newNode, nodes[nodeKey]);
-        // console.log('asdfn ' + typeof newNode.deconstruct);
         this.nodes[nodeKey] = newNode;
     }
 };

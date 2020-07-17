@@ -52,11 +52,8 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
         newFrame.visibleEditing = frame.visibleEditing;
         newFrame.developer = frame.developer;
         newFrame.links = frame.links;
-
-        // convert to Node constructors
-        // newFrame.nodes = frame.nodes;
-        newFrame.setNodesFromJson(frame.nodes);
-
+        // cast JSON data to Node objects
+        newFrame.setNodesFromJson(frame.nodes); // instead of newFrame.nodes = frame.nodes;
         newFrame.location = frame.location;
         newFrame.src = frame.src;
         newFrame.width = frame.width;
@@ -71,16 +68,12 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         object.frames[frameKey] = newFrame;
 
-        console.log('starts: ' + typeof object.frames[frameKey].deconstruct);
-
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
         utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
         // notifies any open screens that a new frame was added
         hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
 
-        console.log('then: ' + typeof object.frames[frameKey].deconstruct);
-        
         callback(200, {success: true, frameId: frameKey});
     });
 };
@@ -296,7 +289,6 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     var frameName = object.frames[frameId].name;
 
     try {
-        console.log(typeof object.frames[frameId].deconstruct);
         object.frames[frameId].deconstruct();
     } catch (e) {
         console.warn('Frame exists without proper prototype: ' + frameId);
@@ -306,11 +298,14 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     // remove the frame directory from the object
     utilities.deleteFrameFolder(objectName, frameName, objectsPath);
 
-    // Delete frame's nodes
+    // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
     var deletedNodes = {};
-    for (var nodeId in frame.nodes) {
-        deletedNodes[nodeId] = true;
-        delete frame.nodes[nodeId];
+    for (var nodeId in object.nodes) {
+        var node = object.nodes[nodeId];
+        if (node.frame === frameId) {
+            deletedNodes[nodeId] = true;
+            delete object.nodes[nodeId];
+        }
     }
 
     // Delete links involving frame's nodes

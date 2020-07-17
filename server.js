@@ -739,92 +739,11 @@ function loadObjects() {
                     }
                 }
 
-                console.log('Overwrote ObjectModel with JSON for detected object: ' + tempFolderName);
-
-                // using setPrototypeOf (misses constructor behavior but that's mostly ok)
-                // Object.setPrototypeOf(objects[tempFolderName], ObjectModel.prototype);
-                // for (var frameKey in objects[tempFolderName].frames) {
-                //     Object.setPrototypeOf(objects[tempFolderName].frames[frameKey], Frame.prototype);
-                //     objects[tempFolderName].frames[frameKey].foo();
-                //
-                //     for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
-                //         Object.setPrototypeOf(objects[tempFolderName].frames[frameKey].nodes[nodeKey], Node.prototype);
-                //         // constructor isn't called, so manually call setup
-                //         objects[tempFolderName].frames[frameKey].nodes[nodeKey].setupProgram();
-                //     }
-                // }
-
-                // using assign
-                // let newObj = Object.assign(new ObjectModel(), objects[tempFolderName]);
-                // for (var frameKey in newObj.frames) {
-                //     let newFrame = Object.assign(new Frame(), newObj.frames[frameKey]);
-                //     newFrame.foo();
-                //     for (var nodeKey in newFrame.nodes) {
-                //         let name = newFrame.nodes[nodeKey].name;
-                //         let type = newFrame.nodes[nodeKey].type;
-                //         let newNode = Object.assign(new Node(name, type), newFrame.nodes[nodeKey]);
-                //         newFrame.nodes[nodeKey] = newNode;
-                //     }
-                //     newObj.frames[frameKey] = newFrame;
-                // }
-                // objects[tempFolderName] = newObj;
-
-                // this works but doesn't copy all the properties
-                // let newObj = new ObjectModel();
-                // newObj.name = objects[tempFolderName].name;
-                // for (var frameKey in objects[tempFolderName].frames) {
-                //     let newFrame = new Frame();
-                //     newFrame.name = objects[tempFolderName].frames[frameKey].name;
-                //     newFrame.foo();
-                //     for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
-                //         let name = objects[tempFolderName].frames[frameKey].nodes[nodeKey].name;
-                //         let type = objects[tempFolderName].frames[frameKey].nodes[nodeKey].type;
-                //         let newNode = new Node(name, type);
-                //         newFrame.nodes[nodeKey] = newNode;
-                //     }
-                //     newObj.frames[frameKey] = newFrame;
-                // }
-                // objects[tempFolderName] = newObj;
-
-
-                // var a = {}; // or anything else
-                //
-                // var b = Object.create(
-                //     Object.getPrototypeOf(a)
-                // );
-                //
-                // Object.getOwnPropertyNames(a).forEach(function (k) {
-                //     Object.defineProperty(b, k, Object.getOwnPropertyDescriptor(a, k));
-                // });
-
                 let newObj = new ObjectModel();
-                console.log(Object.getOwnPropertyNames(newObj));
-                utilities.assignProperties(newObj, objects[tempFolderName]);
-                for (var frameKey in newObj.frames) {
-                    let newFrame = new Frame();
-                    // console.log('asdf ' + typeof newFrame.foo);
-                    utilities.assignProperties(newFrame, newObj.frames[frameKey]);
-                    // console.log('asdf ' + typeof newFrame.foo);
-
-                    newFrame.setNodesFromJson(objects[tempFolderName].frames[frameKey].nodes);
-
-                    // for (var nodeKey in newFrame.nodes) {
-                    //     let name = newFrame.nodes[nodeKey].name;
-                    //     let type = newFrame.nodes[nodeKey].type;
-                    //     let newNode = new Node(name, type);
-                    //     // console.log('asdfn ' + typeof newNode.deconstruct);
-                    //     utilities.assignProperties(newNode, newFrame.nodes[nodeKey]);
-                    //     // console.log('asdfn ' + typeof newNode.deconstruct);
-                    //     newFrame.nodes[nodeKey] = newNode;
-                    // }
-                    newObj.frames[frameKey] = newFrame;
-                }
+                newObj.setFromJson(objects[tempFolderName]);
                 objects[tempFolderName] = newObj;
 
-                objects[tempFolderName].deconstruct();
-
                 console.log('I found objects that I want to add');
-
 
             } catch (e) {
                 objects[tempFolderName].ip = services.ip; //ip.address();
@@ -838,18 +757,6 @@ function loadObjects() {
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
 
-    console.log('done loading objects');
-    for (let objectKey in objects) {
-        console.log('obj: ' + typeof objects[objectKey].deconstruct);
-        for (let frameKey in objects[objectKey].frames) {
-            console.log('fra: ' + typeof objects[objectKey].frames[frameKey].deconstruct);
-            for (let nodeKey in objects[objectKey].frames[frameKey].nodes) {
-                console.log('obj: ' + typeof objects[objectKey].frames[frameKey].nodes[nodeKey].deconstruct);
-            }
-        }
-    }
-    console.log('done logging objects');
-    
     hardwareAPI.reset();
 }
 
