@@ -692,8 +692,6 @@ function loadObjects() {
             objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
             objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
-            
-            console.log('Create ObjectModel for detected object: ' + tempFolderName);
 
             // create first frame
             // todo this need to be checked in the system
@@ -2305,9 +2303,6 @@ function objectWebServer() {
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
                 var pathKey = req.body.path;
-                
-                let thisFrame = getFrame(objectKey, frameNameKey);
-                // console.log(typeof thisFrame.foo);
 
                 var thisObject = getObject(objectKey);
                 if (thisObject) {
@@ -2334,9 +2329,7 @@ function objectWebServer() {
                         if (thisObject) {
                             try {
                                 // deconstructs the nodes on this frame too, if needed
-                                let thisFrame = thisObject.frames[frameNameKey];
-                                thisFrame.foo();
-                                thisFrame.deconstruct();
+                                thisObject.frames[frameNameKey].deconstruct();
                             } catch (e) {
                                 console.warn('Frame exists without proper prototype: ' + frameNameKey);
                             }
@@ -3608,9 +3601,6 @@ var engine = {
 
         var _this = this;
         if ((thisNode.type in this.nodeTypeModules)) {
-            console.log('obj: ' + typeof objects[object].deconstruct);
-            console.log('fra: ' + typeof objects[object].frames[frame].deconstruct);
-            console.log('nod: ' + typeof objects[object].frames[frame].nodes[node].deconstruct);
             this.nodeTypeModules[thisNode.type].render(object, frame, node, thisNode, function (object, frame, node, thisNode) {
                 _this.processLinks(object, frame, node, thisNode);
             });
