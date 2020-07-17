@@ -48,6 +48,9 @@ function Node(name, type) {
     this.setupProgram();
 }
 
+/**
+ * Triggers the exports.setup function defined in the add-on for this node type
+ */
 Node.prototype.setupProgram = function() {
     let nodeTypes = availableModules.getNodes();
     if (typeof nodeTypes[this.type] === 'undefined') {
@@ -60,8 +63,11 @@ Node.prototype.setupProgram = function() {
     }
 };
 
+/**
+ * Should be called before deleting this node
+ * Triggers the exports.onRemove function defined in the add-on for this node type
+ */
 Node.prototype.deconstruct = function() {
-    console.log('Deconstructing node (' + this.name + ')');
     let nodeTypes = availableModules.getNodes();
     if (typeof nodeTypes[this.type] === 'undefined') {
         console.warn('Trying to deconstruct an unsupported node type (' + this.type + ')');
