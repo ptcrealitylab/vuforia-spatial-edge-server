@@ -59,6 +59,7 @@ recorder.saveState = function () {
 recorder.recurse = function (obj, objectInTime, keyString) {
     if (!keyString) keyString = '';
     for (let key in obj) { // works for objects and arrays
+        if (!obj.hasOwnProperty(key)) { return; }
         let item = obj[key];
         if (typeof item === 'object') {
 
