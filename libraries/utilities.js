@@ -60,6 +60,7 @@ var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
+const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
 
@@ -584,8 +585,11 @@ exports.updateObject = function (objectName, objects) {
                         }
                     }
 
-                    console.log('I found objects that I want to add');
+                    let newObj = new ObjectModel();
+                    newObj.setFromJson(objects[tempFolderName]);
+                    objects[tempFolderName] = newObj;
 
+                    console.log('I found objects that I want to add');
 
                 } catch (e) {
                     objects[tempFolderName].ip = ip.address();
@@ -886,10 +890,4 @@ exports.assignProperties = function(newInstance, jsonData) {
             Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
         }
     });
-
-    // Object.getOwnPropertyNames(jsonData).forEach(function (k) {
-    //     if (Object.getOwnPropertyNames(newInstance).includes(k)) {
-    //         Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
-    //     }
-    // });
 };

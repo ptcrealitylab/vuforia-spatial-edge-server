@@ -1,3 +1,6 @@
+const utilities = require('../libraries/utilities.js');
+const Frame = require('./Frame.js'); // needs reference to Frame constructor
+
 /**
  * This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
@@ -52,6 +55,21 @@ function ObjectModel(ip, version, protocol) {
     this.isWorldObject = false;
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
+
+ObjectModel.prototype.setFromJson = function(object) {
+    utilities.assignProperties(this, object);
+    this.setFramesFromJson(object.frames);
+};
+
+ObjectModel.prototype.setFramesFromJson = function(frames) {
+    this.frames = {};
+    for (var frameKey in frames) {
+        let newFrame = new Frame();
+        utilities.assignProperties(newFrame, frames[frameKey]);
+        newFrame.setNodesFromJson(frames[frameKey].nodes);
+        this.frames[frameKey] = newFrame;
+    }
+};
 
 // Gives all this object's frames the chance to deconstruct when the object is deconstructed
 ObjectModel.prototype.deconstruct = function() {
