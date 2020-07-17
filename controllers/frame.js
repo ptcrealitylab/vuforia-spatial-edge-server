@@ -52,7 +52,11 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
         newFrame.visibleEditing = frame.visibleEditing;
         newFrame.developer = frame.developer;
         newFrame.links = frame.links;
-        newFrame.nodes = frame.nodes;
+
+        // convert to Node constructors
+        // newFrame.nodes = frame.nodes;
+        newFrame.setNodesFromJson(frame.nodes);
+
         newFrame.location = frame.location;
         newFrame.src = frame.src;
         newFrame.width = frame.width;
@@ -67,12 +71,16 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         object.frames[frameKey] = newFrame;
 
+        console.log('starts: ' + typeof object.frames[frameKey].deconstruct);
+
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
         utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
         // notifies any open screens that a new frame was added
         hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
 
+        console.log('then: ' + typeof object.frames[frameKey].deconstruct);
+        
         callback(200, {success: true, frameId: frameKey});
     });
 };
