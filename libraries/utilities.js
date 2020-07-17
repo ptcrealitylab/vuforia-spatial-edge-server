@@ -553,9 +553,6 @@ exports.updateObject = function (objectName, objects) {
                     objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
                     objects[tempFolderName].ip = ip.address();
 
-                    // TODO: properly parse the JSON data into each constructor (Object,Frame,Node)
-                    console.log('SHOULD PARSE OBJECT: ' +  tempFolderName);
-
                     // this is for transforming old lists to new lists
                     if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                         objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
@@ -585,6 +582,7 @@ exports.updateObject = function (objectName, objects) {
                         }
                     }
 
+                    // cast everything from JSON to Object, Frame, and Node classes
                     let newObj = new ObjectModel();
                     newObj.setFromJson(objects[tempFolderName]);
                     objects[tempFolderName] = newObj;
@@ -883,11 +881,13 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
 }
 exports.getVideoDir = getVideoDir;
 
-// copies over properties without interfering with prototype
+/**
+ * Copies all properties from json object into the new class instance
+ * @param {Object} newInstance
+ * @param {JSON} jsonData
+ */
 exports.assignProperties = function(newInstance, jsonData) {
-    Object.getOwnPropertyNames(newInstance).forEach(function (k) {
-        if (jsonData.hasOwnProperty(k)) {
-            Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
-        }
+    Object.getOwnPropertyNames(jsonData).forEach(function (k) {
+        Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
     });
 };

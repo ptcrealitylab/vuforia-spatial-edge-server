@@ -56,11 +56,35 @@ function ObjectModel(ip, version, protocol) {
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
+/**
+ * Should be called before deleting the object in order to properly destroy it
+ * Gives all this object's frames the chance to deconstruct when the object is deconstructed
+ */
+ObjectModel.prototype.deconstruct = function() {
+    for (let frameKey in this.frames) {
+        if (typeof this.frames[frameKey].deconstruct === 'function') {
+            this.frames[frameKey].deconstruct();
+        } else {
+            console.warn('Frame exists without proper prototype: ' + frameKey);
+        }
+    }
+};
+
+/**
+ * Sets the properties of this object based on a JSON blob, recursively constructing
+ * its frames and its nodes and casting their JSON data to Frame and Node instances
+ * @param {JSON} object
+ */
 ObjectModel.prototype.setFromJson = function(object) {
     utilities.assignProperties(this, object);
     this.setFramesFromJson(object.frames);
 };
 
+/**
+ * Parses a json blob of a set of frames' data into properly constructed Frames
+ * attached to this object. Should be used instead of object.frames = frames
+ * @param {JSON} frames
+ */
 ObjectModel.prototype.setFramesFromJson = function(frames) {
     this.frames = {};
     for (var frameKey in frames) {
@@ -68,18 +92,6 @@ ObjectModel.prototype.setFramesFromJson = function(frames) {
         utilities.assignProperties(newFrame, frames[frameKey]);
         newFrame.setNodesFromJson(frames[frameKey].nodes);
         this.frames[frameKey] = newFrame;
-    }
-};
-
-// Gives all this object's frames the chance to deconstruct when the object is deconstructed
-ObjectModel.prototype.deconstruct = function() {
-    console.log('Deconstructing object (' + this.name + ')');
-    for (let frameKey in this.frames) {
-        if (typeof this.frames[frameKey].deconstruct === 'function') {
-            this.frames[frameKey].deconstruct();
-        } else {
-            console.warn('Frame exists without proper prototype: ' + frameKey);
-        }
     }
 };
 

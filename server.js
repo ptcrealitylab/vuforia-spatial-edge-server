@@ -733,6 +733,7 @@ function loadObjects() {
                     }
                 }
 
+                // cast everything from JSON to Object, Frame, and Node classes
                 let newObj = new ObjectModel();
                 newObj.setFromJson(objects[tempFolderName]);
                 objects[tempFolderName] = newObj;
