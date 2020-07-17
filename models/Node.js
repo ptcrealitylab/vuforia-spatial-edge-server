@@ -9,7 +9,7 @@ const availableModules = require('../libraries/availableModules');
  */
 function Node(name, type) {
     // the name of each link. It is used in the Reality Editor to show the IO name.
-    this.name = name;
+    this.name = name || '';
     // the ID of the containing object.
     this.objectId = null;
     // the ID of the containing frame.

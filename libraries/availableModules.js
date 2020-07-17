@@ -2,32 +2,26 @@ let nodeTypes = {};
 let hardwareInterfaces = {};
 let blockTypes = {};
 
-const setNodes = function(nodeTypeModules) {
+exports.setNodes = function setNodes(nodeTypeModules) {
     nodeTypes = nodeTypeModules;
 };
-exports.setNodes = setNodes;
 
-const setHardwareInterfaces = function(hardwareInterfaceModules) {
+exports.setHardwareInterfaces = function setHardwareInterfaces(hardwareInterfaceModules) {
     hardwareInterfaces = hardwareInterfaceModules;
 };
-exports.setHardwareInterfaces = setHardwareInterfaces;
 
-const setBlocks = function(blockTypeModules) {
+exports.setBlocks = function setBlocks(blockTypeModules) {
     blockTypes = blockTypeModules;
 };
-exports.setBlocks = setBlocks;
 
-const getNodes = function() {
+exports.getNodes = function getNodes() {
     return nodeTypes;
 };
-exports.getNodes = getNodes;
 
-const getHardwareInterfaces = function() {
+exports.getHardwareInterfaces = function getHardwareInterfaces() {
     return hardwareInterfaces;
 };
-exports.getHardwareInterfaces = getHardwareInterfaces;
 
-const getBlocks = function() {
+exports.getBlocks = function getBlocks() {
     return blockTypes;
 };
-exports.getBlocks = getBlocks;
