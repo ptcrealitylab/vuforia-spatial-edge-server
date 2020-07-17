@@ -6,9 +6,11 @@ const Node = require('./Node.js');
  *
  * @constructor
  */
-function Frame() {
+function Frame(objectId, frameId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = null;
+    this.objectId = objectId;
+    // Stores its own unique ID
+    this.uuid = frameId;
     // The name for the object used for interfaces.
     this.name = '';
     // which visualization mode it should use right now ("ar" or "screen")
@@ -76,16 +78,27 @@ Frame.prototype.deconstruct = function() {
 };
 
 /**
+ * Sets the properties of this frame based on a JSON blob, recursively constructing
+ * its nodes and casting their JSON data to Node instances
+ * @param {JSON} frame
+ */
+Frame.prototype.setFromJson = function(frame) {
+    utilities.assignProperties(this, frame);
+    this.setNodesFromJson(frame.nodes);
+};
+
+/**
  * Parses a json blob of a set of nodes' data into properly constructed Nodes attached to this frame
  * Should be used instead of frame.nodes = nodes
  * @param {JSON} nodes
+ * @param {string} frameId - the uuid of this frame, since this frame doesn't store it
  */
 Frame.prototype.setNodesFromJson = function(nodes) {
     this.nodes = {};
     for (let nodeKey in nodes) {
         let name = nodes[nodeKey].name;
         let type = nodes[nodeKey].type;
-        let newNode = new Node(name, type);
+        let newNode = new Node(name, type, this.objectId, this.uuid, nodeKey);
         utilities.assignProperties(newNode, nodes[nodeKey]);
         this.nodes[nodeKey] = newNode;
     }

@@ -40,9 +40,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         utilities.createFrameFolder(object.name, frame.name, dirname, objectsPath, globalVariables.debug, frame.location);
 
-        var newFrame = new Frame();
-        newFrame.objectId = frame.objectId;
-        newFrame.uuid = frameKey;
+        var newFrame = new Frame(frame.objectId, frameKey);
         newFrame.name = frame.name;
         newFrame.visualization = frame.visualization;
         newFrame.ar = frame.ar;
@@ -145,11 +143,11 @@ const copyFrame = function(objectID, frameID, body, callback) {
         // don't need to create a folder because we already ensured it is a global frame
         // (otherwise we would need... utilities.createFrameFolder(object.name, frame.name, ... )
 
-        var newFrame = new Frame();
-        newFrame.objectId = frame.objectId;
-        newFrame.name = frame.src + utilities.uuidTime();
-        var newFrameKey = objectID + newFrame.name;
-        newFrame.uuid = newFrameKey;
+        var newName = frame.src + utilities.uuidTime();
+        var newFrameKey = objectID + newName;
+
+        var newFrame = new Frame(frame.objectId, newFrameKey);
+        newFrame.name = newName;
         newFrame.visualization = frame.visualization;
         // deep clone ar by value, not reference, otherwise posting new position for one might affect the other
         newFrame.ar = {
@@ -175,14 +173,12 @@ const copyFrame = function(objectID, frameID, body, callback) {
         for (var oldNodeKey in frame.nodes) {
             if (!frame.nodes.hasOwnProperty(oldNodeKey)) continue;
             var oldNode = frame.nodes[oldNodeKey];
-            var newNode = new Node(oldNode.name, oldNode.type);
+            var newNodeKey = newFrameKey + oldNode.name;
+            var newNode = new Node(oldNode.name, oldNode.type, objectID, newFrameKey, newNodeKey);
             for (var propertyKey in oldNode) {
                 if (!oldNode.hasOwnProperty(propertyKey)) continue;
                 newNode[propertyKey] = oldNode[propertyKey];
             }
-            newNode.frameId = newFrameKey;
-            var newNodeKey = newNode.frameId + newNode.name;
-            newNode.uuid = newNodeKey;
             newFrame.nodes[newNodeKey] = newNode;
         }
 
@@ -225,13 +221,13 @@ const updateFrame = function(objectID, frameID, body, callback) {
             object.frames = {};
         }
 
-        if (!object.frames[frameID]) {
-            object.frames[frameID] = new Frame();
-        }
-
         frame.loaded = false;
         // Copy over all properties of frame
         Object.assign(object.frames[frameID], frame);
+
+        let newFrame = new Frame(frame.objectId, frame.uuid);
+        newFrame.setFromJson(frame);
+        object.frames[frameID] = newFrame;
 
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
