@@ -190,7 +190,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
 
             // populate the data for each frame template on the frontend, using data from the object json structure
             for (var frameKey in objects[thisObjectKey].frames) {
-                newObject[thisObjectKey].frames[frameKey] = new Frame();
+                newObject[thisObjectKey].frames[frameKey] = new Frame(thisObjectKey, frameKey);
                 newObject[thisObjectKey].frames[frameKey].name = objects[thisObjectKey].frames[frameKey].name;
                 newObject[thisObjectKey].frames[frameKey].location = objects[thisObjectKey].frames[frameKey].location; // 'global' or 'local'
                 newObject[thisObjectKey].frames[frameKey].src = objects[thisObjectKey].frames[frameKey].src; // the frame type, e.g. 'graphUI'

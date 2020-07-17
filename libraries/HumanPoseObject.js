@@ -136,18 +136,14 @@ HumanPoseObject.prototype.createPoseFrames = function(dontFilterJoints) {
  * @return {Frame}
  */
 HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
-    var newFrame = new Frame();
-    newFrame.objectId = this.objectId;
-    newFrame.uuid = this.getFrameKey(jointName);
+    var newFrame = new Frame(this.objectId, this.getFrameKey(jointName));
     newFrame.name = jointName;
     newFrame.distanceScale = 2; // visible from twice as far away as usual frames
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = new Node('value', 'node');
-        newNode.objectId = this.objectId;
-        newNode.frameId = newFrame.uuid;
-        newNode.uuid = newFrame.uuid + newNode.name;
+        let nodeName = 'value';
+        var newNode = new Node(nodeName, 'node', this.objectId, newFrame.uuid, newFrame.uuid + nodeName);
         newFrame.nodes[newNode.uuid] = newNode;
         newNode.scale = 0.2; // nodes currently have a problem of being rendered too large by default, so decrease scale
     }

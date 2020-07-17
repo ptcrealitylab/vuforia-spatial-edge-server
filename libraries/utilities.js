@@ -583,7 +583,10 @@ exports.updateObject = function (objectName, objects) {
                     }
 
                     // cast everything from JSON to Object, Frame, and Node classes
-                    let newObj = new ObjectModel();
+                    let newObj = new ObjectModel(objects[tempFolderName].ip,
+                        objects[tempFolderName].version,
+                        objects[tempFolderName].protocol,
+                        objects[tempFolderName].objectId);
                     newObj.setFromJson(objects[tempFolderName]);
                     objects[tempFolderName] = newObj;
 

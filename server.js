@@ -689,7 +689,7 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
+            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol, tempFolderName);
             objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
 
@@ -738,7 +738,10 @@ function loadObjects() {
                 }
 
                 // cast everything from JSON to Object, Frame, and Node classes
-                let newObj = new ObjectModel();
+                let newObj = new ObjectModel(objects[tempFolderName].ip,
+                    objects[tempFolderName].version,
+                    objects[tempFolderName].protocol,
+                    objects[tempFolderName].objectId);
                 newObj.setFromJson(objects[tempFolderName]);
                 objects[tempFolderName] = newObj;
 
@@ -805,14 +808,10 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel(services.ip, version, protocol);
+    let thisWorldObjectId = isMobile ? worldObjectName : (worldObjectName + utilities.uuidTime());
+    worldObject = new ObjectModel(services.ip, version, protocol, thisWorldObjectId);
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
-    if (isMobile) {
-        worldObject.objectId = worldObjectName;
-    } else {
-        worldObject.objectId = worldObjectName + utilities.uuidTime();
-    }
     worldObject.isWorldObject = true;
 
     // try to read previously saved data to overwrite the default world object
@@ -884,11 +883,9 @@ function loadAnchor(anchorName) {
     }
 
     // create a new anchor object
-    objects[anchorUuid] = new ObjectModel(services.ip, version, protocol);
+    objects[anchorUuid] = new ObjectModel(services.ip, version, protocol, anchorUuid);
     objects[anchorUuid].port = serverPort;
     objects[anchorUuid].name = anchorName;
-    objects[anchorUuid].ip = services.ip;
-    objects[anchorUuid].objectId = anchorUuid;
 
     objects[anchorUuid].isAnchor = false;
     objects[anchorUuid].matrix = [
@@ -2241,9 +2238,8 @@ function objectWebServer() {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         if (isWorldObject) {
                             let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(services.ip, version, protocol);
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
-                            objects[objectId].objectId = objectId;
                             objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
@@ -2269,7 +2265,7 @@ function objectWebServer() {
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, 'local');
-                        objects[objectKey].frames[objectKey + req.body.frame] = new Frame();
+                        objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     } else {
@@ -2872,7 +2868,6 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
                 objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
                 objects[objectIDXML].port = serverPort;
                 objects[objectIDXML].name = folderVar;
-                objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].targetSize = objectSizeXML;
 
                 if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
@@ -3413,7 +3408,7 @@ function socketServer() {
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
                 console.log('creating node ' + nodeKey);
-                var newNode = new Node(nodeData.name, nodeData.type);
+                var newNode = new Node(nodeData.name, nodeData.type, objectKey, frameKey, nodeKey);
                 frame.nodes[nodeKey] = newNode;
                 newNode.objectId = objectKey;
                 newNode.frameId = frameKey;
