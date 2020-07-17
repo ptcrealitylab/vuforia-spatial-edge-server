@@ -799,15 +799,18 @@ function loadObjects() {
                     // console.log('asdf ' + typeof newFrame.foo);
                     utilities.assignProperties(newFrame, newObj.frames[frameKey]);
                     // console.log('asdf ' + typeof newFrame.foo);
-                    for (var nodeKey in newFrame.nodes) {
-                        let name = newFrame.nodes[nodeKey].name;
-                        let type = newFrame.nodes[nodeKey].type;
-                        let newNode = new Node(name, type);
-                        // console.log('asdfn ' + typeof newNode.deconstruct);
-                        utilities.assignProperties(newNode, newFrame.nodes[nodeKey]);
-                        // console.log('asdfn ' + typeof newNode.deconstruct);
-                        newFrame.nodes[nodeKey] = newNode;
-                    }
+
+                    newFrame.setNodesFromJson(objects[tempFolderName].frames[frameKey].nodes);
+
+                    // for (var nodeKey in newFrame.nodes) {
+                    //     let name = newFrame.nodes[nodeKey].name;
+                    //     let type = newFrame.nodes[nodeKey].type;
+                    //     let newNode = new Node(name, type);
+                    //     // console.log('asdfn ' + typeof newNode.deconstruct);
+                    //     utilities.assignProperties(newNode, newFrame.nodes[nodeKey]);
+                    //     // console.log('asdfn ' + typeof newNode.deconstruct);
+                    //     newFrame.nodes[nodeKey] = newNode;
+                    // }
                     newObj.frames[frameKey] = newFrame;
                 }
                 objects[tempFolderName] = newObj;
@@ -829,6 +832,18 @@ function loadObjects() {
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
 
+    console.log('done loading objects');
+    for (let objectKey in objects) {
+        console.log('obj: ' + typeof objects[objectKey].deconstruct);
+        for (let frameKey in objects[objectKey].frames) {
+            console.log('fra: ' + typeof objects[objectKey].frames[frameKey].deconstruct);
+            for (let nodeKey in objects[objectKey].frames[frameKey].nodes) {
+                console.log('obj: ' + typeof objects[objectKey].frames[frameKey].nodes[nodeKey].deconstruct);
+            }
+        }
+    }
+    console.log('done logging objects');
+    
     hardwareAPI.reset();
 }
 
@@ -3680,6 +3695,9 @@ var engine = {
 
         var _this = this;
         if ((thisNode.type in this.nodeTypeModules)) {
+            console.log('obj: ' + typeof objects[object].deconstruct);
+            console.log('fra: ' + typeof objects[object].frames[frame].deconstruct);
+            console.log('nod: ' + typeof objects[object].frames[frame].nodes[node].deconstruct);
             this.nodeTypeModules[thisNode.type].render(object, frame, node, thisNode, function (object, frame, node, thisNode) {
                 _this.processLinks(object, frame, node, thisNode);
             });
