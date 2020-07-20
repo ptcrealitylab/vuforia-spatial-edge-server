@@ -60,7 +60,7 @@ Node.prototype.setupProgram = function() {
     } else {
         let nodeTemplate = nodeTypes[this.type];
         if (typeof nodeTemplate.setup === 'function') {
-            nodeTemplate.setup(this);
+            nodeTemplate.setup(this.objectId, this.frameId, this.uuid, this);
         }
     }
 };
@@ -76,7 +76,7 @@ Node.prototype.deconstruct = function() {
     } else {
         let nodeTemplate = nodeTypes[this.type];
         if (typeof nodeTemplate.onRemove === 'function') {
-            nodeTemplate.onRemove(this);
+            nodeTemplate.onRemove(this.objectId, this.frameId, this.uuid, this);
         }
     }
 };

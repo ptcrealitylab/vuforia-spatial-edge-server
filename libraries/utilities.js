@@ -573,12 +573,12 @@ exports.updateObject = function (objectName, objects) {
                         delete objects[tempFolderName].links;
                     }
 
-
-                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
-
-                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
-                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                    for (var frameKey in objects[tempFolderName].frames) {
+                        for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                            if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
+                                var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
+                                objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                            }
                         }
                     }
 
@@ -644,7 +644,7 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
         hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
 
     } catch (e) {
-        console.log('Could not Load: ' + hardwareInterfaceName);
+        console.log('Could not load settings.json for: ' + hardwareInterfaceName);
         hardwareInterfaces[hardwareInterfaceName] = {};
     }
 
