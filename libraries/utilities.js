@@ -883,14 +883,3 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
     return videoDir;
 }
 exports.getVideoDir = getVideoDir;
-
-/**
- * Copies all properties from json object into the new class instance
- * @param {Object} newInstance
- * @param {JSON} jsonData
- */
-exports.assignProperties = function(newInstance, jsonData) {
-    Object.getOwnPropertyNames(jsonData).forEach(function (k) {
-        Object.defineProperty(newInstance, k, Object.getOwnPropertyDescriptor(jsonData, k));
-    });
-};

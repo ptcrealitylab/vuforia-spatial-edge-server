@@ -1,4 +1,3 @@
-const utilities = require('../libraries/utilities.js');
 const Frame = require('./Frame.js'); // needs reference to Frame constructor
 
 /**
@@ -77,7 +76,7 @@ ObjectModel.prototype.deconstruct = function() {
  * @param {JSON} object
  */
 ObjectModel.prototype.setFromJson = function(object) {
-    utilities.assignProperties(this, object);
+    Object.assign(this, object);
     this.setFramesFromJson(object.frames);
 };
 
@@ -90,7 +89,7 @@ ObjectModel.prototype.setFramesFromJson = function(frames) {
     this.frames = {};
     for (var frameKey in frames) {
         let newFrame = new Frame(this.objectId, frameKey);
-        utilities.assignProperties(newFrame, frames[frameKey]);
+        Object.assign(newFrame, frames[frameKey]);
         newFrame.setNodesFromJson(frames[frameKey].nodes);
         this.frames[frameKey] = newFrame;
     }
