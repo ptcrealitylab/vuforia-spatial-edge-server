@@ -1,4 +1,3 @@
-const utilities = require('../libraries/utilities.js');
 const Node = require('./Node.js');
 
 /**
@@ -83,7 +82,7 @@ Frame.prototype.deconstruct = function() {
  * @param {JSON} frame
  */
 Frame.prototype.setFromJson = function(frame) {
-    utilities.assignProperties(this, frame);
+    Object.assign(this, frame);
     this.setNodesFromJson(frame.nodes);
 };
 
@@ -91,7 +90,6 @@ Frame.prototype.setFromJson = function(frame) {
  * Parses a json blob of a set of nodes' data into properly constructed Nodes attached to this frame
  * Should be used instead of frame.nodes = nodes
  * @param {JSON} nodes
- * @param {string} frameId - the uuid of this frame, since this frame doesn't store it
  */
 Frame.prototype.setNodesFromJson = function(nodes) {
     this.nodes = {};
@@ -99,7 +97,7 @@ Frame.prototype.setNodesFromJson = function(nodes) {
         let name = nodes[nodeKey].name;
         let type = nodes[nodeKey].type;
         let newNode = new Node(name, type, this.objectId, this.uuid, nodeKey);
-        utilities.assignProperties(newNode, nodes[nodeKey]);
+        Object.assign(newNode, nodes[nodeKey]);
         this.nodes[nodeKey] = newNode;
     }
 };
