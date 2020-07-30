@@ -633,6 +633,12 @@ if (!isMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
     availableModules.setHardwareInterfaces(hardwareInterfaceModules);
+
+    // statically serve the "public" directory in each hardware interface
+    for (let folderName in hardwareInterfaceLoader.folderMap) {
+        let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
+        webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+    }
 }
 
 console.log('ready to start internal servers');
