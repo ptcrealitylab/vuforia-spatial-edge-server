@@ -1555,6 +1555,7 @@ function objectWebServer() {
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
         webServer.use('/libraries', express.static(__dirname + '/libraries/webInterface/'));
+        webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
@@ -1956,6 +1957,7 @@ function objectWebServer() {
                         } else {
                             console.log('successfully wrote settings hardwareInterface: ' + interfaceName);
                             callback(true);
+                            hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
                         }
                     });
                 } else {
