@@ -1827,7 +1827,7 @@ function objectWebServer() {
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
-        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
             if (!isMobile) {
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
