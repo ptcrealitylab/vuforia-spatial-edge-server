@@ -41,4 +41,6 @@ module.exports = {
     },
     setHardwareInterfaceSettingsImpl: function() {
     },
+    pushSettingsToGui: function() {
+    }
 };
