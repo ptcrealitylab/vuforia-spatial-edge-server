@@ -2261,6 +2261,8 @@ function objectWebServer() {
                             return;
                         }
                     }
+                    
+                    setAnchors(); // Needed to initialize non-world (anchor) objects
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
