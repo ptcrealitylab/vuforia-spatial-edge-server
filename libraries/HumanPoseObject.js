@@ -144,10 +144,9 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 2;
 
     if (shouldCreateNode) {
-        var newNode = new Node();
+        var newNode = new Node('value', 'node');
         newNode.objectId = this.objectId;
         newNode.frameId = newFrame.uuid;
-        newNode.name = 'value';
         newNode.uuid = newFrame.uuid + newNode.name;
         newFrame.nodes[newNode.uuid] = newNode;
         newNode.scale = 0.2; // nodes currently have a problem of being rendered too large by default, so decrease scale

@@ -18,10 +18,12 @@
  */
 
 var path = require('path');
+var fs = require('fs');
 var utilities = require('./utilities');
 var _ = require('lodash');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
+const ObjectModel = require('../models/ObjectModel.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -34,6 +36,10 @@ var objectsPath;
 var nodeTypeModules;
 // eslint-disable-next-line no-unused-vars
 var blockModules;
+var services;
+var version;
+var protocol;
+var serverPort;
 var callback;
 var actionCallback;
 var publicDataCallBack;
@@ -417,14 +423,45 @@ exports.setTool = function (object, tool, newTool, dirName) {
  **/
 
 exports.addNode = function (object, tool, node, type, position) {
-
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.addNode objectID: ', objectID, object, objectsPath);
 
     if (!objectID) {
+        console.log('Creating new object for hardware node', object);
+        
+        var folder = path.join(objectsPath, object);
+        var identityPath = path.join(folder, '.identity');
+        var jsonFilePath = path.join(identityPath, 'object.json');
+        objectID = object + utilities.uuidTime();
+
         utilities.createFolder(object, objectsPath, globalVariables.debug);
-        console.warn('Creating empty folder and giving up');
-        return;
+
+        // create a new anchor object
+        objects[objectID] = new ObjectModel(services.ip, version, protocol);
+        objects[objectID].port = serverPort;
+        objects[objectID].name = object;
+        objects[objectID].ip = services.ip;
+        objects[objectID].objectId = objectID;
+        objects[objectID].isAnchor = true;
+        objects[objectID].matrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ];
+        objects[objectID].tcs = 0;
+
+        if (globalVariables.saveToDisk) {
+            fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
+                if (err) {
+                    console.log('anchor object save error', err);
+                } else {
+                    // console.log('JSON saved to ' + jsonFilePath);
+                }
+            });
+        } else {
+            console.log('I am not allowed to save');
+        }
     }
 
     var nodeUuid = objectID + tool + node;
@@ -451,7 +488,7 @@ exports.addNode = function (object, tool, node, type, position) {
             var thisObject;
 
             if (!objects[objectID].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-                objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
+                objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node(node, type);
                 thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
@@ -466,11 +503,9 @@ exports.addNode = function (object, tool, node, type, position) {
             }
 
             thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            thisObject.name = node;
             thisObject.frameId = frameUuid;
             thisObject.objectId = objectID;
             thisObject.text = undefined;
-            thisObject.type = type;
 
             console.log('added node', {
                 node: node,
@@ -674,6 +709,7 @@ exports.setHardwareInterfaceSettingsImpl = function(setHardwareInterfaceSettings
 exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray_, globalVariables_, dirnameO_,
     objectsPath_, nodeTypeModules_, blockModules_,
+    services_, version_, protocol_, serverPort_,
     hardwareAPICallbacks) {
     objects = objects_;
     objectLookup = objectLookup_;
@@ -684,6 +720,10 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     objectsPath = objectsPath_;
     nodeTypeModules = nodeTypeModules_;
     blockModules = blockModules_;
+    services = services_;
+    version = version_;
+    protocol = protocol_;
+    serverPort = serverPort_;
     publicDataCallBack = hardwareAPICallbacks.publicData;
     actionCallback = hardwareAPICallbacks.actions;
     callback = hardwareAPICallbacks.data;

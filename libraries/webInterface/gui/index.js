@@ -510,6 +510,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 if (thisObject.visualization === 'screen' && thisObject.active && thisObject.isExpanded) {
                     let thisFullScreen = document.getElementById('fullScreenId').content.cloneNode(true);
                     thisFullScreen.querySelector('.fullscreen').id = 'fullscreen' + objectKey;
+                    thisFullScreen.querySelector('#fullscreen' + objectKey).dataset.objectName = thisObject.name;
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
                     }
@@ -656,7 +657,7 @@ realityServer.updateManageFrames = function () {
 
 realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
+    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
 
@@ -1092,6 +1093,7 @@ realityServer.gotClick = function (event) {
 
             let newNode = document.getElementById('targetId').content.cloneNode(true);
             newNode.querySelector('.dropZoneElement').id = 'targetDropZone' + objectKey;
+            newNode.querySelector('.imagegen-button').dataset.objectName = thisObject.name;
 
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
@@ -1923,7 +1925,6 @@ realityServer.setActive = function (item) {
 
 
 realityServer.toggleFullScreen = function (item) {
-
     let thisIframe = document.getElementById('fullscreenIframe');
 
     if (!thisIframe) {
@@ -1935,13 +1936,24 @@ realityServer.toggleFullScreen = function (item) {
         document.body.appendChild(thisIframe);
     }
 
-    let screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
-    thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + screenPort;
-
     let thisScreen = thisIframe;
     // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
+        thisIframe.src = "about:blank"; // Clear iframe before loading
+        const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
+        const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
+        fetch(targetUrl).then((response) => {
+            if (response.ok) {
+                thisIframe.contentDocument.write(iframeContents);
+                thisIframe.contentDocument.close();  
+            } else {
+                setGeneratedTarget(item, () => {
+                    thisIframe.contentDocument.write(iframeContents);
+                    thisIframe.contentDocument.close();    
+                });
+            }
+        });
         if (thisScreen.mozRequestFullScreen) {
             thisScreen.mozRequestFullScreen();
         } else {
@@ -2149,5 +2161,91 @@ function addZipDownload(button, frameName) {
         window.location.href = '/frame/' + frameName + '/zipBackup/';
     });
 }
+
+function voronoiTarget(canvas, callback) {
+  const width = 128 * 16;
+  const height = 128 * 9;
+  const targetCellSize = 60;
+  const count = Math.floor(width * height / (targetCellSize * targetCellSize));
+  const topCount = Math.floor(count / 12);
+  const lineWidth = 8;
+  const topLineWidth = 16;
+  
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  const gfx = canvas.getContext('2d');
+  canvas.width = gfx.width = width;
+  canvas.height = gfx.height = height;
+  
+  const points = [];
+  const topPoints = [];
+
+  for (let i = 0; i < count; i++) {
+    points.push([
+      Math.random() * (width - lineWidth) + lineWidth / 2,
+      Math.random() * (height - lineWidth) + lineWidth / 2
+    ]);
+  }
+
+  for (let i = 0; i < topCount; i++) {
+    topPoints.push([
+      Math.random() * (width - topLineWidth) + topLineWidth / 2,
+      Math.random() * (height - topLineWidth) + topLineWidth / 2
+    ]);
+  }
+
+  const del = d3.Delaunay.from(points);
+  const topDel = d3.Delaunay.from(topPoints);
+  const vor = del.voronoi([0, 0, width, height]);
+  const topVor = topDel.voronoi([0, 0, width, height]);
+  
+  // Background fill
+  gfx.fillStyle = '#3A3A3A';
+  gfx.fillRect(0, 0, width, height);
+
+  // Background lines
+  gfx.strokeStyle = '#474747';
+  gfx.lineWidth = lineWidth;
+  gfx.beginPath();
+  vor.render(gfx);
+  gfx.stroke();
+  
+  // Top lines
+  gfx.strokeStyle = '#666666';
+  gfx.lineWidth = topLineWidth;
+  gfx.beginPath();
+  topVor.render(gfx);
+  gfx.stroke();
+  
+  // Marker border
+  gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
+  
+  canvas.toBlob(callback, 'image/jpeg');
+}
+
+function setGeneratedTarget(clickedElem, callback) {
+    const objectName = clickedElem.dataset.objectName;
+    voronoiTarget(document.querySelector('.imagegen-canvas'), (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob, 'autogen-target.jpg');
+        fetch(`/content/${objectName}`, {
+            body: formData,
+            headers: {
+                "type": "targetUpload"
+            },
+            method: "post"
+        }).then((response) => {
+            callback();
+        });
+    });
+}
+
+// Useful if you want to generate a target image and download it to the user's computer
+// function downloadGeneratedTarget(clickedElem) {
+//   const data = voronoiTarget(document.querySelector('.imagegen-canvas'));
+//   clickedElem.href = data;
+//   clickedElem.download = 'autogen-target.jpg';
+// }
+
 
 realityServer.initialize();
