@@ -896,15 +896,10 @@ function loadAnchor(anchorName) {
     objects[anchorUuid].tcs = 0;
 
     if (globalVariables.saveToDisk) {
-        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4), function (err) {
-            if (err) {
-                console.log('anchor object save error', err);
-            } else {
-                // console.log('JSON saved to ' + jsonFilePath);
-                objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
-                hardwareAPI.reset();
-            }
-        });
+        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
+        // console.log('JSON saved to ' + jsonFilePath);
+        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        hardwareAPI.reset();
     } else {
         console.log('I am not allowed to save');
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
