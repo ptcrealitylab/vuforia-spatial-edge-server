@@ -1272,7 +1272,7 @@ function objectWebServer() {
     services.ip = services.getIP(); // ip.address();
     // security implemented
 
-    // check all sever requests for being inside the netmask parameters.
+    // check all server requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
 
     webServer.use('*', function (req, res, next) {
@@ -1336,6 +1336,12 @@ function objectWebServer() {
 
     webServer.use('/frames/:frameName', function (req, res, next) {
 
+        if (!utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid frame name. Must be alphanumeric.');
+            console.log(req.params.frameName);
+            return;
+        }
+        
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1657,8 +1663,12 @@ function objectWebServer() {
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
-    webServer.post('/triggerBlock/:blockID', function (req, res) {
-        blockController.triggerBlockSearch(req.params.blockID, req.body, function (statusCode, responseContents) {
+    webServer.post('/triggerBlock/:blockName', function (req, res) {
+        if (!utilities.isValidId(req.params.blockName)) {
+          res.status(400).send('Invalid block name. Must be alphanumeric.');
+          return;
+        }
+        blockController.triggerBlockSearch(req.params.blockName, req.body, function (statusCode, responseContents) {
             res.status(statusCode).json(responseContents).end();
         });
     });
@@ -1697,6 +1707,10 @@ function objectWebServer() {
             res.sendStatus(404);
             return;
         }
+        if (utilities.goesUpDirectory(req.params.fileName)) {
+            res.status(400).send('Invalid file name. Cannot go up directories.');
+            return;
+        }
         res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
     });
 
@@ -1705,6 +1719,10 @@ function objectWebServer() {
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
         if (!nodePath) {
             res.sendStatus(404);
+            return;
+        }
+        if (utilities.goesUpDirectory(req.params.fileName)) {
+            res.status(400).send('Invalid file name. Cannot go up directories.');
             return;
         }
         res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
@@ -1761,20 +1779,32 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
             // console.log("get 12");
+            if (!utilities.isValidId(req.params.id)) {
+                res.status(400).send('Invalid object id. Must be alphanumeric.');
+                return;
+            }
             res.send(webFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
             // console.log("get 12");
+            if (!utilities.isValidId(req.params.id)) {
+                res.status(400).send('Invalid object id. Must be alphanumeric.');
+                return;
+            }
             res.send(webFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         // sends the content page for the object :id
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
-            console.log('get frameFolder', req.params.object, req.params.frame);
+        webServer.get(objectInterfaceFolder + 'object/:objectName/:frameName/frameFolder', function (req, res) {
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
+            }
+            console.log('get frameFolder', req.params.objectName, req.params.frameName);
             const dirTree = require('directory-tree');
-            var objectPath = objectsPath + '/' + req.params.object + '/' + req.params.frame;
+            var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
                 item.path = item.path.replace(objectsPath, '/obj');
             });
@@ -1782,18 +1812,25 @@ function objectWebServer() {
         });
 
 
-        webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'content/:objectName/:frameName', function (req, res) {
             // console.log("get 13");
             console.log('get frame index', req.params);
-            res.send(webFrontend.uploadTargetContentFrame(req.params.object, req.params.frame, objectsPath, objectInterfaceFolder));
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
+            }
+            res.send(webFrontend.uploadTargetContentFrame(req.params.objectName, req.params.frameName, objectsPath, objectInterfaceFolder));
         });
 
-        webServer.get(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
             webFrontend.editContent(req, res);
         });
 
-        webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
-            // TODO insecure, requires sanitization of path
+        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
+            if (utilities.goesUpDirectory(req.path)) {
+                res.status(400).send('Invalid path. Cannot go up directories.');
+                return;
+            }
             console.log('PUT', req.path, req.body.content);
             fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
                 if (err) {
@@ -1805,14 +1842,22 @@ function objectWebServer() {
         });
         // sends the target page for the object :id
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'target/:objectName', function (req, res) {
             //   console.log("get 14");
-            res.send(webFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
+            if (!utilities.isValidId(req.params.objectName)) {
+              res.status(400).send('Invalid object name. Must be alphanumeric.');
+              return;
+            }
+            res.send(webFrontend.uploadTargetText(req.params.objectName, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
         });
 
-        webServer.get(objectInterfaceFolder + 'target/*/*/', function (req, res) {
-            res.sendFile(__dirname + '/' + req.params[0] + '/' + req.params[1]);
+        webServer.get(objectInterfaceFolder + 'target/:objectName/:frameName/', function (req, res) {
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+              res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+              return;
+            }
+            res.sendFile(__dirname + '/' + req.params.objectName + '/' + req.params.frameName);
         });
 
         // Send the main starting page for the web user interface
@@ -1826,6 +1871,11 @@ function objectWebServer() {
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
             if (!isMobile) {
+                if (!utilities.isValidId(req.params.interfaceName)) {
+                  res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                  return;
+                }
+                
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
                 res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
@@ -1843,12 +1893,12 @@ function objectWebServer() {
             }
         });
 
-        webServer.get('/server/networkInterface/*/', function (req, res) {
-            console.log('--------------------------------------------------------get networkInterface', req.params[0]);
-            services.ips.activeInterface = req.params[0];
+        webServer.get('/server/networkInterface/:activeInterface/', function (req, res) {
+            console.log('--------------------------------------------------------get networkInterface', req.params.activeInterface);
+            services.ips.activeInterface = req.params.activeInterface;
             res.json(services.ips);
 
-            storage.setItemSync('activeNetworkInterface', req.params[0]);
+            storage.setItemSync('activeNetworkInterface', req.params.activeInterface);
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
             // res.redirect(req.get('referer'));
 
@@ -1884,6 +1934,11 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             const interfaceName = req.params.interfaceName;
+            
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             if (!hardwareInterfaceModules.hasOwnProperty(interfaceName)) {
                 res.sendStatus(404);
@@ -1895,6 +1950,11 @@ function objectWebServer() {
 
         webServer.post('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             var interfaceName = req.params.interfaceName;
+            
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
                 if (success) {
@@ -1977,6 +2037,11 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
+            
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
                 if (success) {
@@ -1990,6 +2055,11 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
+            
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
                 if (success) {
@@ -2051,6 +2121,11 @@ function objectWebServer() {
 
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
+            
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
 
             addonFrames.setFrameEnabled(frameName, false, function (success, errorMessage) {
                 if (success) {
@@ -2067,6 +2142,11 @@ function objectWebServer() {
 
         webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
             var frameName = req.params.frameName;
+            
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
 
             addonFrames.setFrameEnabled(frameName, true, function (success, errorMessage) {
                 if (success) {
@@ -2090,6 +2170,12 @@ function objectWebServer() {
             }
 
             var frameName = req.params.frameName;
+            
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
+            
             console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
@@ -2161,6 +2247,10 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
             if (req.body.action === 'delete') {
+                if (utilities.goesUpDirectory(req.path)) {
+                  res.status(400).send("Invalid path. Cannot contain '..'.");
+                  return;
+                }
                 var folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
@@ -2189,6 +2279,17 @@ function objectWebServer() {
 
         webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
             if (req.body.action === 'delete') {
+                
+                if (!utilities.isValidId(req.body.name)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
+                
+                if (!utilities.isValidId(req.params.id)) {
+                    res.status(400).send('Invalid object id. Must be alphanumeric.');
+                    return;
+                }
+                
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
@@ -2230,6 +2331,11 @@ function objectWebServer() {
                 console.log('got NEW', req.body.name);
                 // console.log(req.body);
                 if (req.body.name !== '' && !req.body.frame) {
+                    if (!utilities.isValidId(req.body.name)) {
+                        res.status(400).send('Invalid object name. Must be alphanumeric.');
+                        return;
+                    }
+                  
                     // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
@@ -2260,6 +2366,11 @@ function objectWebServer() {
                     setAnchors(); // Needed to initialize non-world (anchor) objects
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
+                    if (!utilities.isValidId(req.body.name) || !utilities.isValidId(req.body.frame)) {
+                        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                        return;
+                    }
+                  
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
@@ -2292,9 +2403,12 @@ function objectWebServer() {
                     }
                 };
 
-
+                if (!utilities.isValidId(req.body.name)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
+                
                 // remove when frame is implemented
-
                 var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
@@ -2310,12 +2424,20 @@ function objectWebServer() {
                 }
 
                 if (pathKey && pathKey !== '') {
+                    if (utilities.goesUpDirectory(pathKey)) {
+                        res.status(400).send("Invalid path. Cannot contain '..'.");
+                        return;
+                    }
                     fs.unlinkSync(objectsPath + pathKey.substring(4));
                     res.send('ok');
                     return;
                 }
 
                 if (frameName !== '') {
+                    if (!utilities.isValidId(frameName)) {
+                        res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                        return;
+                    }
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
@@ -2464,10 +2586,20 @@ function objectWebServer() {
             function (req, res) {
 
                 console.log('object is: ' + req.params.id);
+                
+                if (!utilities.isValidId(req.params.id)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
 
                 tmpFolderFile = req.params.id;
 
                 if (req.body.action === 'delete') {
+                    if (!utilities.isValidId(req.body.name)) {
+                        res.status(400).send('Invalid object name. Must be alphanumeric.');
+                        return;
+                    }
+                    
                     var folderDel = objectsPath + '/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
