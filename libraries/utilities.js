@@ -883,3 +883,14 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
     return videoDir;
 }
 exports.getVideoDir = getVideoDir;
+
+// Ensures id is alphanumeric or -_
+const isValidId = function (id) {
+    return id.match(/^[A-Za-z0-9_\-]+$/);
+}
+exports.isValidId = isValidId;
+
+const goesUpDirectory = function (path) {
+    return path.match(/\.\./);
+}
+exports.goesUpDirectory = goesUpDirectory;
