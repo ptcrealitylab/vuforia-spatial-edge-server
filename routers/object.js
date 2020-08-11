@@ -26,46 +26,90 @@ var git;
 var nodeTypeModules;
 
 // logic links
-router.post('/*/frame/*/node/*/link/*/addBlockLink/', function (req, res) {
-    res.send(blockLinkController.addLogicLink(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/addBlockLink/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, node, or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockLinkController.addLogicLink(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.linkName, req.body));
 });
-router.delete('/*/frame/*/node/*/link/*/editor/*/deleteBlockLink/', function (req, res) {
-    res.send(blockLinkController.deleteLogicLink(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
+router.delete('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/editor/:lastEditor/deleteBlockLink/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, node, or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockLinkController.deleteLogicLink(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.linkName, req.params.lastEditor));
 });
 
 // logic blocks
-router.post('/:objectID/frame/:frameID/node/:nodeID/block/:blockID/addBlock/', function (req, res) {
-    res.send(blockController.addNewBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/block/:blockName/addBlock/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.blockName)) {
+        res.status(400).send('Invalid object, frame, node, or block name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockController.addNewBlock(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.blockName, req.body));
 });
-router.delete('/:objectID/frame/:frameID/node/:nodeID/block/:blockID/editor/:lastEditor/deleteBlock/', function (req, res) {
-    res.send(blockController.deleteBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.params.lastEditor));
+router.delete('/:objectName/frame/:frameName/node/:nodeName/block/:blockName/editor/:lastEditor/deleteBlock/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.blockName)) {
+        res.status(400).send('Invalid object, frame, node, or block name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockController.deleteBlock(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.blockName, req.params.lastEditor));
 });
-router.post('/*/frame/*/node/*/block/*/blockPosition/', function (req, res) {
-    res.send(blockController.postBlockPosition(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/block/:blockName/blockPosition/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.blockName)) {
+        res.status(400).send('Invalid object, frame, node, or block name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockController.postBlockPosition(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.blockName, req.body));
 });
-router.post('/:objectID/frame/:frameID/node/:nodeID/block/:blockID/triggerBlock/', function (req, res) {
-    res.send(blockController.triggerBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/block/:blockName/triggerBlock/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.blockName)) {
+        res.status(400).send('Invalid object, frame, node, or block name. Must be alphanumeric.');
+        return;
+    }
+    res.send(blockController.triggerBlock(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.blockName, req.body));
 });
 
 // logic nodes
-router.post('/*/frame/*/node/*/addLogicNode/', function (req, res) {
-    res.send(logicNodeController.addLogicNode(req.params[0], req.params[1], req.params[2], req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/addLogicNode/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(logicNodeController.addLogicNode(req.params.objectName, req.params.frameName, req.params.nodeName, req.body));
 });
-router.delete('/*/frame/*/node/*/editor/*/deleteLogicNode', function (req, res) {
-    res.send(logicNodeController.deleteLogicNode(req.params[0], req.params[1], req.params[2], req.params[3]));
+router.delete('/:objectName/frame/:frameName/node/:nodeName/editor/:lastEditor/deleteLogicNode', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(logicNodeController.deleteLogicNode(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.lastEditor));
 });
-router.post('/*/frame/*/node/*/nodeSize/', function (req, res) {
-    logicNodeController.changeNodeSize(req.params[0], req.params[1], req.params[2], req.body, function (statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/node/:nodeName/nodeSize/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    logicNodeController.changeNodeSize(req.params.objectName, req.params.frameName, req.params.nodeName, req.body, function (statusCode, responseContents) {
         res.status(statusCode).send(responseContents);
     });
 });
-router.post('/:objectID/frame/:frameID/node/:nodeID/rename/', function (req, res) {
-    logicNodeController.rename(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function (statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/node/:nodeName/rename/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.body.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    logicNodeController.rename(req.params.objectName, req.params.frameName, req.params.nodeName, req.body, function (statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function (req, res) {
-    logicNodeController.uploadIconImage(req.params.objectID, req.params.frameID, req.params.nodeID, req, function (statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/node/:nodeName/uploadIconImage', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    logicNodeController.uploadIconImage(req.params.objectName, req.params.frameName, req.params.nodeName, req, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
@@ -75,57 +119,113 @@ router.post('/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function (
 });
 
 // normal links
-router.delete('/*/link/*/lastEditor/*/', function (req, res) {
-    res.send(linkController.deleteLink(req.params[0], req.params[0], req.params[1], req.params[2]));
+router.delete('/:objectName/link/:linkName/lastEditor/:lastEditor/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.deleteLink(req.params.objectName, req.params.objectName, req.params.linkName, req.params.lastEditor));
 });
-router.delete('/*/frame/*/link/*/editor/*/deleteLink', function (req, res) {
-    res.send(linkController.deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
+router.delete('/:objectName/frame/:frameName/link/:linkName/editor/:lastEditor/deleteLink', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.deleteLink(req.params.objectName, req.params.frameName, req.params.linkName, req.params.lastEditor));
 });
 // todo links for programs as well
-router.post('/:objectID/frame/:frameID/link/:linkID/addLink/', function (req, res) {
+router.post('/:objectName/frame/:frameName/link/:linkName/addLink/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
+        return;
+    }
     console.log('routed by 2');
-    res.status(200).send(linkController.newLink(req.params.objectID, req.params.frameID, req.params.linkID, req.body));
+    res.status(200).send(linkController.newLink(req.params.objectName, req.params.frameName, req.params.linkName, req.body));
 });
-router.post('/*/link/*/', function (req, res) {
+router.post('/:objectName/link/:linkName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object or link name. Must be alphanumeric.');
+        return;
+    }
     console.log('routed by 1');
-    res.status(200).send(linkController.newLink(req.params[0], req.params[0], req.params[1], req.body));
+    res.status(200).send(linkController.newLink(req.params.objectName, req.params.objectName, req.params.linkName, req.body));
 });
-router.post('/*/linkLock/*/', function (req, res) {
-    res.send(linkController.addLinkLock(req.params[0], req.params[0], req.params[1], req.body));
+router.post('/:objectName/linkLock/:linkName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.addLinkLock(req.params.objectName, req.params.objectName, req.params.linkName, req.body));
 });
-router.post('/*/frame/*/link/*/addLock', function (req, res) {
-    res.send(linkController.addLinkLock(req.params[0], req.params[1], req.params[2], req.body));
+router.post('/:objectName/frame/:frameName/link/:linkName/addLock', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.addLinkLock(req.params.objectName, req.params.frameName, req.params.linkName, req.body));
 });
-router.delete('/*/linkLock/*/password/*/', function (req, res) {
-    res.send(linkController.deleteLinkLock(req.params[0], req.params[0], req.params[1], req.params[2]));
+router.delete('/:objectName/linkLock/:linkName/password/:password/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.deleteLinkLock(req.params.objectName, req.params.objectName, req.params.linkName, req.params.password));
 });
-router.delete('/*/frame/*/link/*/password/*/deleteLock', function (req, res) {
-    res.send(linkController.deleteLinkLock(req.params[0], req.params[1], req.params[2], req.params[3]));
+router.delete('/:objectName/frame/:frameName/link/:linkName/password/:password/deleteLock', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.linkName)) {
+        res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
+        return;
+    }
+    res.send(linkController.deleteLinkLock(req.params.objectName, req.params.frameName, req.params.linkName, req.params.password));
 });
 
 // normal nodes
-router.post('/:objectKey/frame/:frameKey/node/:nodeKey/addNode', function (req, res) {
-    nodeController.addNodeToFrame(req.params.objectKey, req.params.frameKey, req.params.nodeKey, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/node/:nodeName/addNode', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    nodeController.addNodeToFrame(req.params.objectName, req.params.frameName, req.params.nodeName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/:objectKey/node/:nodeKey/', function (req, res) {
-    nodeController.addNodeToFrame(req.params.objectKey, req.params.objectKey, req.params.nodeKey, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/node/:nodeName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object or node name. Must be alphanumeric.');
+        return;
+    }
+    nodeController.addNodeToFrame(req.params.objectName, req.params.objectName, req.params.nodeName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/*/nodeLock/*/', function (req, res) {
-    res.send(nodeController.addNodeLock(req.params[0], req.params[0], req.params[1], req.body));
+router.post('/:objectName/nodeLock/:nodeName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(nodeController.addNodeLock(req.params.objectName, req.params.objectName, req.params.nodeName, req.body));
 });
-router.post('/*/frame/*/node/*/addLock/', function (req, res) {
-    res.send(nodeController.addNodeLock(req.params[0], req.params[1], req.params[2], req.body));
+router.post('/:objectName/frame/:frameName/node/:nodeName/addLock/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(nodeController.addNodeLock(req.params.objectName, req.params.frameName, req.params.nodeName, req.body));
 });
 // TODO: add robust security to the "password" field
-router.delete('/*/frame/*/node/*/password/*/deleteLock', function (req, res) {
-    res.send(nodeController.deleteNodeLock(req.params[0], req.params[1], req.params[2], req.params[3]));
+router.delete('/:objectName/frame/:frameName/node/:nodeName/password/:password/deleteLock', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(nodeController.deleteNodeLock(req.params.objectName, req.params.frameName, req.params.nodeName, req.params.password));
 });
-router.delete('/*/nodeLock/*/password/*/', function (req, res) {
-    res.send(nodeController.deleteNodeLock(req.params[0], req.params[0], req.params[1], req.params[2]));
+router.delete('/:objectName/nodeLock/:nodeName/password/:password/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.nodeName)) {
+        res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+        return;
+    }
+    res.send(nodeController.deleteNodeLock(req.params.objectName, req.params.objectName, req.params.nodeName, req.params.password));
 });
 
 // objects
@@ -134,8 +234,12 @@ router.delete('/*/nodeLock/*/password/*/', function (req, res) {
  * The video is stored in a form, which can be parsed and written to the filesystem.
  * @todo compress video
  */
-router.post('/:objectID/video/:videoID', function (req, res) {
-    objectController.uploadVideo(req.params.objectID, req.params.videoID, req, function (statusCode, responseContents) {
+router.post('/:objectName/video/:videoName', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.uploadVideo(req.params.objectName, req.params.videoName, req, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
@@ -144,8 +248,12 @@ router.post('/:objectID/video/:videoID', function (req, res) {
     });
 });
 // object git interfaces
-router.post('/:objectID/saveCommit', function (req, res) {
-    objectController.saveCommit(req.params.objectID, function (statusCode, responseContents) {
+router.post('/:objectName/saveCommit', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.saveCommit(req.params.objectName, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
@@ -153,8 +261,12 @@ router.post('/:objectID/saveCommit', function (req, res) {
         }
     });
 });
-router.post('/:objectID/resetToLastCommit', function (req, res) {
-    objectController.resetToLastCommit(req.params.objectID, function (statusCode, responseContents) {
+router.post('/:objectName/resetToLastCommit', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.resetToLastCommit(req.params.objectName, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
@@ -162,13 +274,21 @@ router.post('/:objectID/resetToLastCommit', function (req, res) {
         }
     });
 });
-router.post('/:objectID/matrix', function (req, res) {
-    objectController.setMatrix(req.params.objectID, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/matrix', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.setMatrix(req.params.objectName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/:objectID/memory', function (req, res) {
-    objectController.memoryUpload(req.params.objectID, req, function (statusCode, responseContents) {
+router.post('/:objectName/memory', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.memoryUpload(req.params.objectName, req, function (statusCode, responseContents) {
         if (statusCode === 500) {
             res.status(statusCode).send(responseContents);
         } else {
@@ -179,96 +299,156 @@ router.post('/:objectID/memory', function (req, res) {
 
 // frames
 // Generates uuid
-router.post('/*/frames/', function (req, res) {
+router.post('/:objectName/frames/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
     var frameId = 'frame' + utilities.uuidTime();
-    frameController.addFrameToObject(req.params[0], frameId, req.body, function(statusCode, responseContents) {
+    frameController.addFrameToObject(req.params.objectName, frameId, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
 // Uses given uuid
-router.post('/*/addFrame/', function (req, res) {
-    frameController.addFrameToObject(req.params[0], req.body.uuid, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/addFrame/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    frameController.addFrameToObject(req.params.objectName, req.body.uuid, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
 // Update the publicData of a frame when it gets moved from one object to another
-router.delete('/:objectID/frame/:frameID/publicData', function (req, res) {
-    frameController.deletePublicData(req.params.objectID, req.params.frameID, function(statusCode, responseContents) {
+router.delete('/:objectName/frame/:frameName/publicData', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.deletePublicData(req.params.objectName, req.params.frameName, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/:objectID/frame/:frameID/publicData', function (req, res) {
-    frameController.addPublicData(req.params.objectID, req.params.frameID, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/publicData', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.addPublicData(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
 /**
  * Creates a copy of the frame (happens when you pull an instance from a staticCopy frame)
  */
-router.post('/:objectID/frames/:frameID/copyFrame/', function (req, res) {
-    frameController.copyFrame(req.params.objectID, req.params.frameID, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/frames/:frameName/copyFrame/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.copyFrame(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/*/frames/*/', function (req, res) {
-    frameController.updateFrame(req.params[0], req.params[1], req.body, function(statusCode, responseContents) {
+router.post('/:objectName/frames/:frameName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.updateFrame(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.delete('/:objectID/frames/:frameID/', function (req, res) {
-    frameController.deleteFrame(req.params.objectID, req.params.frameID, req.body, function(statusCode, responseContents) {
+router.delete('/:objectName/frames/:frameName/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.deleteFrame(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
-router.post('/:objectID/frame/:frameID/group/', function (req, res) {
-    frameController.setGroup(req.params.objectID, req.params.frameID, req.body, function(statusCode, responseContents) {
+router.post('/:objectName/frame/:frameName/group/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.setGroup(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
 
 const setupDeveloperRoutes = function() {
     // normal nodes
-    router.post('/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
-        nodeController.changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function (statusCode, responseContents) {
+    router.post('/:objectName/frame/:frameName/node/:nodeName/size/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+            res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+            return;
+        }
+        nodeController.changeSize(req.params.objectName, req.params.frameName, req.params.nodeName, req.body, function (statusCode, responseContents) {
             res.status(statusCode).send({status: responseContents});
         });
     });
-    router.get('/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
-        var node = nodeController.getNode(req.params.objectID, req.params.frameID, req.params.nodeID);
+    router.get('/:objectName/frame/:frameName/node/:nodeName/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName)) {
+            res.status(400).send('Invalid object, frame, or node name. Must be alphanumeric.');
+            return;
+        }
+        var node = nodeController.getNode(req.params.objectName, req.params.frameName, req.params.nodeName);
         res.json(node || {}).end();
     });
 
     // frames
-    router.post('/:objectID/frame/:frameID/size/', function (req, res) {
-        frameController.changeSize(req.params.objectID, req.params.frameID, null, req.body, function (statusCode, responseContents) {
+    router.post('/:objectName/frame/:frameName/size/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+            return;
+        }
+        frameController.changeSize(req.params.objectName, req.params.frameName, null, req.body, function (statusCode, responseContents) {
             res.status(statusCode).send({status: responseContents});
         });
     });
-    router.post('/*/frame/*/visualization/', function (req, res) {
-        frameController.changeVisualization(req.params[0], req.params[1], req.body, function (statusCode, responseContents) {
+    router.post('/:objectName/frame/:frameName/visualization/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+            return;
+        }
+        frameController.changeVisualization(req.params.objectName, req.params.frameName, req.body, function (statusCode, responseContents) {
             res.status(statusCode).json(responseContents).end();
         });
     });
-    router.get('/object/*/*/reset/', function (req, res) {
-        frameController.resetPositioning(req.params[0], req.params[1], function (statusCode, responseContents) {
+    router.get('/:objectName/:frameName/reset/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+            return;
+        }
+        frameController.resetPositioning(req.params.objectName, req.params.frameName, function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/*/frame/*/', function (req, res) {
-        var frame = frameController.getFrame(req.params[0], req.params[1]);
+    router.get('/:objectName/frame/:frameName/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+            return;
+        }
+        var frame = frameController.getFrame(req.params.objectName, req.params.frameName);
         if (frame) {
             res.status(200).json(frame).end();
             return;
         }
         res.status(404).json({
             failure: true,
-            error: 'Object: ' + req.params[0] + ', frame: ' + req.params[1] + ' not found'
+            error: 'Object: ' + req.params.objectName + ', frame: ' + req.params.frameName + ' not found'
         }).end();
     });
 
     // objects
-    router.get('/*/deactivate/', function (req, res) {
-        objectController.deactivate(req.params[0], function (statusCode, responseContents) {
+    router.get('/:objectName/deactivate/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.deactivate(req.params.objectName, function (statusCode, responseContents) {
             if (statusCode === 200) {
                 res.status(statusCode).send(responseContents);
             } else {
@@ -276,8 +456,12 @@ const setupDeveloperRoutes = function() {
             }
         });
     });
-    router.get('/*/activate/', function (req, res) {
-        objectController.activate(req.params[0], function (statusCode, responseContents) {
+    router.get('/:objectName/activate/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.activate(req.params.objectName, function (statusCode, responseContents) {
             if (statusCode === 200) {
                 res.status(statusCode).send(responseContents);
             } else {
@@ -285,26 +469,46 @@ const setupDeveloperRoutes = function() {
             }
         });
     });
-    router.get('/*/screen/', function (req, res) {
-        objectController.setVisualization(req.params[0], 'screen', function (statusCode, responseContents) {
+    router.get('/:objectName/screen/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.setVisualization(req.params.objectName, 'screen', function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/*/ar/', function (req, res) {
-        objectController.setVisualization(req.params[0], 'ar', function (statusCode, responseContents) {
+    router.get('/:objectName/ar/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.setVisualization(req.params.objectName, 'ar', function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/:objectID/zipBackup/', function (req, res) {
-        objectController.zipBackup(req.params.objectID, req, res);
+    router.get('/:objectName/zipBackup/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.zipBackup(req.params.objectName, req, res);
     });
-    router.post('/:objectID/generateXml/', function (req, res) {
-        objectController.generateXml(req.params.objectID, req.body, function (statusCode, responseContents) {
+    router.post('/:objectName/generateXml/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.generateXml(req.params.objectName, req.body, function (statusCode, responseContents) {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/:objectID/disableFrameSharing/', function (req, res) {
-        objectController.setFrameSharingEnabled(req.params.objectID, false, function (success, errorMessage) {
+    router.get('/:objectName/disableFrameSharing/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.setFrameSharingEnabled(req.params.objectName, false, function (success, errorMessage) {
             if (success) {
                 res.status(200).send('ok');
             } else {
@@ -312,8 +516,12 @@ const setupDeveloperRoutes = function() {
             }
         });
     });
-    router.get('/:objectID/enableFrameSharing/', function (req, res) {
-        objectController.setFrameSharingEnabled(req.params.objectID, true, function (success, errorMessage) {
+    router.get('/:objectName/enableFrameSharing/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.setFrameSharingEnabled(req.params.objectName, true, function (success, errorMessage) {
             if (success) {
                 res.status(200).send('ok');
             } else {
@@ -321,8 +529,12 @@ const setupDeveloperRoutes = function() {
             }
         });
     });
-    router.get('/:objectID/', function (req, res) {
-        res.json(objectController.getObject(req.params.objectID)).end();
+    router.get('/:objectName/', function (req, res) {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        res.json(objectController.getObject(req.params.objectName)).end();
     });
 };
 
