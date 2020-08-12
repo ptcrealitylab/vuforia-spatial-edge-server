@@ -43,8 +43,8 @@ function Node(name, type, objectId, frameId, nodeId) {
         this.publicData = {};
     } else {
         let nodeTemplate = nodeTypes[type];
-        this.privateData = JSON.parse(JSON.stringify(nodeTemplate.properties.privateData)) || {};
-        this.publicData = JSON.parse(JSON.stringify(nodeTemplate.properties.publicData)) || {};
+        this.privateData = JSON.parse(JSON.stringify(nodeTemplate.properties.privateData || {}));
+        this.publicData = JSON.parse(JSON.stringify(nodeTemplate.properties.publicData || {}));
     }
 
     this.setupProgram();
