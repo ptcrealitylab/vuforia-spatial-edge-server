@@ -43,8 +43,8 @@ function Node(name, type, objectId, frameId, nodeId) {
         this.publicData = {};
     } else {
         let nodeTemplate = nodeTypes[type];
-        this.privateData = nodeTemplate.properties.privateData || {};
-        this.publicData = nodeTemplate.properties.publicData || {};
+        this.privateData = Object.assign({}, nodeTemplate.properties.privateData) || {};
+        this.publicData = Object.assign({}, nodeTemplate.properties.publicData) || {};
     }
 
     this.setupProgram();
