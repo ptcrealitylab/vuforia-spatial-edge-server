@@ -366,7 +366,7 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
 };
 
 function executeWrite(objects) {
-    console.log("execute write");
+    console.log('execute write');
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
@@ -389,7 +389,7 @@ function executeWrite(objects) {
     // prepare to write
     var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
-    console.log("writing:" +obj);
+    console.log('writing:', obj);
     // write file
     fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
         // once writeFile is done, unblock writing and loop again
@@ -694,12 +694,12 @@ exports.actionSender = function (action, timeToLive, beatport) {
 
 };
 
-const doesObjectExist = function(objects, objectKey) {
+function doesObjectExist(objects, objectKey) {
     return objects.hasOwnProperty(objectKey);
 }
 exports.doesObjectExist = doesObjectExist;
 
-const getObject = function(objects, objectKey) {
+function getObject(objects, objectKey) {
     if (doesObjectExist(objects, objectKey)) {
         return objects[objectKey];
     }
@@ -707,7 +707,7 @@ const getObject = function(objects, objectKey) {
 }
 exports.getObject = getObject;
 
-const doesFrameExist = function(objects, objectKey, frameKey) {
+function doesFrameExist(objects, objectKey, frameKey) {
     if (doesObjectExist(objects, objectKey)) {
         var foundObject = getObject(objects, objectKey);
         if (foundObject) {
@@ -718,7 +718,7 @@ const doesFrameExist = function(objects, objectKey, frameKey) {
 }
 exports.doesFrameExist = doesFrameExist;
 
-const getFrame = function(objects, objectKey, frameKey) {
+function getFrame(objects, objectKey, frameKey) {
     if (doesFrameExist(objects, objectKey, frameKey)) {
         var foundObject = getObject(objects, objectKey);
         if (foundObject) {
@@ -729,7 +729,7 @@ const getFrame = function(objects, objectKey, frameKey) {
 }
 exports.getFrame = getFrame;
 
-const doesNodeExist = function(objects, objectKey, frameKey, nodeKey) {
+function doesNodeExist(objects, objectKey, frameKey, nodeKey) {
     if (doesFrameExist(objects, objectKey, frameKey)) {
         var foundFrame = getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
@@ -740,7 +740,7 @@ const doesNodeExist = function(objects, objectKey, frameKey, nodeKey) {
 }
 exports.doesNodeExist = doesNodeExist;
 
-const getNode = function(objects, objectKey, frameKey, nodeKey) {
+function getNode(objects, objectKey, frameKey, nodeKey) {
     if (doesNodeExist(objects, objectKey, frameKey, nodeKey)) {
         var foundFrame = getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
@@ -755,7 +755,7 @@ exports.getNode = getNode;
  * @param objectKey
  * @param {Function} callback - (error: {failure: bool, error: string}, object)
  */
-const getObjectAsync = function (objects, objectKey, callback) {
+function getObjectAsync(objects, objectKey, callback) {
     if (!objects.hasOwnProperty(objectKey)) {
         callback({failure: true, error: 'Object ' + objectKey + ' not found'});
         return;
@@ -770,7 +770,7 @@ exports.getObjectAsync = getObjectAsync;
  * @param frameKey
  * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
  */
-const getFrameAsync = function (objects, objectKey, frameKey, callback) {
+function getFrameAsync(objects, objectKey, frameKey, callback) {
     getObjectAsync(objects, objectKey, function (error, object) {
         if (error) {
             callback(error);
@@ -792,7 +792,7 @@ exports.getFrameAsync = getFrameAsync;
  * @param nodeKey
  * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
  */
-const getNodeAsync = function (objects, objectKey, frameKey, nodeKey, callback) {
+function getNodeAsync(objects, objectKey, frameKey, nodeKey, callback) {
     getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
         if (error) {
             callback(error);
@@ -815,7 +815,7 @@ exports.getNodeAsync = getNodeAsync;
  * @param nodeKey
  * @param callback
  */
-const getFrameOrNode = function (objects, objectKey, frameKey, nodeKey, callback) {
+function getFrameOrNode(objects, objectKey, frameKey, nodeKey, callback) {
     getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
         if (error) {
             callback(error);
@@ -837,7 +837,7 @@ const getFrameOrNode = function (objects, objectKey, frameKey, nodeKey, callback
 }
 exports.getFrameOrNode = getFrameOrNode;
 
-const forEachObject = function (objects, callback) {
+function forEachObject(objects, callback) {
     for (var objectKey in objects) {
         if (!objects.hasOwnProperty(objectKey)) continue;
         callback(objects[objectKey], objectKey);
@@ -845,7 +845,7 @@ const forEachObject = function (objects, callback) {
 }
 exports.forEachObject = forEachObject;
 
-const forEachFrameInObject = function (object, callback) {
+function forEachFrameInObject(object, callback) {
     for (var frameKey in object.frames) {
         if (!object.frames.hasOwnProperty(frameKey)) continue;
         callback(object.frames[frameKey], frameKey);
@@ -853,7 +853,7 @@ const forEachFrameInObject = function (object, callback) {
 }
 exports.forEachFrameInObject = forEachFrameInObject;
 
-const forEachNodeInFrame = function (frame, callback) {
+function forEachNodeInFrame(frame, callback) {
     for (var nodeKey in frame.nodes) {
         if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
         callback(frame.nodes[nodeKey], nodeKey);
@@ -867,7 +867,7 @@ exports.forEachNodeInFrame = forEachNodeInFrame;
  * @param objectName
  * @return {string}
  */
-const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectName) {
+function getVideoDir(objectsPath, identityFolderName, isMobile, objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
@@ -885,12 +885,12 @@ const getVideoDir = function (objectsPath, identityFolderName, isMobile, objectN
 exports.getVideoDir = getVideoDir;
 
 // Ensures id is alphanumeric or -_
-const isValidId = function (id) {
-    return id.match(/^[A-Za-z0-9_\-]+$/);
+function isValidId(id) {
+    return id.match(/^[A-Za-z0-9_-]+$/);
 }
 exports.isValidId = isValidId;
 
-const goesUpDirectory = function (path) {
+function goesUpDirectory(path) {
     return path.match(/\.\./);
 }
 exports.goesUpDirectory = goesUpDirectory;
