@@ -4,6 +4,7 @@ const router = express.Router();
 const blockController = require('../controllers/block.js');
 const blockLinkController = require('../controllers/blockLink.js');
 const logicNodeController = require('../controllers/logicNode.js');
+const utilities = require('../libraries/utilities');
 
 // Variables populated from server.js with setup()
 var globalVariables;
