@@ -102,6 +102,8 @@
             }
         }.bind(this));
 
+        let screenPositionListenerHandle = null;
+        let mostRecentScreenPosition = null;
         /**
          * Automatically show and hide the rootElement of the frame when its envelope opens or closes
          */
@@ -118,6 +120,27 @@
                     this.show();
                 } else {
                     this.hide();
+                }
+            }
+
+            // respond to position subscriptions
+            if (typeof envelopeMessage.subscribeToPosition !== 'undefined') {
+                // console.log('contained frame received position subscription');
+
+                if (!screenPositionListenerHandle) {
+                    screenPositionListenerHandle = realityInterface.addScreenPositionListener(function (screenPosition) {
+                        if (mostRecentScreenPosition &&
+                            mostRecentScreenPosition.center.x === screenPosition.center.x &&
+                            mostRecentScreenPosition.center.y === screenPosition.center.y) {
+                            return; // don't send duplicate values
+                        }
+                        mostRecentScreenPosition = screenPosition;
+                        // console.log('contained frame learned its own position');
+
+                        this.sendMessageToEnvelope({
+                            screenPosition: mostRecentScreenPosition
+                        });
+                    }.bind(this));
                 }
             }
 
