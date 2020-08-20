@@ -127,20 +127,78 @@
             if (typeof envelopeMessage.subscribeToPosition !== 'undefined') {
                 // console.log('contained frame received position subscription');
 
-                if (!screenPositionListenerHandle) {
-                    screenPositionListenerHandle = realityInterface.addScreenPositionListener(function (screenPosition) {
-                        if (mostRecentScreenPosition &&
-                            mostRecentScreenPosition.center.x === screenPosition.center.x &&
-                            mostRecentScreenPosition.center.y === screenPosition.center.y) {
-                            return; // don't send duplicate values
-                        }
-                        mostRecentScreenPosition = screenPosition;
-                        // console.log('contained frame learned its own position');
+                if (envelopeMessage.subscribeToPosition === '3d') {
+                    if (!screenPositionListenerHandle) {
 
-                        this.sendMessageToEnvelope({
-                            screenPosition: mostRecentScreenPosition
+                        let screenWidth = 736; // assume iPhone 8 but update to accurate when API returns
+                        let screenHeight = 414;
+                        realityInterface.getScreenDimensions(function(width, height) {
+                            screenWidth = width;
+                            screenHeight = height;
                         });
-                    }.bind(this));
+
+                        screenPositionListenerHandle = realityInterface.addMatrixListener(function(modelView, projection) {
+                            let modelViewProjection = [];
+                            multiplyMatrix(modelView, projection, modelViewProjection);
+
+                            let semiNormalizedX = modelViewProjection[12] / modelViewProjection[15];
+                            let semiNormalizedY = modelViewProjection[13] / modelViewProjection[15];
+                            let z = modelViewProjection[14]; // don't divide by [15] or it's always = 1
+
+                            let x = mapRange(semiNormalizedX, -1, 1, 0, screenWidth);
+                            let y = mapRange(semiNormalizedY, 1, -1, 0, screenHeight);
+
+                            // console.log('x,y,z = ' + x.toFixed(2) + ',' + y.toFixed(2) + ',' + z.toFixed(2));
+                            // var zDistance = Math.abs(modelView[14]);
+
+                            if (mostRecentScreenPosition &&
+                                mostRecentScreenPosition.center.x === x &&
+                                mostRecentScreenPosition.center.y === y &&
+                                mostRecentScreenPosition.center.z === z) {
+                                return; // don't send duplicate values
+                            }
+
+                            let width = 200; // TODO: infer or calculate from scale etc
+                            let height = 200;
+                            let depth = 200;
+                            mostRecentScreenPosition = {
+                                center: {
+                                    x: x,
+                                    y: y,
+                                    z: z
+                                },
+                                upperLeft: {
+                                    x: x - width / 2,
+                                    y: y - height / 2,
+                                    z: z - depth / 2
+                                },
+                                lowerRight: {
+                                    x: x + width / 2,
+                                    y: y + height / 2,
+                                    z: z + depth / 2
+                                }
+                            };
+                            this.sendMessageToEnvelope({
+                                screenPosition: mostRecentScreenPosition
+                            });
+                        }.bind(this));
+                    }
+                } else {
+                    if (!screenPositionListenerHandle) {
+                        screenPositionListenerHandle = realityInterface.addScreenPositionListener(function (screenPosition) {
+                            if (mostRecentScreenPosition &&
+                                mostRecentScreenPosition.center.x === screenPosition.center.x &&
+                                mostRecentScreenPosition.center.y === screenPosition.center.y) {
+                                return; // don't send duplicate values
+                            }
+                            mostRecentScreenPosition = screenPosition;
+                            // console.log('contained frame learned its own position');
+
+                            this.sendMessageToEnvelope({
+                                screenPosition: mostRecentScreenPosition
+                            });
+                        }.bind(this));
+                    }
                 }
             }
 
@@ -263,6 +321,50 @@
             this.callbacks[callbackName].push(callbackFunction);
         };
     }
+
+    /**
+     * @desc This function multiplies one m16 matrix with a second m16 matrix
+     * @param {Array.<number>} m2 - origin matrix to be multiplied with
+     * @param {Array.<number>} m1 - second matrix that multiplies.
+     * @param {Array.<number>} r - matrix result of the multiplication
+     */
+    const multiplyMatrix = function(m2, m1, r) {
+        // Cm1che only the current line of the second mm1trix
+        r[0] = m2[0] * m1[0] + m2[1] * m1[4] + m2[2] * m1[8] + m2[3] * m1[12];
+        r[1] = m2[0] * m1[1] + m2[1] * m1[5] + m2[2] * m1[9] + m2[3] * m1[13];
+        r[2] = m2[0] * m1[2] + m2[1] * m1[6] + m2[2] * m1[10] + m2[3] * m1[14];
+        r[3] = m2[0] * m1[3] + m2[1] * m1[7] + m2[2] * m1[11] + m2[3] * m1[15];
+
+        r[4] = m2[4] * m1[0] + m2[5] * m1[4] + m2[6] * m1[8] + m2[7] * m1[12];
+        r[5] = m2[4] * m1[1] + m2[5] * m1[5] + m2[6] * m1[9] + m2[7] * m1[13];
+        r[6] = m2[4] * m1[2] + m2[5] * m1[6] + m2[6] * m1[10] + m2[7] * m1[14];
+        r[7] = m2[4] * m1[3] + m2[5] * m1[7] + m2[6] * m1[11] + m2[7] * m1[15];
+
+        r[8] = m2[8] * m1[0] + m2[9] * m1[4] + m2[10] * m1[8] + m2[11] * m1[12];
+        r[9] = m2[8] * m1[1] + m2[9] * m1[5] + m2[10] * m1[9] + m2[11] * m1[13];
+        r[10] = m2[8] * m1[2] + m2[9] * m1[6] + m2[10] * m1[10] + m2[11] * m1[14];
+        r[11] = m2[8] * m1[3] + m2[9] * m1[7] + m2[10] * m1[11] + m2[11] * m1[15];
+
+        r[12] = m2[12] * m1[0] + m2[13] * m1[4] + m2[14] * m1[8] + m2[15] * m1[12];
+        r[13] = m2[12] * m1[1] + m2[13] * m1[5] + m2[14] * m1[9] + m2[15] * m1[13];
+        r[14] = m2[12] * m1[2] + m2[13] * m1[6] + m2[14] * m1[10] + m2[15] * m1[14];
+        r[15] = m2[12] * m1[3] + m2[13] * m1[7] + m2[14] * m1[11] + m2[15] * m1[15];
+    };
+
+    /**
+     * Rescales x from the original range (in_min, in_max) to the new range (out_min, out_max)
+     * @example map(5, 0, 10, 100, 200) would return 150, because 5 is halfway between 0 and 10, so it finds the number halfway between 100 and 200
+     *
+     * @param {number} x
+     * @param {number} in_min
+     * @param {number} in_max
+     * @param {number} out_min
+     * @param {number} out_max
+     * @return {number}
+     */
+    const mapRange = function(x, in_min, in_max, out_min, out_max) {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    };
 
     exports.EnvelopeContents = EnvelopeContents;
 

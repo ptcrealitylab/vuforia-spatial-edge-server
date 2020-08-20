@@ -668,7 +668,7 @@
         };
 
         let subscriptions = {};
-        Envelope.prototype.subscribeToPosition = function(frameId, callback) {
+        Envelope.prototype.subscribeToPosition = function(frameId, callback, subscribe3d) {
             if (typeof subscriptions[frameId] !== 'undefined') {
                 // subscriptions[frameId] = {};
                 console.warn('currently only supports one subscription per frameId...');
@@ -678,8 +678,10 @@
             // console.log('subscribed to position for ' + frameId);
             // console.log(subscriptions);
 
+            let value = subscribe3d ? '3d' : true;
+
             this.sendMessageToFrameWithId(frameId, {
-                subscribeToPosition: true
+                subscribeToPosition: value
             });
         };
 
@@ -696,7 +698,15 @@
             // console.log('envelope learned contained frame position');
             let displayWidth = screenPosition.lowerRight.x - screenPosition.upperLeft.x;
             let displayHeight = screenPosition.lowerRight.y - screenPosition.upperLeft.y;
-            thisCallback(screenPosition.center.x, screenPosition.center.y, displayWidth, displayHeight);
+
+            let zPosition = undefined;
+            let depth = undefined;
+
+            if (typeof screenPosition.center.z !== 'undefined') {
+                zPosition = screenPosition.center.z;
+                depth = screenPosition.lowerRight.z - screenPosition.upperLeft.z;
+            }
+            thisCallback(screenPosition.center.x, screenPosition.center.y, displayWidth, displayHeight, zPosition, depth);
         };
 
         /**
