@@ -158,9 +158,13 @@
                                 return; // don't send duplicate values
                             }
 
-                            let width = 200; // TODO: infer or calculate from scale etc
-                            let height = 200;
-                            let depth = 200;
+                            var scaleFactor = Math.abs(modelView[0]);
+
+                            // 300 happens to be the width in pixels of this tool
+                            let width = 300 * scaleFactor * (300 / modelViewProjection[15]); // TODO: infer or calculate from scale etc
+                            let height = width; //300 * scaleFactor / modelViewProjection[15];
+                            let depth = width; //300 * scaleFactor / modelViewProjection[15];
+
                             mostRecentScreenPosition = {
                                 center: {
                                     x: x,
