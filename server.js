@@ -384,8 +384,6 @@ const objectController = require('./controllers/object.js');
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
-const Block = require('./models/Block.js');
-const EdgeBlock = require('./models/EdgeBlock.js');
 const Frame = require('./models/Frame.js');
 const Node = require('./models/Node.js');
 const ObjectModel = require('./models/ObjectModel.js');
@@ -1565,93 +1563,6 @@ function objectWebServer() {
     webServer.use(cors());
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
-
-
-    // Utility functions for getting object, frame, and node in a safe way that reports errors for network requests
-
-    /**
-     * @param objectKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object)
-     */
-    function getObjectAsync(objectKey, callback) {
-        if (!objects.hasOwnProperty(objectKey)) {
-            callback({failure: true, error: 'Object ' + objectKey + ' not found'});
-            return;
-        }
-        var object = objects[objectKey];
-        callback(null, object);
-    }
-
-    /**
-     * @param objectKey
-     * @param frameKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
-     */
-    function getFrameAsync(objectKey, frameKey, callback) {
-        getObjectAsync(objectKey, function (error, object) {
-            if (error) {
-                callback(error);
-                return;
-            }
-            if (!object.frames.hasOwnProperty(frameKey)) {
-                callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
-                return;
-            }
-            var frame = object.frames[frameKey];
-            callback(null, object, frame);
-        });
-    }
-
-    /**
-     * @param objectKey
-     * @param frameKey
-     * @param nodeKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
-     */
-    function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
-        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
-            if (error) {
-                callback(error);
-                return;
-            }
-            if (!frame.nodes.hasOwnProperty(nodeKey)) {
-                callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
-                return;
-            }
-            var node = frame.nodes[nodeKey];
-            callback(null, object, frame, node);
-        });
-    }
-
-    /**
-     * Returns node if a nodeKey is provided, otherwise the frame
-     * @param objectKey
-     * @param frameKey
-     * @param nodeKey
-     * @param callback
-     */
-    function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
-
-        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
-            if (error) {
-                callback(error);
-                return;
-            }
-
-            var node = null;
-
-            if (nodeKey && nodeKey !== 'null') {
-                if (!frame.nodes.hasOwnProperty(nodeKey)) {
-                    callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
-                    return;
-                }
-                node = frame.nodes[nodeKey];
-            }
-
-            callback(null, object, frame, node);
-        });
-
-    }
 
     // Express router routes
     const objectRouter = require('./routers/object');
