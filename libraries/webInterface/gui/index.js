@@ -2041,7 +2041,7 @@ realityServer.uuidTime = function () {
     let abcUuidTime = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + '' + dateUuidTime.getTime()).toString(36);
     while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
-    return stampUuidTime;
+    return "VST"+stampUuidTime;
 };
 
 // toggle between activated and deactivated
