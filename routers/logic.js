@@ -6,9 +6,6 @@ const blockLinkController = require('../controllers/blockLink.js');
 const logicNodeController = require('../controllers/logicNode.js');
 const utilities = require('../libraries/utilities');
 
-// Variables populated from server.js with setup()
-var globalVariables;
-
 // logic links
 router.delete('/:objectName/:nodeName/link/:linkName/lastEditor/:lastEditor/', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
@@ -69,8 +66,7 @@ router.post('/:objectName/:nodeName/nodeSize/', function (req, res) {
     });
 });
 
-const setup = function(globalVariables_) {
-    globalVariables = globalVariables_;
+const setup = function() {
 };
 
 module.exports = {
