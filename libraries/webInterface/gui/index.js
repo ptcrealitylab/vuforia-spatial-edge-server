@@ -1940,17 +1940,17 @@ realityServer.toggleFullScreen = function (item) {
     // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
-        thisIframe.src = "about:blank"; // Clear iframe before loading
+        thisIframe.src = 'about:blank'; // Clear iframe before loading
         const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
         const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
         fetch(targetUrl).then((response) => {
             if (response.ok) {
                 thisIframe.contentDocument.write(iframeContents);
-                thisIframe.contentDocument.close();  
+                thisIframe.contentDocument.close();
             } else {
                 setGeneratedTarget(item, () => {
                     thisIframe.contentDocument.write(iframeContents);
-                    thisIframe.contentDocument.close();    
+                    thisIframe.contentDocument.close();
                 });
             }
         });
@@ -2163,77 +2163,77 @@ function addZipDownload(button, frameName) {
 }
 
 function voronoiTarget(canvas, callback) {
-  const width = 128 * 16;
-  const height = 128 * 9;
-  const targetCellSize = 60;
-  const count = Math.floor(width * height / (targetCellSize * targetCellSize));
-  const topCount = Math.floor(count / 12);
-  const lineWidth = 8;
-  const topLineWidth = 16;
-  
-  canvas.style.width = width + 'px';
-  canvas.style.height = height + 'px';
-  const gfx = canvas.getContext('2d');
-  canvas.width = gfx.width = width;
-  canvas.height = gfx.height = height;
-  
-  const points = [];
-  const topPoints = [];
+    const width = 128 * 16;
+    const height = 128 * 9;
+    const targetCellSize = 60;
+    const count = Math.floor(width * height / (targetCellSize * targetCellSize));
+    const topCount = Math.floor(count / 12);
+    const lineWidth = 8;
+    const topLineWidth = 16;
 
-  for (let i = 0; i < count; i++) {
-    points.push([
-      Math.random() * (width - lineWidth) + lineWidth / 2,
-      Math.random() * (height - lineWidth) + lineWidth / 2
-    ]);
-  }
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const gfx = canvas.getContext('2d');
+    canvas.width = gfx.width = width;
+    canvas.height = gfx.height = height;
 
-  for (let i = 0; i < topCount; i++) {
-    topPoints.push([
-      Math.random() * (width - topLineWidth) + topLineWidth / 2,
-      Math.random() * (height - topLineWidth) + topLineWidth / 2
-    ]);
-  }
+    const points = [];
+    const topPoints = [];
 
-  const del = d3.Delaunay.from(points);
-  const topDel = d3.Delaunay.from(topPoints);
-  const vor = del.voronoi([0, 0, width, height]);
-  const topVor = topDel.voronoi([0, 0, width, height]);
-  
-  // Background fill
-  gfx.fillStyle = '#3A3A3A';
-  gfx.fillRect(0, 0, width, height);
+    for (let i = 0; i < count; i++) {
+        points.push([
+            Math.random() * (width - lineWidth) + lineWidth / 2,
+            Math.random() * (height - lineWidth) + lineWidth / 2
+        ]);
+    }
 
-  // Background lines
-  gfx.strokeStyle = '#474747';
-  gfx.lineWidth = lineWidth;
-  gfx.beginPath();
-  vor.render(gfx);
-  gfx.stroke();
-  
-  // Top lines
-  gfx.strokeStyle = '#666666';
-  gfx.lineWidth = topLineWidth;
-  gfx.beginPath();
-  topVor.render(gfx);
-  gfx.stroke();
-  
-  // Marker border
-  gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
-  
-  canvas.toBlob(callback, 'image/jpeg');
+    for (let i = 0; i < topCount; i++) {
+        topPoints.push([
+            Math.random() * (width - topLineWidth) + topLineWidth / 2,
+            Math.random() * (height - topLineWidth) + topLineWidth / 2
+        ]);
+    }
+
+    const del = d3.Delaunay.from(points);
+    const topDel = d3.Delaunay.from(topPoints);
+    const vor = del.voronoi([0, 0, width, height]);
+    const topVor = topDel.voronoi([0, 0, width, height]);
+
+    // Background fill
+    gfx.fillStyle = '#3A3A3A';
+    gfx.fillRect(0, 0, width, height);
+
+    // Background lines
+    gfx.strokeStyle = '#474747';
+    gfx.lineWidth = lineWidth;
+    gfx.beginPath();
+    vor.render(gfx);
+    gfx.stroke();
+
+    // Top lines
+    gfx.strokeStyle = '#666666';
+    gfx.lineWidth = topLineWidth;
+    gfx.beginPath();
+    topVor.render(gfx);
+    gfx.stroke();
+
+    // Marker border
+    gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
+
+    canvas.toBlob(callback, 'image/jpeg');
 }
 
 function setGeneratedTarget(clickedElem, callback) {
     const objectName = clickedElem.dataset.objectName;
     voronoiTarget(document.querySelector('.imagegen-canvas'), (blob) => {
         const formData = new FormData();
-        formData.append("file", blob, 'autogen-target.jpg');
+        formData.append('file', blob, 'autogen-target.jpg');
         fetch(`/content/${objectName}`, {
             body: formData,
             headers: {
-                "type": "targetUpload"
+                'type': 'targetUpload'
             },
-            method: "post"
+            method: 'post'
         }).then((response) => {
             callback();
         });

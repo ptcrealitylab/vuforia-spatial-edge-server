@@ -1053,10 +1053,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (typeof oneTimeOnly === 'undefined') {
         oneTimeOnly = false;
     }
-    
+
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
-      console.log('already created beat for object: ' + thisId);
-      return;
+        console.log('already created beat for object: ' + thisId);
+        return;
     }
 
     var HOST = '255.255.255.255';
@@ -1305,7 +1305,7 @@ function objectWebServer() {
                 checkThisNetwork = true;
             }
 
-         checkThisNetwork = true;
+        checkThisNetwork = true;
         if (services.ips.activeInterface in services.ips.interfaces) {
             if (checkThisNetwork) {
                 next();
@@ -1341,7 +1341,7 @@ function objectWebServer() {
             console.log(req.params.frameName);
             return;
         }
-        
+
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
         console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
@@ -1652,7 +1652,7 @@ function objectWebServer() {
         });
 
     }
-    
+
     // Express router routes
     const objectRouter = require('./routers/object');
     const logicRouter = require('./routers/logic');
@@ -1665,8 +1665,8 @@ function objectWebServer() {
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
     webServer.post('/triggerBlock/:blockName', function (req, res) {
         if (!utilities.isValidId(req.params.blockName)) {
-          res.status(400).send('Invalid block name. Must be alphanumeric.');
-          return;
+            res.status(400).send('Invalid block name. Must be alphanumeric.');
+            return;
         }
         blockController.triggerBlockSearch(req.params.blockName, req.body, function (statusCode, responseContents) {
             res.status(statusCode).json(responseContents).end();
@@ -1845,8 +1845,8 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'target/:objectName', function (req, res) {
             //   console.log("get 14");
             if (!utilities.isValidId(req.params.objectName)) {
-              res.status(400).send('Invalid object name. Must be alphanumeric.');
-              return;
+                res.status(400).send('Invalid object name. Must be alphanumeric.');
+                return;
             }
             res.send(webFrontend.uploadTargetText(req.params.objectName, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
@@ -1854,8 +1854,8 @@ function objectWebServer() {
 
         webServer.get(objectInterfaceFolder + 'target/:objectName/:frameName/', function (req, res) {
             if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
-              res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
-              return;
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
             }
             res.sendFile(__dirname + '/' + req.params.objectName + '/' + req.params.frameName);
         });
@@ -1872,10 +1872,10 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
             if (!isMobile) {
                 if (!utilities.isValidId(req.params.interfaceName)) {
-                  res.status(400).send('Invalid interface name. Must be alphanumeric.');
-                  return;
+                    res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                    return;
                 }
-                
+
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
                 res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
@@ -1934,7 +1934,7 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             const interfaceName = req.params.interfaceName;
-            
+
             if (!utilities.isValidId(interfaceName)) {
                 res.status(400).send('Invalid interface name. Must be alphanumeric.');
                 return;
@@ -1950,7 +1950,7 @@ function objectWebServer() {
 
         webServer.post('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             var interfaceName = req.params.interfaceName;
-            
+
             if (!utilities.isValidId(interfaceName)) {
                 res.status(400).send('Invalid interface name. Must be alphanumeric.');
                 return;
@@ -2037,7 +2037,7 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
-            
+
             if (!utilities.isValidId(interfaceName)) {
                 res.status(400).send('Invalid interface name. Must be alphanumeric.');
                 return;
@@ -2055,7 +2055,7 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
-            
+
             if (!utilities.isValidId(interfaceName)) {
                 res.status(400).send('Invalid interface name. Must be alphanumeric.');
                 return;
@@ -2121,7 +2121,7 @@ function objectWebServer() {
 
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
-            
+
             if (!utilities.isValidId(frameName)) {
                 res.status(400).send('Invalid frame name. Must be alphanumeric.');
                 return;
@@ -2142,7 +2142,7 @@ function objectWebServer() {
 
         webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
             var frameName = req.params.frameName;
-            
+
             if (!utilities.isValidId(frameName)) {
                 res.status(400).send('Invalid frame name. Must be alphanumeric.');
                 return;
@@ -2170,12 +2170,12 @@ function objectWebServer() {
             }
 
             var frameName = req.params.frameName;
-            
+
             if (!utilities.isValidId(frameName)) {
                 res.status(400).send('Invalid frame name. Must be alphanumeric.');
                 return;
             }
-            
+
             console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
@@ -2248,8 +2248,8 @@ function objectWebServer() {
         webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
             if (req.body.action === 'delete') {
                 if (utilities.goesUpDirectory(req.path)) {
-                  res.status(400).send("Invalid path. Cannot contain '..'.");
-                  return;
+                    res.status(400).send('Invalid path. Cannot contain \'..\'.');
+                    return;
                 }
                 var folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
@@ -2279,17 +2279,17 @@ function objectWebServer() {
 
         webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
             if (req.body.action === 'delete') {
-                
+
                 if (!utilities.isValidId(req.body.name)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
                 }
-                
+
                 if (!utilities.isValidId(req.params.id)) {
                     res.status(400).send('Invalid object id. Must be alphanumeric.');
                     return;
                 }
-                
+
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
@@ -2335,7 +2335,7 @@ function objectWebServer() {
                         res.status(400).send('Invalid object name. Must be alphanumeric.');
                         return;
                     }
-                  
+
                     // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
@@ -2362,7 +2362,7 @@ function objectWebServer() {
                             return;
                         }
                     }
-                    
+
                     setAnchors(); // Needed to initialize non-world (anchor) objects
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
@@ -2370,7 +2370,7 @@ function objectWebServer() {
                         res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                         return;
                     }
-                  
+
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
@@ -2407,7 +2407,7 @@ function objectWebServer() {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
                 }
-                
+
                 // remove when frame is implemented
                 var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
                 var frameName = req.body.frame;
@@ -2425,7 +2425,7 @@ function objectWebServer() {
 
                 if (pathKey && pathKey !== '') {
                     if (utilities.goesUpDirectory(pathKey)) {
-                        res.status(400).send("Invalid path. Cannot contain '..'.");
+                        res.status(400).send('Invalid path. Cannot contain \'..\'.');
                         return;
                     }
                     fs.unlinkSync(objectsPath + pathKey.substring(4));
@@ -2586,7 +2586,7 @@ function objectWebServer() {
             function (req, res) {
 
                 console.log('object is: ' + req.params.id);
-                
+
                 if (!utilities.isValidId(req.params.id)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2599,7 +2599,7 @@ function objectWebServer() {
                         res.status(400).send('Invalid object name. Must be alphanumeric.');
                         return;
                     }
-                    
+
                     var folderDel = objectsPath + '/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
@@ -2682,7 +2682,7 @@ function objectWebServer() {
                     if (req.headers.type === 'targetUpload') {
                         console.log('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
-                        
+
                         if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
                             fileExtension = 'jpg';
                         }

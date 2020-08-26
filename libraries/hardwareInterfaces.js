@@ -438,7 +438,7 @@ exports.addNode = function (object, tool, node, type, position) {
 
     if (!objectID) {
         console.log('Creating new object for hardware node', object);
-        
+
         var folder = path.join(objectsPath, object);
         var identityPath = path.join(folder, '.identity');
         var jsonFilePath = path.join(identityPath, 'object.json');
