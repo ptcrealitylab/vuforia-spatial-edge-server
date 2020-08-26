@@ -78,7 +78,7 @@
         var abcUuidTime = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + '' + dateUuidTime.getTime()).toString(36);
         while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
-        return stampUuidTime;
+        return "VST"+stampUuidTime;
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
