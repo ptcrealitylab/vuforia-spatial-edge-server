@@ -10,21 +10,6 @@ const logicNodeController = require('../controllers/logicNode.js');
 const nodeController = require('../controllers/node.js');
 const objectController = require('../controllers/object.js');
 
-// Variables populated from server.js with setup()
-var objects = {};
-var knownObjects = {};
-var socketArray = {};
-var globalVariables;
-var engine;
-var hardwareAPI;
-var serverDirName;
-var objectsPath;
-var identityFolderName;
-var Jimp;
-var socketUpdater;
-var git;
-var nodeTypeModules;
-
 // logic links
 router.post('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/addBlockLink/', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
@@ -538,8 +523,7 @@ const setupDeveloperRoutes = function() {
     });
 };
 
-const setup = function(globalVariables_) {
-    globalVariables = globalVariables_;
+const setup = function(globalVariables) {
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
         setupDeveloperRoutes();
