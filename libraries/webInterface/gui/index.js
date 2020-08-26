@@ -938,7 +938,7 @@ realityServer.gotClick = function (event) {
                 let element = document.getElementById(name);
                 element.classList.remove('selectedButton');
 
-                document.querySelectorAll('.name').forEach(function (item, index) {
+                document.querySelectorAll('.name').forEach(function(item) {
                     let objectID = item.getAttribute('objectid');
                     let toolID = item.getAttribute('frameid');
                     let thisKey = objectID;
@@ -962,14 +962,14 @@ realityServer.gotClick = function (event) {
             let element = document.getElementById('rec');
             element.classList.remove('white');
             element.classList.add('red');
-            realityServer.sendRequest('/webUI/REC/START', 'POST', function (state) {
+            realityServer.sendRequest('/webUI/REC/START', 'POST', function(_state) {
             }, '');
         } else {
             recordState = true;
             let element = document.getElementById('rec');
             element.classList.remove('red');
             element.classList.add('white');
-            realityServer.sendRequest('/webUI/REC/STOP', 'POST', function (state) {
+            realityServer.sendRequest('/webUI/REC/STOP', 'POST', function(_state) {
             }, '');
         }
     }
@@ -984,8 +984,6 @@ realityServer.gotClick = function (event) {
         if (buttonClassList.contains('name')) {
             if (thisEventObject.classList.contains('selectedButton')) {
                 thisEventObject.classList.remove('selectedButton');
-                let thisKey = objectKey;
-                if (frameKey) thisKey = frameKey;
             } else {
                 thisEventObject.classList.add('selectedButton');
                 console.log(objectKey, frameKey, '');
@@ -994,7 +992,7 @@ realityServer.gotClick = function (event) {
 
 
         let allItems = document.querySelectorAll('.name');
-        allItems.forEach(function (item, index) {
+        allItems.forEach(function(item) {
 
             let objectID = item.getAttribute('objectid');
             if (!objectID) objectID = '';
@@ -1046,7 +1044,7 @@ realityServer.gotClick = function (event) {
 
     function sendSpatialState() {
         let messageBody = 'locator=' + JSON.stringify(spatialLocator);
-        realityServer.sendRequest('/webUI/spatial/locator', 'POST', function (state) {
+        realityServer.sendRequest('/webUI/spatial/locator', 'POST', function(_state) {
         }, messageBody);
     }
 
@@ -1054,11 +1052,11 @@ realityServer.gotClick = function (event) {
 
         let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
 
-        allItems.forEach(function (item, index) {
-            item.querySelectorAll('div').forEach(function (button, index) {
+        allItems.forEach(function(item) {
+            item.querySelectorAll('div').forEach(function(button) {
                 realityServer.switchClass(button, 'clickAble', 'inactive');
             });
-            item.querySelectorAll('.name').forEach(function (name, index) {
+            item.querySelectorAll('.name').forEach(function(name) {
                 realityServer.switchClass(name, 'inactive', 'clickAble');
             });
         });
@@ -1068,8 +1066,8 @@ realityServer.gotClick = function (event) {
 
         let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
 
-        allItems.forEach(function (item, index) {
-            item.querySelectorAll('div').forEach(function (button, index) {
+        allItems.forEach(function(item) {
+            item.querySelectorAll('div').forEach(function(button) {
                 realityServer.switchClass(button, 'inactive', 'clickAble');
                 button.classList.remove('selectedButton');
             });
@@ -2234,7 +2232,7 @@ function setGeneratedTarget(clickedElem, callback) {
                 'type': 'targetUpload'
             },
             method: 'post'
-        }).then((response) => {
+        }).then((_response) => {
             callback();
         });
     });
