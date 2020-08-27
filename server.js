@@ -180,7 +180,6 @@ try {
     console.log('Something went wrong with initSync');
 }
 
-var _ = require('lodash');    // JavaScript utility library
 var dgram = require('dgram'); // UDP Broadcasting library
 
 var services = {};
@@ -1132,7 +1131,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     });
                 }
             }
-        }, beatInterval + _.random(-250, 250));
+        }, beatInterval + utilities.randomIntInc(-250, 250));
     } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
@@ -1161,7 +1160,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     client.close();
                 });
             }
-        }, _.random(1, 250));
+        }, utilities.randomIntInc(1, 250));
     }
 }
 
@@ -2994,54 +2993,51 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         console.log('got ID: objectIDXML');
-        if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
-            if (objectIDXML.length > 13) {
+        if (objectIDXML && objectIDXML.length > 13) {
+            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
+            objects[objectIDXML].port = serverPort;
+            objects[objectIDXML].name = folderVar;
+            objects[objectIDXML].targetSize = objectSizeXML;
 
-                objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
-                objects[objectIDXML].port = serverPort;
-                objects[objectIDXML].name = folderVar;
-                objects[objectIDXML].targetSize = objectSizeXML;
-
-                if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-                    objects[objectIDXML].isWorldObject = true;
-                    objects[objectIDXML].timestamp = Date.now();
-                }
-
-                console.log('this should be the IP' + objectIDXML);
-
-                try {
-                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
-                    objects[objectIDXML].ip = services.ip; //ip.address();
-                    console.log('testing: ' + objects[objectIDXML].ip);
-                } catch (e) {
-                    objects[objectIDXML].ip = services.ip; //ip.address();
-                    console.log('testing: ' + objects[objectIDXML].ip);
-                    console.log('No saved data for: ' + objectIDXML);
-                }
-
-                if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                    let objectId = utilities.readObject(objectLookup, folderVar);
-                    try {
-                        objects[objectId].deconstruct();
-                    } catch (e) {
-                        console.warn('Object exists without proper prototype: ' + objectId);
-                    }
-                    delete objects[objectId];
-                }
-                utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-                // entering the obejct in to the lookup table
-
-                // ask the object to reinitialize
-                //serialPort.write("ok\n");
-                // todo send init to internal
-
-                hardwareAPI.reset();
-
-                console.log('weiter im text ' + objectIDXML);
-                utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
-
-                objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
+            if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+                objects[objectIDXML].isWorldObject = true;
+                objects[objectIDXML].timestamp = Date.now();
             }
+
+            console.log('this should be the IP' + objectIDXML);
+
+            try {
+                objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
+                objects[objectIDXML].ip = services.ip; //ip.address();
+                console.log('testing: ' + objects[objectIDXML].ip);
+            } catch (e) {
+                objects[objectIDXML].ip = services.ip; //ip.address();
+                console.log('testing: ' + objects[objectIDXML].ip);
+                console.log('No saved data for: ' + objectIDXML);
+            }
+
+            if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+                let objectId = utilities.readObject(objectLookup, folderVar);
+                try {
+                    objects[objectId].deconstruct();
+                } catch (e) {
+                    console.warn('Object exists without proper prototype: ' + objectId);
+                }
+                delete objects[objectId];
+            }
+            utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
+            // entering the obejct in to the lookup table
+
+            // ask the object to reinitialize
+            //serialPort.write("ok\n");
+            // todo send init to internal
+
+            hardwareAPI.reset();
+
+            console.log('weiter im text ' + objectIDXML);
+            utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+            objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
         }
     }
 }
