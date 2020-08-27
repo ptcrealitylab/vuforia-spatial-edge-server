@@ -20,7 +20,6 @@
 var path = require('path');
 var fs = require('fs');
 var utilities = require('./utilities');
-var _ = require('lodash');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
 const ObjectModel = require('../models/ObjectModel.js');
@@ -142,7 +141,7 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
                 console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
@@ -162,7 +161,7 @@ exports.clearObject = function (objectUuid, toolUuid) {
 exports.removeAllNodes = function (object, tool) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
@@ -245,7 +244,7 @@ var getAllTools_ = function (object) {
     var objectID = utilities.readObject(objectLookup, object);
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var tools = objects[objectID].frames;
             return tools;
@@ -263,7 +262,7 @@ exports.getAllNodes = function (object, tool) {
     var frameID = objectID + tool;
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 // get all of its nodes
@@ -282,7 +281,7 @@ exports.getAllLinksToNodes = function (object, tool) {
     var frameID = objectID + tool;
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 // get all of its nodes
@@ -371,7 +370,7 @@ exports.clearTool = function (object, tool) {
 
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 if (objects[objectID].frames[frameUuid].hasOwnProperty('tool')) {
@@ -389,7 +388,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
 
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
 
             if (dirName) {
@@ -475,7 +474,7 @@ exports.addNode = function (object, tool, node, type, position) {
     var nodeUuid = objectID + tool + node;
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = object;
@@ -538,7 +537,7 @@ exports.addNode = function (object, tool, node, type, position) {
 
 exports.renameNode = function (object, tool, oldNode, newNode) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + tool;
             var nodeUUID = objectID + tool + oldNode;
@@ -573,7 +572,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
@@ -599,7 +598,7 @@ exports.removeNode = function (object, tool, node) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
@@ -622,7 +621,7 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
@@ -642,7 +641,7 @@ exports.pushUpdatesToDevices = function (object) {
 
 exports.activate = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
         }
@@ -652,7 +651,7 @@ exports.activate = function (object) {
 exports.deactivate = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.deactivate');
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
 
@@ -808,7 +807,7 @@ exports.screenObjectServerCallBack = function (callback) {
 // TODO These are the two calls for the page
 exports.addScreenObjectListener = function (object, callBack) {
     var objectID = utilities.readObject(objectLookup, object);
-    if (!_.isUndefined(objectID)) {
+    if (objectID) {
         screenObjectCallBacks[objectID] = callBack;
     }
 };
@@ -842,7 +841,7 @@ exports.addReadListener = function (object, tool, node, callBack) {
 
     console.log('Add read listener for objectID: ', objectID);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -875,7 +874,7 @@ exports.addPublicDataListener = function (object, tool, node, dataObject, callBa
 
     console.log('Add publicData listener for objectID: ', objectID);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -929,7 +928,7 @@ exports.addConnectionListener = function (object, tool, node, callBack) {
 
     console.log('Add connection listener for objectID: ', objectID, frameID, node);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
 
