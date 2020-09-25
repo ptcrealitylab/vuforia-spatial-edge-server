@@ -18,7 +18,7 @@
     "ip": "^1.1.5",
     "jimp": "^0.13.0",
     "module-alias": "^2.2.2",
-    "monaco-editor": "^0.21.0",
+    "monaco-editor": "^0.21.1",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.6.1",
     "node-persist": "^2.1.0",
