@@ -18,10 +18,11 @@
  */
 
 var path = require('path');
+var fs = require('fs');
 var utilities = require('./utilities');
-var _ = require('lodash');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
+const ObjectModel = require('../models/ObjectModel.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -34,6 +35,10 @@ var objectsPath;
 var nodeTypeModules;
 // eslint-disable-next-line no-unused-vars
 var blockModules;
+var services;
+var version;
+var protocol;
+var serverPort;
 var callback;
 var actionCallback;
 var publicDataCallBack;
@@ -136,10 +141,15 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
                 console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
+                try {
+                    objects[objectID].frames[toolUuid].nodes[key].deconstruct();
+                } catch (e) {
+                    console.warn('Node exists without proper prototype: ' + key);
+                }
                 delete objects[objectID].frames[toolUuid].nodes[key];
             }
         }
@@ -151,12 +161,17 @@ exports.clearObject = function (objectUuid, toolUuid) {
 exports.removeAllNodes = function (object, tool) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 for (var nodeKey in objects[objectID].frames[frameID].nodes) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeKey);
                     if (!objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeKey)) continue;
+                    try {
+                        objects[objectID].frames[frameID].nodes[nodeKey].deconstruct();
+                    } catch (e) {
+                        console.warn('Node exists without proper prototype: ' + nodeKey);
+                    }
                     delete objects[objectID].frames[frameID].nodes[nodeKey];
                 }
             }
@@ -229,7 +244,7 @@ var getAllTools_ = function (object) {
     var objectID = utilities.readObject(objectLookup, object);
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var tools = objects[objectID].frames;
             return tools;
@@ -247,7 +262,7 @@ exports.getAllNodes = function (object, tool) {
     var frameID = objectID + tool;
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 // get all of its nodes
@@ -266,7 +281,7 @@ exports.getAllLinksToNodes = function (object, tool) {
     var frameID = objectID + tool;
 
     // lookup object properties using name
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 // get all of its nodes
@@ -355,7 +370,7 @@ exports.clearTool = function (object, tool) {
 
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 if (objects[objectID].frames[frameUuid].hasOwnProperty('tool')) {
@@ -373,7 +388,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
 
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
 
             if (dirName) {
@@ -398,7 +413,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
                     }
                 }
                 if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
-                    objects[objectID].frames[frameUuid] = new Frame();
+                    objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
                 }
                 //define the tool that is used with this frame
                 objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: newTool};
@@ -417,26 +432,55 @@ exports.setTool = function (object, tool, newTool, dirName) {
  **/
 
 exports.addNode = function (object, tool, node, type, position) {
-
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.addNode objectID: ', objectID, object, objectsPath);
 
     if (!objectID) {
+        console.log('Creating new object for hardware node', object);
+
+        var folder = path.join(objectsPath, object);
+        var identityPath = path.join(folder, '.identity');
+        var jsonFilePath = path.join(identityPath, 'object.json');
+        objectID = object + utilities.uuidTime();
+
         utilities.createFolder(object, objectsPath, globalVariables.debug);
-        console.warn('Creating empty folder and giving up');
-        return;
+
+        // create a new anchor object
+        objects[objectID] = new ObjectModel(services.ip, version, protocol, objectID);
+        objects[objectID].port = serverPort;
+        objects[objectID].name = object;
+        objects[objectID].isAnchor = true;
+        objects[objectID].matrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ];
+        objects[objectID].tcs = 0;
+
+        if (globalVariables.saveToDisk) {
+            fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
+                if (err) {
+                    console.log('anchor object save error', err);
+                } else {
+                    // console.log('JSON saved to ' + jsonFilePath);
+                }
+            });
+        } else {
+            console.log('I am not allowed to save');
+        }
     }
 
     var nodeUuid = objectID + tool + node;
     var frameUuid = objectID + tool;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].developer = globalVariables.developer;
             objects[objectID].name = object;
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
-                objects[objectID].frames[frameUuid] = new Frame();
+                objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
                 utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, 'local');
             } else {
                 utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
@@ -451,7 +495,7 @@ exports.addNode = function (object, tool, node, type, position) {
             var thisObject;
 
             if (!objects[objectID].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
-                objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node();
+                objects[objectID].frames[frameUuid].nodes[nodeUuid] = new Node(node, type, objectID, frameUuid, nodeUuid);
                 thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
                 thisObject.x = utilities.randomIntInc(0, 200) - 100;
                 thisObject.y = utilities.randomIntInc(0, 200) - 100;
@@ -466,11 +510,7 @@ exports.addNode = function (object, tool, node, type, position) {
             }
 
             thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
-            thisObject.name = node;
-            thisObject.frameId = frameUuid;
-            thisObject.objectId = objectID;
             thisObject.text = undefined;
-            thisObject.type = type;
 
             console.log('added node', {
                 node: node,
@@ -497,7 +537,7 @@ exports.addNode = function (object, tool, node, type, position) {
 
 exports.renameNode = function (object, tool, oldNode, newNode) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + tool;
             var nodeUUID = objectID + tool + oldNode;
@@ -532,7 +572,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
@@ -558,11 +598,17 @@ exports.removeNode = function (object, tool, node) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
                     deleteLinksToAndFromNode(objectID, frameID, nodeID);
+                    let thisNode = objects[objectID].frames[frameID].nodes[nodeID];
+                    try {
+                        thisNode.deconstruct();
+                    } catch (e) {
+                        console.warn('Node exists without proper prototype: ' + nodeID);
+                    }
                     delete objects[objectID].frames[frameID].nodes[nodeID];
                 }
             }
@@ -575,7 +621,7 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
@@ -595,7 +641,7 @@ exports.pushUpdatesToDevices = function (object) {
 
 exports.activate = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
         }
@@ -605,7 +651,7 @@ exports.activate = function (object) {
 exports.deactivate = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('hardwareInterfaces.deactivate');
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
 
@@ -674,6 +720,7 @@ exports.setHardwareInterfaceSettingsImpl = function(setHardwareInterfaceSettings
 exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray_, globalVariables_, dirnameO_,
     objectsPath_, nodeTypeModules_, blockModules_,
+    services_, version_, protocol_, serverPort_,
     hardwareAPICallbacks) {
     objects = objects_;
     objectLookup = objectLookup_;
@@ -684,6 +731,10 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     objectsPath = objectsPath_;
     nodeTypeModules = nodeTypeModules_;
     blockModules = blockModules_;
+    services = services_;
+    version = version_;
+    protocol = protocol_;
+    serverPort = serverPort_;
     publicDataCallBack = hardwareAPICallbacks.publicData;
     actionCallback = hardwareAPICallbacks.actions;
     callback = hardwareAPICallbacks.data;
@@ -756,7 +807,7 @@ exports.screenObjectServerCallBack = function (callback) {
 // TODO These are the two calls for the page
 exports.addScreenObjectListener = function (object, callBack) {
     var objectID = utilities.readObject(objectLookup, object);
-    if (!_.isUndefined(objectID)) {
+    if (objectID) {
         screenObjectCallBacks[objectID] = callBack;
     }
 };
@@ -790,7 +841,7 @@ exports.addReadListener = function (object, tool, node, callBack) {
 
     console.log('Add read listener for objectID: ', objectID);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -823,7 +874,7 @@ exports.addPublicDataListener = function (object, tool, node, dataObject, callBa
 
     console.log('Add publicData listener for objectID: ', objectID);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -877,7 +928,7 @@ exports.addConnectionListener = function (object, tool, node, callBack) {
 
     console.log('Add connection listener for objectID: ', objectID, frameID, node);
 
-    if (!_.isUndefined(objectID) && !_.isNull(objectID)) {
+    if (objectID) {
 
         if (objects.hasOwnProperty(objectID)) {
 

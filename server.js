@@ -86,6 +86,7 @@ const globalVariables = {
     developer: true,
     // Send more debug messages to console
     debug: false,
+    isMobile: isMobile,
     // Prohibit saving to file system if we're on mobile or just running tests
     saveToDisk: !isMobile && process.env.NODE_ENV !== 'test',
     // Create an object for attaching frames to the world
@@ -112,14 +113,14 @@ var serverPort = isMobile ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
-const timeToLive = 2;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
+const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
 
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
-const version = '3.2.0';
+const version = '3.2.2';
 // The protocol of this server
 const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
@@ -138,7 +139,7 @@ const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjec
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 let objectsPath = spatialToolboxPath;
 
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android') {
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
     objectsPath = path.join(__dirname, 'spatialToolbox');
 }
 
@@ -169,9 +170,16 @@ const objectInterfaceFolder = '/';
  ******************************************** Requirements ************************************************************
  **********************************************************************************************************************/
 const storage = require('./libraries/storage');
-storage.initSync();
+let dir = path.join(require('os').homedir(), 'vst-edge-server');
+//fs.mkdirSync('/Users/Anna/my-test-dir');
+console.log('**** DIR: ', dir);
 
-var _ = require('lodash');    // JavaScript utility library
+try {
+    storage.initSync({dir: dir});
+} catch (e) {
+    console.log('Something went wrong with initSync');
+}
+
 var dgram = require('dgram'); // UDP Broadcasting library
 
 var services = {};
@@ -222,6 +230,7 @@ services.getIP = function () {
 
     // if it is still empty give it a default
     if (this.ips.activeInterface === null) {
+        console.warn('No active interface found, defaulting to "en0"');
         this.ips.activeInterface = 'en0';
         // make sure all objects got the memo
         this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
@@ -229,8 +238,13 @@ services.getIP = function () {
 
     // if activeInterface is not available, get the first available one and refresh all objects
     if (!(this.ips.activeInterface in this.ips.interfaces)) {
+        console.warn(`Current activeInterface "${this.ips.activeInterface}" not found`);
         this.ips.tempActiveInterface = this.ips.activeInterface;
         for (var tempKey in this.ips.interfaces) {
+            if (!this.ips.interfaces[tempKey]) {
+                continue;
+            }
+            console.warn(`Selecting "${tempKey}" from`, this.ips.interfaces);
             this.ips.activeInterface = tempKey;
             // make sure all objects got the memo
             this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
@@ -241,6 +255,7 @@ services.getIP = function () {
     // check if active interface is back
     if (this.ips.tempActiveInterface) {
         if (this.ips.tempActiveInterface in this.ips.interfaces) {
+            console.warn(`Activating temp interface "${this.ips.tempActiveInterface}"`);
             this.ips.activeInterface = this.ips.tempActiveInterface;
             this.ips.tempActiveInterface = null;
         }
@@ -356,11 +371,18 @@ if (isMobile || process.env.NODE_ENV === 'test') {
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
 
+// Controller imports
+const blockController = require('./controllers/block.js');
+const blockLinkController = require('./controllers/blockLink.js');
+const frameController = require('./controllers/frame.js');
+const linkController = require('./controllers/link.js');
+const logicNodeController = require('./controllers/logicNode.js');
+const nodeController = require('./controllers/node.js');
+const objectController = require('./controllers/object.js');
+
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
-const Block = require('./models/Block.js');
-const EdgeBlock = require('./models/EdgeBlock.js');
 const Frame = require('./models/Frame.js');
 const Node = require('./models/Node.js');
 const ObjectModel = require('./models/ObjectModel.js');
@@ -504,11 +526,16 @@ function Protocols() {
 
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
-const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 
+const availableModules = require('./libraries/availableModules');
+
+const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 const nodeTypeModules = nodeFolderLoader.loadModules();   // Will hold all available data point interfaces
+availableModules.setNodes(nodeTypeModules);
+
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
+availableModules.setBlocks(blockModules);
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
@@ -528,6 +555,8 @@ var realityEditorSocketArray = {};     // all socket connections that are kept a
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
 var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
 var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
+
+var activeHeartbeats = {}; // Prevents multiple recurring beats for the same object
 
 // counter for the socket connections
 // this counter is used for the Web Developer Interface to reflect the state of the server socket connections.
@@ -552,7 +581,6 @@ var worldObject;
 
 
 console.log('Starting the Server');
-
 console.log('Initialize System: ');
 console.log('Loading Hardware interfaces');
 
@@ -581,7 +609,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
 
 console.log('Done');
 
@@ -601,6 +629,13 @@ console.log('started');
 if (!isMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
+    availableModules.setHardwareInterfaces(hardwareInterfaceModules);
+
+    // statically serve the "public" directory in each hardware interface
+    for (let folderName in hardwareInterfaceLoader.folderMap) {
+        let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
+        webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+    }
 }
 
 console.log('ready to start internal servers');
@@ -651,7 +686,7 @@ function loadObjects() {
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
-            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol);
+            objects[tempFolderName] = new ObjectModel(services.ip, version, protocol, tempFolderName);
             objects[tempFolderName].port = serverPort;
             objects[tempFolderName].name = objectFolderList[i];
 
@@ -699,8 +734,15 @@ function loadObjects() {
                     }
                 }
 
-                console.log('I found objects that I want to add');
+                // cast everything from JSON to Object, Frame, and Node classes
+                let newObj = new ObjectModel(objects[tempFolderName].ip,
+                    objects[tempFolderName].version,
+                    objects[tempFolderName].protocol,
+                    objects[tempFolderName].objectId);
+                newObj.setFromJson(objects[tempFolderName]);
+                objects[tempFolderName] = newObj;
 
+                console.log('I found objects that I want to add');
 
             } catch (e) {
                 objects[tempFolderName].ip = services.ip; //ip.address();
@@ -763,14 +805,10 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    worldObject = new ObjectModel(services.ip, version, protocol);
+    let thisWorldObjectId = isMobile ? worldObjectName : (worldObjectName + utilities.uuidTime());
+    worldObject = new ObjectModel(services.ip, version, protocol, thisWorldObjectId);
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
-    if (isMobile) {
-        worldObject.objectId = worldObjectName;
-    } else {
-        worldObject.objectId = worldObjectName + utilities.uuidTime();
-    }
     worldObject.isWorldObject = true;
 
     // try to read previously saved data to overwrite the default world object
@@ -810,7 +848,7 @@ function loadAnchor(anchorName) {
     // create the file for it if necessary
     var folder = path.join(objectsPath, anchorName);
     var identityPath = path.join(folder, '.identity');
-    var jsonFilePath = path.join(folder, 'object.json');
+    var jsonFilePath = path.join(identityPath, 'object.json');
     let anchorUuid = anchorName + utilities.uuidTime();
 
     // create objects folder at objectsPath if necessary
@@ -842,11 +880,9 @@ function loadAnchor(anchorName) {
     }
 
     // create a new anchor object
-    objects[anchorUuid] = new ObjectModel(services.ip, version, protocol);
+    objects[anchorUuid] = new ObjectModel(services.ip, version, protocol, anchorUuid);
     objects[anchorUuid].port = serverPort;
     objects[anchorUuid].name = anchorName;
-    objects[anchorUuid].ip = services.ip;
-    objects[anchorUuid].objectId = anchorUuid;
 
     objects[anchorUuid].isAnchor = false;
     objects[anchorUuid].matrix = [
@@ -857,20 +893,15 @@ function loadAnchor(anchorName) {
     ];
     objects[anchorUuid].tcs = 0;
 
-    objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
-    hardwareAPI.reset();
-
     if (globalVariables.saveToDisk) {
-
-        fs.writeFile(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4), function (err) {
-            if (err) {
-                console.log('anchor object save error', err);
-            } else {
-                //console.log('JSON saved to ' + jsonFilePath);
-            }
-        });
+        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
+        // console.log('JSON saved to ' + jsonFilePath);
+        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        hardwareAPI.reset();
     } else {
         console.log('I am not allowed to save');
+        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        hardwareAPI.reset();
     }
 }
 
@@ -1020,6 +1051,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         oneTimeOnly = false;
     }
 
+    if (!oneTimeOnly && activeHeartbeats[thisId]) {
+        console.log('already created beat for object: ' + thisId);
+        return;
+    }
+
     var HOST = '255.255.255.255';
 
     console.log('creating beat for object: ' + thisId);
@@ -1061,7 +1097,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     });
 
     if (!oneTimeOnly) {
-        setInterval(function () {
+        activeHeartbeats[thisId] = setInterval(function () {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
@@ -1071,7 +1107,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                const message = new Buffer(JSON.stringify({
+                const message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1093,7 +1129,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     });
                 }
             }
-        }, beatInterval + _.random(-250, 250));
+        }, beatInterval + utilities.randomIntInc(-250, 250));
     } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
@@ -1107,7 +1143,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                var message = new Buffer(JSON.stringify({
+                var message = Buffer.from(JSON.stringify({
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1122,7 +1158,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     client.close();
                 });
             }
-        }, _.random(1, 250));
+        }, utilities.randomIntInc(1, 250));
     }
 }
 
@@ -1233,7 +1269,7 @@ function objectWebServer() {
     services.ip = services.getIP(); // ip.address();
     // security implemented
 
-    // check all sever requests for being inside the netmask parameters.
+    // check all server requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
 
     webServer.use('*', function (req, res, next) {
@@ -1266,6 +1302,7 @@ function objectWebServer() {
                 checkThisNetwork = true;
             }
 
+        checkThisNetwork = true;
         if (services.ips.activeInterface in services.ips.interfaces) {
             if (checkThisNetwork) {
                 next();
@@ -1295,6 +1332,12 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
+
+        if (!utilities.isValidId(req.params.frameName)) {
+            res.status(400).send('Invalid frame name. Must be alphanumeric.');
+            console.log(req.params.frameName);
+            return;
+        }
 
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
@@ -1408,7 +1451,7 @@ function objectWebServer() {
                 urlArray[urlArray.length - 2] = identityFolderName + '/videos';
             } else {
                 try {
-                    res.sendFile(urlArray[urlArray.length - 1], {root: getVideoDir()});
+                    res.sendFile(urlArray[urlArray.length - 1], {root: utilities.getVideoDir(objectsPath, identityFolderName, isMobile)});
                 } catch (e) {
                     console.warn('error sending video file', e);
                 }
@@ -1510,8 +1553,10 @@ function objectWebServer() {
         }
     });
 
+    // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
         webServer.use('/libraries', express.static(__dirname + '/libraries/webInterface/'));
+        webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
@@ -1520,589 +1565,25 @@ function objectWebServer() {
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
 
-
-    // Utility functions for getting object, frame, and node in a safe way that reports errors for network requests
-
-    /**
-     * @param objectKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object)
-     */
-    function getObjectAsync(objectKey, callback) {
-        if (!objects.hasOwnProperty(objectKey)) {
-            callback({failure: true, error: 'Object ' + objectKey + ' not found'});
-            return;
-        }
-        var object = objects[objectKey];
-        callback(null, object);
-    }
-
-    /**
-     * @param objectKey
-     * @param frameKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
-     */
-    function getFrameAsync(objectKey, frameKey, callback) {
-        getObjectAsync(objectKey, function (error, object) {
-            if (error) {
-                callback(error);
-                return;
-            }
-            if (!object.frames.hasOwnProperty(frameKey)) {
-                callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
-                return;
-            }
-            var frame = object.frames[frameKey];
-            callback(null, object, frame);
-        });
-    }
-
-    /**
-     * @param objectKey
-     * @param frameKey
-     * @param nodeKey
-     * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
-     */
-    function getNodeAsync(objectKey, frameKey, nodeKey, callback) {
-        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
-            if (error) {
-                callback(error);
-                return;
-            }
-            if (!frame.nodes.hasOwnProperty(nodeKey)) {
-                callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
-                return;
-            }
-            var node = frame.nodes[nodeKey];
-            callback(null, object, frame, node);
-        });
-    }
-
-    /**
-     * Returns node if a nodeKey is provided, otherwise the frame
-     * @param objectKey
-     * @param frameKey
-     * @param nodeKey
-     * @param callback
-     */
-    function getFrameOrNode(objectKey, frameKey, nodeKey, callback) {
-
-        getFrameAsync(objectKey, frameKey, function (error, object, frame) {
-            if (error) {
-                callback(error);
-                return;
-            }
-
-            var node = null;
-
-            if (nodeKey && nodeKey !== 'null') {
-                if (!frame.nodes.hasOwnProperty(nodeKey)) {
-                    callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
-                    return;
-                }
-                node = frame.nodes[nodeKey];
-            }
-
-            callback(null, object, frame, node);
-        });
-
-    }
-
-
-    /// logic node handling
-
-
-    /**
-     * Logic Links
-     **/
-
-    // support for frames
-    webServer.delete('/object/*/frame/*/node/*/link/*/editor/*/deleteBlockLink/', function (req, res) {
-        res.send(deleteLogicLink(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
-    });
-
-
-    // delete a logic link. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.delete('/logic/*/*/link/*/lastEditor/*/', function (req, res) {
-        res.send(deleteLogicLink(req.params[0], req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-
-    function deleteLogicLink(objectID, frameID, nodeID, linkID, lastEditor) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectID, frameID, nodeID);
-        if (foundNode) {
-            delete foundNode.links[linkID];
-
-            utilities.actionSender({
-                reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                lastEditor: lastEditor
-            });
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            console.log('deleted link: ' + linkID);
-            updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;
-        }
-
-        return updateStatus;
-
-    }
-
-
-    // adding a new logic link to an object. *1 is the object *2 is the logic *3 is the link id
-    //
-    // ****************************************************************************************************************
-
-    webServer.post('/logic/*/*/link/*/', function (req, res) {
-        res.send(addLogicLink(req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
-    // support for frames
-    webServer.post('/object/*/frame/*/node/*/link/*/addBlockLink/', function (req, res) {
-        res.send(addLogicLink(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
-    });
-
-    /**
-     * Adds a new link with the provided linkID to the specified node.
-     * Doesn't add it if it detects an infinite loop.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {string} linkID
-     * @param {Link} body
-     * @return {string}
-     */
-    function addLogicLink(objectID, frameID, nodeID, linkID, body) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectID, frameID, nodeID);
-        if (foundNode) {
-
-            foundNode.links[linkID] = body;
-            var thisLink = foundNode.links[linkID];
-
-            thisLink.loop = false;
-            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
-            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            if (thisLink.nodeA === thisLink.nodeB && thisLink.logicA === thisLink.logicB) {
-                thisLink.loop = true;
-            }
-
-            if (!thisLink.loop) {
-                // call an action that asks all devices to reload their links, once the links are changed.
-                utilities.actionSender({
-                    reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                    lastEditor: body.lastEditor
-                });
-                // check if there are new connections associated with the new link.
-                // write the object state to the permanent storage.
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-                console.log('added link: ' + linkID);
-                updateStatus = 'added';
-            } else {
-                updateStatus = 'found endless Loop';
-            }
-        }
-
-        return updateStatus;
-    }
-
-    /**
-     * Logic Blocks
-     **/
-
-    // adding a new block to an object. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/addBlock/', function (req, res) {
-        res.send(addNewBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
-    });
-
-    webServer.post('/logic/*/*/block/*/', function (req, res) {
-        res.send(addNewBlock(req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    /**
-     * Adds a new block with the provided blockID to the specified node.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {string} blockID
-     * @param {Block} body
-     * @return {string}
-     */
-    function addNewBlock(objectID, frameID, nodeID, blockID, body) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectID, frameID, nodeID);
-        if (foundNode) {
-
-            var thisBlocks = foundNode.blocks;
-            thisBlocks[blockID] = new Block();
-
-            // todo activate when system is working to increase security
-            /* var thisMessage = req.body;
-
-             var thisModule = {};
-
-             var breakPoint = false;
-
-             if (thisMessage.type in blockFolderList) {
-             thisModule = blockModules[thisMessage.type];
-
-             for (var thisKey in thisMessage.publicData) {
-             if (typeof thisMessage.publicData[thisKey] !== typeof thisModule.publicData[thisKey]) {
-             breakPoint = true;
-             }
-             }
-
-             for (var thisKey in thisMessage.privateData) {
-             if (typeof thisMessage.privateData[thisKey] !== typeof thisModule.privateData[thisKey]) {
-             breakPoint = true;
-             }
-             }
-             }
-             else {
-             breakPoint = true;
-             }
-
-             if (!breakPoint)*/
-
-            thisBlocks[blockID] = body;
-
-            // todo this can be removed once the system runs smoothly
-            if (typeof thisBlocks[blockID].type === 'undefined') {
-                thisBlocks[blockID].type = thisBlocks[blockID].name;
-            }
-
-            // call an action that asks all devices to reload their links, once the links are changed.
-            utilities.actionSender({
-                reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                lastEditor: body.lastEditor
-            });
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            console.log('added block: ' + blockID);
-            updateStatus = 'added';
-        }
-
-        return updateStatus;
-    }
-
-    // delete a block from the logic. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.delete('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/editor/:lastEditor/deleteBlock/', function (req, res) {
-        res.send(deleteBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.params.lastEditor));
-    });
-    // webServer.delete('/logic/*/*/*/block/*/lastEditor/*/', function (req, res) {
-    //     res.send(deleteBlock(req.params[0], req.params[1], req.params[2], req.params[3], req.params[4]));
-    // });
-
-    /**
-     * Deletes a block with the provided blockID from the the specified node.
-     * Also deletes any links connected to that block.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {string} blockID
-     * @param {string} lastEditor
-     * @return {string}
-     */
-    function deleteBlock(objectID, frameID, nodeID, blockID, lastEditor) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectID, frameID, nodeID);
-
-        if (foundNode) {
-
-            delete foundNode.blocks[blockID];
-            console.log('deleted block: ' + blockID);
-
-            var thisLinks = foundNode.links;
-            // Make sure that no links are connected to deleted blocks
-            for (var linkCheckerKey in thisLinks) {
-                if (!thisLinks.hasOwnProperty(linkCheckerKey)) continue;
-                if (thisLinks[linkCheckerKey].nodeA === blockID || thisLinks[linkCheckerKey].nodeB === blockID) { // TODO: do we need to check blockLinks?
-                    delete foundNode.links[linkCheckerKey];
-                }
-            }
-
-            utilities.actionSender({
-                reloadNode: {object: objectID, frame: nodeID, node: nodeID},
-                lastEditor: lastEditor
-            });
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
-        }
-
-        return updateStatus;
-    }
-
-    webServer.post('/logic/*/*/blockPosition/*/', function (req, res) {
-        res.send(postBlockPosition(req.params[0], req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    webServer.post('/object/*/frame/*/node/*/block/*/blockPosition/', function (req, res) {
-        res.send(postBlockPosition(req.params[0], req.params[1], req.params[2], req.params[3], req.body));
-    });
-
-    /**
-     * Sets a new grid position for the specified block
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {string} blockID
-     * @param {{x: number, y: number, lastEditor: string}} body
-     * @return {string}
-     */
-    function postBlockPosition(objectID, frameID, nodeID, blockID, body) {
-
-        var updateStatus = 'nothing happened';
-
-        console.log('changing Position for :' + objectID + ' : ' + nodeID + ' : ' + blockID);
-
-        var foundNode = getNode(objectID, frameID, nodeID);
-
-        if (foundNode) {
-            var foundBlock = foundNode.blocks[blockID];
-            if (foundBlock) {
-                // check that the numbers are valid numbers..
-                if (typeof body.x === 'number' && typeof body.y === 'number') {
-
-                    foundBlock.x = body.x;
-                    foundBlock.y = body.y;
-
-                    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    utilities.actionSender({
-                        reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                        lastEditor: body.lastEditor
-                    });
-                    updateStatus = 'ok';
-                }
-            }
-        }
-
-        return updateStatus;
-    }
+    // Express router routes
+    const objectRouter = require('./routers/object');
+    const logicRouter = require('./routers/logic');
+    objectRouter.setup(globalVariables);
+    logicRouter.setup(globalVariables);
+    webServer.use('/object', objectRouter.router);
+    webServer.use('/logic', logicRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/block/:blockID/triggerBlock/', function (req, res) {
-        res.send(triggerBlock(req.params.objectID, req.params.frameID, req.params.nodeID, req.params.blockID, req.body));
-    });
-
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
-    webServer.post('/triggerBlock/:blockID', function (req, res) {
-
-        var foundBlock = false;
-        forEachObject(function (object, objectKey) {
-            forEachFrameInObject(object, function (frame, frameKey) {
-                forEachNodeInFrame(frame, function (node, nodeKey) {
-                    if (typeof node.blocks !== 'undefined') {
-                        var block = node.blocks[req.params.blockID];
-                        // keep iterating until you find a block with that ID
-                        if (block) {
-                            foundBlock = true;
-                            res.status(200).json(triggerBlock(objectKey, frameKey, nodeKey, req.params.blockID, req.body)).end();
-                        }
-                    }
-                });
-            });
-        });
-
-        if (!foundBlock) {
-            res.status(404).json({success: false, error: 'no block with ID ' + req.params.blockID + ' exists'}).end();
+    webServer.post('/triggerBlock/:blockName', function (req, res) {
+        if (!utilities.isValidId(req.params.blockName)) {
+            res.status(400).send('Invalid block name. Must be alphanumeric.');
+            return;
         }
-
-    });
-
-    function triggerBlock(objectID, frameID, nodeID, blockID, body) {
-        console.log('triggerBlock', objectID, frameID, nodeID, blockID, body);
-        var foundNode = getNode(objectID, frameID, nodeID);
-        if (foundNode) {
-            var block = foundNode.blocks[blockID];
-            console.log('block', block);
-            console.log('set block ' + block.type + ' (' + blockID + ') to ' + body.value);
-
-            block.data[0].value = body.value;
-            engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
-        }
-
-        return {success: true, error: null};
-    }
-
-    /**
-     * Logic Nodes
-     **/
-
-    // adding a new logic node block to an object. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.post('/logic/*/*/node/', function (req, res) {
-        res.send(addLogicNode(req.params[0], req.params[0], req.params[1], req.body));
-    });
-
-    webServer.post('/object/*/frame/*/node/*/addLogicNode/', function (req, res) {
-        res.send(addLogicNode(req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    /**
-     * Adds the Logic Node contained in the body to the specified frame.
-     * Creates some state (edge blocks) necessary for the server data processing that doesn't exist in the client.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {Node} body
-     * @return {string}
-     */
-    function addLogicNode(objectID, frameID, nodeID, body) {
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectID, frameID);
-        if (foundFrame) {
-
-            foundFrame.nodes[nodeID] = body;
-            var newNode = foundFrame.nodes[nodeID];
-
-            // edge blocks are used to transition data between node links going into the red/yellow/green/blue ports...
-            // ...and the corresponding blocks / block links within the crafting board
-            newNode.blocks['in0'] = new EdgeBlock();
-            newNode.blocks['in1'] = new EdgeBlock();
-            newNode.blocks['in2'] = new EdgeBlock();
-            newNode.blocks['in3'] = new EdgeBlock();
-
-            newNode.blocks['out0'] = new EdgeBlock();
-            newNode.blocks['out1'] = new EdgeBlock();
-            newNode.blocks['out2'] = new EdgeBlock();
-            newNode.blocks['out3'] = new EdgeBlock();
-
-            newNode.type = 'logic';
-
-            // call an action that asks all devices to reload their links, once the links are changed.
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({
-                reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                lastEditor: body.lastEditor
-            });
-
-            console.log('added logic node: ' + nodeID);
-            updateStatus = 'added';
-        }
-
-        return updateStatus;
-    }
-
-    // delete a logic node from the logic. *1 is the object *2 is the logic *3 is the link id
-    // ****************************************************************************************************************
-    webServer.delete('/logic/*/*/node/lastEditor/*/', function (req, res) {
-        res.send(deleteLogicNode(req.params[0], req.params[0], req.params[1], req.params[2]));
-    });
-
-    webServer.delete('/object/*/frame/*/node/*/editor/*/deleteLogicNode', function (req, res) {
-        res.send(deleteLogicNode(req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-
-    /**
-     * Deletes the specified Logic Node.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {string} lastEditor
-     * @return {string}
-     */
-    function deleteLogicNode(objectID, frameID, nodeID, lastEditor) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectID, frameID);
-        if (foundFrame) {
-            delete foundFrame.nodes[nodeID];
-            console.log('deleted node: ' + nodeID);
-
-            //todo check all links as well in object
-            // Make sure that no links are connected to deleted objects
-            /*  for (var subCheckerKey in  objects[req.params[0]].links) {
-
-                  if (objects[req.params[0]].links[subCheckerKey].nodeA === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectA === req.params[0]) {
-                      delete objects[req.params[0]].links[subCheckerKey];
-                  }
-                  if (objects[req.params[0]].links[subCheckerKey].nodeB === req.params[1] && objects[req.params[0]].links[subCheckerKey].objectB === req.params[0]) {
-                      delete objects[req.params[0]].links[subCheckerKey];
-                  }
-              }*/
-
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({
-                reloadNode: {object: objectID, frame: frameID, node: nodeID},
-                lastEditor: lastEditor
-            });
-
-            updateStatus = 'deleted: ' + nodeID + ' in frame: ' + frameID + ' of object: ' + objectID;
-        }
-
-        return updateStatus;
-    }
-
-    webServer.post('/logic/*/*/nodeSize/', function (req, res) {
-        changeNodeSize(req.params[0], req.params[0], req.params[1], req.body, function (statusCode, responseContents) {
-            res.status(statusCode).send(responseContents);
+        blockController.triggerBlockSearch(req.params.blockName, req.body, function (statusCode, responseContents) {
+            res.status(statusCode).json(responseContents).end();
         });
     });
-
-    webServer.post('/object/*/frame/*/node/*/nodeSize/', function (req, res) {
-        changeNodeSize(req.params[0], req.params[1], req.params[2], req.body, function (statusCode, responseContents) {
-            res.status(statusCode).send(responseContents);
-        });
-    });
-
-    /**
-     * Updates the position and size of a specified node.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} nodeID
-     * @param {{x: number|undefined, y: number|undefined, scale: number|undefined, matrix: Array.<number>|undefined}} body
-     * @param {function} callback
-     */
-    function changeNodeSize(objectID, frameID, nodeID, body, callback) {
-
-        var updateStatus = 'nothing happened';
-
-        console.log('changing Size for :' + objectID + ' : ' + nodeID);
-
-        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
-            if (error) {
-                callback(404, error);
-                return;
-            }
-
-            // check that the numbers are valid numbers..
-            if (typeof body.x === 'number' && typeof body.y === 'number' && typeof body.scale === 'number') {
-                node.x = body.x;
-                node.y = body.y;
-                node.scale = body.scale;
-                updateStatus = 'ok';
-            }
-
-            if (typeof body.matrix === 'object') {
-                node.matrix = body.matrix;
-                updateStatus = 'ok';
-            }
-
-            // if anything updated, write to disk and broadcast updates to editors
-            if (updateStatus === 'ok') {
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({
-                    reloadObject: {object: objectID, frame: frameID, node: nodeID},
-                    lastEditor: body.lastEditor
-                });
-            }
-
-            callback(200, updateStatus);
-        });
-
-    }
 
     // Responds with the set of Spatial Tools that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
@@ -2115,1352 +1596,31 @@ function objectWebServer() {
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
         console.log('get available logic blocks');
-        res.json(getLogicBlockList());
+        res.json(blockController.getLogicBlockList());
     });
-
-    /**
-     * Utility function that traverses all the blockModules and creates a new entry for each.
-     * @return {Object.<string, Block>}
-     */
-    function getLogicBlockList() {
-
-        var blockList = {};
-
-        // Create a objects list with all IO-Points code.
-        const blockFolderList = Object.keys(blockModules);
-        for (let i = 0; i < blockFolderList.length; i++) {
-
-            // make sure that each block contains all default property keys.
-            blockList[blockFolderList[i]] = new Block();
-
-            // overwrite the properties of that block with those stored in the matching blockModule
-            var thisBlock = blockModules[blockFolderList[i]].properties;
-            for (let key in thisBlock) {
-                blockList[blockFolderList[i]][key] = thisBlock[key];
-            }
-            // this makes sure that the type of the block is set.
-            blockList[blockFolderList[i]].type = blockFolderList[i];
-
-        }
-        return blockList;
-    }
-
-    // uploads a new name for a logic node (or could be used for any type of node)
-    // ****************************************************************************************************************
-    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/rename/', function (req, res) {
-
-        var objectID = req.params.objectID;
-        var frameID = req.params.frameID;
-        var nodeID = req.params.nodeID;
-
-        console.log('received name for', objectID, frameID, nodeID);
-
-        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
-            if (error) {
-                res.status(404);
-                res.json(error).end();
-                return;
-            }
-
-            node.name = req.body.nodeName;
-
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            res.status(200);
-            res.json({success: true}).end();
-        });
-
-    });
-
-    // uploads a new iconImage for a logic block
-    // ****************************************************************************************************************
-    webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/uploadIconImage', function (req, res) {
-
-        var objectID = req.params.objectID;
-        var frameID = req.params.frameID;
-        var nodeID = req.params.nodeID;
-
-        console.log('received icon image for', objectID, frameID, nodeID);
-
-        getNodeAsync(objectID, frameID, nodeID, function (error, object, frame, node) {
-            if (error) {
-                res.status(404);
-                res.json(error).end();
-                return;
-            }
-
-            var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
-            if (!fs.existsSync(iconDir)) {
-                fs.mkdirSync(iconDir);
-            }
-
-            var form = new formidable.IncomingForm({
-                uploadDir: iconDir,
-                keepExtensions: true,
-                accept: 'image/jpeg'
-            });
-
-            console.log('created form');
-
-            form.on('error', function (err) {
-                res.status(500);
-                res.send(err);
-                throw err;
-            });
-
-            var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
-
-            if (fs.existsSync(rawFilepath)) {
-                console.log('deleted old raw file');
-                fs.unlinkSync(rawFilepath);
-            }
-
-            form.on('fileBegin', function (name, file) {
-                console.log('fileBegin loading', name, file);
-                file.path = rawFilepath;
-            });
-
-            console.log('about to parse');
-
-            form.parse(req, function (err, fields) {
-
-                console.log('successfully created icon image', err, fields);
-
-                var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
-                console.log('attempting to write file to ' + resizedFilepath);
-
-                if (fs.existsSync(resizedFilepath)) {
-                    console.log('deleted old resized file');
-                    fs.unlinkSync(resizedFilepath);
-                }
-
-                // copied fullsize file into resized image file as backup, in case resize operation fails
-                fs.copyFileSync(rawFilepath, resizedFilepath);
-
-                if (Jimp) {
-                    Jimp.read(rawFilepath).then(image => {
-                        return image.resize(200, 200).write(resizedFilepath);
-                    }).then(() => {
-                        console.log('done resizing');
-
-                        if (node) {
-                            node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                            utilities.actionSender({
-                                loadLogicIcon: {
-                                    object: objectID,
-                                    frame: frameID,
-                                    node: nodeID,
-                                    ip: object.ip,
-                                    iconImage: node.iconImage
-                                }
-                            }); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
-                        }
-
-                        res.status(200);
-                        res.json({success: true}).end();
-                    }).catch(err => {
-                        console.log('error resizing', err);
-                        res.status(500);
-                        res.send(err);
-                        throw err;
-                    });
-                }
-
-            });
-
-            console.log('parse called');
-
-        });
-
-
-    });
-
-    /**
-     * Normal Links
-     **/
-
-    // delete a link. *1 is the object *2 is the link id
-    // ****************************************************************************************************************
-    webServer.delete('/object/*/link/*/lastEditor/*/', function (req, res) {
-        res.send(deleteLink(req.params[0], req.params[0], req.params[1], req.params[2]));
-    });
-
-    webServer.delete('/object/*/frame/*/link/*/editor/*/deleteLink', function (req, res) {
-        res.send(deleteLink(req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-
-    /**
-     * Extracts a nicely structured set of data about the link
-     * @param {Link} fullEntry
-     * @param wasAdded
-     * @return {*}
-     */
-    function getLinkData(fullEntry, wasAdded) {
-        var linkAddedData = null;
-
-        if (fullEntry) {
-            console.log('getLinkData', fullEntry);
-
-            var linkObjectA = fullEntry['objectA'];
-            var linkObjectB = fullEntry['objectB'];
-            var linkFrameA = fullEntry['frameA'];
-            var linkFrameB = fullEntry['frameB'];
-            var linkNodeA = fullEntry['nodeA'];
-            var linkNodeB = fullEntry['nodeB'];
-
-            var objectAName = fullEntry['namesA'][0];
-            var objectBName = fullEntry['namesB'][0];
-            var frameAName = fullEntry['namesA'][1];
-            var frameBName = fullEntry['namesB'][1];
-            var nodeAName = fullEntry['namesA'][2]; // TODO: implement a single, safe way to get the object/frame/node (like in the editor) and return null if not found (instead of crashing)
-            var nodeBName = fullEntry['namesB'][2];
-
-            linkAddedData = {
-                added: wasAdded,
-                idObjectA: linkObjectA,
-                idObjectB: linkObjectB,
-                idFrameA: linkFrameA,
-                idFrameB: linkFrameB,
-                idNodeA: linkNodeA,
-                idNodeB: linkNodeB,
-                nameObjectA: objectAName,
-                nameObjectB: objectBName,
-                nameFrameA: frameAName,
-                nameFrameB: frameBName,
-                nameNodeA: nodeAName,
-                nameNodeB: nodeBName
-            };
-
-        } else {
-            console.log('thisObject does not exist');
-        }
-        return linkAddedData;
-    }
-
-    function forEachObject(callback) {
-        for (var objectKey in objects) {
-            if (!objects.hasOwnProperty(objectKey)) continue;
-            callback(objects[objectKey], objectKey);
-        }
-    }
-
-    function forEachFrameInObject(object, callback) {
-        for (var frameKey in object.frames) {
-            if (!object.frames.hasOwnProperty(frameKey)) continue;
-            callback(object.frames[frameKey], frameKey);
-        }
-    }
-
-    function forEachNodeInFrame(frame, callback) {
-        for (var nodeKey in frame.nodes) {
-            if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
-            callback(frame.nodes[nodeKey], nodeKey);
-        }
-    }
-
-    /**
-     * Deletes a regular link from the frame it begins from.
-     * Also delete the websocket to this link's destination server IP if it was the last link from this server to that one.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} linkKey
-     * @param {string} editorID
-     */
-    function deleteLink(objectKey, frameKey, linkKey, editorID) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectKey, frameKey);
-
-        if (foundFrame) {
-
-            var foundLink = foundFrame.links[linkKey];
-            var destinationIp = knownObjects[foundLink.objectB];
-
-            // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-            var linkAddedData = getLinkData(foundLink, false);
-            if (linkAddedData) {
-                hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-                hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-            }
-
-            delete foundFrame.links[linkKey];
-
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
-
-            // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
-            var checkIfIpIsUsed = false;
-            forEachObject(function (thisObject) {
-                forEachFrameInObject(thisObject, function (thisFrame) {
-                    for (var linkCheckerKey in thisFrame.links) {
-                        if (thisFrame.links[linkCheckerKey].objectB === foundLink.objectB) {
-                            checkIfIpIsUsed = true;
-                        }
-                    }
-                });
-            });
-
-            // if the destinationIp isn't linked to at all anymore, delete the websocket to that server
-            if (foundLink.objectB !== foundLink.objectA && !checkIfIpIsUsed) {
-                delete socketArray[destinationIp];
-            }
-
-            console.log('deleted link: ' + linkKey);
-            updateStatus = 'deleted: ' + linkKey + ' in object: ' + objectKey + ' frame: ' + frameKey;
-        }
-
-        return updateStatus;
-
-    }
-
-    // todo links for programms as well
-    // adding a new link to an object. *1 is the object *2 is the link id
-    // ****************************************************************************************************************
-
-    webServer.post('/object/:objectID/frame/:frameID/link/:linkID/addLink/', function (req, res) {
-        console.log('routed by 2');
-        res.status(200).send(newLink(req.params.objectID, req.params.frameID, req.params.linkID, req.body));
-    });
-
-    webServer.post('/object/*/link/*/', function (req, res) {
-        console.log('routed by 1');
-        res.status(200).send(newLink(req.params[0], req.params[0], req.params[1], req.body));
-    });
-
-    /**
-     * Creates a link on the frame containing the node that the link starts from.
-     * @param {string} objectID
-     * @param {string} frameID
-     * @param {string} linkID
-     * @param {Link} body
-     */
-    function newLink(objectID, frameID, linkID, body) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectID, frameID);
-        if (foundFrame) {
-
-            console.log('found frame to add link to');
-
-            // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
-            // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
-            body.loop = (body.objectA === body.objectB &&
-                body.frameA === body.frameB &&
-                body.nodeA === body.nodeB);
-
-            foundFrame.links[linkID] = body;
-
-            if (!body.loop) {
-                console.log('added link: ' + linkID);
-                // write the object state to the permanent storage.
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-                // check if there are new connections associated with the new link.
-                socketUpdater();
-
-                // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-                var newLink = foundFrame.links[linkID];
-                var linkAddedData = getLinkData(newLink, true);
-                if (linkAddedData) {
-                    hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
-                    hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
-                }
-
-                // call an action that asks all devices to reload their links, once the links are changed.
-                utilities.actionSender({reloadLink: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
-
-                updateStatus = 'added';
-            } else {
-                updateStatus = 'found endless Loop';
-            }
-
-        }
-
-        return updateStatus;
-    }
-
-    // Add a new node to an object linked to a frame
-    webServer.post('/object/:objectKey/frame/:frameKey/node/:nodeKey/addNode', function (req, res) {
-        addNodeToFrame(req.params.objectKey, req.params.frameKey, req.params.nodeKey, req, res);
-    });
-
-    webServer.post('/object/:objectKey/node/:nodeKey/', function (req, res) {
-        addNodeToFrame(req.params.objectKey, req.params.objectKey, req.params.nodeKey, req, res);
-    });
-
-    /**
-     * Creates a node on the frame specified frame.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} nodeKey
-     * @param {*} req
-     * @param {*} res
-     * @todo don't pass in req and res, instead callback that triggers status code / err / res
-     */
-    function addNodeToFrame(objectKey, frameKey, nodeKey, req, res) {
-
-        var errorMessage = null;
-
-        var foundObject = getObject(objectKey);
-        if (foundObject) {
-            var foundFrame = getFrame(objectKey, frameKey);
-            if (foundFrame) {
-                foundFrame.nodes[nodeKey] = req.body;
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: req.body.lastEditor});
-            } else {
-                errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
-            }
-        } else {
-            errorMessage = 'Object ' + objectKey + ' not found';
-        }
-
-        if (errorMessage) {
-            res.status(404).json({failure: true, error: errorMessage}).end();
-        } else {
-            res.status(200).json({success: 'true'}).end();
-        }
-    }
-
-    // adding a new lock to an object. *1 is the object *2 is the datapoint id
-    // ****************************************************************************************************************
-
-    webServer.post('/object/*/nodeLock/*/', function (req, res) {
-        res.send(addNodeLock(req.params[0], req.params[0], req.params[1], req.body));
-    });
-
-    webServer.post('/object/*/frame/*/node/*/addLock/', function (req, res) {
-        res.send(addNodeLock(req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    /**
-     * Sets a lock password on the specified node.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} nodeKey
-     * @param {{lockPassword: string, lockType: string}} body
-     */
-    function addNodeLock(objectKey, frameKey, nodeKey, body) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectKey, frameKey, nodeKey);
-        if (foundNode) {
-            var previousLockPassword = foundNode.lockPassword;
-            var newLockPassword = body.lockPassword;
-            var previousLockType = foundNode.lockType;
-            var newLockType = body.lockType;
-
-            var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
-                (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
-
-            if (isLockActionAllowed) {
-                foundNode.lockPassword = newLockPassword;
-                foundNode.lockType = newLockType;
-
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
-
-                updateStatus = 'added';
-
-            } else {
-                if (previousLockPassword === newLockPassword) {
-                    updateStatus = 'already locked by this user';
-                } else {
-                    updateStatus = 'not authorized to add';
-                }
-            }
-
-        }
-
-        return updateStatus;
-    }
-
-    // delete a lock. *1 is the object *2 is the datapoint id *3 is the encrypted user id
-    // TODO: add robust security to the "password" field
-    // ****************************************************************************************************************
-    webServer.delete('/object/*/frame/*/node/*/password/*/deleteLock', function (req, res) {
-        res.send(deleteNodeLock(req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-
-    webServer.delete('/object/*/nodeLock/*/password/*/', function (req, res) {
-        res.send(deleteNodeLock(req.params[0], req.params[0], req.params[1], req.params[2]));
-    });
-
-    /**
-     * Removes the lock on the specified node if using the correct password.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} nodeKey
-     * @param {string} password
-     */
-    function deleteNodeLock(objectKey, frameKey, nodeKey, password) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundNode = getNode(objectKey, frameKey, nodeKey);
-        if (foundNode) {
-            if (password === foundNode.lockPassword || (globalVariables.debug && password === 'DEBUG')) { // TODO: remove DEBUG mode
-                foundNode.lockPassword = null;
-                foundNode.lockType = null;
-
-                var object = getObject(objectKey);
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
-
-                updateStatus = 'deleted';
-            } else {
-                updateStatus = 'not authorized to delete';
-            }
-        }
-
-        return updateStatus;
-    }
-
-    // adding a new lock to an object link. *1 is the object *2 is the link id
-    // ****************************************************************************************************************
-    webServer.post('/object/*/linkLock/*/', function (req, res) {
-        res.send(addLinkLock(req.params[0], req.params[0], req.params[1], req.body));
-    });
-
-    webServer.post('/object/*/frame/*/link/*/addLock', function (req, res) {
-        res.send(addLinkLock(req.params[0], req.params[1], req.params[2], req.body));
-    });
-
-    /**
-     * Sets a lock password on the specified link.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} linkKey
-     * @param {{lockPassword: string, lockType: string}} body
-     */
-    function addLinkLock(objectKey, frameKey, linkKey, body) {
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectKey, frameKey);
-        if (foundFrame) {
-            var foundLink = foundFrame.links[linkKey];
-
-            var previousLockPassword = foundLink.lockPassword;
-            var newLockPassword = body.lockPassword;
-            var previousLockType = foundLink.lockType;
-            var newLockType = body.lockType;
-
-            var isLockActionAllowed = (!previousLockPassword && !!newLockPassword) ||
-                (!!newLockPassword && previousLockPassword === newLockPassword && newLockType !== previousLockType);
-
-            if (isLockActionAllowed) {
-                foundLink.lockPassword = newLockPassword;
-                foundLink.lockType = newLockType;
-
-                var object = getObject(objectKey);
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadLink: {object: object}});
-
-                updateStatus = 'added';
-
-            } else {
-                if (previousLockPassword === newLockPassword) {
-                    updateStatus = 'already locked by this user';
-                } else {
-                    updateStatus = 'not authorized to add';
-                }
-            }
-        }
-
-        return updateStatus;
-    }
-
-    // delete a lock from a link. *1 is the object *2 is the link id *3 is the encrypted user id
-    // ****************************************************************************************************************
-    webServer.delete('/object/*/linkLock/*/password/*/', function (req, res) {
-        res.send(deleteLinkLock(req.params[0], req.params[0], req.params[1], req.params[2]));
-    });
-
-    webServer.delete('/object/*/frame/*/link/*/password/*/deleteLock', function (req, res) {
-        res.send(deleteLinkLock(req.params[0], req.params[1], req.params[2], req.params[3]));
-    });
-
-    /**
-     * Removes the lock on the specified link if using the correct password.
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {string} linkKey
-     * @param {string} password
-     */
-    function deleteLinkLock(objectKey, frameKey, linkKey, password) {
-
-        var updateStatus = 'nothing happened';
-
-        var foundFrame = getFrame(objectKey, frameKey);
-        if (foundFrame) {
-            var foundLink = foundFrame.links[linkKey];
-            if (password === foundLink.lockPassword || password === 'DEBUG') { // TODO: remove DEBUG mode
-                foundLink.lockPassword = null;
-                foundLink.lockType = null;
-
-                var object = getObject(objectKey);
-                utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadLink: {object: objectKey}});
-
-                updateStatus = 'deleted';
-            } else {
-                updateStatus = 'not authorized to delete';
-            }
-        }
-
-        return updateStatus;
-    }
-
-    // Update the publicData of a frame when it gets moved from one object to another
-    // ****************************************************************************************************************
-
-    /**
-     * Delete the publicData from every node in the frame
-     */
-    webServer.delete('/object/:objectID/frame/:frameID/publicData', function (req, res) {
-
-        // locate the containing frame in a safe way
-        getFrameAsync(req.params.objectID, req.params.frameID, function (error, object, frame) {
-            if (error) {
-                res.status(404).json(error).end();
-                return;
-            }
-
-            // reset the publicData of each node
-            forEachNodeInFrame(frame, function (node) {
-                node.publicData = {};
-            });
-
-            // save state to object.json
-            utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
-
-            res.status(200);
-            res.json({success: true}).end();
-        });
-    });
-
-    /**
-     * Add each publicData from the body to the nodes with the same name specified in the publicData's keys
-     */
-    webServer.post('/object/:objectID/frame/:frameID/publicData', function (req, res) {
-
-        var publicData = req.body.publicData;
-
-        // locate the containing frame in a safe way
-        getFrameAsync(req.params.objectID, req.params.frameID, function (error, object, frame) {
-            if (error) {
-                res.status(404).json(error).end();
-                return;
-            }
-
-            // the keys inside publicData are the names of the node that the data belongs to
-            for (var nodeName in publicData) {
-
-                // find the node with the same name
-                var nodeKey = req.params.frameID + nodeName;
-                if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
-
-                var node = frame.nodes[nodeKey];
-                if (node) {
-                    // and set its public data to the correctly indexed data
-                    node.publicData = publicData[nodeName];
-                }
-            }
-
-            // save state to object.json
-            utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
-
-            res.status(200);
-            res.json({success: true}).end();
-        });
-    });
-
-    /**
-     * Helper function to return the absolute path to the directory that should contain all
-     * video files for the provided object name. (makes dir if necessary)
-     * @param objectName
-     * @return {string}
-     */
-    function getVideoDir(objectName) {
-        let videoDir = objectsPath; // on mobile, put videos directly in object home dir
-
-        // directory differs on mobile due to inability to call mkdir
-        if (!isMobile) {
-            videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
-
-            if (!fs.existsSync(videoDir)) {
-                console.log('make videoDir');
-                fs.mkdirSync(videoDir);
-            }
-        }
-
-        return videoDir;
-    }
-
-    /**
-     * Upload a video file to the object's metadata folder.
-     * The video is stored in a form, which can be parsed and written to the filesystem.
-     * @todo compress video
-     */
-    webServer.post('/object/:id/video/:videoId', function (req, res) {
-        var objectKey = req.params.id;
-        var videoId = req.params.videoId;
-
-        let object = getObject(objectKey);
-        if (!object) {
-            res.status(404).json('Object ' + objectKey + ' not found').end();
-            return;
-        }
-        try {
-            var videoDir = getVideoDir(object.name);
-
-            var form = new formidable.IncomingForm({
-                uploadDir: videoDir,
-                keepExtensions: true,
-                accept: 'video/mp4'
-            });
-
-            console.log('created form for video');
-
-            form.on('error', function (err) {
-                res.status(500).send(err);
-            });
-
-            var rawFilepath = form.uploadDir + '/' + videoId + '.mp4';
-
-            if (fs.existsSync(rawFilepath)) {
-                console.log('deleted old raw file');
-                fs.unlinkSync(rawFilepath);
-            }
-
-            form.on('fileBegin', function (name, file) {
-                file.path = rawFilepath;
-                console.log('fileBegin loading', name, file);
-            });
-
-            form.parse(req, function (err, fields) {
-
-                if (err) {
-                    console.log('error parsing', err);
-                    res.status(500).send(err);
-                    return;
-                }
-
-                console.log('successfully created video file', err, fields);
-
-                res.status(200).json({success: true}).end();
-            });
-        } catch (e) {
-            console.warn('error parsing video upload', e);
-        }
-    });
-
-    /**
-     *
-     *  HANDLE GIT Interface
-     *
-     */
-
-    webServer.post('/object/:id/saveCommit', function (req, res) {
-        if (isMobile) {
-            res.status(500).send('saveCommit unavailable on mobile');
-            return;
-        }
-        var object = getObject(req.params.id);
-        if (object) {
-            git.saveCommit(object, objects, function () {
-                res.status(200);
-                res.json({success: true}).end();
-            });
-        }
-    });
-
-    webServer.post('/object/:id/resetToLastCommit', function (req, res) {
-        if (isMobile) {
-            res.status(500).send('resetToLastCommit unavailable on mobile');
-            return;
-        }
-        var object = getObject(req.params.id);
-        if (object) {
-            git.resetToLastCommit(object, objects, function () {
-                res.status(200);
-                res.json({success: true}).end();
-                hardwareAPI.runResetCallbacks(req.params.id);
-            });
-        }
-    });
-
-    webServer.post('/object/:id/matrix', function (req, res) {
-        let object = getObject(req.params.id);
-        if (!object) {
-            res.status(404).json({
-                failure: true,
-                error: 'Object ' + req.params.id + ' not found'
-            }).end();
-            return;
-        }
-
-        object.matrix = req.body.matrix;
-        console.log('set matrix for ' + req.params.id + ' to ' + object.matrix.toString());
-
-        utilities.writeObjectToFile(objects, req.params.id, objectsPath, globalVariables.saveToDisk);
-
-        res.json({success: true}).end();
-    });
-
-    // Handler of new memory uploads
-    webServer.post('/object/:id/memory', function (req, res) {
-        memoryUpload(req.params.id, /*req.params.id,*/ req, res);
-    });
-
-    // webServer.post('/object/:id/frame/:frame/memory', function (req, res) {
-    //     memoryUpload(req.params.id, req.params.frame, req, res);
-    // });
-
-    /**
-     * Upload an image file to the object's metadata folder.
-     * The image is stored in a form, which can be parsed and written to the filesystem.
-     * @param {string} objectID
-     * @param {express.Request} req
-     * @param {express.Response} res
-     */
-    function memoryUpload(objectID, req, res) {
-
-        if (!objects.hasOwnProperty(objectID)) {
-            res.status(404);
-            res.json({failure: true, error: 'Object ' + objectID + ' not found'}).end();
-            return;
-        }
-
-        var obj = getObject(objectID);
-
-        if (obj.isHumanPose) {
-            res.status(404).json({failure: true, error: 'Object ' + objectID + ' has no directory'}).end();
-            return;
-        }
-
-        var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
-        if (!fs.existsSync(memoryDir)) {
-            fs.mkdirSync(memoryDir);
-        }
-
-        var form = new formidable.IncomingForm({
-            uploadDir: memoryDir,
-            keepExtensions: true,
-            accept: 'image/jpeg'
-        });
-
-        form.on('error', function (err) {
-            res.status(500);
-            res.send(err);
-            throw err;
-        });
-
-        form.on('fileBegin', function (name, file) {
-            if (name === 'memoryThumbnailImage') {
-                file.path = form.uploadDir + '/memoryThumbnail.jpg';
-            } else {
-                file.path = form.uploadDir + '/memory.jpg';
-            }
-        });
-
-        form.parse(req, function (err, fields) {
-            if (obj) {
-                obj.memory = JSON.parse(fields.memoryInfo);
-                obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
-                obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
-
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
-            }
-
-            console.log('successfully created memory');
-
-            res.status(200);
-            res.json({success: true}).end();
-        });
-    }
-
-    // Create a frame for an object. Assigns it a new UUID.
-    webServer.post('/object/*/frames/', function (req, res) {
-        var frameId = 'frame' + utilities.uuidTime();
-        addFrameToObject(req.params[0], frameId, req.body, res);
-    });
-
-    // Create a frame for an object. Uses its existing UUID
-    webServer.post('/object/*/addFrame/', function (req, res) {
-        var frame = req.body;
-        addFrameToObject(req.params[0], frame.uuid, frame, res);
-    });
-
-    /**
-     * Adds a provided frame to the specified object
-     * @param {string} objectKey
-     * @param {string} frameKey
-     * @param {Frame} frame
-     * @param {*} res
-     */
-    function addFrameToObject(objectKey, frameKey, frame, res) {
-
-        getObjectAsync(objectKey, function (error, object) {
-
-            if (error) {
-                res.status(404).json(error).end();
-                return;
-            }
-
-            if (!frame.src) {
-                res.status(500).json({failure: true, error: 'frame must have src'}).end();
-                return;
-            }
-
-            if (!object.frames) {
-                object.frames = {};
-            }
-
-            utilities.createFrameFolder(object.name, frame.name, __dirname, objectsPath, globalVariables.debug, frame.location);
-
-            var newFrame = new Frame();
-            newFrame.objectId = frame.objectId;
-            newFrame.uuid = frameKey;
-            newFrame.name = frame.name;
-            newFrame.visualization = frame.visualization;
-            newFrame.ar = frame.ar;
-            newFrame.screen = frame.screen;
-            newFrame.visible = frame.visible;
-            newFrame.visibleText = frame.visibleText;
-            newFrame.visibleEditing = frame.visibleEditing;
-            newFrame.developer = frame.developer;
-            newFrame.links = frame.links;
-            newFrame.nodes = frame.nodes;
-            newFrame.location = frame.location;
-            newFrame.src = frame.src;
-            newFrame.width = frame.width;
-            newFrame.height = frame.height;
-
-            // give default values for this node type to each node's public data, if not already assigned
-            for (let key in newFrame.nodes) {
-                if ((!frame.publicData || Object.keys(frame.publicData).length <= 0) && (!newFrame.nodes[key].publicData || Object.keys(newFrame.nodes[key].publicData).length <= 0)) {
-                    newFrame.nodes[key].publicData = JSON.parse(JSON.stringify(nodeTypeModules[newFrame.nodes[key].type].properties.publicData));
-                }
-            }
-
-            object.frames[frameKey] = newFrame;
-
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
-
-            // notifies any open screens that a new frame was added
-            hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
-
-            res.json({success: true, frameId: frameKey}).end();
-
-        });
-    }
-
-    /**
-     * Creates a copy of the frame (happens when you pull an instance from a staticCopy frame)
-     */
-    webServer.post('/object/:objectID/frames/:frameID/copyFrame/', function (req, res) {
-        var objectID = req.params.objectID;
-        var frameID = req.params.frameID;
-        console.log('making a copy of frame', frameID);
-
-        getFrameAsync(objectID, frameID, function (error, object, frame) {
-            if (error) {
-                res.status(404).json(error).end();
-                return;
-            }
-
-            if (frame.location !== 'global') {
-                return;
-            }
-
-            // don't need to create a folder because we already ensured it is a global frame
-            // (otherwise we would need... utilities.createFrameFolder(object.name, frame.name, ... )
-
-            var newFrame = new Frame();
-            newFrame.objectId = frame.objectId;
-            newFrame.name = frame.src + utilities.uuidTime();
-            var newFrameKey = objectID + newFrame.name;
-            newFrame.uuid = newFrameKey;
-            newFrame.visualization = frame.visualization;
-            // deep clone ar by value, not reference, otherwise posting new position for one might affect the other
-            newFrame.ar = {
-                x: frame.ar.x,
-                y: frame.ar.y,
-                scale: frame.ar.scale,
-                matrix: frame.ar.matrix
-            };
-            // deep clone screen by value, not reference
-            newFrame.screen = {
-                x: frame.screen.x,
-                y: frame.screen.y,
-                scale: frame.screen.scale
-            };
-            newFrame.visible = frame.visible;
-            newFrame.visibleText = frame.visibleText;
-            newFrame.visibleEditing = frame.visibleEditing;
-            newFrame.developer = frame.developer;
-            newFrame.links = frame.links;
-
-            // perform a deep clone of the nodes so it copies by value, not reference
-            newFrame.nodes = {}; // adjust node keys, etc, for copy
-            for (var oldNodeKey in frame.nodes) {
-                if (!frame.nodes.hasOwnProperty(oldNodeKey)) continue;
-                var newNode = new Node();
-                var oldNode = frame.nodes[oldNodeKey];
-                for (var propertyKey in oldNode) {
-                    if (!oldNode.hasOwnProperty(propertyKey)) continue;
-                    newNode[propertyKey] = oldNode[propertyKey];
-                }
-                newNode.frameId = newFrameKey;
-                var newNodeKey = newNode.frameId + newNode.name;
-                newNode.uuid = newNodeKey;
-                newFrame.nodes[newNodeKey] = newNode;
-            }
-
-            newFrame.location = frame.location;
-            newFrame.src = frame.src;
-            newFrame.width = frame.width;
-            newFrame.height = frame.height;
-            object.frames[newFrameKey] = newFrame;
-
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-            // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
-            // utilities.actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
-            utilities.actionSender({
-                reloadFrame: {object: objectID, frame: newFrameKey},
-                lastEditor: req.body.lastEditor
-            });
-
-            hardwareAPI.runFrameAddedCallbacks(objectID, newFrame); // creates frame in screen hardware interface
-
-            res.status(200).json({success: true, frameId: newFrameKey, frame: newFrame}).end();
-        });
-
-    });
-
-    /**
-     * Update an object's frame
-     */
-    webServer.post('/object/*/frames/*/', function (req, res) {
-        var objectId = req.params[0];
-        var frameId = req.params[1];
-
-        getObjectAsync(objectId, function (error, object) {
-
-            if (error) {
-                res.status(404).json(error).end();
-                return;
-            }
-
-            var frame = req.body;
-
-            if (!frame.src) {
-                res.status(500).json({failure: true, error: 'frame must have src'}).end();
-                return;
-            }
-
-            if (!object.frames) {
-                object.frames = {};
-            }
-
-            if (!object.frames[frameId]) {
-                object.frames[frameId] = new Frame();
-            }
-
-            frame.loaded = false;
-            // Copy over all properties of frame
-            Object.assign(object.frames[frameId], frame);
-
-            utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
-
-            utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
-
-            res.json({success: true}).end();
-
-        });
-
-    });
-
-    /**
-     * Delete a frame from an object
-     */
-    webServer.delete('/object/:objectId/frames/:frameId/', function (req, res) {
-
-        var objectId = req.params.objectId;
-        var frameId = req.params.frameId;
-
-        console.log('delete frame from server', objectId, frameId);
-
-        var object = getObject(objectId);
-        if (!object) {
-            res.status(404).json({failure: true, error: 'object ' + objectId + ' not found'}).end();
-            return;
-        }
-
-        var frame = object.frames[frameId];
-        if (!frame) {
-            res.status(404).json({failure: true, error: 'frame ' + frameId + ' not found'}).end();
-            return;
-        }
-
-        //delete any videos associated with the frame, if necessary
-        // var isPublicDataOnFrame = frame.publicData.hasOwnProperty('data');
-        var publicDataOnAllNodes = Object.keys(frame.nodes).map(function (nodeKey) {
-            return frame.nodes[nodeKey].publicData;
-        });
-        var videoPaths = publicDataOnAllNodes.filter(function (publicData) {
-            if (publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
-                if (publicData.data.indexOf('http') > -1 && publicData.data.indexOf('.mp4') > -1) {
-                    return true;
-                }
-            }
-            return false;
-        }).map(function (publicData) {
-            return publicData.data;
-        });
-        console.log('frame being deleted contains these video paths: ', videoPaths);
-        videoPaths.forEach(function (videoPath) {
-            // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
-            var urlArray = videoPath.split('/');
-
-            var objectName = urlArray[4];
-            var videoDir = getVideoDir(objectName);
-            var videoFilePath = path.join(videoDir, urlArray[6]);
-
-            if (fs.existsSync(videoFilePath)) {
-                fs.unlinkSync(videoFilePath);
-            }
-        });
-
-        var objectName = object.name;
-        var frameName = object.frames[frameId].name;
-
-        delete object.frames[frameId];
-
-        // remove the frame directory from the object
-        utilities.deleteFrameFolder(objectName, frameName, objectsPath);
-
-        // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
-        var deletedNodes = {};
-        for (var nodeId in object.nodes) {
-            var node = object.nodes[nodeId];
-            if (node.frame === frameId) {
-                deletedNodes[nodeId] = true;
-                delete object.nodes[nodeId];
-            }
-        }
-
-        // Delete links involving frame's nodes
-        forEachObject(function (linkObject, linkObjectId) {
-            var linkObjectHasChanged = false;
-
-            for (var linkId in linkObject.links) { // TODO: this isn't updated for frames either
-                var link = linkObject.links[linkId];
-                if (link.objectA === objectId || link.objectB === objectId) {
-                    if (deletedNodes[link.nodeA] || deletedNodes[link.nodeB]) {
-                        linkObjectHasChanged = true;
-                        delete linkObject.links[linkId];
-                    }
-                }
-            }
-
-            if (linkObjectHasChanged) {
-                utilities.writeObjectToFile(objects, linkObjectId, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: req.body.lastEditor});
-            }
-        });
-
-        // write changes to object.json
-        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
-        utilities.actionSender({reloadObject: {object: objectId}, lastEditor: req.body.lastEditor});
-
-        res.json({success: true}).end();
-    });
-
-    // sets the groupID of the specified frame
-    webServer.post('/object/:objectID/frame/:frameID/group/', function (req, res) {
-
-        var frame = getFrame(req.params.objectID, req.params.frameID);
-        if (frame) {
-            var newGroupID = req.body.group;
-            if (newGroupID !== frame.groupID) {
-                frame.groupID = newGroupID;
-                utilities.writeObjectToFile(objects, req.params.objectID, objectsPath, globalVariables.saveToDisk);
-                utilities.actionSender({
-                    reloadFrame: {object: req.params.objectID, frame: req.params.frameID},
-                    lastEditor: req.body.lastEditor
-                });
-                res.status(200).json({success: true}).end();
-                return;
-            }
-        }
-
-        res.status(404).json({success: false, error: 'Couldn\'t find frame ' + req.params.frameID + ' to set groupID'});
-
-    });
-
-    // changing the size and position of an item. *1 is the object *2 is the datapoint id
-
-    // ****************************************************************************************************************
 
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
-
-        webServer.post('/object/:objectID/frame/:frameID/node/:nodeID/size/', function (req, res) {
-            changeSize(req.params.objectID, req.params.frameID, req.params.nodeID, req.body, function (statusCode, responseContents) {
-                res.status(statusCode).send({status: responseContents});
-            });
-        });
-
-        webServer.post('/object/:objectID/frame/:frameID/size/', function (req, res) {
-            changeSize(req.params.objectID, req.params.frameID, null, req.body, function (statusCode, responseContents) {
-                res.status(statusCode).send({status: responseContents});
-            });
-        });
-
         // // TODO: ask Valentin what this route was used for?
         // webServer.post('/object/*/size/*', function (req, res) {
         //     console.log("post 1");
         //     console.log(req.params);
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
-
-        /**
-         * Updates the x, y, scale, and/or matrix for the specified frame or node
-         * @todo this function is a mess, fix it up
-         */
-        function changeSize(objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
-
-            console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
-
-            getFrameOrNode(objectID, frameID, nodeID, function (error, object, frame, node) {
-                if (error) {
-                    callback(404, error);
-                    return;
-                }
-
-                var activeVehicle = node || frame; // use node if it found one, frame otherwise
-
-                // console.log('really changing size for ... ' + activeVehicle.uuid, body);
-
-                // console.log("post 2");
-                var updateStatus = 'nothing happened';
-
-                // the reality editor will overwrite all properties from the new frame except these.
-                // useful to not overwrite AR position when sending pos or scale from screen.
-                var propertiesToIgnore = [];
-
-                // TODO: this is a hack to fix ar/screen synchronization, fix it
-                // for frames, the position data is inside "ar" or "screen"
-                if (activeVehicle.hasOwnProperty('visualization')) {
-                    if (activeVehicle.visualization === 'ar') {
-                        activeVehicle = activeVehicle.ar;
-                        propertiesToIgnore.push('screen');
-                    } else if (activeVehicle.visualization === 'screen') {
-                        if (typeof body.scale === 'number' && typeof body.scaleARFactor === 'number') {
-                            activeVehicle.ar.scale = body.scale / body.scaleARFactor;
-                        }
-                        activeVehicle = activeVehicle.screen;
-                        propertiesToIgnore.push('ar.x', 'ar.y'); // TODO: decoding this is currently hard-coded in the editor, make generalized
-                    }
-                }
-
-                var didUpdate = false;
-
-                // check that the numbers are valid numbers..
-                if (typeof body.x === 'number' && typeof body.y === 'number' && typeof body.scale === 'number') {
-
-                    // if the object is equal the datapoint id, the item is actually the object it self.
-                    activeVehicle.x = body.x;
-                    activeVehicle.y = body.y;
-                    activeVehicle.scale = body.scale;
-
-                    if (typeof body.arX === 'number' && typeof body.arY === 'number') {
-                        frame.ar.x = body.arX;
-                        frame.ar.y = body.arY;
-                    }
-
-                    // console.log(req.body);
-                    // ask the devices to reload the objects
-                    didUpdate = true;
-                }
-
-                if (typeof body.matrix === 'object' && activeVehicle.hasOwnProperty('matrix')) {
-                    activeVehicle.matrix = body.matrix;
-                    didUpdate = true;
-                }
-
-                if (didUpdate) {
-                    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                    utilities.actionSender({
-                        reloadFrame: {
-                            object: objectID,
-                            frame: frameID,
-                            propertiesToIgnore: propertiesToIgnore,
-                            wasTriggeredFromEditor: body.wasTriggeredFromEditor
-                        }, lastEditor: body.lastEditor
-                    });
-                    updateStatus = 'updated position and/or scale';
-                }
-
-                callback(200, updateStatus);
-            });
-
-        }
-
-        webServer.post('/object/*/frame/*/visualization/', function (req, res) {
-            console.log('change visualization');
-            changeVisualization(req.params[0], req.params[1], req.body, res);
-        });
-
-        /**
-         * Sets the visualization to
-         * @param objectKey
-         * @param frameKey
-         * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
-         * @param res
-         */
-        function changeVisualization(objectKey, frameKey, body, res) { // eslint-disable-line no-inner-declarations
-            var newVisualization = body.visualization;
-            var oldVisualizationPositionData = body.oldVisualizationPositionData;
-
-            var frame = getFrame(objectKey, frameKey);
-            if (frame) {
-
-                // if changing from ar -> screen, optionally provide default values for ar.x, ar.y, so that it'll be there when you switch back
-                // if changing from screen -> ar, sets screen.x, screen.y, etc
-                if (oldVisualizationPositionData) {
-                    var oldVisualization = frame.visualization;
-                    frame[oldVisualization] = oldVisualizationPositionData;
-                }
-                frame.visualization = newVisualization;
-
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-
-                res.status(200).json({success: true}).end();
-            } else {
-                res.status(404).json({failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey}).end();
-            }
-        }
     }
 
     /**
      * Send the programming interface static web content [This is the older form. Consider it deprecated.
      */
-
     // Version 1
     webServer.get('/obj/dataPointInterfaces/:nodeName/:fileName/', function (req, res) {   // watch out that you need to make a "/" behind request.
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
         if (!nodePath) {
             res.sendStatus(404);
+            return;
+        }
+        if (utilities.goesUpDirectory(req.params.fileName)) {
+            res.status(400).send('Invalid file name. Cannot go up directories.');
             return;
         }
         res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
@@ -3471,6 +1631,10 @@ function objectWebServer() {
         let nodePath = nodeFolderLoader.resolvePath(req.params.nodeName);
         if (!nodePath) {
             res.sendStatus(404);
+            return;
+        }
+        if (utilities.goesUpDirectory(req.params.fileName)) {
+            res.status(400).send('Invalid file name. Cannot go up directories.');
             return;
         }
         res.sendFile(path.join(nodePath, req.params.nodeName, 'gui', req.params.fileName));
@@ -3520,26 +1684,39 @@ function objectWebServer() {
     // frontend interface
     // ****************************************************************************************************************
 
+    // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
 
         // sends the info page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
             // console.log("get 12");
+            if (!utilities.isValidId(req.params.id)) {
+                res.status(400).send('Invalid object id. Must be alphanumeric.');
+                return;
+            }
             res.send(webFrontend.uploadInfoText(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
             // console.log("get 12");
+            if (!utilities.isValidId(req.params.id)) {
+                res.status(400).send('Invalid object id. Must be alphanumeric.');
+                return;
+            }
             res.send(webFrontend.uploadInfoContent(req.params.id, objectLookup, objects, knownObjects, sockets));
         });
 
         // sends the content page for the object :id
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder + 'object/:object/:frame/frameFolder', function (req, res) {
-            console.log('get frameFolder', req.params.object, req.params.frame);
+        webServer.get(objectInterfaceFolder + 'object/:objectName/:frameName/frameFolder', function (req, res) {
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
+            }
+            console.log('get frameFolder', req.params.objectName, req.params.frameName);
             const dirTree = require('directory-tree');
-            var objectPath = objectsPath + '/' + req.params.object + '/' + req.params.frame;
+            var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
                 item.path = item.path.replace(objectsPath, '/obj');
             });
@@ -3547,18 +1724,25 @@ function objectWebServer() {
         });
 
 
-        webServer.get(objectInterfaceFolder + 'content/:object/:frame', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'content/:objectName/:frameName', function (req, res) {
             // console.log("get 13");
             console.log('get frame index', req.params);
-            res.send(webFrontend.uploadTargetContentFrame(req.params.object, req.params.frame, objectsPath, objectInterfaceFolder));
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
+            }
+            res.send(webFrontend.uploadTargetContentFrame(req.params.objectName, req.params.frameName, objectsPath, objectInterfaceFolder));
         });
 
-        webServer.get(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
             webFrontend.editContent(req, res);
         });
 
-        webServer.put(objectInterfaceFolder + 'edit/:id/*', function (req, res) {
-            // TODO insecure, requires sanitization of path
+        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
+            if (utilities.goesUpDirectory(req.path)) {
+                res.status(400).send('Invalid path. Cannot go up directories.');
+                return;
+            }
             console.log('PUT', req.path, req.body.content);
             fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
                 if (err) {
@@ -3570,14 +1754,22 @@ function objectWebServer() {
         });
         // sends the target page for the object :id
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder + 'target/:id', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'target/:objectName', function (req, res) {
             //   console.log("get 14");
-            res.send(webFrontend.uploadTargetText(req.params.id, objectLookup, objects, globalVariables.debug));
+            if (!utilities.isValidId(req.params.objectName)) {
+                res.status(400).send('Invalid object name. Must be alphanumeric.');
+                return;
+            }
+            res.send(webFrontend.uploadTargetText(req.params.objectName, objectLookup, objects, globalVariables.debug));
             // res.sendFile(__dirname + '/'+ "index2.html");
         });
 
-        webServer.get(objectInterfaceFolder + 'target/*/*/', function (req, res) {
-            res.sendFile(__dirname + '/' + req.params[0] + '/' + req.params[1]);
+        webServer.get(objectInterfaceFolder + 'target/:objectName/:frameName/', function (req, res) {
+            if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+                res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                return;
+            }
+            res.sendFile(__dirname + '/' + req.params.objectName + '/' + req.params.frameName);
         });
 
         // Send the main starting page for the web user interface
@@ -3589,8 +1781,13 @@ function objectWebServer() {
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
-        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName', function (req, res) {
+        webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
             if (!isMobile) {
+                if (!utilities.isValidId(req.params.interfaceName)) {
+                    res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                    return;
+                }
+
                 let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
                 let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
                 res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
@@ -3601,108 +1798,25 @@ function objectWebServer() {
         // restart the server from the web frontend to load
 
         webServer.get('/restartServer/', function () {
-            exit();
+            if (process.send) {
+                process.send('restart');
+            } else {
+                exit();
+            }
         });
 
-        webServer.get('/server/networkInterface/*/', function (req, res) {
-            console.log('--------------------------------------------------------get networkInterface', req.params[0]);
-            services.ips.activeInterface = req.params[0];
+        webServer.get('/server/networkInterface/:activeInterface/', function (req, res) {
+            console.log('--------------------------------------------------------get networkInterface', req.params.activeInterface);
+            services.ips.activeInterface = req.params.activeInterface;
             res.json(services.ips);
 
-            storage.setItemSync('activeNetworkInterface', req.params[0]);
+            storage.setItemSync('activeNetworkInterface', req.params.activeInterface);
             //  res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
             // res.redirect(req.get('referer'));
 
             if (process.send) {
                 process.send('restart');
             }
-        });
-
-        webServer.get('/object/*/deactivate/', function (req, res) {
-            var objectID = req.params[0];
-            try {
-                getObject(objectID).deactivated = true;
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                res.status(200).send('ok');
-            } catch (e) {
-                res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
-            }
-        });
-
-        webServer.get('/object/*/activate/', function (req, res) {
-            var objectID = req.params[0];
-            try {
-                getObject(objectID).deactivated = false;
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-                res.status(200).send('ok');
-            } catch (e) {
-                res.status(404).json({success: false, error: 'cannot find object with ID' + objectID}).end();
-            }
-        });
-
-        webServer.get('/object/*/screen/', function (req, res) {
-            var objectID = req.params[0];
-            getObject(objectID).visualization = 'screen';
-            console.log('screen', objectID);
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send('ok');
-        });
-
-        webServer.get('/object/*/ar/', function (req, res) {
-            var objectID = req.params[0];
-            getObject(objectID).visualization = 'ar';
-            console.log('ar', objectID);
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send('ok');
-        });
-
-        webServer.get('/object/*/*/reset/', function (req, res) {
-            var objectID = req.params[0];
-            var frameID = req.params[1];
-            var frame = getFrame(objectID, frameID);
-            frame.ar = {
-                x: 0,
-                y: 0,
-                scale: 1,
-                matrix: []
-            };
-            // position data for the screen visualization mode
-            frame.screen = {
-                x: 0,
-                y: 0,
-                scale: 1,
-                matrix: []
-            };
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            res.send('ok');
-        });
-
-        // request a zip-file with the object stored inside
-        // ****************************************************************************************************************
-        webServer.get('/object/:objectId/zipBackup/', function (req, res) {
-            if (isMobile) {
-                res.status(500).send('zipBackup unavailable on mobile');
-                return;
-            }
-            var objectId = req.params.objectId;
-            console.log('sending zipBackup', objectId);
-
-            if (!fs.existsSync(path.join(objectsPath, objectId))) {
-                res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
-                return;
-            }
-
-            res.writeHead(200, {
-                'Content-Type': 'application/zip',
-                'Content-disposition': 'attachment; filename=' + objectId + '.zip'
-            });
-
-            var archiver = require('archiver');
-
-            var zip = archiver('zip');
-            zip.pipe(res);
-            zip.directory(objectsPath + '/' + objectId, objectId + '/');
-            zip.finalize();
         });
 
         // webFrontend realtime messaging
@@ -3730,55 +1844,13 @@ function objectWebServer() {
             res.status(200).send('ok');
         });
 
-
-        webServer.post('/object/:objectKey/generateXml/', function (req, res) {
-            var objectKey = req.params.objectKey;
-            var msgObject = req.body;
-            var objectName = msgObject.name;
-
-            console.log(objectKey, msgObject);
-
-            console.log('support inferred aspect ratio of image targets');
-            console.log('support object targets');
-
-            // var isImageTarget = true;
-            // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
-
-            var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
-                '   <Tracking>\n' +
-                '   <ImageTarget name="' + objectKey + '" size="' + parseFloat(msgObject.width).toFixed(8) + ' ' + parseFloat(msgObject.height).toFixed(8) + '" />\n' +
-                '   </Tracking>\n' +
-                '   </ARConfig>';
-
-            let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
-            if (!fs.existsSync(targetDir)) {
-                fs.mkdirSync(targetDir);
-                console.log('created directory: ' + targetDir);
-            }
-
-            console.log('am I here!');
-            var xmlOutFile = path.join(targetDir, 'target.xml');
-
-            fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                if (err) {
-                    res.status(500).send('error writing new target size to .xml file for ' + objectKey);
-                } else {
-                    res.status(200).send('ok');
-
-                    // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
-                    var object = getObject(objectKey);
-                    if (object) {
-                        object.targetSize.width = parseFloat(msgObject.width);
-                        object.targetSize.height = parseFloat(msgObject.height);
-                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-                    }
-                }
-            });
-        });
-
         webServer.get('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             const interfaceName = req.params.interfaceName;
+
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             if (!hardwareInterfaceModules.hasOwnProperty(interfaceName)) {
                 res.sendStatus(404);
@@ -3790,6 +1862,11 @@ function objectWebServer() {
 
         webServer.post('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             var interfaceName = req.params.interfaceName;
+
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
                 if (success) {
@@ -3848,6 +1925,7 @@ function objectWebServer() {
                         } else {
                             console.log('successfully wrote settings hardwareInterface: ' + interfaceName);
                             callback(true);
+                            hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
                         }
                     });
                 } else {
@@ -3872,6 +1950,11 @@ function objectWebServer() {
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
+
             setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
@@ -3884,6 +1967,11 @@ function objectWebServer() {
 
         webServer.get('/hardwareInterface/:interfaceName/enable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
+
+            if (!utilities.isValidId(interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
+            }
 
             setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
                 if (success) {
@@ -3946,6 +2034,11 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
 
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
+
             addonFrames.setFrameEnabled(frameName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
@@ -3962,6 +2055,11 @@ function objectWebServer() {
         webServer.get('/globalFrame/:frameName/enable/', function (req, res) {
             var frameName = req.params.frameName;
 
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
+
             addonFrames.setFrameEnabled(frameName, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
@@ -3975,42 +2073,6 @@ function objectWebServer() {
             });
         });
 
-        webServer.get('/object/:objectKey/disableFrameSharing/', function (req, res) {
-            var objectKey = req.params.objectKey;
-
-            setFrameSharingEnabled(objectKey, false, function (success, errorMessage) {
-                if (success) {
-                    res.status(200).send('ok');
-                } else {
-                    res.status(500).send(errorMessage);
-                }
-            });
-        });
-
-        webServer.get('/object/:objectKey/enableFrameSharing/', function (req, res) {
-            var objectKey = req.params.objectKey;
-
-            setFrameSharingEnabled(objectKey, true, function (success, errorMessage) {
-                if (success) {
-                    res.status(200).send('ok');
-                } else {
-                    res.status(500).send(errorMessage);
-                }
-            });
-        });
-
-        /**
-         * Enable sharing of Spatial Tools from this server to objects on other servers
-         * @todo: see github issue #23 - function is currently unimplemented
-         * @param {string} objectKey
-         * @param {boolean} shouldBeEnabled
-         * @param {successCallback} callback - success, error message
-         */
-        function setFrameSharingEnabled(objectKey, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
-            callback(true);
-            console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
-        }
-
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
         webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
@@ -4020,6 +2082,12 @@ function objectWebServer() {
             }
 
             var frameName = req.params.frameName;
+
+            if (!utilities.isValidId(frameName)) {
+                res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                return;
+            }
+
             console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
@@ -4045,39 +2113,6 @@ function objectWebServer() {
             zip.pipe(res);
             zip.directory(framePath, frameName + '/');
             zip.finalize();
-        });
-
-        // sends json object for a specific reality object. * is the object name
-        // ths is the most relevant for
-        // ****************************************************************************************************************
-        webServer.get('/object/:objectID/frame/:frameID/node/:nodeID/', function (req, res) {
-            var node = getNode(req.params.objectID, req.params.frameID, req.params.nodeID);
-            res.json(node || {});
-        });
-
-        // sends json object for a specific reality frame. 1st * is the object name, 2nd * is the frame name
-        // ths is the most relevant for
-        // ****************************************************************************************************************
-        webServer.get('/object/*/frame/*/', function (req, res) {
-            var objectID = req.params[0];
-            var frameID = req.params[1];
-
-            var thisFrame = getFrame(objectID, frameID);
-            if (thisFrame) {
-                res.status(200).json(thisFrame);
-                return;
-            }
-
-            res.status(404).json({
-                failure: true,
-                error: 'Object: ' + objectID + ', frame: ' + frameID + ' not found'
-            }).end();
-        });
-
-        // sends json object for a specific reality object
-        webServer.get('/object/:objectId/', function (req, res) {
-            var object = getObject(req.params.objectId);
-            res.json(object);
         });
 
         /**
@@ -4124,6 +2159,10 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
             if (req.body.action === 'delete') {
+                if (utilities.goesUpDirectory(req.path)) {
+                    res.status(400).send('Invalid path. Cannot contain \'..\'.');
+                    return;
+                }
                 var folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
                     var deleteFolderRecursive = function (folderDel) {
@@ -4152,6 +2191,17 @@ function objectWebServer() {
 
         webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
             if (req.body.action === 'delete') {
+
+                if (!utilities.isValidId(req.body.name)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
+
+                if (!utilities.isValidId(req.params.id)) {
+                    res.status(400).send('Invalid object id. Must be alphanumeric.');
+                    return;
+                }
+
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
@@ -4193,6 +2243,11 @@ function objectWebServer() {
                 console.log('got NEW', req.body.name);
                 // console.log(req.body);
                 if (req.body.name !== '' && !req.body.frame) {
+                    if (!utilities.isValidId(req.body.name)) {
+                        res.status(400).send('Invalid object name. Must be alphanumeric.');
+                        return;
+                    }
+
                     // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
@@ -4201,9 +2256,8 @@ function objectWebServer() {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         if (isWorldObject) {
                             let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(services.ip, version, protocol);
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
-                            objects[objectId].objectId = objectId;
                             objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
@@ -4221,13 +2275,20 @@ function objectWebServer() {
                         }
                     }
 
+                    setAnchors(); // Needed to initialize non-world (anchor) objects
+
                 } else if (req.body.name !== '' && req.body.frame !== '') {
+                    if (!utilities.isValidId(req.body.name) || !utilities.isValidId(req.body.frame)) {
+                        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+                        return;
+                    }
+
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, 'local');
-                        objects[objectKey].frames[objectKey + req.body.frame] = new Frame();
+                        objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     } else {
@@ -4254,9 +2315,12 @@ function objectWebServer() {
                     }
                 };
 
+                if (!utilities.isValidId(req.body.name)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
 
                 // remove when frame is implemented
-
                 var objectKey = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
                 var frameName = req.body.frame;
                 var frameNameKey = req.body.frame;
@@ -4272,12 +2336,20 @@ function objectWebServer() {
                 }
 
                 if (pathKey && pathKey !== '') {
+                    if (utilities.goesUpDirectory(pathKey)) {
+                        res.status(400).send('Invalid path. Cannot contain \'..\'.');
+                        return;
+                    }
                     fs.unlinkSync(objectsPath + pathKey.substring(4));
                     res.send('ok');
                     return;
                 }
 
                 if (frameName !== '') {
+                    if (!utilities.isValidId(frameName)) {
+                        res.status(400).send('Invalid frame name. Must be alphanumeric.');
+                        return;
+                    }
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
@@ -4285,6 +2357,12 @@ function objectWebServer() {
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
+                            try {
+                                // deconstructs the nodes on this frame too, if needed
+                                thisObject.frames[frameNameKey].deconstruct();
+                            } catch (e) {
+                                console.warn('Frame exists without proper prototype: ' + frameNameKey);
+                            }
                             delete thisObject.frames[frameNameKey];
                         }
                     }
@@ -4305,6 +2383,16 @@ function objectWebServer() {
 
                         // remove object from tree
                         if (objects[tempFolderName2]) {
+                            if (activeHeartbeats[tempFolderName2]) {
+                                clearInterval(activeHeartbeats[tempFolderName2]);
+                                delete activeHeartbeats[tempFolderName2];
+                            }
+                            try {
+                                // deconstructs frames and nodes of this object, too
+                                objects[tempFolderName2].deconstruct();
+                            } catch (e) {
+                                console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                            }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
                             delete objectLookup[req.body.name];
@@ -4411,9 +2499,19 @@ function objectWebServer() {
 
                 console.log('object is: ' + req.params.id);
 
+                if (!utilities.isValidId(req.params.id)) {
+                    res.status(400).send('Invalid object name. Must be alphanumeric.');
+                    return;
+                }
+
                 tmpFolderFile = req.params.id;
 
                 if (req.body.action === 'delete') {
+                    if (!utilities.isValidId(req.body.name)) {
+                        res.status(400).send('Invalid object name. Must be alphanumeric.');
+                        return;
+                    }
+
                     var folderDel = objectsPath + '/' + req.body.name;
 
                     if (fs.existsSync(folderDel)) {
@@ -4441,6 +2539,16 @@ function objectWebServer() {
                     var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);//req.body.name + thisMacAddress;
                     // remove object from tree
                     if (tempFolderName2 !== null) {
+                        if (activeHeartbeats[tempFolderName2]) {
+                            clearInterval(activeHeartbeats[tempFolderName2]);
+                            delete activeHeartbeats[tempFolderName2];
+                        }
+                        try {
+                            // deconstructs frames and nodes of this object, too
+                            objects[tempFolderName2].deconstruct();
+                        } catch (e) {
+                            console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                        }
                         delete objects[tempFolderName2];
                         delete knownObjects[tempFolderName2];
                     }
@@ -4486,6 +2594,10 @@ function objectWebServer() {
                     if (req.headers.type === 'targetUpload') {
                         console.log('targetUpload', req.params.id);
                         var fileExtension = getFileExtension(filename);
+
+                        if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
+                            fileExtension = 'jpg';
+                        }
 
                         if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml') {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
@@ -4627,6 +2739,22 @@ function objectWebServer() {
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
                                     utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
                                     setAnchors();
+
+                                    // Removes old heartbeat if it used to be an anchor
+                                    var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
+                                    if (oldObjectId && oldObjectId != thisObjectId) {
+                                        console.log('removed old heartbeat for', oldObjectId);
+                                        clearInterval(activeHeartbeats[oldObjectId]);
+                                        delete activeHeartbeats[oldObjectId];
+                                        try {
+                                            // deconstructs frames and nodes of this object, too
+                                            objects[oldObjectId].deconstruct();
+                                        } catch (e) {
+                                            console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                                        }
+                                        delete objects[oldObjectId];
+                                    }
+
                                     objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                     // res.status(200).send('ok');
                                     res.status(200).json(sendObject);
@@ -4778,49 +2906,51 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         console.log('got ID: objectIDXML');
-        if (!_.isUndefined(objectIDXML) && !_.isNull(objectIDXML)) {
-            if (objectIDXML.length > 13) {
+        if (objectIDXML && objectIDXML.length > 13) {
+            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
+            objects[objectIDXML].port = serverPort;
+            objects[objectIDXML].name = folderVar;
+            objects[objectIDXML].targetSize = objectSizeXML;
 
-                objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
-                objects[objectIDXML].port = serverPort;
-                objects[objectIDXML].name = folderVar;
-                objects[objectIDXML].objectId = objectIDXML;
-                objects[objectIDXML].targetSize = objectSizeXML;
-
-                if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-                    objects[objectIDXML].isWorldObject = true;
-                    objects[objectIDXML].timestamp = Date.now();
-                }
-
-                console.log('this should be the IP' + objectIDXML);
-
-                try {
-                    objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
-                    objects[objectIDXML].ip = services.ip; //ip.address();
-                    console.log('testing: ' + objects[objectIDXML].ip);
-                } catch (e) {
-                    objects[objectIDXML].ip = services.ip; //ip.address();
-                    console.log('testing: ' + objects[objectIDXML].ip);
-                    console.log('No saved data for: ' + objectIDXML);
-                }
-
-                if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                    delete objects[utilities.readObject(objectLookup, folderVar)];
-                }
-                utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-                // entering the obejct in to the lookup table
-
-                // ask the object to reinitialize
-                //serialPort.write("ok\n");
-                // todo send init to internal
-
-                hardwareAPI.reset();
-
-                console.log('weiter im text ' + objectIDXML);
-                utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
-
-                objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
+            if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+                objects[objectIDXML].isWorldObject = true;
+                objects[objectIDXML].timestamp = Date.now();
             }
+
+            console.log('this should be the IP' + objectIDXML);
+
+            try {
+                objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
+                objects[objectIDXML].ip = services.ip; //ip.address();
+                console.log('testing: ' + objects[objectIDXML].ip);
+            } catch (e) {
+                objects[objectIDXML].ip = services.ip; //ip.address();
+                console.log('testing: ' + objects[objectIDXML].ip);
+                console.log('No saved data for: ' + objectIDXML);
+            }
+
+            if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+                let objectId = utilities.readObject(objectLookup, folderVar);
+                try {
+                    objects[objectId].deconstruct();
+                } catch (e) {
+                    console.warn('Object exists without proper prototype: ' + objectId);
+                }
+                delete objects[objectId];
+            }
+            utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
+            // entering the obejct in to the lookup table
+
+            // ask the object to reinitialize
+            //serialPort.write("ok\n");
+            // todo send init to internal
+
+            hardwareAPI.reset();
+
+            console.log('weiter im text ' + objectIDXML);
+            utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+            objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
         }
     }
 }
@@ -5240,6 +3370,11 @@ function socketServer() {
                 if (!thisObject.wasUpdated) {
                     console.log('delete human pose object', objectKey);
                     didAnythingChange = true;
+                    try {
+                        objects[objectKey].deconstruct();
+                    } catch (e) {
+                        console.warn('(Human) Object exists without proper prototype: ' + objectKey);
+                    }
                     delete objects[objectKey];
                     // todo: delete folder recursive if necessary?
                     // ^ might not actually be needed, why would human object need to persist?
@@ -5314,15 +3449,11 @@ function socketServer() {
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
                 console.log('creating node ' + nodeKey);
-                var newNode = new Node();
+                var newNode = new Node(nodeData.name, nodeData.type, objectKey, frameKey, nodeKey);
                 frame.nodes[nodeKey] = newNode;
                 newNode.objectId = objectKey;
                 newNode.frameId = frameKey;
-                newNode.name = nodeData.name;
 
-                if (typeof nodeData.type !== 'undefined') {
-                    newNode.type = nodeData.type;
-                }
                 if (typeof nodeData.x !== 'undefined') {
                     newNode.x = nodeData.x;
                 } else {
@@ -5821,6 +3952,19 @@ function checkObjectActivation(id) {
         return !object.deactivated;
     }
     return false;
+}
+
+// sets up controllers with access to various objects
+setupControllers();
+
+function setupControllers() {
+    blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
+    blockLinkController.setup(objects, globalVariables, objectsPath);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules);
+    linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
+    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
+    nodeController.setup(objects, globalVariables, objectsPath);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git);
 }
 
 checkInit('system');

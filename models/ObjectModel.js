@@ -1,3 +1,5 @@
+const Frame = require('./Frame.js'); // needs reference to Frame constructor
+
 /**
  * This is the default constructor for the Reality Object.
  * It contains information about how to render the UI and how to process the internal data.
@@ -6,10 +8,11 @@
  * @param {string} ip - ip address of server
  * @param {string} version - Version number of server, currently 3.1.0 or 3.2.0
  * @param {string} protocol - Protocol of object, one of R0, R1, or R2 (current)
+ * @param {string} objectId - Stores its own UUID
  */
-function ObjectModel(ip, version, protocol) {
+function ObjectModel(ip, version, protocol, objectId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = null;
+    this.objectId = objectId;
     // The name for the object used for interfaces.
     this.name = '';
     this.matrix = [];
@@ -52,5 +55,44 @@ function ObjectModel(ip, version, protocol) {
     this.isWorldObject = false;
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
+
+/**
+ * Should be called before deleting the object in order to properly destroy it
+ * Gives all this object's frames the chance to deconstruct when the object is deconstructed
+ */
+ObjectModel.prototype.deconstruct = function() {
+    for (let frameKey in this.frames) {
+        if (typeof this.frames[frameKey].deconstruct === 'function') {
+            this.frames[frameKey].deconstruct();
+        } else {
+            console.warn('Frame exists without proper prototype: ' + frameKey);
+        }
+    }
+};
+
+/**
+ * Sets the properties of this object based on a JSON blob, recursively constructing
+ * its frames and its nodes and casting their JSON data to Frame and Node instances
+ * @param {JSON} object
+ */
+ObjectModel.prototype.setFromJson = function(object) {
+    Object.assign(this, object);
+    this.setFramesFromJson(object.frames);
+};
+
+/**
+ * Parses a json blob of a set of frames' data into properly constructed Frames
+ * attached to this object. Should be used instead of object.frames = frames
+ * @param {JSON} frames
+ */
+ObjectModel.prototype.setFramesFromJson = function(frames) {
+    this.frames = {};
+    for (var frameKey in frames) {
+        let newFrame = new Frame(this.objectId, frameKey);
+        Object.assign(newFrame, frames[frameKey]);
+        newFrame.setNodesFromJson(frames[frameKey].nodes);
+        this.frames[frameKey] = newFrame;
+    }
+};
 
 module.exports = ObjectModel;
