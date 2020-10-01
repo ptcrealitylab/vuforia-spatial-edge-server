@@ -465,6 +465,10 @@
                     message.msgContent.containedFrameMessage.sourceFrame = message.sourceFrame;
                 }
 
+                if (typeof message.msgContent.containedFrameMessage.screenPosition !== 'undefined') {
+                    this._receiveScreenPosition(message.sourceFrame, message.msgContent.containedFrameMessage.screenPosition, message.msgContent.containedFrameMessage.worldCoordinates);
+                }
+
                 // console.warn('contents received envelope message', msgContent, sourceFrame, destinationFrame);
                 this.triggerCallbacks('onMessageFromContainedFrame', message.msgContent.containedFrameMessage);
             }
@@ -661,6 +665,49 @@
             for (let frameId in this.containedFrames) {
                 callback(frameId, this.containedFrames[frameId]);
             }
+        };
+
+        let subscriptions = {};
+        Envelope.prototype.subscribeToPosition = function(frameId, callback, subscribe3d) {
+            if (typeof subscriptions[frameId] !== 'undefined') {
+                // subscriptions[frameId] = {};
+                console.warn('currently only supports one subscription per frameId...');
+                console.warn('cancelling previous subscription and subscribing again.');
+            }
+            subscriptions[frameId] = callback;
+            // console.log('subscribed to position for ' + frameId);
+            // console.log(subscriptions);
+
+            let value = subscribe3d ? '3d' : true;
+
+            this.sendMessageToFrameWithId(frameId, {
+                subscribeToPosition: value
+            });
+        };
+
+        /**
+         * Updates the frame to be tagged with the array of categories. Also includes the frame's type as a default.
+         * @param {string} frameId
+         * @param {{x: number, y: number}} screenPosition
+         * @param {{x: number, y: number, z: number}} worldCoordinates
+         */
+        Envelope.prototype._receiveScreenPosition = function(frameId, screenPosition, worldCoordinates) {
+            let thisCallback = subscriptions[frameId];
+            if (typeof thisCallback !== 'function') {
+                return;
+            }
+            // console.log('envelope learned contained frame position');
+            let displayWidth = screenPosition.lowerRight.x - screenPosition.upperLeft.x;
+            let displayHeight = screenPosition.lowerRight.y - screenPosition.upperLeft.y;
+
+            let zPosition = undefined;
+            let depth = undefined;
+
+            if (typeof screenPosition.center.z !== 'undefined') {
+                zPosition = screenPosition.center.z;
+                depth = screenPosition.lowerRight.z - screenPosition.upperLeft.z;
+            }
+            thisCallback(screenPosition.center.x, screenPosition.center.y, displayWidth, displayHeight, zPosition, depth, worldCoordinates);
         };
 
         /**
