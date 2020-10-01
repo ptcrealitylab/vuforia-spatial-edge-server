@@ -510,6 +510,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 if (thisObject.visualization === 'screen' && thisObject.active && thisObject.isExpanded) {
                     let thisFullScreen = document.getElementById('fullScreenId').content.cloneNode(true);
                     thisFullScreen.querySelector('.fullscreen').id = 'fullscreen' + objectKey;
+                    thisFullScreen.querySelector('#fullscreen' + objectKey).dataset.objectName = thisObject.name;
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
                     }
@@ -656,7 +657,7 @@ realityServer.updateManageFrames = function () {
 
 realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName;
+    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
 
@@ -937,7 +938,7 @@ realityServer.gotClick = function (event) {
                 let element = document.getElementById(name);
                 element.classList.remove('selectedButton');
 
-                document.querySelectorAll('.name').forEach(function (item, index) {
+                document.querySelectorAll('.name').forEach(function(item) {
                     let objectID = item.getAttribute('objectid');
                     let toolID = item.getAttribute('frameid');
                     let thisKey = objectID;
@@ -961,14 +962,14 @@ realityServer.gotClick = function (event) {
             let element = document.getElementById('rec');
             element.classList.remove('white');
             element.classList.add('red');
-            realityServer.sendRequest('/webUI/REC/START', 'POST', function (state) {
+            realityServer.sendRequest('/webUI/REC/START', 'POST', function(_state) {
             }, '');
         } else {
             recordState = true;
             let element = document.getElementById('rec');
             element.classList.remove('red');
             element.classList.add('white');
-            realityServer.sendRequest('/webUI/REC/STOP', 'POST', function (state) {
+            realityServer.sendRequest('/webUI/REC/STOP', 'POST', function(_state) {
             }, '');
         }
     }
@@ -983,8 +984,6 @@ realityServer.gotClick = function (event) {
         if (buttonClassList.contains('name')) {
             if (thisEventObject.classList.contains('selectedButton')) {
                 thisEventObject.classList.remove('selectedButton');
-                let thisKey = objectKey;
-                if (frameKey) thisKey = frameKey;
             } else {
                 thisEventObject.classList.add('selectedButton');
                 console.log(objectKey, frameKey, '');
@@ -993,7 +992,7 @@ realityServer.gotClick = function (event) {
 
 
         let allItems = document.querySelectorAll('.name');
-        allItems.forEach(function (item, index) {
+        allItems.forEach(function(item) {
 
             let objectID = item.getAttribute('objectid');
             if (!objectID) objectID = '';
@@ -1045,7 +1044,7 @@ realityServer.gotClick = function (event) {
 
     function sendSpatialState() {
         let messageBody = 'locator=' + JSON.stringify(spatialLocator);
-        realityServer.sendRequest('/webUI/spatial/locator', 'POST', function (state) {
+        realityServer.sendRequest('/webUI/spatial/locator', 'POST', function(_state) {
         }, messageBody);
     }
 
@@ -1053,11 +1052,11 @@ realityServer.gotClick = function (event) {
 
         let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
 
-        allItems.forEach(function (item, index) {
-            item.querySelectorAll('div').forEach(function (button, index) {
+        allItems.forEach(function(item) {
+            item.querySelectorAll('div').forEach(function(button) {
                 realityServer.switchClass(button, 'clickAble', 'inactive');
             });
-            item.querySelectorAll('.name').forEach(function (name, index) {
+            item.querySelectorAll('.name').forEach(function(name) {
                 realityServer.switchClass(name, 'inactive', 'clickAble');
             });
         });
@@ -1067,8 +1066,8 @@ realityServer.gotClick = function (event) {
 
         let allItems = document.querySelectorAll('.frame, .globalFrame, .worldObject, .object');
 
-        allItems.forEach(function (item, index) {
-            item.querySelectorAll('div').forEach(function (button, index) {
+        allItems.forEach(function(item) {
+            item.querySelectorAll('div').forEach(function(button) {
                 realityServer.switchClass(button, 'inactive', 'clickAble');
                 button.classList.remove('selectedButton');
             });
@@ -1092,6 +1091,7 @@ realityServer.gotClick = function (event) {
 
             let newNode = document.getElementById('targetId').content.cloneNode(true);
             newNode.querySelector('.dropZoneElement').id = 'targetDropZone' + objectKey;
+            newNode.querySelector('.imagegen-button').dataset.objectName = thisObject.name;
 
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
@@ -1923,7 +1923,6 @@ realityServer.setActive = function (item) {
 
 
 realityServer.toggleFullScreen = function (item) {
-
     let thisIframe = document.getElementById('fullscreenIframe');
 
     if (!thisIframe) {
@@ -1935,13 +1934,24 @@ realityServer.toggleFullScreen = function (item) {
         document.body.appendChild(thisIframe);
     }
 
-    let screenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
-    thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + screenPort;
-
     let thisScreen = thisIframe;
     // if(item) thisScreen = item;
 
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
+        thisIframe.src = 'about:blank'; // Clear iframe before loading
+        const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
+        const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
+        fetch(targetUrl).then((response) => {
+            if (response.ok) {
+                thisIframe.contentDocument.write(iframeContents);
+                thisIframe.contentDocument.close();
+            } else {
+                setGeneratedTarget(item, () => {
+                    thisIframe.contentDocument.write(iframeContents);
+                    thisIframe.contentDocument.close();
+                });
+            }
+        });
         if (thisScreen.mozRequestFullScreen) {
             thisScreen.mozRequestFullScreen();
         } else {
@@ -2028,8 +2038,8 @@ realityServer.uuidTime = function () {
     let dateUuidTime = new Date();
     let abcUuidTime = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + '' + dateUuidTime.getTime()).toString(36);
-    while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
-    return stampUuidTime;
+    while (stampUuidTime.length < 11) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return '_' + stampUuidTime;
 };
 
 // toggle between activated and deactivated
@@ -2149,5 +2159,91 @@ function addZipDownload(button, frameName) {
         window.location.href = '/frame/' + frameName + '/zipBackup/';
     });
 }
+
+function voronoiTarget(canvas, callback) {
+    const width = 128 * 16;
+    const height = 128 * 9;
+    const targetCellSize = 60;
+    const count = Math.floor(width * height / (targetCellSize * targetCellSize));
+    const topCount = Math.floor(count / 12);
+    const lineWidth = 8;
+    const topLineWidth = 16;
+
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const gfx = canvas.getContext('2d');
+    canvas.width = gfx.width = width;
+    canvas.height = gfx.height = height;
+
+    const points = [];
+    const topPoints = [];
+
+    for (let i = 0; i < count; i++) {
+        points.push([
+            Math.random() * (width - lineWidth) + lineWidth / 2,
+            Math.random() * (height - lineWidth) + lineWidth / 2
+        ]);
+    }
+
+    for (let i = 0; i < topCount; i++) {
+        topPoints.push([
+            Math.random() * (width - topLineWidth) + topLineWidth / 2,
+            Math.random() * (height - topLineWidth) + topLineWidth / 2
+        ]);
+    }
+
+    const del = d3.Delaunay.from(points);
+    const topDel = d3.Delaunay.from(topPoints);
+    const vor = del.voronoi([0, 0, width, height]);
+    const topVor = topDel.voronoi([0, 0, width, height]);
+
+    // Background fill
+    gfx.fillStyle = '#3A3A3A';
+    gfx.fillRect(0, 0, width, height);
+
+    // Background lines
+    gfx.strokeStyle = '#474747';
+    gfx.lineWidth = lineWidth;
+    gfx.beginPath();
+    vor.render(gfx);
+    gfx.stroke();
+
+    // Top lines
+    gfx.strokeStyle = '#666666';
+    gfx.lineWidth = topLineWidth;
+    gfx.beginPath();
+    topVor.render(gfx);
+    gfx.stroke();
+
+    // Marker border
+    gfx.strokeRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth);
+
+    canvas.toBlob(callback, 'image/jpeg');
+}
+
+function setGeneratedTarget(clickedElem, callback) {
+    const objectName = clickedElem.dataset.objectName;
+    voronoiTarget(document.querySelector('.imagegen-canvas'), (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'autogen-target.jpg');
+        fetch(`/content/${objectName}`, {
+            body: formData,
+            headers: {
+                'type': 'targetUpload'
+            },
+            method: 'post'
+        }).then((_response) => {
+            callback();
+        });
+    });
+}
+
+// Useful if you want to generate a target image and download it to the user's computer
+// function downloadGeneratedTarget(clickedElem) {
+//   const data = voronoiTarget(document.querySelector('.imagegen-canvas'));
+//   clickedElem.href = data;
+//   clickedElem.download = 'autogen-target.jpg';
+// }
+
 
 realityServer.initialize();

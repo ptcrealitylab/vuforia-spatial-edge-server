@@ -1,11 +1,15 @@
+const Node = require('./Node.js');
+
 /**
  * A frame is a component of an object with its own UI and nodes
  *
  * @constructor
  */
-function Frame() {
+function Frame(objectId, frameId) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = null;
+    this.objectId = objectId;
+    // Stores its own unique ID
+    this.uuid = frameId;
     // The name for the object used for interfaces.
     this.name = '';
     // which visualization mode it should use right now ("ar" or "screen")
@@ -57,5 +61,45 @@ function Frame() {
     // Indicates what group the frame belongs to; null if none
     this.groupID = null;
 }
+
+/**
+ * Should be called before deleting the frame in order to properly destroy it
+ * Gives all this frame's nodes the chance to deconstruct when the frame is deconstructed
+ */
+Frame.prototype.deconstruct = function() {
+    for (let nodeKey in this.nodes) {
+        if (typeof this.nodes[nodeKey].deconstruct === 'function') {
+            this.nodes[nodeKey].deconstruct();
+        } else {
+            console.warn('Node exists without proper prototype: ' + nodeKey);
+        }
+    }
+};
+
+/**
+ * Sets the properties of this frame based on a JSON blob, recursively constructing
+ * its nodes and casting their JSON data to Node instances
+ * @param {JSON} frame
+ */
+Frame.prototype.setFromJson = function(frame) {
+    Object.assign(this, frame);
+    this.setNodesFromJson(frame.nodes);
+};
+
+/**
+ * Parses a json blob of a set of nodes' data into properly constructed Nodes attached to this frame
+ * Should be used instead of frame.nodes = nodes
+ * @param {JSON} nodes
+ */
+Frame.prototype.setNodesFromJson = function(nodes) {
+    this.nodes = {};
+    for (let nodeKey in nodes) {
+        let name = nodes[nodeKey].name;
+        let type = nodes[nodeKey].type;
+        let newNode = new Node(name, type, this.objectId, this.uuid, nodeKey);
+        Object.assign(newNode, nodes[nodeKey]);
+        this.nodes[nodeKey] = newNode;
+    }
+};
 
 module.exports = Frame;

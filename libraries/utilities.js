@@ -60,7 +60,7 @@ var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
-
+const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
 
@@ -72,6 +72,12 @@ const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 if (!fs.existsSync(homedir) &&
     fs.existsSync(oldHomeDirectory)) {
     homedir = oldHomeDirectory;
+}
+
+const root = require('../getAppRootFolder');
+
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
+    homedir = path.join(root, 'spatialToolbox');
 }
 
 var hardwareIdentity = homedir + '/.identity';
@@ -236,8 +242,8 @@ exports.uuidTime = function () {
     var dateUuidTime = new Date();
     var abcUuidTime = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var stampUuidTime = parseInt(Math.floor((Math.random() * 199) + 1) + '' + dateUuidTime.getTime()).toString(36);
-    while (stampUuidTime.length < 12) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
-    return stampUuidTime;
+    while (stampUuidTime.length < 11) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
+    return '_' + stampUuidTime;
 };
 
 var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
@@ -275,6 +281,27 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
     }
 };
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
+
+var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
+
+    if (folderName === 'allTargetsPlaceholder') {
+        return 'allTargetsPlaceholder000000000000';
+    }
+
+    var jsonFile = objectsPath + '/' + folderName + '/object.json';
+
+    if (fs.existsSync(jsonFile)) {
+        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+        if (thisObject.hasOwnProperty('objectId')) {
+            return thisObject.objectId;
+        } else {
+            return null;
+        }
+    } else {
+        return null;
+    }
+};
+exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
 /**
  *
@@ -339,7 +366,7 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
 };
 
 function executeWrite(objects) {
-    console.log("execute write");
+    console.log('execute write');
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
@@ -362,7 +389,7 @@ function executeWrite(objects) {
     // prepare to write
     var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
-    console.log("writing:" +obj);
+    console.log('writing:', obj);
     // write file
     fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
         // once writeFile is done, unblock writing and loop again
@@ -546,17 +573,24 @@ exports.updateObject = function (objectName, objects) {
                         delete objects[tempFolderName].links;
                     }
 
-
-                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
-
-                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
-                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                    for (var frameKey in objects[tempFolderName].frames) {
+                        for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                            if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
+                                var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
+                                objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                            }
                         }
                     }
 
-                    console.log('I found objects that I want to add');
+                    // cast everything from JSON to Object, Frame, and Node classes
+                    let newObj = new ObjectModel(objects[tempFolderName].ip,
+                        objects[tempFolderName].version,
+                        objects[tempFolderName].protocol,
+                        objects[tempFolderName].objectId);
+                    newObj.setFromJson(objects[tempFolderName]);
+                    objects[tempFolderName] = newObj;
 
+                    console.log('I found objects that I want to add');
 
                 } catch (e) {
                     objects[tempFolderName].ip = ip.address();
@@ -610,7 +644,7 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
         hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
 
     } catch (e) {
-        console.log('Could not Load: ' + hardwareInterfaceName);
+        console.log('Could not load settings.json for: ' + hardwareInterfaceName);
         hardwareInterfaces[hardwareInterfaceName] = {};
     }
 
@@ -641,7 +675,7 @@ exports.actionSender = function (action, timeToLive, beatport) {
     var HOST = '255.255.255.255';
     var message;
 
-    message = new Buffer(JSON.stringify({action: action}));
+    message = Buffer.from(JSON.stringify({action: action}));
 
     // creating the datagram
     var client = dgram.createSocket('udp4');
@@ -659,3 +693,204 @@ exports.actionSender = function (action, timeToLive, beatport) {
     });
 
 };
+
+function doesObjectExist(objects, objectKey) {
+    return objects.hasOwnProperty(objectKey);
+}
+exports.doesObjectExist = doesObjectExist;
+
+function getObject(objects, objectKey) {
+    if (doesObjectExist(objects, objectKey)) {
+        return objects[objectKey];
+    }
+    return null;
+}
+exports.getObject = getObject;
+
+function doesFrameExist(objects, objectKey, frameKey) {
+    if (doesObjectExist(objects, objectKey)) {
+        var foundObject = getObject(objects, objectKey);
+        if (foundObject) {
+            return foundObject.frames.hasOwnProperty(frameKey);
+        }
+    }
+    return false;
+}
+exports.doesFrameExist = doesFrameExist;
+
+function getFrame(objects, objectKey, frameKey) {
+    if (doesFrameExist(objects, objectKey, frameKey)) {
+        var foundObject = getObject(objects, objectKey);
+        if (foundObject) {
+            return foundObject.frames[frameKey];
+        }
+    }
+    return null;
+}
+exports.getFrame = getFrame;
+
+function doesNodeExist(objects, objectKey, frameKey, nodeKey) {
+    if (doesFrameExist(objects, objectKey, frameKey)) {
+        var foundFrame = getFrame(objects, objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes.hasOwnProperty(nodeKey);
+        }
+    }
+    return false;
+}
+exports.doesNodeExist = doesNodeExist;
+
+function getNode(objects, objectKey, frameKey, nodeKey) {
+    if (doesNodeExist(objects, objectKey, frameKey, nodeKey)) {
+        var foundFrame = getFrame(objects, objectKey, frameKey);
+        if (foundFrame) {
+            return foundFrame.nodes[nodeKey];
+        }
+    }
+    return null;
+}
+exports.getNode = getNode;
+
+/**
+ * @param objectKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object)
+ */
+function getObjectAsync(objects, objectKey, callback) {
+    if (!objects.hasOwnProperty(objectKey)) {
+        callback({failure: true, error: 'Object ' + objectKey + ' not found'});
+        return;
+    }
+    var object = objects[objectKey];
+    callback(null, object);
+}
+exports.getObjectAsync = getObjectAsync;
+
+/**
+ * @param objectKey
+ * @param frameKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+ */
+function getFrameAsync(objects, objectKey, frameKey, callback) {
+    getObjectAsync(objects, objectKey, function (error, object) {
+        if (error) {
+            callback(error);
+            return;
+        }
+        if (!object.frames.hasOwnProperty(frameKey)) {
+            callback({failure: true, error: 'Frame ' + frameKey + ' not found'});
+            return;
+        }
+        var frame = object.frames[frameKey];
+        callback(null, object, frame);
+    });
+}
+exports.getFrameAsync = getFrameAsync;
+
+/**
+ * @param objectKey
+ * @param frameKey
+ * @param nodeKey
+ * @param {Function} callback - (error: {failure: bool, error: string}, object, frame)
+ */
+function getNodeAsync(objects, objectKey, frameKey, nodeKey, callback) {
+    getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
+        if (error) {
+            callback(error);
+            return;
+        }
+        if (!frame.nodes.hasOwnProperty(nodeKey)) {
+            callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+            return;
+        }
+        var node = frame.nodes[nodeKey];
+        callback(null, object, frame, node);
+    });
+}
+exports.getNodeAsync = getNodeAsync;
+
+/**
+ * Returns node if a nodeKey is provided, otherwise the frame
+ * @param objectKey
+ * @param frameKey
+ * @param nodeKey
+ * @param callback
+ */
+function getFrameOrNode(objects, objectKey, frameKey, nodeKey, callback) {
+    getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
+        if (error) {
+            callback(error);
+            return;
+        }
+
+        var node = null;
+
+        if (nodeKey && nodeKey !== 'null') {
+            if (!frame.nodes.hasOwnProperty(nodeKey)) {
+                callback({failure: true, error: 'Node ' + nodeKey + ' not found'});
+                return;
+            }
+            node = frame.nodes[nodeKey];
+        }
+
+        callback(null, object, frame, node);
+    });
+}
+exports.getFrameOrNode = getFrameOrNode;
+
+function forEachObject(objects, callback) {
+    for (var objectKey in objects) {
+        if (!objects.hasOwnProperty(objectKey)) continue;
+        callback(objects[objectKey], objectKey);
+    }
+}
+exports.forEachObject = forEachObject;
+
+function forEachFrameInObject(object, callback) {
+    for (var frameKey in object.frames) {
+        if (!object.frames.hasOwnProperty(frameKey)) continue;
+        callback(object.frames[frameKey], frameKey);
+    }
+}
+exports.forEachFrameInObject = forEachFrameInObject;
+
+function forEachNodeInFrame(frame, callback) {
+    for (var nodeKey in frame.nodes) {
+        if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
+        callback(frame.nodes[nodeKey], nodeKey);
+    }
+}
+exports.forEachNodeInFrame = forEachNodeInFrame;
+
+/**
+ * Helper function to return the absolute path to the directory that should contain all
+ * video files for the provided object name. (makes dir if necessary)
+ * @param objectName
+ * @return {string}
+ */
+function getVideoDir(objectsPath, identityFolderName, isMobile, objectName) {
+    let videoDir = objectsPath; // on mobile, put videos directly in object home dir
+
+    // directory differs on mobile due to inability to call mkdir
+    if (!isMobile) {
+        videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
+
+        if (!fs.existsSync(videoDir)) {
+            console.log('make videoDir');
+            fs.mkdirSync(videoDir);
+        }
+    }
+
+    return videoDir;
+}
+exports.getVideoDir = getVideoDir;
+
+// Ensures id is alphanumeric or -_
+function isValidId(id) {
+    return id.match(/^[A-Za-z0-9_-]+$/);
+}
+exports.isValidId = isValidId;
+
+function goesUpDirectory(path) {
+    return path.match(/\.\./);
+}
+exports.goesUpDirectory = goesUpDirectory;

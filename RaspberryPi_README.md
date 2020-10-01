@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: Install the Server on Raspberry Pi
-permalink: /docs/vuforia-spatial-server/raspberry-pi
+permalink: /docs/vuforia-spatial-edge-server/raspberry-pi
 ---
 
 ## Starting the Vuforia Spatial Edge Server on Raspberry Pi

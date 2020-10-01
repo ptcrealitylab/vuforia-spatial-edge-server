@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const root = require('../getAppRootFolder');
 
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
@@ -11,6 +12,10 @@ const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 if (!fs.existsSync(homeDirectory) &&
     fs.existsSync(oldHomeDirectory)) {
     homeDirectory = oldHomeDirectory;
+}
+
+if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
+    homeDirectory = path.join(root, 'spatialToolbox');
 }
 
 const git = require('simple-git')(homeDirectory);
@@ -50,8 +55,11 @@ function resetToLastCommit(object, objects, callback) {
                 git.init();
                 return;
             }
-            git.checkout(objectFolderName + identityFile, function () {
+            git.checkout(objectFolderName + identityFile, function (err) {
                 console.log('reset for ', objectFolderName);
+                if (err) {
+                    console.warn('Error resetting to last commit', err);
+                }
                 utilities.updateObject(objectFolderName, objects);
                 utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                 callback();
