@@ -466,7 +466,7 @@
                 }
 
                 if (typeof message.msgContent.containedFrameMessage.screenPosition !== 'undefined') {
-                    this._receiveScreenPosition(message.sourceFrame, message.msgContent.containedFrameMessage.screenPosition);
+                    this._receiveScreenPosition(message.sourceFrame, message.msgContent.containedFrameMessage.screenPosition, message.msgContent.containedFrameMessage.worldCoordinates);
                 }
 
                 // console.warn('contents received envelope message', msgContent, sourceFrame, destinationFrame);
@@ -689,8 +689,9 @@
          * Updates the frame to be tagged with the array of categories. Also includes the frame's type as a default.
          * @param {string} frameId
          * @param {{x: number, y: number}} screenPosition
+         * @param {{x: number, y: number, z: number}} worldCoordinates
          */
-        Envelope.prototype._receiveScreenPosition = function(frameId, screenPosition) {
+        Envelope.prototype._receiveScreenPosition = function(frameId, screenPosition, worldCoordinates) {
             let thisCallback = subscriptions[frameId];
             if (typeof thisCallback !== 'function') {
                 return;
@@ -706,7 +707,7 @@
                 zPosition = screenPosition.center.z;
                 depth = screenPosition.lowerRight.z - screenPosition.upperLeft.z;
             }
-            thisCallback(screenPosition.center.x, screenPosition.center.y, displayWidth, displayHeight, zPosition, depth);
+            thisCallback(screenPosition.center.x, screenPosition.center.y, displayWidth, displayHeight, zPosition, depth, worldCoordinates);
         };
 
         /**

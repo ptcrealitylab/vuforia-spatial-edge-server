@@ -104,6 +104,7 @@
 
         let screenPositionListenerHandle = null;
         let mostRecentScreenPosition = null;
+        let mostRecentModelView = null;
         /**
          * Automatically show and hide the rootElement of the frame when its envelope opens or closes
          */
@@ -138,6 +139,7 @@
                         });
 
                         screenPositionListenerHandle = realityInterface.addMatrixListener(function(modelView, projection) {
+                            
                             let modelViewProjection = [];
                             multiplyMatrix(modelView, projection, modelViewProjection);
 
@@ -182,8 +184,23 @@
                                     z: z + depth / 2
                                 }
                             };
+
+                            mostRecentModelView = {
+                                position: {
+                                    x: modelView[12],
+                                    y: modelView[13],
+                                    z: modelView[14]
+                                },
+                                scale: {
+                                    x: modelView[0],
+                                    y: modelView[5],
+                                    z: modelView[10]
+                                }
+                            };
+                            
                             this.sendMessageToEnvelope({
-                                screenPosition: mostRecentScreenPosition
+                                screenPosition: mostRecentScreenPosition,
+                                worldCoordinates: mostRecentModelView
                             });
                         }.bind(this));
                     }
