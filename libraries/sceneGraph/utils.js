@@ -37,10 +37,19 @@ function multiplyMatrix(m2, m1, r) {
     r[15] = m2[12] * m1[3] + m2[13] * m1[7] + m2[14] * m1[11] + m2[15] * m1[15];
 }
 
-function distance(m) {
-    return 0;
+function distance(matrix) {
+    return Math.sqrt(Math.pow(matrix[12], 2) + Math.pow(matrix[13], 2) + Math.pow(matrix[14], 2));
+}
+
+function makeGroundPlaneRotationX(theta) {
+    var c = Math.cos(theta), s = Math.sin(theta);
+    return [  1, 0, 0, 0,
+        0, c, -s, 0,
+        0, s, c, 0,
+        0, 0, 0, 1];
 }
 
 exports.newIdentityMatrix = newIdentityMatrix;
 exports.multiplyMatrix = multiplyMatrix;
 exports.distance = distance;
+exports.makeGroundPlaneRotationX = makeGroundPlaneRotationX;
