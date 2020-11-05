@@ -53,6 +53,27 @@ SceneNode.prototype.setParent = function(parent) {
     this.flagForRecompute();
 };
 
+SceneNode.prototype.updateVehicleXYScale = function(x, y, scale) {
+    if (!this.linkedVehicle) { return; }
+    let positionData = null;
+    if (typeof this.linkedVehicle.ar !== 'undefined') {
+        positionData = this.linkedVehicle.ar;
+    } else {
+        positionData = this.linkedVehicle;
+    }
+
+    if (typeof x !== 'undefined') {
+        positionData.x = x;
+    }
+    if (typeof y !== 'undefined') {
+        positionData.y = y;
+    }
+    if (typeof scale !== 'undefined') {
+        positionData.scale = scale;
+    }
+    this.flagForRecompute();
+};
+
 SceneNode.prototype.getVehicleX = function() {
     if (!this.linkedVehicle) { return 0; }
     if (typeof this.linkedVehicle.ar !== 'undefined') {
