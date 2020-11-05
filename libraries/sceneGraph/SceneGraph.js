@@ -138,6 +138,15 @@ class SceneGraph {
         }
         return -1; // return a value that could only be an error
     }
+
+    updateWithPositionData(objectId, frameId, nodeId, localMatrix, x, y, scale) {
+        let id = nodeId || frameId || objectId; // gets most specific address
+        let sceneNode = this.graph[id];
+        if (sceneNode) {
+            sceneNode.updateVehicleXYScale(x, y, scale);
+            sceneNode.setLocalMatrix(localMatrix);
+        }
+    }
 }
 
 module.exports = SceneGraph;
