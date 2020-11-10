@@ -19,6 +19,18 @@ class SceneGraph {
         this.graph[this.NAMES.ROOT] = this.rootNode;
     }
 
+    addObjectAndChildren(objectId, object) {
+        this.addObject(objectId, object.matrix, true);
+        for (let frameId in object.frames) {
+            let frame = object.frames[frameId];
+            this.addFrame(objectId, frameId, frame, frame.ar.matrix);
+            for (let nodeId in frame.nodes) {
+                let node = frame.nodes[nodeId];
+                this.addNode(objectId, frameId, nodeId, node, node.matrix);
+            }
+        }
+    }
+
     addObject(objectId, initialLocalMatrix, needsRotateX) {
         let sceneNode = null;
         if (typeof this.graph[objectId] !== 'undefined') {
@@ -134,7 +146,8 @@ class SceneGraph {
         let nodeA = this.graph[keyA];
         let nodeB = this.graph[keyB];
         if (nodeA && nodeB) {
-            return nodeA.getDistanceTo(nodeB);
+            let distance = nodeA.getDistanceTo(nodeB);
+            return distance; //nodeA.getDistanceTo(nodeB);
         }
         return -1; // return a value that could only be an error
     }

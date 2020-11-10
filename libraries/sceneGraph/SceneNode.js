@@ -138,6 +138,21 @@ SceneNode.prototype.getTransformMatrix = function() {
         x, y, 0, 1];
 };
 
+SceneNode.prototype.getVehicleInfo = function() {
+    let vehicle = this.linkedVehicle;
+    let name = this.id;
+    let type = (name === 'ROOT') ? 'ROOT' : 'object';
+    if (vehicle) {
+        let isFrame = (typeof vehicle.ar !== 'undefined');
+        name = isFrame ? (vehicle.location === 'global' ? vehicle.src : vehicle.name) : vehicle.name;
+        type = isFrame ? 'frame' : 'node';
+    }
+    return {
+        name: name,
+        type: type
+    };
+};
+
 /**
  * Compute where this node is relative to the scene origin
  * @param {Array.<number>} parentWorldMatrix
@@ -216,8 +231,25 @@ SceneNode.prototype.flagContainingSubtreeForRecompute = function() {
 
 SceneNode.prototype.getMatrixRelativeTo = function(otherNode) {
     // note that this could be one frame out-of-date if this is flaggedForRecompute
+    // let thisWorldMatrix = [];
+    // let thatWorldMatrix = [];
+    //
+    // if (ignoreScale) {
+    //     let untransformedThis = [];
+    //     let untransformedThat = [];
+    //
+    //     let thisInverseTransform = utils.invertMatrix(this.getTransformMatrix());
+    //     utils.multiplyMatrix(thisInverseTransform, this.worldMatrix, untransformedThis);
+    //
+    //     let thatInverseTransform = utils.invertMatrix(otherNode.getTransformMatrix());
+    //     utils.multiplyMatrix(thatInverseTransform, otherNode.worldMatrix, untransformedThat);
+    //
+    //     thisWorldMatrix = untransformedThis;
+    //     thatWorldMatrix = untransformedThat;
+    // } else {
     let thisWorldMatrix = this.worldMatrix;
     let thatWorldMatrix = otherNode.worldMatrix;
+    // }
 
     // if they're the same, we should get identity matrix
     let relativeMatrix = [];
@@ -227,7 +259,10 @@ SceneNode.prototype.getMatrixRelativeTo = function(otherNode) {
 };
 
 SceneNode.prototype.getDistanceTo = function(otherNode) {
-    return utils.distance(this.getMatrixRelativeTo(otherNode));
+    let thisPosition = this.getWorldPosition();
+    let thatPosition = otherNode.getWorldPosition();
+    return utils.positionDistance(thisPosition, thatPosition);
+    // return utils.distance(this.getMatrixRelativeTo(otherNode));
 };
 
 // figures out what local matrix this node would need to position it globally at the provided world matrix
@@ -257,5 +292,49 @@ SceneNode.prototype.setPositionRelativeTo = function(otherSceneNode, relativeMat
 
     this.setLocalMatrix(result);
 };
+
+SceneNode.prototype.getSerializableCopy = function() {
+    const keysToExclude = ['anythingInSubtreeNeedsRecompute', 'anythingInSubtreeNeedsRerender', 'needsRecompute', 'needsRerender'];
+
+    // send acyclic version of sceneGraph by removing linkedVehicles if needed
+    let sceneNodeCopy = {};
+    for (var key in this) {
+        if (!this.hasOwnProperty(key)) { continue; }
+        if (key === 'linkedVehicle') {
+            sceneNodeCopy.transformMatrix = this.getTransformMatrix();
+            sceneNodeCopy.vehicleInfo = this.getVehicleInfo();
+            // sceneNodeCopy.type = this.linkedVehicle.type;
+            continue;
+        }
+        if (key === 'parent' && this.parent) {
+            sceneNodeCopy.parent = this.parent.id;
+            continue;
+        }
+        if (key === 'children') {
+            sceneNodeCopy.children = [];
+            this.children.forEach(function(child) {
+                sceneNodeCopy.children.push(child.id);
+            });
+            continue;
+        }
+        if (keysToExclude.includes(key)) {
+            continue;
+        }
+        try {
+            sceneNodeCopy[key] = JSON.parse(JSON.stringify(this[key]));
+        } catch (e) {
+            console.log('error with serializing sceneNode key ' + key);
+        }
+    }
+    return sceneNodeCopy;
+};
+
+SceneNode.prototype.getWorldPosition = function() {
+    return {
+        x: this.worldMatrix[12] / this.worldMatrix[15],
+        y: this.worldMatrix[13] / this.worldMatrix[15],
+        z: this.worldMatrix[14] / this.worldMatrix[15]
+    };
+}
 
 module.exports = SceneNode;
