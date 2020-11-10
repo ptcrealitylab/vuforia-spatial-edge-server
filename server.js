@@ -2298,6 +2298,8 @@ function objectWebServer() {
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                        // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
+                        sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
@@ -2376,6 +2378,8 @@ function objectWebServer() {
 
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
+
+                    sceneGraph.removeElementAndChildren(frameNameKey);
 
                     res.send('ok');
 
@@ -3967,11 +3971,11 @@ setupControllers();
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
     blockLinkController.setup(objects, globalVariables, objectsPath);
-    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
-    nodeController.setup(objects, globalVariables, objectsPath);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git);
+    nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
 }
 
 checkInit('system');

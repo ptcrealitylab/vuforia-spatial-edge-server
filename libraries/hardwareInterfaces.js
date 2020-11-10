@@ -263,6 +263,10 @@ exports.getDistanceOneToMany = function(id1, ids) {
     return distances;
 };
 
+exports.onSceneGraphUpdated = function(callback) {
+    sceneGraphReference.onUpdate(callback);
+};
+
 var getAllTools_ = function (object) {
     var objectID = utilities.readObject(objectLookup, object);
 

@@ -11,6 +11,7 @@ var hardwareAPI;
 var objectsPath;
 var identityFolderName;
 var git;
+var sceneGraph;
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -100,6 +101,8 @@ const setMatrix = function(objectID, body, callback) {
     console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+    sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
 
     callback(200, {success: true});
 };
@@ -279,13 +282,14 @@ const getObject = function (objectID) {
     return utilities.getObject(objects, objectID);
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     git = git_;
+    sceneGraph = sceneGraph_;
 };
 
 module.exports = {
