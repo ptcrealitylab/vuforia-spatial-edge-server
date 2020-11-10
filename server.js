@@ -575,6 +575,9 @@ if (isMobile) {
 }
 var worldObject;
 
+const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
+const sceneGraph = new SceneGraph();
+
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
@@ -609,7 +612,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph);
 
 console.log('Done');
 
@@ -750,6 +753,9 @@ function loadObjects() {
                 console.log('No saved data for: ' + tempFolderName);
             }
 
+            // add this object to the sceneGraph
+            // sceneGraph.addObject(tempFolderName, objects[tempFolderName].matrix, true); // TODO: fix rotateX?
+            sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
         } else {
             console.log(' object ' + objectFolderList[i] + ' has no marker yet');
         }
@@ -757,6 +763,9 @@ function loadObjects() {
     }
 
     hardwareAPI.reset();
+
+    sceneGraph.recomputeGraph();
+    // console.log(sceneGraph.graph);
 }
 
 
