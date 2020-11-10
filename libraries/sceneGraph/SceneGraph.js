@@ -17,6 +17,8 @@ class SceneGraph {
         // Add a root element to hold all objects, tools, nodes, etc
         this.rootNode = new SceneNode(this.NAMES.ROOT);
         this.graph[this.NAMES.ROOT] = this.rootNode;
+
+        this.updateCallbacks = [];
     }
 
     addObjectAndChildren(objectId, object) {
@@ -51,6 +53,8 @@ class SceneGraph {
         }
 
         console.log('added object ' + objectId + ' to scene graph (to parent: ' + this.NAMES.ROOT + ')');
+
+        this.triggerUpdateCallbacks();
     }
 
     addFrame(objectId, frameId, linkedFrame, initialLocalMatrix) {
@@ -79,6 +83,8 @@ class SceneGraph {
         }
 
         console.log('added frame ' + frameId + ' to scene graph (to parent: ' + objectId + ')');
+
+        this.triggerUpdateCallbacks();
     }
 
     addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix) {
@@ -103,6 +109,8 @@ class SceneGraph {
         }
 
         console.log('added node ' + nodeId + ' to scene graph (to parent: ' + frameId + ')');
+
+        this.triggerUpdateCallbacks();
     }
 
     addRotateX(parentSceneNode, groundPlaneVariation) {
@@ -132,6 +140,26 @@ class SceneGraph {
         }
     }
 
+    removeElementAndChildren(id) {
+        let sceneNode = this.graph[id];
+        if (sceneNode) {
+
+            // remove from parent
+            let parentNode = sceneNode.parent;
+            if (parentNode) {
+                let index = parentNode.children.indexOf(sceneNode);
+                if (index > -1) {
+                    parentNode.children.splice(index, 1);
+                }
+            }
+
+            // delete from graph
+            delete this.graph[id];
+
+            this.triggerUpdateCallbacks();
+        }
+    }
+
     /**
      * Call this before any computations to ensure the worldMatrix of each element is up-to-date.
      * It's ok to call too many times, as the nodes will skip computations if already up-to-date.
@@ -158,7 +186,18 @@ class SceneGraph {
         if (sceneNode) {
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
+            this.triggerUpdateCallbacks();
         }
+    }
+
+    onUpdate(callback) {
+        this.updateCallbacks.push(callback);
+    }
+
+    triggerUpdateCallbacks() {
+        this.updateCallbacks.forEach(function(callback) {
+            callback();
+        });
     }
 }
 
