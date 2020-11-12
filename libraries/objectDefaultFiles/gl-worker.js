@@ -1,6 +1,9 @@
 let gl = {};
 let id = 0;
 let proxies = [];
+const wantsResponse = false;
+
+let frameCommandBuffer = [];
 
 const pending = {};
 
@@ -48,12 +51,21 @@ function makeStub(functionName) {
       }
     }
 
-    window.parent.postMessage({
-      workerId,
-      id: invokeId,
-      name: functionName,
-      args,
-    }, '*');
+    const message = {
+        workerId,
+        id: invokeId,
+        name: functionName,
+        args,
+    };
+
+    if (realGl) {
+        window.parent.postMessage({
+            workerId,
+            messages: [message],
+        }, '*');
+    } else {
+        frameCommandBuffer.push(message);
+    }
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
@@ -93,9 +105,11 @@ function makeStub(functionName) {
     //   return cacheGetParameter[arguments[0]];
     // }
 
-    return new Promise(res => {
-      pending[invokeId] = res;
-    });
+    if (wantsResponse) {
+        return new Promise(res => {
+          pending[invokeId] = res;
+        });
+    }
   };
 }
 
@@ -124,17 +138,28 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  if (pending.hasOwnProperty(message.id)) {
+  if (message.id && pending.hasOwnProperty(message.id)) {
     pending[message.id](message.result);
     delete pending[message.id];
   }
 
   if (message.name === 'frame') {
-    render(message.time);
+      frameCommandBuffer = [];
 
-    window.parent.postMessage({
-      workerId,
-      isFrameEnd: true,
-    }, '*');
+      render(message.time);
+
+      if (frameCommandBuffer.length > 0) {
+          window.parent.postMessage({
+              workerId,
+              messages: frameCommandBuffer,
+          }, '*');
+      }
+
+      frameCommandBuffer = [];
+
+      window.parent.postMessage({
+          workerId,
+          isFrameEnd: true,
+      }, '*');
   }
 });
