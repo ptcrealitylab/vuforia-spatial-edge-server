@@ -60,6 +60,7 @@ var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
+var request = require('request');
 const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
@@ -899,3 +900,15 @@ function goesUpDirectory(path) {
     return path.match(/\.\./);
 }
 exports.goesUpDirectory = goesUpDirectory;
+
+exports.httpGet = function(url) {
+    return new Promise((resolve, reject) => {
+        request(url, (error, response, body) => {
+            if (error) reject(error);
+            if (response.statusCode !== 200) {
+                reject('Invalid status code <' + response.statusCode + '>');
+            }
+            resolve(body);
+        });
+    });
+};

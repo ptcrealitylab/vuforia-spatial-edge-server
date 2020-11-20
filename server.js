@@ -322,6 +322,7 @@ var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+var request = require('request');
 
 // Image resizing library, not available on mobile
 let Jimp = null;
@@ -1236,6 +1237,9 @@ function objectBeatServer() {
                 knownObjects[msgContent.id].ip = msgContent.ip;
 
             console.log('I found new Objects: ' + JSON.stringify(knownObjects[msgContent.id]));
+
+            // each time we discover a new object from another, also get the scene graph from that server
+            getKnownSceneGraph(msgContent.ip);
         }
         // check if action 'ping'
         if (msgContent.action === 'ping') {
@@ -1265,6 +1269,23 @@ function objectBeatServer() {
     // bind the udp server to the udp beatPort
 
     udpServer.bind(beatPort);
+}
+
+async function getKnownSceneGraph(ip, port) {
+    // 1. check if we already have an up-to-date sceneGraph from this server
+    let needsThisGraph = true;
+    if (!needsThisGraph) { return; } // TODO: implement placeholder
+
+    // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
+    const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
+    const response = await utilities.httpGet(url);
+
+    // 3. parse the results and add it as a known scene graph
+    let thatSceneGraph = JSON.parse(response);
+    console.log('Discovered scene graph from server ' + ip + ' with keys:');
+    console.log(Object.keys(thatSceneGraph));
+
+    // 4. create a method to compile all known scene graphs with this server's graph to be visualized
 }
 
 var ip_regex = /(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?::(\d+))?/ig;
