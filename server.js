@@ -379,6 +379,7 @@ const linkController = require('./controllers/link.js');
 const logicNodeController = require('./controllers/logicNode.js');
 const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
+const spatialController = require('./controllers/spatial');
 
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
@@ -1590,10 +1591,13 @@ function objectWebServer() {
     // Express router routes
     const objectRouter = require('./routers/object');
     const logicRouter = require('./routers/logic');
+    const spatialRouter = require('./routers/spatial');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
+    spatialRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
+    webServer.use('/spatial', spatialRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
@@ -4006,6 +4010,7 @@ function setupControllers() {
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
     objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
 checkInit('system');
