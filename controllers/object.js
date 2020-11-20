@@ -177,6 +177,7 @@ const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        sceneGraph.deactivateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
@@ -187,6 +188,7 @@ const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        sceneGraph.activateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});

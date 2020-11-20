@@ -207,6 +207,22 @@ class SceneGraph {
             callback();
         });
     }
+
+    deactivateElement(id) {
+        let node = this.graph[id];
+        if (node && !node.deactivated) {
+            node.deactivated = true;
+            this.triggerUpdateCallbacks();
+        }
+    }
+
+    activateElement(id) {
+        let node = this.graph[id];
+        if (node && node.deactivated) {
+            node.deactivated = false;
+            this.triggerUpdateCallbacks();
+        }
+    }
 }
 
 module.exports = SceneGraph;
