@@ -24,6 +24,9 @@ function SceneNode(id) {
 
     // if a vehicle is linked, updating the sceneNode position will set the linkedVehicle position?
     this.linkedVehicle = null;
+
+    // can be temporarily ignored from sceneGraph if deactivated
+    this.deactivated = false;
 }
 
 /**

@@ -767,6 +767,9 @@ function loadObjects() {
         if (thisObject.worldId && typeof objects[thisObject.worldId] !== 'undefined') {
             sceneGraph.updateObjectWorldId(objectId, thisObject.worldId);
         }
+        if (thisObject.deactivated) {
+            sceneGraph.deactivateElement(objectId);
+        }
     }
 
     hardwareAPI.reset();
