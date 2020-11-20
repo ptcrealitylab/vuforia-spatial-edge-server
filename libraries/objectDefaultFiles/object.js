@@ -687,7 +687,7 @@
         this.sendRealityEditorSubscribe = function () {
             var timeoutFunction = function() {
                 if (spatialObject.object) {
-                    console.log('emit sendRealityEditorSubscribe');
+                    // console.log('emit sendRealityEditorSubscribe');
                     self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
                         object: spatialObject.object,
                         frame: spatialObject.frame,

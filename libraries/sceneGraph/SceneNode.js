@@ -35,6 +35,10 @@ SceneNode.prototype.setParent = function(parent) {
         return; // ignore duplicate function calls
     }
 
+    if (parent === this) { // TODO: more robustly prevent all cycles in the tree
+        return;
+    }
+
     // remove us from our parent
     if (this.parent) {
         let index = this.parent.children.indexOf(this);

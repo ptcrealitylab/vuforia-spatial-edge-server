@@ -190,6 +190,14 @@ class SceneGraph {
         }
     }
 
+    updateObjectWorldId(objectId, worldId) {
+        if (objectId === worldId) { return; } // don't set a node to be its own parent
+        let worldNode = this.graph[worldId];
+        let objectNode = this.graph[objectId];
+        if (!objectNode || !worldNode) { return; } // unknown object or world
+        objectNode.setParent(worldNode);
+    }
+
     onUpdate(callback) {
         this.updateCallbacks.push(callback);
     }

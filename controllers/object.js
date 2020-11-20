@@ -100,6 +100,12 @@ const setMatrix = function(objectID, body, callback) {
     object.matrix = body.matrix;
     console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
+    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
+        object.worldId = body.worldId;
+        console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
+        sceneGraph.updateObjectWorldId(objectID, object.worldId);
+    }
+
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
 
     sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
