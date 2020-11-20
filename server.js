@@ -754,12 +754,19 @@ function loadObjects() {
             }
 
             // add this object to the sceneGraph
-            // sceneGraph.addObject(tempFolderName, objects[tempFolderName].matrix, true); // TODO: fix rotateX?
             sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
         } else {
             console.log(' object ' + objectFolderList[i] + ' has no marker yet');
         }
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
+    }
+
+    // update parents of any sceneGraph nodes to be relative to the world where they were localized
+    for (let objectId in objects) {
+        let thisObject = objects[objectId];
+        if (thisObject.worldId && typeof objects[thisObject.worldId] !== 'undefined') {
+            sceneGraph.updateObjectWorldId(objectId, thisObject.worldId);
+        }
     }
 
     hardwareAPI.reset();
@@ -912,6 +919,11 @@ function loadAnchor(anchorName) {
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     }
+
+    // store in lookup table so we can correctly change ID if target data is later uploaded
+    utilities.writeObject(objectLookup, anchorName, anchorUuid);
+
+    sceneGraph.addObjectAndChildren(anchorUuid, objects[anchorUuid]);
 }
 
 function setAnchors() {
@@ -2269,6 +2281,8 @@ function objectWebServer() {
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
+                            sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
+
                             var sendObject = {
                                 id: objectId,
                                 name: req.body.name,
@@ -2407,6 +2421,8 @@ function objectWebServer() {
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
                             delete objectLookup[req.body.name];
+
+                            sceneGraph.removeElementAndChildren(tempFolderName2);
                         }
 
                     }
@@ -2712,7 +2728,7 @@ function objectWebServer() {
                                     console.log(err);
                                 } else {
                                     // create the object if needed / possible
-                                    if (typeof objects[thisObjectId] === 'undefined') {
+                                    if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
                                         console.log('creating object from target file ' + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
@@ -2941,13 +2957,16 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             }
 
             if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                let objectId = utilities.readObject(objectLookup, folderVar);
+                let oldObjectId = utilities.readObject(objectLookup, folderVar);
                 try {
-                    objects[objectId].deconstruct();
+                    objects[oldObjectId].deconstruct();
                 } catch (e) {
-                    console.warn('Object exists without proper prototype: ' + objectId);
+                    console.warn('Object exists without proper prototype: ' + oldObjectId);
                 }
-                delete objects[objectId];
+                delete objects[oldObjectId];
+                delete knownObjects[oldObjectId];
+                delete objectLookup[oldObjectId];
+                sceneGraph.removeElementAndChildren(oldObjectId);
             }
             utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
             // entering the obejct in to the lookup table
@@ -2960,6 +2979,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             console.log('weiter im text ' + objectIDXML);
             utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+            sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
             objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
         }
@@ -3264,6 +3285,12 @@ function socketServer() {
             }
 
             object.matrix = msgContent.matrix;
+
+            if (typeof msgContent.worldId !== 'undefined' && msgContent.worldId !== object.worldId) {
+                object.worldId = msgContent.worldId;
+                console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
+                sceneGraph.updateObjectWorldId(msgContent.objectKey, object.worldId);
+            }
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
