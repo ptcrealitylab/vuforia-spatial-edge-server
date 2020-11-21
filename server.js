@@ -579,6 +579,8 @@ var worldObject;
 
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
 const sceneGraph = new SceneGraph();
+const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
+const worldGraph = new WorldGraph(sceneGraph);
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -614,7 +616,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
 console.log('Done');
 
@@ -1286,6 +1288,7 @@ async function getKnownSceneGraph(ip, port) {
     console.log(Object.keys(thatSceneGraph));
 
     // 4. create a method to compile all known scene graphs with this server's graph to be visualized
+    worldGraph.addKnownGraph(ip, thatSceneGraph);
 }
 
 var ip_regex = /(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?::(\d+))?/ig;

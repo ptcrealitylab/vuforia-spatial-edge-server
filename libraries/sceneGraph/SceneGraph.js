@@ -223,6 +223,37 @@ class SceneGraph {
             this.triggerUpdateCallbacks();
         }
     }
+
+    getSerializableCopy() {
+        this.recomputeGraph();
+        let copy = {};
+        for (var key in this.graph) {
+            let sceneNode = this.graph[key];
+            copy[key] = sceneNode.getSerializableCopy();
+        }
+        return copy;
+    }
+
+    addDataFromSerializableGraph(data) {
+        let nodesToUpdate = [];
+
+        // Add a placeholder element for each data entry in the serializable copy of the graph
+        for (var key in data) {
+            // TODO: how to resolve conflicts? currently ignores nodes that already exist
+            if (typeof this.graph[key] !== 'undefined') { continue; }
+
+            let sceneNode = new SceneNode(key);
+            this.graph[key] = sceneNode;
+
+            nodesToUpdate.push(key);
+        }
+
+        // Copy over the correct data and assign children/parents to the new nodes
+        nodesToUpdate.forEach(function(key) {
+            let sceneNode = this.graph[key];
+            sceneNode.initFromSerializedCopy(data[key], this);
+        }.bind(this));
+    }
 }
 
 module.exports = SceneGraph;

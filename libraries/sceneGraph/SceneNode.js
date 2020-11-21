@@ -160,6 +160,26 @@ SceneNode.prototype.getVehicleInfo = function() {
     };
 };
 
+SceneNode.prototype.setVehicleInfo = function(vehicleInfo) {
+    // inverse of getVehicleInfo
+    if (vehicleInfo.type === 'object') {
+        // no need to set vehicle
+    } else if (vehicleInfo.type === 'frame') {
+        this.linkedVehicle = {
+            ar: {x: 0, y: 0, scale: 1},
+            src: vehicleInfo.name,
+            name: vehicleInfo.name
+        };
+    } else if (vehicleInfo.type === 'node') {
+        this.linkedVehicle = {
+            x: 0,
+            y: 0,
+            scale: 1,
+            name: vehicleInfo.name
+        };
+    }
+};
+
 /**
  * Compute where this node is relative to the scene origin
  * @param {Array.<number>} parentWorldMatrix
@@ -334,6 +354,29 @@ SceneNode.prototype.getSerializableCopy = function() {
         }
     }
     return sceneNodeCopy;
+};
+
+SceneNode.prototype.initFromSerializedCopy = function(data, sceneGraph) {
+    // copy over all properties except for children and parent, which need special processing
+    for (var key in this) {
+        if (typeof data[key] === 'undefined') { continue; }
+        if (key !== 'parent' && key !== 'children') {
+            this[key] = data[key];
+        }
+    }
+
+    // add relevant linkedVehicle info from vehicleInfo
+    if (data.vehicleInfo && !this.linkedVehicle) {
+        this.setVehicleInfo(data.vehicleInfo);
+    }
+
+    // parent was replaced by parentId
+    if (data.parent) {
+        let parentNode = sceneGraph.graph[data.parent];
+        if (parentNode) {
+            this.setParent(parentNode); // this will also take care of assigning children
+        }
+    }
 };
 
 SceneNode.prototype.getWorldPosition = function() {
