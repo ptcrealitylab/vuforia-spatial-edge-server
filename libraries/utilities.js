@@ -894,3 +894,24 @@ function goesUpDirectory(path) {
     return path.match(/\.\./);
 }
 exports.goesUpDirectory = goesUpDirectory;
+
+function deepCopy(item) {
+    if (null == item || typeof item != 'object') return item;
+    if (item instanceof Array) {
+        let copy = [];
+        for (let i = 0, length = item.length; i < length; i++) {
+            copy[i] = deepCopy(item[i]);
+        }
+        return copy;
+    }
+    if (item instanceof Object) {
+        let copy = {};
+        for (let key in item) {
+            if (item.hasOwnProperty(key)) copy[key] = deepCopy(item[key]);
+        }
+        return copy;
+    }
+    throw new Error('Unable to deep copy this object.');
+}
+
+exports.deepCopy = deepCopy;
