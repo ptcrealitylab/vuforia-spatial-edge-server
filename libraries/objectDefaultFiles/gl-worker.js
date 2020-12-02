@@ -43,6 +43,9 @@ function makeStub(functionName) {
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
+      if (!args[i]) {
+        continue;
+      }
       if (args[i].hasOwnProperty('__uncloneableId')) {
         args[i] = {
           fakeClone: true,
@@ -69,6 +72,10 @@ function makeStub(functionName) {
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
+        if (!a) {
+          return a;
+        }
+
         if (a.__uncloneableId && !a.__uncloneableObj) {
           console.error('invariant ruined');
         }
