@@ -54,6 +54,21 @@ function makeStub(functionName) {
       }
     }
 
+    if (functionName === 'texImage2D') {
+      let img = args[args.length - 1];
+      if (img.tagName) {
+        let width = img.width;
+        let height = img.height;
+        let canvas = document.createElement('canvas');
+        let gfx = canvas.getContext('2d');
+        gfx.width = width;
+        gfx.height = height;
+        gfx.drawImage(img, 0, 0, width, height);
+        let imageData = gfx.getImageData(0, 0, width, height);
+        args[args.length - 1] = imageData;
+      }
+    }
+
     const message = {
         workerId,
         id: invokeId,
