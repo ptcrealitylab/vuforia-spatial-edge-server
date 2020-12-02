@@ -112,7 +112,13 @@ function makeStub(functionName) {
             if (prop === 'hasOwnProperty' || prop.startsWith('__')) {
               return obj[prop];
             } else {
-              return obj.__uncloneableObj[prop];
+              // TODO this won't propagate to container
+              const mocked = obj.__uncloneableObj[prop];
+              if (typeof mocked === 'function') {
+                console.error('Unmockable inner function', prop);
+                return mocked.bind(obj.__uncloneableObj);
+              }
+              return mocked;
             }
           },
         });
