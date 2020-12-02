@@ -70,19 +70,19 @@ function makeStub(functionName) {
     }
 
     const message = {
-        workerId,
-        id: invokeId,
-        name: functionName,
-        args,
+      workerId,
+      id: invokeId,
+      name: functionName,
+      args,
     };
 
     if (realGl) {
-        window.parent.postMessage({
-            workerId,
-            messages: [message],
-        }, '*');
+      window.parent.postMessage({
+        workerId,
+        messages: [message],
+      }, '*');
     } else {
-        frameCommandBuffer.push(message);
+      frameCommandBuffer.push(message);
     }
 
     if (realGl) {
@@ -134,9 +134,9 @@ function makeStub(functionName) {
     // }
 
     if (wantsResponse) {
-        return new Promise(res => {
-          pending[invokeId] = res;
-        });
+      return new Promise(res => {
+        pending[invokeId] = res;
+      });
     }
   };
 }
@@ -172,22 +172,22 @@ window.addEventListener('message', function(event) {
   }
 
   if (message.name === 'frame') {
-      frameCommandBuffer = [];
+    frameCommandBuffer = [];
 
-      render(message.time);
+    render(message.time);
 
-      if (frameCommandBuffer.length > 0) {
-          window.parent.postMessage({
-              workerId,
-              messages: frameCommandBuffer,
-          }, '*');
-      }
-
-      frameCommandBuffer = [];
-
+    if (frameCommandBuffer.length > 0) {
       window.parent.postMessage({
-          workerId,
-          isFrameEnd: true,
+        workerId,
+        messages: frameCommandBuffer,
       }, '*');
+    }
+
+    frameCommandBuffer = [];
+
+    window.parent.postMessage({
+      workerId,
+      isFrameEnd: true,
+    }, '*');
   }
 });
