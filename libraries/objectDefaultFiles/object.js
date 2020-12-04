@@ -41,6 +41,7 @@
         fullscreenZPosition: 0,
         sendSticky: false,
         isFullScreenExclusive: false,
+        attachesTo: null,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -580,6 +581,9 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.onlyAttachesToWorld = makeSendStub('onlyAttachesToWorld');
+                this.onlyAttachesToObjects = makeSendStub('onlyAttachesToObjects');
+                this.setAttachesTo = makeSendStub('setAttachesTo');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1477,6 +1481,30 @@
                 getScreenDimensions: true
             });
 
+        };
+
+        this.onlyAttachesToWorld = function() {
+            spatialObject.attachesTo = ['world'];
+
+            postDataToParent({
+                attachesTo: spatialObject.attachesTo
+            });
+        };
+
+        this.onlyAttachesToObjects = function() {
+            spatialObject.attachesTo = ['object'];
+
+            postDataToParent({
+                attachesTo: spatialObject.attachesTo
+            });
+        };
+
+        this.setAttachesTo = function(list) {
+            spatialObject.attachesTo = list;
+
+            postDataToParent({
+                attachesTo: spatialObject.attachesTo
+            });
         };
 
         /**
