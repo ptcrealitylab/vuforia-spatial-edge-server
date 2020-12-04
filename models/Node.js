@@ -45,6 +45,10 @@ function Node(name, type, objectId, frameId, nodeId) {
         let nodeTemplate = nodeTypes[type];
         this.privateData = JSON.parse(JSON.stringify(nodeTemplate.properties.privateData || {}));
         this.publicData = JSON.parse(JSON.stringify(nodeTemplate.properties.publicData || {}));
+
+        if (typeof nodeTemplate.properties.invisible !== 'undefined') {
+            this.invisible = nodeTemplate.properties.invisible;
+        }
     }
 
     this.setupProgram();
