@@ -611,6 +611,8 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
 
+nodeUtilities.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
+
 console.log('Done');
 
 console.log('Loading Objects');
