@@ -2907,7 +2907,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
         console.log('got ID: objectIDXML');
         if (objectIDXML && objectIDXML.length > 13) {
-            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol);
+            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
             objects[objectIDXML].port = serverPort;
             objects[objectIDXML].name = folderVar;
             objects[objectIDXML].targetSize = objectSizeXML;
@@ -2921,6 +2921,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             try {
                 objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
+                objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].ip = services.ip; //ip.address();
                 console.log('testing: ' + objects[objectIDXML].ip);
             } catch (e) {
