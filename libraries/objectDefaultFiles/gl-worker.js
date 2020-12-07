@@ -1,6 +1,9 @@
 let gl = {};
 let id = 0;
 let proxies = [];
+const wantsResponse = false;
+
+let frameCommandBuffer = [];
 
 const pending = {};
 
@@ -40,6 +43,9 @@ function makeStub(functionName) {
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
+      if (!args[i]) {
+        continue;
+      }
       if (args[i].hasOwnProperty('__uncloneableId')) {
         args[i] = {
           fakeClone: true,
@@ -48,15 +54,43 @@ function makeStub(functionName) {
       }
     }
 
-    window.parent.postMessage({
+    if (functionName === 'texImage2D') {
+      let img = args[args.length - 1];
+      if (img.tagName) {
+        let width = img.width;
+        let height = img.height;
+        let canvas = document.createElement('canvas');
+        let gfx = canvas.getContext('2d');
+        gfx.width = width;
+        gfx.height = height;
+        gfx.drawImage(img, 0, 0, width, height);
+        let imageData = gfx.getImageData(0, 0, width, height);
+        args[args.length - 1] = imageData;
+      }
+    }
+
+    const message = {
       workerId,
       id: invokeId,
       name: functionName,
       args,
-    }, '*');
+    };
+
+    if (realGl) {
+      window.parent.postMessage({
+        workerId,
+        messages: [message],
+      }, '*');
+    } else {
+      frameCommandBuffer.push(message);
+    }
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
+        if (!a) {
+          return a;
+        }
+
         if (a.__uncloneableId && !a.__uncloneableObj) {
           console.error('invariant ruined');
         }
@@ -78,7 +112,13 @@ function makeStub(functionName) {
             if (prop === 'hasOwnProperty' || prop.startsWith('__')) {
               return obj[prop];
             } else {
-              return obj.__uncloneableObj[prop];
+              // TODO this won't propagate to container
+              const mocked = obj.__uncloneableObj[prop];
+              if (typeof mocked === 'function') {
+                console.error('Unmockable inner function', prop);
+                return mocked.bind(obj.__uncloneableObj);
+              }
+              return mocked;
             }
           },
         });
@@ -93,9 +133,11 @@ function makeStub(functionName) {
     //   return cacheGetParameter[arguments[0]];
     // }
 
-    return new Promise(res => {
-      pending[invokeId] = res;
-    });
+    if (wantsResponse) {
+      return new Promise(res => {
+        pending[invokeId] = res;
+      });
+    }
   };
 }
 
@@ -124,13 +166,24 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  if (pending.hasOwnProperty(message.id)) {
+  if (message.id && pending.hasOwnProperty(message.id)) {
     pending[message.id](message.result);
     delete pending[message.id];
   }
 
   if (message.name === 'frame') {
+    frameCommandBuffer = [];
+
     render(message.time);
+
+    if (frameCommandBuffer.length > 0) {
+      window.parent.postMessage({
+        workerId,
+        messages: frameCommandBuffer,
+      }, '*');
+    }
+
+    frameCommandBuffer = [];
 
     window.parent.postMessage({
       workerId,
