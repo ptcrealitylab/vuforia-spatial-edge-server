@@ -139,7 +139,7 @@
                         });
 
                         screenPositionListenerHandle = realityInterface.addMatrixListener(function(modelView, projection) {
-                            
+
                             let modelViewProjection = [];
                             multiplyMatrix(modelView, projection, modelViewProjection);
 
@@ -197,7 +197,7 @@
                                     z: modelView[10]
                                 }
                             };
-                            
+
                             this.sendMessageToEnvelope({
                                 screenPosition: mostRecentScreenPosition,
                                 worldCoordinates: mostRecentModelView
