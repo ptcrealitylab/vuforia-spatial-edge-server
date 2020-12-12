@@ -62,3 +62,13 @@ exports.deleteLink = function (object, tool, link) {
     linkController.deleteLink(object, tool, link, 'server');
 };
 
+exports.getWorldObject = function (object) {
+    //todo @Ben how do I find out what world object is assosiated with the object?
+    return null;
+};
+
+exports.getWorldLocation = function (object) {
+    //todo @Ben how do I find out the world location
+    return null;
+};
+
