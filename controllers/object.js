@@ -11,6 +11,7 @@ var hardwareAPI;
 var objectsPath;
 var identityFolderName;
 var git;
+var sceneGraph;
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -99,7 +100,15 @@ const setMatrix = function(objectID, body, callback) {
     object.matrix = body.matrix;
     console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
+    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
+        object.worldId = body.worldId;
+        console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
+        sceneGraph.updateObjectWorldId(objectID, object.worldId);
+    }
+
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+    sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
 
     callback(200, {success: true});
 };
@@ -168,6 +177,7 @@ const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        sceneGraph.deactivateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
@@ -178,6 +188,7 @@ const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
         utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        sceneGraph.activateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
@@ -279,13 +290,14 @@ const getObject = function (objectID) {
     return utilities.getObject(objects, objectID);
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     git = git_;
+    sceneGraph = sceneGraph_;
 };
 
 module.exports = {

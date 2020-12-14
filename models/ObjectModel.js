@@ -15,7 +15,10 @@ function ObjectModel(ip, version, protocol, objectId) {
     this.objectId = objectId;
     // The name for the object used for interfaces.
     this.name = '';
+
     this.matrix = [];
+    this.worldId = null; // matrix is relative to this world
+
     this.isAnchor = false;
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.

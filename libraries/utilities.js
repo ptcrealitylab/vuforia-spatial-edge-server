@@ -60,6 +60,7 @@ var ip = require('ip');       // get the device IP address library
 var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
+var request = require('request');
 const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
@@ -270,11 +271,15 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
 
         return resultXML;
     } else if (fs.existsSync(jsonFile)) {
-        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        if (thisObject.hasOwnProperty('objectId')) {
-            return thisObject.objectId;
-        } else {
-            return null;
+        try {
+            let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+            if (thisObject.hasOwnProperty('objectId')) {
+                return thisObject.objectId;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.log('error reading json file', e);
         }
     } else {
         return null;
@@ -589,6 +594,7 @@ exports.updateObject = function (objectName, objects) {
                         objects[tempFolderName].objectId);
                     newObj.setFromJson(objects[tempFolderName]);
                     objects[tempFolderName] = newObj;
+                    // TODO: does this need to be added to sceneGraph?
 
                     console.log('I found objects that I want to add');
 
@@ -894,3 +900,15 @@ function goesUpDirectory(path) {
     return path.match(/\.\./);
 }
 exports.goesUpDirectory = goesUpDirectory;
+
+exports.httpGet = function(url) {
+    return new Promise((resolve, reject) => {
+        request(url, (error, response, body) => {
+            if (error) reject(error);
+            if (response.statusCode !== 200) {
+                reject('Invalid status code <' + response.statusCode + '>');
+            }
+            resolve(body);
+        });
+    });
+};

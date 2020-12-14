@@ -13,6 +13,7 @@ var dirname;
 var objectsPath;
 var identityFolderName;
 var nodeTypeModules;
+var sceneGraph;
 
 /**
  * Adds a provided frame to the specified object
@@ -68,6 +69,8 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
         utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
+
+        sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
 
         // notifies any open screens that a new frame was added
         hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
@@ -328,6 +331,8 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectId}, lastEditor: body.lastEditor});
 
+    sceneGraph.removeElementAndChildren(frameId);
+
     callback(200, {success: true});
 };
 
@@ -425,6 +430,9 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
                 }, lastEditor: body.lastEditor
             });
             updateStatus = 'updated position and/or scale';
+
+            let positionData = (typeof activeVehicle.ar !== 'undefined') ? activeVehicle.ar : activeVehicle;
+            sceneGraph.updateWithPositionData(objectID, frameID, nodeID, positionData.matrix, positionData.x, positionData.y, positionData.scale);
         }
         callback(200, updateStatus);
     });
@@ -484,7 +492,7 @@ const getFrame = function(objectID, frameID) {
     return utilities.getFrame(objects, objectID, frameID);
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, identityFolderName_, nodeTypeModules_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, identityFolderName_, nodeTypeModules_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -492,6 +500,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, obje
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     nodeTypeModules = nodeTypeModules_;
+    sceneGraph = sceneGraph_;
 };
 
 module.exports = {
