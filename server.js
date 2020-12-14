@@ -322,6 +322,7 @@ var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+var request = require('request');
 
 // Image resizing library, not available on mobile
 let Jimp = null;
@@ -379,6 +380,7 @@ const linkController = require('./controllers/link.js');
 const logicNodeController = require('./controllers/logicNode.js');
 const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
+const spatialController = require('./controllers/spatial');
 
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
@@ -575,6 +577,11 @@ if (isMobile) {
 }
 var worldObject;
 
+const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
+const sceneGraph = new SceneGraph();
+const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
+const worldGraph = new WorldGraph(sceneGraph);
+
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
@@ -609,7 +616,7 @@ var hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
 nodeUtilities.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
@@ -752,13 +759,29 @@ function loadObjects() {
                 console.log('No saved data for: ' + tempFolderName);
             }
 
+            // add this object to the sceneGraph
+            sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
         } else {
             console.log(' object ' + objectFolderList[i] + ' has no marker yet');
         }
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
 
+    // update parents of any sceneGraph nodes to be relative to the world where they were localized
+    for (let objectId in objects) {
+        let thisObject = objects[objectId];
+        if (thisObject.worldId && typeof objects[thisObject.worldId] !== 'undefined') {
+            sceneGraph.updateObjectWorldId(objectId, thisObject.worldId);
+        }
+        if (thisObject.deactivated) {
+            sceneGraph.deactivateElement(objectId);
+        }
+    }
+
     hardwareAPI.reset();
+
+    sceneGraph.recomputeGraph();
+    // console.log(sceneGraph.graph);
 }
 
 
@@ -905,6 +928,11 @@ function loadAnchor(anchorName) {
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     }
+
+    // store in lookup table so we can correctly change ID if target data is later uploaded
+    utilities.writeObject(objectLookup, anchorName, anchorUuid);
+
+    sceneGraph.addObjectAndChildren(anchorUuid, objects[anchorUuid]);
 }
 
 function setAnchors() {
@@ -1213,6 +1241,9 @@ function objectBeatServer() {
                 knownObjects[msgContent.id].ip = msgContent.ip;
 
             console.log('I found new Objects: ' + JSON.stringify(knownObjects[msgContent.id]));
+
+            // each time we discover a new object from another, also get the scene graph from that server
+            getKnownSceneGraph(msgContent.ip);
         }
         // check if action 'ping'
         if (msgContent.action === 'ping') {
@@ -1242,6 +1273,24 @@ function objectBeatServer() {
     // bind the udp server to the udp beatPort
 
     udpServer.bind(beatPort);
+}
+
+async function getKnownSceneGraph(ip, port) {
+    // 1. check if we already have an up-to-date sceneGraph from this server
+    let needsThisGraph = true;
+    if (!needsThisGraph) { return; } // TODO: implement placeholder
+
+    // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
+    const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
+    const response = await utilities.httpGet(url);
+
+    // 3. parse the results and add it as a known scene graph
+    let thatSceneGraph = JSON.parse(response);
+    console.log('Discovered scene graph from server ' + ip + ' with keys:');
+    console.log(Object.keys(thatSceneGraph));
+
+    // 4. create a method to compile all known scene graphs with this server's graph to be visualized
+    worldGraph.addKnownGraph(ip, thatSceneGraph);
 }
 
 var ip_regex = /(\d+)\.(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?::(\d+))?/ig;
@@ -1568,10 +1617,13 @@ function objectWebServer() {
     // Express router routes
     const objectRouter = require('./routers/object');
     const logicRouter = require('./routers/logic');
+    const spatialRouter = require('./routers/spatial');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
+    spatialRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
+    webServer.use('/spatial', spatialRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
@@ -2262,6 +2314,8 @@ function objectWebServer() {
                             objects[objectId].isWorldObject = true;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
+                            sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
+
                             var sendObject = {
                                 id: objectId,
                                 name: req.body.name,
@@ -2291,6 +2345,8 @@ function objectWebServer() {
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                        // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
+                        sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
                         utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
@@ -2370,6 +2426,8 @@ function objectWebServer() {
                     utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
+                    sceneGraph.removeElementAndChildren(frameNameKey);
+
                     res.send('ok');
 
                 } else {
@@ -2396,6 +2454,8 @@ function objectWebServer() {
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
                             delete objectLookup[req.body.name];
+
+                            sceneGraph.removeElementAndChildren(tempFolderName2);
                         }
 
                     }
@@ -2701,7 +2761,7 @@ function objectWebServer() {
                                     console.log(err);
                                 } else {
                                     // create the object if needed / possible
-                                    if (typeof objects[thisObjectId] === 'undefined') {
+                                    if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
                                         console.log('creating object from target file ' + tmpFolderFile);
                                         // createObjectFromTarget(tmpFolderFile);
                                         createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
@@ -2931,13 +2991,16 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             }
 
             if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                let objectId = utilities.readObject(objectLookup, folderVar);
+                let oldObjectId = utilities.readObject(objectLookup, folderVar);
                 try {
-                    objects[objectId].deconstruct();
+                    objects[oldObjectId].deconstruct();
                 } catch (e) {
-                    console.warn('Object exists without proper prototype: ' + objectId);
+                    console.warn('Object exists without proper prototype: ' + oldObjectId);
                 }
-                delete objects[objectId];
+                delete objects[oldObjectId];
+                delete knownObjects[oldObjectId];
+                delete objectLookup[oldObjectId];
+                sceneGraph.removeElementAndChildren(oldObjectId);
             }
             utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
             // entering the obejct in to the lookup table
@@ -2950,6 +3013,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             console.log('weiter im text ' + objectIDXML);
             utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+
+            sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
             objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
         }
@@ -3254,6 +3319,12 @@ function socketServer() {
             }
 
             object.matrix = msgContent.matrix;
+
+            if (typeof msgContent.worldId !== 'undefined' && msgContent.worldId !== object.worldId) {
+                object.worldId = msgContent.worldId;
+                console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
+                sceneGraph.updateObjectWorldId(msgContent.objectKey, object.worldId);
+            }
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
@@ -3965,11 +4036,12 @@ setupControllers();
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
     blockLinkController.setup(objects, globalVariables, objectsPath);
-    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
-    nodeController.setup(objects, globalVariables, objectsPath);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git);
+    nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
 checkInit('system');
