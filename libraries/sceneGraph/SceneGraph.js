@@ -254,6 +254,15 @@ class SceneGraph {
             sceneNode.initFromSerializedCopy(data[key], this);
         }.bind(this));
     }
+
+    getWorldPosition(id) {
+        this.recomputeGraph();
+
+        let node = this.graph[id];
+        if (node) {
+            return node.worldMatrix;
+        }
+    }
 }
 
 module.exports = SceneGraph;
