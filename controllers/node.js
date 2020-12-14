@@ -5,6 +5,7 @@ const Node = require('../models/Node');
 var objects = {};
 var globalVariables;
 var objectsPath;
+var sceneGraph;
 
 /**
  * Creates a node on the frame specified frame.
@@ -41,6 +42,8 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
             foundFrame.nodes[nodeKey] = node;
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
+            sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
+
         } else {
             errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
         }
@@ -129,6 +132,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
  */
 const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
     console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
+    if (nodeID === 'null') { nodeID = null; }
 
     utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
@@ -198,6 +202,9 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
                 }, lastEditor: body.lastEditor
             });
             updateStatus = 'updated position and/or scale';
+
+            let positionData = (typeof activeVehicle.ar !== 'undefined') ? activeVehicle.ar : activeVehicle;
+            sceneGraph.updateWithPositionData(objectID, frameID, nodeID, positionData.matrix, positionData.x, positionData.y, positionData.scale);
         }
         callback(200, updateStatus);
     });
@@ -207,10 +214,11 @@ const getNode = function (objectID, frameID, nodeID) {
     return utilities.getNode(objects, objectID, frameID, nodeID);
 };
 
-const setup = function (objects_, globalVariables_, objectsPath_) {
+const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
+    sceneGraph = sceneGraph_;
 };
 
 module.exports = {
