@@ -241,7 +241,7 @@ exports.getKnownObjects = function () {
     return knownObjects;
 };
 
-exports.getSceneGraph = function() {
+exports.getSceneGraph = function () {
     // send acyclic version of sceneGraph by removing linkedVehicles if needed
     sceneGraphReference.recomputeGraph();
     let sceneGraphCopy = {};
@@ -252,18 +252,18 @@ exports.getSceneGraph = function() {
     return sceneGraphCopy;
 };
 
-exports.getWorldGraph = function() {
+exports.getWorldGraph = function () {
     if (!worldGraphReference) {
         return {};
     }
     return worldGraphReference.compile().getSerializableCopy();
 };
 
-exports.getDistanceOneToMany = function(id1, ids) {
+exports.getDistanceOneToMany = function (id1, ids) {
     sceneGraphReference.recomputeGraph();
     let distances = {};
     distances[id1] = {};
-    ids.forEach(function(id2) {
+    ids.forEach(function (id2) {
         let computedDistance = sceneGraphReference.getDistanceBetween(id1, id2);
         console.log(computedDistance);
         distances[id1][id2] = computedDistance;
@@ -271,7 +271,7 @@ exports.getDistanceOneToMany = function(id1, ids) {
     return distances;
 };
 
-exports.onSceneGraphUpdated = function(callback) {
+exports.onSceneGraphUpdated = function (callback) {
     sceneGraphReference.onUpdate(callback);
 };
 
@@ -733,7 +733,7 @@ let setHardwareInterfaceSettingsImpl = null;
  * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
  * @param {successCallback} callback
  */
-exports.setHardwareInterfaceSettings = function(interfaceName, settings, limitToKeys, callback) {
+exports.setHardwareInterfaceSettings = function (interfaceName, settings, limitToKeys, callback) {
     return setHardwareInterfaceSettingsImpl(interfaceName, settings, limitToKeys, callback);
 };
 
@@ -745,7 +745,7 @@ exports.setHardwareInterfaceSettings = function(interfaceName, settings, limitTo
  * Complement to setup() which is necessary due to the unique positioning of
  * the setHardwareInterfaceSettings function
  */
-exports.setHardwareInterfaceSettingsImpl = function(setHardwareInterfaceSettings) {
+exports.setHardwareInterfaceSettingsImpl = function (setHardwareInterfaceSettings) {
     setHardwareInterfaceSettingsImpl = setHardwareInterfaceSettings;
 };
 

@@ -116,8 +116,8 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
             }
         });
     }
-/**
-    if (!fs.existsSync(firstFrame)) {
+    /**
+     if (!fs.existsSync(firstFrame)) {
         fs.mkdirSync(firstFrame, '0766', function (err) {
             if (err) {
                 console.error(err);
@@ -134,7 +134,7 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
         }
         //  writeObjectToFile(tempFolderName);
     }
-**/
+     **/
 };
 
 
@@ -703,6 +703,7 @@ exports.actionSender = function (action, timeToLive, beatport) {
 function doesObjectExist(objects, objectKey) {
     return objects.hasOwnProperty(objectKey);
 }
+
 exports.doesObjectExist = doesObjectExist;
 
 function getObject(objects, objectKey) {
@@ -711,6 +712,7 @@ function getObject(objects, objectKey) {
     }
     return null;
 }
+
 exports.getObject = getObject;
 
 function doesFrameExist(objects, objectKey, frameKey) {
@@ -722,6 +724,7 @@ function doesFrameExist(objects, objectKey, frameKey) {
     }
     return false;
 }
+
 exports.doesFrameExist = doesFrameExist;
 
 function getFrame(objects, objectKey, frameKey) {
@@ -733,6 +736,7 @@ function getFrame(objects, objectKey, frameKey) {
     }
     return null;
 }
+
 exports.getFrame = getFrame;
 
 function doesNodeExist(objects, objectKey, frameKey, nodeKey) {
@@ -744,6 +748,7 @@ function doesNodeExist(objects, objectKey, frameKey, nodeKey) {
     }
     return false;
 }
+
 exports.doesNodeExist = doesNodeExist;
 
 function getNode(objects, objectKey, frameKey, nodeKey) {
@@ -755,6 +760,7 @@ function getNode(objects, objectKey, frameKey, nodeKey) {
     }
     return null;
 }
+
 exports.getNode = getNode;
 
 /**
@@ -769,6 +775,7 @@ function getObjectAsync(objects, objectKey, callback) {
     var object = objects[objectKey];
     callback(null, object);
 }
+
 exports.getObjectAsync = getObjectAsync;
 
 /**
@@ -790,6 +797,7 @@ function getFrameAsync(objects, objectKey, frameKey, callback) {
         callback(null, object, frame);
     });
 }
+
 exports.getFrameAsync = getFrameAsync;
 
 /**
@@ -812,6 +820,7 @@ function getNodeAsync(objects, objectKey, frameKey, nodeKey, callback) {
         callback(null, object, frame, node);
     });
 }
+
 exports.getNodeAsync = getNodeAsync;
 
 /**
@@ -841,6 +850,7 @@ function getFrameOrNode(objects, objectKey, frameKey, nodeKey, callback) {
         callback(null, object, frame, node);
     });
 }
+
 exports.getFrameOrNode = getFrameOrNode;
 
 function forEachObject(objects, callback) {
@@ -849,23 +859,40 @@ function forEachObject(objects, callback) {
         callback(objects[objectKey], objectKey);
     }
 }
+
 exports.forEachObject = forEachObject;
 
 function forEachFrameInObject(object, callback) {
+    if (!object) return;
     for (var frameKey in object.frames) {
         if (!object.frames.hasOwnProperty(frameKey)) continue;
         callback(object.frames[frameKey], frameKey);
     }
 }
+
 exports.forEachFrameInObject = forEachFrameInObject;
 
 function forEachNodeInFrame(frame, callback) {
+    if (!frame) return;
     for (var nodeKey in frame.nodes) {
         if (!frame.nodes.hasOwnProperty(nodeKey)) continue;
         callback(frame.nodes[nodeKey], nodeKey);
     }
 }
+
 exports.forEachNodeInFrame = forEachNodeInFrame;
+
+
+function forEachLinkInFrame(frame, callback) {
+    if (!frame) return;
+    for (var nodeKey in frame.links) {
+        if (!frame.links.hasOwnProperty(nodeKey)) continue;
+        callback(frame.links[nodeKey], nodeKey);
+    }
+}
+
+exports.forEachLinkInFrame = forEachLinkInFrame;
+
 
 /**
  * Helper function to return the absolute path to the directory that should contain all
@@ -888,17 +915,20 @@ function getVideoDir(objectsPath, identityFolderName, isMobile, objectName) {
 
     return videoDir;
 }
+
 exports.getVideoDir = getVideoDir;
 
 // Ensures id is alphanumeric or -_
 function isValidId(id) {
     return id.match(/^[A-Za-z0-9_-]+$/);
 }
+
 exports.isValidId = isValidId;
 
 function goesUpDirectory(path) {
     return path.match(/\.\./);
 }
+
 exports.goesUpDirectory = goesUpDirectory;
 
 function deepCopy(item) {
@@ -922,7 +952,7 @@ function deepCopy(item) {
 
 exports.deepCopy = deepCopy;
 
-exports.httpGet = function(url) {
+exports.httpGet = function (url) {
     return new Promise((resolve, reject) => {
         request(url, (error, response, body) => {
             if (error) reject(error);
