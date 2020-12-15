@@ -618,7 +618,7 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
-nodeUtilities.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
+nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
 console.log('Done');
 
@@ -1088,7 +1088,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     var HOST = '255.255.255.255';
 
-    console.log('creating beat for object: ' + thisId);
+    //console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
     objects[thisId].port = serverPort;
@@ -1100,7 +1100,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     }
 
     // Objects
-    console.log('with version number: ' + thisVersionNumber);
+    //  console.log('with version number: ' + thisVersionNumber);
     var zone = '';
     if (objects[thisId].zone) zone = objects[thisId].zone;
 
@@ -1247,7 +1247,7 @@ function objectBeatServer() {
         }
         // check if action 'ping'
         if (msgContent.action === 'ping') {
-            console.log(msgContent.action);
+            //console.log(msgContent.action);
             for (let key in objects) {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
@@ -1278,7 +1278,9 @@ function objectBeatServer() {
 async function getKnownSceneGraph(ip, port) {
     // 1. check if we already have an up-to-date sceneGraph from this server
     let needsThisGraph = true;
-    if (!needsThisGraph) { return; } // TODO: implement placeholder
+    if (!needsThisGraph) {
+        return;
+    } // TODO: implement placeholder
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
     const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
@@ -1874,11 +1876,11 @@ function objectWebServer() {
         // webFrontend realtime messaging
         webServer.post('/webUI/spatial/locator', function (req, res) {
             console.log({
-                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
                 lastEditor: null
             });
             utilities.actionSender({
-                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
                 lastEditor: null
             });
             res.status(200).send('ok');
@@ -3743,9 +3745,9 @@ var engine = {
                             if (this.internalObjectDestination.blocks) {
                                 this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
-                               /* for (let key in thisNode.processedData) {
-                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
-                                }*/
+                                /* for (let key in thisNode.processedData) {
+                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                 }*/
                                 this.internalObjectDestination.data[0] = utilities.deepCopy(thisNode.processedData);
 
                                 this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
@@ -3865,9 +3867,9 @@ var engine = {
 
     computeProcessedBlockData: function (thisNode, thisLink, index, internalObjectDestination) {
         // save data in local destination object;
-       /* for (let key1 in thisNode.processedData[index]) {
-            internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
-        }*/
+        /* for (let key1 in thisNode.processedData[index]) {
+             internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
+         }*/
         internalObjectDestination.data = utilities.deepCopy(thisNode.processedData[index]);
 
         // trigger hardware API to push data to the objects

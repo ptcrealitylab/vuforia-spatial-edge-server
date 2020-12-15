@@ -84,6 +84,7 @@ recorder.recurse = function (obj, objectInTime, keyString) {
 
 recorder.getItemFromArray = function (object, array) {
     let item = object;
+    if (!item) return null;
     let returnItem = {};
     array.forEach(function (data) {
         if (data !== '') {
@@ -97,6 +98,7 @@ recorder.getItemFromArray = function (object, array) {
             }
             // let newItem = item[data];
             returnItem = item;
+            if(item[data])
             item = item[data];
         }
     });
