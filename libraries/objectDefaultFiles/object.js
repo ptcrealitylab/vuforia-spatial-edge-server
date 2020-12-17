@@ -584,6 +584,7 @@
                 this.onlyAttachesToWorld = makeSendStub('onlyAttachesToWorld');
                 this.onlyAttachesToObjects = makeSendStub('onlyAttachesToObjects');
                 this.setAttachesTo = makeSendStub('setAttachesTo');
+                this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1504,6 +1505,20 @@
 
             postDataToParent({
                 attachesTo: spatialObject.attachesTo
+            });
+        };
+
+        this.subscribeToWorldId = function(callback) {
+            spatialObject.messageCallBacks.worldIdCall = function (msgContent) {
+                if (typeof msgContent.updateWorldId !== 'undefined') {
+                    if (spatialObject.object === msgContent.updateWorldId.objectId) {
+                        callback(msgContent.updateWorldId.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                getWorldId: true
             });
         };
 
