@@ -444,6 +444,11 @@
             }
         }
 
+        // can be triggered by real-time system to refresh public data when editor received a message from another client
+        if (typeof msgContent.workerId !== 'undefined') {
+            console.log('set workerId to ' + msgContent.workerId);
+            workerId = msgContent.workerId;
+        }
     };
 
     /**
@@ -585,6 +590,7 @@
                 this.onlyAttachesToObjects = makeSendStub('onlyAttachesToObjects');
                 this.setAttachesTo = makeSendStub('setAttachesTo');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
+                this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1482,6 +1488,12 @@
                 getScreenDimensions: true
             });
 
+        };
+
+        this.useWebGlWorker = function() {
+            postDataToParent({
+                useWebGlWorker: true
+            });
         };
 
         this.onlyAttachesToWorld = function() {
