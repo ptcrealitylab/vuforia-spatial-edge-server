@@ -553,6 +553,7 @@
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
                 this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
+                this.subscribeToModelAndView = makeSendStub('subscribeToModelAndView');
                 this.subscribeToScreenPosition = makeSendStub('subscribeToScreenPosition');
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
@@ -603,6 +604,7 @@
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
+                this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
                 this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
                 this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
@@ -1099,6 +1101,14 @@
             });
         };
 
+        this.subscribeToModelAndView = function() {
+            spatialObject.sendMatrices.model = true;
+            spatialObject.sendMatrices.view = true;
+            postDataToParent({
+                sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
             // postAllDataToParent();
@@ -1547,6 +1557,7 @@
         // ensures each callback has a unique name
         var callBackCounter = {
             numMatrixCallbacks: 0,
+            numModelAndViewCallbacks: 0,
             numAllMatricesCallbacks: 0,
             numWorldMatrixCallbacks: 0,
             numGroundPlaneMatrixCallbacks: 0
@@ -1578,6 +1589,18 @@
             spatialObject.messageCallBacks['matrixCall' + callBackCounter.numMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.modelViewMatrix !== 'undefined') {
                     callback(msgContent.modelViewMatrix, spatialObject.matrices.projection);
+                }
+            }.bind(this);
+        };
+
+        this.addModelAndViewListener = function(callback) {
+            if (!spatialObject.sendMatrices.model || !spatialObject.sendMatrices.view) {
+                this.subscribeToModelAndView();
+            }
+            callBackCounter.numModelAndViewCallbacks++;
+            spatialObject.messageCallBacks['matrixCall' + callBackCounter.numModelAndViewCallbacks] = function (msgContent) {
+                if (typeof msgContent.modelMatrix !== 'undefined' && typeof msgContent.viewMatrix !== 'undefined') {
+                    callback(msgContent.modelMatrix, msgContent.viewMatrix, spatialObject.matrices.projection);
                 }
             }.bind(this);
         };
