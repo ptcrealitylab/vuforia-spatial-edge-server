@@ -892,7 +892,7 @@ exports.getVideoDir = getVideoDir;
 
 // Ensures id is alphanumeric or -_
 function isValidId(id) {
-    return id.match(/^[A-Za-z0-9_-]+$/);
+    return id.match(/^[A-Za-z0-9_ -]+$/);
 }
 exports.isValidId = isValidId;
 
