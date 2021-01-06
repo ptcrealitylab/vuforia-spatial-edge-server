@@ -60,6 +60,8 @@ function makeStub(functionName) {
         let width = img.width;
         let height = img.height;
         let canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
         let gfx = canvas.getContext('2d');
         gfx.width = width;
         gfx.height = height;
