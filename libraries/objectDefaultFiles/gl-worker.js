@@ -145,6 +145,11 @@ function makeStub(functionName) {
 
 window.addEventListener('message', function(event) {
   const message = event.data;
+  if (!message) {
+    console.warn('Event missing data', message);
+    return;
+  }
+
   if (message.name === 'bootstrap') {
     for (const fnName of message.functions) {
       gl[fnName] = makeStub(fnName);
