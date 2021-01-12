@@ -591,6 +591,8 @@
                 this.onlyAttachesToObjects = makeSendStub('onlyAttachesToObjects');
                 this.setAttachesTo = makeSendStub('setAttachesTo');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
+                this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
+                this.getPositionInWorld = makeSendStub('getPositionInWorld');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
@@ -1541,6 +1543,34 @@
 
             postDataToParent({
                 getWorldId: true
+            });
+        };
+
+        this.subscribeToPositionInWorld = function(callback) {
+            spatialObject.messageCallBacks.positionInWorldCall = function (msgContent) {
+                if (typeof msgContent.positionInWorld !== 'undefined') {
+                    if (spatialObject.object === msgContent.positionInWorld.objectId) {
+                        callback(msgContent.positionInWorld.worldMatrix, msgContent.positionInWorld.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                sendPositionInWorld: true
+            });
+        };
+
+        this.getPositionInWorld = function(callback) {
+            spatialObject.messageCallBacks.getPositionInWorldCall = function (msgContent) {
+                if (typeof msgContent.getPositionInWorld !== 'undefined') {
+                    if (spatialObject.object === msgContent.getPositionInWorld.objectId) {
+                        callback(msgContent.getPositionInWorld.worldMatrix, msgContent.getPositionInWorld.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                getPositionInWorld: true
             });
         };
 
