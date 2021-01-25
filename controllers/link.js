@@ -19,7 +19,7 @@ function getLinkData(fullEntry, wasAdded) {
     var linkAddedData = null;
 
     if (fullEntry) {
-        console.log('getLinkData', fullEntry);
+        // console.log('getLinkData', fullEntry);
 
         var linkObjectA = fullEntry['objectA'];
         var linkObjectB = fullEntry['objectB'];
@@ -65,6 +65,7 @@ function getLinkData(fullEntry, wasAdded) {
  * @param {Link} body
  */
 const newLink = function (objectID, frameID, linkID, body) {
+
     var updateStatus = 'nothing happened';
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
@@ -77,9 +78,22 @@ const newLink = function (objectID, frameID, linkID, body) {
             body.frameA === body.frameB &&
             body.nodeA === body.nodeB);
 
-        foundFrame.links[linkID] = body;
+        utilities.forEachLinkInFrame(utilities.getFrame(objects, body.objectA, body.frameA), function (thisLink) {
+            if (!body.loop) {
+                console.log('link already exists');
+                body.loop = (body.objectA === thisLink.objectA &&
+                    body.objectB === thisLink.objectB &&
+                    body.frameA === thisLink.frameA &&
+                    body.frameB === thisLink.frameB &&
+                    body.nodeA === thisLink.nodeA &&
+                    body.nodeB === thisLink.nodeB
+                );
+            }
+        });
+
 
         if (!body.loop) {
+            foundFrame.links[linkID] = body;
             console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
@@ -230,7 +244,7 @@ const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
     return updateStatus;
 };
 
-const setup = function(objects_, knownObjects_, socketArray_, globalVariables_, hardwareAPI_, objectsPath_, socketUpdater_) {
+const setup = function (objects_, knownObjects_, socketArray_, globalVariables_, hardwareAPI_, objectsPath_, socketUpdater_) {
     objects = objects_;
     knownObjects = knownObjects_;
     socketArray = socketArray_;
