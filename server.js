@@ -338,7 +338,7 @@ if (!isMobile) {
 
 // This file hosts all kinds of utilities programmed for the server
 var utilities = require('./libraries/utilities');
-
+var nodeUtilities = require('./libraries/nodeUtilities');
 var recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
@@ -618,6 +618,8 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
+nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
+
 console.log('Done');
 
 console.log('Loading Objects');
@@ -736,7 +738,7 @@ function loadObjects() {
 
                         if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
                             var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = utilities.deepCopy(tempItem[0]);
                         }
                     }
                 }
@@ -1086,7 +1088,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     var HOST = '255.255.255.255';
 
-    console.log('creating beat for object: ' + thisId);
+    //console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
     objects[thisId].port = serverPort;
@@ -1098,7 +1100,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     }
 
     // Objects
-    console.log('with version number: ' + thisVersionNumber);
+    //  console.log('with version number: ' + thisVersionNumber);
     var zone = '';
     if (objects[thisId].zone) zone = objects[thisId].zone;
 
@@ -1245,7 +1247,7 @@ function objectBeatServer() {
         }
         // check if action 'ping'
         if (msgContent.action === 'ping') {
-            console.log(msgContent.action);
+            //console.log(msgContent.action);
             for (let key in objects) {
                 objectBeatSender(beatPort, key, objects[key].ip, true);
             }
@@ -1276,7 +1278,9 @@ function objectBeatServer() {
 async function getKnownSceneGraph(ip, port) {
     // 1. check if we already have an up-to-date sceneGraph from this server
     let needsThisGraph = true;
-    if (!needsThisGraph) { return; } // TODO: implement placeholder
+    if (!needsThisGraph) {
+        return;
+    } // TODO: implement placeholder
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
     const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
@@ -1872,11 +1876,11 @@ function objectWebServer() {
         // webFrontend realtime messaging
         webServer.post('/webUI/spatial/locator', function (req, res) {
             console.log({
-                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
                 lastEditor: null
             });
             utilities.actionSender({
-                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip },
+                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
                 lastEditor: null
             });
             res.status(200).send('ok');
@@ -3709,7 +3713,7 @@ var engine = {
         if ((thisNode.type in this.nodeTypeModules)) {
             this.nodeTypeModules[thisNode.type].render(object, frame, node, thisNode, function (object, frame, node, thisNode) {
                 _this.processLinks(object, frame, node, thisNode);
-            });
+            }, nodeUtilities);
         }
     },
     // once data is processed it will determin where to send it.
@@ -3741,9 +3745,10 @@ var engine = {
                             if (this.internalObjectDestination.blocks) {
                                 this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
-                                for (let key in thisNode.processedData) {
-                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
-                                }
+                                /* for (let key in thisNode.processedData) {
+                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                 }*/
+                                this.internalObjectDestination.data[0] = utilities.deepCopy(thisNode.processedData);
 
                                 this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
                                 // this needs to be at the beginning;
@@ -3768,10 +3773,11 @@ var engine = {
         }
 
         // save data in local destination object;
-        let key;
+        /*  let key;
         for (key in thisNode.processedData) {
             internalObjectDestination.data[key] = thisNode.processedData[key];
-        }
+        }*/
+        internalObjectDestination.data = utilities.deepCopy(thisNode.processedData);
 
         // trigger hardware API to push data to the objects
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);
@@ -3798,7 +3804,7 @@ var engine = {
         if ((thisBlock.type in this.blockModules)) {
             this.blockModules[thisBlock.type].render(object, frame, node, block, index, thisBlock, function (object, frame, node, block, index, thisBlock) {
                 _this.processBlockLinks(object, frame, node, block, index, thisBlock);
-            });
+            }, nodeUtilities);
         }
     },
     // this is for after a logic block is processed.
@@ -3807,7 +3813,7 @@ var engine = {
         for (var i = 0; i < 4; i++) {
 
             // check if there is data to be processed
-            if (typeof thisBlock.processedData[i].value === 'number') {
+            if (typeof thisBlock.processedData[i].value === 'number' || typeof thisBlock.processedData[i].value === 'object') {
 
                 this.router = null;
 
@@ -3846,10 +3852,11 @@ var engine = {
                             this.link = this.logic.links[linkKey];
 
                             this.internalObjectDestination = this.logic.blocks[this.link.nodeB];
-                            let key;
+                            /* let key;
                             for (key in thisBlock.processedData[i]) {
                                 this.internalObjectDestination.data[this.link.logicB][key] = thisBlock.processedData[i][key];
-                            }
+                            }*/
+                            this.internalObjectDestination.data[this.link.logicB] = utilities.deepCopy(thisBlock.processedData[i]);
                             this.blockTrigger(object, frame, node, this.link.nodeB, this.link.logicB, this.internalObjectDestination);
                         }
                     }
@@ -3860,9 +3867,10 @@ var engine = {
 
     computeProcessedBlockData: function (thisNode, thisLink, index, internalObjectDestination) {
         // save data in local destination object;
-        for (let key1 in thisNode.processedData[index]) {
-            internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
-        }
+        /* for (let key1 in thisNode.processedData[index]) {
+             internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
+         }*/
+        internalObjectDestination.data = utilities.deepCopy(thisNode.processedData[index]);
 
         // trigger hardware API to push data to the objects
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);
