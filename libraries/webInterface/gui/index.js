@@ -1092,6 +1092,7 @@ realityServer.gotClick = function (event) {
             let newNode = document.getElementById('targetId').content.cloneNode(true);
             newNode.querySelector('.dropZoneElement').id = 'targetDropZone' + objectKey;
             newNode.querySelector('.imagegen-button').dataset.objectName = thisObject.name;
+            newNode.querySelector('.imageremove-button').dataset.objectName = thisObject.name;
 
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
@@ -2245,5 +2246,11 @@ function setGeneratedTarget(clickedElem, callback) {
 //   clickedElem.download = 'autogen-target.jpg';
 // }
 
+function removeTarget(clickedElem, callback) {
+    const objectName = clickedElem.dataset.objectName;
+    realityServer.sendRequest('/content/' + objectName, 'DELETE', function (_state) {
+        callback();
+    });
+}
 
 realityServer.initialize();
