@@ -1377,7 +1377,7 @@ function objectWebServer() {
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     if (isMobile) {
         const LocalUIApp = require('./libraries/LocalUIApp.js');
-        const uiPath = path.join(__dirname, '../userinterface');
+        const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
         const localUserInterfaceApp = new LocalUIApp(uiPath, addonFolders);
         localUserInterfaceApp.setup();
         localUserInterfaceApp.listen(serverUserInterfaceAppPort);
