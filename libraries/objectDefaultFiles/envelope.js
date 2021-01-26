@@ -365,6 +365,12 @@
          * @param {string} msg - stringified JSON message
          */
         Envelope.prototype.onWindowMessage = function(msg) {
+            if (typeof msg === 'string') {
+                return;
+            }
+            if (typeof msg.data !== 'string') {
+                return;
+            }
             let msgContent = JSON.parse(msg.data);
             if (typeof msgContent.envelopeMessage === 'undefined') {
                 return;
@@ -397,7 +403,7 @@
             // update containedFrames and ordering
             var isAlreadyContained = !!this.containedFrames[frameAddedMessage.frameId];
             if (isAlreadyContained) { return; }
-            this.containedFrames[frameAddedMessage.frameId] = new FrameData(frameAddedMessage.frameId, frameAddedMessage.frameType);
+            this.containedFrames[frameAddedMessage.frameId] = new FrameData(frameAddedMessage.objectId, frameAddedMessage.frameId, frameAddedMessage.frameType);
             if (this.areFramesOrdered) {
                 this.frameIdOrdering.push(frameAddedMessage.frameId);
             }
@@ -722,10 +728,12 @@
      * More params can be added as necessary for more features.
      *
      * @constructor
+     * @param {string} objectId - the object uuid
      * @param {string} id - the frame uuid, used as an address to send messages to it
      * @param {string} type - the frame type, used to ensure it is a compatible with this envelope or to distinguish between different contained frames' capabilities
      */
-    function FrameData(id, type) {
+    function FrameData(objectId, id, type) {
+        this.objectId = objectId;
         this.id = id;
         this.type = type;
         this.categories = [type];

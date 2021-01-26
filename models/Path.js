@@ -6,9 +6,9 @@ function Path() {
         object: '',
         tool: '',
         node: ''
-    },
-    this.mode = '', 
-    this.path = [],
+    };
+    this.mode = '';
+    this.path = [];
     this.worldObject = null;
 }
 

@@ -68,6 +68,12 @@
          * Triggers all callbacks functions when the iframe receives an 'envelopeMessage' POST message from the parent window.
          */
         window.addEventListener('message', function (msg) {
+            if (typeof msg === 'string') {
+                return;
+            }
+            if (typeof msg.data !== 'string') {
+                return;
+            }
             let msgContent = JSON.parse(msg.data);
             if (typeof msgContent.envelopeMessage === 'undefined') {
                 return;
@@ -139,7 +145,7 @@
                         });
 
                         screenPositionListenerHandle = realityInterface.addMatrixListener(function(modelView, projection) {
-                            
+
                             let modelViewProjection = [];
                             multiplyMatrix(modelView, projection, modelViewProjection);
 
@@ -197,7 +203,7 @@
                                     z: modelView[10]
                                 }
                             };
-                            
+
                             this.sendMessageToEnvelope({
                                 screenPosition: mostRecentScreenPosition,
                                 worldCoordinates: mostRecentModelView

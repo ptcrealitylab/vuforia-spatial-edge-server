@@ -41,6 +41,7 @@
         fullscreenZPosition: 0,
         sendSticky: false,
         isFullScreenExclusive: false,
+        attachesTo: null,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -443,6 +444,11 @@
             }
         }
 
+        // can be triggered by real-time system to refresh public data when editor received a message from another client
+        if (typeof msgContent.workerId !== 'undefined') {
+            console.log('set workerId to ' + msgContent.workerId);
+            workerId = msgContent.workerId;
+        }
     };
 
     /**
@@ -547,6 +553,7 @@
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
                 this.subscribeToMatrix = makeSendStub('subscribeToMatrix');
+                this.subscribeToModelAndView = makeSendStub('subscribeToModelAndView');
                 this.subscribeToScreenPosition = makeSendStub('subscribeToScreenPosition');
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
@@ -580,6 +587,12 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.prefersAttachingToWorld = makeSendStub('prefersAttachingToWorld');
+                this.prefersAttachingToObjects = makeSendStub('prefersAttachingToObjects');
+                this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
+                this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
+                this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -592,6 +605,7 @@
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
+                this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
                 this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
                 this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
@@ -1088,6 +1102,14 @@
             });
         };
 
+        this.subscribeToModelAndView = function() {
+            spatialObject.sendMatrices.model = true;
+            spatialObject.sendMatrices.view = true;
+            postDataToParent({
+                sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
             // postAllDataToParent();
@@ -1479,6 +1501,70 @@
 
         };
 
+        this.useWebGlWorker = function() {
+            postDataToParent({
+                useWebGlWorker: true
+            });
+        };
+
+        this.prefersAttachingToWorld = function() {
+            spatialObject.attachesTo = ['world'];
+
+            postDataToParent({
+                attachesTo: spatialObject.attachesTo
+            });
+        };
+
+        this.prefersAttachingToObjects = function() {
+            spatialObject.attachesTo = ['object'];
+
+            postDataToParent({
+                attachesTo: spatialObject.attachesTo
+            });
+        };
+
+        this.subscribeToWorldId = function(callback) {
+            spatialObject.messageCallBacks.worldIdCall = function (msgContent) {
+                if (typeof msgContent.updateWorldId !== 'undefined') {
+                    if (spatialObject.object === msgContent.updateWorldId.objectId) {
+                        callback(msgContent.updateWorldId.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                getWorldId: true
+            });
+        };
+
+        this.subscribeToPositionInWorld = function(callback) {
+            spatialObject.messageCallBacks.positionInWorldCall = function (msgContent) {
+                if (typeof msgContent.positionInWorld !== 'undefined') {
+                    if (spatialObject.object === msgContent.positionInWorld.objectId) {
+                        callback(msgContent.positionInWorld.worldMatrix, msgContent.positionInWorld.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                sendPositionInWorld: true
+            });
+        };
+
+        this.getPositionInWorld = function(callback) {
+            spatialObject.messageCallBacks.getPositionInWorldCall = function (msgContent) {
+                if (typeof msgContent.getPositionInWorld !== 'undefined') {
+                    if (spatialObject.object === msgContent.getPositionInWorld.objectId) {
+                        callback(msgContent.getPositionInWorld.worldMatrix, msgContent.getPositionInWorld.worldId);
+                    }
+                }
+            };
+
+            postDataToParent({
+                getPositionInWorld: true
+            });
+        };
+
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
          * Hides the frame itself and instead populates a background context within the editor with this frame's contents
@@ -1492,6 +1578,7 @@
         // ensures each callback has a unique name
         var callBackCounter = {
             numMatrixCallbacks: 0,
+            numModelAndViewCallbacks: 0,
             numAllMatricesCallbacks: 0,
             numWorldMatrixCallbacks: 0,
             numGroundPlaneMatrixCallbacks: 0
@@ -1523,6 +1610,18 @@
             spatialObject.messageCallBacks['matrixCall' + callBackCounter.numMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.modelViewMatrix !== 'undefined') {
                     callback(msgContent.modelViewMatrix, spatialObject.matrices.projection);
+                }
+            }.bind(this);
+        };
+
+        this.addModelAndViewListener = function(callback) {
+            if (!spatialObject.sendMatrices.model || !spatialObject.sendMatrices.view) {
+                this.subscribeToModelAndView();
+            }
+            callBackCounter.numModelAndViewCallbacks++;
+            spatialObject.messageCallBacks['matrixCall' + callBackCounter.numModelAndViewCallbacks] = function (msgContent) {
+                if (typeof msgContent.modelMatrix !== 'undefined' && typeof msgContent.viewMatrix !== 'undefined') {
+                    callback(msgContent.modelMatrix, msgContent.viewMatrix, spatialObject.matrices.projection);
                 }
             }.bind(this);
         };

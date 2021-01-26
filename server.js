@@ -1435,6 +1435,8 @@ function objectWebServer() {
         html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
         html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
 
+        html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -2945,6 +2947,48 @@ function objectWebServer() {
 
                 });
             });
+
+        webServer.delete(objectInterfaceFolder + 'content/:id', function(req, res) {
+            if (!utilities.isValidId(req.params.id)) {
+                res.status(400).send('Invalid object name. Must be alphanumeric.');
+                return;
+            }
+
+            tmpFolderFile = req.params.id;
+            console.log('DELETING TARGET FROM OBJECT: ' + tmpFolderFile);
+
+            let objectKey = utilities.readObject(objectLookup, tmpFolderFile);
+
+            // reset checksum
+            objects[objectKey].tcs = 0;
+
+            // delete target files
+
+            let targetDir = path.join(objectsPath, tmpFolderFile, identityFolderName, 'target');
+            try {
+                fs.unlinkSync(path.join(targetDir, 'target.xml'));
+            } catch (e) {
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.xml'));
+            }
+            try {
+                fs.unlinkSync(path.join(targetDir, 'target.jpg'));
+            } catch (e) {
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.jpg'));
+            }
+            try {
+                fs.unlinkSync(path.join(targetDir, 'target.dat'));
+            } catch (e) {
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.dat'));
+            }
+
+            // recompute isAnchor (depends if there is an initialized world object)
+            setAnchors();
+
+            // save to disk and respond
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            res.send('ok');
+        });
+
     } else {
         webServer.get(objectInterfaceFolder, function (req, res) {
             //   console.log("GET 21");
@@ -3746,8 +3790,8 @@ var engine = {
                                 this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
                                 /* for (let key in thisNode.processedData) {
-                                     this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
-                                 }*/
+                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                                }*/
                                 this.internalObjectDestination.data[0] = utilities.deepCopy(thisNode.processedData);
 
                                 this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
@@ -3868,8 +3912,8 @@ var engine = {
     computeProcessedBlockData: function (thisNode, thisLink, index, internalObjectDestination) {
         // save data in local destination object;
         /* for (let key1 in thisNode.processedData[index]) {
-             internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
-         }*/
+            internalObjectDestination.data[key1] = thisNode.processedData[index][key1];
+        }*/
         internalObjectDestination.data = utilities.deepCopy(thisNode.processedData[index]);
 
         // trigger hardware API to push data to the objects
