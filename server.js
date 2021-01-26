@@ -1373,12 +1373,14 @@ function objectWebServer() {
     webServer.use(bodyParser.json());
     // define a couple of static directory routs
 
-
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     if (isMobile) {
         const LocalUIApp = require('./libraries/LocalUIApp.js');
         const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
-        const localUserInterfaceApp = new LocalUIApp(uiPath, addonFolders);
+        const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
+        const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
+        console.log('SELECTED UI PATH: ' + selectedUiPath);
+        const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
         localUserInterfaceApp.setup();
         localUserInterfaceApp.listen(serverUserInterfaceAppPort);
     }
