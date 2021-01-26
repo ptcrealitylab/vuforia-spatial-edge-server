@@ -587,9 +587,8 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
-                this.onlyAttachesToWorld = makeSendStub('onlyAttachesToWorld');
-                this.onlyAttachesToObjects = makeSendStub('onlyAttachesToObjects');
-                this.setAttachesTo = makeSendStub('setAttachesTo');
+                this.prefersAttachingToWorld = makeSendStub('prefersAttachingToWorld');
+                this.prefersAttachingToObjects = makeSendStub('prefersAttachingToObjects');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
@@ -1508,7 +1507,7 @@
             });
         };
 
-        this.onlyAttachesToWorld = function() {
+        this.prefersAttachingToWorld = function() {
             spatialObject.attachesTo = ['world'];
 
             postDataToParent({
@@ -1516,16 +1515,8 @@
             });
         };
 
-        this.onlyAttachesToObjects = function() {
+        this.prefersAttachingToObjects = function() {
             spatialObject.attachesTo = ['object'];
-
-            postDataToParent({
-                attachesTo: spatialObject.attachesTo
-            });
-        };
-
-        this.setAttachesTo = function(list) {
-            spatialObject.attachesTo = list;
 
             postDataToParent({
                 attachesTo: spatialObject.attachesTo
