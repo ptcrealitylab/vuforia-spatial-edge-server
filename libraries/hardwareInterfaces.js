@@ -699,6 +699,18 @@ exports.getObjectIdFromObjectName = function (object) {
     return utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
 };
 
+exports.getObjectNameFromObjectId = function (objectId) {
+    return objects[objectId].name;
+};
+
+exports.getToolNameFromToolId = function (objectId, toolId) {
+    return objects[objectId].frames[toolId].name;
+};
+
+exports.getNodeNameFromNodeId = function (objectId, toolId, nodeId) {
+    return objects[objectId].frames[toolId].nodes[nodeId].name;
+};
+
 exports.getMarkerSize = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     return objects[objectID].targetSize;
