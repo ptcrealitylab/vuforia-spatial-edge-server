@@ -449,6 +449,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
                 }
                 if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                     objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
+                    objects[objectID].frames[frameUuid].name = tool;
                 }
                 //define the tool that is used with this frame
                 objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: newTool};
@@ -694,6 +695,16 @@ exports.deactivate = function (object) {
     }
 };
 
+exports.hasTool = function(object, tool) {
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    if (objectID) {
+        if (objects.hasOwnProperty(objectID)) {
+            let toolId = objectID + tool;
+            return objects[objectID].frames.hasOwnProperty(toolId);
+        }
+    }
+    return false;
+};
 
 exports.getObjectIdFromObjectName = function (object) {
     return utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
