@@ -446,7 +446,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
  * @param objectKey
  * @param frameKey
  * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
- * @param res
+ * @param callback
  */
 const changeVisualization = function(objectKey, frameKey, body, callback) {
     console.log('change visualization');
