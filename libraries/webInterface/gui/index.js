@@ -511,6 +511,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                     let thisFullScreen = document.getElementById('fullScreenId').content.cloneNode(true);
                     thisFullScreen.querySelector('.fullscreen').id = 'fullscreen' + objectKey;
                     thisFullScreen.querySelector('#fullscreen' + objectKey).dataset.objectName = thisObject.name;
+                    thisFullScreen.querySelector('.fullscreen').classList.add('purple');
+                    thisFullScreen.querySelector('.fullscreen').classList.remove('blue');
+
+                    if (!thisObject.screenPort) {
+                        thisFullScreen.querySelector('.fullscreen').classList.remove('purple');
+                        thisFullScreen.querySelector('.fullscreen').classList.add('blue');
+                        thisFullScreen.querySelector('.fullscreen').innerText = 'VIEW TARGET IMAGE';
+                    }
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
                     }
@@ -710,7 +718,6 @@ realityServer.updateManageHardwareInterfaces = function () {
             interfaceInfo.dom.querySelector('.name').classList.add('inactive');
         }
 
-        // TODO: fix for gear icon inside of name
         if (typeof interfaceInfo.settings !== 'undefined') {
 
             interfaceInfo.dom.querySelector('.gear').classList.remove('hidden');
@@ -1938,21 +1945,32 @@ realityServer.toggleFullScreen = function (item) {
     let thisScreen = thisIframe;
     // if(item) thisScreen = item;
 
+    let thisScreenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
+
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
-        thisIframe.src = 'about:blank'; // Clear iframe before loading
-        const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
-        const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
-        fetch(targetUrl).then((response) => {
-            if (response.ok) {
-                thisIframe.contentDocument.write(iframeContents);
-                thisIframe.contentDocument.close();
-            } else {
-                setGeneratedTarget(item, () => {
+
+        // if we have set up a screen port, open up that hardware interface application
+
+        if (thisScreenPort) {
+            thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
+        } else {
+            // otherwise just view the target image in fullscreen
+            thisIframe.src = 'about:blank'; // Clear iframe before loading
+            const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
+            const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
+            fetch(targetUrl).then((response) => {
+                if (response.ok) {
                     thisIframe.contentDocument.write(iframeContents);
                     thisIframe.contentDocument.close();
-                });
-            }
-        });
+                } else {
+                    setGeneratedTarget(item, () => {
+                        thisIframe.contentDocument.write(iframeContents);
+                        thisIframe.contentDocument.close();
+                    });
+                }
+            });
+        }
+
         if (thisScreen.mozRequestFullScreen) {
             thisScreen.mozRequestFullScreen();
         } else {

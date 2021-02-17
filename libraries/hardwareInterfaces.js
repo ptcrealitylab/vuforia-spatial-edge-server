@@ -495,6 +495,9 @@ exports.addNode = function (object, tool, node, type, position) {
         ];
         objects[objectID].tcs = 0;
 
+        // store mapping of name->ID in lookup table
+        utilities.writeObject(objectLookup, object, objectID);
+
         if (globalVariables.saveToDisk) {
             fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
                 if (err) {
