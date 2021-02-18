@@ -538,3 +538,18 @@ position: relative;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+#tooltip {
+    position: absolute;
+    width: unset;
+    font-size: 14px;
+    padding-left: 10px;
+    padding-right: 10px;
+    pointer-events: none;
+}
+
+.grey {
+    border-color: rgb(128,128,128);
+    color: rgb(200,200,200);
+    background-color: rgb(64,64,64);
+}
