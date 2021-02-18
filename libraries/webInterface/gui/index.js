@@ -82,6 +82,13 @@ realityServer.initialize = function () {
     });
 
     document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', function(e) {
+        setTimeout(function() {
+            console.log('pointerup');
+            onPointerMove(e);
+        }, 10);
+
+    }); // also trigger at the end of clicks
 
     document.getElementById('subtitle').innerText = 'Version: ' + realityServer.states.version + ' - Server IP: ' +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + realityServer.states.serverPort;
@@ -144,7 +151,7 @@ function onPointerMove(e) {
 }
 
 function onPointerHover(timestamp, x, y, text) {
-    if (lastMovedTimestamp !== timestamp) {
+    if (lastMovedTimestamp !== timestamp || !showHelpTooltip) {
         return;
     }
     // let elementMouseIsOver = document.elementFromPoint(x, y);
@@ -188,7 +195,6 @@ realityServer.initializeHelp = function () {
             window.localStorage.removeItem('showHelp');
         } else {
             showHelp();
-            window.localStorage.setItem('showHelp', true);
         }
     });
 
@@ -249,8 +255,11 @@ function showHelp() {
     // make the button say "Hide Help" instead of "Help"
     document.getElementById('showHelpButton').innerText = hideHelpText;
 
-    setTooltipTextForElement(document.getElementById('showHelpButton'), 'Show or hide help text');
+    setTooltipTextForElement(document.getElementById('showHelpButton'), 'For advanced users: hide all help text and' +
+        ' tutorials');
     showHelpTooltip = true;
+
+    window.localStorage.setItem('showHelp', true);
 }
 
 function hideHelp() {
@@ -912,12 +921,22 @@ realityServer.updateManageFrames = function () {
         if (frameInfo.metadata.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
+
+            setTooltipTextForElement('.active', 'This tool is currently active and will be visible in the pocket' +
+                ' of Spatial Toolbox apps in this network while pointing at objects on this server', frameInfo.dom);
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
+
+            setTooltipTextForElement('.active', 'This tool is inactive and won\'t show up in the pocket', frameInfo.dom);
         }
 
         addFrameEnabledToggle(activeToggleButton, frameKey, frameInfo); // create inside closure so interfaceInfo doesn't change after definition
+
+        setTooltipTextForElement('.content', 'Preview this tool in your web browser. All tools are just HTML pages,' +
+            ' but some might not load properly in the browser if they have AR-specific capabilities.', frameInfo.dom);
+
+        setTooltipTextForElement('.download', 'Download a .zip backup of this tool', frameInfo.dom);
 
         this.getDomContents().appendChild(frameInfo.dom, true);
     }
@@ -987,6 +1006,10 @@ realityServer.updateManageHardwareInterfaces = function () {
             interfaceInfo.dom.querySelector('.gear').addEventListener('click', function () {
                 realityServer.selectHardwareInterfaceSettings(interfaceName);
             });
+
+            setTooltipTextForElement('.gear',
+                'Click this to configure the settings of the ' + interfaceName + ' interface',
+                interfaceInfo.dom);
         }
 
         let activeToggleButton = interfaceInfo.dom.querySelector('.active');
@@ -995,9 +1018,20 @@ realityServer.updateManageHardwareInterfaces = function () {
         if (interfaceInfo.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
+
+            setTooltipTextForElement('.active',
+                'The ' + interfaceName + ' interface is currently enabled. To disable it, click this and then' +
+                ' restart your server and refresh this page.',
+                interfaceInfo.dom);
+
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
+
+            setTooltipTextForElement('.active',
+                'The ' + interfaceName + ' interface is currently disabled. To enable it, click this and then' +
+                ' restart your server and refresh this page. When you do so, you can then configure it here.',
+                interfaceInfo.dom);
         }
 
         function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
@@ -1008,6 +1042,8 @@ realityServer.updateManageHardwareInterfaces = function () {
                             hardwareInterfaceInfo.enabled = false;
                         }
                         realityServer.update();
+                        showSuccessNotification('Restart your server to ensure the ' + hardwareInterfaceName + ' interface' +
+                            ' is fully disabled', 5000);
                     });
                 } else {
                     realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/enable/', 'GET', function (state) {
@@ -1015,6 +1051,8 @@ realityServer.updateManageHardwareInterfaces = function () {
                             hardwareInterfaceInfo.enabled = true;
                         }
                         realityServer.update();
+                        showSuccessNotification('Restart your server to ensure the ' + hardwareInterfaceName + ' interface' +
+                            ' is fully enabled', 5000);
                     });
                 }
             });
@@ -1027,6 +1065,10 @@ realityServer.updateManageHardwareInterfaces = function () {
 
     let configFrame = document.createElement('iframe');
     configFrame.classList.add('configFrame');
+    configFrame.addEventListener('pointerenter', function(e) {
+        tooltipDiv.style.display = 'none'; // hide the tooltip when it enters the iframe because we lose capture of it
+        lastMovedTimestamp = Date.now();
+    });
     secondColumn.appendChild(configFrame, true);
 };
 
