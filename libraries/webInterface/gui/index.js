@@ -379,6 +379,33 @@ realityServer.updateManageObjects = function (thisItem2) {
                 thisObject.dom.querySelector('.target').setAttribute('isWorldObject', true);
                 thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
 
+                setTooltipTextForElement('.name',
+                    'World objects are special objects (best used with Area Targets) that only need to be looked at' +
+                    ' once per AR session to localize the Toolbox app within your space',
+                    thisObject.dom);
+
+                setTooltipTextForElement('.zone',
+                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.',
+                    thisObject.dom);
+
+                setTooltipTextForElement('.target',
+                    'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
+                    ' with Area Targets but an Image Target that won\'t move is also fine.',
+                    thisObject.dom);
+
+                setTooltipTextForElement('.sharing',
+                    'The tool sharing feature will be introduced in a future update. Currently has no effect.',
+                    thisObject.dom);
+
+                setTooltipTextForElement('.remove',
+                    'Permanently delete this world object and all data associated with it',
+                    thisObject.dom);
+
+                setTooltipTextForElement('.download',
+                    'Download a .zip backup of this world object. Unzip it into your spatialToolbox directory to' +
+                    ' restore the object on this or a different edge server.',
+                    thisObject.dom);
+
                 function addDeleteListener(button, container, thisObjectKey) { // eslint-disable-line no-inner-declarations
                     button.addEventListener('click', function () {
                         // add a expandcollapse div with Sure? Yes
@@ -438,6 +465,11 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                         addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
 
+                        setTooltipTextForElement('.active',
+                            'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
+                            ' network',
+                            thisObject.dom);
+
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
                         thisObject.dom.querySelector('.active').innerText = 'Off';
@@ -445,6 +477,10 @@ realityServer.updateManageObjects = function (thisItem2) {
                         thisObject.dom.querySelector('.name').classList.add('inactive');
                         thisObject.dom.querySelector('.zone').classList.add('inactive');
                         thisObject.dom.querySelector('.sharing').classList.add('inactive');
+
+                        setTooltipTextForElement('.active',
+                            'This world object is inactive. Click here to enable the object.',
+                            thisObject.dom);
 
                         // realityServer.setDeactive
                     }
