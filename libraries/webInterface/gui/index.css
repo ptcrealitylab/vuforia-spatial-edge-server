@@ -546,10 +546,11 @@ position: relative;
     padding-left: 10px;
     padding-right: 10px;
     pointer-events: none;
+    white-space: nowrap;
 }
 
 .grey {
-    border-color: rgb(128,128,128);
+    border-color: rgb(200,200,200);
     color: rgb(200,200,200);
     background-color: rgb(64,64,64);
 }
