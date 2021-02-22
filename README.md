@@ -19,7 +19,7 @@ Join the conversations in our [discourse forum](https://forum.spatialtoolbox.vuf
 ## Installation
 
 First, install [Node.js](https://nodejs.org/en/). We currently test our
-software on Node 6, 8, and 10 with 10 being our recommended platform.
+software on Node 8, 10, 12, and 14 with 10 being our recommended platform.
 
 Second, clone this repository into your desired directory:
 
