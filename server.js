@@ -264,6 +264,8 @@ services.getIP = function () {
     return this.ips.interfaces[this.ips.activeInterface];
 };
 
+exports.getIP = services.getIP.bind(services);
+
 services.ip = services.getIP(); //ip.address();
 
 var bodyParser = require('body-parser');  // body parsing middleware
@@ -547,6 +549,7 @@ var hardwareInterfaceLoader = null;
 // It has no influance on the connectivity, as it is referenced by the object UUID through the entire time.
 var protocols = new Protocols();
 var knownObjects = {};
+exports.knownObjects = knownObjects;
 // A lookup table used to process faster through the objects.
 var objectLookup = {};
 // This list holds all the socket connections that are kept alive. Socket connections are kept alive if a link is
@@ -578,7 +581,7 @@ if (isMobile) {
 var worldObject;
 
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
-const sceneGraph = new SceneGraph();
+const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
@@ -1204,6 +1207,21 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
 services.ip = services.getIP(); //ip.address();
 
+function handleActionMessage(action) {
+    if (action === 'ping') {
+        for (let key in objects) {
+            objectBeatSender(beatPort, key, objects[key].ip, true);
+        }
+        return;
+    }
+    if (action.type === 'SceneGraphEventMessage') {
+        if (action.ip === services.getIP()) { // UDP also broadcasts to yourself
+            return;
+        }
+        worldGraph.handleMessage(action);
+    }
+}
+
 function objectBeatServer() {
     if (isMobile) {
         return;
@@ -1246,11 +1264,8 @@ function objectBeatServer() {
             getKnownSceneGraph(msgContent.ip);
         }
         // check if action 'ping'
-        if (msgContent.action === 'ping') {
-            //console.log(msgContent.action);
-            for (let key in objects) {
-                objectBeatSender(beatPort, key, objects[key].ip, true);
-            }
+        if (msgContent.action) {
+            handleActionMessage(msgContent.action);
         }
 
         if (typeof msgContent.matrixBroadcast !== 'undefined') {
@@ -1619,6 +1634,12 @@ function objectWebServer() {
     webServer.use(cors());
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
+    
+    webServer.post('/action', (req, res) => {
+        const action = JSON.parse(req.body.action);
+        handleActionMessage(action);
+        res.send();
+    });
 
     // Express router routes
     const objectRouter = require('./routers/object');

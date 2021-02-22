@@ -61,6 +61,7 @@ var dgram = require('dgram'); // UDP Broadcasting library
 var os = require('os');
 var path = require('path');
 var request = require('request');
+const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
@@ -667,6 +668,25 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
     return this.read;
 };
 
+const restActionSender = function (action) {
+    const { knownObjects, getIP } = require('../server');
+    const ipSet = new Set();
+    for (const [key, value] of Object.entries(knownObjects)) {
+        ipSet.add(value.ip);
+    }
+    const body = new URLSearchParams({
+        'action': JSON.stringify(action)
+    });
+    [...ipSet].map(ip => {
+        fetch(`http://${ip}:8080/action`, {
+            method: "POST",
+            body: body
+        }).catch(err => {
+            console.warn(`restActionSender: Error sending action to ${ip} over REST API.`);
+        });;
+    });
+}
+
 /**
  * Broadcasts a JSON message over UDP
  * @param {*} action - JSON object with no specified structure, contains the message to broadcast
@@ -682,6 +702,11 @@ exports.actionSender = function (action, timeToLive, beatport) {
     var message;
 
     message = Buffer.from(JSON.stringify({action: action}));
+    
+    if (message.length > 1472) {
+        restActionSender(action);
+        return;
+    }
 
     // creating the datagram
     var client = dgram.createSocket('udp4');
@@ -693,7 +718,12 @@ exports.actionSender = function (action, timeToLive, beatport) {
     // send the datagram
     client.send(message, 0, message.length, beatport, HOST, function (err) {
         if (err) {
-            console.log('You\'re not on a network. Can\'t send anything');
+            if (err.code === 'EMSGSIZE') {
+                console.error('actionSender: UDP Message Too Large.');
+                // TODO: REST Request
+            } else {
+                console.log('You\'re not on a network. Can\'t send anything');
+            }
         }
         client.close();
     });

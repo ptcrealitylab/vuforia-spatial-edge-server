@@ -9,6 +9,7 @@ let utils = require('./utils');
 class WorldGraph {
     constructor(localGraph) {
         this.localGraph = localGraph;
+        this.localGraph.onUpdate(this.triggerUpdateCallbacks.bind(this));
         this.knownGraphs = {};
         this.compiledGraph = null;
         this.updateCallbacks = [];
@@ -16,7 +17,7 @@ class WorldGraph {
 
     compile() {
         // first add each part of the localGraph into the compiledGraph
-        this.compiledGraph = new SceneGraph();
+        this.compiledGraph = new SceneGraph(false);
 
         // Add a root element to hold all objects, tools, nodes, etc
         // this.rootNode = new SceneNode(this.NAMES.ROOT);
@@ -39,7 +40,7 @@ class WorldGraph {
             this.compiledGraph.addDataFromSerializableGraph(knownGraphCopy);
         }
 
-        console.log(this.compiledGraph);
+        // console.log(this.compiledGraph);
         console.log('finished compiling graphs');
 
         return this.compiledGraph;
@@ -48,7 +49,8 @@ class WorldGraph {
     addKnownGraph(graphId, knownGraphData) {
         console.log('need to convert knownGraphData into a sceneGraph');
         // maybe add an optional constructor param to SceneGraph that allows it to init from serializedCopy
-        let knownGraph = new SceneGraph();
+        let knownGraph = new SceneGraph(false);
+        knownGraph.onUpdate(this.triggerUpdateCallbacks.bind(this));
         knownGraph.addDataFromSerializableGraph(knownGraphData);
 
         this.knownGraphs[graphId] = knownGraph;
@@ -64,6 +66,15 @@ class WorldGraph {
         this.updateCallbacks.forEach(function(callback) {
             callback();
         });
+    }
+    
+    handleMessage(message) {
+        const graph = this.knownGraphs[message.ip];
+        if (!graph) {
+            console.warn(`WorldGraph.handleMessage: Failed to find known graph for IP: ${message.ip}`);
+            return;
+        }
+        graph.handleMessage(message);
     }
 }
 
