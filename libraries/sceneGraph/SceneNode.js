@@ -425,14 +425,16 @@ SceneNode.prototype.updateRulesSatisfied = function() {
     }
     return rulesToCheck.every(rule => {
         switch(rule.type) {
-            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY:
+            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY: {
                 const sensitivityRuleData = {
                     distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
                 }
                 return rule.isSatisfied(sensitivityRuleData);
-            default:
+            }
+            default: {
                 console.error(`SceneNode: updateRulesSatisfied not implemented for rule of type '${rule.type}'.`);
                 return false;
+            }
         }
     })
 }
