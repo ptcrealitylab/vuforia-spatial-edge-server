@@ -260,12 +260,12 @@ exports.getWorldGraph = function () {
 };
 
 exports.getDistanceOneToMany = function (id1, ids) {
-    sceneGraphReference.recomputeGraph();
+    const compiledGraph = worldGraphReference.compile();
     let distances = {};
     distances[id1] = {};
     ids.forEach(function (id2) {
-        let computedDistance = sceneGraphReference.getDistanceBetween(id1, id2);
-        console.log(computedDistance);
+        let computedDistance = compiledGraph.getDistanceBetween(id1, id2);
+        // console.log(computedDistance);
         distances[id1][id2] = computedDistance;
     });
     return distances;
@@ -273,6 +273,10 @@ exports.getDistanceOneToMany = function (id1, ids) {
 
 exports.onSceneGraphUpdated = function (callback) {
     sceneGraphReference.onUpdate(callback);
+};
+
+exports.onWorldGraphUpdated = function (callback) {
+    worldGraphReference.onUpdate(callback);
 };
 
 var getAllTools_ = function (object) {
