@@ -233,6 +233,12 @@ SceneNode.prototype.setLocalMatrix = function(matrix) {
 
     // flagging this will eventually set the other necessary flags for this and parent/children nodes
     this.flagForRecompute();
+    
+    if (this.parent) {
+        this.updateWorldMatrix(this.parent.worldMatrix);
+    } else {
+        this.updateWorldMatrix();
+    }
 };
 
 SceneNode.prototype.flagForRerender = function() {
