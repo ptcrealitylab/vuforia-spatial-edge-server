@@ -326,46 +326,56 @@ class SceneGraph {
                 console.log(messageEvent.data);
             }
             switch (messageEvent.op) {
-                case SceneGraphEventOpEnum.ADD_OBJECT:
+                case SceneGraphEventOpEnum.ADD_OBJECT: {
                     var { objectId, initialLocalMatrix, needsRotateX } = messageEvent.data;
                     this.addObject(objectId, initialLocalMatrix, needsRotateX);
                     break;
-                case SceneGraphEventOpEnum.ADD_FRAME:
+                }
+                case SceneGraphEventOpEnum.ADD_FRAME: {
                     var { objectId, frameId, linkedFrame, initialLocalMatrix } = messageEvent.data;
                     this.addFrame(objectId, frameId, linkedFrame, initialLocalMatrix);
                     break;
-                case SceneGraphEventOpEnum.ADD_NODE:
+                }
+                case SceneGraphEventOpEnum.ADD_NODE: {
                     var { objectId, frameId, nodeId, linkedNode, initialLocalMatrix } = messageEvent.data;
                     this.addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix);
                     break;
-                case SceneGraphEventOpEnum.REMOVE_ELEMENT:
+                }
+                case SceneGraphEventOpEnum.REMOVE_ELEMENT: {
                     var { id } = messageEvent.data;
                     this.removeElementAndChildren(id);
                     break;
-                case SceneGraphEventOpEnum.UPDATE_POSITION:
+                }
+                case SceneGraphEventOpEnum.UPDATE_POSITION: {
                     console.warn('SceneGraph.handleMessage: Need to implement timestamp-dependent position updates');
                     var { id, localMatrix, x, y, scale } = messageEvent.data;
                     this.updateWithPositionData(id, id, id, localMatrix, x, y, scale);
                     break;
-                case SceneGraphEventOpEnum.UPDATE_OBJECT_WORLD_ID:
+                }
+                case SceneGraphEventOpEnum.UPDATE_OBJECT_WORLD_ID: {
                     var { objectId, worldId } = messageEvent.data;
                     this.updateObjectWorldId(objectId, worldId);
                     break;
-                case SceneGraphEventOpEnum.DEACTIVATE_ELEMENT:
+                }
+                case SceneGraphEventOpEnum.DEACTIVATE_ELEMENT: {
                     var { id } = messageEvent.data;
                     this.deactivateElement(id);
                     break;
-                case SceneGraphEventOpEnum.ACTIVATE_ELEMENT:
+                }
+                case SceneGraphEventOpEnum.ACTIVATE_ELEMENT: {
                     var { id } = messageEvent.data;
                     this.activateElement(id);
                     break;
-                case SceneGraphEventOpEnum.FULL_UPDATE:
+                }
+                case SceneGraphEventOpEnum.FULL_UPDATE: {
                     var { serializedGraph } = messageEvent.data;
                     this.addDataFromSerializableGraph(serializedGraph);
                     break;
-                default:
+                }
+                default: {
                     console.error(`SceneGraph.handleMessage: Operation '${messageEvent.op}' is not yet implemented.`);
                     break;
+                }
             }
         });
     }

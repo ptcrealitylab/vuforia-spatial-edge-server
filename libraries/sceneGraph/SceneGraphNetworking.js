@@ -23,13 +23,16 @@ class SceneGraphUpdateRule {
     
     isSatisfied(data) {
         switch(this.type) {
-            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY:
+            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY: {
                 return data.distance > this.ruleRequirements.distance;
-            case SceneGraphUpdateRuleTypeEnum.SPEED:
+            }
+            case SceneGraphUpdateRuleTypeEnum.SPEED: {
                 return data.speed > this.ruleRequirements.speed;
-            default:
+            }
+            default: {
                 console.error(`SceneGraphUpdateRule: isSatisfied not implemented for rule of type '${this.type}'.`);
                 return;
+            }
         }
     }
     
