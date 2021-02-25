@@ -288,13 +288,13 @@ class SceneGraph {
         return copy;
     }
 
-    addDataFromSerializableGraph(data) {
+    addDataFromSerializableGraph(data, shouldUpdateConflicts) {
         let nodesToUpdate = [];
 
         // Add a placeholder element for each data entry in the serializable copy of the graph
         for (var key in data) {
             // // TODO: how to resolve conflicts? currently ignores nodes that already exist
-            // if (typeof this.graph[key] !== 'undefined') { continue; }
+            if (typeof this.graph[key] !== 'undefined' && !shouldUpdateConflicts) { continue; }
 
             let sceneNode = new SceneNode(key);
             this.graph[key] = sceneNode;
@@ -369,7 +369,7 @@ class SceneGraph {
                 }
                 case SceneGraphEventOpEnum.FULL_UPDATE: {
                     var { serializedGraph } = messageEvent.data;
-                    this.addDataFromSerializableGraph(serializedGraph);
+                    this.addDataFromSerializableGraph(serializedGraph, true);
                     break;
                 }
                 default: {

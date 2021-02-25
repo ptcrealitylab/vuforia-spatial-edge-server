@@ -56,6 +56,7 @@ class WorldGraph {
         this.knownGraphs[graphId] = knownGraph;
 
         this.compile();
+        this.triggerUpdateCallbacks();
     }
 
     onUpdate(callback) {
