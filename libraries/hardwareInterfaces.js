@@ -23,6 +23,7 @@ var utilities = require('./utilities');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
 const ObjectModel = require('../models/ObjectModel.js');
+const objectController = require('../controllers/object.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -449,6 +450,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
                 }
                 if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                     objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
+                    objects[objectID].frames[frameUuid].name = tool;
                 }
                 //define the tool that is used with this frame
                 objects[objectID].frames[frameUuid].tool = {addon: addonName, interface: interfaceName, tool: newTool};
@@ -492,6 +494,9 @@ exports.addNode = function (object, tool, node, type, position) {
             0, 0, 0, 1
         ];
         objects[objectID].tcs = 0;
+
+        // store mapping of name->ID in lookup table
+        utilities.writeObject(objectLookup, object, objectID);
 
         if (globalVariables.saveToDisk) {
             fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
@@ -694,6 +699,16 @@ exports.deactivate = function (object) {
     }
 };
 
+exports.hasTool = function(object, tool) {
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    if (objectID) {
+        if (objects.hasOwnProperty(objectID)) {
+            let toolId = objectID + tool;
+            return objects[objectID].frames.hasOwnProperty(toolId);
+        }
+    }
+    return false;
+};
 
 exports.getObjectIdFromObjectName = function (object) {
     return utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
@@ -712,8 +727,46 @@ exports.getNodeNameFromNodeId = function (objectId, toolId, nodeId) {
 };
 
 exports.getMarkerSize = function (object) {
+    try {
+        var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+        return objects[objectID].targetSize;
+    } catch (e) {
+        console.warn('Cannot get markerSize for ' + object + ', returning (0,0)');
+        return { width: 0, height: 0};
+    }
+};
+
+/**
+ * @param {string} object - object name (not uuid)
+ * @param {number} width - target size in mm
+ * @param {number} height - target size height in mm
+ */
+exports.setMarkerSize = function (object, width, height) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    return objects[objectID].targetSize;
+    if (objects.hasOwnProperty(objectID)) {
+        console.log('old size = ' + objects[objectID].targetSize);
+
+        objectController.generateXml(objectID, {name: object, width: width, height: height}, function (statusCode, _responseContents) {
+            if (statusCode === 200) {
+                console.log('wrote size for ' + object + ' to XML from hardware interface. size = ' + width + ', ' + height);
+            } else {
+                console.log('error writing new target size to XML from hardware interface');
+            }
+        });
+    }
+};
+
+exports.setObjectVisualization = function (object, visualization) {
+    if (visualization !== 'screen' && visualization !== 'ar') { return; } // only supported types
+
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    objectController.setVisualization(objectID, visualization, function (statusCode, _responseContents) {
+        if (statusCode === 200) {
+            console.log('set visualization for ' + object + ' to ' + visualization + ' from hardware interface');
+        } else {
+            console.log('error setting visualization from hardware interface');
+        }
+    });
 };
 
 /**

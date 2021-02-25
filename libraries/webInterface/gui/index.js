@@ -81,6 +81,15 @@ realityServer.initialize = function () {
         window.location.reload();
     });
 
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', function(e) {
+        setTimeout(function() {
+            console.log('pointerup');
+            onPointerMove(e);
+        }, 10);
+
+    }); // also trigger at the end of clicks
+
     document.getElementById('subtitle').innerText = 'Version: ' + realityServer.states.version + ' - Server IP: ' +
         realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + realityServer.states.serverPort;
 
@@ -103,9 +112,76 @@ realityServer.initialize = function () {
 let showHelpText = 'Show Help';
 let hideHelpText = 'Hide Help';
 
+let showHelpTooltip = false;
+let tooltipDiv = null;
+
+let lastMovedTimestamp = Date.now();
+
+function onPointerMove(e) {
+    tooltipDiv.style.display = 'none';
+
+    if (!showHelpTooltip) { return; }
+    if (!tooltipDiv) { return; }
+
+    lastMovedTimestamp = Date.now();
+
+    let x = e.clientX, y = e.clientY;
+    let elementMouseIsOver = document.elementFromPoint(x, y);
+    // console.log(elementMouseIsOver);
+
+    let text = elementMouseIsOver.dataset.tooltipText;
+    let levelsOfSearch = 3;
+    while (levelsOfSearch > 0 && !text) {
+        // console.log('no text on this element, searching parent');
+        levelsOfSearch -= 1;
+        if (elementMouseIsOver.parentElement) {
+            elementMouseIsOver = elementMouseIsOver.parentElement;
+            text = elementMouseIsOver.dataset.tooltipText;
+        } else {
+            levelsOfSearch = 0;
+        }
+    }
+
+    if (text) {
+        let thisTime = Date.now();
+        setTimeout(function () {
+            onPointerHover(thisTime, x, y, text);
+        }, 300);
+    }
+}
+
+function onPointerHover(timestamp, x, y, text) {
+    if (lastMovedTimestamp !== timestamp || !showHelpTooltip) {
+        return;
+    }
+    // let elementMouseIsOver = document.elementFromPoint(x, y);
+    tooltipDiv.style.display = '';
+    tooltipDiv.style.left = 0; // set to left so we can compute width //x + 'px';
+    tooltipDiv.style.top = (y + window.scrollY) + 'px';
+    tooltipDiv.innerText = text;
+    tooltipDiv.style.fontSize = '14px';
+    let computedWidth = tooltipDiv.getClientRects()[0].width;
+    let margin = 10;
+    if (computedWidth > window.innerWidth - margin) {
+        tooltipDiv.style.fontSize = '12px';
+        computedWidth = tooltipDiv.getClientRects()[0].width;
+        if (computedWidth > window.innerWidth - margin) {
+            tooltipDiv.style.fontSize = '10px';
+            computedWidth = tooltipDiv.getClientRects()[0].width;
+        }
+    } else {
+        // tooltipDiv.classList.remove('tooltipMiniText');
+        // tooltipDiv.style.fontSize = '14px';
+    }
+
+    let constrainedLeft =  Math.min(window.innerWidth - computedWidth - margin, (x + window.scrollX));
+    tooltipDiv.style.left = constrainedLeft + 'px';
+    // console.log('hover');
+}
+
 realityServer.initializeHelp = function () {
     // if there are no objects, show help by default. otherwise hide help by default.
-    if (Object.keys(realityServer.objects).length === 0) {
+    if (Object.keys(realityServer.objects).length === 0 || window.localStorage.getItem('showHelp')) {
         showHelp();
     } else {
         hideHelp();
@@ -116,11 +192,46 @@ realityServer.initializeHelp = function () {
         let isHelpActive = document.getElementById('showHelpButton').innerText === hideHelpText;
         if (isHelpActive) {
             hideHelp();
+            window.localStorage.removeItem('showHelp');
         } else {
             showHelp();
         }
     });
+
+    // create the tooltipDiv
+    if (!tooltipDiv) {
+        tooltipDiv = document.createElement('div');
+        tooltipDiv.classList.add('tooltip', 'grey', 'button', 'item');
+        tooltipDiv.id = 'tooltip';
+        document.body.appendChild(tooltipDiv);
+    }
 };
+
+function setTooltipTextForElement(element, helpText) {
+    if (typeof element === 'string') {
+        element = document.querySelector(element);
+    }
+    if (element) {
+        element.dataset.tooltipText = helpText;
+    }
+}
+
+function setTooltipTextForManageObjects() {
+    setTooltipTextForElement('#addObject', 'Define an object with an Image, Object, or Model target where AR content' +
+        ' will "stick to" when looking at it with the Spatial Toolbox');
+    setTooltipTextForElement('#addWorldObject', 'Create a "world" object with an Area or Image target, to' +
+        ' specify the (0,0,0) position of your space and where any objects without targets can be anchored');
+    setTooltipTextForElement('#rec', 'While turned on, saves a debug log of all object activity to the objectLogs' +
+        ' directory');
+    setTooltipTextForElement('#whereIs', 'Select this while the Spatial Toolbox app is open to trigger a' +
+        ' spatial search for the selected objects or tools');
+    setTooltipTextForElement('#whereWas', 'Visualize where selected objects or tools have moved over time (in the' +
+        ' app)');
+    setTooltipTextForElement('#howFarIs', 'Visualize the distance between selected objects or tools (in the app)');
+    setTooltipTextForElement('#velocityOf', 'Visualize the velocity of selected objects or tools (in the app)');
+    setTooltipTextForElement('#netInterface', 'If multiple network interfaces are present here, select the one you' +
+        ' want to use, otherwise this server might not be discoverable on the network');
+}
 
 function showHelp() {
     // show help text
@@ -139,6 +250,12 @@ function showHelp() {
 
     // make the button say "Hide Help" instead of "Help"
     document.getElementById('showHelpButton').innerText = hideHelpText;
+
+    setTooltipTextForElement(document.getElementById('showHelpButton'),
+        'For advanced users: hide all help text and tutorials');
+    showHelpTooltip = true;
+
+    window.localStorage.setItem('showHelp', true);
 }
 
 function hideHelp() {
@@ -158,6 +275,11 @@ function hideHelp() {
 
     // make the button say "Help" instead of "Hide Help"
     document.getElementById('showHelpButton').innerText = showHelpText;
+
+    showHelpTooltip = false;
+    if (tooltipDiv) {
+        tooltipDiv.style.display = 'none';
+    }
 }
 
 function updateVisibilityOfTutorials() {
@@ -262,6 +384,27 @@ realityServer.updateManageObjects = function (thisItem2) {
                 thisObject.dom.querySelector('.target').setAttribute('isWorldObject', true);
                 thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
 
+                setTooltipTextForElement(thisObject.dom.querySelector('.name'),
+                    'World objects are special objects (best used with Area Targets) that only need to be looked at' +
+                    ' once per AR session to localize the Toolbox app within your space');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
+                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                    'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
+                    ' with Area Targets but an Image Target that won\'t move is also fine.');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.sharing'),
+                    'The tool sharing feature will be introduced in a future update. Currently has no effect.');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
+                    'Permanently delete this world object and all data associated with it');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.download'),
+                    'Download a .zip backup of this world object. Unzip it into your spatialToolbox directory to' +
+                    ' restore the object on this or a different edge server.');
+
                 function addDeleteListener(button, container, thisObjectKey) { // eslint-disable-line no-inner-declarations
                     button.addEventListener('click', function () {
                         // add a expandcollapse div with Sure? Yes
@@ -321,6 +464,10 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                         addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
 
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
+                            'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
+                            ' network');
+
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
                         thisObject.dom.querySelector('.active').innerText = 'Off';
@@ -328,6 +475,9 @@ realityServer.updateManageObjects = function (thisItem2) {
                         thisObject.dom.querySelector('.name').classList.add('inactive');
                         thisObject.dom.querySelector('.zone').classList.add('inactive');
                         thisObject.dom.querySelector('.sharing').classList.add('inactive');
+
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
+                            'This world object is inactive. Click here to enable the object.');
 
                         // realityServer.setDeactive
                     }
@@ -391,6 +541,9 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
 
+                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                        'Add a target file to finish setting up this world object');
+
                     // if (thisObject.dom.querySelector('.objectIcon')) {
                     thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
                     // }
@@ -411,9 +564,40 @@ realityServer.updateManageObjects = function (thisItem2) {
                 // check if items are active
                 if (thisObject.initialized && thisObject.active) {
                     realityServer.changeActiveState(thisObject.dom, true, objectKey);
+
+                    // set help text for each of the buttons in an activated object
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.name'),
+                        'Click here to view debug info for this object');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.zone'),
+                        'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.target'),
+                        'Edit which target data the app should look for to see the content (tools) attached to this object');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.addFrame'),
+                        'Click here to attach a custom tool (piece of AR content) to this object');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.visualization'),
+                        'For most objects this should stay "AR". If you have the vuforia-spatial-screens-addon' +
+                        ' installed, this will indicate if your object has been configured as a screen HMI.');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.active'),
+                        'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the network');
+
                 } else {
                     realityServer.changeActiveState(thisObject.dom, false, objectKey);
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.active'),
+                        'This object is inactive and won\'t be seen by Spatial Toolbox apps in the network');
                 }
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.remove'),
+                    'Permanently delete this object and all data associated with it');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.download'),
+                    'Download a .zip backup of this object. Unzip it into your spatialToolbox directory to restore' +
+                    ' the object on this or a different edge server.');
 
                 if (thisObject.initialized) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
@@ -435,6 +619,9 @@ realityServer.updateManageObjects = function (thisItem2) {
                 } else {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                        'Add a target file or activate a world object to finish setting up this object');
 
                     // if (thisObject.dom.querySelector('.objectIcon')) {
                     thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
@@ -490,6 +677,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.addFrame'), 'blue', 'purple');
                     realityServer.switchClass(thisObject.dom.querySelector('.download'), 'blue', 'purple');
 
+                    // TODO: ben fade it out if there isn't a connected screen port
+                    // add a tool-tip that explains what screen-mode does
+                    if (thisObject.screenPort) {
+                        thisObject.dom.querySelector('.visualization').classList.remove('inactive');
+                    } else {
+                        thisObject.dom.querySelector('.visualization').classList.add('inactive');
+                    }
+
                     thisObject.dom.querySelector('.downloadIcon').src = realityServer.downloadImageP.src;
                 }
 
@@ -511,6 +706,24 @@ realityServer.updateManageObjects = function (thisItem2) {
                     let thisFullScreen = document.getElementById('fullScreenId').content.cloneNode(true);
                     thisFullScreen.querySelector('.fullscreen').id = 'fullscreen' + objectKey;
                     thisFullScreen.querySelector('#fullscreen' + objectKey).dataset.objectName = thisObject.name;
+                    thisFullScreen.querySelector('.fullscreen').classList.add('purple');
+                    thisFullScreen.querySelector('.fullscreen').classList.remove('blue');
+
+                    let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+
+                    setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
+                        'Open the screen HMI configured by the vuforia-spatial-screens-addon.' +
+                        ' (For this object: http://' + ipAddress + ': ' + thisObject.screenPort + ')');
+
+                    if (!thisObject.screenPort) {
+                        thisFullScreen.querySelector('.fullscreen').classList.remove('purple');
+                        thisFullScreen.querySelector('.fullscreen').classList.add('blue');
+                        thisFullScreen.querySelector('.fullscreen').innerText = 'VIEW TARGET IMAGE';
+
+                        setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
+                            'Open the target image in the browser. If you configure this object with the' +
+                            ' vuforia-spatial-screens-addon, this button will change to open up the screen HMI.');
+                    }
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
                     }
@@ -550,8 +763,38 @@ realityServer.updateManageObjects = function (thisItem2) {
                     }
 
                     thisFrame.dom.querySelector('.name').innerText = thisFrame.src;
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.name'),
+                        'This is a "pocket" tool added to this object from a Toolbox app\'s pocket menu. It can be' +
+                        ' added, deleted, or moved to another object using the Toolbox app.');
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.content'),
+                        'Preview this tool in your web browser. All tools are just HTML pages, but some might not load' +
+                        ' properly in the browser if they have AR-specific capabilities.');
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.remove'),
+                        'Delete this tool from the object. You can always add another from your app\'s pocket, since' +
+                        ' this is a pocket tool.');
+
                 } else {
                     thisFrame.dom.querySelector('.name').innerText = thisFrame.name;
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.name'),
+                        'This is a "custom" tool specifically added to this object. You will see it in the toolbox if' +
+                        ' you look at this object\'s target.');
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.content'),
+                        'View a list of this custom tool\'s content files. In most cases, these can be edited in your' +
+                        ' spatialToolbox/objectName/toolName directory.');
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.reset'),
+                        'Reset the position of this tool to be centered on the object\'s target. Useful if you misplace' +
+                        ' the tool.');
+
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.remove'),
+                        'Permanently delete this tool from the object and all data associated with it. This is a' +
+                        ' custom tool so think twice if you\'ve modified its HTML.');
+
                 }
 
                 if (thisObject.visualization === 'screen' && thisFrame.location !== 'global') {
@@ -583,6 +826,8 @@ realityServer.updateManageObjects = function (thisItem2) {
     }
 
     console.log(realityServer.objects);
+
+    setTooltipTextForManageObjects();
 };
 
 realityServer.updateManageFrames = function () {
@@ -644,12 +889,26 @@ realityServer.updateManageFrames = function () {
         if (frameInfo.metadata.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
+
+            setTooltipTextForElement(frameInfo.dom.querySelector('.active'),
+                'This tool is currently active and will be visible in the pocket of Spatial Toolbox apps in this' +
+                ' network while pointing at objects on this server');
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
+
+            setTooltipTextForElement(frameInfo.dom.querySelector('.active'),
+                'This tool is inactive and won\'t show up in the pocket');
         }
 
         addFrameEnabledToggle(activeToggleButton, frameKey, frameInfo); // create inside closure so interfaceInfo doesn't change after definition
+
+        setTooltipTextForElement(frameInfo.dom.querySelector('.content'),
+            'Preview this tool in your web browser. All tools are just HTML pages,' +
+            ' but some might not load properly in the browser if they have AR-specific capabilities.');
+
+        setTooltipTextForElement(frameInfo.dom.querySelector('.download'),
+            'Download a .zip backup of this tool');
 
         this.getDomContents().appendChild(frameInfo.dom, true);
     }
@@ -710,7 +969,6 @@ realityServer.updateManageHardwareInterfaces = function () {
             interfaceInfo.dom.querySelector('.name').classList.add('inactive');
         }
 
-        // TODO: fix for gear icon inside of name
         if (typeof interfaceInfo.settings !== 'undefined') {
 
             interfaceInfo.dom.querySelector('.gear').classList.remove('hidden');
@@ -720,6 +978,9 @@ realityServer.updateManageHardwareInterfaces = function () {
             interfaceInfo.dom.querySelector('.gear').addEventListener('click', function () {
                 realityServer.selectHardwareInterfaceSettings(interfaceName);
             });
+
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.gear'),
+                'Click this to configure the settings of the ' + interfaceName + ' interface');
         }
 
         let activeToggleButton = interfaceInfo.dom.querySelector('.active');
@@ -728,9 +989,18 @@ realityServer.updateManageHardwareInterfaces = function () {
         if (interfaceInfo.enabled) {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
+
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.active'),
+                'The ' + interfaceName + ' interface is currently enabled. To disable it, click this and then' +
+                ' restart your server and refresh this page.');
+
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
+
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.active'),
+                'The ' + interfaceName + ' interface is currently disabled. To enable it, click this and then' +
+                ' restart your server and refresh this page. When you do so, you can then configure it here.');
         }
 
         function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
@@ -741,6 +1011,8 @@ realityServer.updateManageHardwareInterfaces = function () {
                             hardwareInterfaceInfo.enabled = false;
                         }
                         realityServer.update();
+                        showSuccessNotification('Restart your server to ensure the ' + hardwareInterfaceName + ' interface' +
+                            ' is fully disabled', 5000);
                     });
                 } else {
                     realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/enable/', 'GET', function (state) {
@@ -748,6 +1020,8 @@ realityServer.updateManageHardwareInterfaces = function () {
                             hardwareInterfaceInfo.enabled = true;
                         }
                         realityServer.update();
+                        showSuccessNotification('Restart your server to ensure the ' + hardwareInterfaceName + ' interface' +
+                            ' is fully enabled', 5000);
                     });
                 }
             });
@@ -760,6 +1034,10 @@ realityServer.updateManageHardwareInterfaces = function () {
 
     let configFrame = document.createElement('iframe');
     configFrame.classList.add('configFrame');
+    configFrame.addEventListener('pointerenter', function(e) {
+        tooltipDiv.style.display = 'none'; // hide the tooltip when it enters the iframe because we lose capture of it
+        lastMovedTimestamp = Date.now();
+    });
     secondColumn.appendChild(configFrame, true);
 };
 
@@ -798,12 +1076,17 @@ realityServer.updateCommonContents = function (thisItem2) {
         // tabName is manageObjects, manageFrames, or manageHardwareInterfaces
         function addTabListener(tabName) { // eslint-disable-line no-inner-declarations
             realityServer.getCommonContents().querySelector('#' + tabName).addEventListener('click', function () {
-                realityServer.selectedTab = tabName;
-                realityServer.update();
+                if (realityServer.selectedTab === tabName && tabName === 'manageObjects') {
+                    // refresh page if click on same tab
+                    window.location.reload();
+                } else {
+                    realityServer.selectedTab = tabName;
+                    realityServer.update();
 
-                // handle side effects for each button separately here
-                if (tabName === 'manageHardwareInterfaces') {
-                    realityServer.selectHardwareInterfaceSettings(defaultHardwareInterfaceSelected);
+                    // handle side effects for each button separately here
+                    if (tabName === 'manageHardwareInterfaces') {
+                        realityServer.selectHardwareInterfaceSettings(defaultHardwareInterfaceSelected);
+                    }
                 }
             });
         }
@@ -811,6 +1094,17 @@ realityServer.updateCommonContents = function (thisItem2) {
         addTabListener('manageObjects');
         addTabListener('manageFrames');
         addTabListener('manageHardwareInterfaces');
+
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageObjects'),
+            'Set up new objects on this server and configure existing objects');
+
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageFrames'),
+            'View all pocket tools that this server supports and select which ones Toolbox apps will see in' +
+            ' their pocket when pointing at objects on this server');
+
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageHardwareInterfaces'),
+            'View all interfaces provided by this server\'s add-ons and configure their properties to enable your AR' +
+            ' content to interact with other systems and devices');
     }
 };
 
@@ -888,11 +1182,16 @@ function showGenerateXml(parentElement, objectKey) {
                     realityServer.sendRequest('/object/' + objectKey + '/generateXml/', 'POST', function (state) {
                         if (state === 'ok') {
                             console.log('successfully generated xml from width ' + newWidth + ' and height ' + newHeight);
+                            let notificationText = 'Successfully set ' + objectKey + ' target size to ' + newWidth + 'm wide by ' + newHeight + 'm tall';
+                            showSuccessNotification(notificationText, 8000);
                         }
                         let removeNode = visualFeedback.querySelector('.textEntry');
                         realityServer.removeAnimated(removeNode);
                     }, 'name=' + realityServer.objects[objectKey].name + '&width=' + newWidth + '&height=' + newHeight);
 
+                } else {
+                    let notificationText = 'Please enter a positive number for width and height';
+                    showErrorNotification(notificationText, 3000);
                 }
 
             });
@@ -1094,6 +1393,21 @@ realityServer.gotClick = function (event) {
             newNode.querySelector('.imagegen-button').dataset.objectName = thisObject.name;
             newNode.querySelector('.imageremove-button').dataset.objectName = thisObject.name;
 
+            // add help text
+
+            setTooltipTextForElement(newNode.querySelector('.name'),
+                'Each object has a unique ID. If generating a target using a Vuforia application, make sure to' +
+                ' name it exactly this. If just uploading a .jpg, the name of the file doesn\'t matter.');
+
+            setTooltipTextForElement(newNode.querySelector('.fileinput-button'),
+                'Select files to upload. Supported formats: .jpg, .dat, .xml, .zip');
+
+            setTooltipTextForElement(newNode.querySelector('.imagegen-button'),
+                'Click here to automatically generate an image target for this object instead of uploading one');
+
+            setTooltipTextForElement(newNode.querySelector('.imageremove-button'),
+                'Click here to delete all target data previously added to this object. Cannot be undone.');
+
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
                 if (objectKey === thisObject.name) {
@@ -1116,6 +1430,10 @@ realityServer.gotClick = function (event) {
                 } else if (thisObject.targetsExist.jpgExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
                     visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
+
+                    setTooltipTextForElement(visualFeedback.querySelector('.hasDat'),
+                        'You don\'t need to upload a .dat file for this object since you gave it a .jpg, but adding' +
+                        ' one (generated from Vuforia developer tools) may improve tracking stability');
                 }
                 if (thisObject.targetsExist.xmlExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
@@ -1126,12 +1444,19 @@ realityServer.gotClick = function (event) {
                     visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
                 } else if (thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
+                    setTooltipTextForElement(visualFeedback.querySelector('.hasJpg'),
+                        'You already uploaded a .dat file to be the target data, but you should still upload a .jpg' +
+                        ' to act as this object\'s icon');
                 }
 
                 if (!thisObject.targetsExist.jpgExists && !thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
                 } else {
                     realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
+
+                    setTooltipTextForElement(visualFeedback.querySelector('.generateXml'),
+                        'You must accurately enter the width and height (in meters) for AR content to scale' +
+                        ' correctly when attached to this object. Defaults to 0.3 meters (12 inches).');
                     showGenerateXml(visualFeedback, objectKey);
                 }
             }
@@ -1938,21 +2263,32 @@ realityServer.toggleFullScreen = function (item) {
     let thisScreen = thisIframe;
     // if(item) thisScreen = item;
 
+    let thisScreenPort = realityServer.objects[item.id.slice('fullscreen'.length)].screenPort;
+
     if (!thisScreen.mozFullScreen && !document.webkitFullScreen) {
-        thisIframe.src = 'about:blank'; // Clear iframe before loading
-        const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
-        const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
-        fetch(targetUrl).then((response) => {
-            if (response.ok) {
-                thisIframe.contentDocument.write(iframeContents);
-                thisIframe.contentDocument.close();
-            } else {
-                setGeneratedTarget(item, () => {
+
+        // if we have set up a screen port, open up that hardware interface application
+
+        if (thisScreenPort) {
+            thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
+        } else {
+            // otherwise just view the target image in fullscreen
+            thisIframe.src = 'about:blank'; // Clear iframe before loading
+            const targetUrl = `/obj/${item.dataset.objectName}/target/target.jpg`;
+            const iframeContents = `<div style="text-align: center;"><div style="background: url(${targetUrl}) no-repeat center; background-size: contain; height: 100%; width: 100%;"></div></div>`;
+            fetch(targetUrl).then((response) => {
+                if (response.ok) {
                     thisIframe.contentDocument.write(iframeContents);
                     thisIframe.contentDocument.close();
-                });
-            }
-        });
+                } else {
+                    setGeneratedTarget(item, () => {
+                        thisIframe.contentDocument.write(iframeContents);
+                        thisIframe.contentDocument.close();
+                    });
+                }
+            });
+        }
+
         if (thisScreen.mozRequestFullScreen) {
             thisScreen.mozRequestFullScreen();
         } else {

@@ -2962,7 +2962,9 @@ function objectWebServer() {
             let objectKey = utilities.readObject(objectLookup, tmpFolderFile);
 
             // reset checksum
-            objects[objectKey].tcs = 0;
+            if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
+                objects[objectKey].tcs = 0;
+            }
 
             // delete target files
 
@@ -2987,7 +2989,9 @@ function objectWebServer() {
             setAnchors();
 
             // save to disk and respond
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            }
             res.send('ok');
         });
 
