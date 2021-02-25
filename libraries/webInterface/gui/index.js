@@ -207,13 +207,9 @@ realityServer.initializeHelp = function () {
     }
 };
 
-function setTooltipTextForElement(element, helpText, optionalParent) {
+function setTooltipTextForElement(element, helpText) {
     if (typeof element === 'string') {
-        if (optionalParent) {
-            element = optionalParent.querySelector(element);
-        } else {
-            element = document.querySelector(element);
-        }
+        element = document.querySelector(element);
     }
     if (element) {
         element.dataset.tooltipText = helpText;
@@ -255,8 +251,8 @@ function showHelp() {
     // make the button say "Hide Help" instead of "Help"
     document.getElementById('showHelpButton').innerText = hideHelpText;
 
-    setTooltipTextForElement(document.getElementById('showHelpButton'), 'For advanced users: hide all help text and' +
-        ' tutorials');
+    setTooltipTextForElement(document.getElementById('showHelpButton'),
+        'For advanced users: hide all help text and tutorials');
     showHelpTooltip = true;
 
     window.localStorage.setItem('showHelp', true);
@@ -388,32 +384,26 @@ realityServer.updateManageObjects = function (thisItem2) {
                 thisObject.dom.querySelector('.target').setAttribute('isWorldObject', true);
                 thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
 
-                setTooltipTextForElement('.name',
+                setTooltipTextForElement(thisObject.dom.querySelector('.name'),
                     'World objects are special objects (best used with Area Targets) that only need to be looked at' +
-                    ' once per AR session to localize the Toolbox app within your space',
-                    thisObject.dom);
+                    ' once per AR session to localize the Toolbox app within your space');
 
-                setTooltipTextForElement('.zone',
-                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.',
-                    thisObject.dom);
+                setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
+                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
-                setTooltipTextForElement('.target',
+                setTooltipTextForElement(thisObject.dom.querySelector('.target'),
                     'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
-                    ' with Area Targets but an Image Target that won\'t move is also fine.',
-                    thisObject.dom);
+                    ' with Area Targets but an Image Target that won\'t move is also fine.');
 
-                setTooltipTextForElement('.sharing',
-                    'The tool sharing feature will be introduced in a future update. Currently has no effect.',
-                    thisObject.dom);
+                setTooltipTextForElement(thisObject.dom.querySelector('.sharing'),
+                    'The tool sharing feature will be introduced in a future update. Currently has no effect.');
 
-                setTooltipTextForElement('.remove',
-                    'Permanently delete this world object and all data associated with it',
-                    thisObject.dom);
+                setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
+                    'Permanently delete this world object and all data associated with it');
 
-                setTooltipTextForElement('.download',
+                setTooltipTextForElement(thisObject.dom.querySelector('.download'),
                     'Download a .zip backup of this world object. Unzip it into your spatialToolbox directory to' +
-                    ' restore the object on this or a different edge server.',
-                    thisObject.dom);
+                    ' restore the object on this or a different edge server.');
 
                 function addDeleteListener(button, container, thisObjectKey) { // eslint-disable-line no-inner-declarations
                     button.addEventListener('click', function () {
@@ -474,10 +464,9 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                         addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
 
-                        setTooltipTextForElement('.active',
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
                             'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
-                            ' network',
-                            thisObject.dom);
+                            ' network');
 
                     } else {
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
@@ -487,9 +476,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                         thisObject.dom.querySelector('.zone').classList.add('inactive');
                         thisObject.dom.querySelector('.sharing').classList.add('inactive');
 
-                        setTooltipTextForElement('.active',
-                            'This world object is inactive. Click here to enable the object.',
-                            thisObject.dom);
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
+                            'This world object is inactive. Click here to enable the object.');
 
                         // realityServer.setDeactive
                     }
@@ -553,8 +541,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
 
-                    setTooltipTextForElement(thisObject.dom.querySelector('.target'), 'Add a target file to finish' +
-                        ' setting up this world object');
+                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                        'Add a target file to finish setting up this world object');
 
                     // if (thisObject.dom.querySelector('.objectIcon')) {
                     thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
@@ -578,49 +566,38 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.changeActiveState(thisObject.dom, true, objectKey);
 
                     // set help text for each of the buttons in an activated object
-                    setTooltipTextForElement('.name',
-                        'Click here to view debug info for this object',
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.name'),
+                        'Click here to view debug info for this object');
 
-                    setTooltipTextForElement('.zone',
-                        'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.',
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.zone'),
+                        'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
-                    setTooltipTextForElement('.target',
-                        'Edit which target data the app should look for to see the content (tools) attached to this object',
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.target'),
+                        'Edit which target data the app should look for to see the content (tools) attached to this object');
 
-                    setTooltipTextForElement('.addFrame',
-                        'Click here to attach a custom tool (piece of AR content) to this object',
-                        // You can edit its contents in its index.html file in the spatialToolbox/objectName/toolName directory
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.addFrame'),
+                        'Click here to attach a custom tool (piece of AR content) to this object');
 
-                    setTooltipTextForElement('.visualization',
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.visualization'),
                         'For most objects this should stay "AR". If you have the vuforia-spatial-screens-addon' +
-                        ' installed, this will indicate if your object has been configured as a screen HMI.',
-                        thisObject.dom.querySelector('.object'));
+                        ' installed, this will indicate if your object has been configured as a screen HMI.');
 
-                    setTooltipTextForElement('.active',
-                        'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
-                        ' network',
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.active'),
+                        'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the network');
 
                 } else {
                     realityServer.changeActiveState(thisObject.dom, false, objectKey);
 
-                    setTooltipTextForElement('.active',
-                        'This object is inactive and won\'t be seen by Spatial Toolbox apps in the network',
-                        thisObject.dom.querySelector('.object'));
+                    setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.active'),
+                        'This object is inactive and won\'t be seen by Spatial Toolbox apps in the network');
                 }
 
-                setTooltipTextForElement('.remove',
-                    'Permanently delete this object and all data associated with it',
-                    thisObject.dom.querySelector('.object'));
+                setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.remove'),
+                    'Permanently delete this object and all data associated with it');
 
-                setTooltipTextForElement('.download',
+                setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.download'),
                     'Download a .zip backup of this object. Unzip it into your spatialToolbox directory to restore' +
-                    ' the object on this or a different edge server.',
-                    thisObject.dom.querySelector('.object'));
+                    ' the object on this or a different edge server.');
 
                 if (thisObject.initialized) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
@@ -643,8 +620,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
 
-                    setTooltipTextForElement(thisObject.dom.querySelector('.target'), 'Add a target file or activate a world object to finish' +
-                        ' setting up this object');
+                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                        'Add a target file or activate a world object to finish setting up this object');
 
                     // if (thisObject.dom.querySelector('.objectIcon')) {
                     thisObject.dom.querySelector('.objectIcon').remove(); //.parentElement.removeChild(thisObject.dom.querySelector('.objectIcon'));
@@ -734,20 +711,18 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
 
-                    setTooltipTextForElement('.fullscreen',
+                    setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
                         'Open the screen HMI configured by the vuforia-spatial-screens-addon.' +
-                        ' (For this object: http://' + ipAddress + ': ' + thisObject.screenPort + ')',
-                        thisFullScreen);
+                        ' (For this object: http://' + ipAddress + ': ' + thisObject.screenPort + ')');
 
                     if (!thisObject.screenPort) {
                         thisFullScreen.querySelector('.fullscreen').classList.remove('purple');
                         thisFullScreen.querySelector('.fullscreen').classList.add('blue');
                         thisFullScreen.querySelector('.fullscreen').innerText = 'VIEW TARGET IMAGE';
 
-                        setTooltipTextForElement('.fullscreen',
+                        setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
                             'Open the target image in the browser. If you configure this object with the' +
-                            ' vuforia-spatial-screens-addon, this button will change to open up the screen HMI.',
-                            thisFullScreen);
+                            ' vuforia-spatial-screens-addon, this button will change to open up the screen HMI.');
                     }
                     if (!thisItem2) {
                         this.getDomContents().appendChild(thisFullScreen);
@@ -789,43 +764,36 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     thisFrame.dom.querySelector('.name').innerText = thisFrame.src;
 
-                    setTooltipTextForElement('.name',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.name'),
                         'This is a "pocket" tool added to this object from a Toolbox app\'s pocket menu. It can be' +
-                        ' added, deleted, or moved to another object using the Toolbox app.',
-                        thisFrame.dom);
+                        ' added, deleted, or moved to another object using the Toolbox app.');
 
-                    setTooltipTextForElement('.content',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.content'),
                         'Preview this tool in your web browser. All tools are just HTML pages, but some might not load' +
-                        ' properly in the browser if they have AR-specific capabilities.',
-                        thisFrame.dom);
+                        ' properly in the browser if they have AR-specific capabilities.');
 
-                    setTooltipTextForElement('.remove',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.remove'),
                         'Delete this tool from the object. You can always add another from your app\'s pocket, since' +
-                        ' this is a pocket tool.',
-                        thisFrame.dom);
+                        ' this is a pocket tool.');
 
                 } else {
                     thisFrame.dom.querySelector('.name').innerText = thisFrame.name;
 
-                    setTooltipTextForElement('.name',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.name'),
                         'This is a "custom" tool specifically added to this object. You will see it in the toolbox if' +
-                        ' you look at this object\'s target.',
-                        thisFrame.dom);
+                        ' you look at this object\'s target.');
 
-                    setTooltipTextForElement('.content',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.content'),
                         'View a list of this custom tool\'s content files. In most cases, these can be edited in your' +
-                        ' spatialToolbox/objectName/toolName directory.',
-                        thisFrame.dom);
+                        ' spatialToolbox/objectName/toolName directory.');
 
-                    setTooltipTextForElement('.reset',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.reset'),
                         'Reset the position of this tool to be centered on the object\'s target. Useful if you misplace' +
-                        ' the tool.',
-                        thisFrame.dom);
+                        ' the tool.');
 
-                    setTooltipTextForElement('.remove',
+                    setTooltipTextForElement(thisFrame.dom.querySelector('.remove'),
                         'Permanently delete this tool from the object and all data associated with it. This is a' +
-                        ' custom tool so think twice if you\'ve modified its HTML.',
-                        thisFrame.dom);
+                        ' custom tool so think twice if you\'ve modified its HTML.');
 
                 }
 
@@ -922,21 +890,25 @@ realityServer.updateManageFrames = function () {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
 
-            setTooltipTextForElement('.active', 'This tool is currently active and will be visible in the pocket' +
-                ' of Spatial Toolbox apps in this network while pointing at objects on this server', frameInfo.dom);
+            setTooltipTextForElement(frameInfo.dom.querySelector('.active'),
+                'This tool is currently active and will be visible in the pocket of Spatial Toolbox apps in this' +
+                ' network while pointing at objects on this server');
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
 
-            setTooltipTextForElement('.active', 'This tool is inactive and won\'t show up in the pocket', frameInfo.dom);
+            setTooltipTextForElement(frameInfo.dom.querySelector('.active'),
+                'This tool is inactive and won\'t show up in the pocket');
         }
 
         addFrameEnabledToggle(activeToggleButton, frameKey, frameInfo); // create inside closure so interfaceInfo doesn't change after definition
 
-        setTooltipTextForElement('.content', 'Preview this tool in your web browser. All tools are just HTML pages,' +
-            ' but some might not load properly in the browser if they have AR-specific capabilities.', frameInfo.dom);
+        setTooltipTextForElement(frameInfo.dom.querySelector('.content'),
+            'Preview this tool in your web browser. All tools are just HTML pages,' +
+            ' but some might not load properly in the browser if they have AR-specific capabilities.');
 
-        setTooltipTextForElement('.download', 'Download a .zip backup of this tool', frameInfo.dom);
+        setTooltipTextForElement(frameInfo.dom.querySelector('.download'),
+            'Download a .zip backup of this tool');
 
         this.getDomContents().appendChild(frameInfo.dom, true);
     }
@@ -1007,9 +979,8 @@ realityServer.updateManageHardwareInterfaces = function () {
                 realityServer.selectHardwareInterfaceSettings(interfaceName);
             });
 
-            setTooltipTextForElement('.gear',
-                'Click this to configure the settings of the ' + interfaceName + ' interface',
-                interfaceInfo.dom);
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.gear'),
+                'Click this to configure the settings of the ' + interfaceName + ' interface');
         }
 
         let activeToggleButton = interfaceInfo.dom.querySelector('.active');
@@ -1019,19 +990,17 @@ realityServer.updateManageHardwareInterfaces = function () {
             realityServer.switchClass(activeToggleButton, 'yellow', 'green');
             activeToggleButton.innerText = 'On';
 
-            setTooltipTextForElement('.active',
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.active'),
                 'The ' + interfaceName + ' interface is currently enabled. To disable it, click this and then' +
-                ' restart your server and refresh this page.',
-                interfaceInfo.dom);
+                ' restart your server and refresh this page.');
 
         } else {
             realityServer.switchClass(activeToggleButton, 'green', 'yellow');
             activeToggleButton.innerText = 'Off';
 
-            setTooltipTextForElement('.active',
+            setTooltipTextForElement(interfaceInfo.dom.querySelector('.active'),
                 'The ' + interfaceName + ' interface is currently disabled. To enable it, click this and then' +
-                ' restart your server and refresh this page. When you do so, you can then configure it here.',
-                interfaceInfo.dom);
+                ' restart your server and refresh this page. When you do so, you can then configure it here.');
         }
 
         function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
@@ -1126,19 +1095,16 @@ realityServer.updateCommonContents = function (thisItem2) {
         addTabListener('manageFrames');
         addTabListener('manageHardwareInterfaces');
 
-        setTooltipTextForElement('#manageObjects',
-            'Set up new objects on this server and configure existing objects',
-            realityServer.getCommonContents());
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageObjects'),
+            'Set up new objects on this server and configure existing objects');
 
-        setTooltipTextForElement('#manageFrames',
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageFrames'),
             'View all pocket tools that this server supports and select which ones Toolbox apps will see in' +
-            ' their pocket when pointing at objects on this server',
-            realityServer.getCommonContents());
+            ' their pocket when pointing at objects on this server');
 
-        setTooltipTextForElement('#manageHardwareInterfaces',
+        setTooltipTextForElement(realityServer.getCommonContents().querySelector('#manageHardwareInterfaces'),
             'View all interfaces provided by this server\'s add-ons and configure their properties to enable your AR' +
-            ' content to interact with other systems and devices',
-            realityServer.getCommonContents());
+            ' content to interact with other systems and devices');
     }
 };
 
@@ -1429,22 +1395,18 @@ realityServer.gotClick = function (event) {
 
             // add help text
 
-            setTooltipTextForElement('.name',
+            setTooltipTextForElement(newNode.querySelector('.name'),
                 'Each object has a unique ID. If generating a target using a Vuforia application, make sure to' +
-                ' name it exactly this. If just uploading a .jpg, the name of the file doesn\'t matter.',
-                newNode);
+                ' name it exactly this. If just uploading a .jpg, the name of the file doesn\'t matter.');
 
-            setTooltipTextForElement('.fileinput-button',
-                'Select files to upload. Supported formats: .jpg, .dat, .xml, .zip',
-                newNode);
+            setTooltipTextForElement(newNode.querySelector('.fileinput-button'),
+                'Select files to upload. Supported formats: .jpg, .dat, .xml, .zip');
 
-            setTooltipTextForElement('.imagegen-button',
-                'Click here to automatically generate an image target for this object instead of uploading one',
-                newNode);
+            setTooltipTextForElement(newNode.querySelector('.imagegen-button'),
+                'Click here to automatically generate an image target for this object instead of uploading one');
 
-            setTooltipTextForElement('.imageremove-button',
-                'Click here to delete all target data previously added to this object. Cannot be undone.',
-                newNode);
+            setTooltipTextForElement(newNode.querySelector('.imageremove-button'),
+                'Click here to delete all target data previously added to this object. Cannot be undone.');
 
             if (!thisObject.targetName) {
                 // generate a random UUID if not yet initialized with a persistent UUID
@@ -1469,10 +1431,9 @@ realityServer.gotClick = function (event) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
                     visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
 
-                    setTooltipTextForElement('.hasDat',
+                    setTooltipTextForElement(visualFeedback.querySelector('.hasDat'),
                         'You don\'t need to upload a .dat file for this object since you gave it a .jpg, but adding' +
-                        ' one (generated from Vuforia developer tools) may improve tracking stability',
-                        visualFeedback);
+                        ' one (generated from Vuforia developer tools) may improve tracking stability');
                 }
                 if (thisObject.targetsExist.xmlExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
@@ -1483,10 +1444,9 @@ realityServer.gotClick = function (event) {
                     visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
                 } else if (thisObject.targetsExist.datExists) {
                     realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
-                    setTooltipTextForElement('.hasJpg',
+                    setTooltipTextForElement(visualFeedback.querySelector('.hasJpg'),
                         'You already uploaded a .dat file to be the target data, but you should still upload a .jpg' +
-                        ' to act as this object\'s icon',
-                        visualFeedback);
+                        ' to act as this object\'s icon');
                 }
 
                 if (!thisObject.targetsExist.jpgExists && !thisObject.targetsExist.datExists) {
@@ -1494,10 +1454,9 @@ realityServer.gotClick = function (event) {
                 } else {
                     realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
 
-                    setTooltipTextForElement('.generateXml',
+                    setTooltipTextForElement(visualFeedback.querySelector('.generateXml'),
                         'You must accurately enter the width and height (in meters) for AR content to scale' +
-                        ' correctly when attached to this object. Defaults to 0.3 meters (12 inches).',
-                        visualFeedback);
+                        ' correctly when attached to this object. Defaults to 0.3 meters (12 inches).');
                     showGenerateXml(visualFeedback, objectKey);
                 }
             }
