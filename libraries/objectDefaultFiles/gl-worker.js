@@ -1,5 +1,5 @@
 let gl = {};
-let id = 0;
+let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
 
@@ -39,35 +39,64 @@ let realGl;
 function makeStub(functionName) {
   return function() {
     const invokeId = id;
-    id += 1;
+    id += 1 + Math.random();
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
-      if (!args[i]) {
-        continue;
-      }
-      if (args[i].hasOwnProperty('__uncloneableId')) {
+      if (args[i] && args[i].hasOwnProperty('__uncloneableId')) {
         args[i] = {
           fakeClone: true,
           index: args[i].__uncloneableId,
         };
+      } else if (typeof args[i] === 'object') {
+        if (args[i] instanceof Float32Array) {
+          args[i] = new Float32Array(args[i]);
+        } else if (args[i] instanceof Uint8Array) {
+          args[i] = new Uint8Array(args[i]);
+        } else if (args[i] instanceof Array) {
+          args[i] = Array.from(args[i]);
+        } else {
+          console.log('Uncloned arg', args[i]);
+        }
       }
     }
 
     if (functionName === 'texImage2D') {
-      let img = args[args.length - 1];
-      if (img.tagName) {
-        let width = img.width;
-        let height = img.height;
+      let elt = args[args.length - 1];
+      if (elt.tagName === 'IMG') {
+        let width = elt.width;
+        let height = elt.height;
         let canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         let gfx = canvas.getContext('2d');
         gfx.width = width;
         gfx.height = height;
-        gfx.drawImage(img, 0, 0, width, height);
+        gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
+      } else if (elt.tagName === 'CANVAS') {
+        let width = elt.width;
+        let height = elt.height;
+        let gfx = elt.getContext('2d');
+        gfx.width = width;
+        gfx.height = height;
+        gfx.drawImage(elt, 0, 0, width, height);
+        let imageData = gfx.getImageData(0, 0, width, height);
+        args[args.length - 1] = imageData;
+      } else {
+        console.warn('not an easy image', elt);
+      }
+    }
+
+    if (functionName === 'getExtension') {
+      const ext = arguments[0];
+      // Blacklist unproxied extensions
+      if (ext === 'OES_vertex_array_object' ||
+          // ext === 'EXT_frag_depth' ||
+          // ext === 'EXT_shader_texture_lod' ||
+          ext === 'EXT_blend_minmax') {
+        return null;
       }
     }
 
