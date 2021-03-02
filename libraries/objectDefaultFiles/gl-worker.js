@@ -105,14 +105,7 @@ function makeStub(functionName) {
       args,
     };
 
-    if (realGl) {
-      window.parent.postMessage({
-        workerId,
-        messages: [message],
-      }, '*');
-    } else {
-      frameCommandBuffer.push(message);
-    }
+    frameCommandBuffer.push(message);
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
@@ -196,7 +189,14 @@ window.addEventListener('message', function(event) {
       gl[constName] = message.constants[constName];
     }
 
+    frameCommandBuffer = [];
     main();
+    if (frameCommandBuffer.length > 0) {
+      window.parent.postMessage({
+        workerId,
+        messages: frameCommandBuffer,
+      }, '*');
+    }
     return;
   }
 
