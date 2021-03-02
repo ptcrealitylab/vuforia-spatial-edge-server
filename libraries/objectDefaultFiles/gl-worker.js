@@ -84,8 +84,6 @@ function makeStub(functionName) {
         gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
-      } else {
-        console.warn('not an easy image', elt);
       }
     }
 
