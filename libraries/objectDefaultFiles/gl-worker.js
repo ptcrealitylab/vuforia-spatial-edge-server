@@ -53,6 +53,8 @@ function makeStub(functionName) {
           args[i] = new Float32Array(args[i]);
         } else if (args[i] instanceof Uint8Array) {
           args[i] = new Uint8Array(args[i]);
+        } else if (args[i] instanceof Uint16Array) {
+          args[i] = new Uint16Array(args[i]);
         } else if (args[i] instanceof Array) {
           args[i] = Array.from(args[i]);
         } else {
