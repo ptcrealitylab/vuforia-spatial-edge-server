@@ -35,6 +35,7 @@
             allObjects: false
         },
         sendScreenPosition: false,
+        sendDeviceDistance: false,
         sendAcceleration: false,
         sendFullScreen: false,
         sendScreenObject: false,
@@ -558,6 +559,7 @@
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
                 this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
+                this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
@@ -1140,6 +1142,20 @@
             // postAllDataToParent();
             postDataToParent({
                 sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
+        this.subscribeToDeviceDistance = function (callback) {
+            spatialObject.messageCallBacks.deviceDistanceCall = function (msgContent) {
+                if (typeof msgContent.deviceDistance !== 'undefined') {
+                    callback(msgContent.deviceDistance);
+                }
+            };
+
+            spatialObject.sendDeviceDistance = true;
+            // postAllDataToParent();
+            postDataToParent({
+                sendDeviceDistance: spatialObject.sendDeviceDistance
             });
         };
 
