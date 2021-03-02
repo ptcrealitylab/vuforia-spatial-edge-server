@@ -43,6 +43,7 @@
         sendSticky: false,
         isFullScreenExclusive: false,
         attachesTo: null,
+        wasToolJustCreated: null,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -209,6 +210,10 @@
             if (!spatialObject.socketIoUrl) {
                 loadObjectSocketIo(msgContent.objectData);
             }
+        }
+
+        if (typeof msgContent.firstInitialization !== 'undefined') {
+            spatialObject.wasToolJustCreated = msgContent.firstInitialization;
         }
 
         // initialize spatialObject for frames and add additional API methods
@@ -596,6 +601,7 @@
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
+                this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1586,6 +1592,23 @@
             postDataToParent({
                 errorNotification: errorMessageText
             });
+        };
+
+        this.wasToolJustCreated = function(callback) {
+            if (typeof spatialObject.wasToolJustCreated === 'boolean') {
+                callback(spatialObject.wasToolJustCreated);
+                return;
+            }
+
+            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+                if (typeof msgContent.firstInitialization !== 'undefined') {
+                    spatialObject.wasToolJustCreated = msgContent.firstInitialization;
+                    callback(msgContent.firstInitialization);
+                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                }
+            };
+
+            // return spatialObject.wasToolJustCreated;
         };
 
         /**
