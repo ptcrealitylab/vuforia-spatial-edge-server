@@ -174,18 +174,18 @@ class SceneGraphNetworkManager {
     sendEventUpdates() {
         const events = this.eventQueue.popEvents();
         if (events.length === 0) {
-            console.log('SceneGraphNetworking: No event updates.');
+            // console.log('SceneGraphNetworking: No event updates.');
             return;
         }
         const message = new SceneGraphEventMessage(events, this.getIP());
-        console.log(`SceneGraphNetworking: Sending ${message.events.length} event updates.`);
+        // console.log(`SceneGraphNetworking: Sending ${message.events.length} event updates.`);
         this.actionSender(message);
     }
     
     sendFullUpdate(serializedGraph) {
         const fullUpdateEvent = SceneGraphEvent.FullUpdate(serializedGraph);
         const message = new SceneGraphEventMessage([fullUpdateEvent], this.getIP());
-        console.log('SceneGraphNetworking: Sending full update.');
+        // console.log('SceneGraphNetworking: Sending full update.');
         this.actionSender(message);
     }
 }
