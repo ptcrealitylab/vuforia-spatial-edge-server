@@ -1,3 +1,5 @@
+const debugGlWorker = false;
+
 let gl = {};
 let id = Math.random();
 let proxies = [];
@@ -61,7 +63,7 @@ function makeStub(functionName) {
         } else if (args[i] instanceof Array) {
           args[i] = Array.from(args[i]);
         } else {
-          console.log('Uncloned arg', args[i]);
+          if (debugGlWorker) console.log('Uncloned arg', args[i]);
         }
       }
     }
@@ -171,7 +173,7 @@ function makeStub(functionName) {
 window.addEventListener('message', function(event) {
   const message = event.data;
   if (!message) {
-    console.warn('Event missing data', message);
+    if (debugGlWorker) console.warn('Event missing data', message);
     return;
   }
 
@@ -182,9 +184,9 @@ window.addEventListener('message', function(event) {
 
     gl = new Proxy(gl, {
       get: function(obj, prop) {
-        if (typeof obj[prop] === 'function') {
-          // TODO dynamically stub
-        }
+        // TODO dynamically stub
+        // if (typeof obj[prop] === 'function') {
+        // }
         return obj[prop];
       },
     });
