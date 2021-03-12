@@ -43,7 +43,10 @@ function makeStub(functionName) {
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
-      if (args[i] && args[i].hasOwnProperty('__uncloneableId')) {
+      if (!args[i]) {
+        continue;
+      }
+      if (args[i].hasOwnProperty('__uncloneableId')) {
         args[i] = {
           fakeClone: true,
           index: args[i].__uncloneableId,
@@ -202,7 +205,7 @@ window.addEventListener('message', function(event) {
     return;
   }
 
-  if (message.id && pending.hasOwnProperty(message.id)) {
+  if (message.hasOwnProperty('id') && pending.hasOwnProperty(message.id)) {
     pending[message.id](message.result);
     delete pending[message.id];
   }
