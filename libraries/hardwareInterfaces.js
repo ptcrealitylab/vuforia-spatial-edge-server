@@ -89,7 +89,7 @@ function EmptyNode(nodeName, type) {
  * Spatial Toolbox server.
  * @param {string} objectName The name of the RealityInterface
  * @param {string} nodeName The name of the IO point
- * @param {value} value The value to be passed on
+ * @param {number} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
 exports.write = function (object, tool, node, value, mode, unit, unitMin, unitMax) {

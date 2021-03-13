@@ -2950,7 +2950,7 @@ function objectWebServer() {
                 });
             });
 
-        webServer.delete(objectInterfaceFolder + 'content/:id', function(req, res) {
+        webServer.delete(objectInterfaceFolder + 'content/:id', function (req, res) {
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object name. Must be alphanumeric.');
                 return;
@@ -3759,6 +3759,8 @@ var engine = {
         if (!thisNode.processedData)
             thisNode.processedData = {};
 
+        // thisNode.processLink = link;
+
         var _this = this;
         if ((thisNode.type in this.nodeTypeModules)) {
             this.nodeTypeModules[thisNode.type].render(object, frame, node, thisNode, function (object, frame, node, thisNode) {
@@ -3771,10 +3773,17 @@ var engine = {
 
         var thisFrame = getFrame(object, frame);
 
+        /*  if (thisNode.processLink) {
+              this.link = thisNode.processLink;
+              processLink();
+          } else {*/
         for (var linkKey in thisFrame.links) {
-
             this.link = thisFrame.links[linkKey];
+            /*        processLink();
+           }
+       }
 
+       function processLink() {*/
             if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame) {
                 if (!checkObjectActivation(this.link.objectB)) {
                     socketSender(object, frame, linkKey, thisNode.processedData);

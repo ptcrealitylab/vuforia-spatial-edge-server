@@ -8,6 +8,7 @@ var globalVariables;
 var hardwareAPI;
 var objectsPath;
 var socketUpdater;
+// var engine;
 
 /**
  * Extracts a nicely structured set of data about the link
@@ -97,6 +98,16 @@ const newLink = function (objectID, frameID, linkID, body) {
             console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+        /*    // check if link is complex data type. If yes trigger engine only for this single link
+            if (foundFrame.hasOwnProperty(body.nodeA)) {
+                let thisNode = foundFrame[body.nodeA];
+                if (thisNode.data.hasOwnProperty('mode')) {
+                    if (thisNode.data.mode === 'c') {
+                        engine.trigger(body.objectA, body.frameA, body.nodeA, thisNode, body);
+                    }
+                }
+            }*/
 
             // check if there are new connections associated with the new link.
             socketUpdater();
@@ -252,6 +263,7 @@ const setup = function (objects_, knownObjects_, socketArray_, globalVariables_,
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
     socketUpdater = socketUpdater_;
+   // engine = engine_;
 };
 
 module.exports = {
