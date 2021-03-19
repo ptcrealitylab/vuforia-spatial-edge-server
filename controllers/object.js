@@ -63,6 +63,58 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     }
 };
 
+function uploadMediaFile(objectID, req, callback) {
+    console.log('received media file for', objectID);
+
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        callback(404, 'object ' + objectID + ' not found');
+        return;
+    }
+
+    var mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
+    if (!fs.existsSync(mediaDir)) {
+        fs.mkdirSync(mediaDir);
+    }
+
+    var form = new formidable.IncomingForm({
+        uploadDir: mediaDir,
+        keepExtensions: true
+        // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
+    });
+
+    console.log('created form');
+
+    form.on('error', function (err) {
+        callback(500, err);
+    });
+
+    let mediaUuid = utilities.uuidTime();
+
+    var rawFilepath = form.uploadDir + '/' + mediaUuid + '.jpg';
+
+    if (fs.existsSync(rawFilepath)) {
+        console.log('deleted old raw file');
+        fs.unlinkSync(rawFilepath);
+    }
+
+    form.on('fileBegin', function (name, file) {
+        console.log('fileBegin loading', name, file);
+
+        if (file.type.match('video.*')) {
+            rawFilepath = rawFilepath.replace('.jpg', '.mov');
+        }
+        console.log('upload ' + file.path + ' to ' + rawFilepath);
+        file.path = rawFilepath;
+    });
+
+    form.parse(req, function (err, fields) {
+        console.log('successfully uploaded image', err, fields);
+
+        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: rawFilepath});
+    });
+}
+
 const saveCommit = function(objectID, callback) {
     if (globalVariables.isMobile) {
         callback(500, 'saveCommit unavailable on mobile');
@@ -309,6 +361,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
 
 module.exports = {
     uploadVideo: uploadVideo,
+    uploadMediaFile: uploadMediaFile,
     saveCommit: saveCommit,
     resetToLastCommit: resetToLastCommit,
     setMatrix: setMatrix,
