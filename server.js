@@ -1477,6 +1477,24 @@ function objectWebServer() {
         res.sendFile(fileName);
     });
 
+    webServer.use('/mediaFile', function (req, res) {
+        var urlArray = req.originalUrl.split('/');
+
+        var objectId = urlArray[2];
+        if (!getObject(objectId)) {
+            res.status(404).send('object ' + objectId + ' not found');
+            return;
+        }
+
+        var objectName = getObject(objectId).name;
+        var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/mediaFiles/' + urlArray[3];
+        if (!fs.existsSync(fileName)) {
+            res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not found
+            return;
+        }
+        res.sendFile(fileName);
+    });
+
     webServer.use('/obj', function (req, res, next) {
 
         var urlArray = req.originalUrl.split('/');

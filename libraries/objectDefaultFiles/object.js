@@ -17,7 +17,8 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
-        serverIp: '127.0.0,1',
+        serverIp: '127.0.0.1',
+        serverPort: '8080',
         matrices: {
             modelView: [],
             projection: [],
@@ -106,6 +107,8 @@
 
         let defaultPort = '8080';
         if (object.hasOwnProperty('port')) defaultPort = object.port;
+
+        spatialObject.serverPort = defaultPort;
 
         var url = 'http://' + object.ip + ':' + defaultPort;
         spatialObject.socketIoUrl = url;
