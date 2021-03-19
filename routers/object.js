@@ -232,6 +232,19 @@ router.post('/:objectName/video/:videoName', function (req, res) {
         }
     });
 });
+router.post('/:objectName/uploadMediaFile', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    objectController.uploadMediaFile(req.params.objectName, req, function (statusCode, responseContents) {
+        if (statusCode === 500) {
+            res.status(statusCode).send(responseContents);
+        } else {
+            res.status(statusCode).json(responseContents).end();
+        }
+    });
+});
 // object git interfaces
 router.post('/:objectName/saveCommit', function (req, res) {
     if (!utilities.isValidId(req.params.objectName)) {
