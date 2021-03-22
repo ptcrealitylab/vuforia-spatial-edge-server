@@ -1649,6 +1649,236 @@ function objectWebServer() {
     webServer.use('/logic', logicRouter.router);
     webServer.use('/spatial', spatialRouter.router);
 
+    webServer.get('/mapImage/', function(req, res) {
+        var hardwareInterfaceDir = objectsPath + '/' + identityFolderName + '/MIR100/';
+        var mapImageFilepath = hardwareInterfaceDir + '/map.jpg';
+        res.sendFile(mapImageFilepath);
+    });
+
+    webServer.post('/mapImage/', function(req, res) {
+
+        var hardwareInterfaceDir = objectsPath + '/' + identityFolderName + '/MIR100/';
+        if (!fs.existsSync(hardwareInterfaceDir)) {
+            fs.mkdirSync(hardwareInterfaceDir);
+        }
+
+        var form = new formidable.IncomingForm({
+            uploadDir: hardwareInterfaceDir,
+            keepExtensions: true,
+            accept: 'image/jpg'
+        });
+
+        form.on('error', function (err) {
+            res.status(500).res.send(err);
+        });
+
+        var rawFilepath = form.uploadDir + '/map.jpg';
+
+        if (fs.existsSync(rawFilepath)) {
+            console.log('deleted old raw file');
+            fs.unlinkSync(rawFilepath);
+        }
+
+        form.on('fileBegin', function (name, file) {
+            console.log('fileBegin loading', name, file);
+            file.path = rawFilepath;
+        });
+
+        console.log('about to parse image upload form');
+
+        form.parse(req, function (err, fields) {
+
+            if (!err) {
+                console.log('successfully created image file', err, fields);
+                res.status(200).json({success: true}).end();
+            } else {
+                console.log('error parsing', err);
+                res.status(500).res.send(err);
+            }
+
+        });
+
+    });
+
+    var overallCameraPositions = {};
+    webServer.post('/cameraPosition', function(req, res) {
+        var cameraInfo = req.body;
+        var clientId = cameraInfo.clientId;
+        var didChange = false;
+        var timeSinceLast = 0;
+        var TIME_PER_SAVED_SAMPLE = 500; // 3000?
+
+        // create new placeholder if this object hasn't been seen before
+        if (!overallCameraPositions[clientId]) {
+            overallCameraPositions[clientId] = {
+                cameraCoordinates: {},
+                cameraRotation: 0,
+                // cameraMatrix: [],
+                timestamp: 0,
+                history: [],
+                localizedToOrigin: false
+            };
+            didChange = true;
+        }
+
+        if (cameraInfo.timestamp > overallCameraPositions[clientId].timestamp) {
+            var cameraCoordinates = {
+                x: cameraInfo.cameraMatrix[12],
+                y: cameraInfo.cameraMatrix[13],
+                z: cameraInfo.cameraMatrix[14]
+            };
+            overallCameraPositions[clientId].cameraCoordinates = cameraCoordinates;
+            overallCameraPositions[clientId].cameraRotation = cameraInfo.cameraRotation;
+            // overallCameraPositions[clientId].cameraMatrix = cameraInfo.cameraMatrix;
+            // console.log(cameraInfo.cameraRotation);
+            overallCameraPositions[clientId].timestamp = cameraInfo.timestamp;
+            overallCameraPositions[clientId].localizedToOrigin = cameraInfo.localizedToOrigin;
+
+            // don't add to history every time, to save space. we don't need that granularity
+            var historyLength = overallCameraPositions[clientId].history.length;
+            if (historyLength === 0) {
+                timeSinceLast = cameraInfo.timestamp;
+            } else {
+                timeSinceLast = cameraInfo.timestamp - overallCameraPositions[clientId].history[historyLength-1].timestamp;
+            }
+            // console.log('time since last camera = ' + timeSinceLast);
+
+            overallCameraPositions[clientId].history = [{
+                timestamp: cameraInfo.timestamp,
+                cameraCoordinates: cameraCoordinates,
+                cameraRotation: cameraInfo.cameraRotation,
+                // cameraMatrix: cameraInfo.cameraMatrix,
+            }];
+
+            // if (timeSinceLast >= TIME_PER_SAVED_SAMPLE) {
+            //     overallCameraPositions[clientId].history.push({
+            //         timestamp: cameraInfo.timestamp,
+            //         cameraCoordinates: cameraCoordinates,
+            //         cameraRotation: cameraInfo.cameraRotation,
+            //         // cameraMatrix: cameraInfo.cameraMatrix,
+            //     });
+            // }
+
+            didChange = true;
+        }
+
+        if (didChange) {
+            hardwareAPI.triggerCameraPositionsCallbacks(overallCameraPositions);
+            // writeCameraPositionsToFile(overallCameraPositions, globalVariables.saveToDisk);
+        }
+
+        res.status(200).json({success: true}).end();
+
+    });
+
+    function writeCameraPositionsToFile(cameraPositions, writeToFile) {
+        if (writeToFile) {
+            var outputFilename = objectsPath + '/.identity/ObjectMap/cameraPositions.json';
+
+            fs.writeFile(outputFilename, JSON.stringify(cameraPositions, null, '\t'), function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    // console.log("JSON saved to " + outputFilename);
+                }
+            });
+        } else {
+            console.log("I am not allowed to save");
+        }
+    }
+
+    var overallMappedObjects = {};
+
+    webServer.post('/mapInfo/', function(req, res) {
+        var clientId = req.body.lastEditor;
+        var mappedObjects = req.body.mappedObjects;
+
+        var didChange = false;
+        // var maxTimeSinceLast = 0; // TODO: implement similar feature as in POST /cameraPosition/ to only log history per N seconds
+
+        // update the overall map data with each object received
+        mappedObjects.forEach(function(mappedObjectStruct) {
+            var id = mappedObjectStruct.id;
+            var lastSeen = mappedObjectStruct.lastSeen;
+
+            // create new placeholder if this object hasn't been seen before
+            if (!overallMappedObjects[id]) {
+                overallMappedObjects[id] = {
+                    clientId: null,
+                    lastSeen: {
+                        timestamp: 0
+                    },
+                    history: []
+                };
+                didChange = true;
+            }
+
+            // use newest timestamp when possible
+            if (lastSeen.timestamp > overallMappedObjects[id].lastSeen.timestamp) {
+                overallMappedObjects[id].clientId = clientId;
+                overallMappedObjects[id].lastSeen = lastSeen; // TODO: use absolutely-mapped version when possible, by preferring (lastSeen.localizedToOrigin===true)
+                console.log(lastSeen.coordinates.x, lastSeen.coordinates.y, lastSeen.coordinates.z);
+                overallMappedObjects[id].history.push({
+                    timestamp: lastSeen.timestamp,
+                    coordinates: lastSeen.coordinates,
+                    clientId: clientId
+                });
+                didChange = true;
+            }
+
+        });
+
+        console.log('maxTimeSinceLast = ' + maxTimeSinceLast);
+
+        if (didChange) {
+            hardwareAPI.triggerMapInfoCallbacks(overallMappedObjects);
+            writeMapToFile(overallMappedObjects, globalVariables.saveToDisk);
+        }
+
+        res.status(200).json({success: true}).end();
+
+    });
+
+    function writeMapToFile(mapData, writeToFile) {
+        if (writeToFile) {
+            var outputFilename = objectsPath + '/.identity/ObjectMap/map.json';
+
+            fs.writeFile(outputFilename, JSON.stringify(mapData, null, '\t'), function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    // console.log("JSON saved to " + outputFilename);
+                }
+            });
+        } else {
+            console.log("I am not allowed to save");
+        }
+    }
+
+    webServer.get('/mapInfo/', function(req, res) {
+        console.log("get map info from disk");
+        // TODO: smartly load in by not overwriting ones with newer data
+        var filepath = objectsPath + '/.identity/ObjectMap/map.json';
+        if (fs.existsSync(filepath)) {
+            overallMappedObjects = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+            res.json(overallMappedObjects);
+        } else {
+            res.json({});
+        }
+    });
+
+    webServer.get('/cameraPositions/', function(req, res) {
+        console.log("get camera positions from disk");
+        // TODO: smartly load in by not overwriting ones with newer data
+        var filepath = objectsPath + '/.identity/ObjectMap/cameraPositions.json';
+        if (fs.existsSync(filepath)) {
+            overallCameraPositions = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+            res.json(overallCameraPositions);
+        } else {
+            res.json({});
+        }
+    });
+
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
     webServer.post('/triggerBlock/:blockName', function (req, res) {

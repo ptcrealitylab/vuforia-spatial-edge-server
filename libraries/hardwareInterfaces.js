@@ -51,6 +51,8 @@ var frameAddedCallbacks = [];
 var resetCallbacks = [];
 var matrixStreamCallbacks = [];
 var udpMessageCallbacks = [];
+var mapInfoCallbacks = [];
+var cameraPositionsCallbacks = [];
 var interfaceSettingsCallbacks = {};
 var screenPortMap = {};
 var _this = this;
@@ -1150,4 +1152,24 @@ exports.initialize = function () {
 
 exports.loadHardwareInterface = function (hardwareInterface) {
     return utilities.loadHardwareInterface(hardwareInterface.split(path.sep).pop());
+};
+
+exports.subscribeToMapInfo = function(callback) {
+    mapInfoCallbacks.push(callback);
+};
+
+exports.triggerMapInfoCallbacks = function(mapInfo) {
+    mapInfoCallbacks.forEach(function(callback) {
+        callback(mapInfo);
+    });
+};
+
+exports.subscribeToCameraPositions = function(callback) {
+    cameraPositionsCallbacks.push(callback);
+};
+
+exports.triggerCameraPositionsCallbacks = function(cameraPositions) {
+    cameraPositionsCallbacks.forEach(function(callback) {
+        callback(cameraPositions);
+    });
 };
