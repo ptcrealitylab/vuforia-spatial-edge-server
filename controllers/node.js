@@ -20,6 +20,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     var errorMessage = null;
 
     var foundObject = utilities.getObject(objects, objectKey);
+    let nodeBody = null;
     if (foundObject) {
         var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
         if (foundFrame) {
@@ -40,6 +41,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
             }
 
             foundFrame.nodes[nodeKey] = node;
+            nodeBody = node;
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
             sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
@@ -54,7 +56,11 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     if (errorMessage) {
         callback(404, {failure: true, error: errorMessage});
     } else {
-        callback(200, {success: 'true'});
+        let response = {success: 'true'};
+        if (nodeBody) {
+            response.node = JSON.stringify(nodeBody);
+        }
+        callback(200, response);
     }
 };
 
