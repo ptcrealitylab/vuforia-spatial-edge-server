@@ -51,8 +51,6 @@ function Node(name, type, objectId, frameId, nodeId) {
         }
     }
 
-    console.log(nodeId + ' invisible?', this.invisible);
-
     this.setupProgram();
 }
 
