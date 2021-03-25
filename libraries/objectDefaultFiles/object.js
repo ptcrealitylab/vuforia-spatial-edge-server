@@ -596,6 +596,7 @@
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
+                this.createTool = makeSendStub('createTool');
             }
 
             /**
@@ -950,6 +951,29 @@
                 node: spatialObject.frame + node,
                 privateData: thisItem
             }));
+        };
+
+        /**
+         * Creates a new tool of type type
+         * @param {string} name - required
+         * @param type - required.
+         */
+        this.createTool = function(name, type) {
+
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('createTool must specify a name and a type');
+            }
+            
+            let toolData = {
+                name: name,
+                type: type
+            };
+            
+            postDataToParent({
+                createTool: {
+                    toolData: toolData
+                }
+            });
         };
 
         /**
