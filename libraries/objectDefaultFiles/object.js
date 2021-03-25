@@ -959,6 +959,8 @@
          * @param type - required.
          */
         this.createTool = function(name, type) {
+            
+            console.log('Create new pathpoint tool: ', name, type);
 
             if (typeof name === 'undefined' || typeof type === 'undefined') {
                 console.error('createTool must specify a name and a type');
