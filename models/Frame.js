@@ -60,6 +60,8 @@ function Frame(objectId, frameId) {
     this.distanceScale = 1.0;
     // Indicates what group the frame belongs to; null if none
     this.groupID = null;
+    // "Pinned" frames are by default loaded and visible with the object they belong to. Unpinned must be asked for.
+    this.pinned = true;
 }
 
 /**

@@ -376,6 +376,16 @@ router.post('/:objectName/frame/:frameName/group/', function (req, res) {
     });
 });
 
+router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.setPinned(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
 const setupDeveloperRoutes = function() {
     // normal nodes
     router.post('/:objectName/frame/:frameName/node/:nodeName/size/', function (req, res) {
