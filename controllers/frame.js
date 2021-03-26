@@ -355,6 +355,25 @@ const setGroup = function(objectID, frameID, body, callback) {
     callback(404, {success: false, error: 'Couldn\'t find frame ' + frameID + ' to set groupID'});
 };
 
+const setPinned = function(objectID, frameID, body, callback) {
+    var frame = utilities.getFrame(objects, objectID, frameID);
+    if (frame) {
+        var newPinned = body.isPinned;
+        if (newPinned !== frame.pinned) {
+            frame.pinned = newPinned;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({
+                reloadFrame: {object: objectID, frame: frameID},
+                lastEditor: body.lastEditor
+            });
+            callback(200, {success: true});
+            return;
+        }
+    }
+
+    callback(404, {success: false, error: 'Couldn\'t find frame ' + frameID + ' to set pinned'});
+};
+
 /**
  * Updates the x, y, scale, and/or matrix for the specified frame or node
  * @todo this function is a mess, fix it up
@@ -514,6 +533,7 @@ module.exports = {
     updateFrame: updateFrame,
     deleteFrame: deleteFrame,
     setGroup: setGroup,
+    setPinned: setPinned,
     changeSize: changeSize,
     changeVisualization: changeVisualization,
     resetPositioning: resetPositioning,
