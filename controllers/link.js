@@ -98,7 +98,7 @@ const newLink = function (objectID, frameID, linkID, body) {
             console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
             utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            
+
             // check if link is complex data type. If yes trigger engine only for this single link
             if (foundFrame.nodes.hasOwnProperty(body.nodeA)) {
                 let thisNode = foundFrame.nodes[body.nodeA];
@@ -122,6 +122,9 @@ const newLink = function (objectID, frameID, linkID, body) {
 
             // call an action that asks all devices to reload their links, once the links are changed.
             utilities.actionSender({reloadLink: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
+            setTimeout(function() {
+                utilities.actionSender({reloadLink: {object: objectID, frame: frameID}, lastEditor: body.lastEditor});
+            }, 100);
 
             updateStatus = 'added';
         } else {
