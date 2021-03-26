@@ -355,6 +355,25 @@ const setGroup = function(objectID, frameID, body, callback) {
     callback(404, {success: false, error: 'Couldn\'t find frame ' + frameID + ' to set groupID'});
 };
 
+const setSpatialLoyalty = function(objectID, frameID, body, callback) {
+    var frame = utilities.getFrame(objects, objectID, frameID);
+    if (frame) {
+        var newSpatialLoyalty = body.spatialLoyalty;
+        if (newSpatialLoyalty !== frame.spatialLoyalty) {
+            frame.spatialLoyalty = newSpatialLoyalty;
+            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.actionSender({
+                reloadFrame: {object: objectID, frame: frameID},
+                lastEditor: body.lastEditor
+            });
+            callback(200, {success: true});
+            return;
+        }
+    }
+
+    callback(404, {success: false, error: 'Couldn\'t find frame ' + frameID + ' to set spatialLoyalty'});
+};
+
 /**
  * Updates the x, y, scale, and/or matrix for the specified frame or node
  * @todo this function is a mess, fix it up
@@ -514,6 +533,7 @@ module.exports = {
     updateFrame: updateFrame,
     deleteFrame: deleteFrame,
     setGroup: setGroup,
+    setSpatialLoyalty: setSpatialLoyalty,
     changeSize: changeSize,
     changeVisualization: changeVisualization,
     resetPositioning: resetPositioning,

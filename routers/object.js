@@ -362,6 +362,15 @@ router.post('/:objectName/frame/:frameName/group/', function (req, res) {
         res.status(statusCode).json(responseContents).end();
     });
 });
+router.post('/:objectName/frame/:frameName/spatialLoyalty/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.setSpatialLoyalty(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
 
 const setupDeveloperRoutes = function() {
     // normal nodes

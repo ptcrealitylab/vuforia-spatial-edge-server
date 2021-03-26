@@ -60,6 +60,8 @@ function Frame(objectId, frameId) {
     this.distanceScale = 1.0;
     // Indicates what group the frame belongs to; null if none
     this.groupID = null;
+    // Change this to another object, world, etc that this frame should be positioned relative to in the scene graph
+    this.spatialLoyalty = 'default';
 }
 
 /**
