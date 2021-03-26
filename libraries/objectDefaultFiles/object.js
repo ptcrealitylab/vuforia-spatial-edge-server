@@ -45,6 +45,7 @@
         isFullScreenExclusive: false,
         attachesTo: null,
         wasToolJustCreated: null,
+        isPinned: true,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -605,6 +606,7 @@
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
+                this.setPinned = makeSendStub('setPinned');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1612,6 +1614,13 @@
             };
 
             // return spatialObject.wasToolJustCreated;
+        };
+
+        this.setPinned = function(isPinned) {
+            spatialObject.isPinned = isPinned;
+            postDataToParent({
+                setPinned: isPinned
+            });
         };
 
         /**
