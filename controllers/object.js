@@ -345,8 +345,26 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 };
 
-const getObject = function (objectID) {
-    return utilities.getObject(objects, objectID);
+const getObject = function (objectID, excludeUnpinned) {
+    let fullObject = utilities.getObject(objects, objectID);
+    if (!excludeUnpinned) {
+        return fullObject; // by default, returns entire object
+    }
+
+    // if query parameter is included, removes all unpinned frames
+    let filteredObject = JSON.parse(JSON.stringify(fullObject));
+    filteredObject.unpinnedFrameKeys = [];
+    Object.keys(filteredObject.frames).forEach(function(frameKey) {
+        let thisFrame = filteredObject.frames[frameKey];
+        if (typeof thisFrame.pinned !== 'undefined' && !thisFrame.pinned) {
+            filteredObject.unpinnedFrameKeys.push(frameKey);
+        }
+    });
+    // each unpinnedFrameKey is still passed to the client so that they can download it later if desired
+    filteredObject.unpinnedFrameKeys.forEach(function(frameKey) {
+        delete filteredObject.frames[frameKey];
+    });
+    return filteredObject;
 };
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
