@@ -542,7 +542,9 @@ const setupDeveloperRoutes = function() {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
             return;
         }
-        res.json(objectController.getObject(req.params.objectName)).end();
+        let excludeUnpinned = (req.query.excludeUnpinned === 'true');
+        console.log(excludeUnpinned);
+        res.json(objectController.getObject(req.params.objectName, excludeUnpinned)).end();
     });
 };
 

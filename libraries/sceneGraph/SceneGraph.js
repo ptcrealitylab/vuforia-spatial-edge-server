@@ -180,6 +180,16 @@ class SceneGraph {
         return -1; // return a value that could only be an error
     }
 
+    getDistanceNodeToPoint(keyA, x, y, z) {
+        this.recomputeGraph();
+
+        let nodeA = this.graph[keyA];
+        if (nodeA) {
+            let distance = nodeA.getDistanceToPoint(x, y, z);
+            return distance;
+        }
+    }
+
     updateWithPositionData(objectId, frameId, nodeId, localMatrix, x, y, scale) {
         let id = nodeId || frameId || objectId; // gets most specific address
         let sceneNode = this.graph[id];
