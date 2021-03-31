@@ -576,6 +576,7 @@
                 this.setStickinessOff = makeSendStub('setStickinessOff');
                 this.setExclusiveFullScreenOn = makeSendStub('setExclusiveFullScreenOn');
                 this.setExclusiveFullScreenOff = makeSendStub('setExclusiveFullScreenOff');
+                this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -1270,6 +1271,20 @@
             spatialObject.isFullScreenExclusive = false;
             postDataToParent({
                 isFullScreenExclusive: spatialObject.isFullScreenExclusive
+            });
+        };
+
+        this.isExclusiveFullScreenOccupied = function(callback) {
+            if (typeof callback !== 'undefined') {
+                spatialObject.messageCallBacks.fullScreenOccupiedCall = function (msgContent) {
+                    if (typeof msgContent.fullScreenOccupiedStatus !== 'undefined') {
+                        callback(msgContent.fullScreenOccupiedStatus);
+                    }
+                };
+            }
+
+            postDataToParent({
+                getIsExclusiveFullScreenOccupied: true
             });
         };
 
