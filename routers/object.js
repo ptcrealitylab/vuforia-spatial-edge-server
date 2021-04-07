@@ -543,7 +543,6 @@ const setupDeveloperRoutes = function() {
             return;
         }
         let excludeUnpinned = (req.query.excludeUnpinned === 'true');
-        console.log(excludeUnpinned);
         res.json(objectController.getObject(req.params.objectName, excludeUnpinned)).end();
     });
 };
