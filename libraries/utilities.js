@@ -264,6 +264,11 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
                 for (var first in result) {
                     for (var secondFirst in result[first].Tracking[0]) {
                         resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                        if (typeof resultXML === 'string' && resultXML.length === 0) {
+                            console.warn('Target file for ' + folderName + ' has empty name, ' +
+                                'and may not function correctly. Delete and re-upload target for best results.');
+                            resultXML = null;
+                        }
                         break;
                     }
                     break;

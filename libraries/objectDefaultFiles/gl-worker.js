@@ -1,5 +1,7 @@
+const debugGlWorker = false;
+
 let gl = {};
-let id = 0;
+let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
 
@@ -39,7 +41,7 @@ let realGl;
 function makeStub(functionName) {
   return function() {
     const invokeId = id;
-    id += 1;
+    id += 1 + Math.random();
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
@@ -51,23 +53,55 @@ function makeStub(functionName) {
           fakeClone: true,
           index: args[i].__uncloneableId,
         };
+      } else if (typeof args[i] === 'object') {
+        if (args[i] instanceof Float32Array) {
+          args[i] = new Float32Array(args[i]);
+        } else if (args[i] instanceof Uint8Array) {
+          args[i] = new Uint8Array(args[i]);
+        } else if (args[i] instanceof Uint16Array) {
+          args[i] = new Uint16Array(args[i]);
+        } else if (args[i] instanceof Array) {
+          args[i] = Array.from(args[i]);
+        } else {
+          if (debugGlWorker) console.log('Uncloned arg', args[i]);
+        }
       }
     }
 
     if (functionName === 'texImage2D') {
-      let img = args[args.length - 1];
-      if (img.tagName) {
-        let width = img.width;
-        let height = img.height;
+      let elt = args[args.length - 1];
+      if (elt.tagName === 'IMG') {
+        let width = elt.width;
+        let height = elt.height;
         let canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         let gfx = canvas.getContext('2d');
         gfx.width = width;
         gfx.height = height;
-        gfx.drawImage(img, 0, 0, width, height);
+        gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
+      } else if (elt.tagName === 'CANVAS') {
+        let width = elt.width;
+        let height = elt.height;
+        let gfx = elt.getContext('2d');
+        gfx.width = width;
+        gfx.height = height;
+        gfx.drawImage(elt, 0, 0, width, height);
+        let imageData = gfx.getImageData(0, 0, width, height);
+        args[args.length - 1] = imageData;
+      }
+    }
+
+    if (functionName === 'getExtension') {
+      const ext = arguments[0];
+      // Blacklist unproxied extensions
+      if (ext === 'OES_vertex_array_object' ||
+          // ext === 'EXT_frag_depth' ||
+          // ext === 'EXT_shader_texture_lod' ||
+          ext === 'EXT_blend_minmax') {
+        return null;
       }
     }
 
@@ -78,14 +112,7 @@ function makeStub(functionName) {
       args,
     };
 
-    if (realGl) {
-      window.parent.postMessage({
-        workerId,
-        messages: [message],
-      }, '*');
-    } else {
-      frameCommandBuffer.push(message);
-    }
+    frameCommandBuffer.push(message);
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
@@ -146,7 +173,7 @@ function makeStub(functionName) {
 window.addEventListener('message', function(event) {
   const message = event.data;
   if (!message) {
-    console.warn('Event missing data', message);
+    if (debugGlWorker) console.warn('Event missing data', message);
     return;
   }
 
@@ -157,9 +184,9 @@ window.addEventListener('message', function(event) {
 
     gl = new Proxy(gl, {
       get: function(obj, prop) {
-        if (typeof obj[prop] === 'function') {
-          // TODO dynamically stub
-        }
+        // TODO dynamically stub
+        // if (typeof obj[prop] === 'function') {
+        // }
         return obj[prop];
       },
     });
@@ -169,11 +196,18 @@ window.addEventListener('message', function(event) {
       gl[constName] = message.constants[constName];
     }
 
+    frameCommandBuffer = [];
     main();
+    if (frameCommandBuffer.length > 0) {
+      window.parent.postMessage({
+        workerId,
+        messages: frameCommandBuffer,
+      }, '*');
+    }
     return;
   }
 
-  if (message.id && pending.hasOwnProperty(message.id)) {
+  if (message.hasOwnProperty('id') && pending.hasOwnProperty(message.id)) {
     pending[message.id](message.result);
     delete pending[message.id];
   }

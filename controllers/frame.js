@@ -379,17 +379,19 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         // useful to not overwrite AR position when sending pos or scale from screen.
         var propertiesToIgnore = [];
 
+        let positionData = activeVehicle;
+
         // TODO: this is a hack to fix ar/screen synchronization, fix it
         // for frames, the position data is inside "ar" or "screen"
         if (activeVehicle.hasOwnProperty('visualization')) {
             if (activeVehicle.visualization === 'ar') {
-                activeVehicle = activeVehicle.ar;
+                positionData = activeVehicle.ar;
                 propertiesToIgnore.push('screen');
             } else if (activeVehicle.visualization === 'screen') {
                 if (typeof body.scale === 'number' && typeof body.scaleARFactor === 'number') {
                     activeVehicle.ar.scale = body.scale / body.scaleARFactor;
                 }
-                activeVehicle = activeVehicle.screen;
+                positionData = activeVehicle.screen;
                 propertiesToIgnore.push('ar.x', 'ar.y'); // TODO: decoding this is currently hard-coded in the editor, make generalized
             }
         }
@@ -400,9 +402,9 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         if (typeof body.x === 'number' && typeof body.y === 'number' && typeof body.scale === 'number') {
 
             // if the object is equal the datapoint id, the item is actually the object it self.
-            activeVehicle.x = body.x;
-            activeVehicle.y = body.y;
-            activeVehicle.scale = body.scale;
+            positionData.x = body.x;
+            positionData.y = body.y;
+            positionData.scale = body.scale;
 
             if (typeof body.arX === 'number' && typeof body.arY === 'number') {
                 frame.ar.x = body.arX;
@@ -414,8 +416,8 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
             didUpdate = true;
         }
 
-        if (typeof body.matrix === 'object' && activeVehicle.hasOwnProperty('matrix')) {
-            activeVehicle.matrix = body.matrix;
+        if (typeof body.matrix === 'object' && positionData.hasOwnProperty('matrix')) {
+            positionData.matrix = body.matrix;
             didUpdate = true;
         }
 
@@ -431,8 +433,9 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
             });
             updateStatus = 'updated position and/or scale';
 
-            let positionData = (typeof activeVehicle.ar !== 'undefined') ? activeVehicle.ar : activeVehicle;
-            sceneGraph.updateWithPositionData(objectID, frameID, nodeID, positionData.matrix, positionData.x, positionData.y, positionData.scale);
+            if (activeVehicle.visualization !== 'screen') {
+                sceneGraph.updateWithPositionData(objectID, frameID, nodeID, positionData.matrix, positionData.x, positionData.y, positionData.scale);
+            }
         }
         callback(200, updateStatus);
     });
@@ -443,7 +446,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
  * @param objectKey
  * @param frameKey
  * @param { {visualization: string, oldVisualizationPositionData: {{x: number, y: number, scale: number, matrix: Array.<number>}}|undefined } body
- * @param res
+ * @param callback
  */
 const changeVisualization = function(objectKey, frameKey, body, callback) {
     console.log('change visualization');
