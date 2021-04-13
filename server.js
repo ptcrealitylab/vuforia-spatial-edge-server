@@ -324,6 +324,11 @@ var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
 
+// use the cors cross origin REST model
+webServer.use(cors());
+// allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
+webServer.options('*', cors());
+
 // Image resizing library, not available on mobile
 let Jimp = null;
 if (!isMobile) {
@@ -1620,11 +1625,6 @@ function objectWebServer() {
         webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
-
-    // use the cors cross origin REST model
-    webServer.use(cors());
-    // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
-    webServer.options('*', cors());
 
     // Express router routes
     const objectRouter = require('./routers/object');
