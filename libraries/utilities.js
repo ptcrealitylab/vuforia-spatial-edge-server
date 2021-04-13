@@ -720,7 +720,6 @@ exports.actionSender = function (action, timeToLive, beatport) {
         if (err) {
             if (err.code === 'EMSGSIZE') {
                 console.error('actionSender: UDP Message Too Large.');
-                // TODO: REST Request
             } else {
                 console.log('You\'re not on a network. Can\'t send anything');
             }
