@@ -196,10 +196,17 @@ const activate = function(objectID, callback) {
 };
 
 const setVisualization = function(objectID, vis, callback) {
-    utilities.getObject(objects, objectID).visualization = vis;
-    console.log(vis, objectID);
-    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-    callback(200, 'ok');
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        callback(404, {success: false, error: 'cannot find object with ID' + objectID});
+    }
+    try {
+        object.visualization = vis;
+        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        callback(200, 'ok');
+    } catch (e) {
+        callback(500, {success: false, error: e.message});
+    }
 };
 
 // request a zip-file with the object stored inside

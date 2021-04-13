@@ -592,6 +592,7 @@
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
@@ -1562,6 +1563,12 @@
 
             postDataToParent({
                 getPositionInWorld: true
+            });
+        };
+
+        this.errorNotification = function(errorMessageText) {
+            postDataToParent({
+                errorNotification: errorMessageText
             });
         };
 
