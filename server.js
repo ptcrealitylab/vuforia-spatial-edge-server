@@ -2355,14 +2355,16 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                     // immediately create world object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined') {
+                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined') {
                         let isWorldObject = JSON.parse(req.body.isWorld);
-                        if (isWorldObject) {
+                        let isHumanObject = JSON.parse(req.body.isHuman);
+                        if (isWorldObject || isHumanObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
                             objects[objectId].port = serverPort;
-                            objects[objectId].isWorldObject = true;
+                            objects[objectId].isWorldObject = isWorldObject;
+                            objects[objectId].isHumanObject = isHumanObject;
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
                             sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
@@ -4169,7 +4171,7 @@ function setupControllers() {
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
     objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
-    spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
+    spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph, objectsPath, globalVariables);
 }
 
 checkInit('system');

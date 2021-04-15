@@ -15,6 +15,34 @@ router.get('/sceneGraph', function (req, res) {
     }).end();
 });
 
+router.post('/cameraMatrix', function (req, res) {
+    // if (!utilities.isValidId(req.params.objectName)) {
+    //     res.status(400).send('Invalid object name. Must be alphanumeric.');
+    //     return;
+    // }
+
+    spatialController.setCameraMatrix(req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+
+    /*
+        matrix: matrix,
+        clientId: clientId,
+        worldId: worldId,
+        lastEditor: globalStates.tempUuid
+     */
+
+    // var sceneGraph = spatialController.getSceneGraph();
+    // if (sceneGraph) {
+    //     res.status(200).json(sceneGraph).end();
+    //     return;
+    // }
+    // res.status(404).json({
+    //     failure: true,
+    //     error: 'Scene Graph not available on this server'
+    // }).end();
+});
+
 router.get('/searchObjects', function (req, res) {
     spatialController.searchObjects(req.query, function(results, err) {
         if (!err) {

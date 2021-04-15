@@ -2,7 +2,7 @@
 // const fs = require('fs');
 // const path = require('path');
 // const formidable = require('formidable');
-// const utilities = require('../libraries/utilities');
+const utilities = require('../libraries/utilities');
 
 // Variables populated from server.js with setup()
 var hardwareAPI;
@@ -10,10 +10,49 @@ var hardwareAPI;
 var objects = {};
 var _globalVariables;
 var sceneGraph;
+var objectsPath;
+var globalVariables;
 
 const getSceneGraph = function() {
     console.log('GET /spatial/sceneGraph');
     return hardwareAPI.getSceneGraph();
+};
+
+const setCameraMatrix = function(body, callback) {
+    if (!body.worldId) { return; }
+    let worldObject = utilities.getObject(objects, body.worldId);
+    if (!worldObject) {
+        callback(404, {failure: true, error: 'Object ' + body.worldId + ' not found'});
+        return;
+    }
+
+    if (typeof worldObject.localizedDevices === 'undefined') {
+        worldObject.localizedDevices = {};
+    }
+
+    worldObject.localizedDevices[body.clientId] = {
+        matrix: body.matrix,
+        tempId: body.lastEditor
+    };
+
+    // console.log(worldObject.localizedDevices);
+
+    sceneGraph.updateLocalizedDevices(body.worldId, worldObject.localizedDevices);
+
+    // worldObject.matrix = body.matrix;
+    // console.log('set matrix for ' + body.worldId + ' to ' + body.matrix.toString());
+
+    // if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
+    //     object.worldId = body.worldId;
+    //     console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
+    //     sceneGraph.updateObjectWorldId(objectID, object.worldId);
+    // }
+
+    utilities.writeObjectToFile(objects, body.worldId, objectsPath, globalVariables.saveToDisk);
+
+    // sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
+
+    callback(200, {success: true});
 };
 
 // http://localhost:8080/spatial/search?maxDistance=2000&src=communication&publicData.title.includes=Machine&publicData.mentions.includes=@Ben
@@ -149,15 +188,18 @@ const searchFrames = function(queryParams, callback) {
     // });
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, sceneGraph_, objectsPath_, globalVariables_) {
     objects = objects_;
     _globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     sceneGraph = sceneGraph_;
+    objectsPath = objectsPath_;
+    globalVariables = globalVariables_;
 };
 
 module.exports = {
     getSceneGraph: getSceneGraph,
+    setCameraMatrix: setCameraMatrix,
     searchObjects: searchObjects,
     searchFrames: searchFrames,
     setup: setup

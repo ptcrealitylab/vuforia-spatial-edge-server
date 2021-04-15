@@ -40,6 +40,9 @@ class SceneGraph {
 
     addObjectAndChildren(objectId, object) {
         this.addObject(objectId, object.matrix, true);
+        if (typeof object.localizedDevices !== 'undefined') {
+            this.updateLocalizedDevices(objectId, object.localizedDevices);
+        }
         for (let frameId in object.frames) {
             let frame = object.frames[frameId];
             this.addFrame(objectId, frameId, frame, frame.ar.matrix);
@@ -174,7 +177,7 @@ class SceneGraph {
             const removeElementEvent = SceneGraphEvent.RemoveElement(id);
             this.networkManager.addEvent(removeElementEvent);
         }
-        
+
         let sceneNode = this.graph[id];
         if (sceneNode) {
 
@@ -228,6 +231,11 @@ class SceneGraph {
         let id = nodeId || frameId || objectId; // gets most specific address
         let sceneNode = this.graph[id];
         if (sceneNode) {
+            if (typeof x === 'undefined' && typeof y === 'undefined' && typeof scale === 'undefined' &&
+                localMatrix && (localMatrix.toString() === sceneNode.localMatrix.toString())) {
+                // console.log('skip update.. no changes');
+                return;
+            }
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
             this.triggerUpdateCallbacks();
@@ -252,6 +260,30 @@ class SceneGraph {
         }
         objectNode.setParent(worldNode);
         this.triggerUpdateCallbacks();
+    }
+
+    updateLocalizedDevices(worldId, localizedDevices) {
+        // console.log('UPDATE LOCALIZED DEVICES');
+        let worldNode = this.graph[worldId];
+        if (!worldId) { return; }
+        // add nodes for each new localizedDevice
+        Object.keys(localizedDevices).forEach(function(clientId) {
+            // this.addFrame(worldId, )
+            let matrix = localizedDevices[clientId].matrix;
+            let index = this.getNodeOrRotateXChild(worldNode).children.map(function(node) { return node.id; }).indexOf(clientId);
+            if (index === -1) {
+                // even tho client devices aren't "frames" they can be added to the scene graph in the right spot like:
+                this.addFrame(worldId, clientId, undefined, matrix);
+                console.log('ADD LOCALIZED DEVICE: ' + clientId);
+            } else {
+                let thatNode = this.graph[clientId];
+                if (thatNode) {
+                    this.updateWithPositionData(worldId, clientId, null, matrix);
+                    console.log('UPDATE LOCALIZED DEVICE: ' + clientId);
+                }
+            }
+        }.bind(this));
+        // TODO remove nodes if old localizedDevice isn't still present in args
     }
 
     onUpdate(callback) {
@@ -327,7 +359,15 @@ class SceneGraph {
             return node.worldMatrix;
         }
     }
-    
+
+    getNodeOrRotateXChild(sceneNode) {
+        if (sceneNode.needsRotateX) {
+            let childRotateXId = sceneNode.id + 'rotateX';
+            return this.graph[childRotateXId];
+        }
+        return sceneNode;
+    }
+
     handleMessage(message) {
         const timestamp = message.timestamp;
         message.events.forEach(messageEvent => {
