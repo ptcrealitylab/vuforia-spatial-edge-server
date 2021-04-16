@@ -1640,11 +1640,6 @@ function objectWebServer() {
         webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
-
-    // use the cors cross origin REST model
-    webServer.use(cors());
-    // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
-    webServer.options('*', cors());
     
     webServer.post('/action', (req, res) => {
         const action = JSON.parse(req.body.action);
