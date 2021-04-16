@@ -109,10 +109,26 @@ function makeGroundPlaneRotationX(theta) {
         0, 0, 0, 1];
 }
 
+function matrixToPosition(matrix) {
+    return {
+        x: matrix[12] / matrix[15],
+        y: matrix[13] / matrix[15],
+        z: matrix[14] / matrix[15]
+    }
+}
+
+function matrixDistance(mat1, mat2) {
+    let pos1 = matrixToPosition(mat1);
+    let pos2 = matrixToPosition(mat2);
+    return positionDistance(pos1, pos2);
+}
+
 exports.newIdentityMatrix = newIdentityMatrix;
 exports.multiplyMatrix = multiplyMatrix;
 exports.invertMatrix = invertMatrix;
 exports.copyMatrixInPlace = copyMatrixInPlace;
 exports.positionDistance = positionDistance;
+exports.matrixDistance = matrixDistance;
+exports.matrixToPosition = matrixToPosition;
 exports.distance = distance;
 exports.makeGroundPlaneRotationX = makeGroundPlaneRotationX;

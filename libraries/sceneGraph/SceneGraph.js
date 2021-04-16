@@ -1,12 +1,19 @@
 let SceneNode = require('./SceneNode');
 let utils = require('./utils');
+const actionSender = require('../utilities').actionSender;
+const { SceneGraphEvent, SceneGraphEventOpEnum, SceneGraphNetworkManager } = require('./SceneGraphNetworking');
+const { getIP } = require('../../server');
+
+const EVENT_UPDATE_INTERVAL = 3000; // 3 seconds
+const FULL_UPDATE_INTERVAL = 60000; // 1 minute
+
 /**
  * The scene graph stores and computes the locations of all known objects, tools, and nodes.
  * It mirrors the information collected by Spatial Toolbox clients and can be used to perform
  * spatial computations on the server about the relative locations of various elements.
  */
 class SceneGraph {
-    constructor() {
+    constructor(shouldBroadcastChanges) {
         this.NAMES = Object.freeze({
             ROOT: 'ROOT',
             CAMERA: 'CAMERA', // TODO: might not need CAMERA and GROUNDPLANE on server
@@ -19,6 +26,16 @@ class SceneGraph {
         this.graph[this.NAMES.ROOT] = this.rootNode;
 
         this.updateCallbacks = [];
+        this.shouldBroadcastChanges = shouldBroadcastChanges;
+        if (this.shouldBroadcastChanges) {
+            this.networkManager = new SceneGraphNetworkManager(actionSender, getIP);
+            this.eventUpdateInterval = setInterval(() => {
+                this.networkManager.sendEventUpdates();
+            }, EVENT_UPDATE_INTERVAL);
+            this.fullUpdateInterval = setInterval(() => {
+                this.networkManager.sendFullUpdate(this.getSerializableCopy());
+            }, FULL_UPDATE_INTERVAL);
+        }
     }
 
     addObjectAndChildren(objectId, object) {
@@ -34,6 +51,10 @@ class SceneGraph {
     }
 
     addObject(objectId, initialLocalMatrix, needsRotateX) {
+        if (this.shouldBroadcastChanges) {
+            const addObjectEvent = SceneGraphEvent.AddObject(objectId, initialLocalMatrix, needsRotateX);
+            this.networkManager.addEvent(addObjectEvent);
+        }
         let sceneNode = null;
         if (typeof this.graph[objectId] !== 'undefined') {
             sceneNode = this.graph[objectId];
@@ -58,6 +79,10 @@ class SceneGraph {
     }
 
     addFrame(objectId, frameId, linkedFrame, initialLocalMatrix) {
+        if (this.shouldBroadcastChanges) {
+            const addFrameEvent = SceneGraphEvent.AddFrame(objectId, frameId, linkedFrame, initialLocalMatrix);
+            this.networkManager.addEvent(addFrameEvent);
+        }
         let sceneNode = null;
         if (typeof this.graph[frameId] !== 'undefined') {
             sceneNode = this.graph[frameId];
@@ -88,6 +113,10 @@ class SceneGraph {
     }
 
     addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix) {
+        if (this.shouldBroadcastChanges) {
+            const addNodeEvent = SceneGraphEvent.AddNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix);
+            this.networkManager.addEvent(addNodeEvent);
+        }
         let sceneNode = null;
         if (typeof this.graph[nodeId] !== 'undefined') {
             sceneNode = this.graph[nodeId];
@@ -141,6 +170,11 @@ class SceneGraph {
     }
 
     removeElementAndChildren(id) {
+        if (this.shouldBroadcastChanges) {
+            const removeElementEvent = SceneGraphEvent.RemoveElement(id);
+            this.networkManager.addEvent(removeElementEvent);
+        }
+        
         let sceneNode = this.graph[id];
         if (sceneNode) {
 
@@ -187,6 +221,13 @@ class SceneGraph {
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
             this.triggerUpdateCallbacks();
+            if (this.shouldBroadcastChanges && sceneNode.broadcastRulesSatisfied()) {
+                const updatePositionEvent = SceneGraphEvent.UpdatePosition(id, localMatrix, x, y, scale);
+                this.networkManager.addEvent(updatePositionEvent);
+                sceneNode.onBroadcast();
+            }
+        } else {
+            console.warn('SceneGraph.updateWithPositionData: Could not find node');
         }
     }
 
@@ -195,7 +236,12 @@ class SceneGraph {
         let worldNode = this.graph[worldId];
         let objectNode = this.graph[objectId];
         if (!objectNode || !worldNode) { return; } // unknown object or world
+        if (this.shouldBroadcastChanges) {
+            const updateObjectWorldIdEvent = SceneGraphEvent.UpdateObjectWorldId(objectId, worldId);
+            this.networkManager.addEvent(updateObjectWorldIdEvent);
+        }
         objectNode.setParent(worldNode);
+        this.triggerUpdateCallbacks();
     }
 
     onUpdate(callback) {
@@ -211,6 +257,10 @@ class SceneGraph {
     deactivateElement(id) {
         let node = this.graph[id];
         if (node && !node.deactivated) {
+            if (this.shouldBroadcastChanges) {
+                const deactivateElementEvent = SceneGraphEvent.DeactivateElement(id);
+                this.networkManager.addEvent(deactivateElementEvent);
+            }
             node.deactivated = true;
             this.triggerUpdateCallbacks();
         }
@@ -219,6 +269,10 @@ class SceneGraph {
     activateElement(id) {
         let node = this.graph[id];
         if (node && node.deactivated) {
+            if (this.shouldBroadcastChanges) {
+                const activateElementEvent = SceneGraphEvent.ActivateElement(id);
+                this.networkManager.addEvent(activateElementEvent);
+            }
             node.deactivated = false;
             this.triggerUpdateCallbacks();
         }
@@ -234,13 +288,13 @@ class SceneGraph {
         return copy;
     }
 
-    addDataFromSerializableGraph(data) {
+    addDataFromSerializableGraph(data, shouldUpdateConflicts) {
         let nodesToUpdate = [];
 
         // Add a placeholder element for each data entry in the serializable copy of the graph
         for (var key in data) {
-            // TODO: how to resolve conflicts? currently ignores nodes that already exist
-            if (typeof this.graph[key] !== 'undefined') { continue; }
+            // // TODO: how to resolve conflicts? currently ignores nodes that already exist
+            if (typeof this.graph[key] !== 'undefined' && !shouldUpdateConflicts) { continue; }
 
             let sceneNode = new SceneNode(key);
             this.graph[key] = sceneNode;
@@ -262,6 +316,68 @@ class SceneGraph {
         if (node) {
             return node.worldMatrix;
         }
+    }
+    
+    handleMessage(message) {
+        const timestamp = message.timestamp;
+        message.events.forEach(messageEvent => {
+            console.log(`SceneGraph.handleMessage: Received operation ${messageEvent.op}.`);
+            if (messageEvent.op != SceneGraphEventOpEnum.FULL_UPDATE) {
+                console.log(messageEvent.data);
+            }
+            switch (messageEvent.op) {
+                case SceneGraphEventOpEnum.ADD_OBJECT: {
+                    var { objectId, initialLocalMatrix, needsRotateX } = messageEvent.data;
+                    this.addObject(objectId, initialLocalMatrix, needsRotateX);
+                    break;
+                }
+                case SceneGraphEventOpEnum.ADD_FRAME: {
+                    var { objectId, frameId, linkedFrame, initialLocalMatrix } = messageEvent.data;
+                    this.addFrame(objectId, frameId, linkedFrame, initialLocalMatrix);
+                    break;
+                }
+                case SceneGraphEventOpEnum.ADD_NODE: {
+                    var { objectId, frameId, nodeId, linkedNode, initialLocalMatrix } = messageEvent.data;
+                    this.addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix);
+                    break;
+                }
+                case SceneGraphEventOpEnum.REMOVE_ELEMENT: {
+                    var { id } = messageEvent.data;
+                    this.removeElementAndChildren(id);
+                    break;
+                }
+                case SceneGraphEventOpEnum.UPDATE_POSITION: {
+                    console.warn('SceneGraph.handleMessage: Need to implement timestamp-dependent position updates');
+                    var { id, localMatrix, x, y, scale } = messageEvent.data;
+                    this.updateWithPositionData(id, id, id, localMatrix, x, y, scale);
+                    break;
+                }
+                case SceneGraphEventOpEnum.UPDATE_OBJECT_WORLD_ID: {
+                    var { objectId, worldId } = messageEvent.data;
+                    this.updateObjectWorldId(objectId, worldId);
+                    break;
+                }
+                case SceneGraphEventOpEnum.DEACTIVATE_ELEMENT: {
+                    var { id } = messageEvent.data;
+                    this.deactivateElement(id);
+                    break;
+                }
+                case SceneGraphEventOpEnum.ACTIVATE_ELEMENT: {
+                    var { id } = messageEvent.data;
+                    this.activateElement(id);
+                    break;
+                }
+                case SceneGraphEventOpEnum.FULL_UPDATE: {
+                    var { serializedGraph } = messageEvent.data;
+                    this.addDataFromSerializableGraph(serializedGraph, true);
+                    break;
+                }
+                default: {
+                    console.error(`SceneGraph.handleMessage: Operation '${messageEvent.op}' is not yet implemented.`);
+                    break;
+                }
+            }
+        });
     }
 }
 
