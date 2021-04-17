@@ -56,6 +56,8 @@ function ObjectModel(ip, version, protocol, objectId) {
         height: 0.3
     };
     this.isWorldObject = false;
+    this.isAnchor = false;
+    this.type = 'object'; // or: 'world' or 'human' etc...
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 

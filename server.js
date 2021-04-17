@@ -2365,6 +2365,7 @@ function objectWebServer() {
                             objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = isWorldObject;
                             objects[objectId].isHumanObject = isHumanObject;
+                            objects[objectId].type = isWorldObject ? 'world' : (isHumanObject ? 'human' : 'object');
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
                             sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
@@ -3398,6 +3399,22 @@ function socketServer() {
             }
 
         });
+
+        // worldGraph.onUpdate(function() {
+        //     console.log('world graph updated');
+        //
+        //     for (var socketId in realityEditorUpdateSocketArray) {
+        //         // if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+        //         //     //  console.log('dont send updates to the editor that triggered it');
+        //         //     continue;
+        //         // }
+        //
+        //         var thisSocket = io.sockets.connected[socketId];
+        //         if (thisSocket) {
+        //             thisSocket.emit('/spatial/graph', JSON.stringify(worldGraph.compile().getSerializableCopy()));
+        //         }
+        //     }
+        // });
 
         socket.on('/batchedUpdate', function (msg) {
             var msgContent = JSON.parse(msg);

@@ -37,7 +37,7 @@ const setCameraMatrix = function(body, callback) {
 
     // console.log(worldObject.localizedDevices);
 
-    sceneGraph.updateLocalizedDevices(body.worldId, worldObject.localizedDevices);
+    // sceneGraph.updateLocalizedDevices(body.worldId, worldObject.localizedDevices);
 
     // worldObject.matrix = body.matrix;
     // console.log('set matrix for ' + body.worldId + ' to ' + body.matrix.toString());

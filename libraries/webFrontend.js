@@ -333,9 +333,9 @@ exports.uploadInfoContent = function (parm, objectLookup, objects, knownObjects,
                     '' + thisHtmlNode.routeBuffer[3] + '<br></td></tr>';
             } else {
                 if (!thisHtmlNode.text) {
-                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.name + '</td><td>' + thisHtmlNode.data.value + '</td></tr>';
+                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.name + '</td><td>' + JSON.stringify(thisHtmlNode.data.value) + '</td></tr>';
                 } else {
-                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.text + '</td><td>' + thisHtmlNode.data.value + '</td></tr>';
+                    text += '<tr> <td>' + infoCount + '</td><td>' + thisHtmlNode.text + '</td><td>' + JSON.stringify(thisHtmlNode.data.value) + '</td></tr>';
                 }
 
             }
