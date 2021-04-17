@@ -326,6 +326,11 @@ var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 var request = require('request');
 
+// use the cors cross origin REST model
+webServer.use(cors());
+// allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
+webServer.options('*', cors());
+
 // Image resizing library, not available on mobile
 let Jimp = null;
 if (!isMobile) {
@@ -1521,7 +1526,7 @@ function objectWebServer() {
         var switchToInteraceTool = true;
         if (!toolpath) switchToInteraceTool = false;
 
-        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml')
+        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml' || urlArray[urlArray.length - 1] === 'target.glb')
             && urlArray[urlArray.length - 2] === 'target') {
             urlArray[urlArray.length - 2] = identityFolderName + '/target';
             switchToInteraceTool = false;
@@ -1653,11 +1658,6 @@ function objectWebServer() {
         webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
-
-    // use the cors cross origin REST model
-    webServer.use(cors());
-    // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
-    webServer.options('*', cors());
     
     webServer.post('/action', (req, res) => {
         const action = JSON.parse(req.body.action);
@@ -2376,7 +2376,8 @@ function objectWebServer() {
                                 initialized: true,
                                 jpgExists: false,
                                 xmlExists: false,
-                                datExists: false
+                                datExists: false,
+                                glbExists: false
                             };
                             res.status(200).json(sendObject);
                             return;
@@ -2713,7 +2714,7 @@ function objectWebServer() {
                             fileExtension = 'jpg';
                         }
 
-                        if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml') {
+                        if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
                             if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
                                 fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
                                     if (err) {
@@ -2831,8 +2832,9 @@ function objectWebServer() {
                                 let jpgPath = path.join(folderD, identityFolderName, '/target/target.jpg');
                                 let datPath = path.join(folderD, identityFolderName, '/target/target.dat');
                                 let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
+                                let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
 
-                                var fileList = [jpgPath, xmlPath, datPath];
+                                var fileList = [jpgPath, xmlPath, datPath, glbPath];
                                 var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                 if (typeof objects[thisObjectId] !== 'undefined') {
@@ -2840,6 +2842,7 @@ function objectWebServer() {
                                     var jpg = fs.existsSync(jpgPath);
                                     var dat = fs.existsSync(datPath);
                                     var xml = fs.existsSync(xmlPath);
+                                    var glb = fs.existsSync(glbPath);
 
                                     var sendObject = {
                                         id: thisObjectId,
@@ -2847,7 +2850,8 @@ function objectWebServer() {
                                         initialized: (jpg && xml),
                                         jpgExists: jpg,
                                         xmlExists: xml,
-                                        datExists: dat
+                                        datExists: dat,
+                                        glbExists: glb
                                     };
 
                                     thisObject.tcs = utilities.generateChecksums(objects, fileList);
@@ -2901,7 +2905,7 @@ function objectWebServer() {
                                     for (var i = 0; i < folderFile.length; i++) {
                                         console.log(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
-                                        if (folderFileType === 'xml' || folderFileType === 'dat') {
+                                        if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb') {
                                             fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                             anyTargetsUploaded = true;
                                         }
@@ -2922,7 +2926,7 @@ function objectWebServer() {
                                         hardwareAPI.reset();
                                         console.log('have initialized the modules');
 
-                                        var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat'];
+                                        var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat', folderD + '/' + identityFolderName + '/target/target.glb'];
 
                                         var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
@@ -2940,6 +2944,7 @@ function objectWebServer() {
                                             var jpg = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.jpg');
                                             var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
                                             var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
+                                            var glb = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.glb');
 
                                             let sendObject = {
                                                 id: thisObjectId,
@@ -2947,7 +2952,8 @@ function objectWebServer() {
                                                 initialized: (jpg && xml && dat),
                                                 jpgExists: jpg,
                                                 xmlExists: xml,
-                                                datExists: dat
+                                                datExists: dat,
+                                                glbExists: glb
                                             };
 
                                             res.json(sendObject);
