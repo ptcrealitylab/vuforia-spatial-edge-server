@@ -1,0 +1,46 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: archiver
+    versions:
+    - "> 3.1.1"
+  - dependency-name: archiver
+    versions:
+    - ">= 4.a, < 5"
+  - dependency-name: eslint
+    versions:
+    - ">= 7.a, < 8"
+  - dependency-name: express-handlebars
+    versions:
+    - ">= 5.a, < 6"
+  - dependency-name: jimp
+    versions:
+    - "> 0.13.0"
+  - dependency-name: node-persist
+    versions:
+    - "> 2.1.0"
+  - dependency-name: socket.io
+    versions:
+    - "> 2.2.0"
+  - dependency-name: socket.io-client
+    versions:
+    - ">= 3.a, < 4"
+  - dependency-name: socket.io-client
+    versions:
+    - 2.4.0
+    - 4.0.0
+  - dependency-name: simple-git
+    versions:
+    - 2.32.0
+- package-ecosystem: gitsubmodule
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
