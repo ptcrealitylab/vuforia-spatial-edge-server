@@ -1,3 +1,5 @@
+const debugGlWorker = false;
+
 let gl = {};
 let id = Math.random();
 let proxies = [];
@@ -43,7 +45,10 @@ function makeStub(functionName) {
 
     let args = Array.from(arguments);
     for (let i = 0; i < args.length; i++) {
-      if (args[i] && args[i].hasOwnProperty('__uncloneableId')) {
+      if (!args[i]) {
+        continue;
+      }
+      if (args[i].hasOwnProperty('__uncloneableId')) {
         args[i] = {
           fakeClone: true,
           index: args[i].__uncloneableId,
@@ -53,10 +58,12 @@ function makeStub(functionName) {
           args[i] = new Float32Array(args[i]);
         } else if (args[i] instanceof Uint8Array) {
           args[i] = new Uint8Array(args[i]);
+        } else if (args[i] instanceof Uint16Array) {
+          args[i] = new Uint16Array(args[i]);
         } else if (args[i] instanceof Array) {
           args[i] = Array.from(args[i]);
         } else {
-          console.log('Uncloned arg', args[i]);
+          if (debugGlWorker) console.log('Uncloned arg', args[i]);
         }
       }
     }
@@ -84,8 +91,6 @@ function makeStub(functionName) {
         gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
-      } else {
-        console.warn('not an easy image', elt);
       }
     }
 
@@ -107,14 +112,7 @@ function makeStub(functionName) {
       args,
     };
 
-    if (realGl) {
-      window.parent.postMessage({
-        workerId,
-        messages: [message],
-      }, '*');
-    } else {
-      frameCommandBuffer.push(message);
-    }
+    frameCommandBuffer.push(message);
 
     if (realGl) {
       const unclonedArgs = Array.from(arguments).map(a => {
@@ -175,7 +173,7 @@ function makeStub(functionName) {
 window.addEventListener('message', function(event) {
   const message = event.data;
   if (!message) {
-    console.warn('Event missing data', message);
+    if (debugGlWorker) console.warn('Event missing data', message);
     return;
   }
 
@@ -186,9 +184,9 @@ window.addEventListener('message', function(event) {
 
     gl = new Proxy(gl, {
       get: function(obj, prop) {
-        if (typeof obj[prop] === 'function') {
-          // TODO dynamically stub
-        }
+        // TODO dynamically stub
+        // if (typeof obj[prop] === 'function') {
+        // }
         return obj[prop];
       },
     });
@@ -198,11 +196,18 @@ window.addEventListener('message', function(event) {
       gl[constName] = message.constants[constName];
     }
 
+    frameCommandBuffer = [];
     main();
+    if (frameCommandBuffer.length > 0) {
+      window.parent.postMessage({
+        workerId,
+        messages: frameCommandBuffer,
+      }, '*');
+    }
     return;
   }
 
-  if (message.id && pending.hasOwnProperty(message.id)) {
+  if (message.hasOwnProperty('id') && pending.hasOwnProperty(message.id)) {
     pending[message.id](message.result);
     delete pending[message.id];
   }

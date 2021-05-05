@@ -89,7 +89,7 @@ function EmptyNode(nodeName, type) {
  * Spatial Toolbox server.
  * @param {string} objectName The name of the RealityInterface
  * @param {string} nodeName The name of the IO point
- * @param {value} value The value to be passed on
+ * @param {number} value The value to be passed on
  * @param {string} mode specifies the datatype of value, you can define it to be whatever you want. For example 'f' could mean value is a floating point variable.
  **/
 exports.write = function (object, tool, node, value, mode, unit, unitMin, unitMax) {
@@ -261,12 +261,12 @@ exports.getWorldGraph = function () {
 };
 
 exports.getDistanceOneToMany = function (id1, ids) {
-    sceneGraphReference.recomputeGraph();
+    const compiledGraph = worldGraphReference.compile();
     let distances = {};
     distances[id1] = {};
     ids.forEach(function (id2) {
-        let computedDistance = sceneGraphReference.getDistanceBetween(id1, id2);
-        console.log(computedDistance);
+        let computedDistance = compiledGraph.getDistanceBetween(id1, id2);
+        // console.log(computedDistance);
         distances[id1][id2] = computedDistance;
     });
     return distances;
@@ -274,6 +274,10 @@ exports.getDistanceOneToMany = function (id1, ids) {
 
 exports.onSceneGraphUpdated = function (callback) {
     sceneGraphReference.onUpdate(callback);
+};
+
+exports.onWorldGraphUpdated = function (callback) {
+    worldGraphReference.onUpdate(callback);
 };
 
 var getAllTools_ = function (object) {
