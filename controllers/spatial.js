@@ -33,6 +33,22 @@ const searchObjects = function(queryParams, callback) {
     });
 };
 
+/**
+ * Returns the validAddresses of all frames matching the queryParams.
+ * Currently supported queryParams:
+ *
+ * (interdependent params):
+ * maxDistance: tools further away than this (in mm) will be excluded
+ * worldId: tools not localized within this world will be excluded
+ * clientX|clientY|clientZ: the origin (camera position) against which distance is measured
+ *
+ * (independent params):
+ * publicData: a set of requirements on the publicData of any node on the tool. negative matches are excluded.
+ *   (example: publicData.mentions.includes=@Ben)
+ *
+ * @param queryParams
+ * @param callback
+ */
 const searchFrames = function(queryParams, callback) {
     console.log(queryParams);
 
@@ -142,11 +158,6 @@ const searchFrames = function(queryParams, callback) {
     }
 
     callback({validAddresses: validAddresses}, null);
-
-    // callback(null, {
-    //     code: 500,
-    //     message: 'unimplemented'
-    // });
 };
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, sceneGraph_) {

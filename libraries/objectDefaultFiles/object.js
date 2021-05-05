@@ -1165,7 +1165,6 @@
             };
 
             spatialObject.sendDeviceDistance = true;
-            // postAllDataToParent();
             postDataToParent({
                 sendDeviceDistance: spatialObject.sendDeviceDistance
             });
@@ -1621,8 +1620,6 @@
                     delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
                 }
             };
-
-            // return spatialObject.wasToolJustCreated;
         };
 
         this.setPinned = function(isPinned) {
