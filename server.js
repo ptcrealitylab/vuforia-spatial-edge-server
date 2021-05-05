@@ -264,6 +264,8 @@ services.getIP = function () {
     return this.ips.interfaces[this.ips.activeInterface];
 };
 
+exports.getIP = services.getIP.bind(services);
+
 services.ip = services.getIP(); //ip.address();
 
 var bodyParser = require('body-parser');  // body parsing middleware
@@ -547,6 +549,7 @@ var hardwareInterfaceLoader = null;
 // It has no influance on the connectivity, as it is referenced by the object UUID through the entire time.
 var protocols = new Protocols();
 var knownObjects = {};
+exports.knownObjects = knownObjects;
 // A lookup table used to process faster through the objects.
 var objectLookup = {};
 // This list holds all the socket connections that are kept alive. Socket connections are kept alive if a link is
@@ -578,7 +581,7 @@ if (isMobile) {
 var worldObject;
 
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
-const sceneGraph = new SceneGraph();
+const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
@@ -1204,6 +1207,21 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
 services.ip = services.getIP(); //ip.address();
 
+function handleActionMessage(action) {
+    if (action === 'ping') {
+        for (let key in objects) {
+            objectBeatSender(beatPort, key, objects[key].ip, true);
+        }
+        return;
+    }
+    if (action.type === 'SceneGraphEventMessage') {
+        if (action.ip === services.getIP()) { // UDP also broadcasts to yourself
+            return;
+        }
+        worldGraph.handleMessage(action);
+    }
+}
+
 function objectBeatServer() {
     if (isMobile) {
         return;
@@ -1246,11 +1264,8 @@ function objectBeatServer() {
             getKnownSceneGraph(msgContent.ip);
         }
         // check if action 'ping'
-        if (msgContent.action === 'ping') {
-            //console.log(msgContent.action);
-            for (let key in objects) {
-                objectBeatSender(beatPort, key, objects[key].ip, true);
-            }
+        if (msgContent.action) {
+            handleActionMessage(msgContent.action);
         }
 
         if (typeof msgContent.matrixBroadcast !== 'undefined') {
@@ -1585,6 +1600,12 @@ function objectWebServer() {
             for (let i = 0; i < urlArray.length; i++) {
                 level += '../';
             }
+
+            html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
+            html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
+
+            html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+            
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
             scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1637,6 +1658,12 @@ function objectWebServer() {
     webServer.use(cors());
     // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
     webServer.options('*', cors());
+    
+    webServer.post('/action', (req, res) => {
+        const action = JSON.parse(req.body.action);
+        handleActionMessage(action);
+        res.send();
+    });
 
     // Express router routes
     const objectRouter = require('./routers/object');
@@ -2968,7 +2995,7 @@ function objectWebServer() {
                 });
             });
 
-        webServer.delete(objectInterfaceFolder + 'content/:id', function(req, res) {
+        webServer.delete(objectInterfaceFolder + 'content/:id', function (req, res) {
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object name. Must be alphanumeric.');
                 return;
@@ -3773,9 +3800,11 @@ var engine = {
     logic: undefined,
 
     // triggered by normal inputs from hardware or network
-    trigger: function (object, frame, node, thisNode) {
+    trigger: function (object, frame, node, thisNode, link = null) {
         if (!thisNode.processedData)
             thisNode.processedData = {};
+
+        thisNode.processLink = link;
 
         var _this = this;
         if ((thisNode.type in this.nodeTypeModules)) {
@@ -3789,50 +3818,58 @@ var engine = {
 
         var thisFrame = getFrame(object, frame);
 
-        for (var linkKey in thisFrame.links) {
+        // process a single link or all links for a node.
+        if (thisNode.processLink) {
+            this.link = thisFrame.links[thisNode.processLink];
+            this.processLink(object, frame, node, thisNode, thisNode.processLink);
+        } else {
+            for (var linkKey in thisFrame.links) {
+                this.link = thisFrame.links[linkKey];
+                this.processLink(object, frame, node, thisNode, linkKey);
+            }
+        }
+    },
+    processLink: function (object, frame, node, thisNode, linkKey) {
+        if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame) {
+            if (!checkObjectActivation(this.link.objectB)) {
+                socketSender(object, frame, linkKey, thisNode.processedData);
+            } else {
 
-            this.link = thisFrame.links[linkKey];
+                if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
 
-            if (this.link.nodeA === node && this.link.objectA === object && this.link.frameA === frame) {
-                if (!checkObjectActivation(this.link.objectB)) {
-                    socketSender(object, frame, linkKey, thisNode.processedData);
+                this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
+
+                // if this is a regular node, not a logic node, process normally
+                if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
+                    this.computeProcessedData(thisNode, this.link, this.internalObjectDestination);
                 } else {
+                    // otherwise process as logic node by triggering its internal blocks connected to each input
+                    this.blockKey = 'in' + this.link.logicB;
 
-                    if (!doesNodeExist(this.link.objectB, this.link.frameB, this.link.nodeB)) return;
+                    if (this.internalObjectDestination && this.blockKey) {
+                        if (this.internalObjectDestination.blocks) {
+                            this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
 
-                    this.internalObjectDestination = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
+                            /* for (let key in thisNode.processedData) {
+                                this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
+                            }*/
+                            this.internalObjectDestination.data[0] = utilities.deepCopy(thisNode.processedData);
 
-                    // if this is a regular node, not a logic node, process normally
-                    if (this.link.logicB !== 0 && this.link.logicB !== 1 && this.link.logicB !== 2 && this.link.logicB !== 3) {
-                        this.computeProcessedData(thisNode, this.link, this.internalObjectDestination);
-                    } else {
-                        // otherwise process as logic node by triggering its internal blocks connected to each input
-                        this.blockKey = 'in' + this.link.logicB;
-
-                        if (this.internalObjectDestination && this.blockKey) {
-                            if (this.internalObjectDestination.blocks) {
-                                this.internalObjectDestination = this.internalObjectDestination.blocks[this.blockKey];
-
-                                /* for (let key in thisNode.processedData) {
-                                    this.internalObjectDestination.data[0][key] = thisNode.processedData[key];
-                                }*/
-                                this.internalObjectDestination.data[0] = utilities.deepCopy(thisNode.processedData);
-
-                                this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
-                                // this needs to be at the beginning;
-                                if (!this.nextLogic.routeBuffer) {
-                                    this.nextLogic.routeBuffer = [0, 0, 0, 0];
-                                }
-
-                                this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
-                                this.blockTrigger(this.link.objectB, this.link.frameB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
+                            this.nextLogic = getNode(this.link.objectB, this.link.frameB, this.link.nodeB);
+                            // this needs to be at the beginning;
+                            if (!this.nextLogic.routeBuffer) {
+                                this.nextLogic.routeBuffer = [0, 0, 0, 0];
                             }
+
+                            this.nextLogic.routeBuffer[this.link.logicB] = thisNode.processedData.value;
+                            this.blockTrigger(this.link.objectB, this.link.frameB, this.link.nodeB, this.blockKey, 0, this.internalObjectDestination);
                         }
                     }
                 }
             }
         }
     },
+
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
         if (!internalObjectDestination) {
@@ -4107,7 +4144,7 @@ function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
     blockLinkController.setup(objects, globalVariables, objectsPath);
     frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
-    linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater);
+    linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
     objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);

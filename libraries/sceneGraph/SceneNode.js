@@ -1,7 +1,10 @@
 let utils = require('./utils');
+const { SceneGraphUpdateRule, SceneGraphUpdateRuleTypeEnum } = require('./SceneGraphNetworking');
 
 const globalFrameScaleAdjustment = 0.5;
 const globalNodeScaleAdjustment = 0.5;
+
+const defaultSensitivityRule = SceneGraphUpdateRule.Sensitivity(20); // 20 Millimeters = 2 Centimeters
 
 /**
  * Defines a node in our scene graph
@@ -27,6 +30,11 @@ function SceneNode(id) {
 
     // can be temporarily ignored from sceneGraph if deactivated
     this.deactivated = false;
+    
+    // rules that determine whether or not to send an update
+    this.updateRules = [];
+    this.lastUpdateMatrix = [...this.worldMatrix]; // Used when communicating over sockets in real-time
+    this.lastBroadcastMatrix = [...this.worldMatrix]; // Used when communicating over action messages
 }
 
 /**
@@ -225,6 +233,12 @@ SceneNode.prototype.setLocalMatrix = function(matrix) {
 
     // flagging this will eventually set the other necessary flags for this and parent/children nodes
     this.flagForRecompute();
+    
+    if (this.parent) {
+        this.updateWorldMatrix(this.parent.worldMatrix);
+    } else {
+        this.updateWorldMatrix();
+    }
 };
 
 SceneNode.prototype.flagForRerender = function() {
@@ -391,6 +405,64 @@ SceneNode.prototype.getWorldPosition = function() {
         y: this.worldMatrix[13] / this.worldMatrix[15],
         z: this.worldMatrix[14] / this.worldMatrix[15]
     };
+}
+
+SceneNode.prototype.addUpdateRule = function(newRule) {
+    const existingRuleOfSameType = this.updateRules.find(rule => rule.type === newRule.type);
+    if (existingRuleOfSameType) {
+        const index = this.updateRules.indexOf(existingRuleOfSameType);
+        this.updateRules.splice(index, 1);
+    }
+    this.updateRules.push(newRule);
+}
+
+SceneNode.prototype.removeUpdateRuleByType = function(ruleType) {
+    const rule = this.updateRules.find(rule => rule.type === ruleType);
+    if (rule) {
+        const index = this.updateRules.indexOf(rule);
+        this.updateRules.splice(index, 1);
+    }
+}
+
+SceneNode.prototype.updateRulesSatisfied = function() {
+    const rulesToCheck = [...this.updateRules];
+    if (!this.updateRules.find(rule => rule.type === SceneGraphUpdateRuleTypeEnum.SENSITIVITY)) {
+        rulesToCheck.push(defaultSensitivityRule);
+    }
+    return rulesToCheck.every(rule => {
+        switch(rule.type) {
+            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY: {
+                const sensitivityRuleData = {
+                    distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
+                }
+                return rule.isSatisfied(sensitivityRuleData);
+            }
+            default: {
+                console.error(`SceneNode: updateRulesSatisfied not implemented for rule of type '${rule.type}'.`);
+                return false;
+            }
+        }
+    })
+}
+
+// Only sensitivity is used for broadcasts
+SceneNode.prototype.broadcastRulesSatisfied = function() {
+    let sensitivityRule = this.updateRules.find(rule => rule.type === SceneGraphUpdateRuleTypeEnum.SENSITIVITY);
+    if (!sensitivityRule) {
+        sensitivityRule = defaultSensitivityRule;
+    }
+    const sensitivityRuleData = {
+        distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
+    }
+    return sensitivityRule.isSatisfied(sensitivityRuleData);
+}
+
+SceneNode.prototype.onSendUpdate = function() {
+    utils.copyMatrixInPlace(this.worldMatrix, this.lastUpdateMatrix);
+}
+
+SceneNode.prototype.onBroadcast = function() {
+    utils.copyMatrixInPlace(this.worldMatrix, this.lastBroadcastMatrix);
 }
 
 module.exports = SceneNode;

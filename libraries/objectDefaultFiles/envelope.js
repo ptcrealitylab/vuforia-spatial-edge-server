@@ -135,6 +135,7 @@
         // add your own callback to adjust the UI based on frames being added or removed
         this.onFrameAdded(this._defaultOnFrameAdded.bind(this));
         this.onFrameDeleted(this._defaultOnFrameDeleted.bind(this));
+        this.onFrameLoaded(this._defaultOnFrameLoaded.bind(this));
 
         // these update the UI automatically when the frame is opened or closed to switch between its two container divs
         this.onOpen(this._defaultOnOpen.bind(this));
@@ -253,6 +254,15 @@
          */
         Envelope.prototype.onFrameDeleted = function(callback) {
             this.addCallback('onFrameDeleted', callback);
+        };
+
+        /**
+         * API to subscribe to a compatible frame being loaded (perhaps from another object coming into view).
+         * The envelope already automatically adds it to the containedFrames and updates the ordering if needed.
+         * @param {onFrameCallback} callback
+         */
+        Envelope.prototype.onFrameLoaded = function(callback) {
+            this.addCallback('onFrameLoaded', callback);
         };
 
         /**
@@ -430,6 +440,17 @@
             this.orderingUpdated();
             this.containedFramesUpdated();
             this.savePersistentData();
+        };
+
+        /**
+         * Maintains set of contained frames when a compatible frame is added
+         * @param {{objectId: string, frameId: string, frameType: string}} frameAddedMessage
+         */
+        Envelope.prototype._defaultOnFrameLoaded = function(_frameAddedMessage) {
+            // send messages to trigger events and save persistently
+            this.orderingUpdated();
+            this.containedFramesUpdated();
+            // this.savePersistentData();
         };
 
         /**

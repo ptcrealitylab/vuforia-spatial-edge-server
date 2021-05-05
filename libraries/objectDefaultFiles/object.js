@@ -604,6 +604,7 @@
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
@@ -1628,6 +1629,12 @@
             spatialObject.isPinned = isPinned;
             postDataToParent({
                 setPinned: isPinned
+            });
+        };
+
+        this.errorNotification = function(errorMessageText) {
+            postDataToParent({
+                errorNotification: errorMessageText
             });
         };
 
