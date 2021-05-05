@@ -16,15 +16,8 @@ const getSceneGraph = function() {
     return hardwareAPI.getSceneGraph();
 };
 
-// http://localhost:8080/spatial/search?maxDistance=2000&src=communication&publicData.title.includes=Machine&publicData.mentions.includes=@Ben
-/*
-{
-    maxDistance: '2000',
-    src: 'communication',
-    'publicData.title.includes': 'Machine',
-    'publicData.mentions.includes': '@Ben'
-}
-*/
+// @todo: implement similarly to searchFrames, to return a list of all objects matching certain
+//        spatial criteria or other metadata criteria
 const searchObjects = function(queryParams, callback) {
     console.log(queryParams);
     callback(null, {
@@ -37,14 +30,15 @@ const searchObjects = function(queryParams, callback) {
  * Returns the validAddresses of all frames matching the queryParams.
  * Currently supported queryParams:
  *
- * (interdependent params):
+ * (interdependent "spatial" params):
  * maxDistance: tools further away than this (in mm) will be excluded
  * worldId: tools not localized within this world will be excluded
  * clientX|clientY|clientZ: the origin (camera position) against which distance is measured
  *
- * (independent params):
+ * (independent metadata params):
  * publicData: a set of requirements on the publicData of any node on the tool. negative matches are excluded.
  *   (example: publicData.mentions.includes=@Ben)
+ *   (supported operators: includes, beginsWith, equals)
  *
  * @param queryParams
  * @param callback
