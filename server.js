@@ -319,7 +319,9 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
     console.log('webserver + socket.io is listening on port', serverPort);
     checkInit('web');
 });
-var io = require('socket.io')(http); // Websocket library
+var io = require('socket.io')(http, {
+    allowEIO3: true,
+});
 var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
