@@ -347,6 +347,7 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
 
 const getObject = function (objectID, excludeUnpinned) {
     let fullObject = utilities.getObject(objects, objectID);
+    if (!fullObject) { return null; }
     if (!excludeUnpinned) {
         return fullObject; // by default, returns entire object
     }

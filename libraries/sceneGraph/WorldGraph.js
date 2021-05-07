@@ -68,7 +68,7 @@ class WorldGraph {
             callback();
         });
     }
-    
+
     handleMessage(message) {
         const graph = this.knownGraphs[message.ip];
         if (!graph) {

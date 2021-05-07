@@ -456,6 +456,8 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
+                        realityServer.changeActiveState(thisObject.dom, true, objectKey);
+
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
                         thisObject.dom.querySelector('.active').innerText = 'On';
 
@@ -1676,6 +1678,10 @@ realityServer.gotClick = function (event) {
      */
     if (buttonClassList.contains('name')) {
         window.location.href = '/info/' + thisObject.name;
+    }
+
+    if (buttonClassList.contains('worldName')) {
+        window.location.href = 'http://localhost:8081';
     }
 
     if (buttonClassList.contains('netInterface')) {
