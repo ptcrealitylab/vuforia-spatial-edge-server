@@ -17,7 +17,8 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
-        serverIp: '127.0.0,1',
+        serverIp: '127.0.0.1',
+        serverPort: '8080',
         matrices: {
             modelView: [],
             projection: [],
@@ -35,6 +36,7 @@
             allObjects: false
         },
         sendScreenPosition: false,
+        sendDeviceDistance: false,
         sendAcceleration: false,
         sendFullScreen: false,
         sendScreenObject: false,
@@ -42,6 +44,8 @@
         sendSticky: false,
         isFullScreenExclusive: false,
         attachesTo: null,
+        wasToolJustCreated: null,
+        isPinned: true,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -104,6 +108,8 @@
 
         let defaultPort = '8080';
         if (object.hasOwnProperty('port')) defaultPort = object.port;
+
+        spatialObject.serverPort = defaultPort;
 
         var url = 'http://' + object.ip + ':' + defaultPort;
         spatialObject.socketIoUrl = url;
@@ -208,6 +214,10 @@
             if (!spatialObject.socketIoUrl) {
                 loadObjectSocketIo(msgContent.objectData);
             }
+        }
+
+        if (typeof msgContent.firstInitialization !== 'undefined') {
+            spatialObject.wasToolJustCreated = msgContent.firstInitialization;
         }
 
         // initialize spatialObject for frames and add additional API methods
@@ -558,6 +568,7 @@
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
                 this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
+                this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
@@ -565,6 +576,7 @@
                 this.setStickinessOff = makeSendStub('setStickinessOff');
                 this.setExclusiveFullScreenOn = makeSendStub('setExclusiveFullScreenOn');
                 this.setExclusiveFullScreenOff = makeSendStub('setExclusiveFullScreenOff');
+                this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -594,6 +606,8 @@
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
+                this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
+                this.setPinned = makeSendStub('setPinned');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1143,6 +1157,19 @@
             });
         };
 
+        this.subscribeToDeviceDistance = function (callback) {
+            spatialObject.messageCallBacks.deviceDistanceCall = function (msgContent) {
+                if (typeof msgContent.deviceDistance !== 'undefined') {
+                    callback(msgContent.deviceDistance);
+                }
+            };
+
+            spatialObject.sendDeviceDistance = true;
+            postDataToParent({
+                sendDeviceDistance: spatialObject.sendDeviceDistance
+            });
+        };
+
         // subscriptions
         this.subscribeToAcceleration = function () {
             spatialObject.sendAcceleration = true;
@@ -1243,6 +1270,20 @@
             spatialObject.isFullScreenExclusive = false;
             postDataToParent({
                 isFullScreenExclusive: spatialObject.isFullScreenExclusive
+            });
+        };
+
+        this.isExclusiveFullScreenOccupied = function(callback) {
+            if (typeof callback !== 'undefined') {
+                spatialObject.messageCallBacks.fullScreenOccupiedCall = function (msgContent) {
+                    if (typeof msgContent.fullScreenOccupiedStatus !== 'undefined') {
+                        callback(msgContent.fullScreenOccupiedStatus);
+                    }
+                };
+            }
+
+            postDataToParent({
+                getIsExclusiveFullScreenOccupied: true
             });
         };
 
@@ -1563,6 +1604,28 @@
 
             postDataToParent({
                 getPositionInWorld: true
+            });
+        };
+
+        this.wasToolJustCreated = function(callback) {
+            if (typeof spatialObject.wasToolJustCreated === 'boolean') {
+                callback(spatialObject.wasToolJustCreated);
+                return;
+            }
+
+            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+                if (typeof msgContent.firstInitialization !== 'undefined') {
+                    spatialObject.wasToolJustCreated = msgContent.firstInitialization;
+                    callback(msgContent.firstInitialization);
+                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                }
+            };
+        };
+
+        this.setPinned = function(isPinned) {
+            spatialObject.isPinned = isPinned;
+            postDataToParent({
+                setPinned: isPinned
             });
         };
 
