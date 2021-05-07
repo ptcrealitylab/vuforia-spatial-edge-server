@@ -55,7 +55,9 @@ function ObjectModel(ip, version, protocol, objectId) {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
     };
-    this.isWorldObject = false;
+    this.isWorldObject = false; // a bit redundant with this.type, but good for backwards compatibility
+    this.isAnchor = false;
+    this.type = 'object'; // or: 'world' or 'human' etc...
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
