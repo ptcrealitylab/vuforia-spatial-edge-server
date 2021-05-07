@@ -63,6 +63,58 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     }
 };
 
+function uploadMediaFile(objectID, req, callback) {
+    console.log('received media file for', objectID);
+
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        callback(404, 'object ' + objectID + ' not found');
+        return;
+    }
+
+    var mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
+    if (!fs.existsSync(mediaDir)) {
+        fs.mkdirSync(mediaDir);
+    }
+
+    var form = new formidable.IncomingForm({
+        uploadDir: mediaDir,
+        keepExtensions: true
+        // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
+    });
+
+    console.log('created form');
+
+    form.on('error', function (err) {
+        callback(500, err);
+    });
+
+    let mediaUuid = utilities.uuidTime();
+    let newFilepath = null;
+
+    form.on('fileBegin', function (name, file) {
+        console.log('fileBegin loading', name, file);
+
+        // rename uploaded file using mediaUuid that is passed back to client
+        let extension = path.extname(file.path);
+        newFilepath = form.uploadDir + '/' + mediaUuid + extension;
+
+        if (fs.existsSync(newFilepath)) {
+            console.log('deleted old raw file');
+            fs.unlinkSync(newFilepath);
+        }
+
+        console.log('upload ' + file.path + ' to ' + newFilepath);
+        file.path = newFilepath;
+    });
+
+    form.parse(req, function (err, fields) {
+        console.log('successfully uploaded image', err, fields);
+
+        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: newFilepath});
+    });
+}
+
 const saveCommit = function(objectID, callback) {
     if (globalVariables.isMobile) {
         callback(500, 'saveCommit unavailable on mobile');
@@ -293,8 +345,26 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 };
 
-const getObject = function (objectID) {
-    return utilities.getObject(objects, objectID);
+const getObject = function (objectID, excludeUnpinned) {
+    let fullObject = utilities.getObject(objects, objectID);
+    if (!excludeUnpinned) {
+        return fullObject; // by default, returns entire object
+    }
+
+    // if query parameter is included, removes all unpinned frames
+    let filteredObject = JSON.parse(JSON.stringify(fullObject));
+    filteredObject.unpinnedFrameKeys = [];
+    Object.keys(filteredObject.frames).forEach(function(frameKey) {
+        let thisFrame = filteredObject.frames[frameKey];
+        if (typeof thisFrame.pinned !== 'undefined' && !thisFrame.pinned) {
+            filteredObject.unpinnedFrameKeys.push(frameKey);
+        }
+    });
+    // each unpinnedFrameKey is still passed to the client so that they can download it later if desired
+    filteredObject.unpinnedFrameKeys.forEach(function(frameKey) {
+        delete filteredObject.frames[frameKey];
+    });
+    return filteredObject;
 };
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
@@ -309,6 +379,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
 
 module.exports = {
     uploadVideo: uploadVideo,
+    uploadMediaFile: uploadMediaFile,
     saveCommit: saveCommit,
     resetToLastCommit: resetToLastCommit,
     setMatrix: setMatrix,

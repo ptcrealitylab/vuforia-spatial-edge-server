@@ -232,6 +232,19 @@ router.post('/:objectName/video/:videoName', function (req, res) {
         }
     });
 });
+router.post('/:objectName/uploadMediaFile', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    objectController.uploadMediaFile(req.params.objectName, req, function (statusCode, responseContents) {
+        if (statusCode === 500) {
+            res.status(statusCode).send(responseContents);
+        } else {
+            res.status(statusCode).json(responseContents).end();
+        }
+    });
+});
 // object git interfaces
 router.post('/:objectName/saveCommit', function (req, res) {
     if (!utilities.isValidId(req.params.objectName)) {
@@ -359,6 +372,16 @@ router.post('/:objectName/frame/:frameName/group/', function (req, res) {
         return;
     }
     frameController.setGroup(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
+router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
+    if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
+        res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
+        return;
+    }
+    frameController.setPinned(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
     });
 });
@@ -519,7 +542,8 @@ const setupDeveloperRoutes = function() {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
             return;
         }
-        res.json(objectController.getObject(req.params.objectName)).end();
+        let excludeUnpinned = (req.query.excludeUnpinned === 'true');
+        res.json(objectController.getObject(req.params.objectName, excludeUnpinned)).end();
     });
 };
 

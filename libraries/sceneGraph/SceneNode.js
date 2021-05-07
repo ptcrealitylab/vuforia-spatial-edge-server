@@ -306,6 +306,12 @@ SceneNode.prototype.getDistanceTo = function(otherNode) {
     // return utils.distance(this.getMatrixRelativeTo(otherNode));
 };
 
+SceneNode.prototype.getDistanceToPoint = function(x, y, z) {
+    let thisPosition = this.getWorldPosition();
+    let thatPosition = { x: x, y: y, z: z };
+    return utils.positionDistance(thisPosition, thatPosition);
+};
+
 // figures out what local matrix this node would need to position it globally at the provided world matrix
 SceneNode.prototype.calculateLocalMatrix = function(worldMatrix) {
     // get the world matrix of the node's parent = parentWorldMatrix
