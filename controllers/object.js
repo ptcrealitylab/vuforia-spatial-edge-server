@@ -90,28 +90,28 @@ function uploadMediaFile(objectID, req, callback) {
     });
 
     let mediaUuid = utilities.uuidTime();
-
-    var rawFilepath = form.uploadDir + '/' + mediaUuid + '.jpg';
-
-    if (fs.existsSync(rawFilepath)) {
-        console.log('deleted old raw file');
-        fs.unlinkSync(rawFilepath);
-    }
+    let newFilepath = null;
 
     form.on('fileBegin', function (name, file) {
         console.log('fileBegin loading', name, file);
 
-        if (file.type.match('video.*')) {
-            rawFilepath = rawFilepath.replace('.jpg', '.mov');
+        // rename uploaded file using mediaUuid that is passed back to client
+        let extension = path.extname(file.path);
+        newFilepath = form.uploadDir + '/' + mediaUuid + extension;
+
+        if (fs.existsSync(newFilepath)) {
+            console.log('deleted old raw file');
+            fs.unlinkSync(newFilepath);
         }
-        console.log('upload ' + file.path + ' to ' + rawFilepath);
-        file.path = rawFilepath;
+
+        console.log('upload ' + file.path + ' to ' + newFilepath);
+        file.path = newFilepath;
     });
 
     form.parse(req, function (err, fields) {
         console.log('successfully uploaded image', err, fields);
 
-        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: rawFilepath});
+        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: newFilepath});
     });
 }
 
