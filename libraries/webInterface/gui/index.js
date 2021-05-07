@@ -119,7 +119,6 @@ function continueAfterCheckingRemoteOperator(callback) {
     request.onreadystatechange = function() {
         if (request.readyState === 4) {
             if (request.status === 200) {
-                // alert("Oh no, it does not exist!");
                 isRemoteOperatorSupported = true;
                 console.log('remoteOperator: YES');
             } else {
@@ -479,7 +478,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
-                        if (isRemoteOperatorSupported) {
+                        if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
                             realityServer.changeActiveState(thisObject.dom, true, objectKey);
                         }
 
