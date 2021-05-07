@@ -1416,7 +1416,6 @@ function objectWebServer() {
 
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
-        // console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
         if (!frameLibPath) {
             next();
             return;
@@ -1817,7 +1816,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                 return;
             }
-            // console.log('get frameFolder', req.params.objectName, req.params.frameName);
             const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
@@ -3428,7 +3426,6 @@ function socketServer() {
             var msgContent = JSON.parse(msg);
             realityEditorObjectMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
             console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
-            // console.log(realityEditorObjectMatrixSocketArray);
         });
 
         socket.on('/update/object/matrix', function (msg) {
@@ -3629,7 +3626,6 @@ function socketServer() {
                 return;
             }
 
-            // console.log(msgContent);
             var objectKey = msgContent.object;
             var frameKey = msgContent.frame;
             var nodeData = msgContent.nodeData;
