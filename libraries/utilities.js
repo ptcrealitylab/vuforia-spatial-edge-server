@@ -63,7 +63,6 @@ var path = require('path');
 var request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
-const URLSearchParams = require('url').URLSearchParams;
 
 var hardwareInterfaces = {};
 
