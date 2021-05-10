@@ -1416,7 +1416,6 @@ function objectWebServer() {
 
         var urlArray = req.originalUrl.split('/');
         const frameLibPath = frameFolderLoader.resolvePath(req.params.frameName);
-        console.log('frame load', req.params.frameName, frameLibPath, req.originalUrl);
         if (!frameLibPath) {
             next();
             return;
@@ -1817,7 +1816,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                 return;
             }
-            console.log('get frameFolder', req.params.objectName, req.params.frameName);
             const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
@@ -2351,18 +2349,19 @@ function objectWebServer() {
                         return;
                     }
 
-                    // var defaultFrameName = 'zero'; // TODO: put this in the request body, like the object name
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
-                    // immediately create world object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined') {
+                    // immediately create world or human object rather than wait for target data to instantiate
+                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined') {
                         let isWorldObject = JSON.parse(req.body.isWorld);
-                        if (isWorldObject) {
+                        let isHumanObject = JSON.parse(req.body.isHuman);
+                        if (isWorldObject || isHumanObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
                             objects[objectId].port = serverPort;
-                            objects[objectId].isWorldObject = true;
+                            objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
+                            objects[objectId].type = isWorldObject ? 'world' : (isHumanObject ? 'human' : 'object');
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
                             sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
@@ -3175,7 +3174,7 @@ function socketServer() {
                     frame: msgContent.frame,
                     protocol: thisProtocol
                 };
-                console.log(realityEditorSocketArray);
+                // console.log(realityEditorSocketArray);
             }
 
             var publicData = {};
@@ -3228,7 +3227,7 @@ function socketServer() {
                     frame: msgContent.frame,
                     protocol: thisProtocol
                 };
-                console.log(realityEditorSocketArray);
+                // console.log(realityEditorSocketArray);
             }
 
             var frame = getFrame(msgContent.object, msgContent.frame);
@@ -3259,7 +3258,7 @@ function socketServer() {
                 console.log('the latest socket has the ID: ' + socket.id);
 
                 realityEditorBlockSocketArray[socket.id] = {object: msgContent.object};
-                console.log(realityEditorBlockSocketArray);
+                // console.log(realityEditorBlockSocketArray);
             }
 
             var publicData = {};
@@ -3403,11 +3402,30 @@ function socketServer() {
 
         });
 
+        // relays realtime updates (to matrix, x, y, scale, etc) from one client to the rest of the clients
+        // clients are responsible for batching and processing the batched updates at whatever frequency they prefer
+        socket.on('/batchedUpdate', function (msg) {
+            var msgContent = JSON.parse(msg);
+            let batchedUpdates = msgContent.batchedUpdates;
+            if (!batchedUpdates) { return; }
+
+            for (var socketId in realityEditorUpdateSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                    //  console.log('dont send updates to the editor that triggered it');
+                    continue;
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                }
+            }
+        });
+
         socket.on('/subscribe/objectUpdates', function (msg) {
             var msgContent = JSON.parse(msg);
             realityEditorObjectMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
             console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
-            console.log(realityEditorObjectMatrixSocketArray);
         });
 
         socket.on('/update/object/matrix', function (msg) {
@@ -3608,7 +3626,6 @@ function socketServer() {
                 return;
             }
 
-            console.log(msgContent);
             var objectKey = msgContent.object;
             var frameKey = msgContent.frame;
             var nodeData = msgContent.nodeData;
