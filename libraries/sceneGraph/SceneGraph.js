@@ -174,7 +174,7 @@ class SceneGraph {
             const removeElementEvent = SceneGraphEvent.RemoveElement(id);
             this.networkManager.addEvent(removeElementEvent);
         }
-        
+
         let sceneNode = this.graph[id];
         if (sceneNode) {
 
@@ -228,6 +228,11 @@ class SceneGraph {
         let id = nodeId || frameId || objectId; // gets most specific address
         let sceneNode = this.graph[id];
         if (sceneNode) {
+            if (typeof x === 'undefined' && typeof y === 'undefined' && typeof scale === 'undefined' &&
+                localMatrix && (localMatrix.toString() === sceneNode.localMatrix.toString())) {
+                // console.log('skip update.. no changes');
+                return;
+            }
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
             this.triggerUpdateCallbacks();
@@ -327,7 +332,7 @@ class SceneGraph {
             return node.worldMatrix;
         }
     }
-    
+
     handleMessage(message) {
         const timestamp = message.timestamp;
         message.events.forEach(messageEvent => {

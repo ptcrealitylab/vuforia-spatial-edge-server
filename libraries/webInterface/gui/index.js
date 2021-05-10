@@ -61,6 +61,9 @@ realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
+let remoteOperatorUrl = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
+let isRemoteOperatorSupported = false;
+
 realityServer.initialize = function () {
     realityServer.downloadImage = new Image();
     realityServer.downloadImage.src = '../libraries/gui/resources/icondownload.svg';
@@ -104,10 +107,29 @@ realityServer.initialize = function () {
         }
     }
 
-    this.update();
-
-    this.initializeHelp();
+    continueAfterCheckingRemoteOperator(function() {
+        this.update();
+        this.initializeHelp();
+    }.bind(this));
 };
+
+function continueAfterCheckingRemoteOperator(callback) {
+    var request = new XMLHttpRequest();
+    request.open('GET', remoteOperatorUrl, true);
+    request.onreadystatechange = function() {
+        if (request.readyState === 4) {
+            if (request.status === 200) {
+                isRemoteOperatorSupported = true;
+                console.log('remoteOperator: YES');
+            } else {
+                isRemoteOperatorSupported = false;
+                console.log('remoteOperator: NO');
+            }
+            callback();
+        }
+    }.bind(this);
+    request.send();
+}
 
 let showHelpText = 'Show Help';
 let hideHelpText = 'Hide Help';
@@ -456,6 +478,10 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
+                        if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
+                            realityServer.changeActiveState(thisObject.dom, true, objectKey);
+                        }
+
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
                         thisObject.dom.querySelector('.active').innerText = 'On';
 
@@ -1211,7 +1237,6 @@ realityServer.spatialButtonState = {
     velocityOf: false
 };
 
-
 realityServer.gotClick = function (event) {
     let thisEventObject = event.currentTarget;
     let buttonClassList = thisEventObject.classList;
@@ -1676,6 +1701,12 @@ realityServer.gotClick = function (event) {
      */
     if (buttonClassList.contains('name')) {
         window.location.href = '/info/' + thisObject.name;
+    }
+
+    if (buttonClassList.contains('worldName')) {
+        if (isRemoteOperatorSupported) {
+            window.location.href = remoteOperatorUrl;
+        }
     }
 
     if (buttonClassList.contains('netInterface')) {

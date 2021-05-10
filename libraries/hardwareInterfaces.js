@@ -556,13 +556,6 @@ exports.addNode = function (object, tool, node, type, position) {
             thisObject = objects[objectID].frames[frameUuid].nodes[nodeUuid];
             thisObject.text = undefined;
 
-            console.log('added node', {
-                node: node,
-                object: object,
-                frame: tool,
-                name: thisObject.name,
-            });
-
             if (!hardwareObjects.hasOwnProperty(object)) {
                 hardwareObjects[object] = new EmptyObject(object);
             }

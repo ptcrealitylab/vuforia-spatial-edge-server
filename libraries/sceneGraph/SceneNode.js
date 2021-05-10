@@ -30,7 +30,7 @@ function SceneNode(id) {
 
     // can be temporarily ignored from sceneGraph if deactivated
     this.deactivated = false;
-    
+
     // rules that determine whether or not to send an update
     this.updateRules = [];
     this.lastUpdateMatrix = [...this.worldMatrix]; // Used when communicating over sockets in real-time
@@ -233,7 +233,7 @@ SceneNode.prototype.setLocalMatrix = function(matrix) {
 
     // flagging this will eventually set the other necessary flags for this and parent/children nodes
     this.flagForRecompute();
-    
+
     if (this.parent) {
         this.updateWorldMatrix(this.parent.worldMatrix);
     } else {
