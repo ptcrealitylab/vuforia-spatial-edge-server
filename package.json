@@ -33,7 +33,7 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^7.28.0",
+    "eslint": "^7.29.0",
     "jsdoc": "^3.6.7",
     "minami": "^1.2.3"
   },
