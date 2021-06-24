@@ -82,13 +82,11 @@ function makeStub(functionName) {
         gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
-      } else if (elt.tagName === 'CANVAS') {
+      } else if (elt.tagName === 'CANVAS' ||
+                 (typeof OffscreenCanvas === 'object' && elt instanceof OffscreenCanvas)) {
         let width = elt.width;
         let height = elt.height;
         let gfx = elt.getContext('2d');
-        gfx.width = width;
-        gfx.height = height;
-        gfx.drawImage(elt, 0, 0, width, height);
         let imageData = gfx.getImageData(0, 0, width, height);
         args[args.length - 1] = imageData;
       }
