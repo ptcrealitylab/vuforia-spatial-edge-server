@@ -407,7 +407,7 @@
 
                         if (elementOrRecursiveParentIsOfClass(elt, 'realityInteraction')) {
                             // if (elt.classList.contains('realityInteraction')) {
-                            elt.dispatchEvent(event);
+                            if (elt) elt.dispatchEvent(event);
 
                             postDataToParent({
                                 pointerDownResult: 'interaction'
@@ -426,7 +426,7 @@
                                 pointerDownResult: 'nonInteraction'
                             });
                         } else {
-                            elt.dispatchEvent(event);
+                            if (elt) elt.dispatchEvent(event);
 
                             postDataToParent({
                                 pointerDownResult: 'interaction'
@@ -438,11 +438,11 @@
 
 
                 } else {
-                    elt.dispatchEvent(event);
+                    if (elt) elt.dispatchEvent(event);
                 }
 
             } else {
-                elt.dispatchEvent(event);
+                if (elt) elt.dispatchEvent(event);
             }
 
 
