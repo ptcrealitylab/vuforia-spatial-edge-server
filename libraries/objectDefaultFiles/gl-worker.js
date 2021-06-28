@@ -193,9 +193,10 @@ window.addEventListener('message', function(event) {
     for (const constName in message.constants) {
       gl[constName] = message.constants[constName];
     }
+    let {width, height} = message;
 
     frameCommandBuffer = [];
-    main();
+    main({width, height});
     if (frameCommandBuffer.length > 0) {
       window.parent.postMessage({
         workerId,
