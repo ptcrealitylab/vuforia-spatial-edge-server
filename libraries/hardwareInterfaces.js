@@ -1128,6 +1128,17 @@ exports.pushSettingsToGui = function (interface, currentSettings) {
     }
 };
 
+exports.writeObjectPosition = function(objectName, matrixRelativeToWorld) {
+    var objectKey = utilities.readObject(objectLookup, objectName); //get globally unique object id
+
+    if (objects.hasOwnProperty(objectKey)) {
+        console.log('old matrix: ' + objects[objectKey].matrix);
+        console.log('new matrix: ' + matrixRelativeToWorld);
+        objects[objectKey].matrix = matrixRelativeToWorld;
+        writeObjectCallback(objectKey);
+    }
+};
+
 exports.shutdown = function () {
 
     console.log('hardwareInterfaces.shutdown');
