@@ -2352,16 +2352,24 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined') {
+                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined' || typeof req.body.isRegion) {
                         let isWorldObject = JSON.parse(req.body.isWorld);
                         let isHumanObject = JSON.parse(req.body.isHuman);
-                        if (isWorldObject || isHumanObject) {
+                        let isRegionObject = JSON.parse(req.body.isRegion);
+                        if (isWorldObject || isHumanObject || isRegionObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
                             objects[objectId].port = serverPort;
                             objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
-                            objects[objectId].type = isWorldObject ? 'world' : (isHumanObject ? 'human' : 'object');
+                            objects[objectId].type = 'object';
+                            if (isWorldObject) {
+                                objects[objectId].type = 'world';
+                            } else if (isHumanObject) {
+                                objects[objectId].type = 'human';
+                            } else if (isRegionObject) {
+                                objects[objectId].type = 'region';
+                            }
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 
                             sceneGraph.addObjectAndChildren(objectId, objects[objectId]);

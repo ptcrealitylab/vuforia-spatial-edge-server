@@ -62,6 +62,7 @@ function ThisObjects() {
     this.zone = '';
     this.screenPort = '';
     this.isWorldObject = false;
+    this.type = '';
 }
 
 // Constructor with subset of frame information necessary for the web frontend
@@ -142,10 +143,8 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         // create a data structure for the information to create the DOM elements representing this object
         newObject[thisObjectKey] = new ThisObjects();
 
-        // TODO: more robust way to keep track of world objects that haven't been fully initialized with a target (for now, the name is the only way to tell)
-        if (thisObjectKey.indexOf(worldObjectPrefix) > -1) {
-            newObject[thisObjectKey].isWorldObject = true;
-        }
+        newObject[thisObjectKey].isWorldObject = objects[thisObjectKey].isWorldObject;
+        newObject[thisObjectKey].type = objects[thisObjectKey].type;
 
         // check if the object is correctly initialized with tracking targets
         var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));

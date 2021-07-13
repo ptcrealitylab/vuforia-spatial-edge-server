@@ -88,7 +88,7 @@
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
 
-    console.log('fullscreen reset for new frame ' + spatialObject.sendFullScreen);
+    // console.log('fullscreen reset for new frame ' + spatialObject.sendFullScreen);
 
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
@@ -154,7 +154,7 @@
      * Helper function that posts entire basic state of spatialObject to parent
      */
     function postAllDataToParent() {
-        console.log('check: ' + spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
+        // console.log('check: ' + spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
 
         if (typeof spatialObject.node !== 'undefined' || typeof spatialObject.frame !== 'undefined') {
             parent.postMessage(JSON.stringify(
@@ -456,7 +456,7 @@
 
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
-            console.log('set workerId to ' + msgContent.workerId);
+            // console.log('set workerId to ' + msgContent.workerId);
             workerId = msgContent.workerId;
         }
     };
@@ -695,7 +695,7 @@
 
         // reload a frame if its socket reconnects
         this.ioObject.on('reconnect', function() {
-            console.log('reconnect');
+            // console.log('reconnect');
             window.location.reload();
 
             // notify the containing application that a frame socket reconnected, for additional optional behavior (e.g. make the screen reload)
@@ -789,7 +789,7 @@
          * @return {*}
          */
         this.readPublicData = function (node, valueName, value) {
-            console.log(spatialObject.publicData);
+            // console.log(spatialObject.publicData);
             if (!value)  value = 0;
 
             if (typeof spatialObject.publicData[node] === 'undefined') {
@@ -818,7 +818,7 @@
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
                     if (thisMsg.sessionUuid === sessionUuid) {
-                        console.log('ignoring message sent by self (publicData)');
+                        // console.log('ignoring message sent by self (publicData)');
                         return;
                     }
                 }
@@ -1029,7 +1029,7 @@
             }
         };
 
-        console.log('socket.io is loaded and injected into the object.js API');
+        // console.log('socket.io is loaded and injected into the object.js API');
 
         for (var i = 0; i < this.pendingIos.length; i++) {
             var pendingIo = this.pendingIos[i];
@@ -1440,7 +1440,7 @@
             spatialObject.messageCallBacks.frameCreatedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameCreatedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the creation of frame ' + msgContent.frameCreatedEvent.frameId + ' (type ' + msgContent.frameCreatedEvent.frameType + ')');
+                    // console.log(spatialObject.frame + ' learned about the creation of frame ' + msgContent.frameCreatedEvent.frameId + ' (type ' + msgContent.frameCreatedEvent.frameType + ')');
                     callback(msgContent.frameCreatedEvent);
                 }
             };
@@ -1456,7 +1456,7 @@
             spatialObject.messageCallBacks.frameDeletedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameDeletedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the deletion of frame ' + msgContent.frameDeletedEvent.frameId + ' (type ' + msgContent.frameDeletedEvent.frameType + ')');
+                    // console.log(spatialObject.frame + ' learned about the deletion of frame ' + msgContent.frameDeletedEvent.frameId + ' (type ' + msgContent.frameDeletedEvent.frameType + ')');
                     callback(msgContent.frameDeletedEvent);
                 }
             };
@@ -1931,7 +1931,7 @@
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
-                console.log('ios socket connected.');
+                // console.log('ios socket connected.');
                 this.iosObject = io.connect(iOSHost);
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();

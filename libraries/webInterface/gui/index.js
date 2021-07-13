@@ -637,6 +637,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                     // add Image for Target
                     if (thisObject.targetsExist.jpgExists) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                    } else if (thisObject.type === 'region') {
+                        thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/region.svg';
                     } else if (thisObject.isAnchor) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
                     }
