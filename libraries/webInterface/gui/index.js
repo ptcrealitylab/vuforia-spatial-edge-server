@@ -241,6 +241,8 @@ function setTooltipTextForElement(element, helpText) {
 function setTooltipTextForManageObjects() {
     setTooltipTextForElement('#addObject', 'Define an object with an Image, Object, or Model target where AR content' +
         ' will "stick to" when looking at it with the Spatial Toolbox');
+    setTooltipTextForElement('#addRegion', 'Create a "region" object whose boundaries can be later defined' +
+        ' as a subsection of the world. Tools dropped into that subsection of the world will stick to that region.');
     setTooltipTextForElement('#addWorldObject', 'Create a "world" object with an Area or Image target, to' +
         ' specify the (0,0,0) position of your space and where any objects without targets can be anchored');
     setTooltipTextForElement('#rec', 'While turned on, saves a debug log of all object activity to the objectLogs' +
@@ -377,6 +379,7 @@ realityServer.updateManageObjects = function (thisItem2) {
     /////// ^ Tutorial ^ ///////
 
     document.getElementById('addObject').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('addRegion').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('addWorldObject').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('whereIs').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('whereWas').addEventListener('click', realityServer.gotClick, false);
@@ -1965,7 +1968,7 @@ realityServer.gotClick = function (event) {
     /**
      *  ADD OBJECT
      */
-    if (buttonClassList.contains('addObject') || buttonClassList.contains('addWorldObject')) {
+    if (buttonClassList.contains('addObject') || buttonClassList.contains('addWorldObject') || buttonClassList.contains('addRegion')) {
         console.log(document.getElementById('textEntryObject'));
 
         if (!document.getElementById('textEntryObject')) {
@@ -1976,6 +1979,8 @@ realityServer.gotClick = function (event) {
 
             if (buttonClassList.contains('addWorldObject')) {
                 textEntryElements.getElementById('textEntryObject').setAttribute('isWorldObject', true);
+            } else if (buttonClassList.contains('addRegion')) {
+                textEntryElements.getElementById('textEntryObject').setAttribute('isRegion', true);
             }
 
             document.getElementById('addObject').parentNode.appendChild(textEntryElements);
@@ -1988,6 +1993,7 @@ realityServer.gotClick = function (event) {
     if (buttonClassList.contains('addButton')) {
 
         let shouldAddWorldObject = document.getElementById('textEntryObject').getAttribute('isWorldObject');
+        let shouldAddRegion = document.getElementById('textEntryObject').getAttribute('isRegion');
 
         let textContent = document.getElementById('textEntryObject').querySelector('.textfield').innerText;
 
@@ -2002,6 +2008,8 @@ realityServer.gotClick = function (event) {
         let objectName = textContent;
         if (shouldAddWorldObject) {
             objectName = '_WORLD_' + textContent;
+        } else if (shouldAddRegion) {
+            objectName = '_REGION_' + textContent;
         }
 
         realityServer.sendRequest('/', 'POST', function (state) {
@@ -2012,6 +2020,8 @@ realityServer.gotClick = function (event) {
 
                 if (shouldAddWorldObject) {
                     realityServer.objects[objectName].isWorldObject = true;
+                } else if (shouldAddRegion) {
+                    realityServer.objects[objectName].type = 'region';
                 }
             } else {
                 // this is how world objects get instantly initialized
@@ -2025,6 +2035,7 @@ realityServer.gotClick = function (event) {
 
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
+                            realityServer.objects[msgContent.id].type = msgContent.type;
                             realityServer.objects[msgContent.id].isWorldObject = true;
                             //    realityServer.objects[msgContent.id].initialized = true;
 
@@ -2049,7 +2060,7 @@ realityServer.gotClick = function (event) {
             realityServer.update();
             // todo this needs to be changed to a proper read response for the latest objects
             window.location.reload();
-        }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject);
+        }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject + '&isRegion=' + shouldAddRegion);
     }
 
     if (buttonClassList.contains('addButtonFrame')) {

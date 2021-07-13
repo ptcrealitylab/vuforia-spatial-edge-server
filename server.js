@@ -2352,10 +2352,10 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined' || typeof req.body.isRegion) {
-                        let isWorldObject = JSON.parse(req.body.isWorld);
-                        let isHumanObject = JSON.parse(req.body.isHuman);
-                        let isRegionObject = JSON.parse(req.body.isRegion);
+                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined' || typeof req.body.isRegion !== 'undefined') {
+                        let isWorldObject = JSON.parse(req.body.isWorld || null);
+                        let isHumanObject = JSON.parse(req.body.isHuman || null);
+                        let isRegionObject = JSON.parse(req.body.isRegion || null);
                         if (isWorldObject || isHumanObject || isRegionObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
