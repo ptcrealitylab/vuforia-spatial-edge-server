@@ -586,6 +586,163 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 this.getDomContents().appendChild(thisObject.dom);
 
+            } else if (thisObject.type === 'region') {
+
+                thisObject.dom = this.templates['regionObject'].content.cloneNode(true); // world object template
+                thisObject.dom.querySelector('.regionObject').id = 'object' + objectKey;
+                thisObject.dom.querySelector('.name').innerText = thisObject.name;
+
+                thisObject.dom.querySelector('.target').setAttribute('objectId', objectKey);
+                thisObject.dom.querySelector('.target').setAttribute('isRegion', true);
+                thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.name'),
+                    'World objects are special objects (best used with Area Targets) that only need to be looked at' +
+                    ' once per AR session to localize the Toolbox app within your space');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
+                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                    'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
+                    ' with Area Targets but an Image Target that won\'t move is also fine.');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
+                    'Permanently delete this world object and all data associated with it');
+
+                setTooltipTextForElement(thisObject.dom.querySelector('.download'),
+                    'Download a .zip backup of this world object. Unzip it into your spatialToolbox directory to' +
+                    ' restore the object on this or a different edge server.');
+
+                function addDeleteListener(button, container, thisObjectKey) { // eslint-disable-line no-inner-declarations
+                    button.addEventListener('click', function () {
+                        // add a expandcollapse div with Sure? Yes
+                        let alreadyOpen = container.querySelector('.expandcollapse');
+                        if (alreadyOpen) {
+                            realityServer.removeAnimated(alreadyOpen.querySelector('.deleteOK'));
+                            return;
+                        }
+                        let deleteConfirmation = realityServer.templates['deleteOKId'].content.cloneNode(true);
+                        container.appendChild(deleteConfirmation);
+
+                        container.querySelector('.deleteYes').addEventListener('click', function () {
+                            realityServer.removeAnimated(container.querySelector('.deleteOK'));
+
+                            realityServer.sendRequest('/', 'POST', function (state) {
+                                if (state === 'ok') {
+                                    delete realityServer.objects[thisObjectKey];
+                                    window.location.reload();
+                                }
+                                realityServer.update();
+                            }, 'action=delete&name=' + realityServer.objects[thisObjectKey].name + '&frame=');
+                        });
+                    });
+                }
+
+                addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.regionObject'), objectKey);
+
+                if (Object.keys(thisObject.frames).length > 0) {
+                    thisObject.dom.querySelector('.triangle').classList.remove('hidden');
+                    thisObject.dom.querySelector('.triangle').classList.add('clickAble');
+                    addExpandedToggle(thisObject.dom.querySelector('.triangle'), objectKey, thisObject);
+
+                    if (thisObject.isExpanded) {
+                        thisObject.dom.querySelector('.triangle').classList.add('triangleDown');
+                    } else {
+                        thisObject.dom.querySelector('.triangle').classList.remove('triangleDown');
+                    }
+                }
+
+                if (thisObject.initialized) {
+
+                    // on/off and download buttons are always clickable if initialized
+                    thisObject.dom.querySelector('.active').classList.add('clickAble');
+                    thisObject.dom.querySelector('.download').classList.add('clickAble');
+
+                    // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
+                    if (thisObject.active) {
+                        if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
+                            realityServer.changeActiveState(thisObject.dom, true, objectKey);
+                        }
+
+                        realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
+                        thisObject.dom.querySelector('.active').innerText = 'On';
+
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
+                            'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
+                            ' network');
+
+                    } else {
+                        realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
+                        thisObject.dom.querySelector('.active').innerText = 'Off';
+
+                        thisObject.dom.querySelector('.name').classList.add('inactive');
+                        thisObject.dom.querySelector('.zone').classList.add('inactive');
+
+                        setTooltipTextForElement(thisObject.dom.querySelector('.active'),
+                            'This world object is inactive. Click here to enable the object.');
+
+                        // realityServer.setDeactive
+                    }
+
+                    // download zip file if click on download button
+                    thisObject.dom.querySelector('.download').addEventListener('click', function (_e) {
+                        window.location.href = '/object/' + realityServer.objects[objectKey].name + '/zipBackup/';
+                    });
+
+                    // world objects with targets should have a green "Edit Origin" button when fully initialized
+                    if (thisObject.targetsExist.datExists || thisObject.targetsExist.jpgExists) {
+                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
+                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
+                        thisObject.dom.querySelector('.target').innerText = 'Edit Origin';
+
+                        // only add the icon if it exists
+                        if (thisObject.targetsExist.jpgExists) {
+                            let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                        }
+
+                    } else {
+                        // world objects without targets should have an "Add Origin Target" button instead
+                        setTimeout(function (thisObjectKey) {
+                            let thisObjectElement = document.getElementById('object' + thisObjectKey);
+                            if (thisObjectElement) {
+                                // if (thisObjectElement.querySelector('.objectIcon')) {
+                                //     thisObjectElement.querySelector('.objectIcon').remove();
+                                // }
+                                thisObjectElement.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/region.svg';
+                                realityServer.switchClass(thisObjectElement.querySelector('.target'), 'one', 'three'); // targetWidthWide
+                                thisObjectElement.querySelector('.target').innerText = 'Region Boundaries Unset';
+                            }
+                        }, 10, objectKey); // interferes with other layout in Safari if happens immediately
+                    }
+                    
+                    addEnabledToggle(thisObject.dom.querySelector('.active'), objectKey, thisObject); // create inside closure so interfaceInfo doesn't change after definition
+
+                } else { // if not initializes with target files...
+
+                    thisObject.dom.querySelector('.name').classList.add('inactive');
+                    thisObject.dom.querySelector('.zone').classList.add('inactive');
+                    thisObject.dom.querySelector('.download').classList.add('inactive');
+                    thisObject.dom.querySelector('.active').classList.add('inactive');
+
+                    // make on/off button yellow always if not properly initialized
+                    realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
+                    thisObject.dom.querySelector('.active').innerText = 'Off';
+
+                    // make Add Target button yellow
+                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
+                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
+
+                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
+                        'Add a target file to finish setting up this world object');
+
+                    thisObject.dom.querySelector('.objectIcon').remove();
+
+                }
+
+                this.getDomContents().appendChild(thisObject.dom);
+                
             } else {
 
                 thisObject.dom = this.templates['object'].content.cloneNode(true);

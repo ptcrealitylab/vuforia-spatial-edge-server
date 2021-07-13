@@ -304,6 +304,10 @@ body {
   width: 336px;
 }
 
+.threeAndHalf {
+  width: 398px;
+}
+
 .four {
    width: 452px;
  }
@@ -483,6 +487,10 @@ position: relative;
 
 .targetWidthMedium {
     width: 140px;
+}
+
+.targetWidthWide {
+    width: 370px;
 }
 
 /* This makes the background extend nicely beyond the edges of the div when it gets highlighted*/
