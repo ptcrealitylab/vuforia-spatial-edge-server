@@ -99,6 +99,10 @@ function uploadMediaFile(objectID, req, callback) {
         let extension = path.extname(file.path);
         newFilepath = form.uploadDir + '/' + mediaUuid + extension;
 
+        if (file.name) {
+            newFilepath = path.join(form.uploadDir, file.name);
+        }
+
         if (fs.existsSync(newFilepath)) {
             console.log('deleted old raw file');
             fs.unlinkSync(newFilepath);

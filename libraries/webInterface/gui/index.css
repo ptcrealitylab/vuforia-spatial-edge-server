@@ -481,6 +481,10 @@ position: relative;
     margin-left: -6px;
 }
 
+.objectIcon.yellow {
+    border: 2px solid rgb(255,255,45);
+}
+
 .nameWidthMedium {
     width: 181px;
 }

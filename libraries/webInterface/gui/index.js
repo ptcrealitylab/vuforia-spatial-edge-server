@@ -592,20 +592,19 @@ realityServer.updateManageObjects = function (thisItem2) {
                 thisObject.dom.querySelector('.regionObject').id = 'object' + objectKey;
                 thisObject.dom.querySelector('.name').innerText = thisObject.name;
 
-                thisObject.dom.querySelector('.target').setAttribute('objectId', objectKey);
-                thisObject.dom.querySelector('.target').setAttribute('isRegion', true);
-                thisObject.dom.querySelector('.target').addEventListener('click', realityServer.gotClick, false);
+                thisObject.dom.querySelector('.regionTarget').setAttribute('objectId', objectKey);
+                thisObject.dom.querySelector('.regionTarget').setAttribute('isRegion', true);
+                // thisObject.dom.querySelector('.regionTarget').addEventListener('click', realityServer.gotClick, false);
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.name'),
-                    'World objects are special objects (best used with Area Targets) that only need to be looked at' +
-                    ' once per AR session to localize the Toolbox app within your space');
+                    'Region objects are special objects that define a subsection of a World Object. Tools dropped into' +
+                    ' the world when you\'re within a region will stick to the region object instead of the world object');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
                     'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
-                setTooltipTextForElement(thisObject.dom.querySelector('.target'),
-                    'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
-                    ' with Area Targets but an Image Target that won\'t move is also fine.');
+                setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
+                    'The boundaries of this region can be drawn in the Remote Operator. Preview the region here.');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
                     'Permanently delete this world object and all data associated with it');
@@ -661,9 +660,9 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     // make on/off button green or yellow, and certain buttons clickable or faded out, depending on active state
                     if (thisObject.active) {
-                        if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
-                            realityServer.changeActiveState(thisObject.dom, true, objectKey);
-                        }
+                        // if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
+                        //     realityServer.changeActiveState(thisObject.dom, true, objectKey);
+                        // }
 
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
                         thisObject.dom.querySelector('.active').innerText = 'On';
@@ -681,8 +680,6 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                         setTooltipTextForElement(thisObject.dom.querySelector('.active'),
                             'This world object is inactive. Click here to enable the object.');
-
-                        // realityServer.setDeactive
                     }
 
                     // download zip file if click on download button
@@ -691,28 +688,27 @@ realityServer.updateManageObjects = function (thisItem2) {
                     });
 
                     // world objects with targets should have a green "Edit Origin" button when fully initialized
-                    if (thisObject.targetsExist.datExists || thisObject.targetsExist.jpgExists) {
-                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
-                        realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
-                        thisObject.dom.querySelector('.target').innerText = 'Edit Origin';
+                    if (thisObject.targetsExist.jpgExists) {
+                        realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'yellow', 'green');
+                        realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'three');
+                        thisObject.dom.querySelector('.regionTarget').innerText = 'View Region Boundaries';
 
-                        // only add the icon if it exists
-                        if (thisObject.targetsExist.jpgExists) {
-                            let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
-                        }
+                        // preview the region in the icon
+                        thisObject.dom.querySelector('.objectIcon').classList.remove('yellow');
+                        let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+                        thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
 
                     } else {
                         // world objects without targets should have an "Add Origin Target" button instead
                         setTimeout(function (thisObjectKey) {
                             let thisObjectElement = document.getElementById('object' + thisObjectKey);
                             if (thisObjectElement) {
-                                // if (thisObjectElement.querySelector('.objectIcon')) {
-                                //     thisObjectElement.querySelector('.objectIcon').remove();
-                                // }
-                                thisObjectElement.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/region.svg';
-                                realityServer.switchClass(thisObjectElement.querySelector('.target'), 'one', 'three'); // targetWidthWide
-                                thisObjectElement.querySelector('.target').innerText = 'Region Boundaries Unset';
+                                thisObjectElement.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/regionYellow.svg';
+                                
+                                thisObjectElement.querySelector('.objectIcon').classList.add('yellow');
+                                
+                                realityServer.switchClass(thisObjectElement.querySelector('.regionTarget'), 'one', 'three'); // targetWidthWide
+                                thisObjectElement.querySelector('.regionTarget').innerText = 'Region Boundaries Unset';
                             }
                         }, 10, objectKey); // interferes with other layout in Safari if happens immediately
                     }
@@ -731,11 +727,11 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.active').innerText = 'Off';
 
                     // make Add Target button yellow
-                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'green', 'yellow');
-                    realityServer.switchClass(thisObject.dom.querySelector('.target'), 'one', 'targetWidthMedium');
+                    realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'green', 'yellow');
+                    realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'targetWidthMedium');
 
-                    setTooltipTextForElement(thisObject.dom.querySelector('.target'),
-                        'Add a target file to finish setting up this world object');
+                    setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
+                        'Define the boundaries of this region using the Remote Operator.');
 
                     thisObject.dom.querySelector('.objectIcon').remove();
 
@@ -797,8 +793,6 @@ realityServer.updateManageObjects = function (thisItem2) {
                     // add Image for Target
                     if (thisObject.targetsExist.jpgExists) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
-                    } else if (thisObject.type === 'region') {
-                        thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/region.svg';
                     } else if (thisObject.isAnchor) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
                     }
