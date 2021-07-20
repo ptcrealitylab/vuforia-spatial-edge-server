@@ -5,6 +5,7 @@ function Objects() {
     this.frames = {};
     this.visualization = 'AR';
     this.active = false;
+    // zone has been renamed to group, but changing the property name would break backwards-compatibility
     this.zone = '';
     this.screenPort = '';
     this.isWorldObject = false;
@@ -241,8 +242,8 @@ function setTooltipTextForElement(element, helpText) {
 function setTooltipTextForManageObjects() {
     setTooltipTextForElement('#addObject', 'Define an object with an Image, Object, or Model target where AR content' +
         ' will "stick to" when looking at it with the Spatial Toolbox');
-    setTooltipTextForElement('#addRegion', 'Create a "region" object whose boundaries can be later defined' +
-        ' as a subsection of the world. Tools dropped into that subsection of the world will stick to that region.');
+    setTooltipTextForElement('#addRegion', 'Create a "zone" object whose boundaries can be later defined' +
+        ' as a subsection of the world. Tools dropped into that subsection of the world will stick to that zone.');
     setTooltipTextForElement('#addWorldObject', 'Create a "world" object with an Area or Image target, to' +
         ' specify the (0,0,0) position of your space and where any objects without targets can be anchored');
     setTooltipTextForElement('#rec', 'While turned on, saves a debug log of all object activity to the objectLogs' +
@@ -414,7 +415,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     ' once per AR session to localize the Toolbox app within your space');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
-                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+                    'Group is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.target'),
                     'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
@@ -597,14 +598,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                 // thisObject.dom.querySelector('.regionTarget').addEventListener('click', realityServer.gotClick, false);
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.name'),
-                    'Region objects are special objects that define a subsection of a World Object. Tools dropped into' +
-                    ' the world when you\'re within a region will stick to the region object instead of the world object');
+                    'Zone objects are special objects that define a subsection of a World Object. Tools dropped into' +
+                    ' the world when you\'re within a zone will stick to the zone object instead of the world object');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
-                    'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+                    'Group is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
-                    'The boundaries of this region can be drawn in the Remote Operator. Preview the region here.');
+                    'The boundaries of this zone can be drawn in the Remote Operator. Preview the zone here.');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
                     'Permanently delete this world object and all data associated with it');
@@ -691,9 +692,9 @@ realityServer.updateManageObjects = function (thisItem2) {
                     if (thisObject.targetsExist.jpgExists) {
                         realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'yellow', 'green');
                         realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'three');
-                        thisObject.dom.querySelector('.regionTarget').innerText = 'View Region Boundaries';
+                        thisObject.dom.querySelector('.regionTarget').innerText = 'View Zone Boundaries';
 
-                        // preview the region in the icon
+                        // preview the zone in the icon
                         thisObject.dom.querySelector('.objectIcon').classList.remove('yellow');
                         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                         thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
@@ -708,7 +709,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                                 thisObjectElement.querySelector('.objectIcon').classList.add('yellow');
                                 
                                 realityServer.switchClass(thisObjectElement.querySelector('.regionTarget'), 'one', 'three'); // targetWidthWide
-                                thisObjectElement.querySelector('.regionTarget').innerText = 'Region Boundaries Unset';
+                                thisObjectElement.querySelector('.regionTarget').innerText = 'Zone Boundaries Unset';
                             }
                         }, 10, objectKey); // interferes with other layout in Safari if happens immediately
                     }
@@ -731,7 +732,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'targetWidthMedium');
 
                     setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
-                        'Define the boundaries of this region using the Remote Operator.');
+                        'Define the boundaries of this zone using the Remote Operator.');
 
                     thisObject.dom.querySelector('.objectIcon').remove();
 
@@ -752,7 +753,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                         'Click here to view debug info for this object');
 
                     setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.zone'),
-                        'Zone is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
+                        'Group is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
                     setTooltipTextForElement(thisObject.dom.querySelector('.object').querySelector('.target'),
                         'Edit which target data the app should look for to see the content (tools) attached to this object');
@@ -845,7 +846,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 thisObject.dom.querySelector('.downloadIcon').src = realityServer.downloadImage.src;
 
                 if (thisObject.zone === '' || !thisObject.zone) {
-                    thisObject.dom.querySelector('.zone').innerText = 'Zone';
+                    thisObject.dom.querySelector('.zone').innerText = 'Group';
                 } else {
                     thisObject.dom.querySelector('.zone').innerText = thisObject.zone;
                 }
@@ -2160,7 +2161,7 @@ realityServer.gotClick = function (event) {
         if (shouldAddWorldObject) {
             objectName = '_WORLD_' + textContent;
         } else if (shouldAddRegion) {
-            objectName = '_REGION_' + textContent;
+            objectName = '_ZONE_' + textContent;
         }
 
         realityServer.sendRequest('/', 'POST', function (state) {
