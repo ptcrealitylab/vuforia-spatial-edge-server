@@ -43,7 +43,7 @@
         <div class="start">
             <div id="addObject" class='addObject button blue one clickAble' style="cursor: pointer">Add Object</div>
             <div class='space smallSpace hidden'></div>
-            <div id="addRegion" class='addRegion button blue one clickAble' style="cursor: pointer">Add Zone</div>
+            <div id="addZone" class='addZone button blue one clickAble' style="cursor: pointer">Add Zone</div>
             <div class='space smallSpace hidden'></div>
             <div id="addWorldObject" class='addWorldObject button blue one clickAble' style="cursor: pointer">Add World</div>
             <div class='space smallSpace hidden'></div>
@@ -178,15 +178,15 @@
     </div>
 </template>
 
-<template id="regionObject">
-    <div class="regionObject group adjustedMargin">
+<template id="zoneObject">
+    <div class="zoneObject group adjustedMargin">
         <div>
             <div class="item half button noBorder noBackground triangle hidden"></div>
-            <div class='regionName name item button white nameWidthMedium' style="width: 181px">Name</div>
+            <div class='zoneName name item button white nameWidthMedium' style="width: 181px">Name</div>
             <div class='item hidden space smallSpace'></div>
             <div class='textfield zone item button white one textcursor' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Group</div>
             <div class='item hidden space smallSpace'></div>
-            <div class='regionTarget item button yellow three'>Zone Boundaries Unset</div>
+            <div class='zoneTarget item button yellow three'>Zone Boundaries Unset</div>
             <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
             <div class='objectIconSpace item hidden space' style="width: 2px"></div>
             <div class='remove item button red half clickAble'>X</div>

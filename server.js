@@ -2352,11 +2352,11 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined' || typeof req.body.isRegion !== 'undefined') {
+                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined' || typeof req.body.isZone !== 'undefined') {
                         let isWorldObject = JSON.parse(req.body.isWorld || null);
                         let isHumanObject = JSON.parse(req.body.isHuman || null);
-                        let isRegionObject = JSON.parse(req.body.isRegion || null);
-                        if (isWorldObject || isHumanObject || isRegionObject) {
+                        let isZoneObject = JSON.parse(req.body.isZone || null);
+                        if (isWorldObject || isHumanObject || isZoneObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
                             objects[objectId].name = req.body.name;
@@ -2367,8 +2367,8 @@ function objectWebServer() {
                                 objects[objectId].type = 'world';
                             } else if (isHumanObject) {
                                 objects[objectId].type = 'human';
-                            } else if (isRegionObject) {
-                                objects[objectId].type = 'region';
+                            } else if (isZoneObject) {
+                                objects[objectId].type = 'zone';
                             }
                             utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
 

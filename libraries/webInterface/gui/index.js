@@ -242,7 +242,7 @@ function setTooltipTextForElement(element, helpText) {
 function setTooltipTextForManageObjects() {
     setTooltipTextForElement('#addObject', 'Define an object with an Image, Object, or Model target where AR content' +
         ' will "stick to" when looking at it with the Spatial Toolbox');
-    setTooltipTextForElement('#addRegion', 'Create a "zone" object whose boundaries can be later defined' +
+    setTooltipTextForElement('#addZone', 'Create a "zone" object whose boundaries can be later defined' +
         ' as a subsection of the world. Tools dropped into that subsection of the world will stick to that zone.');
     setTooltipTextForElement('#addWorldObject', 'Create a "world" object with an Area or Image target, to' +
         ' specify the (0,0,0) position of your space and where any objects without targets can be anchored');
@@ -380,7 +380,7 @@ realityServer.updateManageObjects = function (thisItem2) {
     /////// ^ Tutorial ^ ///////
 
     document.getElementById('addObject').addEventListener('click', realityServer.gotClick, false);
-    document.getElementById('addRegion').addEventListener('click', realityServer.gotClick, false);
+    document.getElementById('addZone').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('addWorldObject').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('whereIs').addEventListener('click', realityServer.gotClick, false);
     document.getElementById('whereWas').addEventListener('click', realityServer.gotClick, false);
@@ -587,15 +587,15 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 this.getDomContents().appendChild(thisObject.dom);
 
-            } else if (thisObject.type === 'region') {
+            } else if (thisObject.type === 'zone') {
 
-                thisObject.dom = this.templates['regionObject'].content.cloneNode(true); // world object template
-                thisObject.dom.querySelector('.regionObject').id = 'object' + objectKey;
+                thisObject.dom = this.templates['zoneObject'].content.cloneNode(true); // world object template
+                thisObject.dom.querySelector('.zoneObject').id = 'object' + objectKey;
                 thisObject.dom.querySelector('.name').innerText = thisObject.name;
 
-                thisObject.dom.querySelector('.regionTarget').setAttribute('objectId', objectKey);
-                thisObject.dom.querySelector('.regionTarget').setAttribute('isRegion', true);
-                // thisObject.dom.querySelector('.regionTarget').addEventListener('click', realityServer.gotClick, false);
+                thisObject.dom.querySelector('.zoneTarget').setAttribute('objectId', objectKey);
+                thisObject.dom.querySelector('.zoneTarget').setAttribute('isZone', true);
+                // thisObject.dom.querySelector('.zoneTarget').addEventListener('click', realityServer.gotClick, false);
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.name'),
                     'Zone objects are special objects that define a subsection of a World Object. Tools dropped into' +
@@ -604,7 +604,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 setTooltipTextForElement(thisObject.dom.querySelector('.zone'),
                     'Group is optional and limits which apps will discover this object. Don\'t change this unless you know what you\'re doing.');
 
-                setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
+                setTooltipTextForElement(thisObject.dom.querySelector('.zoneTarget'),
                     'The boundaries of this zone can be drawn in the Remote Operator. Preview the zone here.');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
@@ -639,7 +639,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     });
                 }
 
-                addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.regionObject'), objectKey);
+                addDeleteListener(thisObject.dom.querySelector('.remove'), thisObject.dom.querySelector('.zoneObject'), objectKey);
 
                 if (Object.keys(thisObject.frames).length > 0) {
                     thisObject.dom.querySelector('.triangle').classList.remove('hidden');
@@ -690,9 +690,9 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     // world objects with targets should have a green "Edit Origin" button when fully initialized
                     if (thisObject.targetsExist.jpgExists) {
-                        realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'yellow', 'green');
-                        realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'three');
-                        thisObject.dom.querySelector('.regionTarget').innerText = 'View Zone Boundaries';
+                        realityServer.switchClass(thisObject.dom.querySelector('.zoneTarget'), 'yellow', 'green');
+                        realityServer.switchClass(thisObject.dom.querySelector('.zoneTarget'), 'one', 'three');
+                        thisObject.dom.querySelector('.zoneTarget').innerText = 'View Zone Boundaries';
 
                         // preview the zone in the icon
                         thisObject.dom.querySelector('.objectIcon').classList.remove('yellow');
@@ -704,12 +704,12 @@ realityServer.updateManageObjects = function (thisItem2) {
                         setTimeout(function (thisObjectKey) {
                             let thisObjectElement = document.getElementById('object' + thisObjectKey);
                             if (thisObjectElement) {
-                                thisObjectElement.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/regionYellow.svg';
+                                thisObjectElement.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/zoneYellow.svg';
                                 
                                 thisObjectElement.querySelector('.objectIcon').classList.add('yellow');
                                 
-                                realityServer.switchClass(thisObjectElement.querySelector('.regionTarget'), 'one', 'three'); // targetWidthWide
-                                thisObjectElement.querySelector('.regionTarget').innerText = 'Zone Boundaries Unset';
+                                realityServer.switchClass(thisObjectElement.querySelector('.zoneTarget'), 'one', 'three'); // targetWidthWide
+                                thisObjectElement.querySelector('.zoneTarget').innerText = 'Zone Boundaries Unset';
                             }
                         }, 10, objectKey); // interferes with other layout in Safari if happens immediately
                     }
@@ -728,10 +728,10 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.active').innerText = 'Off';
 
                     // make Add Target button yellow
-                    realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'green', 'yellow');
-                    realityServer.switchClass(thisObject.dom.querySelector('.regionTarget'), 'one', 'targetWidthMedium');
+                    realityServer.switchClass(thisObject.dom.querySelector('.zoneTarget'), 'green', 'yellow');
+                    realityServer.switchClass(thisObject.dom.querySelector('.zoneTarget'), 'one', 'targetWidthMedium');
 
-                    setTooltipTextForElement(thisObject.dom.querySelector('.regionTarget'),
+                    setTooltipTextForElement(thisObject.dom.querySelector('.zoneTarget'),
                         'Define the boundaries of this zone using the Remote Operator.');
 
                     thisObject.dom.querySelector('.objectIcon').remove();
@@ -2120,7 +2120,7 @@ realityServer.gotClick = function (event) {
     /**
      *  ADD OBJECT
      */
-    if (buttonClassList.contains('addObject') || buttonClassList.contains('addWorldObject') || buttonClassList.contains('addRegion')) {
+    if (buttonClassList.contains('addObject') || buttonClassList.contains('addWorldObject') || buttonClassList.contains('addZone')) {
         console.log(document.getElementById('textEntryObject'));
 
         if (!document.getElementById('textEntryObject')) {
@@ -2131,8 +2131,8 @@ realityServer.gotClick = function (event) {
 
             if (buttonClassList.contains('addWorldObject')) {
                 textEntryElements.getElementById('textEntryObject').setAttribute('isWorldObject', true);
-            } else if (buttonClassList.contains('addRegion')) {
-                textEntryElements.getElementById('textEntryObject').setAttribute('isRegion', true);
+            } else if (buttonClassList.contains('addZone')) {
+                textEntryElements.getElementById('textEntryObject').setAttribute('isZone', true);
             }
 
             document.getElementById('addObject').parentNode.appendChild(textEntryElements);
@@ -2145,7 +2145,7 @@ realityServer.gotClick = function (event) {
     if (buttonClassList.contains('addButton')) {
 
         let shouldAddWorldObject = document.getElementById('textEntryObject').getAttribute('isWorldObject');
-        let shouldAddRegion = document.getElementById('textEntryObject').getAttribute('isRegion');
+        let shouldAddZone = document.getElementById('textEntryObject').getAttribute('isZone');
 
         let textContent = document.getElementById('textEntryObject').querySelector('.textfield').innerText;
 
@@ -2160,7 +2160,7 @@ realityServer.gotClick = function (event) {
         let objectName = textContent;
         if (shouldAddWorldObject) {
             objectName = '_WORLD_' + textContent;
-        } else if (shouldAddRegion) {
+        } else if (shouldAddZone) {
             objectName = '_ZONE_' + textContent;
         }
 
@@ -2172,8 +2172,8 @@ realityServer.gotClick = function (event) {
 
                 if (shouldAddWorldObject) {
                     realityServer.objects[objectName].isWorldObject = true;
-                } else if (shouldAddRegion) {
-                    realityServer.objects[objectName].type = 'region';
+                } else if (shouldAddZone) {
+                    realityServer.objects[objectName].type = 'zone';
                 }
             } else {
                 // this is how world objects get instantly initialized
@@ -2212,7 +2212,7 @@ realityServer.gotClick = function (event) {
             realityServer.update();
             // todo this needs to be changed to a proper read response for the latest objects
             window.location.reload();
-        }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject + '&isRegion=' + shouldAddRegion);
+        }, 'action=new&name=' + objectName + '&isWorld=' + shouldAddWorldObject + '&isZone=' + shouldAddZone);
     }
 
     if (buttonClassList.contains('addButtonFrame')) {

@@ -57,7 +57,7 @@ function ObjectModel(ip, version, protocol, objectId) {
     };
     this.isWorldObject = false; // a bit redundant with this.type, but good for backwards compatibility
     this.isAnchor = false;
-    this.type = 'object'; // or: 'world' or 'human' or 'region' etc...
+    this.type = 'object'; // or: 'world' or 'human' or 'zone' etc...
     this.timestamp = null; // timestamp optionally stores when the object was first created
 }
 
