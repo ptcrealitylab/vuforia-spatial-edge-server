@@ -48,8 +48,13 @@ function ObjectModel(ip, version, protocol, objectId) {
     this.framesHistory = {};
     // which visualization mode it should use right now ("ar" or "screen")
     this.visualization = 'ar';
-
+    // clients can optionally load objects from only certain groups. backwards-compatible: group used to be named zone
     this.zone = '';
+    Object.defineProperty(ObjectModel.prototype, 'discoveryGroup', {
+        get: function() { return this.zone; },
+        set: function(discoveryGroup) { this.zone = discoveryGroup; },
+        configurable: true
+    });
     // taken from target.xml. necessary to make the screens work correctly.
     this.targetSize = {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size

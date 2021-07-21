@@ -1109,8 +1109,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     // Objects
     //  console.log('with version number: ' + thisVersionNumber);
-    var zone = '';
-    if (objects[thisId].zone) zone = objects[thisId].zone;
+    var discoveryGroup = '';
+    if (objects[thisId].discoveryGroup) discoveryGroup = objects[thisId].discoveryGroup;
 
     // json string to be sent
     const messageStr = JSON.stringify({
@@ -1120,7 +1120,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
-        zone: zone
+        zone: discoveryGroup // zone was renamed to discoveryGroup but backwards-compatible protocol still uses 'zone'
     });
 
     if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
@@ -1139,8 +1139,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
-                let zone = '';
-                if (objects[thisId].zone) zone = objects[thisId].zone;
+                let discoveryGroup = '';
+                if (objects[thisId].discoveryGroup) discoveryGroup = objects[thisId].discoveryGroup;
                 if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
@@ -1152,7 +1152,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
-                    zone: zone
+                    zone: discoveryGroup // zone was renamed to discoveryGroup but backwards-compatible protocol still uses 'zone'
                 }));
                 if (objects[thisId].tcs || objects[thisId].isAnchor) {
                     client.send(message, 0, message.length, PORT, HOST, function (err) {
@@ -1175,8 +1175,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
 
-                var zone = '';
-                if (objects[thisId].zone) zone = objects[thisId].zone;
+                var discoveryGroup = '';
+                if (objects[thisId].discoveryGroup) discoveryGroup = objects[thisId].discoveryGroup;
                 if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
 
                 services.ip = services.getIP();
@@ -1188,7 +1188,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     vn: thisVersionNumber,
                     pr: protocol,
                     tcs: objects[thisId].tcs,
-                    zone: zone
+                    zone: discoveryGroup // zone was renamed to discoveryGroup but backwards-compatible protocol still uses 'zone'
                 }));
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) throw err;
@@ -2231,7 +2231,7 @@ function objectWebServer() {
             var returnJSON = [];
 
             for (var thisId in objects) {
-                if (objects[thisId].deactivated) continue; // todo: filter by zone, too?
+                if (objects[thisId].deactivated) continue; // todo: filter by discoveryGroup, too?
 
                 objects[thisId].version = version;
                 objects[thisId].protocol = protocol;
@@ -2333,9 +2333,9 @@ function objectWebServer() {
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
 
-            if (req.body.action === 'zone') {
+            if (req.body.action === 'zone' || req.body.action === 'discoveryGroup') { // backwards compatible, supports 'zone' or 'discoveryGroup'
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
-                objects[objectKey].zone = req.body.zone;
+                objects[objectKey].discoveryGroup = (req.body.action === 'zone') ? req.body.zone : req.body.discoveryGroup;
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                 res.send('ok');
             }

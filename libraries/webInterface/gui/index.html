@@ -156,8 +156,11 @@
         <div class="item half button noBorder noBackground triangle"></div>
         <div class='name item button white nameWidthMedium' style="width: 181px">Name
         </div><div class='item space hidden'>
-        </div><div class='textfield zone item button white one textcursor' contenteditable
-               onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Group
+        </div><div class='textfield zone item button white fontTransparentNormal one textcursor' contenteditable
+               onclick='if (this.innerText === "Group") {
+                   this.innerText="";
+                   this.classList.remove("fontTransparentNormal");
+               }'>Group
         </div><div class='item space hidden'>
         </div><div class='target item button yellow one'>Add Target
 <!--        </div><div class='item space hidden spaceAfterTarget'>-->
@@ -184,7 +187,11 @@
             <div class="item half button noBorder noBackground triangle hidden"></div>
             <div class='zoneName name item button white nameWidthMedium' style="width: 181px">Name</div>
             <div class='item hidden space smallSpace'></div>
-            <div class='textfield zone item button white one textcursor' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Group</div>
+            <div class='textfield zone item button white fontTransparentNormal one textcursor' contenteditable
+                 onclick='if (this.innerText === "Group") {
+                   this.innerText="";
+                   this.classList.remove("fontTransparentNormal");
+               }'>Group</div>
             <div class='item hidden space smallSpace'></div>
             <div class='zoneTarget item button yellow three'>Zone Boundaries Unset</div>
             <div class='objectIcon item space noBackground half'><img class="objectTargetIcon"></div>
@@ -204,7 +211,11 @@
             <div class="item half button noBorder noBackground triangle hidden"></div>
             <div class='worldName name item button white nameWidthMedium' style="width: 181px">Name</div>
             <div class='item hidden space smallSpace'></div>
-            <div class='textfield zone item button white one textcursor' contenteditable onclick='if(this.innerText === "Zone") {this.innerText=""; this.style.fonts = "12pt"}'>Group</div>
+            <div class='textfield zone item button white fontTransparentNormal one textcursor' contenteditable
+                 onclick='if (this.innerText === "Group") {
+                   this.innerText="";
+                   this.classList.remove("fontTransparentNormal");
+               }'>Group</div>
             <div class='item hidden space smallSpace'></div>
             <div class='target item button yellow one clickAble'>Add Target</div>
 <!--            <div class='item hidden space smallSpace spaceAfterTarget'></div>-->
