@@ -1317,12 +1317,18 @@ async function getKnownSceneGraph(ip, port) {
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
     const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
-    const response = await utilities.httpGet(url);
+    let response = null;
+    try {
+      response = await utilities.httpGet(url);
+    } catch (e) {
+      console.warn('error awaiting /spatial/sceneGraph', e);
+      return;
+    }
 
     // 3. parse the results and add it as a known scene graph
     let thatSceneGraph = JSON.parse(response);
     console.log('Discovered scene graph from server ' + ip + ' with keys:');
-    console.log(Object.keys(thatSceneGraph));
+    // console.log(Object.keys(thatSceneGraph));
 
     // 4. create a method to compile all known scene graphs with this server's graph to be visualized
     worldGraph.addKnownGraph(ip, thatSceneGraph);
