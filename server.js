@@ -1103,6 +1103,19 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
+    // try re-generating checksum if it doesn't exist - in some cases it gets corrupted and beats won't send
+    if (!objects[thisId].tcs) {
+      let targetDir = path.join(objectsPath, objects[thisId].name, identityFolderName, 'target');
+      let jpgPath = path.join(targetDir, 'target.jpg');
+      let datPath = path.join(targetDir, 'target.dat');
+      let xmlPath = path.join(targetDir, 'target.xml');
+      let glbPath = path.join(targetDir, 'target.glb');
+      var fileList = [jpgPath, xmlPath, datPath, glbPath];
+      objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
+      console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+    }
+
+    // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
     if (typeof objects[thisId].tcs === 'undefined') {
         objects[thisId].tcs = 0;
     }
@@ -1609,7 +1622,7 @@ function objectWebServer() {
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
 
             html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
-            
+
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
             scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1657,7 +1670,7 @@ function objectWebServer() {
         webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
-    
+
     webServer.post('/action', (req, res) => {
         const action = JSON.parse(req.body.action);
         handleActionMessage(action);
@@ -4186,4 +4199,3 @@ function checkInit(init) {
         hardwareAPI.initialize();
     }
 }
-
