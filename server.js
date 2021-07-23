@@ -1304,7 +1304,14 @@ async function getKnownSceneGraph(ip, port) {
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
     const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
-    const response = await utilities.httpGet(url);
+    let response = null;
+    try {
+        response = await utilities.httpGet(url);
+    } catch (e) {
+        // this will happen on older servers without /spatial/sceneGraph endpoint
+        console.warn('error awaiting /spatial/sceneGraph', e);
+        return;
+    }
 
     // 3. parse the results and add it as a known scene graph
     let thatSceneGraph = JSON.parse(response);
@@ -4170,7 +4177,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, services, version, protocol, serverPort);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 

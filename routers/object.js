@@ -511,12 +511,12 @@ const setupDeveloperRoutes = function() {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/:objectName/disableFrameSharing/', function (req, res) {
+    router.get('/:objectName/disableSeparateOrigin/', function (req, res) {
         if (!utilities.isValidId(req.params.objectName)) {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
             return;
         }
-        objectController.setFrameSharingEnabled(req.params.objectName, false, function (success, errorMessage) {
+        objectController.setSeparateOriginEnabled(req.params.objectName, false, function (success, errorMessage) {
             if (success) {
                 res.status(200).send('ok');
             } else {
@@ -524,12 +524,12 @@ const setupDeveloperRoutes = function() {
             }
         });
     });
-    router.get('/:objectName/enableFrameSharing/', function (req, res) {
+    router.get('/:objectName/enableSeparateOrigin/', function (req, res) {
         if (!utilities.isValidId(req.params.objectName)) {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
             return;
         }
-        objectController.setFrameSharingEnabled(req.params.objectName, true, function (success, errorMessage) {
+        objectController.setSeparateOriginEnabled(req.params.objectName, true, function (success, errorMessage) {
             if (success) {
                 res.status(200).send('ok');
             } else {

@@ -8,7 +8,6 @@ function Objects() {
     this.zone = '';
     this.screenPort = '';
     this.isWorldObject = false;
-    this.sharingEnabled = false; // world objects can enable their frames to be visually attached to other objects
     this.isExpanded = true;
     this.targetsExist = {
         datExists: false,
@@ -417,8 +416,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                     'Edit which target data will define the origin of this space\'s coordinate system. Works best' +
                     ' with Area Targets but an Image Target that won\'t move is also fine.');
 
-                setTooltipTextForElement(thisObject.dom.querySelector('.sharing'),
-                    'The tool sharing feature will be introduced in a future update. Currently has no effect.');
+                setTooltipTextForElement(thisObject.dom.querySelector('.origin'),
+                    'Set a separate target image to be the origin of the space, rather than the area target\'s default origin');
 
                 setTooltipTextForElement(thisObject.dom.querySelector('.remove'),
                     'Permanently delete this world object and all data associated with it');
@@ -485,10 +484,9 @@ realityServer.updateManageObjects = function (thisItem2) {
                         realityServer.switchClass(thisObject.dom.querySelector('.active'), 'yellow', 'green');
                         thisObject.dom.querySelector('.active').innerText = 'On';
 
-                        thisObject.dom.querySelector('.sharing').classList.add('clickAble');
-                        thisObject.dom.querySelector('.sharing').classList.add('clickAble');
+                        thisObject.dom.querySelector('.origin').classList.add('clickAble');
 
-                        addSharingToggle(thisObject.dom.querySelector('.sharing'), objectKey, thisObject);
+                        addOriginToggle(thisObject.dom.querySelector('.origin'), objectKey, thisObject);
 
                         setTooltipTextForElement(thisObject.dom.querySelector('.active'),
                             'Click here to temporarily disable the object, hiding it from Spatial Toolbox apps in the' +
@@ -500,7 +498,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                         thisObject.dom.querySelector('.name').classList.add('inactive');
                         thisObject.dom.querySelector('.zone').classList.add('inactive');
-                        thisObject.dom.querySelector('.sharing').classList.add('inactive');
+                        thisObject.dom.querySelector('.origin').classList.add('inactive');
 
                         setTooltipTextForElement(thisObject.dom.querySelector('.active'),
                             'This world object is inactive. Click here to enable the object.');
@@ -539,14 +537,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                         }, 10, objectKey); // interferes with other layout in Safari if happens immediately
                     }
 
-                    // make Frame Sharing button turn green or yellow depending on state
-                    if (thisObject.sharingEnabled) {
-                        realityServer.switchClass(thisObject.dom.querySelector('.sharing'), 'yellow', 'green');
-                        thisObject.dom.querySelector('.sharing').innerText = 'Tool Sharing On';
+                    // make Frame Origin button turn green or yellow depending on state
+                    if (thisObject.originEnabled) {
+                        realityServer.switchClass(thisObject.dom.querySelector('.origin'), 'yellow', 'green');
+                        thisObject.dom.querySelector('.origin').innerText = 'Separate Origin On';
 
                     } else {
-                        realityServer.switchClass(thisObject.dom.querySelector('.sharing'), 'green', 'yellow');
-                        thisObject.dom.querySelector('.sharing').innerText = 'Tool Sharing Off';
+                        realityServer.switchClass(thisObject.dom.querySelector('.origin'), 'green', 'yellow');
+                        thisObject.dom.querySelector('.origin').innerText = 'Separate Origin Off';
                     }
 
                     addEnabledToggle(thisObject.dom.querySelector('.active'), objectKey, thisObject); // create inside closure so interfaceInfo doesn't change after definition
@@ -555,7 +553,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     thisObject.dom.querySelector('.name').classList.add('inactive');
                     thisObject.dom.querySelector('.zone').classList.add('inactive');
-                    thisObject.dom.querySelector('.sharing').classList.add('inactive');
+                    thisObject.dom.querySelector('.origin').classList.add('inactive');
                     thisObject.dom.querySelector('.download').classList.add('inactive');
                     thisObject.dom.querySelector('.active').classList.add('inactive');
 
@@ -782,7 +780,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 if (thisFrame.location === 'global') {
                     addLinkToContent(thisFrame.dom.querySelector('.content'), thisFrame.src);
 
-                    if (thisObject.isWorldObject && thisObject.sharingEnabled) {
+                    if (thisObject.isWorldObject && thisObject.originEnabled) {
                         // thisFrame.dom.querySelector('.attachedTo').classList.remove('hidden');
                         realityServer.switchClass(thisFrame.dom.querySelector('.attachedTo'), 'hidden', 'inactive');
                         // TODO: in future, make active/visible only if it is attached to another object, and change the text to show that object's name
@@ -2452,22 +2450,22 @@ function addFrameEnabledToggle(button, frameName, frameInfo) {
     });
 }
 
-// toggle between frame sharing enabled/disabled
-function addSharingToggle(button, objectKey, thisObject) {
+// toggle between custom origin enabled/disabled
+function addOriginToggle(button, objectKey, thisObject) {
     button.addEventListener('click', function () {
-        if (thisObject.sharingEnabled) {
-            realityServer.sendRequest('/object/' + objectKey + '/disableFrameSharing/', 'GET', function (state) {
+        if (thisObject.originEnabled) {
+            realityServer.sendRequest('/object/' + objectKey + '/disableSeparateOrigin/', 'GET', function (state) {
                 if (state === 'ok') {
-                    thisObject.sharingEnabled = false;
-                    console.log(objectKey, thisObject.sharingEnabled);
+                    thisObject.originEnabled = false;
+                    console.log(objectKey, thisObject.originEnabled);
                 }
                 realityServer.update();
             });
         } else {
-            realityServer.sendRequest('/object/' + objectKey + '/enableFrameSharing/', 'GET', function (state) {
+            realityServer.sendRequest('/object/' + objectKey + '/enableSeparateOrigin/', 'GET', function (state) {
                 if (state === 'ok') {
-                    thisObject.sharingEnabled = true;
-                    console.log(objectKey, thisObject.sharingEnabled);
+                    thisObject.originEnabled = true;
+                    console.log(objectKey, thisObject.originEnabled);
                 }
                 realityServer.update();
             });
