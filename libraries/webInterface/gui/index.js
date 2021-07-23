@@ -586,6 +586,11 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 thisObject.dom = this.templates['object'].content.cloneNode(true);
                 thisObject.dom.querySelector('.object').id = 'object' + objectKey;
+
+                if (typeof thisObject.isOriginFor !== 'undefined') {
+                    thisObject.dom.querySelector('.object').style.marginTop = '0'; // move closer to world entry 
+                }
+
                 // check if items are active
                 if (thisObject.initialized && thisObject.active) {
                     realityServer.changeActiveState(thisObject.dom, true, objectKey);
