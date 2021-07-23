@@ -363,6 +363,7 @@ const setSeparateOriginEnabled = function (objectKey, shouldBeEnabled, callback)
             }
         } else {
             utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            callback(true);
         }
 
     } catch (e) {

@@ -14,6 +14,7 @@ function Objects() {
         xmlExists: false,
         jpgExists: false
     };
+    this.useSeparateOrigin = false; // optional property for world objects
 }
 
 function SpatialLocator(objectID, toolID, nodeID) {
@@ -538,7 +539,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     }
 
                     // make Frame Origin button turn green or yellow depending on state
-                    if (thisObject.originEnabled) {
+                    if (thisObject.useSeparateOrigin) {
                         realityServer.switchClass(thisObject.dom.querySelector('.origin'), 'yellow', 'green');
                         thisObject.dom.querySelector('.origin').innerText = 'Separate Origin On';
 
@@ -712,6 +713,19 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.downloadIcon').src = realityServer.downloadImageP.src;
                 }
 
+                if (typeof thisObject.isOriginFor !== 'undefined') {
+                    // disable the Add Tool and AR/Screen buttons
+                    // console.log(thisObject.dom);
+                    // console.log(thisObject.dom.querySelector('.addFrame'));
+                    thisObject.dom.querySelector('.addFrame').classList.add('inactive');
+                    thisObject.dom.querySelector('.addFrame').classList.remove('clickAble');
+                    thisObject.dom.querySelector('.addFrame').removeEventListener('click', realityServer.gotClick, false);
+
+                    thisObject.dom.querySelector('.visualization').classList.add('inactive');
+                    thisObject.dom.querySelector('.visualization').classList.remove('clickAble');
+                    thisObject.dom.querySelector('.visualization').removeEventListener('click', realityServer.gotClick, false);
+                }
+
                 thisObject.dom.querySelector('.name').innerText = thisObject.name;
                 if (!thisItem2) {
                     this.getDomContents().appendChild(thisObject.dom);
@@ -780,7 +794,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 if (thisFrame.location === 'global') {
                     addLinkToContent(thisFrame.dom.querySelector('.content'), thisFrame.src);
 
-                    if (thisObject.isWorldObject && thisObject.originEnabled) {
+                    if (thisObject.isWorldObject && thisObject.useSeparateOrigin) {
                         // thisFrame.dom.querySelector('.attachedTo').classList.remove('hidden');
                         realityServer.switchClass(thisFrame.dom.querySelector('.attachedTo'), 'hidden', 'inactive');
                         // TODO: in future, make active/visible only if it is attached to another object, and change the text to show that object's name
@@ -2355,6 +2369,7 @@ realityServer.removeAnimated = function (item, target, expand, collapse) {
 realityServer.sortObject = function (objects) {
     let objectInfo = [];
     let worldObjectInfo = [];
+    let worldOrigins = [];
 
     for (let objectKey in objects) {
         if (!objects.hasOwnProperty(objectKey)) {
@@ -2363,6 +2378,8 @@ realityServer.sortObject = function (objects) {
 
         if (objects[objectKey].isWorldObject) {
             worldObjectInfo.push([objects[objectKey].name, objectKey]);
+        } else if (objectKey.indexOf('_ORIGIN_') === 0) {
+            worldOrigins.push([objects[objectKey].name, objectKey]);
         } else {
             objectInfo.push([objects[objectKey].name, objectKey]);
         }
@@ -2374,6 +2391,29 @@ realityServer.sortObject = function (objects) {
     });
     worldObjectInfo.sort(function (a, b) {
         return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
+    });
+    worldOrigins.sort(function (a, b) {
+        return (a[0].toLowerCase() > b[0].toLowerCase()) ? 1 : -1;
+    });
+
+    // insert each _ORIGIN_ object directly after its corresponding _WORLD_
+    let insertPositions = [];
+    for (let i = 0; i < worldOrigins.length; i++) {
+        let originInfo = worldOrigins[i];
+        let worldName = originInfo[0].replace(/^_ORIGIN_/, '_WORLD_');
+        let worldInfoIndex = worldObjectInfo.map(function(elt) { return elt[0]; }).indexOf(worldName);
+        if (worldInfoIndex > -1) {
+            objects[originInfo[1]].isOriginFor = worldName;
+            insertPositions.push ({
+                i: worldInfoIndex,
+                elt: originInfo
+            });
+        }
+    }
+    insertPositions.sort(function (a, b) {
+        return (a.i < b.i) ? 1 : -1;
+    }).forEach(function(info) {
+        worldObjectInfo.splice(info.i + 1, 0, info.elt);
     });
 
     return objectInfo.concat(worldObjectInfo);
@@ -2453,21 +2493,19 @@ function addFrameEnabledToggle(button, frameName, frameInfo) {
 // toggle between custom origin enabled/disabled
 function addOriginToggle(button, objectKey, thisObject) {
     button.addEventListener('click', function () {
-        if (thisObject.originEnabled) {
+        if (thisObject.useSeparateOrigin) {
             realityServer.sendRequest('/object/' + objectKey + '/disableSeparateOrigin/', 'GET', function (state) {
                 if (state === 'ok') {
-                    thisObject.originEnabled = false;
-                    console.log(objectKey, thisObject.originEnabled);
+                    thisObject.useSeparateOrigin = false;
                 }
-                realityServer.update();
+                window.location.reload();
             });
         } else {
             realityServer.sendRequest('/object/' + objectKey + '/enableSeparateOrigin/', 'GET', function (state) {
                 if (state === 'ok') {
-                    thisObject.originEnabled = true;
-                    console.log(objectKey, thisObject.originEnabled);
+                    thisObject.useSeparateOrigin = true;
                 }
-                realityServer.update();
+                window.location.reload();
             });
         }
     });

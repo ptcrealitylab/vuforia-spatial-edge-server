@@ -56,6 +56,7 @@ function ObjectModel(ip, version, protocol, objectId) {
         height: 0.3
     };
     this.isWorldObject = false; // a bit redundant with this.type, but good for backwards compatibility
+    this.useSeparateOrigin = false; // optionally set to true for world objects to specify origin with another object
     this.isAnchor = false;
     this.type = 'object'; // or: 'world' or 'human' etc...
     this.timestamp = null; // timestamp optionally stores when the object was first created

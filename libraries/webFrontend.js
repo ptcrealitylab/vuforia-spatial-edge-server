@@ -172,6 +172,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
                 newObject[thisObjectKey].initialized = objects[thisObjectKey].isAnchor;
             }
             newObject[thisObjectKey].isAnchor = objects[thisObjectKey].isAnchor;
+            newObject[thisObjectKey].useSeparateOrigin = objects[thisObjectKey].useSeparateOrigin;
         }
 
         newObject[thisObjectKey].targetsExist = {
