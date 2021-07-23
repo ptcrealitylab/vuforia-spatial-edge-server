@@ -353,7 +353,7 @@ const setSeparateOriginEnabled = function (objectKey, shouldBeEnabled, callback)
         // if needed, create a new object named _ORIGIN_worldName
         if (shouldBeEnabled) {
             let originID = objectKey.replace(/^_WORLD_/, '_ORIGIN_');
-            let originObject = createObject(originID);
+            let originObject = createObject(originID, 'origin');
             if (originObject) {
                 utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
                 callback(true);
@@ -372,7 +372,7 @@ const setSeparateOriginEnabled = function (objectKey, shouldBeEnabled, callback)
     }
 };
 
-const createObject = function (objectID) {
+const createObject = function (objectID, type) {
     let existingObject = utilities.getObject(objects, objectID);
     if (existingObject) { return existingObject; }
 
@@ -383,7 +383,7 @@ const createObject = function (objectID) {
 
     let folder = path.join(objectsPath, objectName);
     let identityPath = path.join(folder, '.identity');
-    let jsonFilePath = path.join(identityPath, 'object.json');
+    // let jsonFilePath = path.join(identityPath, 'object.json');
 
     utilities.createFolder(objectName, objectsPath, globalVariables.debug);
 
@@ -398,21 +398,13 @@ const createObject = function (objectID) {
         0, 0, 0, 1
     ];
 
+    if (typeof type !== 'undefined') {
+        objects[objectID].type = type;
+    }
+
     // store mapping of name->ID in lookup table
     utilities.writeObject(objectLookup, objectName, objectID);
     utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-
-    // if (globalVariables.saveToDisk) {
-    //     fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
-    //         if (err) {
-    //             console.log('object save error', err);
-    //         } else {
-    //             // console.log('JSON saved to ' + jsonFilePath);
-    //         }
-    //     });
-    // } else {
-    //     console.log('I am not allowed to save');
-    // }
 
     return objects[objectID];
 };
