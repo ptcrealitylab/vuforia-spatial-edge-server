@@ -3,15 +3,21 @@ const fs = require('fs');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
+const ObjectModel = require('../models/ObjectModel');
 
 // Variables populated from server.js with setup()
 var objects = {};
+var objectLookup;
 var globalVariables;
 var hardwareAPI;
 var objectsPath;
 var identityFolderName;
 var git;
 var sceneGraph;
+var services;
+var version;
+var protocol;
+var serverPort;
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -338,15 +344,73 @@ const generateXml = function(objectID, body, callback) {
 };
 
 /**
- * Enable sharing of Spatial Tools from this server to objects on other servers
- * @todo: see github issue #23 - function is currently unimplemented
+ * Enable a custom origin target to be added to set the origin of this world object
  * @param {string} objectKey
  * @param {boolean} shouldBeEnabled
  * @param {successCallback} callback - success, error message
  */
-const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
-    callback(true);
-    console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
+const setSeparateOriginEnabled = function (objectKey, shouldBeEnabled, callback) {
+    try {
+        let thisObject = getObject(objectKey);
+        thisObject.useSeparateOrigin = shouldBeEnabled;
+
+        // if needed, create a new object named _ORIGIN_worldName
+        if (shouldBeEnabled) {
+            let originID = objectKey.replace(/^_WORLD_/, '_ORIGIN_');
+            let originObject = createObject(originID, 'origin');
+            if (originObject) {
+                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                callback(true);
+            } else {
+                thisObject.useSeparateOrigin = false;
+                callback(false, 'error creating origin object');
+            }
+        } else {
+            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            callback(true);
+        }
+
+    } catch (e) {
+        console.warn('error toggling separate origin for object ' + objectKey);
+        callback(false, e.message);
+    }
+};
+
+const createObject = function (objectID, type) {
+    let existingObject = utilities.getObject(objects, objectID);
+    if (existingObject) { return existingObject; }
+
+    console.log('Creating new object with ID: ' + objectID);
+
+    let fakeUUid = utilities.uuidTime();
+    let objectName = objectID.substring(0, objectID.length - fakeUUid.length);
+
+    let folder = path.join(objectsPath, objectName);
+    let identityPath = path.join(folder, '.identity');
+    // let jsonFilePath = path.join(identityPath, 'object.json');
+
+    utilities.createFolder(objectName, objectsPath, globalVariables.debug);
+
+    // create a new anchor object
+    objects[objectID] = new ObjectModel(services.ip, version, protocol, objectID);
+    objects[objectID].port = serverPort;
+    objects[objectID].name = objectName;
+    objects[objectID].matrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ];
+
+    if (typeof type !== 'undefined') {
+        objects[objectID].type = type;
+    }
+
+    // store mapping of name->ID in lookup table
+    utilities.writeObject(objectLookup, objectName, objectID);
+    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+    return objects[objectID];
 };
 
 const getObject = function (objectID, excludeUnpinned) {
@@ -372,7 +436,7 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_, objectLookup_, services_, version_, protocol_, serverPort_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -380,6 +444,11 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     identityFolderName = identityFolderName_;
     git = git_;
     sceneGraph = sceneGraph_;
+    objectLookup = objectLookup_;
+    services = services_;
+    version = version_;
+    protocol = protocol_;
+    serverPort = serverPort_;
 };
 
 module.exports = {
@@ -394,7 +463,7 @@ module.exports = {
     setVisualization: setVisualization,
     zipBackup: zipBackup,
     generateXml: generateXml,
-    setFrameSharingEnabled: setFrameSharingEnabled,
+    setSeparateOriginEnabled: setSeparateOriginEnabled,
     getObject: getObject,
     setup: setup
 };
