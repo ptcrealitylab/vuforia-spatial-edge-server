@@ -1722,7 +1722,7 @@ realityServer.gotClick = function (event) {
 
     if (buttonClassList.contains('worldName')) {
         if (isRemoteOperatorSupported) {
-            window.location.href = remoteOperatorUrl;
+            window.location.href = remoteOperatorUrl + '?world=' + objectKey;
         }
     }
 
