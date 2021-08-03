@@ -1104,14 +1104,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     // try re-generating checksum if it doesn't exist - in some cases it gets corrupted and beats won't send
     if (!objects[thisId].tcs) {
-      let targetDir = path.join(objectsPath, objects[thisId].name, identityFolderName, 'target');
-      let jpgPath = path.join(targetDir, 'target.jpg');
-      let datPath = path.join(targetDir, 'target.dat');
-      let xmlPath = path.join(targetDir, 'target.xml');
-      let glbPath = path.join(targetDir, 'target.glb');
-      var fileList = [jpgPath, xmlPath, datPath, glbPath];
-      objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-      console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        let targetDir = path.join(objectsPath, objects[thisId].name, identityFolderName, 'target');
+        let jpgPath = path.join(targetDir, 'target.jpg');
+        let datPath = path.join(targetDir, 'target.dat');
+        let xmlPath = path.join(targetDir, 'target.xml');
+        let glbPath = path.join(targetDir, 'target.glb');
+        var fileList = [jpgPath, xmlPath, datPath, glbPath];
+        objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
+        console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1318,10 +1318,10 @@ async function getKnownSceneGraph(ip, port) {
     const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
     let response = null;
     try {
-      response = await utilities.httpGet(url);
+        response = await utilities.httpGet(url);
     } catch (e) {
-      console.warn('error awaiting /spatial/sceneGraph', e);
-      return;
+        console.warn('error awaiting /spatial/sceneGraph', e);
+        return;
     }
 
     // 3. parse the results and add it as a known scene graph
