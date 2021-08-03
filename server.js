@@ -324,7 +324,6 @@ var socket = require('socket.io-client'); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
-var request = require('request');
 
 // use the cors cross origin REST model
 webServer.use(cors());
