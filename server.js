@@ -1169,7 +1169,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                 if (objects[thisId].tcs || objects[thisId].isAnchor) {
                     client.send(message, 0, message.length, PORT, HOST, function (err) {
                         if (err) {
-                            console.log('Your not on a network. Can\'t send anything');
+                            console.log('You\'re not on a network. Can\'t send anything', err);
                             //throw err;
                             for (var key in objects) {
                                 objects[key].ip = services.ip;
