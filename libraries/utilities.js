@@ -989,9 +989,13 @@ exports.deepCopy = deepCopy;
 exports.httpGet = function (url) {
     return new Promise((resolve, reject) => {
         request(url, (error, response, body) => {
-            if (error) reject(error);
+            if (error) {
+                reject(error);
+                return;
+            }
             if (response.statusCode !== 200) {
                 reject('Invalid status code <' + response.statusCode + '>');
+                return;
             }
             resolve(body);
         });
