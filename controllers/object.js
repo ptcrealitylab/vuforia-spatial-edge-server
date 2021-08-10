@@ -159,6 +159,18 @@ const setMatrix = function(objectID, body, callback) {
         return;
     }
 
+    if (object.isWorldObject || object.type === 'world') {
+        callback(405, {failure: true, error: 'Cannot set the matrix of a world object. World objects have identity.'});
+        return;
+    }
+
+    // if this already has a worldId matching something on this server, don't let another server re-assign it
+    if (object.worldId && utilities.getObject(objects, object.worldId) && !utilities.getObject(objects, body.worldId)) {
+        console.log('preventing worldId from being re-assigned');
+        callback(200, {success: true});
+        return;
+    }
+
     object.matrix = body.matrix;
     console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
