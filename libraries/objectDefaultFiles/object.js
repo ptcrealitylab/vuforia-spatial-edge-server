@@ -577,6 +577,8 @@
                 this.setExclusiveFullScreenOn = makeSendStub('setExclusiveFullScreenOn');
                 this.setExclusiveFullScreenOff = makeSendStub('setExclusiveFullScreenOff');
                 this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
+                this.stickNodeToScreen = makeSendStub('stickNodeToScreen');
+                this.unstickNodeFromScreen = makeSendStub('unstickNodeFromScreen');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -1284,6 +1286,20 @@
 
             postDataToParent({
                 getIsExclusiveFullScreenOccupied: true
+            });
+        };
+
+        this.stickNodeToScreen = function(name) {
+            postDataToParent({
+                nodeName: name,
+                nodeIsFullScreen: true
+            });
+        };
+
+        this.unstickNodeFromScreen = function(name) {
+            postDataToParent({
+                nodeName: name,
+                nodeIsFullScreen: false
             });
         };
 
