@@ -566,6 +566,7 @@
                 this.subscribeToModelAndView = makeSendStub('subscribeToModelAndView');
                 this.subscribeToScreenPosition = makeSendStub('subscribeToScreenPosition');
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
+                this.subscribeToUnityCameraMatrix = makeSendStub('subscribeToUnityCameraMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
                 this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
@@ -623,6 +624,7 @@
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
                 this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addUnityCameraMatrixListener = makeSendStub('addUnityCameraMatrixListener');
                 this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
                 this.cancelScreenPositionListener = makeSendStub('cancelScreenPositionListener');
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
@@ -1141,6 +1143,13 @@
             });
         };
 
+        this.subscribeToUnityCameraMatrix = function () {
+            spatialObject.sendMatrices.unityCamera = true;
+            postDataToParent({
+                sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
         this.subscribeToAllMatrices = function () {
             spatialObject.sendMatrices.allObjects = true;
             // postAllDataToParent();
@@ -1651,7 +1660,8 @@
             numModelAndViewCallbacks: 0,
             numAllMatricesCallbacks: 0,
             numWorldMatrixCallbacks: 0,
-            numGroundPlaneMatrixCallbacks: 0
+            numGroundPlaneMatrixCallbacks: 0,
+            numUnityCameraMatrixCallbacks: 0
         };
 
         this.addGlobalMessageListener = function(callback) {
@@ -1716,6 +1726,18 @@
             spatialObject.messageCallBacks['worldMatrixCall' + callBackCounter.numWorldMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.devicePose !== 'undefined') {
                     callback(msgContent.devicePose, spatialObject.matrices.projection);
+                }
+            };
+        };
+
+        this.addUnityCameraMatrixListener = function (callback) {
+            if (!spatialObject.sendMatrices.unityCamera) {
+                this.subscribeToUnityCameraMatrix();
+            }
+            callBackCounter.numUnityCameraMatrixCallbacks++;
+            spatialObject.messageCallBacks['unityCameraMatrixCall' + callBackCounter.numUnityCameraMatrixCallbacks] = function (msgContent) {
+                if (typeof msgContent.unityCameraMatrix !== 'undefined') {
+                    callback(msgContent.unityCameraMatrix, spatialObject.matrices.projection);
                 }
             };
         };
