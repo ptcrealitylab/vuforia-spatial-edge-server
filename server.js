@@ -1609,7 +1609,7 @@ function objectWebServer() {
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
 
             html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
-            
+
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
             scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1657,7 +1657,7 @@ function objectWebServer() {
         webServer.use('/hardwareInterface/libraries', express.static(__dirname + '/libraries/webInterface/'));
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
-    
+
     webServer.post('/action', (req, res) => {
         const action = JSON.parse(req.body.action);
         handleActionMessage(action);
@@ -3409,6 +3409,8 @@ function socketServer() {
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
 
+            //console.log('received batchedUpdate');
+
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
                     //  console.log('dont send updates to the editor that triggered it');
@@ -4186,4 +4188,3 @@ function checkInit(init) {
         hardwareAPI.initialize();
     }
 }
-
