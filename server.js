@@ -3427,6 +3427,8 @@ function socketServer() {
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
 
+            //console.log('received batchedUpdate');
+
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
                     //  console.log('dont send updates to the editor that triggered it');
