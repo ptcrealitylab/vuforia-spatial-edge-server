@@ -319,8 +319,9 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
     console.log('webserver + socket.io is listening on port', serverPort);
     checkInit('web');
 });
-var io = require('socket.io')(http); // Websocket library
-var socket = require('socket.io-client'); // websocket client source
+const ToolSocket = require('toolsocket');
+var io = new ToolSocket.Io.Server({server: http}); // Websocket library
+var socket = new ToolSocket.Io(); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
@@ -1608,6 +1609,8 @@ function objectWebServer() {
             }
 
             if (!fs.existsSync(fileName)) {
+                console.log('file is not here is it there?');
+                res.send(404);
                 next();
                 return;
             }
@@ -1645,6 +1648,7 @@ function objectWebServer() {
             let fileName = objectsPath + req.url + identityFolderName + '/object.json';
 
             if (!fs.existsSync(fileName)) {
+                res.send(404);
                 next();
                 return;
             }
@@ -3169,7 +3173,12 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
 function socketServer() {
 
     io.on('connection', function (socket) {
+        console.log('------------ ', socket.id);
         socketHandler.socket = socket;
+
+        socket.on('close', function () {
+         //   delete realityEditorSocketArray[socket.id];
+        });
 
         //console.log('connected to socket ' + socket.id);
 
@@ -3797,6 +3806,7 @@ function messagetoSend(msgContent, socketID) {
 
     var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
     if (node) {
+        console.log(socketID);
         io.sockets.connected[socketID].emit('object', JSON.stringify({
             object: msgContent.object,
             frames: msgContent.frame,
