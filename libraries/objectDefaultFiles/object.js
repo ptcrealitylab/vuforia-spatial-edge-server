@@ -1,5 +1,5 @@
 (function(exports) {
-
+    console.log('---- obj loaded ----');
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
     if (typeof exports.spatialObject !== 'undefined') {
@@ -105,24 +105,68 @@
     function loadObjectSocketIo(object) {
         var script = document.createElement('script');
         script.type = 'text/javascript';
+        let proxy = {
+            route: location.pathname,
+            port: location.port,
+            ip: location.hostname,
+            protocol: location.protocol,
+            ws: 'ws://'
+        };
 
         let defaultPort = '8080';
         if (object.hasOwnProperty('port')) defaultPort = object.port;
 
+        var url = null;
+        let urlSplit = null;
+        let urlObj = {};
+        if (parseInt(Number(defaultPort))) {
+            url = location.protocol + '//' + object.ip + ':' + defaultPort;
+        } else {
+            urlSplit = location.pathname.split('/');
+            for (let i = 0; i < urlSplit.length; i++) {
+                if (['n', 'i'].includes(urlSplit[i])) {
+                    if (urlSplit[i + 1])
+                        urlObj[urlSplit[i]] = urlSplit[i + 1];
+                    i++;
+                } else if (urlSplit[i]) {
+                   // url = url + '/' + urlSplit[i];
+                }
+            }
+
+            if (location.protocol === 'https:' || location.protocol === 'wss:')
+                url = location.protocol + '//' + object.ip + ':' + 443 +"/n/" + urlObj.n + "/i/" + urlObj.i;
+            else
+                url = location.protocol + '//' + object.ip + ':' + 80 +"/n/" + urlObj.n + "/i/" + urlObj.i;;
+        }
+
         spatialObject.serverPort = defaultPort;
 
-        var url = 'http://' + object.ip + ':' + defaultPort;
-        spatialObject.socketIoUrl = url;
-        script.src = url + '/socket.io/socket.io.js';
 
+        spatialObject.socketIoUrl = url;
+        script.src = url + '/objectDefaultFiles/toolsocket.js';
+
+        console.log(location.pathname, script.src);
         script.addEventListener('load', function() {
             if (realityInterface) {
+                console.log('get here interfaceAPI load');
                 // adds the API methods related to sending/receiving socket messages
                 realityInterface.injectSocketIoAPI();
             }
         });
 
         document.body.appendChild(script);
+    }
+
+    function getPort (port) {
+        let serverPort = '8080';
+        if (port) {
+            serverPort = port;
+        }
+        if (proxy.route) {
+            return serverPort + proxy.route;
+        } else {
+            return serverPort;
+        }
     }
 
     /**
@@ -686,7 +730,7 @@
 
     SpatialInterface.prototype.injectSocketIoAPI = function() {
         var self = this;
-
+        console.log('----------socktTool----- ', spatialObject.socketIoUrl);
         this.ioObject = io.connect(spatialObject.socketIoUrl);
 
         // Adds the custom API functions that allow a frame to connect to the Internet of Screens application
@@ -1948,6 +1992,7 @@
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
                 console.log('ios socket connected.');
+                console.log('iOSHost', iOSHost);
                 this.iosObject = io.connect(iOSHost);
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();
