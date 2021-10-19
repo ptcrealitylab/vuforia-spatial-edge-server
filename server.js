@@ -411,7 +411,7 @@ function Protocols() {
         // process the data received by a node
         receive: function (message) {
             if (!message) return null;
-            var msgContent = JSON.parse(message);
+            var msgContent = typeof message === 'string' ? JSON.parse(message) : message;
             if (!msgContent.object) return null;
             if (!msgContent.frame) return null;
             if (!msgContent.node) return null;
@@ -478,7 +478,7 @@ function Protocols() {
         },
         receive: function (message) {
             if (!message) return null;
-            var msgContent = JSON.parse(message);
+            var msgContent = typeof message === 'string' ? JSON.parse(message) : message;
             if (!msgContent.object) return null;
             if (!msgContent.node) return null;
             if (!msgContent.data) return null;
@@ -504,7 +504,7 @@ function Protocols() {
         },
         receive: function (message) {
             if (!message) return null;
-            var msgContent = JSON.parse(message);
+            var msgContent = typeof message === 'string' ? JSON.parse(message) : message;
             if (!msgContent.obj) return null;
             if (!msgContent.pos) return null;
             if (!msgContent.value) msgContent.value = 0;
@@ -1326,7 +1326,7 @@ async function getKnownSceneGraph(ip, port) {
     }
 
     // 3. parse the results and add it as a known scene graph
-    let thatSceneGraph = JSON.parse(response);
+    var thatSceneGraph = typeof response === 'string' ? JSON.parse(response) : response;
     console.log('Discovered scene graph from server ' + ip + ' with keys:');
     // console.log(Object.keys(thatSceneGraph));
 
@@ -3175,16 +3175,10 @@ function socketServer() {
     io.on('connection', function (socket) {
         console.log('------------ ', socket.id);
         socketHandler.socket = socket;
-
-        socket.on('close', function () {
-         //   delete realityEditorSocketArray[socket.id];
-        });
-
         //console.log('connected to socket ' + socket.id);
 
         socket.on('/subscribe/realityEditor', function (msg) {
-
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
 
             if (!msgContent.object) {
@@ -3237,7 +3231,7 @@ function socketServer() {
         });
 
         socket.on('/subscribe/realityEditorPublicData', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
 
             if (!msgContent.object) {
@@ -3278,7 +3272,7 @@ function socketServer() {
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (doesObjectExist(msgContent.object)) {
                 console.log('reality editor block: ' + msgContent.object);
@@ -3314,7 +3308,7 @@ function socketServer() {
          */
         socket.on('/subscribe/interfaceSettings', function (msg) {
             console.log('recieved /subscribe/interfaceSettings');
-            let msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (msgContent.interfaceName) {
                 console.log('/subscribe/interfaceSettings for ' + msgContent.interfaceName);
                 hardwareAPI.addSettingsCallback(msgContent.interfaceName, function (interfaceName, currentSettings) {
@@ -3347,7 +3341,7 @@ function socketServer() {
         });
 
         socket.on('object/publicData', function (_msg) {
-            var msg = JSON.parse(_msg);
+            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node && msg && typeof msg.publicData !== 'undefined') {
@@ -3367,7 +3361,7 @@ function socketServer() {
         });
 
         socket.on('block/setup', function (_msg) {
-            var msg = JSON.parse(_msg);
+            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
@@ -3382,8 +3376,7 @@ function socketServer() {
         });
 
         socket.on('block/publicData', function (_msg) {
-            var msg = JSON.parse(_msg);
-
+            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
@@ -3397,22 +3390,23 @@ function socketServer() {
 
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             messagetoSend(msgContent, socket.id);
         });
 
-        socket.on('/object/screenObject', function (msg) {
+        socket.on('/object/screenObject', function (_msg) {
+            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
             hardwareAPI.screenObjectCall(JSON.parse(msg));
         });
 
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             realityEditorUpdateSocketArray[socket.id] = {editorId: msgContent.editorId};
             console.log('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
         });
 
         socket.on('/update', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             for (var socketId in realityEditorUpdateSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
@@ -3432,7 +3426,7 @@ function socketServer() {
         // relays realtime updates (to matrix, x, y, scale, etc) from one client to the rest of the clients
         // clients are responsible for batching and processing the batched updates at whatever frequency they prefer
         socket.on('/batchedUpdate', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
 
@@ -3450,13 +3444,13 @@ function socketServer() {
         });
 
         socket.on('/subscribe/objectUpdates', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             realityEditorObjectMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
             console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
         });
 
         socket.on('/update/object/matrix', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             var object = getObject(msgContent.objectKey);
             if (!object) {
@@ -3498,7 +3492,7 @@ function socketServer() {
         });
 
         socket.on('/update/object/position', function (msg) {
-            var msgContent = JSON.parse(msg);
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             var object = getObject(msgContent.objectKey);
             if (!object) {
@@ -3552,11 +3546,7 @@ function socketServer() {
             if (!globalVariables.listenForHumanPose) {
                 return;
             }
-
-            var msgContent = msg;
-            if (typeof msg === 'string') {
-                msgContent = JSON.parse(msg);
-            }
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (!msgContent) {
                 return;
             }
@@ -3645,10 +3635,7 @@ function socketServer() {
         });
 
         socket.on('node/setup', function (msg) {
-            var msgContent = msg;
-            if (typeof msg === 'string') {
-                msgContent = JSON.parse(msg);
-            }
+            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (!msgContent) {
                 return;
             }
