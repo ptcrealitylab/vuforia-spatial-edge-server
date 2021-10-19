@@ -98,6 +98,27 @@
     // this will be initialized once the frame creates a new SpatialInterface()
     var realityInterface = null;
 
+    let urlObj = {};
+
+    function getIoTitle (title) {
+        if (urlObj.n) {
+            if (title.charAt(0) !== '/') title = '/' + title;
+            let network = null;
+            let destinationIdentifier = null;
+            let secret = null;
+            if (urlObj.n) network = urlObj.n;
+            if (urlObj.s) secret = urlObj.s;
+            if (urlObj.i) destinationIdentifier = urlObj.i;
+
+            let returnUrl = '';
+            if (network) returnUrl += '/n/' + network;
+            if (destinationIdentifier) returnUrl += '/i/' + destinationIdentifier;
+            if (secret) returnUrl += '/s/' + secret;
+            if (title) returnUrl += title;
+            return returnUrl;
+        }
+    }
+
     /**
      * automatically injects the socket.io script into the page once the editor has posted frame info into the page
      * @param {{ip: string}} object - data object containing the server IP of the object
@@ -118,7 +139,6 @@
 
         var url = null;
         let urlSplit = null;
-        let urlObj = {};
         if (parseInt(Number(defaultPort))) {
             url = location.protocol + '//' + object.ip + ':' + defaultPort;
         } else {
@@ -128,15 +148,13 @@
                     if (urlSplit[i + 1])
                         urlObj[urlSplit[i]] = urlSplit[i + 1];
                     i++;
-                } else if (urlSplit[i]) {
-                   // url = url + '/' + urlSplit[i];
                 }
             }
 
             if (location.protocol === 'https:' || location.protocol === 'wss:')
-                url = location.protocol + '//' + object.ip + ':' + 443 +"/n/" + urlObj.n + "/i/" + urlObj.i;
+                url = location.protocol + '//' + object.ip + ':' + 443 + '/n/' + urlObj.n + '/i/' + urlObj.i;
             else
-                url = location.protocol + '//' + object.ip + ':' + 80 +"/n/" + urlObj.n + "/i/" + urlObj.i;;
+                url = location.protocol + '//' + object.ip + ':' + 80 + '/n/' + urlObj.n + '/i/' + urlObj.i;
         }
 
         spatialObject.serverPort = defaultPort;
@@ -763,7 +781,7 @@
             var timeoutFunction = function() {
                 if (spatialObject.object) {
                     // console.log('emit sendRealityEditorSubscribe');
-                    self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
+                    self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
                         object: spatialObject.object,
                         frame: spatialObject.frame,
                         protocol: spatialObject.protocol
@@ -799,7 +817,7 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
-                self.ioObject.emit('object', JSON.stringify({
+                self.ioObject.emit(getIoTitle('object'), JSON.stringify({
                     object: spatialObject.object,
                     frame: spatialObject.frame,
                     node: spatialObject.frame + node,
@@ -815,7 +833,7 @@
          * @param {function} callback
          */
         this.addReadListener = function (node, callback) {
-            self.ioObject.on('object', function (msg) {
+            self.ioObject.on(getIoTitle('object'), function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
@@ -859,7 +877,7 @@
          * @param {function} callback
          */
         this.addReadPublicDataListener = function (node, valueName, callback) {
-            self.ioObject.on('object/publicData', function (msg) {
+            self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
@@ -929,7 +947,7 @@
 
             spatialObject.publicData[node][valueName] = value;
 
-            this.ioObject.emit('object/publicData', JSON.stringify({
+            this.ioObject.emit(getIoTitle('object/publicData'), JSON.stringify({
                 object: spatialObject.object,
                 frame: spatialObject.frame,
                 node: spatialObject.frame + node,
@@ -956,7 +974,7 @@
          */
         this.reloadPublicData = function() {
             // reload public data when it becomes visible
-            this.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: spatialObject.object, frame: spatialObject.frame}));
+            this.ioObject.emit(getIoTitle('/subscribe/realityEditorPublicData'), JSON.stringify({object: spatialObject.object, frame: spatialObject.frame}));
         };
 
         // Routing the messages via Server for Screen
@@ -964,13 +982,13 @@
             spatialObject.messageCallBacks.screenObjectCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenObject !== 'undefined') {
-                    self.ioObject.emit('/object/screenObject', JSON.stringify(msgContent.screenObject));
+                    self.ioObject.emit(getIoTitle('/object/screenObject'), JSON.stringify(msgContent.screenObject));
                 }
             };
         };
 
         this.addScreenObjectReadListener = function () {
-            self.ioObject.on('/object/screenObject', function (msg) {
+            self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
                 if (spatialObject.visibility !== 'visible') return;
                 var thisMsg = JSON.parse(msg);
                 if (!thisMsg.object) thisMsg.object = null;
@@ -1004,7 +1022,7 @@
             var thisItem = {};
             thisItem[valueName] = value;
 
-            this.ioObject.emit('object/privateData', JSON.stringify({
+            this.ioObject.emit(getIoTitle('object/privateData'), JSON.stringify({
                 object: spatialObject.object,
                 frame: spatialObject.frame,
                 node: spatialObject.frame + node,
@@ -1056,7 +1074,7 @@
          * @param {string} node - node name
          */
         this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: spatialObject.object, frame: spatialObject.frame, node: spatialObject.frame + node}));
+            this.ioObject.emit(getIoTitle('/object/readRequest'), JSON.stringify({object: spatialObject.object, frame: spatialObject.frame, node: spatialObject.frame + node}));
         };
 
         /**
