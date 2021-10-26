@@ -114,10 +114,6 @@
             if (network) returnUrl += '/n/' + network;
             if (destinationIdentifier) returnUrl += '/i/' + destinationIdentifier;
             if (secret) returnUrl += '/s/' + secret;
-            if (spatialObject.object) returnUrl += '/obj/' + spatialObject.object;
-            if (spatialObject.frame) returnUrl += '/int/' + spatialObject.frame;
-            if (spatialObject.node) returnUrl += '/node/' + spatialObject.node;
-            
             if (title) returnUrl += title;
             return returnUrl;
         }
@@ -148,7 +144,7 @@
         } else {
             urlSplit = location.pathname.split('/');
             for (let i = 0; i < urlSplit.length; i++) {
-                if (['n', 'i', 's', 'obj', 'int', 'node'].includes(urlSplit[i])) {
+                if (['n', 'i', 's'].includes(urlSplit[i])) {
                     if (urlSplit[i + 1])
                         urlObj[urlSplit[i]] = urlSplit[i + 1];
                     i++;
