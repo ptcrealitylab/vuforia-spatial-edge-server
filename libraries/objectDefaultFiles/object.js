@@ -114,6 +114,10 @@
             if (network) returnUrl += '/n/' + network;
             if (destinationIdentifier) returnUrl += '/i/' + destinationIdentifier;
             if (secret) returnUrl += '/s/' + secret;
+            if (spatialObject.object) returnUrl += '/obj/' + spatialObject.object;
+            if (spatialObject.frame) returnUrl += '/int/' + spatialObject.frame;
+            if (spatialObject.node) returnUrl += '/node/' + spatialObject.node;
+            
             if (title) returnUrl += title;
             return returnUrl;
         }
@@ -144,17 +148,18 @@
         } else {
             urlSplit = location.pathname.split('/');
             for (let i = 0; i < urlSplit.length; i++) {
-                if (['n', 'i'].includes(urlSplit[i])) {
+                if (['n', 'i', 's', 'obj', 'int', 'node'].includes(urlSplit[i])) {
                     if (urlSplit[i + 1])
                         urlObj[urlSplit[i]] = urlSplit[i + 1];
                     i++;
                 }
             }
 
-            if (location.protocol === 'https:' || location.protocol === 'wss:')
-                url = location.protocol + '//' + object.ip + ':' + 443 + '/n/' + urlObj.n + '/i/' + urlObj.i;
-            else
-                url = location.protocol + '//' + object.ip + ':' + 80 + '/n/' + urlObj.n + '/i/' + urlObj.i;
+            url = location.protocol + '//' + object.ip + ':';
+            if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  ''+ 443; else url += ''+ 80;
+            if(urlObj.n) url += '/n/' + urlObj.n;
+            if(urlObj.i) url += '/i/' + urlObj.i;
+            if(urlObj.s) url += '/s/' + urlObj.s;
         }
 
         spatialObject.serverPort = defaultPort;
@@ -772,6 +777,10 @@
                     socketReconnect: true
                 }), '*');
             }
+        });      
+        
+        this.ioObject.on('close', function() {
+            console.log('frame socket closed');
         });
 
         /**
@@ -833,7 +842,8 @@
          * @param {function} callback
          */
         this.addReadListener = function (node, callback) {
-            self.ioObject.on(getIoTitle('object'), function (msg) {
+            self.ioObject.on('object', function (msg) {
+            //self.ioObject.on(getIoTitle('object'), function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
@@ -877,7 +887,8 @@
          * @param {function} callback
          */
         this.addReadPublicDataListener = function (node, valueName, callback) {
-            self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
+            self.ioObject.on('object/publicData', function (msg) {
+           // self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
@@ -988,7 +999,8 @@
         };
 
         this.addScreenObjectReadListener = function () {
-            self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
+            self.ioObject.on('/object/screenObject', function (msg) {
+           // self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
                 if (spatialObject.visibility !== 'visible') return;
                 var thisMsg = JSON.parse(msg);
                 if (!thisMsg.object) thisMsg.object = null;
