@@ -60,8 +60,14 @@ class AddonFramesSource {
             let frameName = frameFolderList[i];
             let thisIdentityPath = path.join(frameIdentityPath, frameName);
             if (!fs.existsSync(thisIdentityPath)) {
-                console.log('created frames directory at', thisIdentityPath);
-                fs.mkdirSync(thisIdentityPath);
+                console.log('creating frames directory at', thisIdentityPath);
+                try {
+                    fs.mkdirSync(thisIdentityPath);
+                } catch (e) {
+                    console.error(`Unable to mkdir at ${thisIdentityPath}, fix permissions or add it yourself`, e);
+                    this.frameTypeModules[frameName].metadata = {enabled: true};
+                    return;
+                }
             }
             let settingsPath = path.join(thisIdentityPath, 'settings.json');
             if (!fs.existsSync(settingsPath)) {
