@@ -116,6 +116,8 @@
             if (secret) returnUrl += '/s/' + secret;
             if (title) returnUrl += title;
             return returnUrl;
+        } else {
+           return title
         }
     }
 
