@@ -220,6 +220,8 @@
             this.realityInterface.sendEnvelopeMessage({
                 open: true
             });
+
+            this.realityInterface.write('open', 1);
         };
 
         /**
@@ -236,6 +238,8 @@
             this.realityInterface.sendEnvelopeMessage({
                 close: true
             });
+
+            this.realityInterface.write('open', 0);
         };
 
         /**

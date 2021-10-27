@@ -2375,8 +2375,8 @@ function objectWebServer() {
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined') {
-                        let isWorldObject = JSON.parse(req.body.isWorld);
-                        let isHumanObject = JSON.parse(req.body.isHuman);
+                        let isWorldObject = JSON.parse(req.body.isWorld || 'false');
+                        let isHumanObject = JSON.parse(req.body.isHuman || 'false');
                         if (isWorldObject || isHumanObject) {
                             let objectId = req.body.name + utilities.uuidTime();
                             objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
