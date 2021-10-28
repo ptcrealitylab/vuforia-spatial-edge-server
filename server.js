@@ -2923,6 +2923,19 @@ function objectWebServer() {
                                             fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                             anyTargetsUploaded = true;
                                         }
+                                        if (folderFile[i] === path.parse(filename).name) {
+                                            console.log('zip contained a folder of the same name');
+                                            var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                            for (let j = 0; j < innerFolderFiles.length; j++) {
+                                                console.log(innerFolderFiles[j]);
+                                                folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
+                                                if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb') {
+                                                    fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                                    anyTargetsUploaded = true;
+                                                }
+                                            }
+                                            fs.rmdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                        }
                                     }
                                     fs.unlinkSync(folderD + '/' + filename);
 
