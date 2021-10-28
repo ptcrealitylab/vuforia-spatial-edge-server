@@ -404,6 +404,12 @@ exports.triggerUDPCallbacks = function (msgContent) {
     });
 };
 
+exports.actionSender = function (action, timeToLive, beatport) {
+    console.log("-----------------------------------------------------------------------------------",action)
+    utilities.actionSender (action, timeToLive, beatport)
+};
+
+
 exports.clearTool = function (object, tool) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     console.log('remove set tool');
