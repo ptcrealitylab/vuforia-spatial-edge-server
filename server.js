@@ -1365,7 +1365,7 @@ function objectWebServer() {
     // the netmask is set to local networks only.
 
     webServer.use('*', function (req, res, next) {
-                console.log(req.originalUrl, req.method, req.body)
+              //  console.log(req.originalUrl, req.method, req.body)
         
 
         var remoteIP = parseIpSpace(req.ip);
@@ -3457,7 +3457,6 @@ function socketServer() {
                     isNew = false;
                 }
             });
-
             if(isNew) {
                 realityEditorUpdateSocketArray[socket.id].push({editorId: msgContent.editorId});
                 console.log('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
@@ -3491,10 +3490,9 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
-
-            console.log('received batchedUpdate');
-
+            
             for (var socketId in realityEditorUpdateSocketArray) {
+                if(realityEditorUpdateSocketArray[socket.id])
                 realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                         //  console.log('dont send updates to the editor that triggered it');
