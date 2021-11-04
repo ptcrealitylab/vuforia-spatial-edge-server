@@ -82,7 +82,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 const generateFrameOnObject = function (objectKey, frameType, relativeMatrix, callback) {
     let object = utilities.getObject(objects, objectKey);
     if (!object) {
-        callback(404, error);
+        callback(404, {failure: true, error: 'object with id ' + objectKey + ' does not exist'});
         return;
     }
 
