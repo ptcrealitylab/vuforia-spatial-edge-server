@@ -79,6 +79,40 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
     });
 };
 
+const generateFrameOnObject = function (objectKey, frameType, relativeMatrix, callback) {
+    let object = utilities.getObject(objects, objectKey);
+    if (!object) {
+        callback(404, error);
+        return;
+    }
+
+    if (!object.frames) {
+        object.frames = {};
+    }
+
+    let frameKey = objectKey + frameType + utilities.uuidTime();
+    let newFrame = new Frame(objectKey, frameKey);
+    newFrame.name = frameType;
+    newFrame.location = 'global';
+    newFrame.src = frameType;
+
+    if (typeof relativeMatrix !== 'undefined' && Array.isArray(relativeMatrix) && relativeMatrix.length === 16 && typeof relativeMatrix[0] === 'number') {
+        newFrame.ar.matrix = relativeMatrix;
+    }
+
+    object.frames[frameKey] = newFrame;
+
+    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+    utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
+
+    sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
+
+    // notifies any open screens that a new frame was added
+    hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+
+    callback(200, {success: true, frameId: frameKey});
+};
+
 const deletePublicData = function(objectID, frameID, callback) {
     // locate the containing frame in a safe way
     utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
@@ -527,6 +561,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, obje
 
 module.exports = {
     addFrameToObject: addFrameToObject,
+    generateFrameOnObject: generateFrameOnObject,
     deletePublicData: deletePublicData,
     addPublicData: addPublicData,
     copyFrame: copyFrame,
