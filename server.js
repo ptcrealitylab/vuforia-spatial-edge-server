@@ -563,6 +563,7 @@ var socketArray = {};     // all socket connections that are kept alive
 var realityEditorSocketArray = {};     // all socket connections that are kept alive
 var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
 var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
+var realityEditorCameraMatrixSocketArray = {};    // all socket connections to notify clients of each other's position
 var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
 
 var activeHeartbeats = {}; // Prevents multiple recurring beats for the same object
@@ -3451,6 +3452,31 @@ function socketServer() {
                 var thisSocket = io.sockets.connected[socketId];
                 if (thisSocket) {
                     thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                }
+            }
+        });
+
+        // remote operators can subscribe to all other remote operator's camera positions using this method
+        // body should contain a unique "editorId" string identifying the client
+        socket.on('/subscribe/cameraMatrix', function (msg) {
+            var msgContent = JSON.parse(msg);
+            realityEditorCameraMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
+            console.log('editor ' + msgContent.editorId + ' subscribed to camera matrices', realityEditorCameraMatrixSocketArray);
+        });
+
+        // remote operators can broadcast their camera position to all others using this method
+        // body should contain the unique "editorId" of the client as well as its "cameraMatrix" (length 16 array)
+        socket.on('/cameraMatrix', function (msg) {
+            var msgContent = JSON.parse(msg);
+
+            for (var socketId in realityEditorCameraMatrixSocketArray) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorCameraMatrixSocketArray[socketId].editorId) {
+                    continue; // dont send updates to the editor that triggered it
+                }
+
+                var thisSocket = io.sockets.connected[socketId];
+                if (thisSocket) {
+                    thisSocket.emit('/cameraMatrix', JSON.stringify(msgContent));
                 }
             }
         });
