@@ -3742,8 +3742,17 @@ function socketServer() {
                 console.log('Settings for ' + socket.id + ' has disconnected');
             }
 
-            //utilities.writeObjectToFile(objects, req.params[0], __dirname, globalVariables.saveToDisk);
+            if (socket.id in realityEditorObjectMatrixSocketArray) {
+                delete realityEditorObjectMatrixSocketArray[socket.id];
+            }
 
+            if (socket.id in realityEditorUpdateSocketArray) {
+                delete realityEditorUpdateSocketArray[socket.id];
+            }
+
+            if (socket.id in realityEditorCameraMatrixSocketArray) {
+                delete realityEditorCameraMatrixSocketArray[socket.id];
+            }
         });
     });
     this.io = io;
