@@ -317,6 +317,17 @@ router.post('/:objectName/addFrame/', function (req, res) {
         res.status(statusCode).json(responseContents).end();
     });
 });
+router.post('/:objectName/generateFrame', function(req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+
+    frameController.generateFrameOnObject(req.params.objectName, req.body.frameType, req.body.relativeMatrix, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
 // Update the publicData of a frame when it gets moved from one object to another
 router.delete('/:objectName/frame/:frameName/publicData', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
