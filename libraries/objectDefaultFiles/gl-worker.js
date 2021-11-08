@@ -174,6 +174,9 @@ window.addEventListener('message', function(event) {
     if (debugGlWorker) console.warn('Event missing data', message);
     return;
   }
+  if (typeof message !== 'object') {
+      return;
+  }
 
   if (message.name === 'bootstrap') {
     for (const fnName of message.functions) {
