@@ -23,6 +23,7 @@
             modelView: [],
             projection: [],
             groundPlane: [],
+            anchoredModelView: [],
             devicePose: [],
             allObjects: {}
         },
@@ -33,6 +34,7 @@
             modelView: false,
             devicePose: false,
             groundPlane: false,
+            anchoredModelView: false,
             allObjects: false
         },
         sendScreenPosition: false,
@@ -311,6 +313,10 @@
             spatialObject.matrices.groundPlane = msgContent.groundPlaneMatrix;
         }
 
+        if (typeof msgContent.anchoredModelView !== 'undefined') {
+            spatialObject.matrices.anchoredModelView = msgContent.anchoredModelView;
+        }
+
         // receives visibility state (changes when guiState changes or frame gets unloaded due to outside of view)
         if (typeof msgContent.visibility !== 'undefined') {
             spatialObject.visibility = msgContent.visibility;
@@ -568,6 +574,7 @@
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
                 this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
+                this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
@@ -624,7 +631,9 @@
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
-                this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addDevicePoseMatrixListener = makeSendStub('addDevicePoseMatrixListener');
+                this.addGroundPlaneMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addAnchoredModelViewListener = makeSendStub('addAnchoredModelViewListener');
                 this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
                 this.cancelScreenPositionListener = makeSendStub('cancelScreenPositionListener');
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
@@ -647,6 +656,7 @@
                 this.getProjectionMatrix = makeSendStub('getProjectionMatrix');
                 this.getModelViewMatrix = makeSendStub('getModelViewMatrix');
                 this.getGroundPlaneMatrix = makeSendStub('getGroundPlaneMatrix');
+                this.getAnchoredModelView = makeSendStub('getAnchoredModelView');
                 this.getDevicePoseMatrix = makeSendStub('getDevicePoseMatrix');
                 this.getAllObjectMatrices = makeSendStub('getAllObjectMatrices');
                 this.getUnitValue = makeSendStub('getUnitValue');
@@ -1154,6 +1164,13 @@
         this.subscribeToGroundPlaneMatrix = function () {
             spatialObject.sendMatrices.groundPlane = true;
             // postAllDataToParent();
+            postDataToParent({
+                sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
+        this.subscribeToAnchoredModelView = function () {
+            spatialObject.sendMatrices.anchoredModelView = true;
             postDataToParent({
                 sendMatrices: spatialObject.sendMatrices
             });
@@ -1667,7 +1684,8 @@
             numModelAndViewCallbacks: 0,
             numAllMatricesCallbacks: 0,
             numWorldMatrixCallbacks: 0,
-            numGroundPlaneMatrixCallbacks: 0
+            numGroundPlaneMatrixCallbacks: 0,
+            numAnchoredModelViewCallbacks: 0
         };
 
         this.addGlobalMessageListener = function(callback) {
@@ -1744,6 +1762,18 @@
             spatialObject.messageCallBacks['groundPlaneMatrixCall' + callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.groundPlaneMatrix !== 'undefined') {
                     callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection);
+                }
+            };
+        };
+
+        this.addAnchoredModelViewListener = function (callback) {
+            if (!spatialObject.sendMatrices.anchoredModelView) {
+                this.subscribeToAnchoredModelView();
+            }
+            callBackCounter.numAnchoredModelViewCallbacks++;
+            spatialObject.messageCallBacks['anchoredModelViewCall' + callBackCounter.numAnchoredModelViewCallbacks] = function (msgContent) {
+                if (typeof msgContent.anchoredModelView !== 'undefined') {
+                    callback(msgContent.anchoredModelView, spatialObject.matrices.projection);
                 }
             };
         };
@@ -1851,6 +1881,12 @@
         this.getGroundPlaneMatrix = function () {
             if (typeof spatialObject.matrices.groundPlane !== 'undefined') {
                 return spatialObject.matrices.groundPlane;
+            } else return undefined;
+        };
+
+        this.getAnchoredModelView = function () {
+            if (typeof spatialObject.matrices.anchoredModelView !== 'undefined') {
+                return spatialObject.matrices.anchoredModelView;
             } else return undefined;
         };
 
