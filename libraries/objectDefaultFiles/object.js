@@ -71,6 +71,7 @@
             type: null},
         touchDecider: null,
         touchDeciderRegistered: false,
+        unacceptedTouchInProgress: false,
         ignoreAllTouches: false,
         // onFullScreenEjected: null,
         onload: null
@@ -381,8 +382,19 @@
                     postDataToParent({
                         unacceptedTouch: eventData
                     });
+                    spatialObject.unacceptedTouchInProgress = true;
                     return;
                 }
+            }
+
+            if (spatialObject.touchDeciderRegistered && spatialObject.unacceptedTouchInProgress) {
+                postDataToParent({
+                    unacceptedTouch: eventData
+                });
+                if (eventData.type === 'pointerup') {
+                    spatialObject.unacceptedTouchInProgress = false;
+                }
+                return;
             }
 
             // if it wasn't unaccepted, dispatch a touch event into the page contents
