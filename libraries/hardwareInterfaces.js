@@ -682,6 +682,47 @@ exports.pushUpdatesToDevices = function (object) {
     actionCallback({reloadObject: {object: objectID}});
 };
 
+exports.generateFrame = function (objectName, frameType, relativeMatrix) {
+    var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectName, objectsPath);
+    console.log('hardwareInterfaces.generateFrame on object ' + objectID);
+
+    if (!objectID || !objects.hasOwnProperty(objectID)) {
+        console.warn('The object ' + objectName + ' doesn\'t exist.. cannot generateFrame');
+        return;
+    }
+
+    let object = utilities.getObject(objects, objectID);
+
+    if (!object.frames) {
+        object.frames = {};
+    }
+
+    let frameKey = objectID + frameType + utilities.uuidTime();
+    let newFrame = new Frame(objectID, frameKey);
+    newFrame.name = frameType;
+    newFrame.location = 'global';
+    newFrame.src = frameType;
+
+    if (typeof relativeMatrix !== 'undefined' && Array.isArray(relativeMatrix) && relativeMatrix.length === 16 && typeof relativeMatrix[0] === 'number') {
+        newFrame.ar.matrix = relativeMatrix;
+    }
+
+    object.frames[frameKey] = newFrame;
+
+    console.log('generated frame of type ' + frameType + ' on object ' + objectID);
+
+    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+
+    // sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
+
+    // notifies any open screens that a new frame was added
+    // hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+
+    this.pushUpdatesToDevices(objectName);
+
+    return newFrame;
+};
+
 exports.activate = function (object) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     if (objectID) {

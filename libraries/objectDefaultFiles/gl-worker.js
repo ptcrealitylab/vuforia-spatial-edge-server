@@ -174,6 +174,9 @@ window.addEventListener('message', function(event) {
     if (debugGlWorker) console.warn('Event missing data', message);
     return;
   }
+  if (typeof message !== 'object') {
+      return;
+  }
 
   if (message.name === 'bootstrap') {
     for (const fnName of message.functions) {
@@ -212,6 +215,15 @@ window.addEventListener('message', function(event) {
   }
 
   if (message.name === 'frame') {
+    if (Date.now() - message.time > 300) {
+      console.log('time drift detected');
+      window.parent.postMessage({
+        workerId,
+        isFrameEnd: true,
+      }, '*');
+      return;
+    }
+
     frameCommandBuffer = [];
 
     render(message.time);
