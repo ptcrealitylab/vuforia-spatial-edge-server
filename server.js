@@ -3507,7 +3507,7 @@ function socketServer() {
             }
 
             for (var socketId in realityEditorObjectMatrixSocketArray) {
-                if (msgContent.hasOwnProperty('editorId') && realityEditorUpdateSocketArray[socketId] && msgContent.editorId === realityEditorUpdateSocketArray[socketId].editorId) {
+                if (msgContent.hasOwnProperty('editorId') && realityEditorObjectMatrixSocketArray[socketId] && msgContent.editorId === realityEditorObjectMatrixSocketArray[socketId].editorId) {
                     continue; // don't send updates to the editor that triggered it
                 }
 
