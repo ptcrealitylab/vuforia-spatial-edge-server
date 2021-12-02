@@ -1544,7 +1544,7 @@ function objectWebServer() {
         var switchToInteraceTool = true;
         if (!toolpath) switchToInteraceTool = false;
 
-        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml' || urlArray[urlArray.length - 1] === 'target.glb')
+        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml' || urlArray[urlArray.length - 1] === 'target.glb' || urlArray[urlArray.length - 1] === 'target.unitypackage')
             && urlArray[urlArray.length - 2] === 'target') {
             urlArray[urlArray.length - 2] = identityFolderName + '/target';
             switchToInteraceTool = false;
@@ -2920,7 +2920,7 @@ function objectWebServer() {
                                     for (var i = 0; i < folderFile.length; i++) {
                                         console.log(folderFile[i]);
                                         folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
-                                        if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb') {
+                                        if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                             fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                             anyTargetsUploaded = true;
                                         }
@@ -2930,7 +2930,7 @@ function objectWebServer() {
                                             for (let j = 0; j < innerFolderFiles.length; j++) {
                                                 console.log(innerFolderFiles[j]);
                                                 folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
-                                                if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb') {
+                                                if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                                     fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                                     anyTargetsUploaded = true;
                                                 }
