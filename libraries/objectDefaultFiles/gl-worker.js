@@ -270,6 +270,8 @@ class ThreejsInterface {
         this.onSceneCreatedCallbacks = [];
         this.onRenderCallbacks = [];
         this.done = false;
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
 
         this.onSpatialInterfaceLoaded = this.onSpatialInterfaceLoaded.bind(this);
         this.anchoredModelViewCallback = this.anchoredModelViewCallback.bind(this);
@@ -293,19 +295,21 @@ class ThreejsInterface {
 
         this.spatialInterface.addAnchoredModelViewListener(this.anchoredModelViewCallback);
 
+        this.spatialInterface.setMoveDelay(300);
         this.spatialInterface.registerTouchDecider(this.touchDecider);
     }
 
     touchDecider(eventData) {
+        if (!this.camera) {
+            return false;
+        }
         //1. sets the mouse position with a coordinate system where the center
         //   of the screen is the origin
-        const mouse = new THREE.Vector2(
-            (eventData.x / window.innerWidth) * 2 - 1,
-            (eventData.y / window.innerHeight) * 2 + 1
-        );
+        this.mouse.x = (eventData.x / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(eventData.y / window.innerHeight) * 2 + 1;
 
         //2. set the picking ray from the camera position and mouse coordinates
-        this.raycaster.setFromCamera(mouse, this.camera);
+        this.raycaster.setFromCamera(this.mouse, this.camera);
 
         //3. compute intersections
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
