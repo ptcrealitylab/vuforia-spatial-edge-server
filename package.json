@@ -22,7 +22,7 @@
     "node-fetch": "^2.6.6",
     "node-persist": "^2.1.0",
     "request": "^2.*",
-    "simple-git": "^2.43.0",
+    "simple-git": "^2.48.0",
     "toolsocket": "github:ptcrealitylab/toolsocket#main",
     "winston": "^3.3.3",
     "ws": "^8.2.0",

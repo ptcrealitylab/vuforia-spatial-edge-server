@@ -377,7 +377,7 @@ exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile)
 };
 
 function executeWrite(objects) {
-    console.log('execute write');
+    // console.log('execute write');
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
