@@ -109,7 +109,7 @@ class ToolboxUtilities {
             }
         }
         try{
-            if(!schema.items.properties.type) schema.items.properties.type = {"type": "string", "minLength": 1, "maxLength": 5, "enum": ["jpg", "jpeg", "gif", "zip", "glb", "html", "htm", "xml", "dat", "png", "js", "json", "obj", "fbx", "svg", "mp4", "pdf", "csv", "css", "woff", "otf", "webm","webp", "ttf"]};
+            if(!schema.items.properties.type) schema.items.properties.type = {"type": "string", "minLength": 1, "maxLength": 5, "enum": ["jpg", "jpeg", "gif", "zip", "glb", "html", "map","htm", "xml", "dat", "png", "js", "json", "obj", "fbx", "svg", "mp4", "pdf", "csv", "css", "woff", "otf", "webm","webp", "ttf"]};
             if(!schema.items.properties.protocol) schema.items.properties.protocol = {"type": "string", "minLength": 1, "maxLength": 20, "enum": ["spatialtoolbox", "ws", "wss", "http", "https"]};
             if(!schema.items.properties.query) schema.items.properties.query = {"type": "string", "minLength": 0, "maxLength": 2000, "pattern": "^[A-Za-z0-9~!@$%^&*()-_=+{}|;:,./?]*$"};
             if(!schema.items.properties.route )  schema.items.properties.route = {"type": "string", "minLength": 0, "maxLength": 2000, "pattern": "^[A-Za-z0-9/~!@$%^&*()-_=+|;:,.]*$"};
@@ -158,6 +158,8 @@ class MainToolboxSocket extends ToolboxUtilities {
         this.rsOld = null;
         this.packageID = 0;
         this.packageCb = {};
+        this.binaryBuffer = [];
+        this.bufferLength = 0;
         this.routineIntervalRef = null;
         this.netBeatIntervalRef = null;
         this.envNode = (typeof window === 'undefined');
@@ -190,10 +192,11 @@ class MainToolboxSocket extends ToolboxUtilities {
                     "i": {"type": ["string", "null", "undefined"], "minLength": 1, "maxLength": 22, "pattern": "^[A-Za-z0-9_]*$"},
                     "o": {"type": "string", "minLength": 1, "maxLength": 10, "enum": ["server", "client", "web", "edge", "proxy"]},
                     "n": {"type": "string", "minLength": 1, "maxLength": 25, "pattern": "^[A-Za-z0-9_]*$"},
-                    "m": {"type": "string", "minLength": 1, "maxLength": 10, "enum": ["beat", "action", "ping", "get", "post", "put", "patch", "delete", "new", "unsub", "sub", "pub", "message", "io", "res"]},
+                    "m": {"type": "string", "minLength": 1, "maxLength": 10, "enum": ["beat", "action", "ping", "get", "post", "put", "patch", "delete", "new", "unsub", "sub", "pub", "message", "io", "res", "keys"]},
                     "r": {"type": "string", "minLength": 0, "maxLength": 2000, "pattern": "^[A-Za-z0-9_/?:&+.%=-]*$"},
                     "b": {"type": ["boolean", "array", "number", "string", "object"], "minLength": 0, "maxLength": 70000000},
-                    "s": {"type": ["string", "null", "undefined"], "minLength": 0, "maxLength": 45, "pattern": "^[A-Za-z0-9_]*$"}
+                    "s": {"type": ["string", "null", "undefined"], "minLength": 0, "maxLength": 45, "pattern": "^[A-Za-z0-9_]*$"},
+                    "f": {"type": ["number", "null", "undefined"], "min": 1, "max": 99},
                 },
                 "required": ["i", "o", "n", "m", "r", "b"]
             }
@@ -201,26 +204,47 @@ class MainToolboxSocket extends ToolboxUtilities {
         this.Response = function (obj) {
             this.send = (res, data) => {
                 if (obj.i) {
-                    if(data) if(!data.data) { console.log("data object required {data: dataObject}"); return }
-                    let resObj = {obj: new that.DataPackage(that.origin, obj.n, 'res', obj.r, {}, obj.i), bin: {data: data}};
+                    if(data) {if(!data.data) { console.log("data object required {data: dataObject}"); return }} else data = null;
+                    let resObj = {obj: new that.DataPackage(that.origin, obj.n, 'res', obj.r, {}, obj.i), bin: data};
                     if (res) resObj.obj.b = res;
                     else resObj.obj.b = 204;
                     that.send(resObj, null);
                 }
             }
         }
+
         this.router = (msg) => {
             let msgLength = 0;
-            let objBin
+            let objBin = {obj: {}, bin: {}};
                 if(typeof msg !== "string") {
-                    objBin = this.readBinary(msg);
-                    msgLength = msg.byteLength;
-                    if (!objBin.bin.data.byteLength) {
-                        objBin.bin.data = null;
+                    if(this.bufferLength){
+                        this.binaryBuffer.push(msg);
+                        if(this.binaryBuffer.length <= this.bufferLength) return;
+                        objBin.obj = this.binaryBuffer[0];
+                        objBin.bin.data = [];
+                        for (let i = 1; i < this.binaryBuffer.length; i++) {
+                            objBin.bin.data.push(this.binaryBuffer[i]);
+                        }
+                        this.bufferLength = 0;
+                        this.binaryBuffer = [];
+                        msgLength = this.binaryBuffer.byteLength;
+                    } else {
+                        objBin = this.readBinary(msg);
+                        msgLength = msg.byteLength;
+                        if (!objBin.bin.data.byteLength) {
+                            objBin.bin.data = null;
+                        }
                     }
-                } else {
+                }
+                else {
                     objBin = {obj: JSON.parse(msg), bin: {data: null}};
                     msgLength = msg.length;
+                    if(objBin.obj.f){
+                        this.binaryBuffer = [];
+                        this.bufferLength = objBin.obj.f
+                        this.binaryBuffer.push(objBin.obj);
+                        return;
+                    }
                 }
 
             // todo Needs some extra testing to check if the size limit works out.
@@ -278,7 +302,7 @@ class MainToolboxSocket extends ToolboxUtilities {
             }
         }.bind(this), this.timetoRequestPackage);
 
-        this.message = this.new =this.delete = this.patch = this.io = this.put = this.post = this.get = this.action = this.beat = this.ping = (route, body, callback) => {};
+        this.message = this.new =this.delete = this.patch = this.io = this.put = this.post = this.get = this.action = this.keys = this.beat = this.ping = (route, body, callback) => {};
 
         for (let value of this.dataPackageSchema.items.properties.m.enum) {
             this[value] = (route, body, callback, dataObject) => {
@@ -303,11 +327,7 @@ class MainToolboxSocket extends ToolboxUtilities {
             let jsonBuffer = this.enc.encode(JSON.stringify(objBin.obj));
             if(this.envNode) {
                 let jsonBufferLength = Buffer.from(this.intToByte(jsonBuffer.byteLength));
-                if(objBin.bin) if(objBin.bin.data){
                     bytes = Buffer.concat([jsonBufferLength, jsonBuffer, objBin.bin.data]);
-                } else {
-                    bytes = Buffer.concat([jsonBufferLength, jsonBuffer]);
-                }
                 return bytes;
             } else {
                 let binaryBuffer = objBin.bin.data ? Uint8Array.from(objBin.bin.data) : null;
@@ -345,18 +365,36 @@ class MainToolboxSocket extends ToolboxUtilities {
             }
             if(objBin.bin) {
                 if (objBin.bin.data) {
-                    this.socket.send(this.createBinary(objBin), {binary: true});
+                    if(Array.isArray(objBin.bin.data)){
+                        objBin.obj.f = objBin.bin.data.length;
+                        this.socket.send(JSON.stringify(objBin.obj), {binary: false});
+                        for (let i = 0; i < objBin.bin.data.length; i++) {
+                            this.socket.send(objBin.bin.data[i], {binary: true});
+                        }
+                    } else {
+                        this.socket.send(this.createBinary(objBin), {binary: true});
+                    }
                     return;
                 }
             }
+            objBin.obj.f = null;
             this.socket.send(JSON.stringify(objBin.obj), {binary: false});
         }
         this.resend = (id) => {
             if (this.readyState !== this.OPEN) return;
             if (this.packageCb.hasOwnProperty(id)) {
                 if(this.packageCb[id].objBin.bin) {
-                    if (this.packageCb[id].objBin.bin.data)
-                        this.socket.send(this.createBinary(this.packageCb[id].objBin), {binary: true});
+                    if (this.packageCb[id].objBin.bin.data) {
+                            if(Array.isArray(this.packageCb[id].objBin.bin.data)){
+                                this.packageCb[id].objBin.obj.f = this.packageCb[id].objBin.bin.data.length;
+                                this.socket.send(JSON.stringify(this.packageCb[id].objBin.obj), {binary: false});
+                                for (let i = 0; i < this.packageCb[id].objBin.bin.data.length; i++) {
+                                    this.socket.send(this.packageCb[id].objBin.bin.data[i], {binary: true});
+                                }
+                            } else {
+                                this.socket.send(this.createBinary(this.packageCb[id].objBin), {binary: true});
+                            }
+                    }
                     else {
                         this.socket.send(JSON.stringify(this.packageCb[id].objBin.obj), {binary: false});
                     }
@@ -390,7 +428,6 @@ class MainToolboxSocket extends ToolboxUtilities {
                 that.stateEmitter('open', that.OPEN);
                 that.pingInt();
             };
-            this.socket.onerror = (err) => { that.emitInt('error', err); };
 
             if(this.envNode) {
                 this.socket.onmessage = (msg) => { that.router(msg.data)};
@@ -407,6 +444,7 @@ class MainToolboxSocket extends ToolboxUtilities {
                 clearInterval(this.routineIntervalRef);
                 clearInterval(this.netBeatIntervalRef);
                 this.removeAllListeners();
+                if(this.sockets) if(this.sockets.connected) if(this.id) delete this.sockets.connected[this.id];
                 this.closer();
                 return "closed";
             }
@@ -552,11 +590,12 @@ class ToolSocket extends MainToolboxSocket {
             if (that.socket) {
                 that.readyState = that.CLOSED;
                 that.socket.close();
-                this.removeAllListeners();
             }
             that.socket = new that.WebSocket(url);
+            that.socket.onerror = (err) => { that.emitInt('error', err); };
             that.readyState = that.CONNECTING;
-            this.attachEvents();
+            that.attachEvents();
+
         }
         // connect for the first time when opened.
         this.connect(this.url, this.networkID, this.origin);
@@ -567,6 +606,9 @@ class ToolSocket extends MainToolboxSocket {
             if(origin) this.origin = origin; else this.origin = "server";
             if (typeof window !== 'undefined') return;
             let that = this;
+            this.socketID = 1;
+            this.webSockets = {
+            };
             console.log('ToolSocket Server Start')
             let WebSocket = require('ws');
             this.server = new WebSocket.Server(param);
@@ -583,8 +625,15 @@ class ToolSocket extends MainToolboxSocket {
                         this.attachEvents();
                     }
                 }
+
+                if(this.socketID>= Number.MAX_SAFE_INTEGER) this.socketID = 1;
+                this.socketID++;
+                this.webSockets[this.socketID] = new Socket(socket);
+                this.webSockets[this.socketID].id = this.socketID+'';
+                that.emitInt('connection', this.webSockets[this.socketID], ...args);
+
                 // todo proxy origin from main class and parameters
-                that.emitInt('connection', new Socket(socket), ...args);
+              //  that.emitInt('connection', new Socket(socket), ...args);
             });
         };
     }
@@ -620,7 +669,7 @@ class ToolSocket extends MainToolboxSocket {
                     if(this.id>= Number.MAX_SAFE_INTEGER) this.id = 1;
                     this.id++;
                     this.sockets.connected[this.id] = new Socket(socket);
-                    this.sockets.connected[this.id].id = this.id;
+                    this.sockets.connected[this.id].id = this.id+'';
                     this.emitInt('connection', this.sockets.connected[this.id], ...args);
                 });
             };
