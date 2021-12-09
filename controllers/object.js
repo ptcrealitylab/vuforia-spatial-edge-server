@@ -150,7 +150,7 @@ const setMatrix = function(objectID, body, callback) {
     }
 
     object.matrix = body.matrix;
-    console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
+    // console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
     if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
         object.worldId = body.worldId;
