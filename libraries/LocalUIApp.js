@@ -62,7 +62,11 @@ class LocalUIApp {
             }
             res.status(403).send('access prohibited to non-script non-style file');
         });
-        this.app.use(express.static(this.userinterfacePath));
+        if (this.userinterfacePath && fs.existsSync(this.userinterfacePath)) {
+            this.app.use(express.static(this.userinterfacePath));
+        } else {
+            console.warn('LocalUIApp missing userinterfacePath');
+        }
     }
 
     /**
@@ -129,7 +133,9 @@ class LocalUIApp {
             }
             const fileList = fs.readdirSync(uiPath).filter(function (filename) {
                 // this list can be extended in future to support more resource types
-                return filename.endsWith('.svg') || filename.endsWith('.png');
+                return filename.endsWith('.svg') || filename.endsWith('.png') ||
+                    filename.endsWith('.fbx') || filename.endsWith('.gltf') ||
+                    filename.endsWith('.glb');
             });
             if (fileList.length === 0) {
                 continue;
