@@ -263,7 +263,10 @@ window.addEventListener('message', function(event) {
 
 // eslint-disable-next-line no-unused-vars
 class ThreejsInterface {
-    constructor(spatialInterface) {
+    constructor(spatialInterface, injectThree) {
+        if (injectThree) {
+            window.THREE = injectThree;
+        }
         this.spatialInterface = spatialInterface;
         this.prefersAttachingToWorld = true;
         this.pendingLoads = 0;
