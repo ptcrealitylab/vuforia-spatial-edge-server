@@ -46,17 +46,17 @@ class LocalUIApp {
             const addonName = req.params.addonName;
             const file = req.params.file;
             const scriptsInfo = this.scripts[addonName];
-            if (scriptsInfo.files.includes(file)) {
+            if (scriptsInfo && scriptsInfo.files.includes(file)) {
                 res.sendFile(path.join(scriptsInfo.folder, file));
                 return;
             }
             const stylesInfo = this.styles[addonName];
-            if (stylesInfo.files.includes(file)) {
+            if (stylesInfo && stylesInfo.files.includes(file)) {
                 res.sendFile(path.join(stylesInfo.folder, file));
                 return;
             }
             const resourcesInfo = this.resources[addonName];
-            if (resourcesInfo.files.includes(file)) {
+            if (resourcesInfo && resourcesInfo.files.includes(file)) {
                 res.sendFile(path.join(resourcesInfo.folder, file));
                 return;
             }
