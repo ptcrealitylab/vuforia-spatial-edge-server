@@ -1518,6 +1518,59 @@ function objectWebServer() {
         res.sendFile(fileName);
     });
 
+    webServer.use('/virtualizer_recording/:filename', function (req, res) {
+        const range = req.headers.range;
+        if (!range) {
+            res.status(400).send('Requires Range header');
+            return;
+        }
+
+        const videoPath = path.join(objectsPath, identityFolderName, 'virtualizer_recordings', req.params.filename);
+
+        if (!fs.existsSync(videoPath)) {
+            res.status(404).send('No video at path: ' + videoPath);
+            return;
+        }
+
+        const videoSize = fs.statSync(videoPath).size;
+        // console.log('Video Size = ' + Math.round(videoSize / 1000)  + 'kb');
+
+        // Parse Range (example: "bytes=32324-")
+        const CHUNK_SIZE = 10 ** 6; // 1 MB
+        const start = Number(range.replace(/\D/g, ''));
+        const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
+
+        // Create Headers
+        const contentLength = end - start + 1;
+        const headers = {
+            'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': contentLength,
+            'Content-Type': 'video/mp4',
+        };
+
+        // HTTP Status 206 for partial content
+        res.writeHead(206, headers);
+        const videoStream = fs.createReadStream(videoPath, { start, end });
+        videoStream.pipe(res);
+    });
+
+    webServer.use('/virtualizer_recordings', function (req, res) {
+        const jsonPath = path.join(objectsPath, identityFolderName, 'virtualizer_recordings', 'videoInfo.json');
+
+        let defaultInfo = {
+            mergedFiles: {
+                color: {},
+                depth: {}
+            }
+        };
+        if (!fs.existsSync(jsonPath)) {
+            res.json(defaultInfo);
+        } else {
+            res.json(JSON.parse(fs.readFileSync(jsonPath, { encoding: 'utf8', flag: 'r' })));
+        }
+    });
+
     webServer.use('/obj', function (req, res, next) {
 
         var urlArray = req.originalUrl.split('/');
