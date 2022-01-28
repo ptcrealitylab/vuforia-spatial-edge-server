@@ -9,7 +9,7 @@
     "cheerio": "^0.22.0",
     "cors": "^2.8.5",
     "decompress-zip": "^0.3.3",
-    "directory-tree": "^2.4.0",
+    "directory-tree": "^3.0.1",
     "express": "^4.17.2",
     "express-handlebars": "^5.3.4",
     "formidable": "^1.2.2",
