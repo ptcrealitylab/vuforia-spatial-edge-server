@@ -1518,17 +1518,21 @@ function objectWebServer() {
         res.sendFile(fileName);
     });
 
-    webServer.use('/virtualizer_recording/:filename', function (req, res) {
-        const range = req.headers.range;
-        if (!range) {
-            res.status(400).send('Requires Range header');
-            return;
-        }
-
-        const videoPath = path.join(objectsPath, identityFolderName, 'virtualizer_recordings', req.params.filename);
+    webServer.use('/virtualizer_recording/:deviceId/:colorOrDepth/:filename', function (req, res) {
+        let deviceId = req.params.deviceId;
+        let videoType = req.params.colorOrDepth;
+        let filename = req.params.filename;
+        const videoPath = path.join(objectsPath, identityFolderName, 'virtualizer_recordings', deviceId, 'session_videos', videoType, filename);
 
         if (!fs.existsSync(videoPath)) {
             res.status(404).send('No video at path: ' + videoPath);
+            return;
+        }
+
+        const range = req.headers.range;
+        if (!range) {
+            // res.status(400).send('Requires Range header');
+            res.sendFile(videoPath);
             return;
         }
 
