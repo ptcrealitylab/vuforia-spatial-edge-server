@@ -2728,95 +2728,95 @@ function objectWebServer() {
                 form.on('end', function () {
                     var folderD = form.uploadDir;
 
-                   filenameList.forEach((filename) => {
-                       console.log('------------' + form.uploadDir + '/' + filename);
-                       if (req.headers.type === 'targetUpload') {
-                           console.log('targetUpload', req.params.id);
-                           var fileExtension = getFileExtension(filename);
+                    filenameList.forEach((filename) => {
+                        console.log('------------' + form.uploadDir + '/' + filename);
+                        if (req.headers.type === 'targetUpload') {
+                            console.log('targetUpload', req.params.id);
+                            var fileExtension = getFileExtension(filename);
 
-                           if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
-                               fileExtension = 'jpg';
-                           }
+                            if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
+                                fileExtension = 'jpg';
+                            }
 
-                           if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
-                               if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
-                                   fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
-                                       if (err) {
-                                           console.log(err);
-                                           res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
-                                       }
-                                   });
-                               }
+                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
+                                if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
+                                    fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
+                                        if (err) {
+                                            console.log(err);
+                                            res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
+                                        }
+                                    });
+                                }
 
-                               fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
 
-                               // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
-                               // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
-                               if (fileExtension === 'jpg') {
+                                // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
+                                // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
+                                if (fileExtension === 'jpg') {
 
-                                   var rawFilepath = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
-                                   var tempFilepath = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
-                                   var originalFilepath = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
+                                    var rawFilepath = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
+                                    var tempFilepath = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
+                                    var originalFilepath = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
 
-                                   try {
-                                       Jimp.read(rawFilepath).then(image => {
-                                           var desiredMaxDimension = 1024;
+                                    try {
+                                        Jimp.read(rawFilepath).then(image => {
+                                            var desiredMaxDimension = 1024;
 
-                                           if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
-                                               console.log('jpg doesnt need resizing');
-                                               continueProcessingUpload();
+                                            if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
+                                                console.log('jpg doesnt need resizing');
+                                                continueProcessingUpload();
 
-                                           } else {
-                                               console.log('attempting to resize file to ' + rawFilepath);
+                                            } else {
+                                                console.log('attempting to resize file to ' + rawFilepath);
 
-                                               var aspectRatio = image.bitmap.width / image.bitmap.height;
-                                               var newWidth = desiredMaxDimension;
-                                               if (image.bitmap.width < image.bitmap.height) {
-                                                   newWidth = desiredMaxDimension * aspectRatio;
-                                               }
+                                                var aspectRatio = image.bitmap.width / image.bitmap.height;
+                                                var newWidth = desiredMaxDimension;
+                                                if (image.bitmap.width < image.bitmap.height) {
+                                                    newWidth = desiredMaxDimension * aspectRatio;
+                                                }
 
-                                               // copy fullsize file as backup
-                                               if (fs.existsSync(originalFilepath)) {
-                                                   console.log('deleted old original file');
-                                                   fs.unlinkSync(originalFilepath);
-                                               }
-                                               fs.copyFileSync(rawFilepath, originalFilepath);
+                                                // copy fullsize file as backup
+                                                if (fs.existsSync(originalFilepath)) {
+                                                    console.log('deleted old original file');
+                                                    fs.unlinkSync(originalFilepath);
+                                                }
+                                                fs.copyFileSync(rawFilepath, originalFilepath);
 
-                                               // copied file into temp file to be used during the resize operation
-                                               if (fs.existsSync(tempFilepath)) {
-                                                   console.log('deleted old temp file');
-                                                   fs.unlinkSync(tempFilepath);
-                                               }
-                                               fs.copyFileSync(rawFilepath, tempFilepath);
+                                                // copied file into temp file to be used during the resize operation
+                                                if (fs.existsSync(tempFilepath)) {
+                                                    console.log('deleted old temp file');
+                                                    fs.unlinkSync(tempFilepath);
+                                                }
+                                                fs.copyFileSync(rawFilepath, tempFilepath);
 
-                                               Jimp.read(tempFilepath).then(tempImage => {
-                                                   return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
-                                               }).then(() => {
-                                                   console.log('done resizing');
-                                                   if (fs.existsSync(tempFilepath)) {
-                                                       fs.unlinkSync(tempFilepath);
-                                                   }
-                                                   continueProcessingUpload();
-                                               }).catch(err => {
-                                                   console.warn('error resizing', err);
-                                                   continueProcessingUpload();
-                                               });
-                                           }
-                                       });
-                                   } catch (e) {
-                                       console.warn('error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
-                                       continueProcessingUpload();
-                                   }
+                                                Jimp.read(tempFilepath).then(tempImage => {
+                                                    return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
+                                                }).then(() => {
+                                                    console.log('done resizing');
+                                                    if (fs.existsSync(tempFilepath)) {
+                                                        fs.unlinkSync(tempFilepath);
+                                                    }
+                                                    continueProcessingUpload();
+                                                }).catch(err => {
+                                                    console.warn('error resizing', err);
+                                                    continueProcessingUpload();
+                                                });
+                                            }
+                                        });
+                                    } catch (e) {
+                                        console.warn('error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
+                                        continueProcessingUpload();
+                                    }
 
-                               } else {
-                                   continueProcessingUpload();
-                               }
+                                } else {
+                                    continueProcessingUpload();
+                                }
 
-                               // Step 2) - Generate a default XML file if needed
-                               function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
-                                   var objectName = req.params.id + utilities.uuidTime();
+                                // Step 2) - Generate a default XML file if needed
+                                function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
+                                    var objectName = req.params.id + utilities.uuidTime();
 
-                                   var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                                    var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                                        '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                                        '   <Tracking>\n' +
                                        '   <ImageTarget name="' + objectName + '" size="0.30000000 0.30000000" />\n' +
@@ -2824,229 +2824,229 @@ function objectWebServer() {
                                        '   </ARConfig>';
 
 
-                                   var xmlOutFile = path.join(folderD, identityFolderName, '/target/target.xml');
-                                   if (!fs.existsSync(xmlOutFile)) {
-                                       fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                                           onXmlVerified(err);
-                                       });
-                                   } else {
-                                       onXmlVerified();
-                                   }
-                               }
+                                    var xmlOutFile = path.join(folderD, identityFolderName, '/target/target.xml');
+                                    if (!fs.existsSync(xmlOutFile)) {
+                                        fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                                            onXmlVerified(err);
+                                        });
+                                    } else {
+                                        onXmlVerified();
+                                    }
+                                }
 
-                               // create the object data and respond to the webFrontend once the XML file is confirmed to exist
-                               function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
-                                   if (err) {
-                                       console.log(err);
-                                   } else {
-                                       // create the object if needed / possible
-                                       if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
-                                           console.log('creating object from target file ' + tmpFolderFile);
-                                           // createObjectFromTarget(tmpFolderFile);
-                                           createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                // create the object data and respond to the webFrontend once the XML file is confirmed to exist
+                                function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        // create the object if needed / possible
+                                        if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
+                                            console.log('creating object from target file ' + tmpFolderFile);
+                                            // createObjectFromTarget(tmpFolderFile);
+                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
-                                           //todo send init to internal modules
-                                           console.log('have created a new object');
+                                            //todo send init to internal modules
+                                            console.log('have created a new object');
 
-                                           hardwareAPI.reset();
-                                           console.log('have initialized the modules');
-                                       }
-                                   }
-
-                                   let jpgPath = path.join(folderD, identityFolderName, '/target/target.jpg');
-                                   let datPath = path.join(folderD, identityFolderName, '/target/target.dat');
-                                   let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
-                                   let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
-
-                                   var fileList = [jpgPath, xmlPath, datPath, glbPath];
-                                   var thisObjectId = utilities.readObject(objectLookup, req.params.id);
-
-                                   if (typeof objects[thisObjectId] !== 'undefined') {
-                                       var thisObject = objects[thisObjectId];
-                                       var jpg = fs.existsSync(jpgPath);
-                                       var dat = fs.existsSync(datPath);
-                                       var xml = fs.existsSync(xmlPath);
-                                       var glb = fs.existsSync(glbPath);
-
-                                       var sendObject = {
-                                           id: thisObjectId,
-                                           name: thisObject.name,
-                                           initialized: (jpg && xml),
-                                           jpgExists: jpg,
-                                           xmlExists: xml,
-                                           datExists: dat,
-                                           glbExists: glb
-                                       };
-
-                                       thisObject.tcs = utilities.generateChecksums(objects, fileList);
-                                       utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
-                                       setAnchors();
-
-                                       // Removes old heartbeat if it used to be an anchor
-                                       var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
-                                       if (oldObjectId && oldObjectId != thisObjectId) {
-                                           console.log('removed old heartbeat for', oldObjectId);
-                                           clearInterval(activeHeartbeats[oldObjectId]);
-                                           delete activeHeartbeats[oldObjectId];
-                                           try {
-                                               // deconstructs frames and nodes of this object, too
-                                               objects[oldObjectId].deconstruct();
-                                           } catch (e) {
-                                               console.warn('Object exists without proper prototype: ' + tempFolderName2);
-                                           }
-                                           delete objects[oldObjectId];
-                                       }
-
-                                       objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
-                                       // res.status(200).send('ok');
-                                       try {
-                                           res.status(200).json(sendObject);
-                                       } catch (e){
-                                           console.warn('unable to send res', e);
-                                       }
-
-                                   } else {
-                                       // var sendObject = {
-                                       //     initialized : false
-                                       // };
-                                       try {
-                                           res.status(200).send('ok');
-                                       } catch (e){
-                                           console.warn('unable to send res', e);
-                                       }
-                                   }
-                               }
-
-                           } else if (fileExtension === 'zip') {
-
-                               console.log('I found a zip file');
-
-                               try {
-                                   var DecompressZip = require('decompress-zip');
-                                   var unzipper = new DecompressZip(path.join(folderD, filename));
-
-                                   unzipper.on('error', function (err) {
-                                       console.log('Caught an error in unzipper', err);
-                                   });
-
-                                   unzipper.on('extract', function () {
-                                       var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
-                                       var folderFileType;
-                                       let anyTargetsUploaded = false;
-
-                                       for (var i = 0; i < folderFile.length; i++) {
-                                           console.log(folderFile[i]);
-                                           folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
-                                        if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
-                                               fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
-                                               anyTargetsUploaded = true;
-                                           }
-
-                                        if (folderFile[i] === path.parse(filename).name) {
-                                            console.log('zip contained a folder of the same name');
-                                            var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
-                                            for (let j = 0; j < innerFolderFiles.length; j++) {
-                                                console.log(innerFolderFiles[j]);
-                                                folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
-                                                if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
-                                                    fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
-                                                    anyTargetsUploaded = true;
-                                                }
-                                            }
-                                            fs.rmdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                            hardwareAPI.reset();
+                                            console.log('have initialized the modules');
                                         }
-                                       }
-                                       fs.unlinkSync(folderD + '/' + filename);
+                                    }
 
-                                       // evnetually create the object.
+                                    let jpgPath = path.join(folderD, identityFolderName, '/target/target.jpg');
+                                    let datPath = path.join(folderD, identityFolderName, '/target/target.dat');
+                                    let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
+                                    let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
 
-                                       if (fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml')) {
+                                    var fileList = [jpgPath, xmlPath, datPath, glbPath];
+                                    var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
-                                           console.log('creating object from target file ' + tmpFolderFile);
-                                           // createObjectFromTarget(tmpFolderFile);
-                                           createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                    if (typeof objects[thisObjectId] !== 'undefined') {
+                                        var thisObject = objects[thisObjectId];
+                                        var jpg = fs.existsSync(jpgPath);
+                                        var dat = fs.existsSync(datPath);
+                                        var xml = fs.existsSync(xmlPath);
+                                        var glb = fs.existsSync(glbPath);
 
-                                           //todo send init to internal modules
-                                           console.log('have created a new object');
+                                        var sendObject = {
+                                            id: thisObjectId,
+                                            name: thisObject.name,
+                                            initialized: (jpg && xml),
+                                            jpgExists: jpg,
+                                            xmlExists: xml,
+                                            datExists: dat,
+                                            glbExists: glb
+                                        };
 
-                                           hardwareAPI.reset();
-                                           console.log('have initialized the modules');
+                                        thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                                        utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                        setAnchors();
 
-                                           var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat', folderD + '/' + identityFolderName + '/target/target.glb'];
+                                        // Removes old heartbeat if it used to be an anchor
+                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
+                                        if (oldObjectId && oldObjectId != thisObjectId) {
+                                            console.log('removed old heartbeat for', oldObjectId);
+                                            clearInterval(activeHeartbeats[oldObjectId]);
+                                            delete activeHeartbeats[oldObjectId];
+                                            try {
+                                                // deconstructs frames and nodes of this object, too
+                                                objects[oldObjectId].deconstruct();
+                                            } catch (e) {
+                                                console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                                            }
+                                            delete objects[oldObjectId];
+                                        }
 
-                                           var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                        objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                        // res.status(200).send('ok');
+                                        try {
+                                            res.status(200).json(sendObject);
+                                        } catch (e) {
+                                            console.warn('unable to send res', e);
+                                        }
 
-                                           if (typeof objects[thisObjectId] !== 'undefined') {
-                                               var thisObject = objects[thisObjectId];
+                                    } else {
+                                        // var sendObject = {
+                                        //     initialized : false
+                                        // };
+                                        try {
+                                            res.status(200).send('ok');
+                                        } catch (e) {
+                                            console.warn('unable to send res', e);
+                                        }
+                                    }
+                                }
 
-                                               thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                            } else if (fileExtension === 'zip') {
 
-                                               utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
-                                               setAnchors();
-                                               objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                console.log('I found a zip file');
 
-                                               res.status(200);
+                                try {
+                                    var DecompressZip = require('decompress-zip');
+                                    var unzipper = new DecompressZip(path.join(folderD, filename));
 
-                                               var jpg = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.jpg');
-                                               var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
-                                               var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
-                                               var glb = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.glb');
+                                    unzipper.on('error', function (err) {
+                                        console.log('Caught an error in unzipper', err);
+                                    });
 
-                                               let sendObject = {
-                                                   id: thisObjectId,
-                                                   name: thisObject.name,
-                                                   initialized: (jpg && xml && dat),
-                                                   jpgExists: jpg,
-                                                   xmlExists: xml,
-                                                   datExists: dat,
-                                                   glbExists: glb
-                                               };
+                                    unzipper.on('extract', function () {
+                                        var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
+                                        var folderFileType;
+                                        let anyTargetsUploaded = false;
 
-                                               res.json(sendObject);
-                                               return;
-                                           }
+                                        for (var i = 0; i < folderFile.length; i++) {
+                                            console.log(folderFile[i]);
+                                            folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
+                                            if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
+                                                fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                                anyTargetsUploaded = true;
+                                            }
 
-                                       }
+                                            if (folderFile[i] === path.parse(filename).name) {
+                                                console.log('zip contained a folder of the same name');
+                                                var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                                for (let j = 0; j < innerFolderFiles.length; j++) {
+                                                    console.log(innerFolderFiles[j]);
+                                                    folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
+                                                    if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
+                                                        fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                                        anyTargetsUploaded = true;
+                                                    }
+                                                }
+                                                fs.rmdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                            }
+                                        }
+                                        fs.unlinkSync(folderD + '/' + filename);
 
-                                       let sendObject = {
-                                           initialized: false
-                                       };
-                                       if (anyTargetsUploaded) {
-                                           res.status(200).json(sendObject);
-                                       } else {
-                                           res.status(400).json({
-                                               error: 'Unable to extract any target data from provided zip'
-                                           });
-                                       }
-                                   });
+                                        // evnetually create the object.
 
-                                   unzipper.on('progress', function (fileIndex, fileCount) {
-                                       console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
-                                   });
+                                        if (fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml')) {
 
-                                   unzipper.extract({
-                                       path: path.join(folderD, identityFolderName, 'target'),
-                                       filter: function (file) {
-                                           return file.type !== 'SymbolicLink';
-                                       }
-                                   });
-                               } catch (err) {
-                                   console.log('could not unzip file');
-                               }
-                           } else {
-                               let errorString = 'File type is not recognized target data. ' +
+                                            console.log('creating object from target file ' + tmpFolderFile);
+                                            // createObjectFromTarget(tmpFolderFile);
+                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+
+                                            //todo send init to internal modules
+                                            console.log('have created a new object');
+
+                                            hardwareAPI.reset();
+                                            console.log('have initialized the modules');
+
+                                            var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat', folderD + '/' + identityFolderName + '/target/target.glb'];
+
+                                            var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+
+                                            if (typeof objects[thisObjectId] !== 'undefined') {
+                                                var thisObject = objects[thisObjectId];
+
+                                                thisObject.tcs = utilities.generateChecksums(objects, fileList);
+
+                                                utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                                setAnchors();
+                                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+
+                                                res.status(200);
+
+                                                var jpg = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.jpg');
+                                                var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
+                                                var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
+                                                var glb = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.glb');
+
+                                                let sendObject = {
+                                                    id: thisObjectId,
+                                                    name: thisObject.name,
+                                                    initialized: (jpg && xml && dat),
+                                                    jpgExists: jpg,
+                                                    xmlExists: xml,
+                                                    datExists: dat,
+                                                    glbExists: glb
+                                                };
+
+                                                res.json(sendObject);
+                                                return;
+                                            }
+
+                                        }
+
+                                        let sendObject = {
+                                            initialized: false
+                                        };
+                                        if (anyTargetsUploaded) {
+                                            res.status(200).json(sendObject);
+                                        } else {
+                                            res.status(400).json({
+                                                error: 'Unable to extract any target data from provided zip'
+                                            });
+                                        }
+                                    });
+
+                                    unzipper.on('progress', function (fileIndex, fileCount) {
+                                        console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                    });
+
+                                    unzipper.extract({
+                                        path: path.join(folderD, identityFolderName, 'target'),
+                                        filter: function (file) {
+                                            return file.type !== 'SymbolicLink';
+                                        }
+                                    });
+                                } catch (err) {
+                                    console.log('could not unzip file');
+                                }
+                            } else {
+                                let errorString = 'File type is not recognized target data. ' +
                                    'You uploaded .' + fileExtension + ' but only ' +
                                    '.dat, .jpg, .xml, and .zip are supported.';
-                               res.status(400).send({
-                                   error: errorString
-                               });
-                           }
+                                res.status(400).send({
+                                    error: errorString
+                                });
+                            }
 
-                       } else {
-                           res.status(200);
-                           res.send('done');
-                       }
-                   });  
+                        } else {
+                            res.status(200);
+                            res.send('done');
+                        }
+                    });
 
                 });
             });
@@ -3220,23 +3220,23 @@ function socketServer() {
                 console.log('reality editor subscription for object: ' + msgContent.object);
                 console.log('the latest socket has the ID: ' + socket.id);
 
-                if(!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
+                if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
 
                 let isNew = true;
                 realityEditorSocketArray[socket.id].forEach((thisObj) => {
-                    if(msgContent.object === thisObj.object && msgContent.frame === thisObj.frame){
+                    if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
                         isNew = false;
                     }
                 });
 
-                if(isNew) {
+                if (isNew) {
                     realityEditorSocketArray[socket.id].push({
-                    object: msgContent.object,
-                    frame: msgContent.frame,
-                    protocol: thisProtocol
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        protocol: thisProtocol
                     });
                 }
-             
+
             }
             var publicData = {};
 
@@ -3283,20 +3283,20 @@ function socketServer() {
                 console.log('reality editor subscription for object: ' + msgContent.object);
                 console.log('the latest socket has the ID: ' + socket.id);
 
-                if(!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
+                if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
 
                 let isNew = true;
                 realityEditorSocketArray[socket.id].forEach((thisObj) => {
-                    if(msgContent.object === thisObj.object && msgContent.frame === thisObj.frame){
+                    if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
                         isNew = false;
                     }
                 });
 
-                if(isNew) {
+                if (isNew) {
                     realityEditorSocketArray[socket.id].push({
-                    object: msgContent.object,
-                    frame: msgContent.frame,
-                    protocol: thisProtocol
+                        object: msgContent.object,
+                        frame: msgContent.frame,
+                        protocol: thisProtocol
                     });
                 }
                 // console.log(realityEditorSocketArray);
@@ -3328,19 +3328,19 @@ function socketServer() {
             if (doesObjectExist(msgContent.object)) {
                 console.log('reality editor block: ' + msgContent.object);
                 console.log('the latest socket has the ID: ' + socket.id);
-                
-                if(!realityEditorBlockSocketArray[socket.id])  realityEditorBlockSocketArray[socket.id] = [];
+
+                if (!realityEditorBlockSocketArray[socket.id])  realityEditorBlockSocketArray[socket.id] = [];
                 let isNew = true;
                 realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    if(msgContent.object === thisObj.object){
+                    if (msgContent.object === thisObj.object) {
                         isNew = false;
                     }
                 });
-                
-                if(isNew) {
+
+                if (isNew) {
                     realityEditorBlockSocketArray[socket.id].push({object: msgContent.object});
                 }
-                
+
                 // console.log(realityEditorBlockSocketArray);
             }
 
@@ -3464,21 +3464,21 @@ function socketServer() {
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            console.log("!!!!-------------_!!!!!------------------", msg);
-            
-            if(!realityEditorUpdateSocketArray[socket.id]) realityEditorUpdateSocketArray[socket.id] = [];
+            console.log('!!!!-------------_!!!!!------------------', msg);
+
+            if (!realityEditorUpdateSocketArray[socket.id]) realityEditorUpdateSocketArray[socket.id] = [];
             let isNew = true;
             realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                if(msgContent.editorId === thisObj.editorId){
+                if (msgContent.editorId === thisObj.editorId) {
                     isNew = false;
                 }
             });
-            if(isNew) {
+            if (isNew) {
                 realityEditorUpdateSocketArray[socket.id].push({editorId: msgContent.editorId});
                 console.log('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
             }
-            
-          
+
+
         });
 
         socket.on('/update', function (msg) {
@@ -3486,17 +3486,17 @@ function socketServer() {
 
             for (var socketId in realityEditorUpdateSocketArray) {
                 realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
+                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                     //  console.log('dont send updates to the editor that triggered it');
-                   // continue;
-                } else {
-                    var thisSocket = io.sockets.connected[socketId];
-                    if (thisSocket) {
-                        console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + thisObj.editorId + ')');
-                        thisSocket.emit('/update', JSON.stringify(msgContent));
+                        // continue;
+                    } else {
+                        var thisSocket = io.sockets.connected[socketId];
+                        if (thisSocket) {
+                            console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + thisObj.editorId + ')');
+                            thisSocket.emit('/update', JSON.stringify(msgContent));
+                        }
                     }
-                }
-            });
+                });
             }
         });
 
@@ -3506,20 +3506,20 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
-            
+
             for (var socketId in realityEditorUpdateSocketArray) {
-                if(realityEditorUpdateSocketArray[socket.id])
-                realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
+                if (realityEditorUpdateSocketArray[socket.id])
+                    realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
+                        if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                         //  console.log('dont send updates to the editor that triggered it');
-                       // continue;
-                    } else {
-                        var thisSocket = io.sockets.connected[socketId];
-                        if (thisSocket) {
-                            thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                            // continue;
+                        } else {
+                            var thisSocket = io.sockets.connected[socketId];
+                            if (thisSocket) {
+                                thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                            }
                         }
-                    }
-                });
+                    });
             }
         });
 
@@ -3550,20 +3550,20 @@ function socketServer() {
 
         socket.on('/subscribe/objectUpdates', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            if(!realityEditorObjectMatrixSocketArray[socket.id]) realityEditorObjectMatrixSocketArray[socket.id] = [];
-            
+            if (!realityEditorObjectMatrixSocketArray[socket.id]) realityEditorObjectMatrixSocketArray[socket.id] = [];
+
             let isNew = true;
             realityEditorObjectMatrixSocketArray[socket.id].forEach((thisObj) => {
-                if(msgContent.editorId === thisObj.editorId){
+                if (msgContent.editorId === thisObj.editorId) {
                     isNew = false;
                 }
             });
 
-            if(isNew) {
+            if (isNew) {
                 realityEditorObjectMatrixSocketArray[socket.id].push({editorId: msgContent.editorId});
                 console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
             }
-      
+
         });
 
         socket.on('/update/object/matrix', function (msg) {
@@ -3588,7 +3588,7 @@ function socketServer() {
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
-                       // continue; // don't send updates to the editor that triggered it
+                        // continue; // don't send updates to the editor that triggered it
                     } else {
                         var thisSocket = io.sockets.connected[socketId];
                         if (thisSocket) {
@@ -3640,7 +3640,7 @@ function socketServer() {
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
-                       // continue; // don't send updates to the editor that triggered it
+                        // continue; // don't send updates to the editor that triggered it
                     } else {
 
                         var thisSocket = io.sockets.connected[socketId];
@@ -3659,7 +3659,7 @@ function socketServer() {
                             thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                         }
                     }
-                })
+                });
             }
         });
 
@@ -3929,7 +3929,7 @@ function messagetoSend(msgContent, socketID) {
 
     var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
     if (node) {
-       // console.log(socketID);
+        // console.log(socketID);
         io.sockets.connected[socketID].emit('object', JSON.stringify({
             object: msgContent.object,
             frame: msgContent.frame,

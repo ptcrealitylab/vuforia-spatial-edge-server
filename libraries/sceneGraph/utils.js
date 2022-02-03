@@ -114,7 +114,7 @@ function matrixToPosition(matrix) {
         x: matrix[12] / matrix[15],
         y: matrix[13] / matrix[15],
         z: matrix[14] / matrix[15]
-    }
+    };
 }
 
 function matrixDistance(mat1, mat2) {

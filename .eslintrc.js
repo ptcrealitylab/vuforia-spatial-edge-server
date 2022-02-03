@@ -30,7 +30,7 @@ module.exports = {
             'always'
         ],
         'comma-spacing': [
-          'warn', {before: false, after: true}
+            'warn', {before: false, after: true}
         ],
         'key-spacing': 'warn',
         'keyword-spacing': 'warn',

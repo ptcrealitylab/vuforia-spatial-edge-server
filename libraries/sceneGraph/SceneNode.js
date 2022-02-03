@@ -405,7 +405,7 @@ SceneNode.prototype.getWorldPosition = function() {
         y: this.worldMatrix[13] / this.worldMatrix[15],
         z: this.worldMatrix[14] / this.worldMatrix[15]
     };
-}
+};
 
 SceneNode.prototype.addUpdateRule = function(newRule) {
     const existingRuleOfSameType = this.updateRules.find(rule => rule.type === newRule.type);
@@ -414,7 +414,7 @@ SceneNode.prototype.addUpdateRule = function(newRule) {
         this.updateRules.splice(index, 1);
     }
     this.updateRules.push(newRule);
-}
+};
 
 SceneNode.prototype.removeUpdateRuleByType = function(ruleType) {
     const rule = this.updateRules.find(rule => rule.type === ruleType);
@@ -422,7 +422,7 @@ SceneNode.prototype.removeUpdateRuleByType = function(ruleType) {
         const index = this.updateRules.indexOf(rule);
         this.updateRules.splice(index, 1);
     }
-}
+};
 
 SceneNode.prototype.updateRulesSatisfied = function() {
     const rulesToCheck = [...this.updateRules];
@@ -430,20 +430,20 @@ SceneNode.prototype.updateRulesSatisfied = function() {
         rulesToCheck.push(defaultSensitivityRule);
     }
     return rulesToCheck.every(rule => {
-        switch(rule.type) {
-            case SceneGraphUpdateRuleTypeEnum.SENSITIVITY: {
-                const sensitivityRuleData = {
-                    distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
-                }
-                return rule.isSatisfied(sensitivityRuleData);
-            }
-            default: {
-                console.error(`SceneNode: updateRulesSatisfied not implemented for rule of type '${rule.type}'.`);
-                return false;
-            }
+        switch (rule.type) {
+        case SceneGraphUpdateRuleTypeEnum.SENSITIVITY: {
+            const sensitivityRuleData = {
+                distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
+            };
+            return rule.isSatisfied(sensitivityRuleData);
         }
-    })
-}
+        default: {
+            console.error(`SceneNode: updateRulesSatisfied not implemented for rule of type '${rule.type}'.`);
+            return false;
+        }
+        }
+    });
+};
 
 // Only sensitivity is used for broadcasts
 SceneNode.prototype.broadcastRulesSatisfied = function() {
@@ -453,16 +453,16 @@ SceneNode.prototype.broadcastRulesSatisfied = function() {
     }
     const sensitivityRuleData = {
         distance: utils.matrixDistance(this.lastBroadcastMatrix, this.worldMatrix)
-    }
+    };
     return sensitivityRule.isSatisfied(sensitivityRuleData);
-}
+};
 
 SceneNode.prototype.onSendUpdate = function() {
     utils.copyMatrixInPlace(this.worldMatrix, this.lastUpdateMatrix);
-}
+};
 
 SceneNode.prototype.onBroadcast = function() {
     utils.copyMatrixInPlace(this.worldMatrix, this.lastBroadcastMatrix);
-}
+};
 
 module.exports = SceneNode;

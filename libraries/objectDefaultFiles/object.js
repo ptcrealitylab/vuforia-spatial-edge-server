@@ -120,7 +120,7 @@
             if (title) returnUrl += title;
             return returnUrl;
         } else {
-           return title
+            return title;
         }
     }
 
@@ -157,10 +157,10 @@
             }
 
             url = location.protocol + '//' + object.ip + ':';
-            if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  ''+ 443; else url += ''+ 80;
-            if(urlObj.n) url += '/n/' + urlObj.n;
-            if(urlObj.i) url += '/i/' + urlObj.i;
-            if(urlObj.s) url += '/s/' + urlObj.s;
+            if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  '' + 443; else url += '' + 80;
+            if (urlObj.n) url += '/n/' + urlObj.n;
+            if (urlObj.i) url += '/i/' + urlObj.i;
+            if (urlObj.s) url += '/s/' + urlObj.s;
         }
 
         spatialObject.serverPort = defaultPort;
@@ -798,8 +798,8 @@
                     socketReconnect: true
                 }), '*');
             }
-        });      
-        
+        });
+
         this.ioObject.on('close', function() {
             console.log('frame socket closed');
         });
@@ -909,7 +909,7 @@
          */
         this.addReadPublicDataListener = function (node, valueName, callback) {
             self.ioObject.on('object/publicData', function (msg) {
-           // self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
+                // self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
@@ -1021,7 +1021,7 @@
 
         this.addScreenObjectReadListener = function () {
             self.ioObject.on('/object/screenObject', function (msg) {
-           // self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
+                // self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
                 if (spatialObject.visibility !== 'visible') return;
                 var thisMsg = JSON.parse(msg);
                 if (!thisMsg.object) thisMsg.object = null;
