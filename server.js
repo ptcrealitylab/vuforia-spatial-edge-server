@@ -1366,8 +1366,6 @@ function objectWebServer() {
     // the netmask is set to local networks only.
 
     webServer.use('*', function (req, res, next) {
-              //  console.log(req.originalUrl, req.method, req.body)
-        
 
         var remoteIP = parseIpSpace(req.ip);
         var localIP = parseIpSpace(services.ip);
@@ -2357,9 +2355,9 @@ function objectWebServer() {
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
 
-                
+
             console.log(req.body);
-            
+
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
@@ -2701,7 +2699,7 @@ function objectWebServer() {
                     keepExtensions: true
                 });
 
-               // var filename = '';
+                // var filename = '';
                 let filenameList = [];
 
                 form.on('error', function (err) {
@@ -2709,8 +2707,8 @@ function objectWebServer() {
                 });
 
                 form.on('fileBegin', function (name, file) {
-                   // filename = file.name;
-                    filenameList.push(file.name)
+                    // filename = file.name;
+                    filenameList.push(file.name);
                     //rename the incoming file to the file's name
                     if (req.headers.type === 'targetUpload') {
                         file.path = form.uploadDir + '/' + file.name;
@@ -2903,15 +2901,19 @@ function objectWebServer() {
                                        // res.status(200).send('ok');
                                        try {
                                            res.status(200).json(sendObject);
-                                       } catch (e){}
+                                       } catch (e){
+                                           console.warn('unable to send res', e);
+                                       }
 
                                    } else {
                                        // var sendObject = {
                                        //     initialized : false
-                                       // }; 
+                                       // };
                                        try {
-                                       res.status(200).send('ok');
-                                       } catch (e){}
+                                           res.status(200).send('ok');
+                                       } catch (e){
+                                           console.warn('unable to send res', e);
+                                       }
                                    }
                                }
 
@@ -3185,15 +3187,14 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
         for (var thisEditor in realityEditorSocketArray) {
             realityEditorSocketArray[thisEditor].forEach((thisObj) => {
                 if (objectKey === thisObj.object) {
-                io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
-                    object: objectKey,
-                    frame: frameKey,
-                    node: nodeKey,
-                    publicData: node.publicData,
-                    sessionUuid: sessionUuid // used to filter out messages received by the original sender
-                }));
-            }
-                return;
+                    io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
+                        object: objectKey,
+                        frame: frameKey,
+                        node: nodeKey,
+                        publicData: node.publicData,
+                        sessionUuid: sessionUuid // used to filter out messages received by the original sender
+                    }));
+                }
             });
         }
     }
@@ -3840,23 +3841,17 @@ function socketServer() {
 function sendMessagetoEditors(msgContent, sourceSocketID) {
 
     // console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
-    
+
     for (var thisEditor in realityEditorSocketArray) {
         realityEditorSocketArray[thisEditor].forEach((thisObj) => {
             if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID && msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
-              //  continue; // don't trigger the read listener of the socket that originally wrote the data
+                //  continue; // don't trigger the read listener of the socket that originally wrote the data
             } else {
                 if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
-                  messagetoSend(msgContent, thisEditor);
+                    messagetoSend(msgContent, thisEditor);
                 }
             }
         });
-    }
-
-    
-    
-    for (var thisEditor in realityEditorSocketArray) {
-     
     }
 }
 
