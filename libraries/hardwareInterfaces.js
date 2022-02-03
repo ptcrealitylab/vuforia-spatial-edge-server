@@ -405,8 +405,8 @@ exports.triggerUDPCallbacks = function (msgContent) {
 };
 
 exports.actionSender = function (action, timeToLive, beatport) {
-    console.log("-----------------------------------------------------------------------------------",action)
-    utilities.actionSender (action, timeToLive, beatport)
+    console.log('-----------------------------------------------------------------------------------', action);
+    utilities.actionSender (action, timeToLive, beatport);
 };
 
 
