@@ -1154,11 +1154,11 @@ exports.advertiseConnection = function (object, tool, node, logic) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {function} callback
  */
-exports.addSettingsCallback = function (interface, callback) {
-    if (typeof interfaceSettingsCallbacks[interface] === 'undefined') {
-        interfaceSettingsCallbacks[interface] = [];
+exports.addSettingsCallback = function (interfaceName, callback) {
+    if (typeof interfaceSettingsCallbacks[interfaceName] === 'undefined') {
+        interfaceSettingsCallbacks[interfaceName] = [];
     }
-    interfaceSettingsCallbacks[interface].push(callback);
+    interfaceSettingsCallbacks[interfaceName].push(callback);
 };
 
 /**
@@ -1166,11 +1166,11 @@ exports.addSettingsCallback = function (interface, callback) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {JSON} currentSettings - should be the exports.settings
  */
-exports.pushSettingsToGui = function (interface, currentSettings) {
-    console.log('pushSettingsToGui for ' + interface);
-    if (typeof interfaceSettingsCallbacks[interface] !== 'undefined') {
-        interfaceSettingsCallbacks[interface].forEach(function (callback) {
-            callback(interface, currentSettings);
+exports.pushSettingsToGui = function (interfaceName, currentSettings) {
+    console.log('pushSettingsToGui for ' + interfaceName);
+    if (typeof interfaceSettingsCallbacks[interfaceName] !== 'undefined') {
+        interfaceSettingsCallbacks[interfaceName].forEach(function (callback) {
+            callback(interfaceName, currentSettings);
         });
     }
 };
