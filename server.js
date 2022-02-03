@@ -3187,7 +3187,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
                 if (objectKey === thisObj.object) {
                 io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
                     object: objectKey,
-                    frames: frameKey,
+                    frame: frameKey,
                     node: nodeKey,
                     publicData: node.publicData,
                     sessionUuid: sessionUuid // used to filter out messages received by the original sender
