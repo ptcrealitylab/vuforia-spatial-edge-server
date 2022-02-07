@@ -611,6 +611,7 @@
                 this.enableCustomInteractionMode = makeSendStub('enableCustomInteractionMode');
                 this.enableCustomInteractionModeInverted = makeSendStub('enableCustomInteractionModeInverted');
                 this.setInteractableDivs = makeSendStub('setInteractableDivs');
+                this.disableCustomInteractionMode = makeSendStub('disableCustomInteractionMode');
                 this.subscribeToFrameCreatedEvents = makeSendStub('subscribeToFrameCreatedEvents');
                 this.subscribeToFrameDeletedEvents = makeSendStub('subscribeToFrameDeletedEvents');
                 this.subscribeToToolCreatedEvents = makeSendStub('subscribeToToolCreatedEvents');
@@ -1477,6 +1478,14 @@
         };
 
         /**
+         * Resets state from enableCustomInteractionMode and enableCustomInteractionModeInverted
+         */
+        this.disableCustomInteractionMode = function() {
+            spatialObject.customInteractionMode = false;
+            spatialObject.invertedInteractionMode = false;
+        };
+
+        /**
          * Add a callback that will be triggered anytime another new frame is created while this frame is loaded in the DOM
          * The callback will be passed the frameId (uuid of the frame) and the frame type (e.g. graph, slider, loto, etc)
          * This is useful to create relationships between frames and store the frameId for future message passing
@@ -1981,7 +1990,7 @@
         // by default, register a touch decider that ignores touches if they hit a transparent body background
         this.registerTouchDecider(function(eventData) {
             var elt = document.elementFromPoint(eventData.x, eventData.y);
-            return elt !== document.body;
+            return !(elt === document.body || elt === document.body.parentElement);
         });
 
         this.unregisterTouchDecider = function() {
