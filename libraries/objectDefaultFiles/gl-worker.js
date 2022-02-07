@@ -100,10 +100,10 @@ function makeStub(functionName) {
         if (functionName === 'getExtension') {
             const ext = arguments[0];
             // Blacklist unproxied extensions
-            if (ext === 'OES_vertex_array_object' ||
-          // ext === 'EXT_frag_depth' ||
-          // ext === 'EXT_shader_texture_lod' ||
-          ext === 'EXT_blend_minmax') {
+            if (ext === 'OES_vertex_array_object') {
+            // ext === 'EXT_frag_depth' ||
+            // ext === 'EXT_shader_texture_lod' ||
+            // ext === 'EXT_blend_minmax') {
                 return null;
             }
         }
@@ -135,7 +135,7 @@ function makeStub(functionName) {
 
             const res = realGl[functionName].apply(realGl, unclonedArgs);
 
-            if (typeof res === 'object') {
+            if (typeof res === 'object' && res !== null) {
                 let proxy = new Proxy({
                     __uncloneableId: invokeId,
                     __uncloneableObj: res,
@@ -263,7 +263,10 @@ window.addEventListener('message', function(event) {
 
 // eslint-disable-next-line no-unused-vars
 class ThreejsInterface {
-    constructor(spatialInterface) {
+    constructor(spatialInterface, injectThree) {
+        if (injectThree) {
+            window.THREE = injectThree;
+        }
         this.spatialInterface = spatialInterface;
         this.prefersAttachingToWorld = true;
         this.pendingLoads = 0;
