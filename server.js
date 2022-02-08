@@ -2562,6 +2562,9 @@ function objectWebServer() {
                 });
 
                 form.on('fileBegin', function (name, file) {
+                    if (file.newFilename) {
+                        file.name = file.newFilename;
+                    }
                     filename = file.name;
                     //rename the incoming file to the file's name
                     file.path = form.uploadDir + '/' + file.name;
@@ -2700,6 +2703,9 @@ function objectWebServer() {
                 });
 
                 form.on('fileBegin', function (name, file) {
+                    if (file.newFilename) {
+                        file.name = file.newFilename;
+                    }
                     filename = file.name;
                     //rename the incoming file to the file's name
                     if (req.headers.type === 'targetUpload') {
