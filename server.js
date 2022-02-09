@@ -2555,7 +2555,7 @@ function objectWebServer() {
                     keepExtensions: true
                 });
 
-                var filename = '';
+                let filename = '';
 
                 form.on('error', function (err) {
                     throw err;
@@ -2696,7 +2696,7 @@ function objectWebServer() {
                     keepExtensions: true
                 });
 
-                var filename = '';
+                let filename = '';
 
                 form.on('error', function (err) {
                     throw err;
@@ -2908,7 +2908,7 @@ function objectWebServer() {
 
                         } else if (fileExtension === 'zip') {
 
-                            console.log('I found a zip file');
+                            console.log('I found a zip file', filename);
 
                             try {
                                 var DecompressZip = require('decompress-zip');
