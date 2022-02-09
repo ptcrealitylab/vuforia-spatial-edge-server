@@ -2561,13 +2561,16 @@ function objectWebServer() {
                     keepExtensions: true
                 });
 
-                var filename = '';
+                let filename = '';
 
                 form.on('error', function (err) {
                     throw err;
                 });
 
                 form.on('fileBegin', function (name, file) {
+                    if (file.newFilename) {
+                        file.name = file.newFilename;
+                    }
                     filename = file.name;
                     //rename the incoming file to the file's name
                     file.path = form.uploadDir + '/' + file.name;
@@ -2707,6 +2710,9 @@ function objectWebServer() {
                 });
 
                 form.on('fileBegin', function (name, file) {
+                    if (file.newFilename) {
+                        file.name = file.newFilename;
+                    }
                     // filename = file.name;
                     filenameList.push(file.name);
                     //rename the incoming file to the file's name
