@@ -2713,8 +2713,11 @@ function objectWebServer() {
                     if (file.newFilename) {
                         file.name = file.newFilename;
                     }
-                    // filename = file.name;
-                    filenameList.push(file.name);
+                    if (filenameList.includes(file.name)) {
+                        console.warn('duplicate file', file.name);
+                    } else {
+                        filenameList.push(file.name);
+                    }
                     //rename the incoming file to the file's name
                     if (req.headers.type === 'targetUpload') {
                         file.path = form.uploadDir + '/' + file.name;
@@ -2735,7 +2738,7 @@ function objectWebServer() {
                     var folderD = form.uploadDir;
 
                     filenameList.forEach((filename) => {
-                        console.log('------------' + form.uploadDir + '/' + filename);
+                        console.log('form end over', form.uploadDir + '/' + filename);
                         if (req.headers.type === 'targetUpload') {
                             console.log('targetUpload', req.params.id);
                             var fileExtension = getFileExtension(filename);
@@ -2754,7 +2757,12 @@ function objectWebServer() {
                                     });
                                 }
 
-                                fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                let fromPath = path.join(folderD, filename);
+                                if (!fs.existsSync(fromPath)) {
+                                    console.warn('a mistake was about to be made');
+                                } else {
+                                    fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                }
 
                                 // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                                 // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
@@ -2925,7 +2933,7 @@ function objectWebServer() {
 
                             } else if (fileExtension === 'zip') {
 
-                                console.log('I found a zip file');
+                                console.log('I found a zip file', filename);
 
                                 try {
                                     var DecompressZip = require('decompress-zip');
@@ -2935,24 +2943,24 @@ function objectWebServer() {
                                         console.log('Caught an error in unzipper', err);
                                     });
 
-                                    unzipper.on('extract', function () {
+                                    unzipper.on('extract', function() {
                                         var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
                                         var folderFileType;
                                         let anyTargetsUploaded = false;
 
                                         for (var i = 0; i < folderFile.length; i++) {
-                                            console.log(folderFile[i]);
+                                            console.log('zip folder', folderFile[i]);
                                             folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
                                             if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                                 fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                                 anyTargetsUploaded = true;
                                             }
 
-                                            if (folderFile[i] === path.parse(filename).name) {
-                                                console.log('zip contained a folder of the same name');
+                                            if (folderFile[i] === 'target') {
+                                                console.log('zip contained a folder of the same name', filename);
                                                 var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
                                                 for (let j = 0; j < innerFolderFiles.length; j++) {
-                                                    console.log(innerFolderFiles[j]);
+                                                    console.log('innerFolderFile', innerFolderFiles[j]);
                                                     folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
                                                     if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                                         fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
