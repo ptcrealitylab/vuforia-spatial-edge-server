@@ -1,5 +1,4 @@
 (function(exports) {
-    console.log('---- obj loaded ----');
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
     if (typeof exports.spatialObject !== 'undefined') {
@@ -131,13 +130,6 @@
     function loadObjectSocketIo(object) {
         var script = document.createElement('script');
         script.type = 'text/javascript';
-        let proxy = {
-            route: location.pathname,
-            port: location.port,
-            ip: location.hostname,
-            protocol: location.protocol,
-            ws: 'ws://'
-        };
 
         let defaultPort = '8080';
         if (object.hasOwnProperty('port')) defaultPort = object.port;
@@ -165,32 +157,17 @@
 
         spatialObject.serverPort = defaultPort;
 
-
         spatialObject.socketIoUrl = url;
         script.src = url + '/objectDefaultFiles/toolsocket.js';
 
-        console.log(location.pathname, script.src);
         script.addEventListener('load', function() {
             if (realityInterface) {
-                console.log('get here interfaceAPI load');
                 // adds the API methods related to sending/receiving socket messages
                 realityInterface.injectSocketIoAPI();
             }
         });
 
         document.body.appendChild(script);
-    }
-
-    function getPort (port) {
-        let serverPort = '8080';
-        if (port) {
-            serverPort = port;
-        }
-        if (proxy.route) {
-            return serverPort + proxy.route;
-        } else {
-            return serverPort;
-        }
     }
 
     /**
@@ -774,7 +751,7 @@
 
     SpatialInterface.prototype.injectSocketIoAPI = function() {
         var self = this;
-        console.log('----------socktTool----- ', spatialObject.socketIoUrl);
+
         this.ioObject = io.connect(spatialObject.socketIoUrl);
 
         // Adds the custom API functions that allow a frame to connect to the Internet of Screens application
@@ -863,8 +840,8 @@
          * @param {function} callback
          */
         this.addReadListener = function (node, callback) {
+            // TODO: add getIoTitle?
             self.ioObject.on('object', function (msg) {
-            //self.ioObject.on(getIoTitle('object'), function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
@@ -908,8 +885,8 @@
          * @param {function} callback
          */
         this.addReadPublicDataListener = function (node, valueName, callback) {
+            // TODO: add getIoTitle?
             self.ioObject.on('object/publicData', function (msg) {
-                // self.ioObject.on(getIoTitle('object/publicData'), function (msg) {
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
@@ -1020,8 +997,8 @@
         };
 
         this.addScreenObjectReadListener = function () {
+            // TODO: add getIoTitle?
             self.ioObject.on('/object/screenObject', function (msg) {
-                // self.ioObject.on(getIoTitle('/object/screenObject'), function (msg) {
                 if (spatialObject.visibility !== 'visible') return;
                 var thisMsg = JSON.parse(msg);
                 if (!thisMsg.object) thisMsg.object = null;
@@ -2076,8 +2053,7 @@
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
-                console.log('ios socket connected.');
-                console.log('iOSHost', iOSHost);
+                console.log('ios socket connected.', iOSHost);
                 this.iosObject = io.connect(iOSHost);
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();

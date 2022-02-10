@@ -2355,9 +2355,6 @@ function objectWebServer() {
         //*****************************************************************************************
         webServer.post(objectInterfaceFolder, function (req, res) {
 
-
-            console.log(req.body);
-
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
@@ -3478,8 +3475,6 @@ function socketServer() {
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            console.log('!!!!-------------_!!!!!------------------', msg);
-
             if (!realityEditorUpdateSocketArray[socket.id]) realityEditorUpdateSocketArray[socket.id] = [];
             let isNew = true;
             realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
@@ -3491,8 +3486,6 @@ function socketServer() {
                 realityEditorUpdateSocketArray[socket.id].push({editorId: msgContent.editorId});
                 console.log('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
             }
-
-
         });
 
         socket.on('/update', function (msg) {
@@ -3502,13 +3495,12 @@ function socketServer() {
                 realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                     //  console.log('dont send updates to the editor that triggered it');
-                        // continue;
-                    } else {
-                        var thisSocket = io.sockets.connected[socketId];
-                        if (thisSocket) {
-                            console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + thisObj.editorId + ')');
-                            thisSocket.emit('/update', JSON.stringify(msgContent));
-                        }
+                        return;
+                    }
+                    var thisSocket = io.sockets.connected[socketId];
+                    if (thisSocket) {
+                        console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + thisObj.editorId + ')');
+                        thisSocket.emit('/update', JSON.stringify(msgContent));
                     }
                 });
             }
@@ -3522,18 +3514,20 @@ function socketServer() {
             if (!batchedUpdates) { return; }
 
             for (var socketId in realityEditorUpdateSocketArray) {
-                if (realityEditorUpdateSocketArray[socket.id])
-                    realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                        if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
+                if (!realityEditorUpdateSocketArray[socket.id]) {
+                    continue;
+                }
+
+                realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
+                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                         //  console.log('dont send updates to the editor that triggered it');
-                            // continue;
-                        } else {
-                            var thisSocket = io.sockets.connected[socketId];
-                            if (thisSocket) {
-                                thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
-                            }
-                        }
-                    });
+                        return;
+                    }
+                    var thisSocket = io.sockets.connected[socketId];
+                    if (thisSocket) {
+                        thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                    }
+                });
             }
         });
 
@@ -3602,23 +3596,24 @@ function socketServer() {
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
-                        // continue; // don't send updates to the editor that triggered it
-                    } else {
-                        var thisSocket = io.sockets.connected[socketId];
-                        if (thisSocket) {
-                            // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                        // don't send updates to the editor that triggered it
+                        return;
+                    }
 
-                            var updateResponse = {
-                                objectKey: msgContent.objectKey,
-                                propertyPath: 'matrix',
-                                newValue: msgContent.matrix,
-                            };
-                            if (typeof msgContent.editorId !== 'undefined') {
-                                updateResponse.editorId = msgContent.editorId;
-                            }
+                    var thisSocket = io.sockets.connected[socketId];
+                    if (thisSocket) {
+                        // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
 
-                            thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        var updateResponse = {
+                            objectKey: msgContent.objectKey,
+                            propertyPath: 'matrix',
+                            newValue: msgContent.matrix,
+                        };
+                        if (typeof msgContent.editorId !== 'undefined') {
+                            updateResponse.editorId = msgContent.editorId;
                         }
+
+                        thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -3654,24 +3649,24 @@ function socketServer() {
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
-                        // continue; // don't send updates to the editor that triggered it
-                    } else {
+                        // don't send updates to the editor that triggered it
+                        return;
+                    }
 
-                        var thisSocket = io.sockets.connected[socketId];
-                        if (thisSocket) {
-                            // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
+                    var thisSocket = io.sockets.connected[socketId];
+                    if (thisSocket) {
+                        // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
 
-                            var updateResponse = {
-                                objectKey: msgContent.objectKey,
-                                propertyPath: 'matrix',
-                                newValue: object.matrix,
-                            };
-                            if (typeof msgContent.editorId !== 'undefined') {
-                                updateResponse.editorId = msgContent.editorId;
-                            }
-
-                            thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        var updateResponse = {
+                            objectKey: msgContent.objectKey,
+                            propertyPath: 'matrix',
+                            newValue: object.matrix,
+                        };
+                        if (typeof msgContent.editorId !== 'undefined') {
+                            updateResponse.editorId = msgContent.editorId;
                         }
+
+                        thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -3859,11 +3854,11 @@ function sendMessagetoEditors(msgContent, sourceSocketID) {
     for (var thisEditor in realityEditorSocketArray) {
         realityEditorSocketArray[thisEditor].forEach((thisObj) => {
             if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID && msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
-                //  continue; // don't trigger the read listener of the socket that originally wrote the data
-            } else {
-                if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
-                    messagetoSend(msgContent, thisEditor);
-                }
+                return; // don't trigger the read listener of the socket that originally wrote the data
+            }
+
+            if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
+                messagetoSend(msgContent, thisEditor);
             }
         });
     }
