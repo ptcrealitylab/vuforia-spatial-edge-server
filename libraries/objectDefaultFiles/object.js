@@ -100,8 +100,28 @@
     // this will be initialized once the frame creates a new SpatialInterface()
     var realityInterface = null;
 
-    let urlObj = {};
+    /**
+     * Network configuration loaded in loadObjectSocketIO from window.location
+     * based on the /n/:networkId/s/:secret/i/:destinationId format
+     */
+    let urlObj = {
+        n: null, // Network identifier
+        i: null, // Destination identifier
+        s: null, // Network secret used for write access
+    };
 
+    /**
+     * Given a normal socket io title (message topic), adds all available
+     * network specifiers to the title.
+     *
+     * These include network id (n), secret (s), and destination id (i).
+     *
+     * For example, "/object/readPublicData" becomes
+     * "/n/asdf/s/secret/i/destId/object/readPublicData"
+     *
+     * @param {string} title
+     * @return {string} title with additional information from urlObj prepended
+     */
     function getIoTitle (title) {
         if (urlObj.n) {
             if (title.charAt(0) !== '/') title = '/' + title;
