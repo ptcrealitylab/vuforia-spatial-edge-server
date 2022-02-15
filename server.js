@@ -321,7 +321,6 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
 });
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
-var socket = new ToolSocket.Io(); // websocket client source
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
@@ -4246,6 +4245,7 @@ function socketUpdater() {
                     var thisOtherIp = knownObjects[thisLink.objectB].ip;
                     if (!(thisOtherIp in socketArray)) {
                         // console.log("should not show up -----------");
+                        let socket = new ToolSocket.Io();
                         socketArray[thisOtherIp] = new ObjectSocket(socket, socketPort, thisOtherIp);
                     }
                 }
