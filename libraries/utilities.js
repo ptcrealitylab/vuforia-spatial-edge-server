@@ -684,13 +684,13 @@ const restActionSender = function (action) {
     });
     [...ipSet].map(ip => {
         fetch(`http://${ip}:8080/action`, {
-            method: "POST",
+            method: 'POST',
             body: body
         }).catch(err => {
             console.warn(`restActionSender: Error sending action to ${ip} over REST API.`);
-        });;
+        });
     });
-}
+};
 
 /**
  * Broadcasts a JSON message over UDP
@@ -707,7 +707,7 @@ exports.actionSender = function (action, timeToLive, beatport) {
     var message;
 
     message = Buffer.from(JSON.stringify({action: action}));
-    
+
     if (message.length > 1472) {
         restActionSender(action);
         return;
