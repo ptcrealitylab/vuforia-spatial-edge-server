@@ -98,8 +98,8 @@ recorder.getItemFromArray = function (object, array) {
             }
             // let newItem = item[data];
             returnItem = item;
-            if(item[data])
-            item = item[data];
+            if (item[data])
+                item = item[data];
         }
     });
 
