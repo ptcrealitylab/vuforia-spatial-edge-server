@@ -692,6 +692,7 @@
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
+                this.promptForArea = makeSendStub('promptForArea');
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1749,6 +1750,26 @@
             spatialObject.isPinned = isPinned;
             postDataToParent({
                 setPinned: isPinned
+            });
+        };
+
+        this.promptForArea = function(options) {
+            if (!options) {
+                options = {};
+            }
+            postDataToParent({promptForArea: {options: options, frameKey: spatialObject.frame}});
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.areaPromptResult = function (msgContent) {
+                    if (typeof msgContent.area != 'undefined') {
+                        if (!msgContent.canceled) {
+                            resolve(msgContent.area);
+                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                        } else {
+                            reject();
+                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                        }
+                    }
+                };
             });
         };
 

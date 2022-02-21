@@ -2565,7 +2565,7 @@ function objectWebServer() {
                 });
 
                 form.on('fileBegin', function (name, file) {
-                    if (file.newFilename) {
+                    if (!file.name) {
                         file.name = file.newFilename;
                     }
                     filename = file.name;
@@ -2696,25 +2696,20 @@ function objectWebServer() {
 
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath + '/' + req.params.id,  // don't forget the __dirname here
-                    keepExtensions: true
+                    keepExtensions: true,
                 });
 
-                // var filename = '';
-                let filenameList = [];
+                let fileInfoList = [];
 
                 form.on('error', function (err) {
                     throw err;
                 });
 
                 form.on('fileBegin', function (name, file) {
-                    if (file.newFilename) {
+                    if (!file.name) {
                         file.name = file.newFilename;
                     }
-                    if (filenameList.includes(file.name)) {
-                        console.warn('duplicate file', file.name);
-                    } else {
-                        filenameList.push(file.name);
-                    }
+                    fileInfoList.push({name: file.name, completed: false});
                     //rename the incoming file to the file's name
                     if (req.headers.type === 'targetUpload') {
                         file.path = form.uploadDir + '/' + file.name;
@@ -2733,9 +2728,14 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
-
-                    filenameList.forEach((filename) => {
-                        console.log('form end over', form.uploadDir + '/' + filename);
+                    fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
+                    fileInfoList.forEach(fileInfo => {
+                        if (!fs.existsSync(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                            return;
+                        }
+                        fileInfo.completed = true; // File has downloaded
+                        let filename = fileInfo.name;
+                        console.log('------------' + form.uploadDir + '/' + filename);
                         if (req.headers.type === 'targetUpload') {
                             console.log('targetUpload', req.params.id);
                             var fileExtension = getFileExtension(filename);
@@ -2754,12 +2754,7 @@ function objectWebServer() {
                                     });
                                 }
 
-                                let fromPath = path.join(folderD, filename);
-                                if (!fs.existsSync(fromPath)) {
-                                    console.warn('a mistake was about to be made');
-                                } else {
-                                    fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
-                                }
+                                fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
 
                                 // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                                 // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
@@ -2929,35 +2924,34 @@ function objectWebServer() {
                                 }
 
                             } else if (fileExtension === 'zip') {
+                                const zipfileName = filename;
 
-                                console.log('I found a zip file', filename);
+                                console.log('I found a zip file');
 
                                 try {
                                     var DecompressZip = require('decompress-zip');
-                                    var unzipper = new DecompressZip(path.join(folderD, filename));
+                                    var unzipper = new DecompressZip(path.join(folderD, zipfileName));
 
                                     unzipper.on('error', function (err) {
                                         console.log('Caught an error in unzipper', err);
                                     });
 
-                                    unzipper.on('extract', function() {
+                                    unzipper.on('extract', function (log) {
                                         var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
                                         var folderFileType;
                                         let anyTargetsUploaded = false;
 
                                         for (var i = 0; i < folderFile.length; i++) {
-                                            console.log('zip folder', folderFile[i]);
                                             folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
                                             if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                                 fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
                                                 anyTargetsUploaded = true;
                                             }
-
                                             if (folderFile[i] === 'target') {
-                                                console.log('zip contained a folder of the same name', filename);
+                                                console.log('zip contained a folder of the same name');
                                                 var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
                                                 for (let j = 0; j < innerFolderFiles.length; j++) {
-                                                    console.log('innerFolderFile', innerFolderFiles[j]);
+                                                    console.log(innerFolderFiles[j]);
                                                     folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
                                                     if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
                                                         fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
@@ -2967,7 +2961,7 @@ function objectWebServer() {
                                                 fs.rmdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
                                             }
                                         }
-                                        fs.unlinkSync(folderD + '/' + filename);
+                                        fs.unlinkSync(folderD + '/' + zipfileName);
 
                                         // evnetually create the object.
 
@@ -3046,8 +3040,8 @@ function objectWebServer() {
                                 }
                             } else {
                                 let errorString = 'File type is not recognized target data. ' +
-                                   'You uploaded .' + fileExtension + ' but only ' +
-                                   '.dat, .jpg, .xml, and .zip are supported.';
+                                    'You uploaded .' + fileExtension + ' but only ' +
+                                    '.dat, .jpg, .xml, and .zip are supported.';
                                 res.status(400).send({
                                     error: errorString
                                 });
@@ -3058,7 +3052,6 @@ function objectWebServer() {
                             res.send('done');
                         }
                     });
-
                 });
             });
 
