@@ -1752,7 +1752,7 @@
                 setPinned: isPinned
             });
         };
-        
+
         this.promptForArea = function(options) {
             if (!options) {
                 options = {};
@@ -1769,9 +1769,9 @@
                             delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
                         }
                     }
-                }
+                };
             });
-        }
+        };
 
         this.errorNotification = function(errorMessageText) {
             postDataToParent({
