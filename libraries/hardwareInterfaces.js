@@ -875,6 +875,11 @@ exports.readCall = function (objectUuid, toolUuid, nodeUuid, data) {
 };
 
 exports.readPublicDataCall = function (objectUuid, toolUuid, nodeUuid, data) {
+    if (!data) {
+      console.warn('readPublicDataCall failing', Array.from(arguments));
+      return;
+    }
+
     if (callBacks.hasOwnProperty(objectUuid)) {
         if (callBacks[objectUuid].frames.hasOwnProperty(toolUuid)) {
             if (callBacks[objectUuid].frames[toolUuid].nodes.hasOwnProperty(nodeUuid)) {
