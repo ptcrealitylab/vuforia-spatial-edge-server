@@ -783,30 +783,6 @@ exports.getWorldObjectForObject = function (objectId) {
     return null;
 };
 
-exports.getBestWorldObject = function () {
-
-    // if there are any global world objects, add to those first
-    let visibleGlobalWorldObjectKeys = getGlobalWorldObjectKeys().filter(function(objectKey) {
-        return (typeof realityEditor.gui.ar.draw.visibleObjects[objectKey] !== 'undefined');
-    });
-
-    let distances = getDistanceToEachWorld();
-
-    if (visibleGlobalWorldObjectKeys.length > 0) {
-        // todo: should there be a better way to see which server's world object you'd be accessing?
-
-        // sort them by distance
-        visibleGlobalWorldObjectKeys.sort(function(a, b) {
-            return distances[a] - distances[b];
-        });
-
-        return realityEditor.getObject(visibleGlobalWorldObjectKeys[0]); // chooses the closest visible non-local world
-    }
-
-    // otherwise add to the local one. there should always be one of these so it should never return null
-    return getLocalWorldObject();
-};
-
 exports.getMarkerSize = function (object) {
     try {
         var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
