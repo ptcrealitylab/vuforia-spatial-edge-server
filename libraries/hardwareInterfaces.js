@@ -770,6 +770,25 @@ exports.getNodeNameFromNodeId = function (objectId, toolId, nodeId) {
     return objects[objectId].frames[toolId].nodes[nodeId].name;
 };
 
+exports.getWorldObjects = function () {
+    let worldObjects = [];
+    Object.keys(objects).forEach(function(objectId) {
+        let object = objects[objectId];
+        if (object.isWorldObject || object.type === 'world') {
+            worldObjects.push(object);
+        }
+    });
+    return worldObjects;
+};
+
+exports.getWorldObjectForObject = function (objectId) {
+    let thisObject = objects[objectId];
+    if (thisObject.worldId) {
+        return objects[thisObject.worldId];
+    }
+    return null;
+};
+
 exports.getMarkerSize = function (object) {
     try {
         var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
