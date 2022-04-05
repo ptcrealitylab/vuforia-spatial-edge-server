@@ -24,7 +24,7 @@
     "request": "^2.*",
     "simple-git": "^3.5.0",
     "toolsocket": "github:ptcrealitylab/toolsocket#main",
-    "winston": "^3.6.0",
+    "winston": "^3.7.2",
     "ws": "^8.5.0",
     "xml2js": "^0.4.23"
   },
