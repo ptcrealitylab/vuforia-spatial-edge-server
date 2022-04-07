@@ -1113,7 +1113,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         let datPath = path.join(targetDir, 'target.dat');
         let xmlPath = path.join(targetDir, 'target.xml');
         let glbPath = path.join(targetDir, 'target.glb');
-        var fileList = [jpgPath, xmlPath, datPath, glbPath];
+        let tdtPath = path.join(targetDir, 'target.3dt');
+        var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
         console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
     }
@@ -1550,25 +1551,34 @@ function objectWebServer() {
         var switchToInteraceTool = true;
         if (!toolpath) switchToInteraceTool = false;
 
-        if ((urlArray[urlArray.length - 1] === 'target.dat' || urlArray[urlArray.length - 1] === 'target.jpg' || urlArray[urlArray.length - 1] === 'target.xml' || urlArray[urlArray.length - 1] === 'target.glb' || urlArray[urlArray.length - 1] === 'target.unitypackage')
-            && urlArray[urlArray.length - 2] === 'target') {
+        let filename = urlArray[urlArray.length - 1];
+        let targetFiles = [
+            'target.dat',
+            'target.jpg',
+            'target.xml',
+            'target.glb',
+            'target.unitypackage',
+            'target.3dt',
+        ];
+
+        if (targetFiles.includes(filename) && urlArray[urlArray.length - 2] === 'target') {
             urlArray[urlArray.length - 2] = identityFolderName + '/target';
             switchToInteraceTool = false;
         }
 
-        if ((urlArray[urlArray.length - 1] === 'memory.jpg' || urlArray[urlArray.length - 1] === 'memoryThumbnail.jpg')
+        if ((filename === 'memory.jpg' || filename === 'memoryThumbnail.jpg')
             && urlArray[urlArray.length - 2] === 'memory') {
             urlArray[urlArray.length - 2] = identityFolderName + '/memory';
             switchToInteraceTool = false;
         }
 
-        if ((urlArray[urlArray.length - 2] === 'videos') && urlArray[urlArray.length - 1].split('.').pop() === 'mp4') {
+        if ((urlArray[urlArray.length - 2] === 'videos') && filename.split('.').pop() === 'mp4') {
             // videoDir differs on mobile due to inability to call mkdir
             if (!isMobile) {
                 urlArray[urlArray.length - 2] = identityFolderName + '/videos';
             } else {
                 try {
-                    res.sendFile(urlArray[urlArray.length - 1], {root: utilities.getVideoDir(objectsPath, identityFolderName, isMobile)});
+                    res.sendFile(filename, {root: utilities.getVideoDir(objectsPath, identityFolderName, isMobile)});
                 } catch (e) {
                     console.warn('error sending video file', e);
                 }
@@ -2835,8 +2845,9 @@ function objectWebServer() {
                                     let datPath = path.join(folderD, identityFolderName, '/target/target.dat');
                                     let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
                                     let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
+                                    let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
 
-                                    var fileList = [jpgPath, xmlPath, datPath, glbPath];
+                                    var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
                                     var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
@@ -2949,7 +2960,13 @@ function objectWebServer() {
                                             hardwareAPI.reset();
                                             console.log('have initialized the modules');
 
-                                            var fileList = [folderD + '/' + identityFolderName + '/target/target.jpg', folderD + '/' + identityFolderName + '/target/target.xml', folderD + '/' + identityFolderName + '/target/target.dat', folderD + '/' + identityFolderName + '/target/target.glb'];
+                                            var fileList = [
+                                                folderD + '/' + identityFolderName + '/target/target.jpg',
+                                                folderD + '/' + identityFolderName + '/target/target.xml',
+                                                folderD + '/' + identityFolderName + '/target/target.dat',
+                                                folderD + '/' + identityFolderName + '/target/target.glb',
+                                                folderD + '/' + identityFolderName + '/target/target.3dt',
+                                            ];
 
                                             var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
@@ -2968,6 +2985,7 @@ function objectWebServer() {
                                                 var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
                                                 var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
                                                 var glb = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.glb');
+                                                var tdt = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.3dt');
 
                                                 let sendObject = {
                                                     id: thisObjectId,
@@ -2976,7 +2994,8 @@ function objectWebServer() {
                                                     jpgExists: jpg,
                                                     xmlExists: xml,
                                                     datExists: dat,
-                                                    glbExists: glb
+                                                    glbExists: glb,
+                                                    tdtExists: tdt,
                                                 };
 
                                                 res.json(sendObject);
