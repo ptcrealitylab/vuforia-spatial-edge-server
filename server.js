@@ -77,7 +77,8 @@ try {
 const _logger = require('./logger');
 
 const os = require('os');
-const isMobile = os.platform() === 'android' || os.platform() === 'ios' || process.env.FORCE_MOBILE;
+const isMobile = false; // os.platform() === 'android' || os.platform() === 'ios' || process.env.FORCE_MOBILE;
+const isCoolMobile = true;
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
@@ -86,11 +87,11 @@ const globalVariables = {
     developer: true,
     // Send more debug messages to console
     debug: false,
-    isMobile: isMobile,
+    isMobile: isMobile && !isCoolMobile,
     // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: !isMobile && process.env.NODE_ENV !== 'test',
+    saveToDisk: (!isMobile && process.env.NODE_ENV !== 'test') || isCoolMobile,
     // Create an object for attaching frames to the world
-    worldObject: isMobile,
+    worldObject: isMobile || isCoolMobile,
     listenForHumanPose: false,
     initializations: {
         udp: false,
@@ -109,7 +110,7 @@ const globalVariables = {
 
  */
 
-var serverPort = isMobile ? 49369 : 8080;
+var serverPort = (isMobile || isCoolMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
@@ -198,7 +199,7 @@ services.updateAllObjcts = function (ip) {
 services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
-    if (isMobile) {
+    if (isMobile || isCoolMobile) {
         this.ips.interfaces['mobile'] = '127.0.0.1';
         this.ips.activeInterface = 'mobile';
         return '127.0.0.1';
@@ -303,7 +304,7 @@ for (const frameLibPath of frameLibPaths) {
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
 
-if (!isMobile) {
+if (!isMobile || isCoolMobile) {
     webServer.set('views', 'libraries/webInterface/views');
 
     var exphbs = require('express-handlebars'); // View Template library
@@ -349,7 +350,7 @@ var recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend;
-if (isMobile) {
+if (isMobile && !isCoolMobile) {
     webFrontend = require('./libraries/mobile/webFrontend');
 } else {
     webFrontend = require('./libraries/webFrontend');
@@ -357,9 +358,9 @@ if (isMobile) {
 
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
-var hardwareAPI;
+var hardwareAPI = require('./libraries/hardwareInterfaces');
 
-if (isMobile) {
+if (isMobile && !isCoolMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
     hardwareAPI = require('./libraries/hardwareInterfaces');
@@ -580,7 +581,7 @@ var sockets = {
 };
 
 var worldObjectName = '_WORLD_';
-if (isMobile) {
+if (isMobile || isCoolMobile) {
     worldObjectName += 'local';
 }
 var worldObject;
@@ -643,7 +644,7 @@ startSystem();
 console.log('started');
 
 // Get the directory names of all available sources for the 3D-UI
-if (!isMobile) {
+if (!isMobile || isCoolMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
     availableModules.setHardwareInterfaces(hardwareInterfaceModules);
@@ -840,7 +841,7 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    let thisWorldObjectId = isMobile ? worldObjectName : (worldObjectName + utilities.uuidTime());
+    let thisWorldObjectId = (isMobile || isCoolMobile) ? worldObjectName : (worldObjectName + utilities.uuidTime());
     worldObject = new ObjectModel(services.ip, version, protocol, thisWorldObjectId);
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
@@ -1910,18 +1911,14 @@ function objectWebServer() {
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
-            if (!isMobile) {
-                if (!utilities.isValidId(req.params.interfaceName)) {
-                    res.status(400).send('Invalid interface name. Must be alphanumeric.');
-                    return;
-                }
-
-                let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
-                let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
-                res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
-            } else {
-                res.status(403).send('You cannot configure a hardware interface from a mobile device server');
+            if (!utilities.isValidId(req.params.interfaceName)) {
+                res.status(400).send('Invalid interface name. Must be alphanumeric.');
+                return;
             }
+
+            let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
+            let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
         });
         // restart the server from the web frontend to load
 
@@ -1972,6 +1969,10 @@ function objectWebServer() {
             res.status(200).send('ok');
         });
 
+        webServer.get('/hardwareInterface/', function (req, res) {
+            res.json(Object.keys(hardwareInterfaceModules));
+        });
+
         webServer.get('/hardwareInterface/:interfaceName/settings/', function (req, res) {
             const interfaceName = req.params.interfaceName;
 
@@ -2017,7 +2018,14 @@ function objectWebServer() {
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
 
             try {
-                var existingSettings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
+                console.log('rawSettings', rawSettings);
+                let existingSettings = {};
+                try {
+                    existingSettings = JSON.parse(rawSettings);
+                } catch (e) {
+                    console.warn('Unable to parse settings', e, rawSettings);
+                }
 
                 console.log('before:', hardwareInterfaceModules[interfaceName]);
 
@@ -2125,7 +2133,8 @@ function objectWebServer() {
             console.log('interfaceSettingsPath', interfaceSettingsPath);
 
             try {
-                var settings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
+                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
+                var settings = JSON.parse(rawSettings);
                 settings.enabled = shouldBeEnabled;
 
                 if (globalVariables.saveToDisk) {
