@@ -716,7 +716,10 @@ exports.actionSender = function (action, timeToLive, beatport) {
     }
 
     // creating the datagram
-    var client = dgram.createSocket('udp4');
+    var client = dgram.createSocket({
+        type: 'udp4',
+        reuseAddr: true,
+    });
     client.bind(function () {
         client.setBroadcast(true);
         client.setTTL(timeToLive);
