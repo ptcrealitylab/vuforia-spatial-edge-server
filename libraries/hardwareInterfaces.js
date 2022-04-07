@@ -144,7 +144,9 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid, objectsPath);
-    if (objectID) {
+    if (objectID && objects[objectID] && objects[objectID].frames &&
+        objects[objectID].frames[objectID] &&
+        objects[objectID].frames[objectID].nodes) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
                 console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
