@@ -177,7 +177,7 @@ console.log('**** DIR: ', dir);
 try {
     storage.initSync({dir: dir});
 } catch (e) {
-    console.log('Something went wrong with initSync');
+    console.log('Something went wrong with initSync', e);
 }
 
 var dgram = require('dgram'); // UDP Broadcasting library
@@ -694,7 +694,7 @@ function loadObjects() {
             objectFolderList.splice(0, 1);
         }
     } catch (e) {
-        console.log('no hidden files');
+        console.log('no hidden files', e);
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
@@ -764,7 +764,7 @@ function loadObjects() {
             } catch (e) {
                 objects[tempFolderName].ip = services.ip; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
-                console.log('No saved data for: ' + tempFolderName);
+                console.log('No saved data for: ' + tempFolderName, e);
             }
 
             // add this object to the sceneGraph
@@ -852,7 +852,7 @@ function loadWorldObject() {
             worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
             console.log('Loaded world object for server: ' + services.ip);
         } catch (e) {
-            console.log('No saved data for world object on server: ' + services.ip);
+            console.log('No saved data for world object on server: ' + services.ip, e);
         }
     }
 
@@ -910,7 +910,7 @@ function loadAnchor(anchorName) {
             console.log('Loaded anchor object for server: ' + services.ip);
             return;
         } catch (e) {
-            console.log('No saved data for anchor object on server: ' + services.ip);
+            console.log('No saved data for anchor object on server: ' + services.ip, e);
         }
     }
 
@@ -2061,7 +2061,7 @@ function objectWebServer() {
                     callback(false, 'saveToDisk globally disabled for this server');
                 }
             } catch (e) {
-                console.log('error reading settings.json for ' + interfaceName + '.');
+                console.log('error writing settings.json for ' + interfaceName + '.', e);
                 callback(false, 'error writing to file');
             }
         }
@@ -2122,7 +2122,7 @@ function objectWebServer() {
          */
         function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-            console.log(interfaceSettingsPath);
+            console.log('interfaceSettingsPath', interfaceSettingsPath);
 
             try {
                 var settings = JSON.parse(fs.readFileSync(interfaceSettingsPath, 'utf8'));
@@ -2143,7 +2143,7 @@ function objectWebServer() {
                     callback(false, 'saveToDisk globally disabled for this server');
                 }
             } catch (e) {
-                console.log('error reading settings.json for ' + interfaceName + '. try reverting to default settings');
+                console.log('error reading settings.json for ' + interfaceName + '. try reverting to default settings', e);
                 var defaultSettings = {
                     enabled: shouldBeEnabled
                 };
@@ -2467,7 +2467,7 @@ function objectWebServer() {
                                 // deconstructs the nodes on this frame too, if needed
                                 thisObject.frames[frameNameKey].deconstruct();
                             } catch (e) {
-                                console.warn('Frame exists without proper prototype: ' + frameNameKey);
+                                console.warn('Frame exists without proper prototype: ' + frameNameKey, e);
                             }
                             delete thisObject.frames[frameNameKey];
                         }
@@ -2499,7 +2499,7 @@ function objectWebServer() {
                                 // deconstructs frames and nodes of this object, too
                                 objects[tempFolderName2].deconstruct();
                             } catch (e) {
-                                console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                                console.warn('Object exists without proper prototype: ' + tempFolderName2, e);
                             }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
@@ -2598,7 +2598,7 @@ function objectWebServer() {
                             console.log('extracting: ' + filename + '  ' + folderD);
 
                         } catch (err) {
-                            console.log('could not unzip file');
+                            console.log('could not unzip file', err);
                         }
                     }
                 });
@@ -2646,7 +2646,7 @@ function objectWebServer() {
                             // deconstructs frames and nodes of this object, too
                             objects[tempFolderName2].deconstruct();
                         } catch (e) {
-                            console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                            console.warn('Object exists without proper prototype: ' + tempFolderName2, e);
                         }
                         delete objects[tempFolderName2];
                         delete knownObjects[tempFolderName2];
@@ -2861,7 +2861,7 @@ function objectWebServer() {
                                                 // deconstructs frames and nodes of this object, too
                                                 objects[oldObjectId].deconstruct();
                                             } catch (e) {
-                                                console.warn('Object exists without proper prototype: ' + tempFolderName2);
+                                                console.warn('Object exists without proper prototype: ' + tempFolderName2, e);
                                             }
                                             delete objects[oldObjectId];
                                         }
@@ -2999,7 +2999,7 @@ function objectWebServer() {
                                         }
                                     });
                                 } catch (err) {
-                                    console.log('could not unzip file');
+                                    console.log('could not unzip file', err);
                                 }
                             } else {
                                 let errorString = 'File type is not recognized target data. ' +
@@ -3040,17 +3040,17 @@ function objectWebServer() {
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.xml'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.xml'));
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.xml'), e);
             }
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.jpg'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.jpg'));
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.jpg'), e);
             }
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.dat'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.dat'));
+                console.log('error while trying to delete ' + path.join(targetDir, 'target.dat'), e);
             }
 
             // recompute isAnchor (depends if there is an initialized world object)
@@ -3114,7 +3114,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             } catch (e) {
                 objects[objectIDXML].ip = services.ip; //ip.address();
                 console.log('testing: ' + objects[objectIDXML].ip);
-                console.log('No saved data for: ' + objectIDXML);
+                console.log('No saved data for: ' + objectIDXML, e);
             }
 
             if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
@@ -3122,7 +3122,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
                 try {
                     objects[oldObjectId].deconstruct();
                 } catch (e) {
-                    console.warn('Object exists without proper prototype: ' + oldObjectId);
+                    console.warn('Object exists without proper prototype: ' + oldObjectId, e);
                 }
                 delete objects[oldObjectId];
                 delete knownObjects[oldObjectId];
@@ -3679,7 +3679,7 @@ function socketServer() {
                     try {
                         objects[objectKey].deconstruct();
                     } catch (e) {
-                        console.warn('(Human) Object exists without proper prototype: ' + objectKey);
+                        console.warn('(Human) Object exists without proper prototype: ' + objectKey, e);
                     }
                     delete objects[objectKey];
                     // todo: delete folder recursive if necessary?
@@ -4174,7 +4174,7 @@ function socketSender(object, frame, link, data) {
                 presentObjectConnection.emit('object', msg);
             }
         } catch (e) {
-            console.log('can not emit from link ID:' + link + 'and object: ' + object);
+            console.log('can not emit from link ID:' + link + 'and object: ' + object, e);
         }
 
     }
