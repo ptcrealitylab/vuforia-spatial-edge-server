@@ -1140,7 +1140,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     if (globalVariables.debug) console.log('Sending beats... Content', messageStr);
 
     // creating the datagram
-    var client = dgram.createSocket('udp4');
+    var client = dgram.createSocket({
+        type: 'udp4',
+        reuseAddr: true,
+    });
     client.bind(function () {
         client.setBroadcast(true);
         client.setTTL(timeToLive);
@@ -1246,7 +1249,10 @@ function objectBeatServer() {
     }
 
     // creating the udp server
-    var udpServer = dgram.createSocket('udp4');
+    var udpServer = dgram.createSocket({
+        type: 'udp4',
+        reuseAddr: true,
+    });
     udpServer.on('error', function (err) {
         console.log('server error', err);
         udpServer.close();
