@@ -135,7 +135,7 @@ class LocalUIApp {
                 // this list can be extended in future to support more resource types
                 return filename.endsWith('.svg') || filename.endsWith('.png') ||
                     filename.endsWith('.fbx') || filename.endsWith('.gltf') ||
-                    filename.endsWith('.glb');
+                    filename.endsWith('.glb') || filename.endsWith('.3dt');
             });
             if (fileList.length === 0) {
                 continue;

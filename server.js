@@ -132,6 +132,7 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 
 const fs = require('fs');       // Filesystem library
 const path = require('path');
+const DecompressZip = require('decompress-zip');
 
 const spatialToolboxPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
 const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjects');
@@ -2580,7 +2581,6 @@ function objectWebServer() {
                         console.log('I found a zip file');
 
                         try {
-                            var DecompressZip = require('decompress-zip');
                             var unzipper = new DecompressZip(path.join(folderD, filename));
 
                             unzipper.on('error', function (err) {
@@ -2912,43 +2912,95 @@ function objectWebServer() {
                                 console.log('I found a zip file');
 
                                 try {
-                                    var DecompressZip = require('decompress-zip');
                                     var unzipper = new DecompressZip(path.join(folderD, zipfileName));
 
                                     unzipper.on('error', function (err) {
                                         console.log('Caught an error in unzipper', err);
                                     });
 
-                                    unzipper.on('extract', function (log) {
-                                        var folderFile = fs.readdirSync(folderD + '/' + identityFolderName + '/target');
-                                        var folderFileType;
+                                    unzipper.on('extract', function (_log) {
+                                        const targetFolderPath = path.join(folderD, identityFolderName, 'target');
+                                        const folderFiles = fs.readdirSync(targetFolderPath);
+                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
+
                                         let anyTargetsUploaded = false;
 
-                                        for (var i = 0; i < folderFile.length; i++) {
-                                            folderFileType = folderFile[i].substr(folderFile[i].lastIndexOf('.') + 1);
-                                            if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
-                                                fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                        for (var i = 0; i < folderFiles.length; i++) {
+                                            const folderFile = folderFiles[i];
+                                            const folderFileType = folderFile.substr(folderFile.lastIndexOf('.') + 1);
+                                            if (targetTypes.includes(folderFileType)) {
+                                                fs.renameSync(
+                                                    path.join(targetFolderPath, folderFile),
+                                                    path.join(targetFolderPath, 'target.' + folderFileType)
+                                                );
                                                 anyTargetsUploaded = true;
                                             }
-                                            if (folderFile[i] === 'target') {
+                                            if (folderFile === 'target') {
                                                 console.log('zip contained a folder of the same name');
-                                                var innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                                const innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile);
+                                                let deferred = false;
+                                                function finishFn(folderName) {
+                                                    return function() {
+                                                        fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
+                                                        let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                        console.log('nff', newFolderFiles);
+                                                        fs.renameSync(
+                                                            path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
+                                                            path.join(folderD, identityFolderName, 'target', 'target.glb')
+                                                        );
+                                                    };
+                                                }
+                                                const finish = finishFn(folderFile);
+
                                                 for (let j = 0; j < innerFolderFiles.length; j++) {
-                                                    console.log(innerFolderFiles[j]);
-                                                    folderFileType = innerFolderFiles[j].substr(innerFolderFiles[j].lastIndexOf('.') + 1);
-                                                    if (folderFileType === 'xml' || folderFileType === 'dat' || folderFileType === 'glb' || folderFileType === 'unitypackage') {
-                                                        fs.renameSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i] + '/' + innerFolderFiles[j], folderD + '/' + identityFolderName + '/target/target.' + folderFileType);
+                                                    let innerFolderFile = innerFolderFiles[j];
+                                                    console.log(innerFolderFile);
+
+                                                    const innerFolderFileType = innerFolderFile.substr(innerFolderFile.lastIndexOf('.') + 1);
+                                                    if (targetTypes.includes(innerFolderFileType)) {
+                                                        fs.renameSync(
+                                                            path.join(targetFolderPath, folderFile, innerFolderFile),
+                                                            path.join(targetFolderPath, 'target.' + innerFolderFileType),
+                                                        );
                                                         anyTargetsUploaded = true;
                                                     }
+
+                                                    if (innerFolderFile === 'target.3dt') {
+                                                        deferred = true;
+                                                        // unzip target.3dt
+                                                        let unzipper3dt = new DecompressZip(path.join(targetFolderPath, 'target.3dt'));
+
+                                                        unzipper3dt.on('error', function (err) {
+                                                            console.log('Caught an error for 3dt', err);
+                                                        });
+
+                                                        unzipper3dt.on('extract', function () {
+                                                            console.log('Finished extracting 3dt');
+                                                            finish();
+                                                        });
+
+                                                        unzipper3dt.on('progress', function (fileIndex, fileCount) {
+                                                            console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                                        });
+
+                                                        unzipper3dt.extract({
+                                                            path: targetFolderPath,
+                                                            filter: function (file) {
+                                                                return file.type !== 'SymbolicLink'; // could additionally filter to filename === 'authoringMesh.glb'
+                                                            }
+                                                        });
+                                                    }
                                                 }
-                                                fs.rmdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile[i]);
+                                                if (!deferred) {
+                                                    finish();
+                                                }
                                             }
                                         }
-                                        fs.unlinkSync(folderD + '/' + zipfileName);
+                                        fs.unlinkSync(path.join(folderD, zipfileName));
 
                                         // evnetually create the object.
 
-                                        if (fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat') && fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml')) {
+                                        if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
 
                                             console.log('creating object from target file ' + tmpFolderFile);
                                             // createObjectFromTarget(tmpFolderFile);
@@ -2960,18 +3012,25 @@ function objectWebServer() {
                                             hardwareAPI.reset();
                                             console.log('have initialized the modules');
 
-                                            var fileList = [
-                                                folderD + '/' + identityFolderName + '/target/target.jpg',
-                                                folderD + '/' + identityFolderName + '/target/target.xml',
-                                                folderD + '/' + identityFolderName + '/target/target.dat',
-                                                folderD + '/' + identityFolderName + '/target/target.glb',
-                                                folderD + '/' + identityFolderName + '/target/target.3dt',
-                                            ];
+                                            const targetFileExts = {
+                                                jpg: '',
+                                                xml: '',
+                                                dat: '',
+                                                glb: '',
+                                                '3dt': '',
+                                            };
 
-                                            var thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                            const thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                             if (typeof objects[thisObjectId] !== 'undefined') {
-                                                var thisObject = objects[thisObjectId];
+                                                const thisObject = objects[thisObjectId];
+
+                                                const fileList = [];
+                                                for (const ext of Object.keys(targetFileExts)) {
+                                                    const filePath = path.join(targetFolderPath, 'target.' + ext);
+                                                    fileList.push(filePath);
+                                                    targetFileExts[ext] = fs.existsSync(filePath);
+                                                }
 
                                                 thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
@@ -2979,26 +3038,17 @@ function objectWebServer() {
                                                 setAnchors();
                                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
-                                                res.status(200);
-
-                                                var jpg = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.jpg');
-                                                var dat = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.dat');
-                                                var xml = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.xml');
-                                                var glb = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.glb');
-                                                var tdt = fs.existsSync(folderD + '/' + identityFolderName + '/target/target.3dt');
-
                                                 let sendObject = {
                                                     id: thisObjectId,
                                                     name: thisObject.name,
-                                                    initialized: (jpg && xml && dat),
-                                                    jpgExists: jpg,
-                                                    xmlExists: xml,
-                                                    datExists: dat,
-                                                    glbExists: glb,
-                                                    tdtExists: tdt,
+                                                    initialized: (targetFileExts.jpg && targetFileExts.xml && targetFileExts.dat),
                                                 };
 
-                                                res.json(sendObject);
+                                                for (const ext of Object.keys(targetFileExts)) {
+                                                    sendObject[ext + 'Exists'] = targetFileExts[ext];
+                                                }
+
+                                                res.status(200).json(sendObject);
                                                 return;
                                             }
 
