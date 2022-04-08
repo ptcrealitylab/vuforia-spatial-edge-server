@@ -1175,6 +1175,14 @@ exports.pushSettingsToGui = function (interfaceName, currentSettings) {
     }
 };
 
+/**
+ * Returns the filepath to the spatialToolbox objects directory, wherever that may be on this system
+ * @returns {string}
+ */
+exports.getObjectsPath = function() {
+    return objectsPath;
+};
+
 exports.shutdown = function () {
 
     console.log('hardwareInterfaces.shutdown');
