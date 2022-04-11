@@ -184,6 +184,24 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
     }
 };
 
+/**
+ * Recursively delete a folder and its contents
+ * @param {string} folder - path to folder
+ */
+function deleteFolderRecursive(folder) {
+    if (fs.existsSync(folder)) {
+        fs.readdirSync(folder).forEach(function (file) {
+            var curPath = folder + '/' + file;
+            if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(folder);
+    }
+}
+exports.deleteFolderRecursive = deleteFolderRecursive;
 
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
@@ -192,22 +210,6 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath
  * @param dirname0
  */
 exports.deleteFrameFolder = function (objectName, frameName, objectsPath) {
-
-    function deleteFolderRecursive(path) {
-        console.log('deleteFolderRecursive');
-        if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach(function (file) {
-                var curPath = path + '/' + file;
-                if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                    deleteFolderRecursive(curPath);
-                } else { // delete file
-                    fs.unlinkSync(curPath);
-                }
-            });
-            fs.rmdirSync(path);
-        }
-    }
-
     console.log('objectName', objectName);
     console.log('frameName', frameName);
 
