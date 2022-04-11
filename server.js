@@ -3428,7 +3428,8 @@ function socketServer() {
         socket.on('block/setup', function (_msg) {
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
-            var node = getNode(msg.object, msg.frame, msg.node);
+            const node = getNode(msg.object, msg.frame, msg.node);
+
             if (node) {
                 if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisBlock = node.blocks[msg.block];
