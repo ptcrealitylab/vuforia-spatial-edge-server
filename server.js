@@ -3208,7 +3208,9 @@ function socketServer() {
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for (let key in frame.nodes) {
-                    if (typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    if (!frame.nodes[key].publicData) {
+                        frame.nodes[key].publicData = {};
+                    }
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
                     //  publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
@@ -3270,7 +3272,9 @@ function socketServer() {
             var frame = getFrame(msgContent.object, msgContent.frame);
             if (frame) {
                 for (let key in frame.nodes) {
-                    if (typeof frame.nodes[key].publicData === undefined) frame.nodes[key].publicData = {};
+                    if (!frame.nodes[key].publicData) {
+                        frame.nodes[key].publicData = {};
+                    }
                     //todo Public data is owned by nodes not frames. A frame can have multiple nodes
                     // it is more efficiant to call individual public data per node.
                     //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
