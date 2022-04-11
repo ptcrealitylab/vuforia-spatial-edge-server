@@ -54,19 +54,19 @@
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
 
-var xml2js = require('xml2js');
-var fs = require('fs');
-var ip = require('ip');       // get the device IP address library
-var dgram = require('dgram'); // UDP Broadcasting library
-var os = require('os');
-var path = require('path');
-var request = require('request');
+const xml2js = require('xml2js');
+const fs = require('fs');
+const ip = require('ip');       // get the device IP address library
+const dgram = require('dgram'); // UDP Broadcasting library
+const os = require('os');
+const path = require('path');
+const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
 
 var hardwareInterfaces = {};
 
-var identityFolderName = '.identity'; // TODO: get this from server.js
+const identityFolderName = '.identity'; // TODO: get this from server.js
 var homedir = path.join(os.homedir(), 'Documents', 'spatialToolbox');
 const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 
