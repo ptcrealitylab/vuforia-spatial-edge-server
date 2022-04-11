@@ -44,5 +44,6 @@ module.exports = {
         'no-inner-declarations': 'off',
         'no-extra-semi': 'warn',
         'require-atomic-updates': 'off',
+        'no-shadow': 'warn',
     }
 };
