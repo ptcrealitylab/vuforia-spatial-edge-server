@@ -2286,23 +2286,9 @@ function objectWebServer() {
                     res.status(400).send('Invalid path. Cannot contain \'..\'.');
                     return;
                 }
-                var folderDel = __dirname + req.path.substr(4);
+                const folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
-                    var deleteFolderRecursive = function (folderDel) {
-                        if (fs.existsSync(folderDel)) {
-                            fs.readdirSync(folderDel).forEach(function (file) {
-                                var curPath = folderDel + '/' + file;
-                                if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                    deleteFolderRecursive(curPath);
-                                } else { // delete file
-                                    fs.unlinkSync(curPath);
-                                }
-                            });
-                            fs.rmdirSync(folderDel);
-                        }
-                    };
-
-                    deleteFolderRecursive(folderDel);
+                    utilities.deleteFolderRecursive(folderDel);
                 } else {
                     fs.unlinkSync(folderDel);
                 }
@@ -2328,21 +2314,7 @@ function objectWebServer() {
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
-                    var deleteFolderRecursive = function (folderDel) {
-                        if (fs.existsSync(folderDel)) {
-                            fs.readdirSync(folderDel).forEach(function (file) {
-                                var curPath = folderDel + '/' + file;
-                                if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                    deleteFolderRecursive(curPath);
-                                } else { // delete file
-                                    fs.unlinkSync(curPath);
-                                }
-                            });
-                            fs.rmdirSync(folderDel);
-                        }
-                    };
-
-                    deleteFolderRecursive(folderDel);
+                    utilities.deleteFolderRecursive(folderDel);
                 } else {
                     fs.unlinkSync(folderDel);
                 }
@@ -2652,21 +2624,7 @@ function objectWebServer() {
 
                     if (fs.existsSync(folderDel)) {
                         if (fs.lstatSync(folderDel).isDirectory()) {
-                            var deleteFolderRecursive = function (folderDel) {
-                                if (fs.existsSync(folderDel)) {
-                                    fs.readdirSync(folderDel).forEach(function (file) {
-                                        var curPath = folderDel + '/' + file;
-                                        if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                            deleteFolderRecursive(curPath);
-                                        } else { // delete file
-                                            fs.unlinkSync(curPath);
-                                        }
-                                    });
-                                    fs.rmdirSync(folderDel);
-                                }
-                            };
-
-                            deleteFolderRecursive(folderDel);
+                            utilities.deleteFolderRecursive(folderDel);
                         } else {
                             fs.unlinkSync(folderDel);
                         }
