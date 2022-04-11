@@ -41,7 +41,7 @@ module.exports = {
         'no-prototype-builtins': 'off',
         'no-unused-vars': ['warn', {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}],
         'no-redeclare': 'warn',
-        'no-inner-declarations': 'warn',
+        'no-inner-declarations': 'off',
         'no-extra-semi': 'warn',
         'require-atomic-updates': 'off',
     }
