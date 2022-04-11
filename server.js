@@ -803,10 +803,10 @@ var executeSetups = function () {
                 for (let blockKey in thisFrame.nodes[nodeKey].blocks) {
                     var thisBlock = objects[objectKey].frames[frameKey].nodes[nodeKey].blocks[blockKey];
                     if (blockModules[thisBlock.type]) {
-                        blockModules[thisBlock.type].setup(objectKey, frameKey, nodeKey, blockKey, thisBlock,
-                            function (object, frame, node, block, index, thisBlock) {
-                                engine.processBlockLinks(object, frame, node, block, index, thisBlock);
-                            });
+                        blockModules[thisBlock.type].setup(
+                            objectKey, frameKey, nodeKey, blockKey, thisBlock,
+                            engine.processBlockLinks.bind(engine)
+                        );
                     }
                 }
             }
@@ -945,7 +945,7 @@ function loadAnchor(anchorName) {
 }
 
 function setAnchors() {
-    let worldObject = false;
+    let hasValidWorldObject = false;
 
     // load all object folders
     let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
@@ -985,7 +985,7 @@ function setAnchors() {
             let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
-                worldObject = true;
+                hasValidWorldObject = true;
             }
             break;
         }
@@ -1001,7 +1001,7 @@ function setAnchors() {
             let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if (!(xmlExists && (datExists || jpgExists))) {
-                if (worldObject) {
+                if (hasValidWorldObject) {
                     objects[key].isAnchor = true;
                     objects[key].tcs = 0;
                     continue;
@@ -1123,8 +1123,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
     // Objects
     //  console.log('with version number: ' + thisVersionNumber);
-    var zone = '';
-    if (objects[thisId].zone) zone = objects[thisId].zone;
 
     // json string to be sent
     const messageStr = JSON.stringify({
@@ -1134,7 +1132,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         vn: thisVersionNumber,
         pr: protocol,
         tcs: objects[thisId].tcs,
-        zone: zone
+        zone: objects[thisId].zone || '',
     });
 
     if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
@@ -1189,7 +1187,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
 
-                var zone = '';
+                let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
                 if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
 
@@ -3073,9 +3071,16 @@ function objectWebServer() {
     }
 }
 
-// TODO this should move to the utilities section
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
+ * @param {Record<string, Object>} objects
+ * @param {string} folderVar
+ * @param {string} __dirname
+ * @param {Record<string, unknown>} objectLookup
+ * @param {unknown} hardwareInterfaceModules
+ * @param {unknown} objectBeatSender
+ * @param {unknown} beatPort
+ * @param {unknown} _debug
  */
 function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
     console.log('I can start');
@@ -3170,7 +3175,6 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
 };
 
 function socketServer() {
-
     io.on('connection', function (socket) {
         console.log('------------ ', socket.id);
         socketHandler.socket = socket;
@@ -3400,9 +3404,7 @@ function socketServer() {
                 if (msg.block in node.blocks && typeof msg.block !== 'undefined' && typeof node.blocks[msg.block].publicData !== 'undefined') {
                     var thisBlock = node.blocks[msg.block];
                     blockModules[thisBlock.type].setup(msg.object, msg.frame, msg.node, msg.block, thisBlock,
-                        function (object, frame, node, block, index, thisBlock) {
-                            engine.processBlockLinks(object, frame, node, block, index, thisBlock);
-                        });
+                        engine.processBlockLinks.bind(engine));
                 }
             }
         });
@@ -3948,12 +3950,13 @@ var engine = {
 
         thisNode.processLink = link;
 
-        var _this = this;
-        if ((thisNode.type in this.nodeTypeModules)) {
-            this.nodeTypeModules[thisNode.type].render(object, frame, node, thisNode, function (object, frame, node, thisNode) {
-                _this.processLinks(object, frame, node, thisNode);
-            }, nodeUtilities);
+        if (!this.nodeTypeModules.hasOwnProperty(thisNode.type)) {
+            return;
         }
+
+        this.nodeTypeModules[thisNode.type].render(
+            object, frame, node, thisNode, this.processLinks.bind(this), nodeUtilities
+        );
     },
     // once data is processed it will determin where to send it.
     processLinks: function (object, frame, node, thisNode) {
@@ -4048,11 +4051,13 @@ var engine = {
 
         var _this = this;
 
-        if ((thisBlock.type in this.blockModules)) {
-            this.blockModules[thisBlock.type].render(object, frame, node, block, index, thisBlock, function (object, frame, node, block, index, thisBlock) {
-                _this.processBlockLinks(object, frame, node, block, index, thisBlock);
-            }, nodeUtilities);
+        if (!this.blockModules.hasOwnProperty(thisBlock.type)) {
+            return;
         }
+
+        this.blockModules[thisBlock.type].render(
+            object, frame, node, block, index, thisBlock,
+            this.processBlockLinks.bind(this), nodeUtilities);
     },
     // this is for after a logic block is processed.
     processBlockLinks: function (object, frame, node, block, index, thisBlock) {
