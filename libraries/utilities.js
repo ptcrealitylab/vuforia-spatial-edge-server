@@ -676,20 +676,20 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
 };
 
 const restActionSender = function (action) {
-    const { knownObjects, getIP } = require('../server');
+    const { knownObjects } = require('../server');
     const ipSet = new Set();
-    for (const [key, value] of Object.entries(knownObjects)) {
+    for (const [_key, value] of Object.entries(knownObjects)) {
         ipSet.add(value.ip);
     }
     const body = new URLSearchParams({
         'action': JSON.stringify(action)
     });
-    [...ipSet].map(ip => {
-        fetch(`http://${ip}:8080/action`, {
+    [...ipSet].map(objectIp => {
+        fetch(`http://${objectIp}:8080/action`, {
             method: 'POST',
             body: body
         }).catch(err => {
-            console.warn(`restActionSender: Error sending action to ${ip} over REST API.`);
+            console.warn(`restActionSender: Error sending action to ${objectIp} over REST API.`, err);
         });
     });
 };
@@ -936,12 +936,12 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
  * @param objectName
  * @return {string}
  */
-function getVideoDir(objectsPath, identityFolderName, isMobile, objectName) {
+function getVideoDir(objectsPath, identityFolderNameArg, isMobile, objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
     if (!isMobile) {
-        videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
+        videoDir = path.join(objectsPath, objectName, identityFolderNameArg, 'videos');
 
         if (!fs.existsSync(videoDir)) {
             console.log('make videoDir');
@@ -961,8 +961,8 @@ function isValidId(id) {
 
 exports.isValidId = isValidId;
 
-function goesUpDirectory(path) {
-    return path.match(/\.\./);
+function goesUpDirectory(pathStr) {
+    return pathStr.match(/\.\./);
 }
 
 exports.goesUpDirectory = goesUpDirectory;
