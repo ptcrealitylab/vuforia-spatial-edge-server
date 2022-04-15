@@ -804,7 +804,9 @@ var executeSetups = function () {
                     if (blockModules[thisBlock.type]) {
                         blockModules[thisBlock.type].setup(
                             objectKey, frameKey, nodeKey, blockKey, thisBlock,
-                            engine.processBlockLinks.bind(engine)
+                            function (object, frame, node, block, index, thisBlockCb) {
+                                engine.processBlockLinks(object, frame, node, block, index, thisBlockCb);
+                            }
                         );
                     }
                 }
