@@ -77,8 +77,8 @@ try {
 const _logger = require('./logger');
 
 const os = require('os');
-const isMobile = false; // os.platform() === 'android' || os.platform() === 'ios' || process.env.FORCE_MOBILE;
-const isCoolMobile = true;
+const isMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
+const isCoolMobile = os.platform() === 'ios';
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
