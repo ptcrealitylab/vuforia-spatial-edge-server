@@ -77,7 +77,7 @@ try {
 const _logger = require('./logger');
 
 const os = require('os');
-const isMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
+const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
 const isStandaloneMobile = os.platform() === 'ios';
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
@@ -87,11 +87,11 @@ const globalVariables = {
     developer: true,
     // Send more debug messages to console
     debug: false,
-    isMobile: isMobile && !isStandaloneMobile,
+    isMobile: isLightweightMobile && !isStandaloneMobile,
     // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
+    saveToDisk: (!isLightweightMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
     // Create an object for attaching frames to the world
-    worldObject: isMobile || isStandaloneMobile,
+    worldObject: isLightweightMobile || isStandaloneMobile,
     listenForHumanPose: false,
     initializations: {
         udp: false,
@@ -110,7 +110,7 @@ const globalVariables = {
 
  */
 
-var serverPort = (isMobile || isStandaloneMobile) ? 49369 : 8080;
+var serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
@@ -185,7 +185,7 @@ try {
 var dgram = require('dgram'); // UDP Broadcasting library
 
 var services = {};
-if (!isMobile) {
+if (!isLightweightMobile) {
     services.networkInterface = require('network-interfaces');
 }
 
@@ -200,7 +200,7 @@ services.updateAllObjcts = function (ip) {
 services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
-    if (isMobile || isStandaloneMobile) {
+    if (isLightweightMobile || isStandaloneMobile) {
         this.ips.interfaces['mobile'] = '127.0.0.1';
         this.ips.activeInterface = 'mobile';
         return '127.0.0.1';
@@ -305,7 +305,7 @@ for (const frameLibPath of frameLibPaths) {
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
 
-if (!isMobile || isStandaloneMobile) {
+if (!isLightweightMobile) {
     webServer.set('views', 'libraries/webInterface/views');
 
     var exphbs = require('express-handlebars'); // View Template library
@@ -334,7 +334,7 @@ webServer.options('*', cors());
 
 // Image resizing library, not available on mobile
 let Jimp = null;
-if (!isMobile) {
+if (!isLightweightMobile) {
     try {
         Jimp = require('jimp');
     } catch (e) {
@@ -351,7 +351,7 @@ var recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend;
-if (isMobile && !isStandaloneMobile) {
+if (isLightweightMobile) {
     webFrontend = require('./libraries/mobile/webFrontend');
 } else {
     webFrontend = require('./libraries/webFrontend');
@@ -361,7 +361,7 @@ if (isMobile && !isStandaloneMobile) {
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI = require('./libraries/hardwareInterfaces');
 
-if (isMobile && !isStandaloneMobile) {
+if (isLightweightMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
     hardwareAPI = require('./libraries/hardwareInterfaces');
@@ -371,7 +371,7 @@ if (isMobile && !isStandaloneMobile) {
 const HumanPoseObject = require('./libraries/HumanPoseObject');
 
 var git;
-if (isMobile || process.env.NODE_ENV === 'test') {
+if (isLightweightMobile || process.env.NODE_ENV === 'test') {
     git = null;
 } else {
     git = require('./libraries/gitInterface');
@@ -582,7 +582,7 @@ var sockets = {
 };
 
 var worldObjectName = '_WORLD_';
-if (isMobile || isStandaloneMobile) {
+if (isLightweightMobile || isStandaloneMobile) {
     worldObjectName += 'local';
 }
 var worldObject;
@@ -645,7 +645,7 @@ startSystem();
 console.log('started');
 
 // Get the directory names of all available sources for the 3D-UI
-if (!isMobile || isStandaloneMobile) {
+if (!isLightweightMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
     availableModules.setHardwareInterfaces(hardwareInterfaceModules);
@@ -842,7 +842,7 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    let thisWorldObjectId = (isMobile || isStandaloneMobile) ? worldObjectName : (worldObjectName + utilities.uuidTime());
+    let thisWorldObjectId = (isLightweightMobile || isStandaloneMobile) ? worldObjectName : (worldObjectName + utilities.uuidTime());
     worldObject = new ObjectModel(services.ip, version, protocol, thisWorldObjectId);
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
@@ -1085,7 +1085,7 @@ if (process.pid) {
  **/
 
 function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
-    if (isMobile) {
+    if (isLightweightMobile) {
         return;
     }
 
@@ -1247,7 +1247,7 @@ function handleActionMessage(action) {
 }
 
 function objectBeatServer() {
-    if (isMobile) {
+    if (isLightweightMobile) {
         return;
     }
 
@@ -1575,11 +1575,13 @@ function objectWebServer() {
 
         if ((urlArray[urlArray.length - 2] === 'videos') && filename.split('.').pop() === 'mp4') {
             // videoDir differs on mobile due to inability to call mkdir
-            if (!isMobile) {
+            if (!isLightweightMobile) {
                 urlArray[urlArray.length - 2] = identityFolderName + '/videos';
             } else {
                 try {
-                    res.sendFile(filename, {root: utilities.getVideoDir(objectsPath, identityFolderName, isMobile)});
+                    res.sendFile(filename, {
+                        root: utilities.getVideoDir(objectsPath, identityFolderName, isLightweightMobile),
+                    });
                 } catch (e) {
                     console.warn('error sending video file', e);
                 }
@@ -2224,7 +2226,7 @@ function objectWebServer() {
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
         webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
-            if (isMobile) {
+            if (isLightweightMobile) {
                 res.status(500).send('zipBackup unavailable on mobile');
                 return;
             }
