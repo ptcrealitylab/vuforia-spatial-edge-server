@@ -78,7 +78,7 @@ const _logger = require('./logger');
 
 const os = require('os');
 const isMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
-const isCoolMobile = os.platform() === 'ios';
+const isStandaloneMobile = os.platform() === 'ios';
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
@@ -87,11 +87,11 @@ const globalVariables = {
     developer: true,
     // Send more debug messages to console
     debug: false,
-    isMobile: isMobile && !isCoolMobile,
+    isMobile: isMobile && !isStandaloneMobile,
     // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isMobile && process.env.NODE_ENV !== 'test') || isCoolMobile,
+    saveToDisk: (!isMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
     // Create an object for attaching frames to the world
-    worldObject: isMobile || isCoolMobile,
+    worldObject: isMobile || isStandaloneMobile,
     listenForHumanPose: false,
     initializations: {
         udp: false,
@@ -110,7 +110,7 @@ const globalVariables = {
 
  */
 
-var serverPort = (isMobile || isCoolMobile) ? 49369 : 8080;
+var serverPort = (isMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
@@ -200,7 +200,7 @@ services.updateAllObjcts = function (ip) {
 services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
-    if (isMobile || isCoolMobile) {
+    if (isMobile || isStandaloneMobile) {
         this.ips.interfaces['mobile'] = '127.0.0.1';
         this.ips.activeInterface = 'mobile';
         return '127.0.0.1';
@@ -305,7 +305,7 @@ for (const frameLibPath of frameLibPaths) {
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
 
-if (!isMobile || isCoolMobile) {
+if (!isMobile || isStandaloneMobile) {
     webServer.set('views', 'libraries/webInterface/views');
 
     var exphbs = require('express-handlebars'); // View Template library
@@ -351,7 +351,7 @@ var recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
 var webFrontend;
-if (isMobile && !isCoolMobile) {
+if (isMobile && !isStandaloneMobile) {
     webFrontend = require('./libraries/mobile/webFrontend');
 } else {
     webFrontend = require('./libraries/webFrontend');
@@ -361,7 +361,7 @@ if (isMobile && !isCoolMobile) {
 // This is used for the interfaces defined in the hardwareAPI folder.
 var hardwareAPI = require('./libraries/hardwareInterfaces');
 
-if (isMobile && !isCoolMobile) {
+if (isMobile && !isStandaloneMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
     hardwareAPI = require('./libraries/hardwareInterfaces');
@@ -582,7 +582,7 @@ var sockets = {
 };
 
 var worldObjectName = '_WORLD_';
-if (isMobile || isCoolMobile) {
+if (isMobile || isStandaloneMobile) {
     worldObjectName += 'local';
 }
 var worldObject;
@@ -645,7 +645,7 @@ startSystem();
 console.log('started');
 
 // Get the directory names of all available sources for the 3D-UI
-if (!isMobile || isCoolMobile) {
+if (!isMobile || isStandaloneMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
     availableModules.setHardwareInterfaces(hardwareInterfaceModules);
@@ -842,7 +842,7 @@ function loadWorldObject() {
     }
 
     // create a new world object
-    let thisWorldObjectId = (isMobile || isCoolMobile) ? worldObjectName : (worldObjectName + utilities.uuidTime());
+    let thisWorldObjectId = (isMobile || isStandaloneMobile) ? worldObjectName : (worldObjectName + utilities.uuidTime());
     worldObject = new ObjectModel(services.ip, version, protocol, thisWorldObjectId);
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
