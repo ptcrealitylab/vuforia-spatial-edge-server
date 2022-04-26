@@ -10,7 +10,7 @@
     "cors": "^2.8.5",
     "decompress-zip": "^0.3.3",
     "directory-tree": "^3.2.2",
-    "express": "^4.17.3",
+    "express": "^4.18.0",
     "express-handlebars": "^5.3.5",
     "formidable": "^2.0.1",
     "ip": "^1.1.5",
