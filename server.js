@@ -2988,7 +2988,8 @@ function objectWebServer() {
                                                         unzipper3dt.extract({
                                                             path: targetFolderPath,
                                                             filter: function (file) {
-                                                                return file.type !== 'SymbolicLink'; // could additionally filter to filename === 'authoringMesh.glb'
+                                                                // skipping over frame_%d.jpg, images.json, and tileset.json
+                                                                return file.type !== 'SymbolicLink' && file.filename.endsWith('glb');
                                                             }
                                                         });
                                                     }
