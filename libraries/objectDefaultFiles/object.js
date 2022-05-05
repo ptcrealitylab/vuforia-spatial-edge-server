@@ -436,6 +436,10 @@
                 screenY: eventData.y
             });
 
+            if (typeof eventData.projectedZ !== 'undefined') {
+                event.projectedZ = eventData.projectedZ;
+            }
+
             // send unacceptedTouch message if this interface wants touches to pass through it
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
                 var touchAccepted = spatialObject.touchDecider(eventData);
