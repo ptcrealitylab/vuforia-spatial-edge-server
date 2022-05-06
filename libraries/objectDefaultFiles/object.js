@@ -439,6 +439,9 @@
             if (typeof eventData.projectedZ !== 'undefined') {
                 event.projectedZ = eventData.projectedZ;
             }
+            if (typeof eventData.worldIntersectPoint !== 'undefined') {
+                event.worldIntersectPoint = eventData.worldIntersectPoint;
+            }
 
             // send unacceptedTouch message if this interface wants touches to pass through it
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
