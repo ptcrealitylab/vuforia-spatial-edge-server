@@ -436,9 +436,12 @@
                 screenY: eventData.y
             });
 
+            // this adds the depth (relative to the camera) of the touch coordinate raycasted against the world
             if (typeof eventData.projectedZ !== 'undefined') {
                 event.projectedZ = eventData.projectedZ;
             }
+            // this adds the 3D scene coordinates of the touch raycasted against the world
+            // currently it is world coordinates relative to the groundPlaneContainerObject
             if (typeof eventData.worldIntersectPoint !== 'undefined') {
                 event.worldIntersectPoint = eventData.worldIntersectPoint;
             }
