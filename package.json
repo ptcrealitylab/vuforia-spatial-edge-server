@@ -24,7 +24,7 @@
     "simple-git": "^3.7.1",
     "toolsocket": "github:ptcrealitylab/toolsocket#main",
     "winston": "^3.7.2",
-    "ws": "^8.6.0",
+    "ws": "^8.7.0",
     "xml2js": "^0.4.23"
   },
   "repository": {
