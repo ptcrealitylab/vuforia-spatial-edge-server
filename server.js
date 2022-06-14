@@ -3537,8 +3537,12 @@ function socketServer() {
         socket.on('/update', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            for (var socketId in realityEditorUpdateSocketArray) {
-                realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
+            for (const socketId in realityEditorUpdateSocketArray) {
+                const subList = realityEditorUpdateSocketArray[socketId];
+                if (!subList) {
+                    continue;
+                }
+                subList.forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
                     //  console.log('dont send updates to the editor that triggered it');
                         return;
@@ -3559,13 +3563,14 @@ function socketServer() {
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
 
-            for (var socketId in realityEditorUpdateSocketArray) {
-                if (!realityEditorUpdateSocketArray[socket.id]) {
+            for (const socketId in realityEditorUpdateSocketArray) {
+                const subList = realityEditorUpdateSocketArray[socketId];
+                if (!subList) {
                     continue;
                 }
 
-                realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
+                subList.forEach((sub) => {
+                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === sub.editorId) {
                         //  console.log('dont send updates to the editor that triggered it');
                         return;
                     }
@@ -3590,7 +3595,7 @@ function socketServer() {
         socket.on('/cameraMatrix', function (msg) {
             var msgContent = JSON.parse(msg);
 
-            for (var socketId in realityEditorCameraMatrixSocketArray) {
+            for (const socketId in realityEditorCameraMatrixSocketArray) {
                 if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorCameraMatrixSocketArray[socketId].editorId) {
                     continue; // dont send updates to the editor that triggered it
                 }
