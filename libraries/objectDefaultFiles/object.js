@@ -433,7 +433,8 @@
                 pageX: eventData.x,
                 pageY: eventData.y,
                 screenX: eventData.x,
-                screenY: eventData.y
+                screenY: eventData.y,
+                button: eventData.button,
             });
 
             if (typeof eventData.projectedZ !== 'undefined') {
