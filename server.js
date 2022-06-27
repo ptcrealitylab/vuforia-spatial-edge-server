@@ -997,7 +997,7 @@ function setAnchors() {
     // check if there are uninitialized objects and turn them into anchors if an initialized world object exists.
     for (let key in objects) {
         objects[key].isAnchor = false;
-        if (!objects[key].isWorldObject) {
+        if (!(objects[key].isWorldObject || objects[key].type === 'world' || objects[key].type === 'human' || objects[key].type === 'avatar')) {
             // check if the object is correctly initialized with tracking targets
             let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
             let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
@@ -1014,6 +1014,31 @@ function setAnchors() {
     }
 }
 
+function removeAvatars() {
+    let objectsToDelete = [];
+
+    // load all object folders
+    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
+        return fs.statSync(path.join(objectsPath, file)).isDirectory();
+    });
+    // remove hidden directories
+    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
+        tempFiles.splice(0, 1);
+    }
+
+    // populate all objects folders with object.json files.
+    tempFiles.forEach(function (objectKey) {
+        if (objectKey.includes('_AVATAR_')) {
+            objectsToDelete.push(objectKey);
+        }
+    });
+    
+    objectsToDelete.forEach(objectKey => {
+        console.log('deleting object: ' + objectKey);
+        fs.rmSync(path.join(objectsPath, objectKey), { recursive: true });
+    });
+}
+
 /**********************************************************************************************************************
  ******************************************** Starting the System ******************************************************
  **********************************************************************************************************************/
@@ -1023,6 +1048,8 @@ function setAnchors() {
  **/
 
 function startSystem() {
+    // delete each object that represented a client that was connected to the server in its last session
+    removeAvatars();
 
     // make sure that the system knows about the state of anchors.
     setAnchors();
@@ -2373,32 +2400,41 @@ function objectWebServer() {
                     utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
-                    if (typeof req.body.isWorld !== 'undefined' || typeof req.body.isHuman !== 'undefined') {
-                        let isWorldObject = JSON.parse(req.body.isWorld || 'false');
-                        let isHumanObject = JSON.parse(req.body.isHuman || 'false');
-                        if (isWorldObject || isHumanObject) {
-                            let objectId = req.body.name + utilities.uuidTime();
-                            objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
-                            objects[objectId].name = req.body.name;
-                            objects[objectId].port = serverPort;
-                            objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
-                            objects[objectId].type = isWorldObject ? 'world' : (isHumanObject ? 'human' : 'object');
-                            utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                    let isWorldObject = JSON.parse(req.body.isWorld || 'false');
+                    let isHumanObject = JSON.parse(req.body.isHuman || 'false');
+                    let isAvatarObject = JSON.parse(req.body.isAvatar || 'false');
 
-                            sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
-
-                            var sendObject = {
-                                id: objectId,
-                                name: req.body.name,
-                                initialized: true,
-                                jpgExists: false,
-                                xmlExists: false,
-                                datExists: false,
-                                glbExists: false
-                            };
-                            res.status(200).json(sendObject);
-                            return;
+                    if (isWorldObject || isHumanObject || isAvatarObject) {
+                        let objectId = req.body.name + utilities.uuidTime();
+                        objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
+                        objects[objectId].name = req.body.name;
+                        objects[objectId].port = serverPort;
+                        objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
+                        let objectType = 'object';
+                        if (isWorldObject) {
+                            objectType = 'world';
+                        } else if (isHumanObject) {
+                            objectType = 'human';
+                        } else if (isAvatarObject) {
+                            objectType = 'avatar';
                         }
+                        objects[objectId].type = objectType;
+                        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                        sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
+
+                        objectBeatSender(beatPort, objectId, objects[objectId].ip);
+
+                        var sendObject = {
+                            id: objectId,
+                            name: req.body.name,
+                            initialized: true,
+                            jpgExists: false,
+                            xmlExists: false,
+                            datExists: false,
+                            glbExists: false
+                        };
+                        res.status(200).json(sendObject);
+                        return;
                     }
 
                     setAnchors(); // Needed to initialize non-world (anchor) objects
@@ -3886,6 +3922,17 @@ function socketServer() {
             }
 
             if (socket.id in realityEditorUpdateSocketArray) {
+                let matchingAvatarKeys = [];
+                realityEditorUpdateSocketArray[socket.id].forEach(entry => {
+                    let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
+                    matchingAvatarKeys.push(matchingKeys);
+                });
+                
+                console.log('delete avatar objects: ', matchingAvatarKeys.flat());
+                matchingAvatarKeys.flat().forEach(avatarObjectKey => {
+                    utilities.deleteObject(objects[avatarObjectKey].name, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+                });
+
                 delete realityEditorUpdateSocketArray[socket.id];
             }
 
