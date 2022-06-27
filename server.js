@@ -2423,6 +2423,31 @@ function objectWebServer() {
                         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
+                        // automatically create a tool and a node on the avatar object
+                        if (isAvatarObject) {
+                            let toolName = 'Avatar';
+                            let toolId = objectId + toolName;
+                            if (!objects[objectId].frames[toolId]) {
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, 'local');
+                                objects[objectId].frames[toolId] = new Frame(objectId, toolId);
+                                objects[objectId].frames[toolId].name = toolName;
+                                utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+
+                                // now add a publicData storage node to the tool
+                                let nodeInfo = {
+                                    name: 'storage',
+                                    type: 'storeData',
+                                    x: 0,
+                                    y: 0
+                                }
+                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {
+                                    console.log('added node to frame... ', statusCode, responseContents);
+                                });
+                            } else {
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, objects[objectId].frames[toolId].location);
+                            }
+                        }
+
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
                         objectBeatSender(beatPort, objectId, objects[objectId].ip);
