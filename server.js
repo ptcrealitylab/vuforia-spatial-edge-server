@@ -1200,7 +1200,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
-                if (objects[thisId].tcs || objects[thisId].isAnchor) {
+                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
+                if (objects[thisId].tcs || sendWithoutTargetFiles) {
                     client.send(message, 0, message.length, PORT, HOST, function (err) {
                         if (err) {
                             console.log('You\'re not on a network. Can\'t send anything', err);
@@ -2420,6 +2421,8 @@ function objectWebServer() {
                         }
                         objects[objectId].type = objectType;
                         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                        utilities.writeObject(objectLookup, req.body.name, objectId);
+
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
                         objectBeatSender(beatPort, objectId, objects[objectId].ip);
@@ -3930,7 +3933,7 @@ function socketServer() {
                 
                 console.log('delete avatar objects: ', matchingAvatarKeys.flat());
                 matchingAvatarKeys.flat().forEach(avatarObjectKey => {
-                    utilities.deleteObject(objects[avatarObjectKey].name, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+                    utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
                 });
 
                 delete realityEditorUpdateSocketArray[socket.id];

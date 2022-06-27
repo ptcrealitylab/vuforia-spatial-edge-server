@@ -621,11 +621,13 @@ exports.updateObject = function (objectName, objects) {
     return null;
 };
 
-exports.deleteObject = function (objectName, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+exports.deleteObject = function (objectName, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     console.log('Deleting object: ' + objectName);
 
     let objectFolderPath = path.join(objectsPath, objectName);
-    fs.rmSync(objectFolderPath, { recursive: true });
+    if (fs.existsSync(objectFolderPath)) {
+        fs.rmSync(objectFolderPath, { recursive: true });
+    }
 
     let objectKey = this.readObject(objectLookup, objectName);
 
@@ -651,6 +653,8 @@ exports.deleteObject = function (objectName, objectsPath, objectLookup, activeHe
 
     console.log('i deleted: ' + objectKey);
     setAnchors();
+
+    this.actionSender({reloadObject: {object: objectKey} });
 }
 
 exports.loadHardwareInterface = function (hardwareInterfaceName) {
