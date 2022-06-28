@@ -2420,6 +2420,11 @@ function objectWebServer() {
                             objectType = 'avatar';
                         }
                         objects[objectId].type = objectType;
+
+                        if (typeof req.body.worldId !== 'undefined') {
+                            objects[objectId].worldId = req.body.worldId;
+                        }
+
                         utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
