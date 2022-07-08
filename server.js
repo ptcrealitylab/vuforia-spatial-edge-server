@@ -3543,7 +3543,9 @@ function socketServer() {
                 }
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
-            utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+            if (objects[msg.object] && objects[msg.object].type !== 'avatar') {
+                utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+            }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it
             socketHandler.sendPublicDataToAllSubscribers(msg.object, msg.frame, msg.node, msg.sessionUuid);
@@ -3963,7 +3965,16 @@ function socketServer() {
                 
                 console.log('delete avatar objects: ', matchingAvatarKeys.flat());
                 matchingAvatarKeys.flat().forEach(avatarObjectKey => {
-                    utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+                    if (objects[avatarObjectKey]) {
+                        utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+                    } else {
+                        // try to clean up any other state that might be remaining
+                        clearInterval(activeHeartbeats[avatarObjectKey]);
+                        delete activeHeartbeats[avatarObjectKey];
+                        delete knownObjects[avatarObjectKey];
+                        delete objectLookup[avatarObjectKey];
+                        sceneGraph.removeElementAndChildren(avatarObjectKey);
+                    }
                 });
 
                 delete realityEditorUpdateSocketArray[socket.id];
