@@ -340,13 +340,21 @@ class ThreejsInterface {
 
     main({width, height}) {
         this.spatialInterface.changeFrameSize(width, height);
-        this.realRenderer = new THREE.WebGLRenderer({alpha: true});
+        if (THREE.WebGL1Renderer) {
+            this.realRenderer = new THREE.WebGL1Renderer({alpha: true});
+        } else {
+            this.realRenderer = new THREE.WebGLRenderer({alpha: true});
+        }
         this.realRenderer.debug.checkShaderErrors = false;
         this.realRenderer.setPixelRatio(window.devicePixelRatio);
         this.realRenderer.setSize(width, height);
         realGl = this.realRenderer.getContext();
 
-        this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
+        if (THREE.WebGL1Renderer) {
+            this.renderer = new THREE.WebGL1Renderer({context: gl, alpha: true});
+        } else {
+            this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
+        }
         this.renderer.debug.checkShaderErrors = false;
         this.renderer.setSize(width, height);
 
@@ -369,7 +377,11 @@ class ThreejsInterface {
         }
         if (!this.isProjectionMatrixSet && this.lastProjectionMatrix && this.lastProjectionMatrix.length === 16) {
             this.setMatrixFromArray(this.camera.projectionMatrix, this.lastProjectionMatrix);
-            this.camera.projectionMatrixInverse.getInverse(this.camera.projectionMatrix);
+            if (this.camera.projectionMatrixInverse.getInverse) {
+                this.camera.projectionMatrixInverse.getInverse(this.camera.projectionMatrix);
+            } else {
+                this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+            }
             this.isProjectionMatrixSet = true;
         }
 
