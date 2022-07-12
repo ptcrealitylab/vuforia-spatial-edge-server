@@ -626,7 +626,7 @@ exports.deleteObject = function (objectName, objects, objectsPath, objectLookup,
 
     let objectFolderPath = path.join(objectsPath, objectName);
     if (fs.existsSync(objectFolderPath)) {
-        fs.rmSync(objectFolderPath, { recursive: true });
+        fs.rmdirSync(objectFolderPath, {recursive: true});
     }
 
     let objectKey = this.readObject(objectLookup, objectName);
@@ -655,7 +655,7 @@ exports.deleteObject = function (objectName, objects, objectsPath, objectLookup,
     setAnchors();
 
     this.actionSender({reloadObject: {object: objectKey} });
-}
+};
 
 exports.loadHardwareInterface = function (hardwareInterfaceName) {
 

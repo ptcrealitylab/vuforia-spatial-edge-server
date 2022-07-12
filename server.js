@@ -1031,10 +1031,10 @@ function removeAvatarFiles() {
             objectsToDelete.push(objectKey);
         }
     });
-    
+
     objectsToDelete.forEach(objectKey => {
         console.log('deleting object: ' + objectKey);
-        fs.rmSync(path.join(objectsPath, objectKey), { recursive: true });
+        fs.rmdirSync(path.join(objectsPath, objectKey), {recursive: true});
     });
 }
 
