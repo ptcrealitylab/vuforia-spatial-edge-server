@@ -158,7 +158,9 @@ const setMatrix = function(objectID, body, callback) {
         sceneGraph.updateObjectWorldId(objectID, object.worldId);
     }
 
-    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+    if (object.type !== 'avatar') {
+        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+    }
 
     sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
 
