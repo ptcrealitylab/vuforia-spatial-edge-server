@@ -1014,7 +1014,7 @@ function setAnchors() {
     }
 }
 
-function removeAvatars() {
+function removeAvatarFiles() {
     let objectsToDelete = [];
 
     // load all object folders
@@ -1026,7 +1026,6 @@ function removeAvatars() {
         tempFiles.splice(0, 1);
     }
 
-    // populate all objects folders with object.json files.
     tempFiles.forEach(function (objectKey) {
         if (objectKey.includes('_AVATAR_')) {
             objectsToDelete.push(objectKey);
@@ -1049,7 +1048,7 @@ function removeAvatars() {
 
 function startSystem() {
     // delete each object that represented a client that was connected to the server in its last session
-    removeAvatars();
+    removeAvatarFiles();
 
     // make sure that the system knows about the state of anchors.
     setAnchors();
