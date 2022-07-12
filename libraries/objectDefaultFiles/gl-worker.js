@@ -1,4 +1,5 @@
 const debugGlWorker = false;
+const GLPROXY_ENABLE_EXTVAO = false;
 
 let gl = {};
 let id = Math.random();
@@ -105,6 +106,10 @@ function makeStub(functionName) {
 
             if (ext === 'OES_vertex_array_object') {
                 const prefix = 'extVao-';
+                if (!GLPROXY_ENABLE_EXTVAO) {
+                    return null;
+                }
+
                 if (realGl) {
                     extVao = realGl.getExtension(ext);
                 }
