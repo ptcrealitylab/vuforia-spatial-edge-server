@@ -24,6 +24,7 @@ let workerId;
 // that require valid objects
 let realGl;
 
+// VAO extension from realGl if applicable
 let extVao;
 
 // const cacheGetParameter = {
@@ -107,6 +108,9 @@ function makeStub(functionName) {
                 if (realGl) {
                     extVao = realGl.getExtension(ext);
                 }
+                // Mock the real VAO extension so that method calls on it get
+                // proxied and sent through the glproxy with the prefix
+                // 'extVao-'
                 return {
                     createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
                     deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
