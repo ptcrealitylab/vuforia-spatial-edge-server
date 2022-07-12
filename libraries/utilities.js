@@ -621,6 +621,42 @@ exports.updateObject = function (objectName, objects) {
     return null;
 };
 
+exports.deleteObject = function (objectName, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+    console.log('Deleting object: ' + objectName);
+
+    let objectFolderPath = path.join(objectsPath, objectName);
+    if (fs.existsSync(objectFolderPath)) {
+        fs.rmSync(objectFolderPath, { recursive: true });
+    }
+
+    let objectKey = this.readObject(objectLookup, objectName);
+
+    if (objectKey && objects[objectKey]) {
+        // remove object from tree
+
+        if (activeHeartbeats[objectKey]) {
+            clearInterval(activeHeartbeats[objectKey]);
+            delete activeHeartbeats[objectKey];
+        }
+        try {
+            // deconstructs frames and nodes of this object, too
+            objects[objectKey].deconstruct();
+        } catch (e) {
+            console.warn('Object exists without proper prototype: ' + objectKey, e);
+        }
+        delete objects[objectKey];
+        delete knownObjects[objectKey];
+        delete objectLookup[objectName];
+
+        sceneGraph.removeElementAndChildren(objectKey);
+    }
+
+    console.log('i deleted: ' + objectKey);
+    setAnchors();
+
+    this.actionSender({reloadObject: {object: objectKey} });
+}
+
 exports.loadHardwareInterface = function (hardwareInterfaceName) {
 
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
