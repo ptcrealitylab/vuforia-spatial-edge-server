@@ -24,6 +24,8 @@ let workerId;
 // that require valid objects
 let realGl;
 
+let extVao;
+
 // const cacheGetParameter = {
 //   3379: 8192,
 //   7938: 'WebGL 1.0',
@@ -99,12 +101,18 @@ function makeStub(functionName) {
 
         if (functionName === 'getExtension') {
             const ext = arguments[0];
-            // Blacklist unproxied extensions
+
             if (ext === 'OES_vertex_array_object') {
-            // ext === 'EXT_frag_depth' ||
-            // ext === 'EXT_shader_texture_lod' ||
-            // ext === 'EXT_blend_minmax') {
-                return null;
+                const prefix = 'extVao-';
+                if (realGl) {
+                    extVao = realGl.getExtension(ext);
+                }
+                return {
+                    createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
+                    deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
+                    isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
+                    bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
+                };
             }
         }
 
@@ -133,7 +141,12 @@ function makeStub(functionName) {
                 return a;
             });
 
-            const res = realGl[functionName].apply(realGl, unclonedArgs);
+            let res;
+            if (functionName.startsWith('extVao-')) {
+                res = extVao[functionName.split('-')[1]].apply(extVao, unclonedArgs);
+            } else {
+                res = realGl[functionName].apply(realGl, unclonedArgs);
+            }
 
             if (typeof res === 'object' && res !== null) {
                 let proxy = new Proxy({
@@ -406,6 +419,7 @@ class ThreejsInterface {
                     this.realRenderer = null;
                     // eslint-disable-next-line no-global-assign
                     realGl = null;
+                    extVao = null;
                 }
                 this.done = true;
             }
