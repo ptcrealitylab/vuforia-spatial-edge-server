@@ -101,3 +101,26 @@ following in PowerShell:
 $env:LOG_MODULES="interfaces"
 node index.js
 ```
+
+## Additional Server Addons
+There are several useful server addons that we do not include in the base
+server. For example, installing the include the [edge
+agent](https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon) and
+[remote
+operator](https://github.com/ptcrealitylab/vuforia-spatial-remote-operator-addon/)
+addons will enable your server to act as a standalone remote operator host
+behind our cloud proxy. Note that the edge agent addon is currently private but
+will be open-sourced soon.
+
+For each addon you want to install follow these steps, substituting the github
+url as necessary:
+```bash
+cd addons
+git clone https://github.com/ptcrealitylab/vuforia-spatial-remote-operator-addon
+git clone git@github.com:ptcrealitylab/vuforia-spatial-edge-agent-addon
+cd vuforia-spatial-remote-operator-addon
+npm install
+cd .. # return to the addons directory
+cd vuforia-spatial-edge-agent-addon
+npm install
+```
