@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "eslint": "^8.20.0",
-    "jsdoc": "^3.6.10",
+    "jsdoc": "^3.6.11",
     "minami": "^1.2.3"
   },
   "scripts": {
