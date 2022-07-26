@@ -788,6 +788,10 @@ function loadObjects() {
         }
     }
 
+    // delete each object that represented a client that was connected to the server in its last session
+    // this needs to happen before hardwareAPI.reset, or the object will get corrupted when its nodes are parsed
+    removeAvatarFiles();
+
     hardwareAPI.reset();
 
     sceneGraph.recomputeGraph();
@@ -1026,15 +1030,21 @@ function removeAvatarFiles() {
         tempFiles.splice(0, 1);
     }
 
-    tempFiles.forEach(function (objectKey) {
-        if (objectKey.includes('_AVATAR_')) {
-            objectsToDelete.push(objectKey);
+    tempFiles.forEach(objectFolderName => {
+        if (objectFolderName.indexOf('_AVATAR_') === 0) {
+            objectsToDelete.push(objectFolderName);
         }
     });
 
-    objectsToDelete.forEach(objectKey => {
-        console.log('deleting object: ' + objectKey);
-        fs.rmdirSync(path.join(objectsPath, objectKey), {recursive: true});
+    objectsToDelete.forEach(objectFolderName => {
+        let objectKey = utilities.readObject(objectLookup, objectFolderName);
+
+        if (objects[objectKey]) {
+            console.log('deleting avatar object: ' + objectFolderName);
+            utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        } else {
+            console.warn('problem deleting avatar object (' + objectFolderName + ') because can\'t get objectID from name');
+        }
     });
 }
 
@@ -1047,9 +1057,6 @@ function removeAvatarFiles() {
  **/
 
 function startSystem() {
-    // delete each object that represented a client that was connected to the server in its last session
-    removeAvatarFiles();
-
     // make sure that the system knows about the state of anchors.
     setAnchors();
 
