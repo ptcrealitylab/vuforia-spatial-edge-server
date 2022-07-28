@@ -22,7 +22,7 @@
     "node-persist": "^2.1.0",
     "request": "^2.*",
     "simple-git": "^3.10.0",
-    "toolsocket": "github:ptcrealitylab/toolsocket#main",
+    "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.8.1",
     "ws": "^8.8.1",
     "xml2js": "^0.4.23"
