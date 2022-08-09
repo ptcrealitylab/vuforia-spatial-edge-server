@@ -1,5 +1,5 @@
 const debugGlWorker = false;
-const GLPROXY_ENABLE_EXTVAO = false;
+const GLPROXY_ENABLE_EXTVAO = true;
 
 let gl = {};
 let id = Math.random();
@@ -105,23 +105,33 @@ function makeStub(functionName) {
             const ext = arguments[0];
 
             if (ext === 'OES_vertex_array_object') {
-                const prefix = 'extVao-';
-                if (!GLPROXY_ENABLE_EXTVAO) {
-                    return null;
-                }
+                if (realGl.getParameter(realGl.VERSION).includes('WebGL 1.0')) {
+                    const prefix = 'extVao-';
 
-                if (realGl) {
-                    extVao = realGl.getExtension(ext);
+                    if (!GLPROXY_ENABLE_EXTVAO) {
+                        return null;
+                    }
+
+                    if (realGl) {
+                        extVao = realGl.getExtension(ext);
+                    }
+                    // Mock the real VAO extension so that method calls on it get
+                    // proxied and sent through the glproxy with the prefix
+                    // 'extVao-'
+                    return {
+                        createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
+                        deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
+                        isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
+                        bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
+                    };
+                } else {
+                    return {
+                        createVertexArrayOES: makeStub('createVertexArray'),
+                        deleteVertexArrayOES: makeStub('deleteVertexArray'),
+                        isVertexArrayOES: makeStub('isVertexArray'),
+                        bindVertexArrayOES: makeStub('bindVertexArray'),
+                    };
                 }
-                // Mock the real VAO extension so that method calls on it get
-                // proxied and sent through the glproxy with the prefix
-                // 'extVao-'
-                return {
-                    createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
-                    deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
-                    isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
-                    bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
-                };
             }
         }
 
@@ -362,21 +372,14 @@ class ThreejsInterface {
 
     main({width, height}) {
         this.spatialInterface.changeFrameSize(width, height);
-        if (THREE.WebGL1Renderer) {
-            this.realRenderer = new THREE.WebGL1Renderer({alpha: true});
-        } else {
-            this.realRenderer = new THREE.WebGLRenderer({alpha: true});
-        }
+        const canvas = document.createElement('canvas');
+        realGl = canvas.getContext('webgl2');
+        this.realRenderer = new THREE.WebGLRenderer({context: realGl, alpha: true});
         this.realRenderer.debug.checkShaderErrors = false;
         this.realRenderer.setPixelRatio(window.devicePixelRatio);
         this.realRenderer.setSize(width, height);
-        realGl = this.realRenderer.getContext();
 
-        if (THREE.WebGL1Renderer) {
-            this.renderer = new THREE.WebGL1Renderer({context: gl, alpha: true});
-        } else {
-            this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
-        }
+        this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
         this.renderer.debug.checkShaderErrors = false;
         this.renderer.setSize(width, height);
 
