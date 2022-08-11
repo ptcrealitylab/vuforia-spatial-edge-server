@@ -565,6 +565,8 @@
 
         var self = this;
 
+        this.spatialInterfaceLoadedCallbacks = [];
+
         /**
          * Adds an onload callback that will wait until this SpatialInterfaces receives its object/frame data
          * @param {function} callback
@@ -573,11 +575,12 @@
             if (spatialObject.object && spatialObject.frame) {
                 callback();
             } else {
-                spatialObject.onload = callback;
+                this.spatialInterfaceLoadedCallbacks.push(callback);
             }
         };
 
         this.onSpatialInterfaceLoaded = this.onRealityInterfaceLoaded;
+        spatialObject.onload = () => this.spatialInterfaceLoadedCallbacks.forEach(cb => cb());
 
         // Adds the API functions that allow a frame to send and receive socket messages (e.g. write and addReadListener)
         if (typeof io !== 'undefined') {
