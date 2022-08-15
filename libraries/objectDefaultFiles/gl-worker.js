@@ -78,26 +78,28 @@ function makeStub(functionName) {
         }
 
         if (functionName === 'texImage2D' || functionName === 'texSubImage2D') {
-            let elt = args[args.length - 1];
-            if (elt.tagName === 'IMG') {
-                let width = elt.width;
-                let height = elt.height;
-                let canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                let gfx = canvas.getContext('2d');
-                gfx.width = width;
-                gfx.height = height;
-                gfx.drawImage(elt, 0, 0, width, height);
-                let imageData = gfx.getImageData(0, 0, width, height);
-                args[args.length - 1] = imageData;
-            } else if (elt.tagName === 'CANVAS' ||
-                 (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
-                let width = elt.width;
-                let height = elt.height;
-                let gfx = elt.getContext('2d');
-                let imageData = gfx.getImageData(0, 0, width, height);
-                args[args.length - 1] = imageData;
+            for (let i = 0; i < args.length; i++) {
+                let elt = args[i];
+                if (elt.tagName === 'IMG') {
+                    let width = elt.width;
+                    let height = elt.height;
+                    let canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    let gfx = canvas.getContext('2d');
+                    gfx.width = width;
+                    gfx.height = height;
+                    gfx.drawImage(elt, 0, 0, width, height);
+                    let imageData = gfx.getImageData(0, 0, width, height);
+                    args[i] = imageData;
+                } else if (elt.tagName === 'CANVAS' ||
+                     (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
+                    let width = elt.width;
+                    let height = elt.height;
+                    let gfx = elt.getContext('2d');
+                    let imageData = gfx.getImageData(0, 0, width, height);
+                    args[i] = imageData;
+                }
             }
         }
 
