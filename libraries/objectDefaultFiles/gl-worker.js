@@ -167,6 +167,21 @@ function makeStub(functionName) {
                 res = realGl[functionName].apply(realGl, unclonedArgs);
             }
 
+            if (functionName === 'compileShader') {
+                const message = realGl.getShaderInfoLog(unclonedArgs[0]);
+                if (message.length > 0) {
+                    console.error('Shader error', realGl, message);
+                }
+            }
+
+            if (functionName === 'linkProgram') {
+                const message = realGl.getProgramInfoLog(unclonedArgs[0]);
+                if (message.length > 0) {
+                    console.error('Program error', realGl, message);
+                }
+            }
+
+
             if (typeof res === 'object' && res !== null) {
                 let proxy = new Proxy({
                     __uncloneableId: invokeId,
