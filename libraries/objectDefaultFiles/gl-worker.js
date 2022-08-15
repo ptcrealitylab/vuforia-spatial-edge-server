@@ -1,7 +1,7 @@
 const debugGlWorker = false;
 const GLPROXY_ENABLE_EXTVAO = true;
 
-let gl = {};
+let gl = Object.create(WebGL2RenderingContext.prototype);
 let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
@@ -77,7 +77,7 @@ function makeStub(functionName) {
             }
         }
 
-        if (functionName === 'texImage2D') {
+        if (functionName === 'texImage2D' || functionName === 'texSubImage2D') {
             let elt = args[args.length - 1];
             if (elt.tagName === 'IMG') {
                 let width = elt.width;
@@ -220,14 +220,15 @@ window.addEventListener('message', function(event) {
             gl[fnName] = makeStub(fnName);
         }
 
-        gl = new Proxy(gl, {
-            get: function(obj, prop) {
-                // TODO dynamically stub
-                // if (typeof obj[prop] === 'function') {
-                // }
-                return obj[prop];
-            },
-        });
+        // gl = new Proxy(gl, {
+        //     get: function(obj, prop) {
+        //         // TODO dynamically stub
+        //         // if (typeof obj[prop] === 'function') {
+        //         // }
+        //         return obj[prop];
+        //     },
+        // });
+
 
 
         for (const constName in message.constants) {
