@@ -1,7 +1,10 @@
 const debugGlWorker = false;
 const GLPROXY_ENABLE_EXTVAO = true;
 
-let gl = Object.create(WebGL2RenderingContext.prototype);
+let gl = {
+    enableWebGL2: true,
+};
+
 let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
@@ -233,20 +236,14 @@ window.addEventListener('message', function(event) {
     }
 
     if (message.name === 'bootstrap') {
+        if (gl.enableWebGL2) {
+            gl = Object.create(WebGL2RenderingContext.prototype);
+        } else {
+            gl = Object.create(WebGLRenderingContext.prototype);
+        }
         for (const fnName of message.functions) {
             gl[fnName] = makeStub(fnName);
         }
-
-        // gl = new Proxy(gl, {
-        //     get: function(obj, prop) {
-        //         // TODO dynamically stub
-        //         // if (typeof obj[prop] === 'function') {
-        //         // }
-        //         return obj[prop];
-        //     },
-        // });
-
-
 
         for (const constName in message.constants) {
             gl[constName] = message.constants[constName];
