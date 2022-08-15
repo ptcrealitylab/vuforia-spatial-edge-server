@@ -411,6 +411,14 @@ class ThreejsInterface {
         this.lastProjectionMatrix = projectionMatrix;
     }
 
+    getRealGl() {
+        return realGl;
+    }
+
+    getGl() {
+        return gl;
+    }
+
     render(now) {
         if (!this.camera) {
             console.warn('rendering too early');
@@ -433,7 +441,7 @@ class ThreejsInterface {
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
                 this.renderer.render(this.scene, this.camera);
-                if (this.done && this.realGl && this.pendingLoads === 0) {
+                if (this.done && realGl && this.pendingLoads === 0) {
                     for (let proxy of proxies) {
                         proxy.__uncloneableObj = null;
                         delete proxy.__uncloneableObj;
