@@ -530,7 +530,6 @@ exports.generateChecksums = function (objects, fileArray) {
             checksumText = itob62(crc32(fs.readFileSync(fileArray[i])));
         }
     }
-    console.log('created Checksum', checksumText);
     return checksumText;
 };
 
