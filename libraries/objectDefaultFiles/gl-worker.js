@@ -285,11 +285,15 @@ window.addEventListener('message', function(event) {
 
         frameCommandBuffer = [];
 
-        if (render) {
-            render(message.time);
-        }
-        if (window.glProxy.render) {
-            window.glProxy.render(message.time);
+        try {
+            if (render) {
+                render(message.time);
+            }
+            if (window.glProxy.render) {
+                window.glProxy.render(message.time);
+            }
+        } catch (err) {
+            console.error('Error in gl-worker render fn', err);
         }
 
         if (frameCommandBuffer.length > 0) {
