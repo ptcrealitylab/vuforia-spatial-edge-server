@@ -3332,7 +3332,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
 
 function socketServer() {
     io.on('connection', function (socket) {
-        console.log('------------ ', socket.id);
+        console.log('------------ connection', socket.id);
         socketHandler.socket = socket;
         //console.log('connected to socket ' + socket.id);
 
@@ -3942,6 +3942,41 @@ function socketServer() {
             }
         });
 
+        socket.on('/disconnectEditor', function(msgRaw) {
+            let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+
+            if (!realityEditorUpdateSocketArray.hasOwnProperty(socket.id)) {
+                return;
+            }
+
+            let matchingAvatarKeys = [];
+            realityEditorUpdateSocketArray[socket.id].forEach(entry => {
+                if (entry.editorId !== msg.editorId) {
+                    return;
+                }
+                let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
+                matchingAvatarKeys.push(matchingKeys);
+            });
+
+            deleteAvatarObjects(matchingAvatarKeys.flat());
+        });
+
+        function deleteAvatarObjects(avatarKeys) {
+            // console.log('delete avatar objects: ', avatarKeys);
+            avatarKeys.forEach(avatarObjectKey => {
+                if (objects[avatarObjectKey]) {
+                    utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+                } else {
+                    // try to clean up any other state that might be remaining
+                    clearInterval(activeHeartbeats[avatarObjectKey]);
+                    delete activeHeartbeats[avatarObjectKey];
+                    delete knownObjects[avatarObjectKey];
+                    delete objectLookup[avatarObjectKey];
+                    sceneGraph.removeElementAndChildren(avatarObjectKey);
+                }
+            });
+        }
+
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
@@ -3968,20 +4003,8 @@ function socketServer() {
                     let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
                     matchingAvatarKeys.push(matchingKeys);
                 });
-                
-                console.log('delete avatar objects: ', matchingAvatarKeys.flat());
-                matchingAvatarKeys.flat().forEach(avatarObjectKey => {
-                    if (objects[avatarObjectKey]) {
-                        utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
-                    } else {
-                        // try to clean up any other state that might be remaining
-                        clearInterval(activeHeartbeats[avatarObjectKey]);
-                        delete activeHeartbeats[avatarObjectKey];
-                        delete knownObjects[avatarObjectKey];
-                        delete objectLookup[avatarObjectKey];
-                        sceneGraph.removeElementAndChildren(avatarObjectKey);
-                    }
-                });
+
+                deleteAvatarObjects(matchingAvatarKeys.flat());
 
                 delete realityEditorUpdateSocketArray[socket.id];
             }
