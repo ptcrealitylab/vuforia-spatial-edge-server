@@ -3944,21 +3944,9 @@ function socketServer() {
 
         socket.on('/disconnectEditor', function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
-
-            if (!realityEditorUpdateSocketArray.hasOwnProperty(socket.id)) {
-                return;
-            }
-
-            let matchingAvatarKeys = [];
-            realityEditorUpdateSocketArray[socket.id].forEach(entry => {
-                if (entry.editorId !== msg.editorId) {
-                    return;
-                }
-                let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
-                matchingAvatarKeys.push(matchingKeys);
-            });
-
-            deleteAvatarObjects(matchingAvatarKeys.flat());
+            console.log('received /disconnectEditor with editorId: ' + msg.editorId);
+            let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
+            deleteAvatarObjects(matchingKeys);
         });
 
         function deleteAvatarObjects(avatarKeys) {
@@ -3966,14 +3954,15 @@ function socketServer() {
             avatarKeys.forEach(avatarObjectKey => {
                 if (objects[avatarObjectKey]) {
                     utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
-                } else {
-                    // try to clean up any other state that might be remaining
+                }
+                // try to clean up any other state that might be remaining
+                if (activeHeartbeats[avatarObjectKey]){
                     clearInterval(activeHeartbeats[avatarObjectKey]);
                     delete activeHeartbeats[avatarObjectKey];
-                    delete knownObjects[avatarObjectKey];
-                    delete objectLookup[avatarObjectKey];
-                    sceneGraph.removeElementAndChildren(avatarObjectKey);
                 }
+                delete knownObjects[avatarObjectKey];
+                delete objectLookup[avatarObjectKey];
+                sceneGraph.removeElementAndChildren(avatarObjectKey);
             });
         }
 
