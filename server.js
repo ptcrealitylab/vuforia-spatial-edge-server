@@ -851,6 +851,7 @@ function loadWorldObject() {
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
     worldObject.isWorldObject = true;
+    worldObject.type = 'world';
 
     // try to read previously saved data to overwrite the default world object
     if (globalVariables.saveToDisk) {
@@ -985,7 +986,7 @@ function setAnchors() {
 
     // check if there is an initialized World Object
     for (let key in objects) {
-        if (objects[key].isWorldObject) {
+        if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
             let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
             let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
@@ -2901,11 +2902,13 @@ function objectWebServer() {
 
                                 // create the object data and respond to the webFrontend once the XML file is confirmed to exist
                                 function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
+                                    let thisObjectId = utilities.readObject(objectLookup, req.params.id);
+
                                     if (err) {
                                         console.log(err);
                                     } else {
                                         // create the object if needed / possible
-                                        if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
+                                        if (typeof objects[thisObjectId] === 'undefined') {
                                             console.log('creating object from target file ' + tmpFolderFile);
                                             // createObjectFromTarget(tmpFolderFile);
                                             createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
@@ -2925,7 +2928,6 @@ function objectWebServer() {
                                     let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
 
                                     var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
-                                    var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
@@ -3257,6 +3259,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
                 objects[objectIDXML].isWorldObject = true;
+                objects[objectIDXML].type = 'world';
                 objects[objectIDXML].timestamp = Date.now();
             }
 
