@@ -371,7 +371,7 @@ if (isLightweightMobile) {
 const HumanPoseObject = require('./libraries/HumanPoseObject');
 
 var git;
-if (isLightweightMobile || process.env.NODE_ENV === 'test') {
+if (isStandaloneMobile || isLightweightMobile || process.env.NODE_ENV === 'test') {
     git = null;
 } else {
     git = require('./libraries/gitInterface');
