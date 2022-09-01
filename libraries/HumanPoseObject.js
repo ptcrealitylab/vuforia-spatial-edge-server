@@ -119,16 +119,11 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
 
 /**
  * Generates a default frame for each joint in the skeleton.
- * By default, only generates the subset in POSE_JOINTS_FILTERED.
- * @param {boolean|undefined} dontFilterJoints - If truthy argument is provided, generates all in POSE_JOINTS
+ * @param {*} poseJointSchema - Set of joint names
  */
-HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) { //dontFilterJoints) {
+HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) {
     var frames = {};
-    var jointsToCreate = poseJointSchema.joints; // this.POSE_JOINTS;
-    // if (!dontFilterJoints) {
-    //     jointsToCreate = this.POSE_JOINTS_FILTERED;
-    // }
-    Object.keys(jointsToCreate).forEach(function(jointName) {
+    Object.keys(poseJointSchema).forEach(function(jointName) {
         frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
     }.bind(this));
     return frames;
