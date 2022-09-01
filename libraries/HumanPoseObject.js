@@ -6,13 +6,18 @@ const Node = require('../models/Node.js');
  * and sets other parameters for a human pose object
  *
  * @constructor
- * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
+ * @param {string} ip
+ * @param {number} version
+ * @param {string} protocol
+ * @param {string} objectId
+ * @param {*} poseJointSchema
+ // * @param {number} bodyId - identifies a skeleton so that updates from the tracker consistently affect the same object
  */
-function HumanPoseObject(ip, version, protocol, bodyId) {
+function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     // The ID for the object will be broadcasted along with the IP. It consists of the name with a 12 letter UUID added.
-    this.objectId = HumanPoseObject.getObjectId(bodyId);
+    this.objectId = objectId; // HumanPoseObject.getObjectId(bodyId);
     // The name for the object used for interfaces.
-    this.name = this.getName(bodyId);
+    this.name = objectId; // this.getName(objectId);
     // The IP address for the object is relevant to point the Reality Editor to the right server.
     // It will be used for the UDP broadcasts.
     this.ip = ip;
@@ -28,7 +33,7 @@ function HumanPoseObject(ip, version, protocol, bodyId) {
     this.memoryCameraMatrix = {};
     this.memoryProjectionMatrix = {};
     // Store the frames. These embed content positioned relative to the object
-    this.frames = this.createPoseFrames();
+    this.frames = this.createPoseFrames(poseJointSchema);
     // keep a memory of the last commit state of the frames.
     this.framesHistory = {};
     // which visualization mode it should use right now ("ar" or "screen")
@@ -39,9 +44,9 @@ function HumanPoseObject(ip, version, protocol, bodyId) {
         width: 0.3, // default size should always be overridden, but exists in case xml doesn't contain size
         height: 0.3
     };
-
     this.isHumanPose = true;
-    this.isWorldObject = true;
+    this.type = 'human';
+    this.isWorldObject = false;
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
@@ -57,73 +62,68 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
     return this.objectId + jointName;
 };
 
-// matches the entries of the Azure Kinect Body Tracking SDK
-// k4abt_joint_id_t (https://microsoft.github.io/Azure-Kinect-Body-Tracking/release/0.9.x/group__btenums.html#ga5fe6fa921525a37dec7175c91c473781)
-// For out purposes, serves as a mapping from joint names to the index they appear in the socket message updating the joint positions
-HumanPoseObject.prototype.POSE_JOINTS = Object.freeze({
-    JOINT_PELVIS: 0,
-    JOINT_SPINE_NAVEL: 1,
-    JOINT_SPINE_CHEST: 2,
-    JOINT_NECK: 3,
-    JOINT_CLAVICLE_LEFT: 4,
-    JOINT_SHOULDER_LEFT: 5,
-    JOINT_ELBOW_LEFT: 6,
-    JOINT_WRIST_LEFT: 7,
-    JOINT_HAND_LEFT: 8,
-    JOINT_HANDTIP_LEFT: 9,
-    JOINT_THUMB_LEFT: 10,
-    JOINT_CLAVICLE_RIGHT: 11,
-    JOINT_SHOULDER_RIGHT: 12,
-    JOINT_ELBOW_RIGHT: 13,
-    JOINT_WRIST_RIGHT: 14,
-    JOINT_HAND_RIGHT: 15,
-    JOINT_HANDTIP_RIGHT: 16,
-    JOINT_THUMB_RIGHT: 17,
-    JOINT_HIP_LEFT: 18,
-    JOINT_KNEE_LEFT: 19,
-    JOINT_ANKLE_LEFT: 20,
-    JOINT_FOOT_LEFT: 21,
-    JOINT_HIP_RIGHT: 22,
-    JOINT_KNEE_RIGHT: 23,
-    JOINT_ANKLE_RIGHT: 24,
-    JOINT_FOOT_RIGHT: 25,
-    JOINT_HEAD: 26,
-    JOINT_NOSE: 27,
-    JOINT_EYE_LEFT: 28,
-    JOINT_EAR_LEFT: 29,
-    JOINT_EYE_RIGHT: 30,
-    JOINT_EAR_RIGHT: 31
-});
-
-// a selected subset of joints that frames should be created for to represent the most important parts of the pose
-HumanPoseObject.prototype.POSE_JOINTS_FILTERED = Object.freeze({
-    JOINT_PELVIS: 0,
-    JOINT_SPINE_NAVEL: 1,
-    JOINT_CLAVICLE_LEFT: 4,
-    JOINT_ELBOW_LEFT: 6,
-    JOINT_HAND_LEFT: 8,
-    JOINT_CLAVICLE_RIGHT: 11,
-    JOINT_ELBOW_RIGHT: 13,
-    JOINT_HAND_RIGHT: 15,
-    JOINT_KNEE_LEFT: 19,
-    JOINT_FOOT_LEFT: 21,
-    JOINT_KNEE_RIGHT: 23,
-    JOINT_FOOT_RIGHT: 25,
-    JOINT_HEAD: 26
-});
+// // matches the entries of the Azure Kinect Body Tracking SDK
+// // k4abt_joint_id_t (https://microsoft.github.io/Azure-Kinect-Body-Tracking/release/0.9.x/group__btenums.html#ga5fe6fa921525a37dec7175c91c473781)
+// // For out purposes, serves as a mapping from joint names to the index they appear in the socket message updating the joint positions
+// HumanPoseObject.prototype.POSE_JOINTS = Object.freeze({
+//     JOINT_PELVIS: 0,
+//     JOINT_SPINE_NAVEL: 1,
+//     JOINT_SPINE_CHEST: 2,
+//     JOINT_NECK: 3,
+//     JOINT_CLAVICLE_LEFT: 4,
+//     JOINT_SHOULDER_LEFT: 5,
+//     JOINT_ELBOW_LEFT: 6,
+//     JOINT_WRIST_LEFT: 7,
+//     JOINT_HAND_LEFT: 8,
+//     JOINT_HANDTIP_LEFT: 9,
+//     JOINT_THUMB_LEFT: 10,
+//     JOINT_CLAVICLE_RIGHT: 11,
+//     JOINT_SHOULDER_RIGHT: 12,
+//     JOINT_ELBOW_RIGHT: 13,
+//     JOINT_WRIST_RIGHT: 14,
+//     JOINT_HAND_RIGHT: 15,
+//     JOINT_HANDTIP_RIGHT: 16,
+//     JOINT_THUMB_RIGHT: 17,
+//     JOINT_HIP_LEFT: 18,
+//     JOINT_KNEE_LEFT: 19,
+//     JOINT_ANKLE_LEFT: 20,
+//     JOINT_FOOT_LEFT: 21,
+//     JOINT_HIP_RIGHT: 22,
+//     JOINT_KNEE_RIGHT: 23,
+//     JOINT_ANKLE_RIGHT: 24,
+//     JOINT_FOOT_RIGHT: 25,
+//     JOINT_HEAD: 26,
+//     JOINT_NOSE: 27,
+//     JOINT_EYE_LEFT: 28,
+//     JOINT_EAR_LEFT: 29,
+//     JOINT_EYE_RIGHT: 30,
+//     JOINT_EAR_RIGHT: 31
+// });
+//
+// // a selected subset of joints that frames should be created for to represent the most important parts of the pose
+// HumanPoseObject.prototype.POSE_JOINTS_FILTERED = Object.freeze({
+//     JOINT_PELVIS: 0,
+//     JOINT_SPINE_NAVEL: 1,
+//     JOINT_CLAVICLE_LEFT: 4,
+//     JOINT_ELBOW_LEFT: 6,
+//     JOINT_HAND_LEFT: 8,
+//     JOINT_CLAVICLE_RIGHT: 11,
+//     JOINT_ELBOW_RIGHT: 13,
+//     JOINT_HAND_RIGHT: 15,
+//     JOINT_KNEE_LEFT: 19,
+//     JOINT_FOOT_LEFT: 21,
+//     JOINT_KNEE_RIGHT: 23,
+//     JOINT_FOOT_RIGHT: 25,
+//     JOINT_HEAD: 26
+// });
 
 /**
  * Generates a default frame for each joint in the skeleton.
- * By default, only generates the subset in POSE_JOINTS_FILTERED.
- * @param {boolean|undefined} dontFilterJoints - If truthy argument is provided, generates all in POSE_JOINTS
+ * @param {*} poseJointSchema - Set of joint names
  */
-HumanPoseObject.prototype.createPoseFrames = function(dontFilterJoints) {
+HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) {
     var frames = {};
-    var jointsToCreate = this.POSE_JOINTS;
-    if (!dontFilterJoints) {
-        jointsToCreate = this.POSE_JOINTS_FILTERED;
-    }
-    Object.keys(jointsToCreate).forEach(function(jointName) {
+    Object.keys(poseJointSchema).forEach(function(jointName) {
         frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
     }.bind(this));
     return frames;
@@ -139,7 +139,7 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     var newFrame = new Frame(this.objectId, this.getFrameKey(jointName));
     newFrame.name = jointName;
     newFrame.distanceScale = 2; // visible from twice as far away as usual frames
-    newFrame.ar.scale = 2;
+    newFrame.ar.scale = 1;
 
     if (shouldCreateNode) {
         let nodeName = 'value';

@@ -117,7 +117,8 @@ const beatPort = 52316;            // this is the port for UDP broadcasting so t
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-
+const objectCleanupInterval = 5000; // how often the system checks if avatar and humanPose objects are inactive and can be removed.
+const cleanupDeletionAge = 30000; // how old an object can be before being deleted (checked in each objectCleanupInterval)
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
@@ -590,6 +591,7 @@ var worldObject;
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
 const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
+const {deleteObject} = require('./libraries/utilities');
 const worldGraph = new WorldGraph(sceneGraph);
 
 /**********************************************************************************************************************
@@ -790,7 +792,7 @@ function loadObjects() {
 
     // delete each object that represented a client that was connected to the server in its last session
     // this needs to happen before hardwareAPI.reset, or the object will get corrupted when its nodes are parsed
-    removeAvatarFiles();
+    removeAvatarAndHumanPoseFiles();
 
     hardwareAPI.reset();
 
@@ -1019,7 +1021,7 @@ function setAnchors() {
     }
 }
 
-function removeAvatarFiles() {
+function removeAvatarAndHumanPoseFiles() {
     let objectsToDelete = [];
 
     // load all object folders
@@ -1032,7 +1034,7 @@ function removeAvatarFiles() {
     }
 
     tempFiles.forEach(objectFolderName => {
-        if (objectFolderName.indexOf('_AVATAR_') === 0) {
+        if (objectFolderName.indexOf('_AVATAR_') === 0 || objectFolderName.indexOf('_HUMAN_') === 0) {
             objectsToDelete.push(objectFolderName);
         }
     });
@@ -1041,10 +1043,10 @@ function removeAvatarFiles() {
         let objectKey = utilities.readObject(objectLookup, objectFolderName);
 
         if (objects[objectKey]) {
-            console.log('deleting avatar object: ' + objectFolderName);
+            console.log('deleting avatar/humanPose object: ' + objectFolderName);
             utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
         } else {
-            console.warn('problem deleting avatar object (' + objectFolderName + ') because can\'t get objectID from name');
+            console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
         }
     });
 }
@@ -1084,6 +1086,9 @@ function startSystem() {
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
+    
+    // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
+    cleanupObjectInterval();
 
     recorder.initRecorder(objects);
 }
@@ -2414,10 +2419,6 @@ function objectWebServer() {
 
                     if (isWorldObject || isHumanObject || isAvatarObject) {
                         let objectId = req.body.name + utilities.uuidTime();
-                        objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
-                        objects[objectId].name = req.body.name;
-                        objects[objectId].port = serverPort;
-                        objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
                         let objectType = 'object';
                         if (isWorldObject) {
                             objectType = 'world';
@@ -2426,6 +2427,18 @@ function objectWebServer() {
                         } else if (isAvatarObject) {
                             objectType = 'avatar';
                         }
+
+                        if (isHumanObject) {
+                            // special constructor for HumanPoseObject that also creates a frame for each joint
+                            objects[objectId] = new HumanPoseObject(services.ip, version, protocol, objectId, JSON.parse(req.body.poseJointSchema));
+                        } else {
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
+                        }
+
+                        objects[objectId].name = req.body.name;
+                        objects[objectId].port = serverPort;
+                        objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
+
                         objects[objectId].type = objectType;
 
                         if (typeof req.body.worldId !== 'undefined') {
@@ -3948,24 +3961,30 @@ function socketServer() {
         socket.on('/disconnectEditor', function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
             console.log('received /disconnectEditor with editorId: ' + msg.editorId);
-            let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
-            deleteAvatarObjects(matchingKeys);
+
+            console.log('delete avatar objects associated with ' + msg.editorId);
+            let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
+            deleteObjects(avatarKeys);
+
+            console.log('delete human pose objects associated with ' + msg.editorId);
+            let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(msg.editorId));
+            deleteObjects(humanPoseKeys);
         });
 
-        function deleteAvatarObjects(avatarKeys) {
+        function deleteObjects(objectKeysToDelete) {
             // console.log('delete avatar objects: ', avatarKeys);
-            avatarKeys.forEach(avatarObjectKey => {
-                if (objects[avatarObjectKey]) {
-                    utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+            objectKeysToDelete.forEach(objectKey => {
+                if (objects[objectKey]) {
+                    utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
                 }
                 // try to clean up any other state that might be remaining
-                if (activeHeartbeats[avatarObjectKey]){
-                    clearInterval(activeHeartbeats[avatarObjectKey]);
-                    delete activeHeartbeats[avatarObjectKey];
+                if (activeHeartbeats[objectKey]){
+                    clearInterval(activeHeartbeats[objectKey]);
+                    delete activeHeartbeats[objectKey];
                 }
-                delete knownObjects[avatarObjectKey];
-                delete objectLookup[avatarObjectKey];
-                sceneGraph.removeElementAndChildren(avatarObjectKey);
+                delete knownObjects[objectKey];
+                delete objectLookup[objectKey];
+                sceneGraph.removeElementAndChildren(objectKey);
             });
         }
 
@@ -3990,13 +4009,16 @@ function socketServer() {
             }
 
             if (socket.id in realityEditorUpdateSocketArray) {
-                let matchingAvatarKeys = [];
+
+                let keysToDelete = [];
                 realityEditorUpdateSocketArray[socket.id].forEach(entry => {
-                    let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
-                    matchingAvatarKeys.push(matchingKeys);
+                    let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
+                    let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(entry.editorId));
+                    keysToDelete.push(avatarKeys);
+                    keysToDelete.push(humanPoseKeys);
                 });
 
-                deleteAvatarObjects(matchingAvatarKeys.flat());
+                deleteObjects(keysToDelete.flat());
 
                 delete realityEditorUpdateSocketArray[socket.id];
             }
@@ -4473,6 +4495,37 @@ function socketUpdaterInterval() {
     setInterval(function () {
         socketUpdater();
     }, socketUpdateInterval);
+}
+
+function cleanupObjectInterval() {
+    setInterval(() => {
+        cleanupStaleObjects();
+    }, objectCleanupInterval);
+}
+
+function cleanupStaleObjects() {
+    for (const [objectKey, object] of Object.entries(objects)) {
+        if (object.type !== 'human' && object.type !== 'avatar') {
+            continue;
+        }
+
+        // get time of last update for this object
+        let lastUpdateTime = Date.now(); // TODO: update this via some sort of heartbeat mechanism
+        let currentTime = Date.now();
+
+        if (lastUpdateTime && (currentTime - lastUpdateTime > cleanupDeletionAge)) {
+            // delete this object
+            utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+            // try to clean up any other state that might be remaining
+            if (activeHeartbeats[objectKey]){
+                clearInterval(activeHeartbeats[objectKey]);
+                delete activeHeartbeats[objectKey];
+            }
+            delete knownObjects[objectKey];
+            delete objectLookup[objectKey];
+            sceneGraph.removeElementAndChildren(objectKey);
+        }
+    }
 }
 
 /**
