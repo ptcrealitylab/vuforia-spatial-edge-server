@@ -14,7 +14,7 @@
     "express-handlebars": "^5.3.5",
     "formidable": "^2.0.1",
     "ip": "^2.0.0",
-    "jimp": "^0.16.1",
+    "jimp": "^0.16.2",
     "module-alias": "^2.2.2",
     "monaco-editor": "^0.34.0",
     "network-interfaces": "^1.1.0",
