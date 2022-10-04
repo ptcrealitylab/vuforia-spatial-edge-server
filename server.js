@@ -117,8 +117,6 @@ const beatPort = 52316;            // this is the port for UDP broadcasting so t
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-const objectCleanupInterval = 5000; // how often the system checks if avatar and humanPose objects are inactive and can be removed.
-const cleanupDeletionAge = 30000; // how old an object can be before being deleted (checked in each objectCleanupInterval)
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
@@ -582,6 +580,15 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
+const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
+const staleObjectCleaners = [];
+function resetObjectTimeouts(objectKey) {
+    staleObjectCleaners.forEach(cleaner => {
+        cleaner.resetObjectTimeout(objectKey);
+    });
+}
+exports.resetObjectTimeouts = resetObjectTimeouts;
+
 var worldObjectName = '_WORLD_';
 if (isLightweightMobile || isStandaloneMobile) {
     worldObjectName += 'local';
@@ -591,7 +598,6 @@ var worldObject;
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
 const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
-const {deleteObject} = require('./libraries/utilities');
 const worldGraph = new WorldGraph(sceneGraph);
 
 /**********************************************************************************************************************
@@ -1044,7 +1050,7 @@ function removeAvatarAndHumanPoseFiles() {
 
         if (objects[objectKey]) {
             console.log('deleting avatar/humanPose object: ' + objectFolderName);
-            utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+            deleteObject(objectKey);
         } else {
             console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
         }
@@ -1088,7 +1094,11 @@ function startSystem() {
     socketUpdaterInterval();
     
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    cleanupObjectInterval();
+    const poseAndAvatarCleaner = new StaleObjectCleaner(objects, deleteObject);
+    const checkIntervalMs = 10000; // how often to check if avatar and humanPose objects are inactive
+    const deletionAgeMs = 60000; // how long an object can stale be before being deleted
+    poseAndAvatarCleaner.createCleanupInterval(checkIntervalMs, deletionAgeMs, ['avatar', 'human']);
+    staleObjectCleaners.push(poseAndAvatarCleaner);
 
     recorder.initRecorder(objects);
 }
@@ -1278,11 +1288,21 @@ function handleActionMessage(action) {
         }
         return;
     }
+    
+    // non-string actions can be processed after this point
+    action = (typeof action === 'string') ? JSON.parse(action) : action;
+
     if (action.type === 'SceneGraphEventMessage') {
         if (action.ip === services.getIP()) { // UDP also broadcasts to yourself
             return;
         }
         worldGraph.handleMessage(action);
+    }
+
+    // clients can use this to signal that the avatar objects are still being used
+    if (action.type === 'keepObjectAlive') {
+        // console.log('received keepObjectAlive for ' + action.objectKey);
+        resetObjectTimeouts(action.objectKey);
     }
 }
 
@@ -3607,8 +3627,8 @@ function socketServer() {
         });
 
         socket.on('/object/screenObject', function (_msg) {
-            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
-            hardwareAPI.screenObjectCall(JSON.parse(msg));
+            let msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
+            hardwareAPI.screenObjectCall(msg);
         });
 
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
@@ -3655,6 +3675,11 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
+            let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
+
+            batchedUpdates.forEach(update => {
+                resetObjectTimeouts(update.objectKey);
+            });
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -3667,6 +3692,10 @@ function socketServer() {
                         //  console.log('dont send updates to the editor that triggered it');
                         return;
                     }
+                    if (senderId && senderId === sub.editorId) {
+                        return; // properly retrieve the editorId from one of the batchedUpdates in case the overall message doesn't have it
+                    }
+
                     var thisSocket = io.sockets.connected[socketId];
                     if (thisSocket) {
                         thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
@@ -3971,23 +4000,6 @@ function socketServer() {
             deleteObjects(humanPoseKeys);
         });
 
-        function deleteObjects(objectKeysToDelete) {
-            // console.log('delete avatar objects: ', avatarKeys);
-            objectKeysToDelete.forEach(objectKey => {
-                if (objects[objectKey]) {
-                    utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
-                }
-                // try to clean up any other state that might be remaining
-                if (activeHeartbeats[objectKey]){
-                    clearInterval(activeHeartbeats[objectKey]);
-                    delete activeHeartbeats[objectKey];
-                }
-                delete knownObjects[objectKey];
-                delete objectLookup[objectKey];
-                sceneGraph.removeElementAndChildren(objectKey);
-            });
-        }
-
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
@@ -4030,6 +4042,26 @@ function socketServer() {
     });
     this.io = io;
     console.log('socket.io started');
+}
+
+function deleteObjects(objectKeysToDelete) {
+    objectKeysToDelete.forEach(objectKey => {
+        deleteObject(objectKey);
+    });
+}
+
+function deleteObject(objectKey) {
+    if (objects[objectKey]) {
+        utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+    }
+    // try to clean up any other state that might be remaining
+    if (activeHeartbeats[objectKey]){
+        clearInterval(activeHeartbeats[objectKey]);
+        delete activeHeartbeats[objectKey];
+    }
+    delete knownObjects[objectKey];
+    delete objectLookup[objectKey];
+    sceneGraph.removeElementAndChildren(objectKey);
 }
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
@@ -4495,37 +4527,6 @@ function socketUpdaterInterval() {
     setInterval(function () {
         socketUpdater();
     }, socketUpdateInterval);
-}
-
-function cleanupObjectInterval() {
-    setInterval(() => {
-        cleanupStaleObjects();
-    }, objectCleanupInterval);
-}
-
-function cleanupStaleObjects() {
-    for (const [objectKey, object] of Object.entries(objects)) {
-        if (object.type !== 'human' && object.type !== 'avatar') {
-            continue;
-        }
-
-        // get time of last update for this object
-        let lastUpdateTime = Date.now(); // TODO: update this via some sort of heartbeat mechanism
-        let currentTime = Date.now();
-
-        if (lastUpdateTime && (currentTime - lastUpdateTime > cleanupDeletionAge)) {
-            // delete this object
-            utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
-            // try to clean up any other state that might be remaining
-            if (activeHeartbeats[objectKey]){
-                clearInterval(activeHeartbeats[objectKey]);
-                delete activeHeartbeats[objectKey];
-            }
-            delete knownObjects[objectKey];
-            delete objectLookup[objectKey];
-            sceneGraph.removeElementAndChildren(objectKey);
-        }
-    }
 }
 
 /**
