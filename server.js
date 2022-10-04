@@ -581,13 +581,11 @@ var sockets = {
 };
 
 const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
-const staleObjectCleaners = [];
-function resetObjectTimeouts(objectKey) {
-    staleObjectCleaners.forEach(cleaner => {
-        cleaner.resetObjectTimeout(objectKey);
-    });
+const staleObjectCleaner = new StaleObjectCleaner(objects, deleteObject);
+function resetObjectTimeout(objectKey) {
+    staleObjectCleaner.resetObjectTimeout(objectKey);
 }
-exports.resetObjectTimeouts = resetObjectTimeouts;
+exports.resetObjectTimeout = resetObjectTimeout;
 
 var worldObjectName = '_WORLD_';
 if (isLightweightMobile || isStandaloneMobile) {
@@ -1094,11 +1092,13 @@ function startSystem() {
     socketUpdaterInterval();
     
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    const poseAndAvatarCleaner = new StaleObjectCleaner(objects, deleteObject);
-    const checkIntervalMs = 10000; // how often to check if avatar and humanPose objects are inactive
-    const deletionAgeMs = 60000; // how long an object can stale be before being deleted
-    poseAndAvatarCleaner.createCleanupInterval(checkIntervalMs, deletionAgeMs, ['avatar', 'human']);
-    staleObjectCleaners.push(poseAndAvatarCleaner);
+    const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
+    const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
+    staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
+
+    const humanCheckIntervalMs = 5000;
+    const humanDeletionAgeMs = 30000; // human objects are deleted more aggressively if they haven't been seen recently
+    staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
 }
@@ -1302,7 +1302,7 @@ function handleActionMessage(action) {
     // clients can use this to signal that the avatar objects are still being used
     if (action.type === 'keepObjectAlive') {
         // console.log('received keepObjectAlive for ' + action.objectKey);
-        resetObjectTimeouts(action.objectKey);
+        resetObjectTimeout(action.objectKey);
     }
 }
 
@@ -3678,7 +3678,7 @@ function socketServer() {
             let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
 
             batchedUpdates.forEach(update => {
-                resetObjectTimeouts(update.objectKey);
+                resetObjectTimeout(update.objectKey);
             });
 
             for (const socketId in realityEditorUpdateSocketArray) {
