@@ -2,7 +2,7 @@ let SceneNode = require('./SceneNode');
 let utils = require('./utils');
 const actionSender = require('../utilities').actionSender;
 const { SceneGraphEvent, SceneGraphEventOpEnum, SceneGraphNetworkManager } = require('./SceneGraphNetworking');
-const { getIP, resetObjectTimeouts } = require('../../server');
+const { getIP, resetObjectTimeout } = require('../../server');
 
 const EVENT_UPDATE_INTERVAL = 3000; // 3 seconds
 const FULL_UPDATE_INTERVAL = 60000; // 1 minute
@@ -235,7 +235,7 @@ class SceneGraph {
             }
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
-            resetObjectTimeouts(objectId);
+            resetObjectTimeout(objectId);
             this.triggerUpdateCallbacks();
             if (this.shouldBroadcastChanges && sceneNode.broadcastRulesSatisfied()) {
                 const updatePositionEvent = SceneGraphEvent.UpdatePosition(id, localMatrix, x, y, scale);
