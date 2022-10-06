@@ -391,8 +391,8 @@ class ThreejsInterface {
 
     main({width, height}) {
         this.spatialInterface.changeFrameSize(width, height);
-        const canvas = document.createElement('canvas');
-        realGl = canvas.getContext('webgl2');
+        this.canvas = document.createElement('canvas');
+        realGl = this.canvas.getContext('webgl2');
         this.realRenderer = new THREE.WebGLRenderer({context: realGl, alpha: true});
         this.realRenderer.debug.checkShaderErrors = false;
         this.realRenderer.setPixelRatio(window.devicePixelRatio);
@@ -422,7 +422,7 @@ class ThreejsInterface {
         return gl;
     }
 
-    render(now) {
+    preRender(now) {
         if (!this.camera) {
             console.warn('rendering too early');
             return;
@@ -440,6 +440,10 @@ class ThreejsInterface {
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
+    }
+
+    render(now) {
+        this.preRender(now);
 
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
@@ -461,6 +465,46 @@ class ThreejsInterface {
                     extVao = null;
                 }
                 this.done = true;
+            }
+        }
+    }
+
+    setMatrixFromArray(matrix, array) {
+        /**
+         * this is the following matrix (ROW MAJOR)
+         *  a0 a4 a8 a12
+         *  a1 a5 a9 a13
+         *  a2 a6 a10 a14
+         *  a4 a7 a11 a15
+         */
+        matrix.set(
+            array[0], array[4], array[8], array[12],
+            array[1], array[5], array[9], array[13],
+            array[2], array[6], array[10], array[14],
+            array[3], array[7], array[11], array[15]
+        );
+    }
+}
+
+// eslint-disable-next-line no-unused-vars
+class ThreejsFakeProxyInterface extends ThreejsInterface {
+    constructor(spatialInterface, injectThree) {
+        super(spatialInterface, injectThree);
+    }
+
+    main({width, height}) {
+        super.main({width, height});
+        this.canvas.width = width;
+        this.canvas.height = height;
+        document.body.appendChild(this.canvas);
+    }
+
+    render(now) {
+        this.preRender(now);
+
+        if (this.isProjectionMatrixSet) {
+            if (this.realRenderer && this.scene && this.camera) {
+                this.realRenderer.render(this.scene, this.camera);
             }
         }
     }
