@@ -209,6 +209,12 @@ services.getIP = function () {
     let interfaceNames;
     try {
         interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+        let interfaceNamesFiltered = interfaceNames.filter((interfaceName) => {
+            return !interfaceName.startsWith('utun'); // discard docker's virtual network interface on mac
+        });
+        if (interfaceNamesFiltered.length > 0) {
+            interfaceNames = interfaceNamesFiltered;
+        }
     } catch (e) {
         console.error('getInterfaces failed', e);
         return this.ip;
