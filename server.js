@@ -320,11 +320,13 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
     console.log('webserver + socket.io is listening on port', serverPort);
     checkInit('web');
 });
+const https = require('https');
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+const fetch = require('node-fetch'); // Fetch API for Node
 
 // use the cors cross origin REST model
 webServer.use(cors());
@@ -1993,8 +1995,27 @@ function objectWebServer() {
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
         });
-        // restart the server from the web frontend to load
 
+        // Proxies requests to toolboxedge.net, for CORS video playback
+        webServer.get('/proxy/*', (req, res) => {
+            // res.send(`https://toolboxedge.net/${req.params[0]}\n${JSON.stringify(req.headers)}`);
+            const proxyURL = `https://toolboxedge.net/${req.params[0]}`;
+            const headers = req.headers;
+            // fetch(proxyURL, {method: 'GET', headers: headers}).then(proxyRes => {
+            //     proxyRes.pipe(res);
+            https.get(proxyURL, {headers}, proxyRes => {
+                for (let header in proxyRes.headers) {
+                    res.setHeader(header, proxyRes.headers[header]);
+                }
+                proxyRes.pipe(res);
+            });
+            // }).catch(err => {
+            //     console.log(err);
+            //     res.status(500).send(err);
+            // });
+        });
+
+        // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
             if (process.send) {
                 process.send('restart');
