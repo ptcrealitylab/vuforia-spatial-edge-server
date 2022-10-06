@@ -676,6 +676,8 @@
                 this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
+                this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
+                this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
@@ -1460,6 +1462,24 @@
             });
         };
 
+        this.startVirtualizerRecording = function() {
+            postDataToParent({
+                virtualizerRecording: true
+            });
+        };
+
+        this.stopVirtualizerRecording = function(callback) {
+            spatialObject.messageCallBacks.stopVirtualizerRecording = function (msgContent) {
+                if (typeof msgContent.virtualizerRecordingData !== 'undefined') {
+                    callback(msgContent.virtualizerRecordingData.baseUrl, msgContent.virtualizerRecordingData.recordingId, msgContent.virtualizerRecordingData.deviceId);
+                }
+            };
+
+            postDataToParent({
+                virtualizerRecording: false
+            });
+        };
+
         this.getScreenshotBase64 = function(callback) {
             spatialObject.messageCallBacks.screenshotBase64 = function (msgContent) {
                 if (typeof msgContent.screenshotBase64 !== 'undefined') {
@@ -1911,7 +1931,7 @@
             callBackCounter.numGroundPlaneMatrixCallbacks++;
             spatialObject.messageCallBacks['groundPlaneMatrixCall' + callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.groundPlaneMatrix !== 'undefined') {
-                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection);
+                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection, msgContent.floorOffset);
                 }
             };
         };
