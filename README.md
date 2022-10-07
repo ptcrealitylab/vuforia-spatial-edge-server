@@ -19,7 +19,7 @@ Join the conversations in our [discourse forum](https://forum.spatialtoolbox.vuf
 ## Installation
 
 First, install [Node.js](https://nodejs.org/en/). We currently test our
-software on Node 10, 12, and 14 with 12 being our recommended platform.
+software on Node 10, 12, 14, and 16 with 16 being our recommended platform.
 
 Second, clone this repository into your desired directory:
 
@@ -46,7 +46,7 @@ cd ../.. # return to the main vuforia-toolbox-server directory
 You can now run the server using the following command:
 
 ```bash
-node index.js
+npm start
 ```
 
 ## Contributing
