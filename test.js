@@ -29,15 +29,34 @@ function sleep(ms) {
     const page = await browser.newPage();
 
     await page.goto(
+        'http://localhost:8080/',
+        {
+            timeout: 60 * 1000,
+        },
+    );
+    await page.screenshot({
+        path: 'screenshots/server-settings.png',
+        fullPage: true,
+    });
+
+    await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
         'http://localhost:8081/',
         {
             timeout: 60 * 1000,
         },
     );
+    await page.screenshot({
+        path: 'screenshots/remote-operator-start.png',
+        fullPage: true,
+    });
 
     await page.waitForSelector('#gltf-added', {
         timeout: 120 * 1000
+    });
+    await page.screenshot({
+        path: 'screenshots/remote-operator-loaded.png',
+        fullPage: true,
     });
 
     await page.close();

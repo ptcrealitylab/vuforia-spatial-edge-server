@@ -26,6 +26,11 @@ jobs:
       env:
         CI: true
 
+    - uses: actions/upload-artifact@v3
+      with:
+        name: test-screenshots
+        path: screenshots/
+
   build-quiet:
 
     runs-on: ubuntu-latest
