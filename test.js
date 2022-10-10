@@ -53,7 +53,7 @@ function sleep(ms) {
 
     try {
         await page.waitForSelector('#gltf-added', {
-            timeout: 120 * 1000
+            timeout: 60 * 1000
         });
     } catch (e) {
         console.warn('gltf-added wait failed', e);
