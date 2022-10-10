@@ -88,8 +88,9 @@ const globalVariables = {
     // Send more debug messages to console
     debug: false,
     isMobile: isLightweightMobile && !isStandaloneMobile,
-    // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isLightweightMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
+    // Prohibit saving to file system if we're in a mobile env that doesn't
+    // support that
+    saveToDisk: !isLightweightMobile || isStandaloneMobile,
     // Create an object for attaching frames to the world
     worldObject: isLightweightMobile || isStandaloneMobile,
     listenForHumanPose: false,
