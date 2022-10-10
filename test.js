@@ -51,9 +51,13 @@ function sleep(ms) {
         fullPage: true,
     });
 
-    await page.waitForSelector('#gltf-added', {
-        timeout: 120 * 1000
-    });
+    try {
+        await page.waitForSelector('#gltf-added', {
+            timeout: 120 * 1000
+        });
+    } catch (e) {
+        console.warn('gltf-added wait failed', e);
+    }
     await page.screenshot({
         path: 'screenshots/remote-operator-loaded.png',
         fullPage: true,
