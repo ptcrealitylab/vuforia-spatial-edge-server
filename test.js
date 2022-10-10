@@ -5,7 +5,7 @@
  */
 
 const puppeteer = require('puppeteer');
-// const fetch = require('node-fetch');
+const fetch = require('node-fetch');
 
 // Start the server doing its own thing
 require('./server.js');
