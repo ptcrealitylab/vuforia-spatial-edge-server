@@ -664,7 +664,7 @@ console.log('ready to start internal servers');
 
 hardwareAPI.reset();
 
-console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
+console.log('found ' + Object.keys(hardwareInterfaceModules).join(', ') + ' enabled hardware interfaces');
 console.log('starting internal Server.');
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
