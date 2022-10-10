@@ -10,21 +10,10 @@ const puppeteer = require('puppeteer');
 // Start the server doing its own thing
 require('./server.js');
 
-function sleep(ms) {
-    return new Promise((res) => {
-        setTimeout(res, ms);
-    });
-}
-
 (async () => {
-    await sleep(10 * 1000);
-
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
-
-    // const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
-    // const localSettings = await res.json();
 
     const page = await browser.newPage();
 
@@ -52,21 +41,42 @@ function sleep(ms) {
         },
     );
     await page.screenshot({
-        path: 'screenshots/remote-operator-start.png',
+        path: 'screenshots/remote-operator-start-localhost.png',
         fullPage: true,
     });
 
-    try {
-        await page.waitForSelector('#gltf-added', {
-            timeout: 60 * 1000
-        });
-    } catch (e) {
-        console.warn('gltf-added wait failed', e);
-    }
+    await page.waitForSelector('#gltf-added', {
+        timeout: 60 * 1000
+    });
+
     await page.screenshot({
-        path: 'screenshots/remote-operator-loaded.png',
+        path: 'screenshots/remote-operator-loaded-localhost.png',
         fullPage: true,
     });
+
+    const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
+    const localSettings = await res.json();
+
+    await page.goto(
+        `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
+        {
+            timeout: 60 * 1000,
+        },
+    );
+    await page.screenshot({
+        path: 'screenshots/remote-operator-start-proxied.png',
+        fullPage: true,
+    });
+
+    await page.waitForSelector('#gltf-added', {
+        timeout: 60 * 1000
+    });
+
+    await page.screenshot({
+        path: 'screenshots/remote-operator-loaded-proxied.png',
+        fullPage: true,
+    });
+
 
     await page.close();
 
