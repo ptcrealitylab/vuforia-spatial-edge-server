@@ -38,6 +38,11 @@ function sleep(ms) {
         path: 'screenshots/server-settings.png',
         fullPage: true,
     });
+    await page.click('#manageHardwareInterfaces');
+    await page.screenshot({
+        path: 'screenshots/server-settings-hardware-interfaces.png',
+        fullPage: true,
+    });
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
