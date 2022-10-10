@@ -29,7 +29,7 @@ require('./server.js');
     );
 
     await page.waitForSelector('#gltf-added', {
-        timeout: 60 * 1000
+        timeout: 120 * 1000
     });
 
     await page.close();
