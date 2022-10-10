@@ -41,6 +41,7 @@
         sendAcceleration: false,
         sendFullScreen: false,
         sendScreenObject: false,
+        sendObjectPositions: {},
         fullscreenZPosition: 0,
         sendSticky: false,
         isFullScreenExclusive: false,
@@ -699,6 +700,7 @@
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.subscribeToObjectsOfType = makeSendStub('subscribeToObjectsOfType');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
@@ -1282,6 +1284,23 @@
                 sendDeviceDistance: spatialObject.sendDeviceDistance
             });
         };
+
+        let objectPositionSubscriptions = {};
+        this.subscribeToObjectsOfType = function (type, callback) {
+            if (typeof objectPositionSubscriptions[type] === 'undefined') {
+                objectPositionSubscriptions[type] = [];
+            }
+            objectPositionSubscriptions[type].push(callback);
+            spatialObject.messageCallBacks['objectSubscriptionCall_' + type] = function (msgContent) {
+                if (typeof msgContent.objectPositions !== 'undefined') {
+                    objectPositionSubscriptions[type].forEach(cb => cb(msgContent.objectPositions[type]));
+                }
+            };
+            spatialObject.sendObjectPositions[type] = true;
+            postDataToParent({
+                sendObjectPositions: spatialObject.sendObjectPositions
+            });
+        }
 
         // subscriptions
         this.subscribeToAcceleration = function () {
