@@ -52,6 +52,6 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install --production
-    - run: npm run test-quiet-simple
+    - run: npm run test-older
       env:
         CI: true
