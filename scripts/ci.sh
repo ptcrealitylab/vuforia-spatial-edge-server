@@ -4,6 +4,7 @@ mkdir screenshots
 
 npm ci
 
+git clone https://github.com/ptcrealitylab/vuforia-spatial-toolbox-userinterface
 git clone https://github.com/hobinjk-ptc/test-spatialToolbox spatialToolbox
 
 cd addons
