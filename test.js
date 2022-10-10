@@ -10,7 +10,15 @@ const puppeteer = require('puppeteer');
 // Start the server doing its own thing
 require('./server.js');
 
+function sleep(ms) {
+    return new Promise((res) => {
+        setTimeout(res, ms);
+    });
+}
+
 (async () => {
+    await sleep(10 * 1000);
+
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
