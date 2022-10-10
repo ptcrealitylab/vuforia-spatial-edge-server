@@ -4,10 +4,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+const puppeteer = require('puppeteer');
+const fetch = require('node-fetch');
+
 // Start the server doing its own thing
 require('./server.js');
 
-setTimeout(() => {
-    console.log('The server is intact after 10 seconds');
+(async () => {
+    const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
+    const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
+    const localSettings = await res.json();
+
+    const page = await browser.newPage();
+
+    await page.goto(
+        `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
+        {
+            timeout: 60 * 1000,
+        },
+    );
+
+    await page.waitForSelector('#gltf-added', {
+        timeout: 60 * 1000
+    });
+
+    await page.close();
+
+    await browser.close();
+
+    console.log('basic remote operator through proxy server page load worked');
     process.exit(0);
-}, 10000);
+})();

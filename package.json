@@ -34,7 +34,8 @@
   "devDependencies": {
     "eslint": "^8.24.0",
     "jsdoc": "^3.6.11",
-    "minami": "^1.2.3"
+    "minami": "^1.2.3",
+    "puppeteer": "^18.2.1"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
