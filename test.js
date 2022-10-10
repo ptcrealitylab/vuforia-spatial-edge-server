@@ -5,7 +5,7 @@
  */
 
 const puppeteer = require('puppeteer');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 
 // Start the server doing its own thing
 require('./server.js');
@@ -15,13 +15,14 @@ require('./server.js');
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
-    const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
-    const localSettings = await res.json();
+    // const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
+    // const localSettings = await res.json();
 
     const page = await browser.newPage();
 
     await page.goto(
-        `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
+        // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
+        'http://localhost:8081/',
         {
             timeout: 60 * 1000,
         },
