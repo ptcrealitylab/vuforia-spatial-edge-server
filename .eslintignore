@@ -6,3 +6,7 @@ dropzone.js
 *.min.js
 /libraries/logicInterfaces.js
 /addons
+
+# Various paths added by test runner
+/vuforia-spatial-toolbox-userinterface
+/spatialToolbox
