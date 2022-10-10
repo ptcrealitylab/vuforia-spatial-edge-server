@@ -37,22 +37,36 @@ jobs:
         name: test-screenshots
         path: screenshots/
 
-   build-quiet:
+  build-quiet:
 
-     runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-     strategy:
-       matrix:
-         node-version: [10.x, 12.x, 14.x]
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x]
 
-     steps:
-     - uses: actions/checkout@v3
-     - name: Use Node.js ${{ matrix.node-version }}
-       uses: actions/setup-node@v3
-       with:
-         node-version: ${{ matrix.node-version }}
-     - run: npm install
-     - run: npm run build --if-present
-     - run: npm run test-no-lint
-       env:
-         CI: true
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure git
+      env:
+        TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      run: git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Download and install supplementary addons and test data
+      run: ./scripts/ci.sh
+
+    - name: Run tests
+      run: npm run test-no-lint
+      env:
+        CI: true
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: test-screenshots-older
+        path: screenshots/
