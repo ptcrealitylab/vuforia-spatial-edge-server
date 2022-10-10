@@ -2,7 +2,7 @@
 
 mkdir screenshots
 
-npm ci
+npm ci || npm install
 
 git clone https://github.com/ptcrealitylab/vuforia-spatial-toolbox-userinterface
 git clone https://github.com/hobinjk-ptc/test-spatialToolbox spatialToolbox
