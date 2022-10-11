@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -x
 
 mkdir screenshots
 
-npm ci || npm install
+npm ci
 
 git clone https://github.com/ptcrealitylab/vuforia-spatial-toolbox-userinterface
 git clone https://github.com/hobinjk-ptc/test-spatialToolbox spatialToolbox
