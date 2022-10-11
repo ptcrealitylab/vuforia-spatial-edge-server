@@ -676,6 +676,11 @@
                 this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
+                this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
+                this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
+                this.playVideoPlayback = makeSendStub('playVideoPlayback');
+                this.pauseVideoPlayback = makeSendStub('pauseVideoPlayback');
                 this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -1459,6 +1464,83 @@
 
             postDataToParent({
                 videoRecording: false
+            });
+        };
+
+        const VideoPlaybackStates = {
+            LOADING: 'LOADING',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED'
+        };
+        class VideoPlayback {
+            constructor(spatialInterface) {
+                this.spatialInterface = spatialInterface;
+                this.onStateChangeCallbacks = [];
+                this.id = Math.random().toString();
+                this.state = VideoPlaybackStates.LOADING;
+            }
+            dispose() {
+                this.spatialInterface.disposeVideoPlayback(this.id);
+            }
+            setCurrentTime(currentTime) {
+                this.spatialInterface.setVideoPlaybackCurrentTime(this.id, currentTime);
+            }
+            play() {
+                this.spatialInterface.playVideoPlayback(this.id);
+            }
+            pause() {
+                this.spatialInterface.pauseVideoPlayback(this.id);
+            }
+            onStateChange(callback) {
+                this.onStateChangeCallbacks.push(callback);
+            }
+            setState(state) {
+                this.state = state;
+            }
+        }
+
+        this.createVideoPlayback = function(urls) {
+            const videoPlayback = new VideoPlayback(this);
+            postDataToParent({
+                createVideoPlayback: {
+                    id: videoPlayback.id,
+                    urls: urls,
+                    frameKey: spatialObject.frame
+                }
+            });
+            return videoPlayback;
+        };
+
+        this.disposeVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                disposeVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.setVideoPlaybackCurrentTime = function(videoPlaybackID, currentTime) {
+            postDataToParent({
+                setVideoPlaybackCurrentTime: {
+                    id: videoPlaybackID,
+                    currentTime: currentTime
+                }
+            });
+        };
+
+        this.playVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                playVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.pauseVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                pauseVideoPlayback: {
+                    id: videoPlaybackID
+                }
             });
         };
 
