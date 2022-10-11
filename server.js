@@ -165,6 +165,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
+console.log('loaded hardwareInterfacePaths', hardwareInterfacePaths);
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
