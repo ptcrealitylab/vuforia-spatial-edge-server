@@ -1105,7 +1105,7 @@ function startSystem() {
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 5000;
-    const humanDeletionAgeMs = 30000; // human objects are deleted more aggressively if they haven't been seen recently
+    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
