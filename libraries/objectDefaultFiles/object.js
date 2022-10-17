@@ -1472,17 +1472,26 @@
             PLAYING: 'PLAYING',
             PAUSED: 'PAUSED'
         };
+        const videoPlaybacks = [];
         class VideoPlayback {
             constructor(spatialInterface) {
                 this.spatialInterface = spatialInterface;
                 this.onStateChangeCallbacks = [];
                 this.id = Math.random().toString();
                 this.state = VideoPlaybackStates.LOADING;
+                this.playbackStartTime = 0; // Date.now()
+                this.playbackStartCurrentTime = 0; // Progress through video
+                this.videoLength = 0;
+                videoPlaybacks.push(this);
             }
             dispose() {
                 this.spatialInterface.disposeVideoPlayback(this.id);
+                videoPlaybacks.splice(videoPlaybacks.indexOf(this), 1);
             }
-            setCurrentTime(currentTime) {
+            get currentTime() {
+                return (Date.now() - this.playbackStartTime + this.playbackStartCurrentTime) % this.videoLength;
+            }
+            set currentTime(currentTime) {
                 this.spatialInterface.setVideoPlaybackCurrentTime(this.id, currentTime);
             }
             play() {
@@ -1496,10 +1505,32 @@
             }
             setState(state) {
                 this.state = state;
+                this.onStateChangeCallbacks.forEach(cb => cb(state));
+            }
+            onVideoMetadata(metadata) {
+                this.videoLength = metadata.videoLength;
             }
         }
 
+        spatialObject.messageCallBacks.onVideoStateChange = function (msgContent) {
+            if (typeof msgContent.onVideoStateChange !== 'undefined') {
+                console.log('RECEIVED STATE CHANGE');
+                const videoPlayback = videoPlaybacks.find(vp => vp.id === msgContent.id);
+                videoPlayback.setState(msgContent.onVideoStateChange);
+                videoPlayback.playbackStartTime = Date.now();
+                videoPlayback.playbackStartCurrentTime = msgContent.currentTime;
+            }
+        };
+
+        spatialObject.messageCallBacks.onVideoMetadata = function (msgContent) {
+            if (typeof msgContent.onVideoMetadata !== 'undefined') {
+                console.log('RECEIVED METADATA');
+                videoPlaybacks.find(vp => vp.id === msgContent.id).onVideoMetadata(msgContent.onVideoMetadata);
+            }
+        };
+
         this.createVideoPlayback = function(urls) {
+            console.log('SENDING CREATION');
             const videoPlayback = new VideoPlayback(this);
             postDataToParent({
                 createVideoPlayback: {
@@ -1512,6 +1543,7 @@
         };
 
         this.disposeVideoPlayback = function(videoPlaybackID) {
+            console.log('SENDING DISPOSE');
             postDataToParent({
                 disposeVideoPlayback: {
                     id: videoPlaybackID
@@ -1520,6 +1552,7 @@
         };
 
         this.setVideoPlaybackCurrentTime = function(videoPlaybackID, currentTime) {
+            console.log('SENDING CURRENT TIME');
             postDataToParent({
                 setVideoPlaybackCurrentTime: {
                     id: videoPlaybackID,
@@ -1529,6 +1562,7 @@
         };
 
         this.playVideoPlayback = function(videoPlaybackID) {
+            console.log('SENDING PLAY');
             postDataToParent({
                 playVideoPlayback: {
                     id: videoPlaybackID
@@ -1537,6 +1571,7 @@
         };
 
         this.pauseVideoPlayback = function(videoPlaybackID) {
+            console.log('SENDING PAUSE');
             postDataToParent({
                 pauseVideoPlayback: {
                     id: videoPlaybackID
