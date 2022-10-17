@@ -88,8 +88,9 @@ const globalVariables = {
     // Send more debug messages to console
     debug: false,
     isMobile: isLightweightMobile && !isStandaloneMobile,
-    // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isLightweightMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
+    // Prohibit saving to file system if we're in a mobile env that doesn't
+    // support that
+    saveToDisk: !isLightweightMobile || isStandaloneMobile,
     // Create an object for attaching frames to the world
     worldObject: isLightweightMobile || isStandaloneMobile,
     listenForHumanPose: false,
@@ -164,6 +165,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
+console.log('loaded hardwareInterfacePaths', hardwareInterfacePaths);
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
@@ -209,6 +211,12 @@ services.getIP = function () {
     let interfaceNames;
     try {
         interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+        let interfaceNamesFiltered = interfaceNames.filter((interfaceName) => {
+            return !interfaceName.startsWith('utun'); // discard docker's virtual network interface on mac
+        });
+        if (interfaceNamesFiltered.length > 0) {
+            interfaceNames = interfaceNamesFiltered;
+        }
     } catch (e) {
         console.error('getInterfaces failed', e);
         return this.ip;
@@ -668,7 +676,7 @@ console.log('ready to start internal servers');
 
 hardwareAPI.reset();
 
-console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
+console.log('found ' + Object.keys(hardwareInterfaceModules).join(', ') + ' enabled hardware interfaces');
 console.log('starting internal Server.');
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
