@@ -305,7 +305,6 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
     console.log('webserver + socket.io is listening on port', serverPort);
     checkInit('web');
 });
-const https = require('https');
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
@@ -2035,23 +2034,8 @@ function objectWebServer() {
         });
 
         // Proxies requests to toolboxedge.net, for CORS video playback
-        webServer.get('/proxy/*', (req, res) => {
-            // res.send(`https://toolboxedge.net/${req.params[0]}\n${JSON.stringify(req.headers)}`);
-            const proxyURL = `https://toolboxedge.net/${req.params[0]}`;
-            const headers = req.headers;
-            // fetch(proxyURL, {method: 'GET', headers: headers}).then(proxyRes => {
-            //     proxyRes.pipe(res);
-            https.get(proxyURL, {headers}, proxyRes => {
-                for (let header in proxyRes.headers) {
-                    res.setHeader(header, proxyRes.headers[header]);
-                }
-                proxyRes.pipe(res);
-            });
-            // }).catch(err => {
-            //     console.log(err);
-            //     res.status(500).send(err);
-            // });
-        });
+        const toolboxEdgeProxyRequestHandler = require('./libraries/serverHelpers/toolboxEdgeProxyRequestHandler.js');
+        webServer.get('/proxy/*', toolboxEdgeProxyRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
