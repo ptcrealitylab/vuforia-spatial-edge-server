@@ -277,7 +277,6 @@ exports.getIP = services.getIP.bind(services);
 
 services.ip = services.getIP(); //ip.address();
 
-var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
 
 // Default back to old realityObjects dir if it exists
@@ -1482,10 +1481,10 @@ function objectWebServer() {
         }
     });
     // define the body parser
-    webServer.use(bodyParser.urlencoded({
+    webServer.use(express.urlencoded({
         extended: true
     }));
-    webServer.use(bodyParser.json());
+    webServer.use(express.json());
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
