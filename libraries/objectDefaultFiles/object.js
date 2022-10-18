@@ -48,6 +48,7 @@
         attachesTo: null,
         wasToolJustCreated: null,
         isPinned: true,
+        alwaysFaceCamera: false,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -672,6 +673,7 @@
                 this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
                 this.stickNodeToScreen = makeSendStub('stickNodeToScreen');
                 this.unstickNodeFromScreen = makeSendStub('unstickNodeFromScreen');
+                this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -1432,6 +1434,13 @@
                 nodeIsFullScreen: false
             });
         };
+
+        this.setAlwaysFaceCamera = function(value) {
+            spatialObject.alwaysFaceCamera = value;
+            postDataToParent({
+                alwaysFaceCamera: value
+            });
+        }
 
         this.startVideoRecording = function() {
             postDataToParent({
