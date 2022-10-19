@@ -904,7 +904,6 @@
          * @return {*}
          */
         this.readPublicData = function (node, valueName, value) {
-            console.log(spatialObject.publicData);
             if (!value)  value = 0;
 
             if (typeof spatialObject.publicData[node] === 'undefined') {
@@ -1514,7 +1513,6 @@
 
         spatialObject.messageCallBacks.onVideoStateChange = function (msgContent) {
             if (typeof msgContent.onVideoStateChange !== 'undefined') {
-                console.log('RECEIVED STATE CHANGE');
                 const videoPlayback = videoPlaybacks.find(vp => vp.id === msgContent.id);
                 videoPlayback.setState(msgContent.onVideoStateChange);
                 videoPlayback.playbackStartTime = Date.now();
@@ -1524,13 +1522,11 @@
 
         spatialObject.messageCallBacks.onVideoMetadata = function (msgContent) {
             if (typeof msgContent.onVideoMetadata !== 'undefined') {
-                console.log('RECEIVED METADATA');
                 videoPlaybacks.find(vp => vp.id === msgContent.id).onVideoMetadata(msgContent.onVideoMetadata);
             }
         };
 
         this.createVideoPlayback = function(urls) {
-            console.log('SENDING CREATION');
             const videoPlayback = new VideoPlayback(this);
             postDataToParent({
                 createVideoPlayback: {
@@ -1543,7 +1539,6 @@
         };
 
         this.disposeVideoPlayback = function(videoPlaybackID) {
-            console.log('SENDING DISPOSE');
             postDataToParent({
                 disposeVideoPlayback: {
                     id: videoPlaybackID
@@ -1552,7 +1547,6 @@
         };
 
         this.setVideoPlaybackCurrentTime = function(videoPlaybackID, currentTime) {
-            console.log('SENDING CURRENT TIME');
             postDataToParent({
                 setVideoPlaybackCurrentTime: {
                     id: videoPlaybackID,
@@ -1562,7 +1556,6 @@
         };
 
         this.playVideoPlayback = function(videoPlaybackID) {
-            console.log('SENDING PLAY');
             postDataToParent({
                 playVideoPlayback: {
                     id: videoPlaybackID
@@ -1571,7 +1564,6 @@
         };
 
         this.pauseVideoPlayback = function(videoPlaybackID) {
-            console.log('SENDING PAUSE');
             postDataToParent({
                 pauseVideoPlayback: {
                     id: videoPlaybackID
