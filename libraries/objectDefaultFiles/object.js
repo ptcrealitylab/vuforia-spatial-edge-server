@@ -1446,7 +1446,7 @@
             postDataToParent({
                 alwaysFaceCamera: value
             });
-        }
+        };
 
         this.startVideoRecording = function() {
             postDataToParent({
