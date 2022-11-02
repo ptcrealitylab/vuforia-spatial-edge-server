@@ -4,7 +4,6 @@ const Node = require('../models/Node');
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
-var objectsPath;
 var sceneGraph;
 
 /**
@@ -42,7 +41,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
 
             foundFrame.nodes[nodeKey] = node;
             nodeBody = node;
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
             sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
 
@@ -88,7 +87,7 @@ const addNodeLock = function (objectKey, frameKey, nodeKey, body) {
             foundNode.lockPassword = newLockPassword;
             foundNode.lockType = newLockType;
 
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'added';
@@ -120,7 +119,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
             foundNode.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'deleted';
@@ -198,7 +197,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,
@@ -223,7 +222,6 @@ const getNode = function (objectID, frameID, nodeID) {
 const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
-    objectsPath = objectsPath_;
     sceneGraph = sceneGraph_;
 };
 
