@@ -7,10 +7,10 @@
  */
 
 // scrappy way to parse command line arguments until we drop support for Node.js 10.x
-let arguments = process.argv.slice(2); // this removes `node` and the filename from arguments list
+let argList = process.argv.slice(2); // this removes `node` and the filename from arguments list
 let args = {}
-if (arguments.indexOf("--services") !== -1) { // if it exists
-    let after = arguments.slice(arguments.indexOf("--services")+1);
+if (argList.indexOf("--services") !== -1) { // if it exists
+    let after = argList.slice(argList.indexOf("--services")+1);
     let until = after.findIndex(value => value.indexOf('--') === 0); // find next
     args.services = after.slice(0, (until === -1 ? undefined : until));
 } else {
