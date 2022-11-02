@@ -32,7 +32,7 @@ var knownObjects; // needed to check if sockets are still used when we delete li
 var socketArray; // needed to delete sockets when links are removed
 var globalVariables;
 var dirnameO;
-var objectsPath;
+const {objectsPath} = require('../config.js');
 var nodeTypeModules;
 // eslint-disable-next-line no-unused-vars
 var blockModules;
@@ -40,7 +40,7 @@ var services;
 var version;
 var protocol;
 var serverPort;
-var callback;
+let dataCallback;
 var actionCallback;
 var publicDataCallBack;
 var writeObjectCallback;
@@ -115,7 +115,7 @@ exports.write = function (object, tool, node, value, mode, unit, unitMin, unitMa
                 thisData.unitMin = unitMin;
                 thisData.unitMax = unitMax;
                 //callback is objectEngine in server.js. Notify data has changed.
-                callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
+                dataCallback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
             }
         }
     }
@@ -893,7 +893,6 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray = socketArray_;
     globalVariables = globalVariables_;
     dirnameO = dirnameO_;
-    objectsPath = objectsPath_;
     nodeTypeModules = nodeTypeModules_;
     blockModules = blockModules_;
     services = services_;
@@ -902,7 +901,7 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     serverPort = serverPort_;
     publicDataCallBack = hardwareAPICallbacks.publicData;
     actionCallback = hardwareAPICallbacks.actions;
-    callback = hardwareAPICallbacks.data;
+    dataCallback = hardwareAPICallbacks.data;
     writeObjectCallback = hardwareAPICallbacks.write;
     sceneGraphReference = sceneGraphReference_;
     worldGraphReference = worldGraphReference_;
