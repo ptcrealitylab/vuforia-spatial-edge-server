@@ -6,7 +6,6 @@ var knownObjects = {};
 var socketArray = {};
 var globalVariables;
 var hardwareAPI;
-var objectsPath;
 var socketUpdater;
 var engine;
 
@@ -97,7 +96,7 @@ const newLink = function (objectID, frameID, linkID, body) {
             foundFrame.links[linkID] = body;
             console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
             // check if link is complex data type. If yes trigger engine only for this single link
             if (foundFrame.nodes.hasOwnProperty(body.nodeA)) {
@@ -160,7 +159,7 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
 
         delete foundFrame.links[linkKey];
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
@@ -213,7 +212,7 @@ const addLinkLock = function (objectKey, frameKey, linkKey, body) {
             foundLink.lockType = newLockType;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: object}});
 
             updateStatus = 'added';
@@ -247,7 +246,7 @@ const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
             foundLink.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: objectKey}});
 
             updateStatus = 'deleted';
@@ -264,7 +263,6 @@ const setup = function (objects_, knownObjects_, socketArray_, globalVariables_,
     socketArray = socketArray_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
-    objectsPath = objectsPath_;
     socketUpdater = socketUpdater_;
     engine = engine_;
 };
