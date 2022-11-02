@@ -58,37 +58,23 @@ const xml2js = require('xml2js');
 const fs = require('fs');
 const ip = require('ip');       // get the device IP address library
 const dgram = require('dgram'); // UDP Broadcasting library
-const os = require('os');
 const path = require('path');
 const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
+const {objectsPath} = require('../config.js');
 
-var hardwareInterfaces = {};
+const hardwareInterfaces = {};
 
 const identityFolderName = '.identity'; // TODO: get this from server.js
-var homedir = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
 
-// Default back to old realityObjects dir if it exists
-if (!fs.existsSync(homedir) &&
-    fs.existsSync(oldHomeDirectory)) {
-    homedir = oldHomeDirectory;
-}
+var hardwareIdentity = path.join(objectsPath, identityFolderName);
 
-const root = require('../getAppRootFolder');
-
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
-    homedir = path.join(root, 'spatialToolbox');
-}
-
-var hardwareIdentity = homedir + '/.identity';
-
-exports.writeObject = function (objectLookup, folder, id) {
+exports.writeObject = function writeObject(objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
 
-exports.readObject = function (objectLookup, folder) {
+exports.readObject = function readObject(objectLookup, folder) {
     if (objectLookup.hasOwnProperty(folder)) {
         return objectLookup[folder].id;
     } else {
@@ -96,7 +82,7 @@ exports.readObject = function (objectLookup, folder) {
     }
 };
 
-exports.createFolder = function (folderVar, objectsPath, debug) {
+exports.createFolder = function createFolder(folderVar, debug) {
 
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
@@ -139,7 +125,7 @@ exports.createFolder = function (folderVar, objectsPath, debug) {
 };
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath, debug, location) {
+exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = folder + identityFolderName + '/';
@@ -207,9 +193,8 @@ exports.deleteFolderRecursive = deleteFolderRecursive;
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
  * @param objectKey
  * @param frameKey
- * @param dirname0
  */
-exports.deleteFrameFolder = function (objectName, frameName, objectsPath) {
+exports.deleteFrameFolder = function (objectName, frameName) {
     console.log('objectName', objectName);
     console.log('frameName', frameName);
 
@@ -250,7 +235,7 @@ exports.uuidTime = function () {
     return '_' + stampUuidTime;
 };
 
-var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
+function getObjectIdFromTargetOrObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -292,10 +277,10 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
     } else {
         return null;
     }
-};
+}
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
-var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
+function getAnchorIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -313,16 +298,15 @@ var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
     } else {
         return null;
     }
-};
+}
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
 /**
  *
- * @param folderName
- * @param objectsPath
+ * @param {string} folderName
  * @return {Array.<float>}
  */
-exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
+exports.getTargetSizeFromTarget = function getTargetSizeFromTarget(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -358,19 +342,18 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
     return resultXML;
 };
 
+
+let writeBufferList = {};
+let isWriting = false;
+
 /**
  * Saves the RealityObject as "object.json"
  * (Writes the object state to permanent storage)
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
- * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
  * @param {boolean}   writeToFile  - Give permission to write to file.
- **/
-
-let writeBufferList = {};
-let isWriting = false;
-
-exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
+ */
+exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToFile) {
     if (writeToFile) {
         writeBufferList[object] = objectsPath;
     }
@@ -395,12 +378,12 @@ function executeWrite(objects) {
 
     // copy the first item and delete it from the buffer list
     let firstKey = Object.keys(writeBufferList)[0];
-    let objectsPath = writeBufferList[firstKey];
+    let objectsPathBuffered = writeBufferList[firstKey];
     let obj = firstKey;
     delete writeBufferList[firstKey];
 
     // prepare to write
-    var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
+    var outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
     console.log('writing:', obj);
     // write file
@@ -522,7 +505,7 @@ function itob62(i) {
  * @param fileArray The array that represents all files that should be checksumed
  * @return {string} checksum text
  */
-exports.generateChecksums = function (objects, fileArray) {
+exports.generateChecksums = function generateChecksums(objects, fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {
@@ -534,11 +517,11 @@ exports.generateChecksums = function (objects, fileArray) {
 };
 
 
-exports.updateObject = function (objectName, objects) {
+exports.updateObject = function updateObject(objectName, objects) {
     console.log('update ', objectName);
 
-    var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
-        return fs.statSync(homedir + '/' + file).isDirectory();
+    var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
+        return fs.statSync(path.join(objectsPath, file)).isDirectory();
     });
 
     try {
@@ -552,7 +535,7 @@ exports.updateObject = function (objectName, objects) {
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
-            var tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i], homedir);
+            const tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
             console.log('TempFolderName: ' + tempFolderName);
 
             if (tempFolderName !== null) {
@@ -562,7 +545,7 @@ exports.updateObject = function (objectName, objects) {
 
                 // try to read a saved previous state of the object
                 try {
-                    objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
+                    objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
                     objects[tempFolderName].ip = ip.address();
 
                     // this is for transforming old lists to new lists
@@ -620,7 +603,7 @@ exports.updateObject = function (objectName, objects) {
     return null;
 };
 
-exports.deleteObject = function (objectName, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+exports.deleteObject = function deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     console.log('Deleting object: ' + objectName);
 
     let objectFolderPath = path.join(objectsPath, objectName);
@@ -656,7 +639,7 @@ exports.deleteObject = function (objectName, objects, objectsPath, objectLookup,
     this.actionSender({reloadObject: {object: objectKey} });
 };
 
-exports.loadHardwareInterface = function (hardwareInterfaceName) {
+exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterfaceName) {
 
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
 
@@ -710,7 +693,7 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
     return this.read;
 };
 
-const restActionSender = function (action) {
+function restActionSender(action) {
     const { knownObjects } = require('../server');
     const ipSet = new Set();
     for (const [_key, value] of Object.entries(knownObjects)) {
@@ -727,7 +710,7 @@ const restActionSender = function (action) {
             console.warn(`restActionSender: Error sending action to ${objectIp} over REST API.`, err);
         });
     });
-};
+}
 
 /**
  * Broadcasts a JSON message over UDP
@@ -735,7 +718,7 @@ const restActionSender = function (action) {
  * @param {number|undefined} timeToLive
  * @param {number|undefined} beatport
  */
-exports.actionSender = function (action, timeToLive, beatport) {
+exports.actionSender = function actionSender(action, timeToLive, beatport) {
     if (!timeToLive) timeToLive = 2;
     if (!beatport) beatport = 52316;
     //  console.log(action);
@@ -899,10 +882,11 @@ exports.getNodeAsync = getNodeAsync;
 
 /**
  * Returns node if a nodeKey is provided, otherwise the frame
- * @param objectKey
- * @param frameKey
- * @param nodeKey
- * @param callback
+ * @param {Object} objects
+ * @param {string} objectKey
+ * @param {string} frameKey
+ * @param {string} nodeKey
+ * @param {function} callback
  */
 function getFrameOrNode(objects, objectKey, frameKey, nodeKey, callback) {
     getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
@@ -974,7 +958,7 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
  * @param objectName
  * @return {string}
  */
-function getVideoDir(objectsPath, identityFolderNameArg, isMobile, objectName) {
+function getVideoDir(identityFolderNameArg, isMobile, objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
