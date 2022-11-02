@@ -77,6 +77,7 @@ try {
 
 const _logger = require('./logger');
 const {objectsPath} = require('./config');
+const {providedServices} = require('./services');
 
 const os = require('os');
 const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
@@ -1085,6 +1086,8 @@ function startSystem() {
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
+
+    serverBeatSender(beatPort);
 }
 
 /**********************************************************************************************************************
@@ -1106,6 +1109,47 @@ if (process.pid) {
 /**********************************************************************************************************************
  ******************************************** Emitter/Client/Sender ***************************************************
  **********************************************************************************************************************/
+
+// send a message on a repeated interval, advertising this server and the services it supports
+function serverBeatSender(udpPort) {
+    if (isLightweightMobile) {
+        return;
+    }
+
+    const udpHost = '255.255.255.255';
+
+    services.ip = services.getIP();
+
+    const messageStr = JSON.stringify({
+        ip: services.ip,
+        port: serverPort,
+        vn: version,
+        // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
+        services: providedServices || [] // e.g. ['world'] if it can support a world object
+    });
+
+    console.log('server has the following heartbeat services: ' + providedServices);
+
+    const message = Buffer.from(messageStr);
+
+    // creating the datagram
+    const client = dgram.createSocket('udp4');
+    client.bind(function () {
+        client.setBroadcast(true);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
+    });
+
+    setInterval(function () {
+        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
+            if (err) {
+                console.log('You\'re not on a network. Can\'t send server beat', err);
+            } else if (globalVariables.debug) {
+                console.log('sent server beat on port ' + udpPort + ' with services ' + JSON.stringify(providedServices || []));
+            }
+        });
+    }, beatInterval + utilities.randomIntInc(-250, 250));
+}
 
 /**
  * @desc Sends out a Heartbeat broadcast via UDP in the local network.
