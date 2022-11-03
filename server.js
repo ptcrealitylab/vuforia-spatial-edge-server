@@ -1087,7 +1087,7 @@ function startSystem() {
 
     recorder.initRecorder(objects);
 
-    serverBeatSender(beatPort);
+    serverBeatSender(beatPort, false);
 }
 
 /**********************************************************************************************************************
@@ -1111,7 +1111,7 @@ if (process.pid) {
  **********************************************************************************************************************/
 
 // send a message on a repeated interval, advertising this server and the services it supports
-function serverBeatSender(udpPort) {
+function serverBeatSender(udpPort, oneTimeOnly = true) {
     if (isLightweightMobile) {
         return;
     }
@@ -1140,6 +1140,15 @@ function serverBeatSender(udpPort) {
         client.setMulticastTTL(timeToLive);
     });
 
+    if (oneTimeOnly) {
+        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
+            if (err) throw err;
+            client.close(); // close the socket as the function is only called once.
+        });
+        return;
+    }
+
+    // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
     setInterval(function () {
         client.send(message, 0, message.length, udpPort, udpHost, function (err) {
             if (err) {
@@ -1314,6 +1323,7 @@ function handleActionMessage(action) {
         for (let key in objects) {
             objectBeatSender(beatPort, key, objects[key].ip, true);
         }
+        serverBeatSender(beatPort);
         return;
     }
     
