@@ -5,18 +5,17 @@
   "main": "server.js",
   "dependencies": {
     "archiver": "^5.3.1",
-    "body-parser": "^1.20.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "decompress-zip": "^0.3.3",
     "directory-tree": "^3.3.1",
-    "express": "^4.18.1",
+    "express": "^4.18.2",
     "express-handlebars": "^5.3.5",
     "formidable": "^2.0.1",
     "ip": "^2.0.0",
     "jimp": "^0.16.2",
     "module-alias": "^2.2.2",
-    "monaco-editor": "^0.34.0",
+    "monaco-editor": "^0.34.1",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.6.7",
     "node-persist": "^2.1.0",
@@ -24,7 +23,7 @@
     "simple-git": "^3.14.1",
     "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.8.2",
-    "ws": "^8.9.0",
+    "ws": "^8.10.0",
     "xml2js": "^0.4.23"
   },
   "repository": {
@@ -32,15 +31,17 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^8.24.0",
+    "eslint": "^8.26.0",
     "jsdoc": "^3.6.11",
-    "minami": "^1.2.3"
+    "minami": "^1.2.3",
+    "puppeteer": "^19.2.1"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
     "test-no-lint": "NODE_ENV=test node test.js",
-    "test-quiet": "npm run lint-quiet && NODE_ENV=test node test.js",
+    "test-quiet-simple": "npm run lint-quiet && NODE_ENV=test node test-simple.js",
     "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
+    "test-older": "NODE_ENV=test node test-simple.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",

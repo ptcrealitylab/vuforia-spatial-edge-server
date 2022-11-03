@@ -10,7 +10,6 @@ var objects = {};
 var globalVariables;
 var hardwareAPI;
 var dirname;
-var objectsPath;
 var identityFolderName;
 var nodeTypeModules;
 var sceneGraph;
@@ -39,7 +38,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
             object.frames = {};
         }
 
-        utilities.createFrameFolder(object.name, frame.name, dirname, objectsPath, globalVariables.debug, frame.location);
+        utilities.createFrameFolder(object.name, frame.name, dirname, globalVariables.debug, frame.location);
 
         var newFrame = new Frame(frame.objectId, frameKey);
         newFrame.name = frame.name;
@@ -67,7 +66,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         object.frames[frameKey] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
         sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
@@ -102,7 +101,7 @@ const generateFrameOnObject = function (objectKey, frameType, relativeMatrix, ca
 
     object.frames[frameKey] = newFrame;
 
-    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
     sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
@@ -127,7 +126,7 @@ const deletePublicData = function(objectID, frameID, callback) {
         });
 
         // save state to object.json
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
@@ -158,7 +157,7 @@ const addPublicData = function(objectID, frameID, body, callback) {
         }
 
         // save state to object.json
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
@@ -225,7 +224,7 @@ const copyFrame = function(objectID, frameID, body, callback) {
         newFrame.height = frame.height;
         object.frames[newFrameKey] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
         // utilities.actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
@@ -266,7 +265,7 @@ const updateFrame = function(objectID, frameID, body, callback) {
         newFrame.setFromJson(frame);
         object.frames[frameID] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         utilities.actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
 
@@ -310,7 +309,7 @@ const deleteFrame = function(objectId, frameId, body, callback) {
         var urlArray = videoPath.split('/');
 
         var objectName = urlArray[4];
-        var videoDir = utilities.getVideoDir(objectsPath, identityFolderName, globalVariables.isMobile, objectName);
+        var videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, objectName);
         var videoFilePath = path.join(videoDir, urlArray[6]);
 
         if (fs.existsSync(videoFilePath)) {
@@ -329,7 +328,7 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     delete object.frames[frameId];
 
     // remove the frame directory from the object
-    utilities.deleteFrameFolder(objectName, frameName, objectsPath);
+    utilities.deleteFrameFolder(objectName, frameName);
 
     // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
     var deletedNodes = {};
@@ -356,13 +355,13 @@ const deleteFrame = function(objectId, frameId, body, callback) {
         }
 
         if (linkObjectHasChanged) {
-            utilities.writeObjectToFile(objects, linkObjectId, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, linkObjectId, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: body.lastEditor});
         }
     });
 
     // write changes to object.json
-    utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+    utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectId}, lastEditor: body.lastEditor});
 
     sceneGraph.removeElementAndChildren(frameId);
@@ -376,7 +375,7 @@ const setGroup = function(objectID, frameID, body, callback) {
         var newGroupID = body.group;
         if (newGroupID !== frame.groupID) {
             frame.groupID = newGroupID;
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {object: objectID, frame: frameID},
                 lastEditor: body.lastEditor
@@ -395,7 +394,7 @@ const setPinned = function(objectID, frameID, body, callback) {
         var newPinned = body.isPinned;
         if (newPinned !== frame.pinned) {
             frame.pinned = newPinned;
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {object: objectID, frame: frameID},
                 lastEditor: body.lastEditor
@@ -475,7 +474,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,
@@ -518,7 +517,7 @@ const changeVisualization = function(objectKey, frameKey, body, callback) {
         }
         frame.visualization = newVisualization;
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         callback(200, {success: true});
     } else {
         callback(404, {failure: true, error: 'frame ' + frameKey + ' not found on ' + objectKey});
@@ -540,7 +539,7 @@ const resetPositioning = function(objectID, frameID, callback) {
         scale: 1,
         matrix: []
     };
-    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+    utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     callback(200, 'ok');
 };
 
@@ -553,7 +552,6 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, obje
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     dirname = dirname_;
-    objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
     nodeTypeModules = nodeTypeModules_;
     sceneGraph = sceneGraph_;

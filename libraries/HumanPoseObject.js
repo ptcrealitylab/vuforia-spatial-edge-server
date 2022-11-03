@@ -123,7 +123,7 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
  */
 HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) {
     var frames = {};
-    Object.keys(poseJointSchema).forEach(function(jointName) {
+    Object.values(poseJointSchema).forEach(function(jointName) {
         frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
     }.bind(this));
     return frames;
@@ -198,6 +198,43 @@ HumanPoseObject.prototype.updateJointPositions = function(joints) {
  */
 HumanPoseObject.getObjectId = function(bodyId) {
     return 'humanPoseObject' + bodyId;
+};
+
+
+/**
+ * Conform to interface of ObjectModel
+ */
+HumanPoseObject.prototype.deconstruct = function() {
+    for (let frameKey in this.frames) {
+        if (typeof this.frames[frameKey].deconstruct === 'function') {
+            this.frames[frameKey].deconstruct();
+        } else {
+            console.warn('Frame exists without proper prototype: ' + frameKey);
+        }
+    }
+};
+
+/**
+ * Conform to interface of ObjectModel
+ * @param {JSON} object
+ */
+HumanPoseObject.prototype.setFromJson = function(object) {
+    Object.assign(this, object);
+    this.setFramesFromJson(object.frames);
+};
+
+/**
+ * Conform to interface of ObjectModel
+ * @param {JSON} frames
+ */
+HumanPoseObject.prototype.setFramesFromJson = function(frames) {
+    this.frames = {};
+    for (var frameKey in frames) {
+        let newFrame = new Frame(this.objectId, frameKey);
+        Object.assign(newFrame, frames[frameKey]);
+        newFrame.setNodesFromJson(frames[frameKey].nodes);
+        this.frames[frameKey] = newFrame;
+    }
 };
 
 module.exports = HumanPoseObject;
