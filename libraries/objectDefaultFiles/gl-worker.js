@@ -1,15 +1,308 @@
-const debugGlWorker = false;
+const debugGlWorker = true;
 const GLPROXY_ENABLE_EXTVAO = true;
-
-let gl = {
-    enableWebGL2: true,
-};
 
 let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
 
-let frameCommandBuffer = [];
+/**
+ * Creates a gl context that stores all received commands in the active command buffer object.
+ * This allows us to switch buffers behind the scene and split up the stream of commands over multiple buffers.
+ */
+class GLCommandBufferContext {
+    constructor(message) {
+        this.gl = {
+            enableWebGL2: true,
+        };
+        // Create a fake gl context that pushes all called functions on the command buffer
+        if (this.gl.enableWebGL2) {
+            this.gl = Object.create(WebGL2RenderingContext.prototype);
+        } else {
+            this.gl = Object.create(WebGLRenderingContext.prototype);
+        }
+        for (const fnName of message.functions) {
+            this.gl[fnName] = this.makeStub(fnName, this);
+        }
+        for (const constName in message.constants) {
+            try {
+                this.gl[constName] = message.constants[constName];
+            } catch (e) {
+                console.error(`Cant set gl const: ${constName}`);
+            }
+        }
+    }
+
+    /**
+     * Changes the buffer in which we store open gl commands
+     * @param {the command buffer to use for storing gl commands} commandBuffer 
+     */
+    setActiveCommandBuffer(commandBuffer) {
+        this.activeBuffer = commandBuffer;
+    }
+
+    /**
+     * Makes a stub for a given function which sends a message to the gl
+     * implementation in the parent.
+     * @param {string} functionName
+     * @return {any} a placeholder object from the local hidden gl context (realGl).
+     */
+    makeStub(functionName) {
+        let localContext = this;
+        return function() {
+            const invokeId = id;
+            id += 1 + Math.random();
+
+            let args = Array.from(arguments);
+            for (let i = 0; i < args.length; i++) {
+                if (!args[i]) {
+                    continue;
+                }
+                if (args[i].hasOwnProperty('__uncloneableId')) {
+                    args[i] = {
+                        fakeClone: true,
+                        index: args[i].__uncloneableId,
+                    };
+                } else if (typeof args[i] === 'object') {
+                    if (args[i] instanceof Float32Array) {
+                        args[i] = new Float32Array(args[i]);
+                    } else if (args[i] instanceof Uint8Array) {
+                        args[i] = new Uint8Array(args[i]);
+                    } else if (args[i] instanceof Uint16Array) {
+                        args[i] = new Uint16Array(args[i]);
+                    } else if (args[i] instanceof Array) {
+                        args[i] = Array.from(args[i]);
+                    } else {
+                        if (debugGlWorker) console.log('Uncloned arg', args[i]);
+                    }
+                }
+            }
+
+            if (functionName === 'texImage2D' || functionName === 'texSubImage2D') {
+                for (let i = 0; i < args.length; i++) {
+                    let elt = args[i];
+                    if (elt.tagName === 'IMG') {
+                        let width = elt.width;
+                        let height = elt.height;
+                        let canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        let gfx = canvas.getContext('2d');
+                        gfx.width = width;
+                        gfx.height = height;
+                        gfx.drawImage(elt, 0, 0, width, height);
+                        let imageData = gfx.getImageData(0, 0, width, height);
+                        args[i] = imageData;
+                    } else if (elt.tagName === 'CANVAS' ||
+                        (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
+                        let width = elt.width;
+                        let height = elt.height;
+                        let gfx = elt.getContext('2d');
+                        let imageData = gfx.getImageData(0, 0, width, height);
+                        args[i] = imageData;
+                    }
+                }
+            }
+
+            if (functionName === 'getExtension') {
+                const ext = arguments[0];
+
+                if (ext === 'OES_vertex_array_object') {
+                    if (realGl.getParameter(realGl.VERSION).includes('WebGL 1.0')) {
+                        const prefix = 'extVao-';
+
+                        if (!GLPROXY_ENABLE_EXTVAO) {
+                            return null;
+                        }
+
+                        if (realGl) {
+                            extVao = realGl.getExtension(ext);
+                        }
+                        // Mock the real VAO extension so that method calls on it get
+                        // proxied and sent through the glproxy with the prefix
+                        // 'extVao-'
+                        return {
+                            createVertexArrayOES: this.makeStub(prefix + 'createVertexArrayOES'),
+                            deleteVertexArrayOES: this.makeStub(prefix + 'deleteVertexArrayOES'),
+                            isVertexArrayOES: this.makeStub(prefix + 'isVertexArrayOES'),
+                            bindVertexArrayOES: this.makeStub(prefix + 'bindVertexArrayOES'),
+                        };
+                    } else {
+                        return {
+                            createVertexArrayOES: this.makeStub('createVertexArray'),
+                            deleteVertexArrayOES: this.makeStub('deleteVertexArray'),
+                            isVertexArrayOES: this.makeStub('isVertexArray'),
+                            bindVertexArrayOES: this.makeStub('bindVertexArray'),
+                        };
+                    }
+                }
+            }
+
+            const message = {
+                workerId,
+                id: invokeId,
+                name: functionName,
+                args,
+            };
+
+            // glCommandBuferObject is the copy of the thi pointer stored in the closure.
+            // by requesting the commandbuffer from the object, we can change it between calls.
+            if (localContext.activeBuffer !== null) {
+                localContext.activeBuffer.push(message);
+            } else {
+                console.error('No active command buffer set for gl context');
+            }
+
+            if (realGl) {
+                const unclonedArgs = Array.from(arguments).map(a => {
+                    if (!a) {
+                        return a;
+                    }
+
+                    if (a.__uncloneableId && !a.__uncloneableObj) {
+                        console.error('invariant ruined');
+                    }
+
+                    if (a.__uncloneableObj) {
+                        return a.__uncloneableObj;
+                    }
+                    return a;
+                });
+
+                let res;
+                if (functionName.startsWith('extVao-')) {
+                    res = extVao[functionName.split('-')[1]].apply(extVao, unclonedArgs);
+                } else {
+                    res = realGl[functionName].apply(realGl, unclonedArgs);
+                }
+
+                if (functionName === 'linkProgram') {
+                    const link_message = realGl.getProgramInfoLog(unclonedArgs[0]);
+                    if (link_message.length > 0) {
+                        const shaders = realGl.getAttachedShaders(unclonedArgs[0]);
+                        for (const shader of shaders) {
+                            const compile_message = realGl.getShaderInfoLog(shader);
+                            if (compile_message.length > 0) {
+                                const shaderType = realGl.getShaderParameter(shader, realGl.SHADER_TYPE);
+                                let shaderTypeStr = "<n/a>";
+                                switch (shaderType) {
+                                case realGl.VERTEX_SHADER:
+                                    shaderTypeStr = "Vertex";
+                                    break;
+                                case realGl.FRAGMENT_SHADER:
+                                    shaderTypeStr = "Fragment";
+                                    break;
+                                default:
+                                    break;
+                                }
+                                console.error(`${shaderTypeStr} shader error`, realGl, compile_message);
+                            }
+                        }
+                        console.error('Program link error', realGl, link_message);
+                    }
+                }
+
+
+                if (typeof res === 'object' && res !== null) {
+                    let proxy = new Proxy({
+                        __uncloneableId: invokeId,
+                        __uncloneableObj: res,
+                    }, {
+                        get: function(obj, prop) {
+                            if (prop === 'hasOwnProperty' || prop.startsWith('__')) {
+                                return obj[prop];
+                            } else {
+                                // TODO this won't propagate to container
+                                const mocked = obj.__uncloneableObj[prop];
+                                if (typeof mocked === 'function') {
+                                    console.error('Unmockable inner function', prop);
+                                    return mocked.bind(obj.__uncloneableObj);
+                                }
+                                return mocked;
+                            }
+                        },
+                    });
+
+                    proxies.push(proxy);
+                    return proxy;
+                }
+                return res;
+            }
+
+            // if (functionName === 'getParameter') {
+            //   return cacheGetParameter[arguments[0]];
+            // }
+
+            if (wantsResponse) {
+                return new Promise(res => {
+                    pending[invokeId] = res;
+                });
+            }
+        };
+    }
+}
+
+/**
+ * List of WebGL commands that can be executed.
+ */
+class CommandBuffer {
+    constructor(workerId) {
+        this.workerId = workerId;
+        this.commandBuffer = [];
+    }
+
+    push(message) {
+        if (message == undefined) {
+            console.error("no command test");
+        }
+        this.commandBuffer.push(message);
+    }
+
+    // Executes all the webGL commands stored in this buffer
+    execute() {
+        if (this.commandBuffer.length > 0) {
+            try {
+                let test = structuredClone(this.commandBuffer);
+                console.debug(test);
+                window.parent.postMessage({
+                    workerId: this.workerId,
+                    messages: this.commandBuffer,
+                }, '*');
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+    }
+
+    // clears the whole buffer for reuse
+    clear() {
+        this.commandBuffer = [];
+    }
+}
+
+/**
+ * creates new command buffer using the hidden variables to hide construction details
+ */
+class CommandBufferFactory {
+    constructor(workerId, glCommandBufferContext) {
+        this.workerId = workerId;
+        this.glCommandBufferContext = glCommandBufferContext;
+    }
+
+    getGL() {
+        return this.glCommandBufferContext.gl;
+    }
+
+    createAndActivate() {
+        let commandBuffer = new CommandBuffer(this.workerId);
+        this.glCommandBufferContext.setActiveCommandBuffer(commandBuffer);
+        return commandBuffer;
+    }
+}
+
+let commandBufferFactory = null;
+let frameCommandBuffer = null;
+let bootstrapProcessed = false;
 
 const pending = {};
 
@@ -23,6 +316,8 @@ window.glProxy = {
 
 // Unique worker id
 let workerId;
+
+let glCommandBufferContext = null;
 
 // Local hidden gl context used to generate placeholder objects for gl calls
 // that require valid objects
@@ -44,187 +339,6 @@ let extVao;
 //   36349: 1024,
 // };
 
-/**
- * Makes a stub for a given function which sends a message to the gl
- * implementation in the parent.
- * @param {string} functionName
- * @return {any} a placeholder object from the local hidden gl context (realGl).
- */
-function makeStub(functionName) {
-    return function() {
-        const invokeId = id;
-        id += 1 + Math.random();
-
-        let args = Array.from(arguments);
-        for (let i = 0; i < args.length; i++) {
-            if (!args[i]) {
-                continue;
-            }
-            if (args[i].hasOwnProperty('__uncloneableId')) {
-                args[i] = {
-                    fakeClone: true,
-                    index: args[i].__uncloneableId,
-                };
-            } else if (typeof args[i] === 'object') {
-                if (args[i] instanceof Float32Array) {
-                    args[i] = new Float32Array(args[i]);
-                } else if (args[i] instanceof Uint8Array) {
-                    args[i] = new Uint8Array(args[i]);
-                } else if (args[i] instanceof Uint16Array) {
-                    args[i] = new Uint16Array(args[i]);
-                } else if (args[i] instanceof Array) {
-                    args[i] = Array.from(args[i]);
-                } else {
-                    if (debugGlWorker) console.log('Uncloned arg', args[i]);
-                }
-            }
-        }
-
-        if (functionName === 'texImage2D' || functionName === 'texSubImage2D') {
-            for (let i = 0; i < args.length; i++) {
-                let elt = args[i];
-                if (elt.tagName === 'IMG') {
-                    let width = elt.width;
-                    let height = elt.height;
-                    let canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    let gfx = canvas.getContext('2d');
-                    gfx.width = width;
-                    gfx.height = height;
-                    gfx.drawImage(elt, 0, 0, width, height);
-                    let imageData = gfx.getImageData(0, 0, width, height);
-                    args[i] = imageData;
-                } else if (elt.tagName === 'CANVAS' ||
-                     (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
-                    let width = elt.width;
-                    let height = elt.height;
-                    let gfx = elt.getContext('2d');
-                    let imageData = gfx.getImageData(0, 0, width, height);
-                    args[i] = imageData;
-                }
-            }
-        }
-
-        if (functionName === 'getExtension') {
-            const ext = arguments[0];
-
-            if (ext === 'OES_vertex_array_object') {
-                if (realGl.getParameter(realGl.VERSION).includes('WebGL 1.0')) {
-                    const prefix = 'extVao-';
-
-                    if (!GLPROXY_ENABLE_EXTVAO) {
-                        return null;
-                    }
-
-                    if (realGl) {
-                        extVao = realGl.getExtension(ext);
-                    }
-                    // Mock the real VAO extension so that method calls on it get
-                    // proxied and sent through the glproxy with the prefix
-                    // 'extVao-'
-                    return {
-                        createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
-                        deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
-                        isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
-                        bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
-                    };
-                } else {
-                    return {
-                        createVertexArrayOES: makeStub('createVertexArray'),
-                        deleteVertexArrayOES: makeStub('deleteVertexArray'),
-                        isVertexArrayOES: makeStub('isVertexArray'),
-                        bindVertexArrayOES: makeStub('bindVertexArray'),
-                    };
-                }
-            }
-        }
-
-        const message = {
-            workerId,
-            id: invokeId,
-            name: functionName,
-            args,
-        };
-
-        frameCommandBuffer.push(message);
-
-        if (realGl) {
-            const unclonedArgs = Array.from(arguments).map(a => {
-                if (!a) {
-                    return a;
-                }
-
-                if (a.__uncloneableId && !a.__uncloneableObj) {
-                    console.error('invariant ruined');
-                }
-
-                if (a.__uncloneableObj) {
-                    return a.__uncloneableObj;
-                }
-                return a;
-            });
-
-            let res;
-            if (functionName.startsWith('extVao-')) {
-                res = extVao[functionName.split('-')[1]].apply(extVao, unclonedArgs);
-            } else {
-                res = realGl[functionName].apply(realGl, unclonedArgs);
-            }
-
-            if (functionName === 'compileShader') {
-                const message = realGl.getShaderInfoLog(unclonedArgs[0]);
-                if (message.length > 0) {
-                    console.error('Shader error', realGl, message);
-                }
-            }
-
-            if (functionName === 'linkProgram') {
-                const message = realGl.getProgramInfoLog(unclonedArgs[0]);
-                if (message.length > 0) {
-                    console.error('Program error', realGl, message);
-                }
-            }
-
-
-            if (typeof res === 'object' && res !== null) {
-                let proxy = new Proxy({
-                    __uncloneableId: invokeId,
-                    __uncloneableObj: res,
-                }, {
-                    get: function(obj, prop) {
-                        if (prop === 'hasOwnProperty' || prop.startsWith('__')) {
-                            return obj[prop];
-                        } else {
-                            // TODO this won't propagate to container
-                            const mocked = obj.__uncloneableObj[prop];
-                            if (typeof mocked === 'function') {
-                                console.error('Unmockable inner function', prop);
-                                return mocked.bind(obj.__uncloneableObj);
-                            }
-                            return mocked;
-                        }
-                    },
-                });
-
-                proxies.push(proxy);
-                return proxy;
-            }
-            return res;
-        }
-
-        // if (functionName === 'getParameter') {
-        //   return cacheGetParameter[arguments[0]];
-        // }
-
-        if (wantsResponse) {
-            return new Promise(res => {
-                pending[invokeId] = res;
-            });
-        }
-    };
-}
-
 window.addEventListener('message', function(event) {
     const message = event.data;
     if (!message) {
@@ -236,35 +350,31 @@ window.addEventListener('message', function(event) {
     }
 
     if (message.name === 'bootstrap') {
-        if (gl.enableWebGL2) {
-            gl = Object.create(WebGL2RenderingContext.prototype);
-        } else {
-            gl = Object.create(WebGLRenderingContext.prototype);
-        }
-        for (const fnName of message.functions) {
-            gl[fnName] = makeStub(fnName);
-        }
-
-        for (const constName in message.constants) {
-            gl[constName] = message.constants[constName];
-        }
         let {width, height} = message;
 
-        frameCommandBuffer = [];
+        glCommandBufferContext = new GLCommandBufferContext(message);
+        commandBufferFactory = new CommandBufferFactory(workerId, glCommandBufferContext);
+        let bootstrapCommandBuffers = [];
         if (typeof main !== 'undefined') {
             // eslint-disable-next-line no-undef
-            main({width, height});
+            bootstrapCommandBuffers = main({width, height}, commandBufferFactory);
+        }
+        if (window.glProxy.main) {
+            bootstrapCommandBuffers = window.glProxy.main({width, height}, commandBufferFactory);
+        }
+        frameCommandBuffer = commandBufferFactory.createAndActivate();
+
+        for (const bootstrapCommandBuffer of bootstrapCommandBuffers) {
+            bootstrapCommandBuffer.execute();
         }
 
-        if (window.glProxy.main) {
-            window.glProxy.main({width, height});
-        }
-        if (frameCommandBuffer.length > 0) {
-            window.parent.postMessage({
-                workerId,
-                messages: frameCommandBuffer,
-            }, '*');
-        }
+        bootstrapProcessed = true;
+
+        window.parent.postMessage({
+            workerId,
+            isFrameEnd: true,
+        }, '*');
+
         return;
     }
 
@@ -274,6 +384,14 @@ window.addEventListener('message', function(event) {
     }
 
     if (message.name === 'frame') {
+        if (!bootstrapProcessed /*|| !bootstrapPromise.isResolved*/) {
+            console.log(`Can't render worker with id: ${workerId}, it has not yet finished initializing`);
+            window.parent.postMessage({
+                workerId,
+                isFrameEnd: true,
+            }, '*');
+            return;
+        }
         if (Date.now() - message.time > 300) {
             console.log('time drift detected');
             window.parent.postMessage({
@@ -283,27 +401,19 @@ window.addEventListener('message', function(event) {
             return;
         }
 
-        frameCommandBuffer = [];
-
+        frameCommandBuffer.clear();
         try {
             if (render) {
-                render(message.time);
+                frameCommandBuffer = render(message.time, frameCommandBuffer);
             }
             if (window.glProxy.render) {
-                window.glProxy.render(message.time);
+                frameCommandBuffer = window.glProxy.render(message.time, frameCommandBuffer);
             }
         } catch (err) {
             console.error('Error in gl-worker render fn', err);
         }
 
-        if (frameCommandBuffer.length > 0) {
-            window.parent.postMessage({
-                workerId,
-                messages: frameCommandBuffer,
-            }, '*');
-        }
-
-        frameCommandBuffer = [];
+        frameCommandBuffer.execute();
 
         window.parent.postMessage({
             workerId,
@@ -389,10 +499,12 @@ class ThreejsInterface {
         return this;
     }
 
-    main({width, height}) {
+    main({width, height}, cmdBufferFactory) {
         this.spatialInterface.changeFrameSize(width, height);
         const canvas = document.createElement('canvas');
         realGl = canvas.getContext('webgl2');
+        let cmdBuffer = cmdBufferFactory.createAndActivate();
+        let gl = cmdBufferFactory.getGL();
         this.realRenderer = new THREE.WebGLRenderer({context: realGl, alpha: true});
         this.realRenderer.debug.checkShaderErrors = false;
         this.realRenderer.setPixelRatio(window.devicePixelRatio);
@@ -408,6 +520,7 @@ class ThreejsInterface {
         for (let callback of this.onSceneCreatedCallbacks) {
             callback(this.scene);
         }
+        return [cmdBuffer];
     }
 
     anchoredModelViewCallback(modelViewMatrix, projectionMatrix) {
@@ -418,11 +531,7 @@ class ThreejsInterface {
         return realGl;
     }
 
-    getGl() {
-        return gl;
-    }
-
-    render(now) {
+    render(now, commandBuffer) {
         if (!this.camera) {
             console.warn('rendering too early');
             return;
@@ -463,6 +572,7 @@ class ThreejsInterface {
                 this.done = true;
             }
         }
+        return commandBuffer;
     }
 
     setMatrixFromArray(matrix, array) {
