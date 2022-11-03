@@ -41,12 +41,14 @@
         sendAcceleration: false,
         sendFullScreen: false,
         sendScreenObject: false,
+        sendObjectPositions: {},
         fullscreenZPosition: 0,
         sendSticky: false,
         isFullScreenExclusive: false,
         attachesTo: null,
         wasToolJustCreated: null,
         isPinned: true,
+        alwaysFaceCamera: false,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -671,6 +673,7 @@
                 this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
                 this.stickNodeToScreen = makeSendStub('stickNodeToScreen');
                 this.unstickNodeFromScreen = makeSendStub('unstickNodeFromScreen');
+                this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
@@ -699,6 +702,7 @@
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.subscribeToObjectsOfType = makeSendStub('subscribeToObjectsOfType');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
@@ -1283,6 +1287,23 @@
             });
         };
 
+        let objectPositionSubscriptions = {};
+        this.subscribeToObjectsOfType = function (type, callback) {
+            if (typeof objectPositionSubscriptions[type] === 'undefined') {
+                objectPositionSubscriptions[type] = [];
+            }
+            objectPositionSubscriptions[type].push(callback);
+            spatialObject.messageCallBacks['objectSubscriptionCall_' + type] = function (msgContent) {
+                if (typeof msgContent.objectPositions !== 'undefined') {
+                    objectPositionSubscriptions[type].forEach(cb => cb(msgContent.objectPositions[type]));
+                }
+            };
+            spatialObject.sendObjectPositions[type] = true;
+            postDataToParent({
+                sendObjectPositions: spatialObject.sendObjectPositions
+            });
+        }
+
         // subscriptions
         this.subscribeToAcceleration = function () {
             spatialObject.sendAcceleration = true;
@@ -1413,6 +1434,13 @@
                 nodeIsFullScreen: false
             });
         };
+
+        this.setAlwaysFaceCamera = function(value) {
+            spatialObject.alwaysFaceCamera = value;
+            postDataToParent({
+                alwaysFaceCamera: value
+            });
+        }
 
         this.startVideoRecording = function() {
             postDataToParent({

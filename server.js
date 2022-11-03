@@ -74,7 +74,10 @@ try {
         // Since process.send is async, just hold the server for preventing more errors
     }
 }
+
 const _logger = require('./logger');
+const {objectsPath} = require('./config');
+const {providedServices} = require('./services');
 
 const os = require('os');
 const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
@@ -88,8 +91,9 @@ const globalVariables = {
     // Send more debug messages to console
     debug: false,
     isMobile: isLightweightMobile && !isStandaloneMobile,
-    // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isLightweightMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
+    // Prohibit saving to file system if we're in a mobile env that doesn't
+    // support that
+    saveToDisk: !isLightweightMobile || isStandaloneMobile,
     // Create an object for attaching frames to the world
     worldObject: isLightweightMobile || isStandaloneMobile,
     listenForHumanPose: false,
@@ -133,17 +137,6 @@ const fs = require('fs');       // Filesystem library
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 
-const spatialToolboxPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjects');
-
-// All objects are stored in this folder:
-// Look for objects in the user Documents directory instead of __dirname+"/objects"
-let objectsPath = spatialToolboxPath;
-
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
-    objectsPath = path.join(__dirname, 'spatialToolbox');
-}
-
 const addonPaths = [
     path.join(__dirname, 'addons'),
     path.join(os.homedir(), 'Documents', 'spatialToolbox-addons'),
@@ -164,6 +157,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
+console.log('loaded hardwareInterfacePaths', hardwareInterfacePaths);
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
@@ -275,22 +269,7 @@ exports.getIP = services.getIP.bind(services);
 
 services.ip = services.getIP(); //ip.address();
 
-var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
-
-// Default back to old realityObjects dir if it exists
-if (!fs.existsSync(objectsPath) &&
-    objectsPath === spatialToolboxPath &&
-    fs.existsSync(oldRealityObjectsPath)) {
-    console.warn('Please rename your realityobjects directory to spatialToolbox');
-    objectsPath = oldRealityObjectsPath;
-}
-
-// create objects folder at objectsPath if necessary
-if (!fs.existsSync(objectsPath)) {
-    console.log('created objects directory at ' + objectsPath);
-    fs.mkdirSync(objectsPath);
-}
 
 var identityFolderName = '.identity';
 
@@ -634,7 +613,7 @@ var hardwareAPICallbacks = {
         engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write: function (objectID) {
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
@@ -673,7 +652,7 @@ console.log('ready to start internal servers');
 
 hardwareAPI.reset();
 
-console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
+console.log('found ' + Object.keys(hardwareInterfaceModules).join(', ') + ' enabled hardware interfaces');
 console.log('starting internal Server.');
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
@@ -712,7 +691,7 @@ function loadObjects() {
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i], objectsPath);
+        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
         console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -982,7 +961,7 @@ function setAnchors() {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
+            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -1103,10 +1082,12 @@ function startSystem() {
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 5000;
-    const humanDeletionAgeMs = 30000; // human objects are deleted more aggressively if they haven't been seen recently
+    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
+
+    serverBeatSender(beatPort);
 }
 
 /**********************************************************************************************************************
@@ -1128,6 +1109,47 @@ if (process.pid) {
 /**********************************************************************************************************************
  ******************************************** Emitter/Client/Sender ***************************************************
  **********************************************************************************************************************/
+
+// send a message on a repeated interval, advertising this server and the services it supports
+function serverBeatSender(udpPort) {
+    if (isLightweightMobile) {
+        return;
+    }
+
+    const udpHost = '255.255.255.255';
+
+    services.ip = services.getIP();
+
+    const messageStr = JSON.stringify({
+        ip: services.ip,
+        port: serverPort,
+        vn: version,
+        // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
+        services: providedServices || [] // e.g. ['world'] if it can support a world object
+    });
+
+    console.log('server has the following heartbeat services: ' + providedServices);
+
+    const message = Buffer.from(messageStr);
+
+    // creating the datagram
+    const client = dgram.createSocket('udp4');
+    client.bind(function () {
+        client.setBroadcast(true);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
+    });
+
+    setInterval(function () {
+        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
+            if (err) {
+                console.log('You\'re not on a network. Can\'t send server beat', err);
+            } else if (globalVariables.debug) {
+                console.log('sent server beat on port ' + udpPort + ' with services ' + JSON.stringify(providedServices || []));
+            }
+        });
+    }, beatInterval + utilities.randomIntInc(-250, 250));
+}
 
 /**
  * @desc Sends out a Heartbeat broadcast via UDP in the local network.
@@ -1480,10 +1502,10 @@ function objectWebServer() {
         }
     });
     // define the body parser
-    webServer.use(bodyParser.urlencoded({
+    webServer.use(express.urlencoded({
         extended: true
     }));
-    webServer.use(bodyParser.json());
+    webServer.use(express.json());
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
@@ -1646,7 +1668,7 @@ function objectWebServer() {
             } else {
                 try {
                     res.sendFile(filename, {
-                        root: utilities.getVideoDir(objectsPath, identityFolderName, isLightweightMobile),
+                        root: utilities.getVideoDir(identityFolderName, isLightweightMobile),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
@@ -2423,7 +2445,7 @@ function objectWebServer() {
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                 res.send('ok');
             }
 
@@ -2436,7 +2458,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
+                    utilities.createFolder(req.body.name, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2471,7 +2493,7 @@ function objectWebServer() {
                             objects[objectId].worldId = req.body.worldId;
                         }
 
-                        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                        utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
                         // automatically create a tool and a node on the avatar object
@@ -2479,10 +2501,10 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, 'local');
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
-                                utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                                utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
                                 // now add a publicData storage node to the tool
                                 let nodeInfo = {
@@ -2490,12 +2512,12 @@ function objectWebServer() {
                                     type: 'storeData',
                                     x: 0,
                                     y: 0
-                                }
+                                };
                                 nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {
                                     console.log('added node to frame... ', statusCode, responseContents);
                                 });
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, objects[objectId].frames[toolId].location);
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, objects[objectId].frames[toolId].location);
                             }
                         }
 
@@ -2528,14 +2550,14 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, 'local');
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2610,7 +2632,7 @@ function objectWebServer() {
                         }
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
                     sceneGraph.removeElementAndChildren(frameNameKey);
@@ -2986,11 +3008,11 @@ function objectWebServer() {
                                         };
 
                                         thisObject.tcs = utilities.generateChecksums(objects, fileList);
-                                        utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                        utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                         setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
-                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
+                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId != thisObjectId) {
                                             console.log('removed old heartbeat for', oldObjectId);
                                             clearInterval(activeHeartbeats[oldObjectId]);
@@ -3153,7 +3175,7 @@ function objectWebServer() {
 
                                                 thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
-                                                utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                                utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                                 setAnchors();
                                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3255,7 +3277,7 @@ function objectWebServer() {
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             }
             res.send('ok');
         });
@@ -3287,8 +3309,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
     if (fs.existsSync(folder)) {
         console.log('folder exists');
-        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
-        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
+        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
+        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
         console.log('got ID: objectIDXML');
         if (objectIDXML && objectIDXML.length > 13) {
             objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
@@ -3337,7 +3359,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             hardwareAPI.reset();
 
             console.log('weiter im text ' + objectIDXML);
-            utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
 
             sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
@@ -3592,7 +3614,7 @@ function socketServer() {
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
             if (objects[msg.object] && objects[msg.object].type !== 'avatar') {
-                utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
             }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it
@@ -4015,7 +4037,7 @@ function socketServer() {
 
             if (socket.id in realityEditorBlockSocketArray) {
                 realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    utilities.writeObjectToFile(objects, thisObj.object, objectsPath, globalVariables.saveToDisk);
+                    utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
                 });
                 delete realityEditorBlockSocketArray[socket.id];
@@ -4058,10 +4080,10 @@ function deleteObjects(objectKeysToDelete) {
 
 function deleteObject(objectKey) {
     if (objects[objectKey]) {
-        utilities.deleteObject(objects[objectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     }
     // try to clean up any other state that might be remaining
-    if (activeHeartbeats[objectKey]){
+    if (activeHeartbeats[objectKey]) {
         clearInterval(activeHeartbeats[objectKey]);
         delete activeHeartbeats[objectKey];
     }
