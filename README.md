@@ -102,6 +102,22 @@ $env:LOG_MODULES="interfaces"
 node index.js
 ```
 
+## Specifying Services
+
+*This is an advanced option, not meant for general use at this point in time.*
+
+To specify a list of services that will be included in the heartbeats sent from
+this server, run the command like so:
+
+```bash
+node server.js --services world service2 service3
+```
+
+The `world` service in particular is used to request that scans for new World
+Objects get sent to this server rather than other servers on the local
+network that do not specify this service (by default, all servers have the same
+priority and the user must choose among them).
+
 ## Additional Server Addons
 There are several useful server addons that we do not include in the base
 server. For example, installing the include the [edge
