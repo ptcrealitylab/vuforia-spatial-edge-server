@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "eslint": "^8.26.0",
-    "jsdoc": "^3.6.11",
+    "jsdoc": "^4.0.0",
     "minami": "^1.2.3",
     "puppeteer": "^19.2.2"
   },
