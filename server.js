@@ -1128,8 +1128,6 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
         services: providedServices || [] // e.g. ['world'] if it can support a world object
     });
 
-    console.log('server has the following heartbeat services: ' + providedServices);
-
     const message = Buffer.from(messageStr);
 
     // creating the datagram
@@ -1147,6 +1145,8 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
         });
         return;
     }
+
+    console.log('server has the following heartbeat services: ' + providedServices);
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
     setInterval(function () {
