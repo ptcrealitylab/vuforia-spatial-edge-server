@@ -1488,7 +1488,11 @@
                 videoPlaybacks.splice(videoPlaybacks.indexOf(this), 1);
             }
             get currentTime() {
-                return (Date.now() - this.playbackStartTime + this.playbackStartCurrentTime) % this.videoLength;
+                if (this.state === VideoPlaybackStates.PAUSED) {
+                    return this.playbackStartCurrentTime;
+                } else {
+                    return (Date.now() - this.playbackStartTime + this.playbackStartCurrentTime) % this.videoLength;
+                }
             }
             set currentTime(currentTime) {
                 this.spatialInterface.setVideoPlaybackCurrentTime(this.id, currentTime);
