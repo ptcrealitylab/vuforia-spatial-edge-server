@@ -4099,6 +4099,7 @@ function deleteObject(objectKey) {
     }
     delete knownObjects[objectKey];
     delete objectLookup[objectKey];
+    delete objects[objectKey];
     sceneGraph.removeElementAndChildren(objectKey);
 }
 
