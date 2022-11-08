@@ -508,20 +508,4 @@ class ThreejsFakeProxyInterface extends ThreejsInterface {
             }
         }
     }
-
-    setMatrixFromArray(matrix, array) {
-        /**
-         * this is the following matrix (ROW MAJOR)
-         *  a0 a4 a8 a12
-         *  a1 a5 a9 a13
-         *  a2 a6 a10 a14
-         *  a4 a7 a11 a15
-         */
-        matrix.set(
-            array[0], array[4], array[8], array[12],
-            array[1], array[5], array[9], array[13],
-            array[2], array[6], array[10], array[14],
-            array[3], array[7], array[11], array[15]
-        );
-    }
 }
