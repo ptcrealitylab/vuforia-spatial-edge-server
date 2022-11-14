@@ -457,8 +457,6 @@ class ThreejsInterface {
                     proxies = [];
                     this.realRenderer.dispose();
                     this.realRenderer.forceContextLoss();
-                    this.realRenderer.context = null;
-                    this.realRenderer.domElement = null;
                     this.realRenderer = null;
                     // eslint-disable-next-line no-global-assign
                     realGl = null;
