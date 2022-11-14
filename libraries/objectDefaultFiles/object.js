@@ -676,6 +676,13 @@
                 this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
+                this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
+                this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
+                this.playVideoPlayback = makeSendStub('playVideoPlayback');
+                this.pauseVideoPlayback = makeSendStub('pauseVideoPlayback');
+                this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
+                this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
@@ -897,7 +904,6 @@
          * @return {*}
          */
         this.readPublicData = function (node, valueName, value) {
-            console.log(spatialObject.publicData);
             if (!value)  value = 0;
 
             if (typeof spatialObject.publicData[node] === 'undefined') {
@@ -1440,7 +1446,7 @@
             postDataToParent({
                 alwaysFaceCamera: value
             });
-        }
+        };
 
         this.startVideoRecording = function() {
             postDataToParent({
@@ -1457,6 +1463,133 @@
 
             postDataToParent({
                 videoRecording: false
+            });
+        };
+
+        const VideoPlaybackStates = {
+            LOADING: 'LOADING',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED'
+        };
+        const videoPlaybacks = [];
+        class VideoPlayback {
+            constructor(spatialInterface) {
+                this.spatialInterface = spatialInterface;
+                this.onStateChangeCallbacks = [];
+                this.id = Math.random().toString();
+                this.state = VideoPlaybackStates.LOADING;
+                this.playbackStartTime = 0; // Date.now()
+                this.playbackStartCurrentTime = 0; // Progress through video
+                this.videoLength = 0;
+                videoPlaybacks.push(this);
+            }
+            dispose() {
+                this.spatialInterface.disposeVideoPlayback(this.id);
+                videoPlaybacks.splice(videoPlaybacks.indexOf(this), 1);
+            }
+            get currentTime() {
+                if (this.state === VideoPlaybackStates.PAUSED) {
+                    return this.playbackStartCurrentTime;
+                } else {
+                    return (Date.now() - this.playbackStartTime + this.playbackStartCurrentTime) % this.videoLength;
+                }
+            }
+            set currentTime(currentTime) {
+                this.spatialInterface.setVideoPlaybackCurrentTime(this.id, currentTime);
+            }
+            play() {
+                this.spatialInterface.playVideoPlayback(this.id);
+            }
+            pause() {
+                this.spatialInterface.pauseVideoPlayback(this.id);
+            }
+            onStateChange(callback) {
+                this.onStateChangeCallbacks.push(callback);
+            }
+            setState(state) {
+                this.state = state;
+                this.onStateChangeCallbacks.forEach(cb => cb(state));
+            }
+            onVideoMetadata(metadata) {
+                this.videoLength = metadata.videoLength;
+            }
+        }
+
+        spatialObject.messageCallBacks.onVideoStateChange = function (msgContent) {
+            if (typeof msgContent.onVideoStateChange !== 'undefined') {
+                const videoPlayback = videoPlaybacks.find(vp => vp.id === msgContent.id);
+                videoPlayback.setState(msgContent.onVideoStateChange);
+                videoPlayback.playbackStartTime = Date.now();
+                videoPlayback.playbackStartCurrentTime = msgContent.currentTime;
+            }
+        };
+
+        spatialObject.messageCallBacks.onVideoMetadata = function (msgContent) {
+            if (typeof msgContent.onVideoMetadata !== 'undefined') {
+                videoPlaybacks.find(vp => vp.id === msgContent.id).onVideoMetadata(msgContent.onVideoMetadata);
+            }
+        };
+
+        this.createVideoPlayback = function(urls) {
+            const videoPlayback = new VideoPlayback(this);
+            postDataToParent({
+                createVideoPlayback: {
+                    id: videoPlayback.id,
+                    urls: urls,
+                    frameKey: spatialObject.frame
+                }
+            });
+            return videoPlayback;
+        };
+
+        this.disposeVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                disposeVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.setVideoPlaybackCurrentTime = function(videoPlaybackID, currentTime) {
+            postDataToParent({
+                setVideoPlaybackCurrentTime: {
+                    id: videoPlaybackID,
+                    currentTime: currentTime
+                }
+            });
+        };
+
+        this.playVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                playVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.pauseVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                pauseVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.startVirtualizerRecording = function() {
+            postDataToParent({
+                virtualizerRecording: true
+            });
+        };
+
+        this.stopVirtualizerRecording = function(callback) {
+            spatialObject.messageCallBacks.stopVirtualizerRecording = function (msgContent) {
+                if (typeof msgContent.virtualizerRecordingData !== 'undefined') {
+                    callback(msgContent.virtualizerRecordingData.baseUrl, msgContent.virtualizerRecordingData.recordingId, msgContent.virtualizerRecordingData.deviceId);
+                }
+            };
+
+            postDataToParent({
+                virtualizerRecording: false
             });
         };
 
@@ -1911,7 +2044,7 @@
             callBackCounter.numGroundPlaneMatrixCallbacks++;
             spatialObject.messageCallBacks['groundPlaneMatrixCall' + callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.groundPlaneMatrix !== 'undefined') {
-                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection);
+                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection, msgContent.floorOffset);
                 }
             };
         };

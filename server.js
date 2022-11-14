@@ -310,6 +310,7 @@ var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+const fetch = require('node-fetch'); // Fetch API for Node
 
 // use the cors cross origin REST model
 webServer.use(cors());
@@ -2031,8 +2032,12 @@ function objectWebServer() {
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
         });
-        // restart the server from the web frontend to load
 
+        // Proxies requests to toolboxedge.net, for CORS video playback
+        const toolboxEdgeProxyRequestHandler = require('./libraries/serverHelpers/toolboxEdgeProxyRequestHandler.js');
+        webServer.get('/proxy/*', toolboxEdgeProxyRequestHandler);
+
+        // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
             if (process.send) {
                 process.send('restart');
