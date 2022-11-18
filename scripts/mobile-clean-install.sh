@@ -5,7 +5,13 @@ npm ci --omit=dev
 
 cd addons
 
-for i in `ls ./`; do echo $i; cd $i; npm ci --omit=dev; cd ..; done
+for i in `ls ./`; do
+  echo $i
+  cd $i
+  npm ci --omit=dev
+  npm uninstall --omit=dev --no-save @ffmpeg-installer/ffmpeg fsevents
+  cd ..
+done
 
 cd ..
 
