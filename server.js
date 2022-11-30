@@ -1076,7 +1076,7 @@ function startSystem() {
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
-    
+
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
     const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
@@ -1327,7 +1327,7 @@ function handleActionMessage(action) {
         serverBeatSender(beatPort);
         return;
     }
-    
+
     // non-string actions can be processed after this point
     action = (typeof action === 'string') ? JSON.parse(action) : action;
 

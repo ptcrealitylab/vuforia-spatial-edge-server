@@ -1,8 +1,8 @@
 createNameSpace("realityEditor.humanPose");
 
-import * as network from './network.js'
-import * as draw from './draw.js'
-import * as utils from './utils.js'
+import * as network from './network.js';
+import * as draw from './draw.js';
+import * as utils from './utils.js';
 
 (function(exports) {
     // Re-export submodules for use in legacy code

@@ -1308,7 +1308,7 @@
             postDataToParent({
                 sendObjectPositions: spatialObject.sendObjectPositions
             });
-        }
+        };
 
         // subscriptions
         this.subscribeToAcceleration = function () {
