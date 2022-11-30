@@ -1514,9 +1514,10 @@ function objectWebServer() {
     });
     // define the body parser
     webServer.use(express.urlencoded({
-        extended: true
+        extended: true,
+        limit: '5mb',
     }));
-    webServer.use(express.json());
+    webServer.use(express.json({limit: '5mb'}));
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
