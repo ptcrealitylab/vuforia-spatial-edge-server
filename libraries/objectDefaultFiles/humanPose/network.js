@@ -19,8 +19,8 @@ function addHumanPoseObject(worldId, objectName, onSuccess, onError) {
         .then(data => {
             onSuccess(data);
         }).catch(err => {
-        onError(err);
-    });
+            onError(err);
+        });
 }
 
 // helper function that will trigger the callback for each avatar object previously or in-future discovered

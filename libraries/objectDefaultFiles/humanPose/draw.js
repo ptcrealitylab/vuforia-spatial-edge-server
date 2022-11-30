@@ -78,7 +78,7 @@ export class HumanPoseRenderer {
     averageJointPositions(jointIds) {
         let avg = {x: 0, y: 0, z: 0};
         for (let jointId of jointIds) {
-            let joint = this.spheres[jointId]
+            let joint = this.spheres[jointId];
             avg.x += joint.position.x;
             avg.y += joint.position.y;
             avg.z += joint.position.z;
