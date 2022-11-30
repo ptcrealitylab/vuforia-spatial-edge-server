@@ -56,7 +56,7 @@ function makePoseFromJoints(name, joints) {
     return {
         name: name,
         joints: joints
-    }
+    };
 }
 
 function getPoseObjectName(pose) {
@@ -65,7 +65,7 @@ function getPoseObjectName(pose) {
 
 function getPoseStringFromObject(poseObject) {
     let jointPositions = Object.keys(poseObject.frames).map(jointFrameId => realityEditor.sceneGraph.getWorldPosition(jointFrameId));
-    return jointPositions.map(position => positionToRoundedString(position)).join()
+    return jointPositions.map(position => positionToRoundedString(position)).join();
 }
 
 function positionToRoundedString(position) {
