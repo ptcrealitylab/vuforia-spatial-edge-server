@@ -124,7 +124,7 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
 HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) {
     var frames = {};
     Object.values(poseJointSchema).forEach(function(jointName) {
-        frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
+        frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName, true);
     }.bind(this));
     return frames;
 };
@@ -142,8 +142,8 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 1;
 
     if (shouldCreateNode) {
-        let nodeName = 'value';
-        var newNode = new Node(nodeName, 'node', this.objectId, newFrame.uuid, newFrame.uuid + nodeName);
+        let nodeName = 'storage';
+        var newNode = new Node(nodeName, 'storeData', this.objectId, newFrame.uuid, newFrame.uuid + nodeName);
         newFrame.nodes[newNode.uuid] = newNode;
         newNode.scale = 0.2; // nodes currently have a problem of being rendered too large by default, so decrease scale
     }
