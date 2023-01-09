@@ -3396,7 +3396,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
             realityEditorSocketArray[thisEditor].forEach((thisObj) => {
-                if (objectKey === thisObj.object) {
+                if (objectKey === thisObj.object && frameKey === thisObj.frame) {
                     io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,
