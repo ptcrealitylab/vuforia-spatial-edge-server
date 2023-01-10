@@ -3691,8 +3691,63 @@ function socketServer() {
             }
         });
 
+        /**
+         * Applies update to object based on the property path and new value found within
+         * @param {any} obj
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyPropertyUpdate(obj, update) {
+            let keys = update.propertyPath.split('.');
+            let target = obj;
+            for (let key of keys.slice(0, -1)) {
+                if (!obj.hasOwnProperty(key)) {
+                    obj[key] = {};
+                }
+                target = obj[key];
+            }
+            target[keys[keys.length - 1]] = update.newValue;
+        }
+
+        /**
+         * Alters objects based on the change described by `update`
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyUpdate(update) {
+            if (!update.objectKey) {
+                console.error('malformed update', update);
+                return;
+            }
+            let obj = objects[update.objectKey];
+            if (!obj) {
+                console.warn('update of unknown object', update);
+                return;
+            }
+            if (!update.frameKey) {
+                applyPropertyUpdate(obj, update);
+                return;
+            }
+            let frame = obj.frames[update.frameKey];
+            if (!frame) {
+                console.warn('update of unknown object frame', update);
+                return;
+            }
+            if (!update.nodeKey) {
+                applyPropertyUpdate(frame, update);
+                return;
+            }
+            let node = frame.nodes[update.nodeKey];
+            if (!node) {
+                console.warn('update of unknown object frame node', update);
+                return;
+            }
+            applyPropertyUpdate(node, update);
+
+            recorder.update();
+        }
+
         socket.on('/update', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            applyUpdate(msgContent);
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -3721,9 +3776,10 @@ function socketServer() {
             if (!batchedUpdates) { return; }
             let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
 
-            batchedUpdates.forEach(update => {
+            for (let update of batchedUpdates) {
                 resetObjectTimeout(update.objectKey);
-            });
+                applyUpdate(update);
+            }
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
