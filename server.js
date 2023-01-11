@@ -3629,8 +3629,19 @@ function socketServer() {
                 }
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
-            if (objects[msg.object] && objects[msg.object].type !== 'avatar') {
-                utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+
+            // frequently updated objects like avatar and human pose are excluded from writing to file
+            var object = getObject(msg.object);
+            if (object) {
+                if (object.type !== 'avatar' && object.type !== 'human') {
+                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                }
+
+                // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
+                if (object.type == 'human' && msg.publicData['whole_pose']) {
+                    // unpack public data with the whole pose to the human pose object
+                    object.updateJoints(msg.publicData['whole_pose'].joints);
+                }
             }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it

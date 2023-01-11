@@ -47,6 +47,7 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     this.isHumanPose = true;
     this.type = 'human';
     this.isWorldObject = false;
+    this.poseJointSchema = poseJointSchema;
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
@@ -151,13 +152,13 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     return newFrame;
 };
 
-HumanPoseObject.prototype.updateJointPositions = function(joints) {
+HumanPoseObject.prototype.updateJoints = function(joints) {
 
     // converts joint position from meters to mm scale
     var scale = 1000;
 
     var objPos = {
-        x: joints[0].x * scale, // right now uses the pelvis as the object's center, but could change to any other joint (e.g. head might make sense)
+        x: joints[0].x * scale, // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
         y: joints[0].y * scale,
         z: joints[0].z * scale
     };
@@ -170,23 +171,35 @@ HumanPoseObject.prototype.updateJointPositions = function(joints) {
     ];
 
     // update the position of each frame based on the poseInfo
-    joints.forEach(function(position, i) {
-        var jointName = Object.keys(this.POSE_JOINTS)[i];
+    joints.forEach(function(jointInfo, index) {
+        var jointName = Object.values(this.poseJointSchema)[index];
         var frame = this.frames[this.getFrameKey(jointName)];
-        if (frame) {
-            var scaledPosition = {
-                x: position.x * scale, // meter to mm scale
-                y: position.y * scale,
-                z: position.z * scale
-            };
-            // frame positions are relative to object
-            frame.ar.matrix = [
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                scaledPosition.x - objPos.x, scaledPosition.y - objPos.y, scaledPosition.z - objPos.z, 1
-            ];
+        if (!frame) {
+            console.warn('couldn\'t find frame for joint ' + jointName + ' (' + index + ')');
+            return;
         }
+       
+        var scaledPosition = {
+            x: jointInfo.x * scale, // meter to mm scale
+            y: jointInfo.y * scale,
+            z: jointInfo.z * scale
+        };
+        // frame positions are relative to object
+        frame.ar.matrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            scaledPosition.x - objPos.x, scaledPosition.y - objPos.y, scaledPosition.z - objPos.z, 1
+        ];
+        
+        var node = Object.values(frame.nodes).find(obj => obj.name === 'storage');
+        if (!node || !node.publicData.data) {
+            console.warn('couldn\'t find node public data for joint ' + jointName + ' (' + index + ')');
+            return;
+        }
+
+        node.publicData.data = { confidence: jointInfo.confidence };
+
     }.bind(this));
 };
 
