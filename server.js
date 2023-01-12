@@ -3640,7 +3640,13 @@ function socketServer() {
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
                 if (object.type == 'human' && msg.publicData['whole_pose']) {
                     // unpack public data with the whole pose to the human pose object
-                    object.updateJoints(msg.publicData['whole_pose'].joints);
+                    if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
+                        typeof msg.publicData['whole_pose'].timestamp !== 'undefined' && 
+                        msg.publicData['whole_pose'].joints.length > 0) {
+                        // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
+                        object.updateJoints(msg.publicData['whole_pose'].joints);
+                        object.lastUpdateTS = msg.publicData['whole_pose'].timestamp;
+                    }
                 }
             }
 
