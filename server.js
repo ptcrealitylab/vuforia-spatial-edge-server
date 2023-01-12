@@ -314,6 +314,11 @@ var cheerio = require('cheerio');
 
 // use the cors cross origin REST model
 webServer.use(cors());
+webServer.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+});
 // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
 webServer.options('*', cors());
 
