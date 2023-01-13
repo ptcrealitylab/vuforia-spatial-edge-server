@@ -3645,7 +3645,9 @@ function socketServer() {
                         msg.publicData['whole_pose'].joints.length > 0) {
                         // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
                         object.updateJoints(msg.publicData['whole_pose'].joints);
-                        object.lastUpdateTS = msg.publicData['whole_pose'].timestamp;
+                        object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
+                        // keep the object alive
+                        resetObjectTimeout(msg.object);
                     }
                 }
             }

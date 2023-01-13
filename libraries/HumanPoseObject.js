@@ -48,8 +48,9 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     this.type = 'human';
     this.isWorldObject = false;
     this.poseJointSchema = poseJointSchema;
-    // Timestamp of the last update of pose (joint positions + related data such as joint confidences) 
-    this.lastUpdateTS = 0;  
+    // Timestamp of the last update of pose (joint positions + related data such as joint confidences)
+    // This is capture time of the image used to compute the pose in the update.
+    this.lastUpdateDataTS = 0;  
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
