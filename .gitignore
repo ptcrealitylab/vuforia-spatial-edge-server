@@ -48,3 +48,4 @@ libraries/objectLogs/*
 /addons/*
 
 /docs
+/.vscode
