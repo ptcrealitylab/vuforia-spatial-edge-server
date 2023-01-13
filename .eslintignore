@@ -5,6 +5,7 @@ dropzone.js
 /hardwareInterfaces/robot
 *.min.js
 /libraries/logicInterfaces.js
+/libraries/objectDefaultFiles/three
 /addons
 
 # Various paths added by test runner

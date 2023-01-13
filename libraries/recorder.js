@@ -107,7 +107,3 @@ recorder.getItemFromArray = function (object, array) {
 };
 
 module.exports = recorder;
-
-
-
-
