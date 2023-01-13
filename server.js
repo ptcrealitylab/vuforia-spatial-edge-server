@@ -310,9 +310,15 @@ var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
+const fetch = require('node-fetch'); // Fetch API for Node
 
 // use the cors cross origin REST model
 webServer.use(cors());
+webServer.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+});
 // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
 webServer.options('*', cors());
 
@@ -1075,7 +1081,7 @@ function startSystem() {
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
-    
+
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
     const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
@@ -1087,7 +1093,7 @@ function startSystem() {
 
     recorder.initRecorder(objects);
 
-    serverBeatSender(beatPort);
+    serverBeatSender(beatPort, false);
 }
 
 /**********************************************************************************************************************
@@ -1111,7 +1117,7 @@ if (process.pid) {
  **********************************************************************************************************************/
 
 // send a message on a repeated interval, advertising this server and the services it supports
-function serverBeatSender(udpPort) {
+function serverBeatSender(udpPort, oneTimeOnly = true) {
     if (isLightweightMobile) {
         return;
     }
@@ -1128,8 +1134,6 @@ function serverBeatSender(udpPort) {
         services: providedServices || [] // e.g. ['world'] if it can support a world object
     });
 
-    console.log('server has the following heartbeat services: ' + providedServices);
-
     const message = Buffer.from(messageStr);
 
     // creating the datagram
@@ -1140,6 +1144,17 @@ function serverBeatSender(udpPort) {
         client.setMulticastTTL(timeToLive);
     });
 
+    if (oneTimeOnly) {
+        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
+            if (err) throw err;
+            client.close(); // close the socket as the function is only called once.
+        });
+        return;
+    }
+
+    console.log('server has the following heartbeat services: ' + providedServices);
+
+    // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
     setInterval(function () {
         client.send(message, 0, message.length, udpPort, udpHost, function (err) {
             if (err) {
@@ -1314,9 +1329,10 @@ function handleActionMessage(action) {
         for (let key in objects) {
             objectBeatSender(beatPort, key, objects[key].ip, true);
         }
+        serverBeatSender(beatPort);
         return;
     }
-    
+
     // non-string actions can be processed after this point
     action = (typeof action === 'string') ? JSON.parse(action) : action;
 
@@ -1503,9 +1519,10 @@ function objectWebServer() {
     });
     // define the body parser
     webServer.use(express.urlencoded({
-        extended: true
+        extended: true,
+        limit: '5mb',
     }));
-    webServer.use(express.json());
+    webServer.use(express.json({limit: '5mb'}));
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
@@ -2021,8 +2038,12 @@ function objectWebServer() {
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
         });
-        // restart the server from the web frontend to load
 
+        // Proxies requests to toolboxedge.net, for CORS video playback
+        const toolboxEdgeProxyRequestHandler = require('./libraries/serverHelpers/toolboxEdgeProxyRequestHandler.js');
+        webServer.get('/proxy/*', toolboxEdgeProxyRequestHandler);
+
+        // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
             if (process.send) {
                 process.send('restart');
@@ -3675,8 +3696,63 @@ function socketServer() {
             }
         });
 
+        /**
+         * Applies update to object based on the property path and new value found within
+         * @param {any} obj
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyPropertyUpdate(obj, update) {
+            let keys = update.propertyPath.split('.');
+            let target = obj;
+            for (let key of keys.slice(0, -1)) {
+                if (!obj.hasOwnProperty(key)) {
+                    obj[key] = {};
+                }
+                target = obj[key];
+            }
+            target[keys[keys.length - 1]] = update.newValue;
+        }
+
+        /**
+         * Alters objects based on the change described by `update`
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyUpdate(update) {
+            if (!update.objectKey) {
+                console.error('malformed update', update);
+                return;
+            }
+            let obj = objects[update.objectKey];
+            if (!obj) {
+                console.warn('update of unknown object', update);
+                return;
+            }
+            if (!update.frameKey) {
+                applyPropertyUpdate(obj, update);
+                return;
+            }
+            let frame = obj.frames[update.frameKey];
+            if (!frame) {
+                console.warn('update of unknown object frame', update);
+                return;
+            }
+            if (!update.nodeKey) {
+                applyPropertyUpdate(frame, update);
+                return;
+            }
+            let node = frame.nodes[update.nodeKey];
+            if (!node) {
+                console.warn('update of unknown object frame node', update);
+                return;
+            }
+            applyPropertyUpdate(node, update);
+
+            recorder.update();
+        }
+
         socket.on('/update', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            applyUpdate(msgContent);
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -3705,9 +3781,10 @@ function socketServer() {
             if (!batchedUpdates) { return; }
             let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
 
-            batchedUpdates.forEach(update => {
+            for (let update of batchedUpdates) {
                 resetObjectTimeout(update.objectKey);
-            });
+                applyUpdate(update);
+            }
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -4089,6 +4166,7 @@ function deleteObject(objectKey) {
     }
     delete knownObjects[objectKey];
     delete objectLookup[objectKey];
+    delete objects[objectKey];
     sceneGraph.removeElementAndChildren(objectKey);
 }
 

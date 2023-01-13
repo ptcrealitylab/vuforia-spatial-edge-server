@@ -876,8 +876,8 @@ class ThreejsInterface {
 
     main({width, height}, cmdBufferFactory) {
         this.spatialInterface.changeFrameSize(width, height);
-        const canvas = document.createElement('canvas');
-        realGl = canvas.getContext('webgl2');
+        this.canvas = document.createElement('canvas');
+        realGl = this.canvas.getContext('webgl2');
         let cmdBuffer = cmdBufferFactory.createAndActivate(false);
         let gl = cmdBufferFactory.getGL();
         this.realRenderer = new THREE.WebGLRenderer({context: realGl, alpha: true});
@@ -924,6 +924,10 @@ class ThreejsInterface {
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
+    }
+
+    render(now) {
+        this.preRender(now);
 
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
@@ -937,8 +941,6 @@ class ThreejsInterface {
                     proxies = [];
                     this.realRenderer.dispose();
                     this.realRenderer.forceContextLoss();
-                    this.realRenderer.context = null;
-                    this.realRenderer.domElement = null;
                     this.realRenderer = null;
                     // eslint-disable-next-line no-global-assign
                     realGl = null;
@@ -964,5 +966,29 @@ class ThreejsInterface {
             array[2], array[6], array[10], array[14],
             array[3], array[7], array[11], array[15]
         );
+    }
+}
+
+// eslint-disable-next-line no-unused-vars
+class ThreejsFakeProxyInterface extends ThreejsInterface {
+    constructor(spatialInterface, injectThree) {
+        super(spatialInterface, injectThree);
+    }
+
+    main({width, height}) {
+        super.main({width, height});
+        this.canvas.width = width;
+        this.canvas.height = height;
+        document.body.appendChild(this.canvas);
+    }
+
+    render(now) {
+        this.preRender(now);
+
+        if (this.isProjectionMatrixSet) {
+            if (this.realRenderer && this.scene && this.camera) {
+                this.realRenderer.render(this.scene, this.camera);
+            }
+        }
     }
 }
