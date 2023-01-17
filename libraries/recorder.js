@@ -49,7 +49,7 @@ recorder.saveToFile = function () {
     });
 };
 
-recoder.update = function() {
+recorder.update = function() {
     // TODO
 };
 
