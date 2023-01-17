@@ -49,6 +49,10 @@ recorder.saveToFile = function () {
     });
 };
 
+recoder.update = function() {
+    // TODO
+};
+
 recorder.saveState = function () {
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
