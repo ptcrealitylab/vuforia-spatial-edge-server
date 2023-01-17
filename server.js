@@ -1809,12 +1809,14 @@ function objectWebServer() {
     const objectRouter = require('./routers/object');
     const logicRouter = require('./routers/logic');
     const spatialRouter = require('./routers/spatial');
+    const historyRouter = require('./routers/history');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
     spatialRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
     webServer.use('/spatial', spatialRouter.router);
+    webServer.use('/history', historyRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
