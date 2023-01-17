@@ -49,17 +49,63 @@ recorder.saveToFile = function () {
     });
 };
 
-recorder.update = function() {
-    // TODO
-};
-
 recorder.saveState = function () {
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
     recorder.recurse(recorder.object, timeObject);
     if (Object.keys(timeObject).length === 0) delete recorder.timeObject[timeString];
-    // console.log(recorder.timeObject);
 };
+
+let pendingUpdate = null;
+recorder.update = function() {
+    if (pendingUpdate) {
+        return;
+    }
+    pendingUpdate = setTimeout(() => {
+        recorder.saveState();
+        pendingUpdate = null;
+    }, 0);
+};
+
+recorder.replay = function(timeObject, targetTime, checkpoint) {
+    let objects = {};
+    let currentTime = 0;
+    if (checkpoint) {
+        objects = checkpoint.objects;
+        currentTime = checkpoint.time;
+    }
+
+    let times = Object.keys(timeObject).map(t => parseInt(t));
+
+    for (let time of times) {
+        if (currentTime >= time) {
+            continue;
+        }
+
+        recorder.applyDiff(objects, timeObject[time]);
+    }
+
+    return objects;
+};
+
+function applyDiffRecur(objects, diff) {
+    let diffKeys = Object.keys(diff);
+    for (let key of diffKeys) {
+        if (diff[key] === null) {
+            continue; // JSON encodes undefined as null so just skip (problem if we try to encode null)
+        }
+        if (typeof diff[key] === 'object' && objects.hasOwnProperty(key)) {
+            applyDiffRecur(objects[key], diff[key]);
+            continue;
+        }
+        objects[key] = diff[key];
+    }
+}
+
+recorder.applyDiff = function(objects, diff) {
+    applyDiffRecur(objects, diff);
+};
+
 recorder.recurse = function (obj, objectInTime, keyString) {
     if (!keyString) keyString = '';
     for (let key in obj) { // works for objects and arrays
@@ -88,7 +134,7 @@ recorder.recurse = function (obj, objectInTime, keyString) {
 
 recorder.getItemFromArray = function (object, array) {
     let item = object;
-    if (!item) return null;
+    if (!item) return item;
     let returnItem = {};
     array.forEach(function (data) {
         if (data !== '') {

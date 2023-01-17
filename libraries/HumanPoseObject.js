@@ -156,7 +156,6 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
 };
 
 HumanPoseObject.prototype.updateJoints = function(joints) {
-
     // converts joint position from meters to mm scale
     var scale = 1000;
 
