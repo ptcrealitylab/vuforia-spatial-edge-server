@@ -1,6 +1,12 @@
 const debugGlWorker = true;
 const GLPROXY_ENABLE_EXTVAO = true;
 
+/**
+ * @typedef {import("./glState.js").JSONGLState} JSONGLState
+ * @typedef {import("./glState.js").JSONDeviceDescription} JSONDeviceDescription
+ * @typedef {import("./glState.js").Handle} Handle
+ */
+
 let proxies = [];
 const wantsResponse = false;
 
@@ -18,7 +24,13 @@ const EXTColorBufferHalfFloat = {
  */
 class GLCommandBufferContext {
     constructor(message) {
+        /**
+         * @type {JSONGLState}
+         */
         this.state = JSON.parse(message.glState);
+        /**
+         * @type {JSONDeviceDescription}
+         */
         this.deviceDesc = JSON.parse(message.deviceDesc);
         this.nextHandle = 1;
         this.handles = {};
@@ -32,12 +44,13 @@ class GLCommandBufferContext {
             this.gl = Object.create(WebGLRenderingContext.prototype);
         }
         for (const fnName of message.functions) {
-            if (fnName === "attachShader") {  
+            if (fnName === "activeTexture") {  
                 /**
-                 * @type {function(Handle, Handle):void}  
+                 * @type {function(Handle):void}  
                  */ 
-                this.gl.attachShader = (program, shader) => {
-                    this.addMessage(fnName, [program, shader]);
+                this.gl.activeTexture = (texture) => {
+                    this.state.activeTexture = texture;
+                    this.addMessage(fnName, [texture]);
                 };
             } else if (fnName === "bindBuffer") {    
                 /**
@@ -63,20 +76,6 @@ class GLCommandBufferContext {
                 this.gl.bindTexture = (target, texture) => {
                     this.state.textureBinds[this.state.activeTexture].value.targets[target].value.texture = texture;
                     this.addMessage(fnName, [target, texture]);
-                };
-            } else if (fnName === "bindAttribLocation") {   
-                /**
-                 * @type {function(Handle, index, name):void}
-                 */ 
-                this.gl.bindAttribLocation = (program, index, name) => {
-                    this.addMessage(fnName, [program, index, name]);
-                };
-            } else if (fnName === "bindVertexArray") {   
-                /**
-                 * @type {function(Handle):void}
-                 */ 
-                this.gl.bindVertexArray = (vertexArray) => {
-                    this.addMessage(fnName, [vertexArray]);
                 };
             } else if (fnName === "bufferData") {   
                 /**
@@ -119,13 +118,6 @@ class GLCommandBufferContext {
                     this.state.parameters[this.gl.STENCIL_CLEAR_VALUE].value = s;
                     this.addMessage(fnName, [s]);
                 };
-            } else if (fnName === "compileShader") {  
-                /**
-                 * @type {function(Handle):void} 
-                 */  
-                this.gl.compileShader = (shader) => {
-                    this.addMessage(fnName, [shader]);
-                };    
             } else if (fnName === "createBuffer") {
                 /**
                  * @type {function():Handle}
@@ -362,7 +354,9 @@ class GLCommandBufferContext {
                     this.addMessage(fnName, [x, y, width, height]);
                 };
             } else {
-                this.gl[fnName] = this.makeStub(fnName);
+                this.gl[fnName] = (...args) => {
+                    this.addMessage(fnName, Array.from(args));
+                }
             }
         }
         for (const constName in message.constants) {        
@@ -679,12 +673,19 @@ class CommandBufferFactory {
 }
 
 let commandBufferFactory = null;
+
+/**
+ * @type {CommandBuffer | null}
+ */
 let frameCommandBuffer = null;
 let bootstrapProcessed = false;
 
 const pending = new Map();
 
 // Render function specified by worker script
+/**
+ * @type {function(number, CommandBuffer): void}
+ */
 let render;
 
 window.glProxy = {
@@ -699,10 +700,10 @@ let glCommandBufferContext = null;
 
 // Local hidden gl context used to generate placeholder objects for gl calls
 // that require valid objects
-let realGl;
-
-// VAO extension from realGl if applicable
-let extVao;
+/**
+ * @type {WebGL2RenderingContext | null}
+ */
+let realGl = null;
 
 // const cacheGetParameter = {
 //   3379: 8192,
@@ -735,10 +736,10 @@ window.addEventListener('message', function(event) {
         let bootstrapCommandBuffers = [];
         if (typeof main !== 'undefined') {
             // eslint-disable-next-line no-undef
-            bootstrapCommandBuffers = main({width, height}, commandBufferFactory);
+            bootstrapCommandBuffers = main(width, height, commandBufferFactory);
         }
         if (window.glProxy.main) {
-            bootstrapCommandBuffers = window.glProxy.main({width, height}, commandBufferFactory);
+            bootstrapCommandBuffers = window.glProxy.main(width, height, commandBufferFactory);
         }
         frameCommandBuffer = commandBufferFactory.createAndActivate(true);
 
@@ -874,7 +875,14 @@ class ThreejsInterface {
         return this;
     }
 
-    main({width, height}, cmdBufferFactory) {
+    /**
+     * 
+     * @param {number} width 
+     * @param {number} height 
+     * @param {CommandBufferFactory} cmdBufferFactory 
+     * @returns {CommandBuffer[]}
+     */
+    main(width, height, cmdBufferFactory) {
         this.spatialInterface.changeFrameSize(width, height);
         this.canvas = document.createElement('canvas');
         realGl = this.canvas.getContext('webgl2');
@@ -902,14 +910,24 @@ class ThreejsInterface {
         this.lastProjectionMatrix = projectionMatrix;
     }
 
+    /**
+     * 
+     * @returns {WebGL2RenderingContext | null}
+     */
     getRealGl() {
         return realGl;
     }
 
+    /**
+     * 
+     * @param {number} now 
+     * @param {CommandBuffer} commandBuffer 
+     * @returns {CommandBuffer | null}
+     */
     render(now, commandBuffer) {
         if (!this.camera) {
             console.warn('rendering too early');
-            return;
+            return null;
         }
         if (!this.isProjectionMatrixSet && this.lastProjectionMatrix && this.lastProjectionMatrix.length === 16) {
             this.setMatrixFromArray(this.camera.projectionMatrix, this.lastProjectionMatrix);
@@ -924,10 +942,6 @@ class ThreejsInterface {
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
-    }
-
-    render(now) {
-        this.preRender(now);
 
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
@@ -944,7 +958,6 @@ class ThreejsInterface {
                     this.realRenderer = null;
                     // eslint-disable-next-line no-global-assign
                     realGl = null;
-                    extVao = null;
                 }
                 this.done = true;
             }
@@ -952,6 +965,11 @@ class ThreejsInterface {
         return commandBuffer;
     }
 
+    /**
+     * 
+     * @param {THREE.Matrix4} matrix 
+     * @param {number[]} array 
+     */
     setMatrixFromArray(matrix, array) {
         /**
          * this is the following matrix (ROW MAJOR)
@@ -975,20 +993,35 @@ class ThreejsFakeProxyInterface extends ThreejsInterface {
         super(spatialInterface, injectThree);
     }
 
-    main({width, height}) {
-        super.main({width, height});
+    /**
+     * 
+     * @param {number} width
+     * @param {number} height
+     * @param {CommandBufferFactory} cmdBufferFactory 
+     * @returns {CommandBuffer[]}
+     */
+    main(width, height, cmdBufferFactory) {
+        let ret = super.main(width, height, cmdBufferFactory);
         this.canvas.width = width;
         this.canvas.height = height;
         document.body.appendChild(this.canvas);
+        return ret;
     }
 
-    render(now) {
-        this.preRender(now);
+    /**
+     * 
+     * @param {number} now 
+     * @param {CommandBuffer} commandBuffer 
+     * @param {CommandBuffer | null}
+     */
+    render(now, commandBuffer) {
+        let ret = super.render(now, commandBuffer);
 
         if (this.isProjectionMatrixSet) {
             if (this.realRenderer && this.scene && this.camera) {
                 this.realRenderer.render(this.scene, this.camera);
             }
         }
+        return ret;
     }
 }

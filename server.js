@@ -1587,7 +1587,7 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
         html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
-
+        html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
         var loadedHtml = cheerio.load(html);
@@ -1752,7 +1752,7 @@ function objectWebServer() {
 
             html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
-
+            html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
             html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
             var loadedHtml = cheerio.load(html);
