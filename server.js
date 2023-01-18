@@ -3396,7 +3396,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
             realityEditorSocketArray[thisEditor].forEach((thisObj) => {
-                if (objectKey === thisObj.object) {
+                if (objectKey === thisObj.object && frameKey === thisObj.frame) {
                     io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,
@@ -3629,8 +3629,27 @@ function socketServer() {
                 }
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
-            if (objects[msg.object] && objects[msg.object].type !== 'avatar') {
-                utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+
+            // frequently updated objects like avatar and human pose are excluded from writing to file
+            var object = getObject(msg.object);
+            if (object) {
+                if (object.type !== 'avatar' && object.type !== 'human') {
+                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                }
+
+                // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
+                if (object.type == 'human' && msg.publicData['whole_pose']) {
+                    // unpack public data with the whole pose to the human pose object
+                    if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
+                        typeof msg.publicData['whole_pose'].timestamp !== 'undefined' && 
+                        msg.publicData['whole_pose'].joints.length > 0) {
+                        // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
+                        object.updateJoints(msg.publicData['whole_pose'].joints);
+                        object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
+                        // keep the object alive
+                        resetObjectTimeout(msg.object);
+                    }
+                }
             }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it
@@ -3942,99 +3961,6 @@ function socketServer() {
                         thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
-            }
-        });
-
-        // create or update the position of a HumanPoseObject
-        socket.on('/update/humanPoses', function (msg) {
-            if (!globalVariables.listenForHumanPose) {
-                return;
-            }
-            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            if (!msgContent) {
-                return;
-            }
-
-            // if no poses changed this frame, don't clog the network with sending the same information
-            var didAnythingChange = false;
-            forEachHumanPoseObject(function (objectKey, thisObject) {
-                thisObject.wasUpdated = false;
-            });
-
-            msgContent.forEach(function (poseInfo) {
-                var objectId = HumanPoseObject.getObjectId(poseInfo.id);
-                var thisObject = objects[objectId];
-                if (!doesObjectExist(objectId)) {
-                    // create an object if needed
-                    const ip = services.ip;
-                    objects[objectId] = new HumanPoseObject(ip, version, protocol, poseInfo.id);
-                    thisObject = objects[objectId];
-                    // advertise to editors
-                    objectBeatSender(beatPort, objectId, thisObject.ip, true);
-                    // currently doesn't writeObjectToFile, because I've found no need for human objects to persist
-                }
-                // update the position of each frame based on the poseInfo
-                thisObject.updateJointPositions(poseInfo.joints);
-                thisObject.wasUpdated = true; // flags objects to be deleted if they are not updated
-                didAnythingChange = true;
-            });
-
-            // check if any Human Objects were not contained in msgContent, and delete them
-            forEachHumanPoseObject(function (objectKey, thisObject) {
-                if (!thisObject.wasUpdated) {
-                    console.log('delete human pose object', objectKey);
-                    didAnythingChange = true;
-                    try {
-                        objects[objectKey].deconstruct();
-                    } catch (e) {
-                        console.warn('(Human) Object exists without proper prototype: ' + objectKey, e);
-                    }
-                    delete objects[objectKey];
-                    // todo: delete folder recursive if necessary?
-                    // ^ might not actually be needed, why would human object need to persist?
-                }
-            });
-
-            if (!didAnythingChange) {
-                return;
-            }
-
-            // send updated objects / positions to all known editors. right now piggybacks on sockets opened for other realtime communications.
-            for (var socketId in realityEditorObjectMatrixSocketArray) {
-                var thisSocket = io.sockets.connected[socketId];
-                if (thisSocket) {
-                    // sends an array of objectIds for the visible poses in this timestep
-                    var visibleHumanPoseObjects = Object.keys(objects).filter(function (objectKey) {
-                        return objects[objectKey].isHumanPose;
-                    });
-                    var updateResponse = {
-                        visibleHumanPoseObjects: visibleHumanPoseObjects
-                    };
-                    // also sends all object JSON data for each visible pose object
-                    var objectData = {};
-                    visibleHumanPoseObjects.forEach(function (objectKey) {
-                        objectData[objectKey] = objects[objectKey];
-                    });
-                    updateResponse.objectData = objectData;
-
-                    // TODO: we should only need to send object matrix, and each frame.ar (x,y,matrix) for each pose object
-                    // this doesn't work right now because we also need the full JSON to instantly create the object on the client for a newly detected pose
-                    // but there might be a way in the future to only send full data for objects that are newly detected
-                    // to reduce the bandwidth used by constantly sending object/frame/pose information to all clients
-                    // var compressedObjectData = {};
-                    // visibleHumanPoseObjects.forEach(function(objectKey) {
-                    //     compressedObjectData[objectKey] = {
-                    //         ip: objects[objectKey].ip
-                    //         matrix: objects[objectKey].matrix
-                    //     };
-                    //     for (var frameKey in objects[objectKey].frames) {
-                    //         compressedObjectData[frameKey] = objects[objectKey].frames[frameKey].ar;
-                    //     }
-                    // });
-                    // updateResponse.compressedObjectData = compressedObjectData;
-
-                    thisSocket.emit('/update/humanPoses', JSON.stringify(updateResponse));
-                }
             }
         });
 
