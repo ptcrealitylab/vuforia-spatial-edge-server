@@ -49,8 +49,8 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     this.isWorldObject = false;
     this.poseJointSchema = poseJointSchema;
     // Timestamp of the last update of pose (joint positions + related data such as joint confidences)
-    // This is capture time of the image used to compute the pose in the update.
-    this.lastUpdateDataTS = 0;  
+    // This is capture timestamp of the image used to compute the pose in the update. Units are miliseconds, but it is a floating-point number with nanosecond precision.
+    this.lastUpdateDataTS = 0;
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
@@ -181,7 +181,7 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
             console.warn('couldn\'t find frame for joint ' + jointName + ' (' + index + ')');
             return;
         }
-       
+
         var scaledPosition = {
             x: jointInfo.x * scale, // meter to mm scale
             y: jointInfo.y * scale,
@@ -194,7 +194,7 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
             0, 0, 1, 0,
             scaledPosition.x - objPos.x, scaledPosition.y - objPos.y, scaledPosition.z - objPos.z, 1
         ];
-        
+
         var node = Object.values(frame.nodes).find(obj => obj.name === 'storage');
         if (!node || !node.publicData.data) {
             console.warn('couldn\'t find node public data for joint ' + jointName + ' (' + index + ')');
