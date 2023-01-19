@@ -159,7 +159,7 @@
         var url = null;
         let urlSplit = null;
         if (parseInt(Number(defaultPort))) {
-            url = location.protocol + '//' + object.ip + ':' + defaultPort;
+            url = location.protocol + '//localhost:' + defaultPort;
         } else {
             urlSplit = location.pathname.split('/');
             for (let i = 0; i < urlSplit.length; i++) {
@@ -170,7 +170,7 @@
                 }
             }
 
-            url = location.protocol + '//' + object.ip + ':';
+            url = location.protocol + '//localhost:';
             if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  '' + 443; else url += '' + 80;
             if (urlObj.n) url += '/n/' + urlObj.n;
             if (urlObj.i) url += '/i/' + urlObj.i;
