@@ -10,8 +10,6 @@ const logicNodeController = require('../controllers/logicNode.js');
 const nodeController = require('../controllers/node.js');
 const objectController = require('../controllers/object.js');
 
-const recorder = require('../libraries/recorder.js');
-
 // logic links
 router.post('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/addBlockLink/', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
