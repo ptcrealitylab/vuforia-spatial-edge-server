@@ -8,15 +8,18 @@ const logsPath = path.join(objectsPath, '.objectLogs');
 
 // Persist every half hour
 const PERSIST_DELAY_MS = 30 * 60 * 1000;
-const prec = Math.pow(10, 8);
 
+// Flag to compress floating point numbers for ~20% average gains at a loss of precision
+const doCompressFloat = false;
+const prec = Math.pow(10, 8);
 /**
  * @param {number} val
- * @return {number} `val` limited to have `Math.log10(prec)` significant digits
+ * @return {number} `val` limited to a resolution of at most `1 / prec` and to
+ * `Math.log10(prec)` significant digits
  */
 function compressFloat(val) {
-    if (Math.round(val) === val) {
-        return val;
+    if (Math.abs(val - Math.round(val)) < 1 / prec) {
+        return Math.round(val);
     }
     let sign = Math.sign(val);
     val = Math.abs(val);
@@ -199,11 +202,13 @@ recorder.recurse = function (obj, objectInTime, keyString) {
             let thisValue = thisItem[key];
             let oldValue = oldItem[key];
 
-            if (typeof thisValue === 'number') {
-                thisValue = compressFloat(thisValue);
-            }
-            if (typeof oldValue === 'number') {
-                oldValue = compressFloat(oldValue);
+            if (doCompressFloat) {
+                if (typeof thisValue === 'number') {
+                    thisValue = compressFloat(thisValue);
+                }
+                if (typeof oldValue === 'number') {
+                    oldValue = compressFloat(oldValue);
+                }
             }
 
             if (thisValue !== oldValue) {
