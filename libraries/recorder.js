@@ -15,10 +15,15 @@ const prec = Math.pow(10, 8);
  * @return {number} `val` limited to have `Math.log10(prec)` significant digits
  */
 function compressFloat(val) {
+    if (Math.round(val) === val) {
+        return val;
+    }
+    let sign = Math.sign(val);
+    val = Math.abs(val);
     let scale = Math.pow(10, Math.floor(Math.log10(val)));
     let significand = val / scale;
     significand = Math.round(significand * prec) / prec;
-    return significand * scale;
+    return sign * significand * scale;
 }
 
 let recorder = {};
