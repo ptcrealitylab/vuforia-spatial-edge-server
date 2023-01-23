@@ -199,14 +199,17 @@ recorder.recurse = function (obj, objectInTime, keyString) {
             let thisValue = thisItem[key];
             let oldValue = oldItem[key];
 
-            if (typeof thisValue === 'number' && typeof oldValue === 'number') {
+            if (typeof thisValue === 'number') {
                 thisValue = compressFloat(thisValue);
+            }
+            if (typeof oldValue === 'number') {
                 oldValue = compressFloat(oldValue);
             }
 
-            if (thisItem[key] !== oldItem[key]) {
+            if (thisValue !== oldValue) {
                 const timeItem = recorder.getItemFromArray(objectInTime, string.split('/'));
-                timeItem[key] = thisValue;
+                // Persists value before any modifications
+                timeItem[key] = thisItem[key];
             }
 
             oldItem[key] = thisValue;
