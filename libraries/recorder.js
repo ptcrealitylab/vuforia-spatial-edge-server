@@ -55,43 +55,49 @@ recorder.start = function () {
     recorder.intervalPersist = setInterval(recorder.persistToFile, PERSIST_DELAY_MS);
 };
 
-recorder.stop = function () {
+recorder.stop = async function () {
     recorder.clearIntervals();
 
-    recorder.persistToFile();
+    await recorder.persistToFile();
 };
 
 recorder.persistToFile = function () {
-    if (recorder.persisting) {
-        return;
-    }
-    recorder.persisting = true;
-    let timeString = Object.keys(recorder.timeObject)[0];
-    const outputFilename = path.join(logsPath, 'objects_' + timeString + '.json.gz');
-
-    if (!fs.existsSync(logsPath)) {
-        try {
-            fs.mkdirSync(logsPath, '0766');
-        } catch (err) {
-            console.error('Log dir creation failed', err);
-            recorder.persisting = false;
+    return new Promise((resolve, reject) => {
+        if (recorder.persisting) {
+            resolve();
             return;
         }
-    }
+        recorder.persisting = true;
+        let timeString = Object.keys(recorder.timeObject)[0];
+        const outputFilename = path.join(logsPath, 'objects_' + timeString + '.json.gz');
 
-    zlib.gzip(JSON.stringify(recorder.timeObject), function(err, buffer) {
-        if (err) {
-            console.error('Log compress failed', err);
-            recorder.persisting = false;
-            return;
-        }
-        fs.writeFile(outputFilename, buffer, function(writeErr) {
-            if (writeErr) {
-                console.error('Log persist failed', writeErr);
+        if (!fs.existsSync(logsPath)) {
+            try {
+                fs.mkdirSync(logsPath, '0766');
+            } catch (err) {
+                console.error('Log dir creation failed', err);
+                recorder.persisting = false;
+                reject(err);
+                return;
             }
-            recorder.objectOld = {};
-            recorder.timeObject = {};
-            recorder.persisting = false;
+        }
+
+        zlib.gzip(JSON.stringify(recorder.timeObject), function(err, buffer) {
+            if (err) {
+                console.error('Log compress failed', err);
+                recorder.persisting = false;
+                reject(err);
+                return;
+            }
+            fs.writeFile(outputFilename, buffer, function(writeErr) {
+                if (writeErr) {
+                    console.error('Log persist failed', writeErr);
+                }
+                recorder.objectOld = {};
+                recorder.timeObject = {};
+                recorder.persisting = false;
+                resolve();
+            });
         });
     });
 };
