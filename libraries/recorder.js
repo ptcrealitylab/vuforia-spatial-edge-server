@@ -1,12 +1,35 @@
-var fs = require('fs');
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
+
+const {objectsPath} = require('../config.js');
+
+const logsPath = path.join(objectsPath, '.objectLogs');
+
+// Persist every half hour
+const PERSIST_DELAY_MS = 30 * 60 * 1000;
+const prec = Math.pow(10, 8);
+
+/**
+ * @param {number} val
+ * @return {number} `val` limited to have `Math.log10(prec)` significant digits
+ */
+function compressFloat(val) {
+    let scale = Math.pow(10, Math.floor(Math.log10(val)));
+    let significand = val / scale;
+    significand = Math.round(significand * prec) / prec;
+    return significand * scale;
+}
 
 let recorder = {};
 recorder.frameRate = 10;
 recorder.object = {};
 recorder.objectOld = {};
 recorder.timeObject = {};
-recorder.isStarted = false;
-recorder.interval = null;
+recorder.intervalSave = null;
+recorder.intervalPersist = null;
+recorder.logsPath = logsPath;
+recorder.persisting = false;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
@@ -14,42 +37,70 @@ recorder.initRecorder = function (object) {
     recorder.start();
 };
 
+recorder.clearIntervals = function() {
+    if (recorder.intervalSave) {
+        clearInterval(recorder.intervalSave);
+        recorder.intervalSave = null;
+    }
+    if (recorder.intervalPersist) {
+        clearInterval(recorder.intervalPersist);
+        recorder.intervalPersist = null;
+    }
+};
+
 recorder.start = function () {
     recorder.objectOld = {};
-    recorder.interval = setInterval(recorder.saveState, 1000 / recorder.frameRate);
+    recorder.clearIntervals();
+    recorder.intervalSave = setInterval(recorder.saveState, 1000 / recorder.frameRate);
+    recorder.intervalPersist = setInterval(recorder.persistToFile, PERSIST_DELAY_MS);
 };
 
 recorder.stop = function () {
-    clearInterval(recorder.interval);
-    recorder.saveToFile();
+    recorder.clearIntervals();
+
+    recorder.persistToFile();
 };
 
-recorder.saveToFile = function () {
-    let timeString = Date.now();
-    let outputFolder = __dirname + '/objectLogs';
-    var outputFilename = outputFolder + '/objects_' + timeString + '.json';
+recorder.persistToFile = function () {
+    if (recorder.persisting) {
+        return;
+    }
+    recorder.persisting = true;
+    let timeString = Object.keys(recorder.timeObject)[0];
+    const outputFilename = path.join(logsPath, 'objects_' + timeString + '.json.gz');
 
-
-    if (!fs.existsSync(outputFolder)) {
-        fs.mkdirSync(outputFolder, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
+    if (!fs.existsSync(logsPath)) {
+        try {
+            fs.mkdirSync(logsPath, '0766');
+        } catch (err) {
+            console.error('Log dir creation failed', err);
+            recorder.persisting = false;
+            return;
+        }
     }
 
-    fs.writeFile(outputFilename, JSON.stringify(recorder.timeObject, null, '\t'), function (err) {
-
-        recorder.objectOld = {};
-        recorder.timeObject = {};
-        // once writeFile is done, unblock writing and loop again
+    zlib.gzip(JSON.stringify(recorder.timeObject), function(err, buffer) {
         if (err) {
-            console.error(err);
+            console.error('Log compress failed', err);
+            recorder.persisting = false;
+            return;
         }
+        fs.writeFile(outputFilename, buffer, function(writeErr) {
+            if (writeErr) {
+                console.error('Log persist failed', writeErr);
+            }
+            recorder.objectOld = {};
+            recorder.timeObject = {};
+            recorder.persisting = false;
+        });
     });
 };
 
 recorder.saveState = function () {
+    if (recorder.persisting) {
+        return;
+    }
+
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
     recorder.recurse(recorder.object, timeObject);
@@ -106,11 +157,20 @@ recorder.applyDiff = function(objects, diff) {
     applyDiffRecur(objects, diff);
 };
 
+/**
+ * @param {object} obj - view into recorder.object
+ * @param {object} objectInTime - object to store any values that change
+ *                 between recorder.object and recorder.objectOld
+ * @param {string} keyString - path to the view `obj`
+ */
 recorder.recurse = function (obj, objectInTime, keyString) {
     if (!keyString) keyString = '';
-    for (let key in obj) { // works for objects and arrays
-        if (!obj.hasOwnProperty(key)) { return; } // this is important. ignores prototype methods
-        let item = obj[key];
+    for (const key in obj) { // works for objects and arrays
+        if (!obj.hasOwnProperty(key)) {
+            // Ignore inherited enumerable properties
+            continue;
+        }
+        const item = obj[key];
         if (typeof item === 'object') {
 
             if (Array.isArray(item)) {
@@ -119,19 +179,35 @@ recorder.recurse = function (obj, objectInTime, keyString) {
                 recorder.recurse(item, objectInTime, keyString + key + '/');
             }
         } else {
-            if (item === undefined) return;
-            let string = keyString + key + '/';
-            let thisItem = recorder.getItemFromArray(recorder.object, string.split('/'), false);
-            let oldItem = recorder.getItemFromArray(recorder.objectOld, string.split('/'), true);
-            if (thisItem[key] !== oldItem[key]) {
-                let timeItem = recorder.getItemFromArray(objectInTime, string.split('/'), true);
-                timeItem[key] = thisItem[key];
+            if (item === undefined) {
+                continue;
             }
-            oldItem[key] = thisItem[key];
+            const string = keyString + key + '/';
+            const thisItem = recorder.getItemFromArray(recorder.object, string.split('/'));
+            const oldItem = recorder.getItemFromArray(recorder.objectOld, string.split('/'));
+            let thisValue = thisItem[key];
+            let oldValue = oldItem[key];
+
+            if (typeof thisValue === 'number' && typeof oldValue === 'number') {
+                thisValue = compressFloat(thisValue);
+                oldValue = compressFloat(oldValue);
+            }
+
+            if (thisItem[key] !== oldItem[key]) {
+                const timeItem = recorder.getItemFromArray(objectInTime, string.split('/'));
+                timeItem[key] = thisValue;
+            }
+
+            oldItem[key] = thisValue;
         }
     }
 };
 
+/**
+ * @param {object} object
+ * @param {Array<String>} array - keyString split at '/'
+ * @return {any} value of `object` from keyString parts `array`
+ */
 recorder.getItemFromArray = function (object, array) {
     let item = object;
     if (!item) return item;
