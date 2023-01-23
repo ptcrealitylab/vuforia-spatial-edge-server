@@ -1095,8 +1095,14 @@ function startSystem() {
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
 
-function exit() {
+async function exit() {
     hardwareAPI.shutdown();
+
+    try {
+        await recorder.stop();
+    } catch (err) {
+        console.error('Recorder error', err);
+    }
 
     process.exit();
 }
