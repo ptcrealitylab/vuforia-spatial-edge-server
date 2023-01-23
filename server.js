@@ -310,7 +310,6 @@ var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
-const fetch = require('node-fetch'); // Fetch API for Node
 
 // use the cors cross origin REST model
 webServer.use(cors());
