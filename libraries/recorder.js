@@ -1,3 +1,16 @@
+/**
+ * Recorder
+ *
+ * Tracks changes to the global `objects` variable, saving them to a compressed
+ * json file periodically or during the shutdown of the server.
+ *
+ *
+ * The recorder is started with initRecorder then will saveState to update its
+ * internal log and persistToFile to persist this log to a file. The async
+ * function stop() allows the server to signal the recorder to stop and
+ * persist.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
