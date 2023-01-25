@@ -5,6 +5,7 @@ const GLPROXY_ENABLE_EXTVAO = true;
  * @typedef {import("./glState.js").JSONGLState} JSONGLState
  * @typedef {import("./glState.js").JSONDeviceDescription} JSONDeviceDescription
  * @typedef {import("./glState.js").Handle} Handle
+ * @typedef {{worker: number, commandBuffer: number, command: number}} InvocationId
  */
 
 let proxies = [];
@@ -378,14 +379,31 @@ class GLCommandBufferContext {
      * Adds a message to the active command buffer
      * @param {String} name - the function name
      * @param {Array<String>} args - the function arguments 
-     * @returns invocation id 
+     * @returns {} invocation id 
      */
     addMessage(name, args) {
         return this.activeBuffer.addMessage(name, args);
     }
 
+    /**
+     * 
+     * @param {string} name 
+     * @param {Array<string>} args 
+     * @param {Handle} handle 
+     * @returns 
+     */
     addMessageWithHandle(name, args, handle) {
         return this.activeBuffer.addMessageWithHandle(name, args, handle);
+    }
+
+    /**
+     * 
+     * @param {string} name 
+     * @param {Array<string>} args 
+     * @returns 
+     */
+    addMessageWithReturn(name, args) {
+        return this.activeBuffer.addMessage(name, args);
     }
 
     /**
@@ -601,6 +619,13 @@ class CommandBuffer {
         this.commandBuffer = [];
     }
 
+    /**
+     * 
+     * @param {string} funcName 
+     * @param {Array<string>} args 
+     * @param {Handle | null} handle 
+     * @returns {InvocationId}
+     */
     addMessageWithHandle(funcName, args, handle) {
         const message = {
             name: funcName,
@@ -608,6 +633,9 @@ class CommandBuffer {
             handle: handle
         };
         this.commandBuffer.push(message);
+        /**
+         * @type {InvocationId} 
+         */
         const id = {
             worker: this.workerId,
             commandBuffer: this.commandBufferId,
@@ -620,6 +648,7 @@ class CommandBuffer {
      * Adds a mesage to the command buffer and returns the invocation id
      * @param {String} funcName - function name
      * @param {Array<String>} args - function arguments
+     * @returns {InvocationId}
      */
     addMessage(funcName, args) {
        return this.addMessageWithHandle(funcName, args, null);
@@ -646,6 +675,35 @@ class CommandBuffer {
         }
     }
 
+    executeAndWait(responseBuffer) {
+        if (this.isRendering) {
+            console.error("Render buffer not repeatable. The render buffer contains a command that sends back data to the tool, this is not allowed because of async nature of rendering commandbuffers");
+            return;
+        }
+        if (this.commandBuffer.length > 0) {
+            try {
+                let test = structuredClone(this.commandBuffer);
+                console.debug(test);
+                let synclockbuffer = new SharedArrayBuffer(4);
+                let synclock = new Int32Array(synclockbuffer);
+                Atomics.store(synclock, 0, 0);
+                window.parent.postMessage({
+                    workerId: this.workerId,
+                    commandBufferId: this.commandBufferId,
+                    isRendering: false,
+                    commands: this.commandBuffer,
+                    synclock: synclock,
+                    responseBuffer: responseBuffer
+                }, '*');
+                Atomics.wait(synclock, 0, 0);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+
+    }
+
     // clears the whole buffer for reuse
     clear() {
         this.commandBuffer = [];
@@ -665,6 +723,11 @@ class CommandBufferFactory {
         return this.glCommandBufferContext.gl;
     }
 
+    /**
+     * 
+     * @param {boolean} isRendering 
+     * @returns {CommandBuffer}
+     */
     createAndActivate(isRendering) {
         let commandBuffer = new CommandBuffer(this.workerId, isRendering);
         this.glCommandBufferContext.setActiveCommandBuffer(commandBuffer);
@@ -672,6 +735,9 @@ class CommandBufferFactory {
     }
 }
 
+/**
+ * @type {CommandBufferFactory | null}
+ */
 let commandBufferFactory = null;
 
 /**
@@ -688,12 +754,18 @@ const pending = new Map();
  */
 let render;
 
+/**
+ * @type {{main: (function(number, number, CommandBufferFactory):CommandBuffer[]) | null, render: (function(number, CommandBuffer):CommandBuffer | null) | null}}
+ */
 window.glProxy = {
     main: null,
     render: null,
 };
 
 // Unique worker id
+/**
+ * @type {number}
+ */
 let workerId;
 
 let glCommandBufferContext = null;
