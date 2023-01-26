@@ -13,6 +13,10 @@ let patches = [];
 
 router.get('/logs', function(req, res) {
     fs.readdir(recorder.logsPath, function (err, files) {
+        if (err) {
+            res.json([]);
+            return;
+        }
         const logNames = {};
         for (let file of files) {
             if (file.endsWith('.json.gz')) {
