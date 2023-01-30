@@ -156,13 +156,12 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
 };
 
 HumanPoseObject.prototype.updateJoints = function(joints) {
-    // converts joint position from meters to mm scale
-    var scale = 1000;
 
+    // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
     var objPos = {
-        x: joints[0].x * scale, // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
-        y: joints[0].y * scale,
-        z: joints[0].z * scale
+        x: joints[0].x, 
+        y: joints[0].y,
+        z: joints[0].z
     };
 
     this.matrix = [
@@ -181,17 +180,17 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
             return;
         }
 
-        var scaledPosition = {
-            x: jointInfo.x * scale, // meter to mm scale
-            y: jointInfo.y * scale,
-            z: jointInfo.z * scale
+        var position = {
+            x: jointInfo.x,
+            y: jointInfo.y,
+            z: jointInfo.z
         };
         // frame positions are relative to object
         frame.ar.matrix = [
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
-            scaledPosition.x - objPos.x, scaledPosition.y - objPos.y, scaledPosition.z - objPos.z, 1
+            position.x - objPos.x, position.y - objPos.y, position.z - objPos.z, 1
         ];
 
         var node = Object.values(frame.nodes).find(obj => obj.name === 'storage');
