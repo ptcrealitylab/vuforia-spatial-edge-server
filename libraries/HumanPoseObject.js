@@ -159,7 +159,7 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
 
     // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
     var objPos = {
-        x: joints[0].x, 
+        x: joints[0].x,
         y: joints[0].y,
         z: joints[0].z
     };
