@@ -715,6 +715,18 @@
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
+
+                this.analyticsAdd = makeSendStub('analyticsAdd');
+                this.analyticsRemove = makeSendStub('analyticsRemove');
+                this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
+                this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
+                this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsSetLens = makeSendStub('analyticsSetLens');
+                this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
+                this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
+                this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
+                this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1590,6 +1602,105 @@
 
             postDataToParent({
                 virtualizerRecording: false
+            });
+        };
+
+        this.analyticsAdd = function analyticsAdd() {
+            postDataToParent({
+                'analyticsAdd': true,
+            });
+        };
+        this.analyticsRemove = function analyticsRemove() {
+            postDataToParent({
+                'analyticsRemove': true,
+            });
+        };
+
+        /**
+         * @param {number} time - cursor time in ms
+         */
+        this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
+            postDataToParent({
+                'analyticsSetCursorTime': {
+                    time,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} highlightRegion
+         */
+        this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
+            postDataToParent({
+                'analyticsSetHighlightRegion': {
+                    highlightRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} displayRegion
+         */
+        this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
+            postDataToParent({
+                'analyticsSetDisplayRegion': {
+                    displayRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {"reba"|"motion"} lens
+         */
+        this.analyticsSetLens = function analyticsSetLens(lens) {
+            postDataToParent({
+                'analyticsSetLens': {
+                    lens,
+                },
+            });
+        };
+
+        /**
+         * @param {"bone"|"pose"} lensDetail
+         */
+        this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
+            postDataToParent({
+                'analyticsSetLensDetail': {
+                    lensDetail,
+                },
+            });
+        };
+
+        /**
+         * @param {string} spaghettiAttachPoint - joint id
+         */
+        this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
+            postDataToParent({
+                'analyticsSetSpaghettiAttachPoint': {
+                    spaghettiAttachPoint,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
+            postDataToParent({
+                'analyticsSetSpaghettiVisible': {
+                    spaghettiVisible,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
+            postDataToParent({
+                'analyticsSetAllClonesVisible': {
+                    allClonesVisible,
+                },
             });
         };
 
