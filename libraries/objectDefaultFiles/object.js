@@ -1,3 +1,15 @@
+// eslint-disable-next-line no-unused-vars
+/* global workerId */
+
+/**
+ * @fileOverview
+ *
+ * object.js provides the SpatialInterface API, forming a bridge between the
+ * tool and the containing user interface. Calling a method on the
+ * SpatialInterface usually calls postMessage to send a message from the tool
+ * iframe to the user interface which will then take an action on behalf of the
+ * tool.
+ */
 (function(exports) {
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
@@ -472,10 +484,10 @@
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
 
-            function forElementAndParentsRecursively(elt, callback) {
-                callback(elt);
-                if (elt.parentNode && elt.parentNode.tagName !== 'HTML' && elt.parentNode !== document) {
-                    forElementAndParentsRecursively(elt.parentNode, callback);
+            function forElementAndParentsRecursively(element, callback) {
+                callback(element);
+                if (element.parentNode && element.parentNode.tagName !== 'HTML' && element.parentNode !== document) {
+                    forElementAndParentsRecursively(element.parentNode, callback);
                 }
             }
 
@@ -547,6 +559,7 @@
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
             console.log('set workerId to ' + msgContent.workerId);
+            // eslint-disable-next-line no-global-assign
             workerId = msgContent.workerId;
         }
     };
