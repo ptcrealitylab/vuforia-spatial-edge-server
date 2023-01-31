@@ -288,6 +288,7 @@ for (const frameLibPath of frameLibPaths) {
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
+exports.webServer = webServer;
 
 if (!isLightweightMobile) {
     webServer.set('views', 'libraries/webInterface/views');
