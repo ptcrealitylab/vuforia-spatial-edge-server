@@ -316,7 +316,8 @@ const fetch = require('node-fetch'); // Fetch API for Node
 webServer.use(cors());
 webServer.use((req, res, next) => {
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-site');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
     next();
 });
 // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
@@ -1588,7 +1589,7 @@ function objectWebServer() {
         html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
         html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
         html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
-        html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+        html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
 
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
@@ -1753,7 +1754,7 @@ function objectWebServer() {
             html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
             html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
-            html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+            html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
 
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
