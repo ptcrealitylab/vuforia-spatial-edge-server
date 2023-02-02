@@ -17,7 +17,7 @@
     "module-alias": "^2.2.2",
     "monaco-editor": "^0.34.1",
     "network-interfaces": "^1.1.0",
-    "node-fetch": "^2.6.8",
+    "node-fetch": "^2.6.9",
     "node-persist": "^2.1.0",
     "request": "^2.*",
     "simple-git": "^3.16.0",
@@ -31,10 +31,10 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^8.32.0",
+    "eslint": "^8.33.0",
     "jsdoc": "^4.0.0",
     "minami": "^1.2.3",
-    "puppeteer": "^19.6.1"
+    "puppeteer": "^19.6.3"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
