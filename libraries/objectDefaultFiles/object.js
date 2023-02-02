@@ -2084,7 +2084,7 @@
                 spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
-                        delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
                     }
                 };
             });
