@@ -1085,7 +1085,8 @@ function startSystem() {
     const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
-    recorder.initRecorder(objects);
+    // HACK MK
+    //recorder.initRecorder(objects);
 
     serverBeatSender(beatPort, false);
 }
@@ -3653,6 +3654,7 @@ function socketServer() {
                         // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
                         object.updateJoints(msg.publicData['whole_pose'].joints);
                         object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
+                        console.log('updating joints: obj=' + object.objectId + ', ts=' + object.lastUpdateDataTS, ', socket=' + socket.id);
                         // keep the object alive
                         resetObjectTimeout(msg.object);
                     }
