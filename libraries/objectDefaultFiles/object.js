@@ -728,6 +728,7 @@
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
+                this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
 
                 this.analyticsAdd = makeSendStub('analyticsAdd');
                 this.analyticsRemove = makeSendStub('analyticsRemove');
@@ -2074,6 +2075,20 @@
                 errorNotification: errorMessageText
             });
         };
+
+        this.getEnvironmentVariables = function() {
+            postDataToParent({
+                getEnvironmentVariables: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
+                    if (typeof msgContent.environmentVariables !== 'undefined') {
+                        resolve(msgContent.environmentVariables);
+                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                    }
+                };
+            });
+        }
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
