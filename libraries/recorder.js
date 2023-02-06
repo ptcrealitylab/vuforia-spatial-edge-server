@@ -207,6 +207,11 @@ recorder.recurse = function (obj, objectInTime, keyString) {
             // Ignore inherited enumerable properties
             continue;
         }
+        // Ignore the special whole_pose property which duplicates changes to
+        // individual joint frame matrices
+        if (key === 'whole_pose' && keyString.includes('_HUMAN_')) {
+            continue;
+        }
         const item = obj[key];
         if (typeof item === 'object') {
 
