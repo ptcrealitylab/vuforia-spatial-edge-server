@@ -1621,12 +1621,12 @@
 
         this.analyticsAdd = function analyticsAdd() {
             postDataToParent({
-                'analyticsAdd': true,
+                analyticsAdd: true,
             });
         };
         this.analyticsRemove = function analyticsRemove() {
             postDataToParent({
-                'analyticsRemove': true,
+                analyticsRemove: true,
             });
         };
 
@@ -1635,7 +1635,7 @@
          */
         this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
             postDataToParent({
-                'analyticsSetCursorTime': {
+                analyticsSetCursorTime: {
                     time,
                 },
             });
@@ -1646,7 +1646,7 @@
          */
         this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
             postDataToParent({
-                'analyticsSetHighlightRegion': {
+                analyticsSetHighlightRegion: {
                     highlightRegion,
                 },
             });
@@ -1657,7 +1657,7 @@
          */
         this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
             postDataToParent({
-                'analyticsSetDisplayRegion': {
+                analyticsSetDisplayRegion: {
                     displayRegion,
                 },
             });
@@ -1668,7 +1668,7 @@
          */
         this.analyticsSetLens = function analyticsSetLens(lens) {
             postDataToParent({
-                'analyticsSetLens': {
+                analyticsSetLens: {
                     lens,
                 },
             });
@@ -1679,7 +1679,7 @@
          */
         this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
             postDataToParent({
-                'analyticsSetLensDetail': {
+                analyticsSetLensDetail: {
                     lensDetail,
                 },
             });
@@ -1690,7 +1690,7 @@
          */
         this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
             postDataToParent({
-                'analyticsSetSpaghettiAttachPoint': {
+                analyticsSetSpaghettiAttachPoint: {
                     spaghettiAttachPoint,
                 },
             });
@@ -1701,7 +1701,7 @@
          */
         this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
             postDataToParent({
-                'analyticsSetSpaghettiVisible': {
+                analyticsSetSpaghettiVisible: {
                     spaghettiVisible,
                 },
             });
@@ -1712,7 +1712,7 @@
          */
         this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
             postDataToParent({
-                'analyticsSetAllClonesVisible': {
+                analyticsSetAllClonesVisible: {
                     allClonesVisible,
                 },
             });
