@@ -82,6 +82,16 @@ recorder.stop = async function () {
     await recorder.persistToFile();
 };
 
+/**
+ * @return {string} current externally visible (uncompressed) log file name
+ * that would be used if the log were to persistToFile
+ */
+recorder.getCurrentLogName = function() {
+    const allTimes = Object.keys(recorder.timeObject);
+    const timeString = allTimes[0] + '-' + allTimes[allTimes.length - 1];
+    return 'objects_' + timeString + '.json';
+};
+
 recorder.persistToFile = function () {
     return new Promise((resolve, reject) => {
         if (recorder.persisting) {
@@ -89,8 +99,8 @@ recorder.persistToFile = function () {
             return;
         }
         recorder.persisting = true;
-        let timeString = Object.keys(recorder.timeObject)[0];
-        const outputFilename = path.join(logsPath, 'objects_' + timeString + '.json.gz');
+        const logName = recorder.getCurrentLogName();
+        const outputFilename = path.join(logsPath, logName + '.gz');
 
         if (!fs.existsSync(logsPath)) {
             try {
