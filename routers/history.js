@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const stream = require('stream');
 const zlib = require('zlib');
 
 const recorder = require('../libraries/recorder.js');
@@ -24,28 +25,55 @@ router.get('/logs', function(req, res) {
                 logNames[jsonLogName] = true;
             }
         }
+        logNames[recorder.getCurrentLogName()] = true;
         res.json(Object.keys(logNames));
     });
 });
+
+/**
+ * Pipe out read stream to res respecting the accept-encoding of req and
+ * setting necessary headers
+ * @param {express.Request} req
+ * @param {express.Response} res
+ * @param {ReadStream} readStream
+ */
+function pipeReadStream(req, res, readStream) {
+    res.set('Vary', 'Accept-Encoding');
+    res.set('Content-Type', 'application/json');
+
+    if (req.get('Accept-Encoding').includes('gzip')) {
+        res.set('Content-Encoding', 'gzip');
+        readStream.pipe(res);
+    } else {
+        readStream.pipe(gzipStream).pipe(res);
+    }
+
+}
 
 router.get('/logs/:logPath', function(req, res) {
     // res.json(recorder.timeObject);
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
     if (!fs.existsSync(compressedLogPath)) {
-        res.sendStatus(404);
+        // Compare only the start `objects_${startTime}` bit of the current log
+        // name since the end time is constantly changing
+        const startTimeSection = req.params.logPath.split('-')[0];
+        const currentLogNameStartTimeSection = recorder.getCurrentLogName().split('-')[0];
+
+        if (startTimeSection !== currentLogNameStartTimeSection) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const readStream = new stream.PassThrough();
+        readStream.end(new Buffer(JSON.stringify(recorder.timeObject)));
+        const compressedReadStream = readStream.pipe(gzipStream);
+        pipeReadStream(req, res, compressedReadStream);
+
         return;
     }
 
-    res.set('Vary', 'Accept-Encoding');
-    res.set('Content-Type', 'application/json');
-    if (req.get('Accept-Encoding').includes('gzip')) {
-        res.set('Content-Encoding', 'gzip');
-        const readStream = fs.createReadStream(compressedLogPath);
-        readStream.pipe(res);
-    } else {
-        const readStream = fs.createReadStream(compressedLogPath);
-        readStream.pipe(gzipStream).pipe(res);
-    }
+    const readStream = fs.createReadStream(compressedLogPath);
+    pipeReadStream(req, res, readStream);
 });
 
 router.get('/patches', function(req, res) {
