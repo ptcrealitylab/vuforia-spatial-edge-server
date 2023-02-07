@@ -1100,8 +1100,9 @@ class DeviceDescription {
          * 
          * @param {WebGL} gl 
          * @param {Map<number, HandleObj>} unclonables 
+         * @param {Array<number>} viewport
          */
-        constructor(gl, unclonables) {
+        constructor(gl, unclonables, viewport) {
             /**
              * @type {WebGL}
              */
@@ -1144,7 +1145,7 @@ class DeviceDescription {
             this.parameters.set(this.gl.SCISSOR_TEST, new NamedBooleanParameter("SCISSOR_TEST", false));
             this.parameters.set(this.gl.STENCIL_CLEAR_VALUE, new NamedNumberParameter("STENCIL_CLEAR_VALUE", 0));
             this.parameters.set(this.gl.STENCIL_TEST, new NamedBooleanParameter("STENCIL_TEST", false));
-            this.parameters.set(this.gl.VIEWPORT, new NamedInt32ArrayParameter("VIEWPORT", new Int32Array([0, 0, 0, 0]))); 
+            this.parameters.set(this.gl.VIEWPORT, new NamedInt32ArrayParameter("VIEWPORT", new Int32Array(viewport))); 
             if (this.gl instanceof WebGL2RenderingContext) {
                 this.parameters.set(this.gl.COPY_READ_BUFFER_BINDING, new NamedHandleParameter("COPY_READ_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
                 this.parameters.set(this.gl.COPY_WRITE_BUFFER_BINDING, new NamedHandleParameter("COPY_WRITE_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
@@ -1174,7 +1175,7 @@ class DeviceDescription {
          * @returns A deep copy of this class
          */
         clone() {
-            let ret = new GLState(this.gl, this.unclonables);
+            let ret = new GLState(this.gl, this.unclonables, this.parameters.get(this.gl.VIEWPORT).value);
             ret.currentProgram = this.currentProgram;
             ret.activeTexture = this.activeTexture;
             this.textureBinds.forEach((textureBind, key) => ret.textureBinds.set(key, textureBind.clone()));
@@ -1190,7 +1191,7 @@ class DeviceDescription {
          * @returns A new GLState instance corresponding to the given gl context
          */
         static createFromGLContext(gl, unclonables) {
-            let ret = new GLState(gl, unclonables);
+            let ret = new GLState(gl, unclonables, [0, 0, 0, 0]);
             ret.currentProgram = gl.getParameter(gl.CURRENT_PROGRAM);
             ret.activeTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
             ret.textureBinds.forEach((textureBind, key) => {
@@ -1460,7 +1461,7 @@ class DeviceDescription {
             }
             const viewport = this.parameters.get(this.gl.VIEWPORT);
             if ((viewport !== undefined) && (viewport.value instanceof Int32Array)) {
-                this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+                //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
             }
             // never change the contextattributes
         }
@@ -1554,7 +1555,7 @@ class DeviceDescription {
             const viewport = this.parameters.get(this.gl.VIEWPORT);
             const curViewport = curState.parameters.get(this.gl.VIEWPORT);
             if ((viewport !== undefined) && (curViewport !== undefined) && (curViewport.value !== viewport.value) && (viewport.value instanceof Int32Array)) {
-                this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+                //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
             }
             // never change the context attributes
         }

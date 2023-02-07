@@ -1,3 +1,7 @@
+/**
+ * @typedef {import("./glState.js").Handle} Handle
+ */
+
 // values taken from the wegl extension registry revision 8
 const EXTColorBufferHalfFloat = {
     RGBA16F_EXT : 0x881A,
@@ -263,7 +267,9 @@ class GLCommandBufferContext {
                  * @type {function(Handle, GLenum):any}
                  */
                 this.gl.getProgramParameter = (program, pname) => {
-                    return this.addMessageAndWait(fnName, [program, pname]);
+                    let result = new SharedArrayBuffer(4);
+                    this.addMessageAndWait(fnName, [program, pname], result);
+                    return new Int32Array(result)[0];
                 };
             } else if (fnName === "getShaderPrecisionFormat") {
                 /**
@@ -569,7 +575,7 @@ class GLCommandBufferContext {
     /**
      * Adds a message to the active command buffer
      * @param {String} name - the function name
-     * @param {Array<String>} args - the function arguments  
+     * @param {Array<any>} args - the function arguments  
      */
     addMessage(name, args) {
         this.activeBuffer.addMessage(name, args);
@@ -579,7 +585,7 @@ class GLCommandBufferContext {
      * Adds a message with the allocated handle to represent the created object
      * 
      * @param {string} name 
-     * @param {Array<string>} args 
+     * @param {Array<any>} args 
      * @param {Handle} handle 
      */
     addMessageWithHandle(name, args, handle) {
@@ -590,11 +596,11 @@ class GLCommandBufferContext {
      * Adds a message and waits until the server has executed the command and responded
      * 
      * @param {string} name 
-     * @param {Array<string>} args 
+     * @param {Array<any>} args 
      * @param {SharedBufferArray} resultBuffer
      */
     addMessageAndWait(name, args, resultBuffer) {
-        return this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
+        this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
     }
 }
 
@@ -604,14 +610,47 @@ class GLCommandBufferContext {
 class CommandBuffer {
     static nextBufferId = 1;
 
-    constructor(workerId, isRendering, debugName = "") {
+    /**
+     * 
+     * @param {number} workerId 
+     * @param {Int32Array} synclock 
+     * @param {boolean} isRendering 
+     * @param {string} debugName 
+     */
+    constructor(workerId, synclock, isRendering, debugName = "") {
+        /**
+         * @type {string}
+         */
         this.debugName = debugName;
+        /**
+         * @type {number}
+         */
         this.commandBufferId = CommandBuffer.nextBufferId++;
+        /**
+         * @type {number}
+         */
         this.workerId = workerId;
+        /**
+         * @type {boolean}
+         */
         this.isRendering = isRendering;
+        /**
+         * @type {Int32Array}
+         */
+        this.synclock = synclock;
+        /**
+         * @type {Array<{name: string, args: Array<any>, handle: Handle | null, responseBuffer: SharedArrayBuffer | null}>}
+         */
         this.commandBuffer = [];
     }
 
+    /**
+     * 
+     * @param {string} funcName 
+     * @param {Array<string>} args 
+     * @param {Handle | null} handle 
+     * @param {SharedArrayBuffer | null} responseBuffer 
+     */
     addMessageInternal(funcName, args, handle, responseBuffer) {
         const message = {
             name: funcName,
@@ -625,7 +664,7 @@ class CommandBuffer {
     /**
      * Adds a mesage to the command buffer
      * @param {String} funcName - function name
-     * @param {Array<String>} args - function arguments
+     * @param {Array<any>} args - function arguments
      */
     addMessage(funcName, args) {
        this.addMessageInternal(funcName, args, null, null);
@@ -634,7 +673,7 @@ class CommandBuffer {
     /**
      * Add a message to the command buffer and waits for a response from the server
      * @param {string} funcName 
-     * @param {Array<string>} args 
+     * @param {Array<any>} args 
      * @param {SharedArrayBuffer} responseBuffer memory used for the response
      */
     addMessageAndWait(funcName, args, responseBuffer) {
@@ -646,7 +685,7 @@ class CommandBuffer {
     /**
      * Add a message to the command buffer to create an object referenced by the handle
      * @param {string} funcName 
-     * @param {Array<string>} args 
+     * @param {Array<any>} args 
      * @param {Handle} handle
      */
     addMessageWithHandle(funcName, args, handle) {
@@ -663,7 +702,7 @@ class CommandBuffer {
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: this.isRendering,
-                    commands: this.commandBuffer
+                    commands: this.commandBuffer,
                 });
             }
             catch (e) {
@@ -679,22 +718,14 @@ class CommandBuffer {
         }
         if (this.commandBuffer.length > 0) {
             try {
-                let synclockbuffer = new SharedArrayBuffer(4);
-                let synclock = new Int32Array(synclockbuffer);
-                Atomics.store(synclock, 0, 0);
+                Atomics.store(this.synclock, 0, 0);
                 postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: false,
                     commands: this.commandBuffer,
-                    syncLock: synclock,
                 });
-                // make renderer go to the next tool to render
-                postMessage({
-                    workerId,
-                    isFrameEnd: true,
-                });
-                Atomics.wait(synclock, 0, 0);
+                Atomics.wait(this.synclock, 0, 0);
             }
             catch (e) {
                 console.error(e);
@@ -711,10 +742,18 @@ class CommandBuffer {
 
 /**
  * creates new command buffer using the hidden variables to hide construction details
+ * 
  */
 class CommandBufferFactory {
-    constructor(workerId, glCommandBufferContext) {
+    /**
+     * 
+     * @param {number} workerId 
+     * @param {GLCommandBufferContext} glCommandBufferContext 
+     * @param {Int32Array} synclock 
+     */
+    constructor(workerId, glCommandBufferContext, synclock) {
         this.workerId = workerId;
+        this.synclock = synclock;
         this.glCommandBufferContext = glCommandBufferContext;
     }
 
@@ -728,7 +767,7 @@ class CommandBufferFactory {
      * @returns {CommandBuffer}
      */
     createAndActivate(isRendering) {
-        let commandBuffer = new CommandBuffer(this.workerId, isRendering);
+        let commandBuffer = new CommandBuffer(this.workerId, this.synclock, isRendering);
         this.glCommandBufferContext.setActiveCommandBuffer(commandBuffer);
         return commandBuffer;
     }
