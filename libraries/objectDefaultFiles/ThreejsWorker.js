@@ -1,8 +1,12 @@
 import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer} from "/objectDefaultFiles/glCommandBuffer.js";
 import * as THREE from '/objectDefaultFiles/three/three.module.js';
 
+/**
+ * interfaces with three.js and intializes the engine for the rest of the tool to use for rendering
+ */
 class ThreejsWorker {
     constructor() {
+        // some values will be set after the bootstrap message has been received
         this.lastProjectionMatrix = null;
         this.isProjectionMatrixSet = false;
         this.workerId = -1;
@@ -24,7 +28,7 @@ class ThreejsWorker {
     }
 
     /**
-     * 
+     * receives messages from the ThreeInteface client class
      * @param {MessageEvent<any>} event 
      */
     onMessageFromInterface(event) {
@@ -37,26 +41,33 @@ class ThreejsWorker {
         }
         if (message.hasOwnProperty("name")) {
             if (message.name === "anchoredModelViewCallback") {
+                // setup the projection matrix
                 this.lastProjectionMatrix = message.projectionMatrix;
             } else if (message.name === "bootstrap") {
+                // finish initialisation
                 const {workerId, width, height, synclock} = message;
                 this.workerId = workerId;
                 this.synclock = synclock;
 
+                // create commandbuffer factory in order to create resource commandbuffers
                 this.glCommandBufferContext = new GLCommandBufferContext(message);
                 this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock);
 
+                // execute three.js startup
                 const bootstrapCommandBuffers = this.main(width, height, this.commandBufferFactory);
 
+                // send all created commandbuffers
                 for (const bootstrapCommandBuffer of bootstrapCommandBuffers) {
                     bootstrapCommandBuffer.execute();
                 }
         
+                // create standard rendering command buffer for reuse every frame
                 this.frameCommandBuffer = this.commandBufferFactory.createAndActivate(true);
 
                 this.bootstrapProcessed = true;
                 return;
             } else if (message.name === "frame") {
+                // safety checks
                 this.workerId = message.workerId;
                 if (!this.bootstrapProcessed) {
                     console.log(`Can't render worker with id: ${this.workerId}, it has not yet finished initializing`);
@@ -75,16 +86,20 @@ class ThreejsWorker {
                     return;
                 }
 
+                // erase the previous render command buffer
                 this.frameCommandBuffer.clear();
                 
+                // try rendering with three.js
                 try {
                     this.frameCommandBuffer = this.render(message.time, this.frameCommandBuffer);
                 } catch (err) {
                     console.error('Error in gl-worker render fn', err);
                 }
 
+                // send the commandbuffer (rendering or resource loading)
                 this.frameCommandBuffer.execute();
 
+                // singnal end of frame
                 self.postMessage({
                     workerId: this.workerId,
                     isFrameEnd: true,
@@ -94,7 +109,7 @@ class ThreejsWorker {
     }
 
     /**
-     * 
+     * registers callbacks for the tool to use during initalisation
      * @param {function(THREE.Scene):void} callback 
      * @returns {ThreejsWorker}
      */
@@ -104,7 +119,7 @@ class ThreejsWorker {
     }
 
     /**
-     * 
+     * registers a callback for the tool to use during rendering
      * @param {function(number):void} callback 
      * @returns {ThreejsWorker}
      */
@@ -114,7 +129,7 @@ class ThreejsWorker {
     }
 
     /**
-     * 
+     * starts three.js engine with the fake webgl context
      * @param {number} width 
      * @param {number} height 
      * @param {CommandBufferFactory} cmdBufferFactory 
@@ -124,26 +139,37 @@ class ThreejsWorker {
         this.commandBufferFactory = cmdBufferFactory;
         let cmdBuffer = cmdBufferFactory.createAndActivate(false);
         let gl = cmdBufferFactory.getGL();
+        // this is needed to trick three.js into completing it's initialisation
         this.fakeCanvas = new FakeCanvas(width, height);
         this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true, canvas: this.fakeCanvas});
         this.renderer.debug.checkShaderErrors = false;
         this.renderer.setSize(width, height);
 
+        // setup camera and scene for the tool
         this.camera = new THREE.PerspectiveCamera(70, width / height, 1, 1000);
         this.scene = new THREE.Scene();
 
+        // call tool specific code to finish initialisation
         for (let callback of this.onSceneCreatedCallbacks) {
             callback(this.scene);
         }
         return [cmdBuffer];
     }
 
+    /**
+     * renders the scene and returns the command buffer
+     * @param {number} now timestamp
+     * @param {CommandBuffer} commandBuffer the commandbuffer to use for rendering
+     * @returns CommandBuffer to send to the server
+     */
     innerRender(now, commandBuffer) {
+        // safety checks
         if (!this.camera) {
             console.warn('rendering too early');
             return commandBuffer;
         }
         if (!this.isProjectionMatrixSet && this.lastProjectionMatrix && this.lastProjectionMatrix.length === 16) {
+            // replace the projection matrix
             setMatrixFromArray(this.camera.projectionMatrix, this.lastProjectionMatrix);
             if (this.camera.projectionMatrixInverse.getInverse) {
                 this.camera.projectionMatrixInverse.getInverse(this.camera.projectionMatrix);
@@ -152,9 +178,11 @@ class ThreejsWorker {
             }
             this.isProjectionMatrixSet = true;
         }
+        // call tool specific code to finish the scene update cycle
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
+        // render the scene using three.js if posible
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
                 this.renderer.render(this.scene, this.camera);
@@ -163,28 +191,32 @@ class ThreejsWorker {
     }
 
     /**
-     * 
-     * @param {number} now 
-     * @param {CommandBuffer} commandBuffer 
-     * @returns {CommandBuffer}
+     * tries to create a render command buffer. 
+     * during the first frame after adding assets the three.js renderer adds sync operations to initialize those new resources
+     * in that case the resulting bufer is not a render command buffer but a resource commandbuffer
+     * this code will detect that and send the resource command buffer to the server and rerender the whole scen to get a valid render commandbuffer to send to the server
+     * @param {number} now timestamp
+     * @param {CommandBuffer} commandBuffer the render commandbuffer to be used for rendering
+     * @returns {CommandBuffer} a render commandbuffer
      */
     render(now, commandBuffer) {
         let threeCommandBuffer = this.commandBufferFactory.createAndActivate(false);
 
         this.innerRender(now, threeCommandBuffer);
-        
+
+        // check if three.js initialized resources during the renderloop
         if (threeCommandBuffer.isCleared) {
+            // send remaining commands in the resource commandbuffer to the server
             threeCommandBuffer.execute();
-            // three js created an unrenderable commandbuffer, try again
+            // rerender scene to get a renderable commandbuffer
             this.glCommandBufferContext.setActiveCommandBuffer(commandBuffer);
-            
-            this.innerRender(now, threeCommandBuffer);
+            this.innerRender(now, commandBuffer);
         } else {
             // three js created a valid render command buffer, replace the current buffer and enable rendering
             commandBuffer = threeCommandBuffer;
             commandBuffer.isRendering = true;
         }
-       
+
         return commandBuffer;
     }
 }
@@ -194,9 +226,9 @@ class ThreejsWorker {
  */
 class FakeCanvas {
     /**
-     * 
-     * @param {number} width 
-     * @param {number} height 
+     *
+     * @param {number} width
+     * @param {number} height
      */
     constructor(width, height) {
         this.width = width;
@@ -205,10 +237,10 @@ class FakeCanvas {
     }
 
     /**
-     * 
-     * @param {string} type 
-     * @param {function(Event):void} listener 
-     * @param {boolean} useCapture 
+     *
+     * @param {string} type
+     * @param {function(Event):void} listener
+     * @param {boolean} useCapture
      */
     addEventListener(type, listener, useCapture) {
         console.warn("ThreeJS tries to implement the following eventlistener: " + type + " which is not implemented");
@@ -216,9 +248,9 @@ class FakeCanvas {
 }
 
 /**
- * 
- * @param {Float32Array} matrix 
- * @param {Float32Array} array 
+ * converts an Float32Array to a THREE.Matrix4
+ * @param {THREE.Matrix4} matrix
+ * @param {Float32Array} array
  */
 function setMatrixFromArray(matrix, array) {
     matrix.set(array[0], array[4], array[8], array[12],

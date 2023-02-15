@@ -1,38 +1,53 @@
 import {Handle} from "./glState.js"
 
-// values taken from the wegl extension registry revision 8
-const EXTColorBufferHalfFloat = {
-    RGBA16F_EXT : 0x881A,
-    RGB16F_EXT : 0x881B,
-    FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT : 0x8211,
-    UNSIGNED_NORMALIZED_EXT : 0x8C17
-}
-
 /**
  * Creates a gl context that stores all received commands in the active command buffer object.
  * This allows us to switch buffers behind the scene and split up the stream of commands over multiple buffers.
  */
 class GLCommandBufferContext {
+    /**
+     * 
+     * @param {{glState: string, deviceDesc: string, functions: string[]}} message 
+     */
     constructor(message) {
         /**
+         * current webGL state of the server will equal a fresh webGL context with a default start state
          * @type {JSONGLState}
          */
         this.state = JSON.parse(message.glState);
         /**
+         * unchangeable parameters, mostly hardware related based on the server
          * @type {JSONDeviceDescription}
          */
         this.deviceDesc = JSON.parse(message.deviceDesc);
+        /**
+         * handles are 0: invalid, negative: server created (default opengl state of textures and buffers) positive: client created
+         * first valid handle = 1
+         * @type {number}
+         */
         this.nextHandle = 1;
+        /**
+         * all created handles
+         * @type {{}}
+         */
         this.handles = {};
-        this.gl = {
-            enableWebGL2: true,
-        };
+        
+        /**
+         * enable webgl2
+         * @type {boolean} 
+         */
+        this.enableWebGL2 = true;
+       
         // Create a fake gl context that pushes all called functions on the command buffer
-        if (this.gl.enableWebGL2) {
+        if (this.enableWebGL2) {
+            /**
+             * @type {WebGL}
+             */
             this.gl = Object.create(WebGL2RenderingContext.prototype);
         } else {
             this.gl = Object.create(WebGLRenderingContext.prototype);
         }
+        // replace all known members on our webGL context so they write to the command buffer instead of executing the commands directly
         for (const fnName of message.functions) {
             if (fnName === "activeTexture") {  
                 /**
@@ -54,15 +69,20 @@ class GLCommandBufferContext {
                  * @type {function(GLenum, Handle):void}
                  */
                 this.gl.bindBuffer = (target, buffer) => {
+                    /**
+                     * @type {Object<string, GLenum>}
+                     */
                     let bufferTargetToTargetBinding = {}
                     bufferTargetToTargetBinding[this.gl.ARRAY_BUFFER] = this.gl.ARRAY_BUFFER_BINDING;
                     bufferTargetToTargetBinding[this.gl.ELEMENT_ARRAY_BUFFER] = this.gl.ELEMENT_ARRAY_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.COPY_READ_BUFFER] = this.gl.COPY_READ_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.COPY_WRITE_BUFFER] = this.gl.COPY_WRITE_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.TRANSFORM_FEEDBACK_BUFFER] = this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.UNIFORM_BUFFER] = this.gl.UNIFORM_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.PIXEL_PACK_BUFFER] = this.gl.PIXEL_PACK_BUFFER_BINDING;
-                    bufferTargetToTargetBinding[this.gl.PIXEL_UNPACK_BUFFER] = this.gl.PIXEL_UNPACK_BUFFER_BINDING;
+                    if (this.gl instanceof WebGL2RenderingContext) {
+                        bufferTargetToTargetBinding[this.gl.COPY_READ_BUFFER] = this.gl.COPY_READ_BUFFER_BINDING;
+                        bufferTargetToTargetBinding[this.gl.COPY_WRITE_BUFFER] = this.gl.COPY_WRITE_BUFFER_BINDING;
+                        bufferTargetToTargetBinding[this.gl.TRANSFORM_FEEDBACK_BUFFER] = this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING;
+                        bufferTargetToTargetBinding[this.gl.UNIFORM_BUFFER] = this.gl.UNIFORM_BUFFER_BINDING;
+                        bufferTargetToTargetBinding[this.gl.PIXEL_PACK_BUFFER] = this.gl.PIXEL_PACK_BUFFER_BINDING;
+                        bufferTargetToTargetBinding[this.gl.PIXEL_UNPACK_BUFFER] = this.gl.PIXEL_UNPACK_BUFFER_BINDING;
+                    }
                     this.state.parameters[bufferTargetToTargetBinding[target]].value = buffer;
                     this.addMessage(fnName, [target, buffer]);
                 };
@@ -100,7 +120,7 @@ class GLCommandBufferContext {
                 };
             } else if (fnName === "clear") {   
                 /**
-                 * @type {function(GLBitField):void}
+                 * @type {function(GLbitfield):void}
                  */ 
                 this.gl.clear = (mask) => {
                     this.addMessage(fnName, [mask]);
@@ -266,11 +286,14 @@ class GLCommandBufferContext {
                  * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
                  */
                 this.gl.getActiveAttrib = (program, index) => {
+                    // request the size of the buffer needed for the response
                     let buffer_length_buf = new SharedArrayBuffer(4); 
                     this.addMessageAndWait("getActiveAttrib_bufferSize", [program, index], buffer_length_buf);
                     const buffer_length = new Int32Array(buffer_length_buf)[0]
+                    // request the actual response
                     let buffer = new SharedArrayBuffer(buffer_length);
                     this.addMessageAndWait("getActiveAttrib", [program, index], buffer);
+                    // decode result
                     let utf8TextDecoder = new TextDecoder();
                     let texbuf = new Uint8Array(buffer_length - 8);
                     texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
@@ -284,10 +307,13 @@ class GLCommandBufferContext {
                  * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
                  */
                 this.gl.getActiveUniform = (program, index) => {
+                    // request the size of the buffer needed for the response
                     let buffer_length_buf = new SharedArrayBuffer(4); 
                     this.addMessageAndWait("getActiveUniform_bufferSize", [program, index], buffer_length_buf);
                     const buffer_length = new Int32Array(buffer_length_buf)[0]
+                    // request the actual response
                     let buffer = new SharedArrayBuffer(buffer_length);
+                    // decode result
                     this.addMessageAndWait("getActiveUniform", [program, index], buffer);
                     let utf8TextDecoder = new TextDecoder();
                     let texbuf = new Uint8Array(buffer_length - 8);
@@ -536,11 +562,13 @@ class GLCommandBufferContext {
                     }
                 };
             } else {
+                // if an unknown function is called, execute it as a default command, not expecting any type of response
                 this.gl[fnName] = (...args) => {
                     this.addMessage(fnName, Array.from(args));
                 }
             }
         }
+        // copy over the gl constants to our fake webgl implmentation
         for (const constName in message.constants) {        
             if (this.gl.hasOwnProperty(constName)) {
                 this.gl[constName] = message.constants[constName];
@@ -549,6 +577,7 @@ class GLCommandBufferContext {
     }
 
     /**
+     * old function used for sending texture data
      * Makes a stub for a given function which sends a message to the gl
      * implementation in the parent.
      * @param {string} functionName
@@ -666,10 +695,11 @@ class GLCommandBufferContext {
 /**
  * @typedef {import("./glState.js").GLState} GLState
  * @typedef {import("./glState.js").WebGL} WebGL
- * @typedef {import("./glState.js").Handle} Handle 
- * @typedef {*} HandleObj
  */
 
+/**
+ * identification of the command based on the worker that send it, the command buffer it was listed in and the index in that command buffer
+ */
 class CommandId {
     /**
      * 
@@ -695,6 +725,9 @@ class CommandId {
     }
 }
 
+/**
+ * as isngle command in the command buffer to be executed by the server
+ */
 class Command {
     /**
      * 
@@ -705,21 +738,26 @@ class Command {
      */
     constructor(name, args, handle, responseBuffer) {
         /**
+         * the webgl function to call
          * @type {string}
          */
         this.name = name;
 
         /**
+         * Argument for the requested command
+         * create a structured clone of the arguments to make sure they don't change
          * @type {any[]}
          */
         this.args = structuredClone(args);
 
         /**
+         * the assigned number/handle by the client to assign to the internal object after creation
          * @type {number | null}
          */
         this.handle = handle;
 
         /**
+         * the buffer to send back a response from the webgl server back to the client in a synchroneous way
          * @type {SharedArrayBuffer | null}
          */
         this.responseBuffer = responseBuffer;
@@ -741,37 +779,46 @@ class CommandBuffer {
      */
     constructor(workerId, synclock, isRendering, debugName = "") {
         /**
+         * a command buffer can be given a name to identify it while debugging
          * @type {string}
          */
         this.debugName = debugName;
         /**
+         * id of this command buffer
          * @type {number}
          */
         this.commandBufferId = CommandBuffer.nextBufferId++;
         /**
+         * the id of the worker isuing this command buffer
          * @type {number}
          */
         this.workerId = workerId;
         /**
+         * true if this command buffer is meant to be repeatable/renderable each frame, if false it will be a resource commandbuffer
          * @type {boolean}
          */
         this.isRendering = isRendering;
         /**
+         * sharedarraybuffer backed int32array that is used as a synchronization method between server and client
          * @type {Int32Array}
          */
         this.synclock = synclock;
         /**
+         * the commands stored in the command buffer
          * @type {Array<Command>}
          */
         this.commands = [];
         /**
+         * indicates that the buffer was cleared since last time this flag was set to false
+         * this is used as a measure to indicate that a render command buffer was changed into a resource command buffer because of a synchroneous command splitting the buffer
+         * in that specific case the buffer will be cleared and the remaining buffer will not be repeatable without the first part
          * @type {boolean}
          */
         this.isCleared = false;
     }
 
     /**
-     * 
+     * adds a command into the command buffer in the most general way
      * @param {string} funcName 
      * @param {Array<string>} args 
      * @param {number | null} handle 
@@ -798,8 +845,11 @@ class CommandBuffer {
      * @param {SharedArrayBuffer} responseBuffer memory used for the response
      */
     addMessageAndWait(funcName, args, responseBuffer) {
+        // add sync message
         this.addMessageInternal(funcName, args, null, responseBuffer);
+        // send and wait
         this.executeAndWait();
+        // since the previous commands stored in this buffer have been executed, clear the command buffer to prevent the same action to be performed twice
         this.clear();
     }   
     
@@ -813,12 +863,10 @@ class CommandBuffer {
        this.addMessageInternal(funcName, args, handle, null);
     }
 
-    // Executes all the webGL commands stored in this buffer
+    // sends the commandbuffer to the server for execution
     execute() {
         if (this.commands.length > 0) {
             try {
-                let test = structuredClone(this.commandBuffer);
-                //console.debug(test);
                 postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
@@ -832,20 +880,26 @@ class CommandBuffer {
         }
     }
 
+    // sends the commandbuffer to the server and goes to sleep until a response has been received
     executeAndWait() {
+        // prevent render commandbuffers to be send, since all buffer with synchronisation are per definition not repeatable
         if (this.isRendering) {
             console.error("Render buffer not repeatable. The render buffer contains a command that sends back data to the tool, this is not allowed because of async nature of rendering commandbuffers");
             return;
         } 
+        // do nothing if the command buffer is empty (sanity check)
         if (this.commands.length > 0) {
             try {
+                // change the webworker state to waiting
                 Atomics.store(this.synclock, 0, 0);
+                // send command buffer
                 postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: false,
                     commands: this.commands,
                 });
+                // await response
                 Atomics.wait(this.synclock, 0, 0);
             }
             catch (e) {
@@ -858,7 +912,7 @@ class CommandBuffer {
     // clears the whole buffer for reuse
     clear() {
         this.commands = [];
-        this.isCleared = true;
+        this.isCleared = true; // set to indicate that the buffer has been cleared since last time this flag was set to false
     }
 }
 
@@ -869,9 +923,9 @@ class CommandBuffer {
 class CommandBufferFactory {
     /**
      * 
-     * @param {number} workerId 
-     * @param {GLCommandBufferContext} glCommandBufferContext 
-     * @param {Int32Array} synclock 
+     * @param {number} workerId this worker's id
+     * @param {GLCommandBufferContext} glCommandBufferContext the context used by outr fake webgl to find to correct commandbuffer to write to
+     * @param {Int32Array} synclock synchronisation mechnism for synchroneous commands
      */
     constructor(workerId, glCommandBufferContext, synclock) {
         this.workerId = workerId;
@@ -879,14 +933,18 @@ class CommandBufferFactory {
         this.glCommandBufferContext = glCommandBufferContext;
     }
 
+    /**
+     * 
+     * @returns the fake webgl renderer used by this commandbuffer factory
+     */
     getGL() {
         return this.glCommandBufferContext.gl;
     }
 
     /**
-     * 
-     * @param {boolean} isRendering 
-     * @returns {CommandBuffer}
+     * creates a new command buffer and immediately activates it. new commands executed on the fake webgl context will be stored in the newly created buffer
+     * @param {boolean} isRendering indicates that the commands stored in this buffer are meant to be repeatable
+     * @returns {CommandBuffer} th newly created and activated commandbuffer
      */
     createAndActivate(isRendering) {
         let commandBuffer = new CommandBuffer(this.workerId, this.synclock, isRendering);
@@ -896,8 +954,8 @@ class CommandBufferFactory {
 }
 
 /**
- * manages all received command buffers and the one that is used for rendering
- * 
+ * manages all received command buffers on the server
+ * this class will decide when to execute a resource command buffer and which render command buffer to use for rendering the proxy
  */
 class CommandBufferManager {
     /**
@@ -906,18 +964,21 @@ class CommandBufferManager {
      */
     constructor(workerId) {
         /**
+         * all received command buffers in order
          * @type {CommandBuffer[]}
          */
         this.commandBuffers = [];
 
         /**
+         * the commandbuffer currently used for repeated rendering
+         * the rendering buffer starts as an empty commandbuffer, so the tool doesn't show until it is fully loaded.
          * @type {CommandBuffer}
          */
         this.renderCommandBuffer = new CommandBuffer(workerId, -1, true, []);
     }
 
     /**
-     * 
+     * called when a commandbuffer is received by the server from the client
      * @param {Message} commandBuffer 
      */
     onCommandBufferReceived(commandBuffer) {
@@ -927,7 +988,8 @@ class CommandBufferManager {
     }
 
     /**
-     * 
+     * returns the last command buffer marked for rendering before encounterign a resource command buffer
+     * this will make sure all resources have been loaded and that the most recent state of the tool posible is rendered
      * @returns {CommandBuffer} the newest commandbuffer marked for rendering for which all resources have been loaded
      */
     getRenderCommandBuffer() {
@@ -946,7 +1008,8 @@ class CommandBufferManager {
     }
 
     /**
-     * 
+     * checks if there a resource commandbuffers in the list and returns the first one it finds
+     * also updates the render commandbuffer to the latest it finds before finding the first resource commandbuffer
      * @returns {CommandBuffer | null} the next resource commandbuffer if it exists
      */
     getResourceCommandBuffer() {
