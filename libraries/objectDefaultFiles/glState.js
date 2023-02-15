@@ -81,7 +81,7 @@
 
 /**
  * the parsed version of the GLState class
- * @typedef {{}} JSONGLState
+ * @typedef {{activeTexture: Handle, parameters: Object<string, any>, textureBinds: Object<string, any>, unclonables: Object<string, Handle>}} JSONGLState
  */
 
 /**
@@ -90,7 +90,7 @@
  */
 
 /**
- * @typedef {{name: string, args:any[], handle: number}} Command
+ * @typedef {{name: string, args:any[], handle: Handle}} Command
  */
 
 /**
@@ -98,6 +98,7 @@
  */
 
 /**
+ * every object we can copy
  * @template T
  */
 class Clonable {
@@ -115,6 +116,7 @@ class Clonable {
 }
 
 /**
+ * contains an id identiying an internal object that can't be transfered to the client
  * @extends Clonable<Handle>
  */
 class Handle extends Clonable {
@@ -159,6 +161,8 @@ class Handle extends Clonable {
 }
 
 /**
+ * base class of a opengl state parameter with a humn readable name, for easy debugging
+ * T is the elementary type, while R represents the subclass used when a copy is made
  * @template T
  * @template R
  * @extends Clonable<R>
@@ -184,6 +188,7 @@ class BaseNamedParameter extends Clonable {
 }
 
 /**
+ * parameter class for all number based webgl state parameters
  * @extends {BaseNamedParameter<GLenum | GLint | GLfloat, NamedNumberParameter>}
  */
 class NamedNumberParameter extends BaseNamedParameter {
@@ -221,6 +226,7 @@ class NamedNumberParameter extends BaseNamedParameter {
 }
 
 /**
+ * class for all boolean based webgl state parameters
  * @extends {BaseNamedParameter<boolean, NamedBooleanParameter>}
  */
 class NamedBooleanParameter extends BaseNamedParameter {
@@ -258,6 +264,7 @@ class NamedBooleanParameter extends BaseNamedParameter {
 }
 
 /**
+ * class for all string based webgl state parameters
  * @extends {BaseNamedParameter<string, NamedStringParameter>}
  */
 class NamedStringParameter extends BaseNamedParameter {
@@ -295,6 +302,7 @@ class NamedStringParameter extends BaseNamedParameter {
 }
 
 /**
+ * class for all boolean[] based webgl state parameters
  * @extends {BaseNamedParameter<Array<boolean>, NamedBooleanArrayParameter>}
  */
 class NamedBooleanArrayParameter extends BaseNamedParameter{
@@ -334,6 +342,7 @@ class NamedBooleanArrayParameter extends BaseNamedParameter{
 }
 
 /**
+ * class for all Int32Array based webglstate parameters
  * @extends {BaseNamedParameter<Int32Array, NamedInt32ArrayParameter>}
  */
 class NamedInt32ArrayParameter extends BaseNamedParameter{
@@ -373,6 +382,7 @@ class NamedInt32ArrayParameter extends BaseNamedParameter{
 }
 
 /**
+ * class for all Float32[] based webgl state parameters
  * @extends {BaseNamedParameter<Float32Array, NamedFloat32ArrayParameter>}
  */
 class NamedFloat32ArrayParameter extends BaseNamedParameter{
@@ -412,6 +422,7 @@ class NamedFloat32ArrayParameter extends BaseNamedParameter{
 }
 
 /**
+ * class for all texturestate based webgl state parameters
  * @extends {BaseNamedParameter<TextureState, NamedTextureStateParameter>}
  */
 class NamedTextureStateParameter extends BaseNamedParameter {
@@ -453,6 +464,7 @@ class NamedTextureStateParameter extends BaseNamedParameter {
 }
 
 /**
+ * class for all textureunit webgl state based parameters
  * @extends {BaseNamedParameter<TextureUnitState, NamedTextureUnitStateParameter>}
  */
 class NamedTextureUnitStateParameter extends BaseNamedParameter {
@@ -495,6 +507,7 @@ class NamedTextureUnitStateParameter extends BaseNamedParameter {
 
 
 /**
+ * class for all types of internal objects in the webgl state parameter dictionary
  * @extends {BaseNamedParameter<Handle, NamedHandleParameter>}
  */
 class NamedHandleParameter extends BaseNamedParameter {
@@ -533,6 +546,7 @@ class NamedHandleParameter extends BaseNamedParameter {
 }
 
 /**
+ * class for all number types webgl state parameters
  * @extends BaseNamedParameter<number, TypedParameter>
  */
 class TypedParameter extends BaseNamedParameter {
@@ -692,13 +706,15 @@ class TextureState {
     }
 
     /**
-     * 
+     * creates a new texture handle (serverside so negative values)
+     * it tries to search if a handle already exists for a server side object and reuses it if it finds it
      * @param {WebGLTexture | null} texture 
      * @param {Map<number, HandleObj>} unclonables 
      * @returns {Handle}
      */
     static getTextureHandle(texture, unclonables) {
         let ret_handle = 0;
+        // does the object already have a handle
         for (const [handle, obj] of unclonables) {
             if (texture === obj) {
                 ret_handle = handle;
@@ -715,11 +731,11 @@ class TextureState {
     }
 
     /**
-     * 
-     * @param {WebGL} gl 
-     * @param {GLenum} target 
-     * @param {Map<number, HandleObj>} unclonables 
-     * @returns 
+     * copies the current state from a webgl texturestate
+     * @param {WebGL} gl the webgl context to copy from
+     * @param {GLenum} target the target to copy
+     * @param {Map<number, HandleObj>} unclonables the list of known handles 
+     * @returns {TextureState}
      */
     static createFromGLContext(gl, target, unclonables) {
         let ret = new TextureState(gl, target, unclonables);
@@ -740,7 +756,7 @@ class TextureState {
     }
 
     /**
-     * 
+     * probes a command to see if it affects the state of this texture
      * @param {Command} command 
      */
     processOneCommand(command) {
@@ -749,6 +765,9 @@ class TextureState {
         }
     }
 
+    /**
+     * applies this texture state to the current webgl context without checking the current state of the webglcontext
+     */
     forceApply() {
         const texture = this.unclonables.get(this.texture.handle);
         if (texture !== undefined) { 
@@ -766,7 +785,7 @@ class TextureState {
     }
 
     /**
-     * 
+     * make changes based on the given state and the current desired texture state stored in this object
      * @param {TextureState} other 
      */
     apply(other) {
@@ -805,9 +824,9 @@ class TextureUnitState {
 
     /**
      * 
-     * @param {WebGL} gl 
-     * @param {GLenum} textureUnit 
-     * @param {Map<number, HandleObj>} unclonables 
+     * @param {WebGL} gl the glcontext
+     * @param {GLenum} textureUnit the texture unit for which to store state
+     * @param {Map<number, HandleObj>} unclonables list of internal objects
      */
     constructor(gl, textureUnit, unclonables) {
         /**
@@ -885,7 +904,7 @@ class TextureUnitState {
      * Copies the current state from the gl context
      * @param {WebGL} gl - The context to copy from
      * @param {GLenum} activeTexture - The current active texture on the gl context
-     * @param {Map<number, HandleObj>} unclonables
+     * @param {Map<number, HandleObj>} unclonables list of internal objects
      * @returns A new TextureUnitState instance corresponding to the given gl context
      */
     static createFromGLContext(gl, activeTexture, unclonables) {
@@ -895,7 +914,7 @@ class TextureUnitState {
     }
 
     /**
-     * 
+     * probes a command to see if it influences the state of this texture unit
      * @param {Command} command 
      */
     processOneCommand(command) {
@@ -907,6 +926,10 @@ class TextureUnitState {
         }
     }
 
+    /**
+     * activate the current texture unit on the gl context
+     * @returns the current activated texture unit
+     */
     activate() {
         const actTex = this.gl.getParameter(this.gl.ACTIVE_TEXTURE);
         if (actTex !== this.textureUnit) {
@@ -916,7 +939,7 @@ class TextureUnitState {
     }
 
     /**
-     * 
+     * deactivate this texture unit on the webgl context
      * @param {GLenum} actTex 
      */
     deactivate(actTex) {
@@ -962,6 +985,9 @@ class TextureUnitState {
     }
 }
 
+/**
+ * this class lists information about the precision formats available in the hardware for use in shaders
+ */
 class ShaderPrecisionFormat {
     /**
      * 
@@ -987,6 +1013,10 @@ class ShaderPrecisionFormat {
     }
 }
 
+/**
+ * list of webgl state parameters that don't change and can't be set
+ * mostly hardware limitations
+ */
 class DeviceDescription {
     // WebGL 1.0
     static FRAGMENT_SHADER = 0x8B30;
@@ -1021,7 +1051,7 @@ class DeviceDescription {
     
     /**
      * 
-     * @param {WebGL} gl 
+     * @param {WebGL} gl the webglcontext to copy the parameters from
      */
     constructor(gl) {
         /**
@@ -1138,14 +1168,14 @@ class DeviceDescription {
 }
 
 /**
- * Manages the state of the gl context
+ * tracks the complete state of the gl context
  */
 class GLState {
     /**
      * 
-     * @param {WebGL} gl 
-     * @param {Map<number, HandleObj>} unclonables 
-     * @param {Array<number>} viewport
+     * @param {WebGL} gl the gl context
+     * @param {Map<number, HandleObj>} unclonables list of internal objects
+     * @param {Array<number>} viewport the viewport of the current webgl context
      */
     constructor(gl, unclonables, viewport) {
         /**
@@ -1312,8 +1342,10 @@ class GLState {
     }
 
     /**
-     * @param {WebGLBuffer | null} buffer
-     * @param {Map<number, HandleObj>} unclonables 
+     * creates a new handle for a buffer (serverside so always negative)
+     * @param {WebGLBuffer | null} buffer buffer to create a handle for
+     * @param {Map<number, HandleObj>} unclonables list of internal objects to add the bufer to
+     * @returns {Handle} a new handle for the buffer
      */
     static getBufferHandle(buffer, unclonables) {
         let ret_handle = 0;
