@@ -1,6 +1,4 @@
-/**
- * @typedef {import("./glState.js").Handle} Handle
- */
+import {Handle} from "./glState.js"
 
 // values taken from the wegl extension registry revision 8
 const EXTColorBufferHalfFloat = {
@@ -44,6 +42,13 @@ class GLCommandBufferContext {
                     this.state.activeTexture = texture;
                     this.addMessage(fnName, [texture]);
                 };
+            } else if (fnName === "attachShader") {   
+                /**
+                 * @type {function(Handle, Handle):void}
+                 */ 
+                this.gl.attachShader = (program, shader) => {
+                    this.addMessage(fnName, [program, shader]);
+                };
             } else if (fnName === "bindBuffer") {    
                 /**
                  * @type {function(GLenum, Handle):void}
@@ -69,6 +74,13 @@ class GLCommandBufferContext {
                     this.state.textureBinds[this.state.activeTexture].value.targets[target].value.texture = texture;
                     this.addMessage(fnName, [target, texture]);
                 };
+            } else if (fnName === "bindVertexArray") {
+                /**
+                 * @type {function(Handle):void}
+                 */
+                this.gl.bindVertexArray = (vertexArray) => {
+                    this.addMessage(fnName, [vertexArray])
+                }
             } else if (fnName === "bufferData") {   
                 /**
                  *  @type {function(GLenum, GLenum):void | function(GLenum, GLsizeiptr, GLenum):void | function(GLenum, BufferSource | null, GLenum):void | function(GLenum, GLenum, GLuint):void | function(GLenum, BufferSource | null, GLenum, GLuint):void | function(GLenum, BufferSource | null, GLenum, GLuint, GLuint):void}
@@ -85,6 +97,13 @@ class GLCommandBufferContext {
                         args[1] = Array.from(args[1]);     
                     }
                     this.addMessage(fnName, args);
+                };
+            } else if (fnName === "clear") {   
+                /**
+                 * @type {function(GLBitField):void}
+                 */ 
+                this.gl.clear = (mask) => {
+                    this.addMessage(fnName, [mask]);
                 };
             } else if (fnName === "clearColor") {    
                 /**
@@ -109,6 +128,21 @@ class GLCommandBufferContext {
                 this.gl.clearStencil = (s) => {
                     this.state.parameters[this.gl.STENCIL_CLEAR_VALUE].value = s;
                     this.addMessage(fnName, [s]);
+                };
+            } else if (fnName === "colorMask") {
+                /**
+                 * @type {function(GLboolean, GLboolean, GLboolean, GLboolean):void}
+                 */    
+                this.gl.colorMask = (red, green, blue, alpha) => {
+                    this.state.parameters[this.gl.COLOR_WRITEMASK].value = [red, green, blue, alpha];
+                    this.addMessage(fnName, [red, green, blue, alpha]);
+                };
+            } else if (fnName === "compileShader") {   
+                /**
+                 * @type {function(Handle):void}
+                 */ 
+                this.gl.compileShader = (shader) => {
+                    this.addMessage(fnName, [shader]);
                 };
             } else if (fnName === "createBuffer") {
                 /**
@@ -181,6 +215,14 @@ class GLCommandBufferContext {
                     this.state.parameters[this.gl.DEPTH_FUNC].value = func;
                     this.addMessage(fnName, [func]);
                 };
+            } else if (fnName === "depthMask") {
+                /**
+                 * @type {function(GLboolean):void}
+                 */
+                this.gl.depthMask = (flag) => {
+                    this.state.parameters[this.gl.DEPTH_WRITEMASK].value = flag;
+                    this.addMessage(fnName, [flag]);
+                };
             } else if (fnName === "disable") {  
                 /**
                  * @type {function(GLenum):void}
@@ -188,6 +230,13 @@ class GLCommandBufferContext {
                 this.gl.disable = (cap) => {
                     this.state.parameters[cap].value = false;
                     this.addMessage(fnName, [cap]);
+                };
+            } else if (fnName === "drawElements") {
+                /**
+                 * @type {function(GLenum, GLsizei, GLenum, GLintptr):void}
+                 */
+                this.gl.drawElements = (mode, count, type, offset) => {
+                    this.addMessage(fnName, [mode, count, type, offset]);
                 };
             } else if (fnName === "enable") {    
                 /**
@@ -197,6 +246,13 @@ class GLCommandBufferContext {
                     this.state.parameters[cap].value = true;
                     this.addMessage(fnName, [cap]);
                 };
+            } else if (fnName === "enableVertexAttribArray") {    
+                /**
+                 * @type {function(GLuint):void}
+                 */
+                this.gl.enableVertexAttribArray = (index) => {
+                    this.addMessage(fnName, [index]);
+                };
             } else if (fnName === "frontFace") {
                 /**
                  * @type {function(GLenum):void}
@@ -205,14 +261,50 @@ class GLCommandBufferContext {
                     this.state.parameters[this.gl.FRONT_FACE].value = mode;
                     this.addMessage(fnName, [mode]);
                 };
+            } else if (fnName === "getActiveAttrib") {    
+                /**
+                 * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
+                 */
+                this.gl.getActiveAttrib = (program, index) => {
+                    let buffer_length_buf = new SharedArrayBuffer(4); 
+                    this.addMessageAndWait("getActiveAttrib_bufferSize", [program, index], buffer_length_buf);
+                    const buffer_length = new Int32Array(buffer_length_buf)[0]
+                    let buffer = new SharedArrayBuffer(buffer_length);
+                    this.addMessageAndWait("getActiveAttrib", [program, index], buffer);
+                    let utf8TextDecoder = new TextDecoder();
+                    let texbuf = new Uint8Array(buffer_length - 8);
+                    texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
+                    let sizeTypeBufMem = new ArrayBuffer(8);
+                    new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
+                    let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
+                    return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+                };
+            } else if (fnName === "getActiveUniform") {    
+                /**
+                 * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
+                 */
+                this.gl.getActiveUniform = (program, index) => {
+                    let buffer_length_buf = new SharedArrayBuffer(4); 
+                    this.addMessageAndWait("getActiveUniform_bufferSize", [program, index], buffer_length_buf);
+                    const buffer_length = new Int32Array(buffer_length_buf)[0]
+                    let buffer = new SharedArrayBuffer(buffer_length);
+                    this.addMessageAndWait("getActiveUniform", [program, index], buffer);
+                    let utf8TextDecoder = new TextDecoder();
+                    let texbuf = new Uint8Array(buffer_length - 8);
+                    texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
+                    let sizeTypeBufMem = new ArrayBuffer(8);
+                    new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
+                    let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
+                    return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+                };
             } else if (fnName === "getAttribLocation") {
                 /**
-                 * @type {function(Handle, string):Handle}
+                 * @type {function(Handle, string):GLuint}
                  */    
                 this.gl.getAttribLocation = (program, name) => {
-                    let handle = this.nextHandle++;
-                    this.addMessageWithHandle(fnName, [program, name], handle);
-                    return new Handle(handle);
+                    let buffer = new SharedArrayBuffer(4);
+                    this.addMessageAndWait(fnName, [program, name], buffer);
+                    return new Int32Array(buffer)[0];
                 };
             } else if (fnName === "getContextAttributes") {
                 /**
@@ -308,6 +400,13 @@ class GLCommandBufferContext {
                 this.gl.linkProgram = (program) => {
                     this.addMessage(fnName, [program]);
                 };
+            } else if (fnName === "makeXRCompatible") {   
+                /**
+                 * @type {function():void}
+                 */ 
+                this.gl.makeXRCompatible = () => {
+                    this.addMessage(fnName, []);
+                };
             } else if (fnName === "scissor") {
                 /**
                  * @type {function(GLint, GLint, GLsizei, GLsizei):void}
@@ -353,6 +452,20 @@ class GLCommandBufferContext {
                     // send to remote gl
                     this.addMessage(fnName, [program]);
                 };
+            } else if (fnName === "vertexAttribDivisor") {
+                /**
+                 * @type {function(GLuint, GLuint):void}
+                 */
+                this.gl.vertexAttribDivisor = (index, divisor) => {
+                    this.addMessage(fnName, [index, divisor]);
+                };
+            } else if (fnName === "vertexAttribPointer") {
+                /**
+                 * @type {function(GLuint, GLint, GLenum, GLboolean, GLsizei, GLintptr):void}
+                 */
+                this.gl.vertexAttribPointer = (index, size, type, normalized, stride, offset) => {
+                    this.addMessage(fnName, [index, size, type, normalized, stride, offset]);
+                };
             } else if (fnName === "viewport") {
                 /**
                  * @type {function(GLint, GLint, GLsizei, GLsizei):void}
@@ -361,6 +474,66 @@ class GLCommandBufferContext {
                     this.state.parameters[this.gl.VIEWPORT].value = new Int32Array([x, y, width, height]);
                     // send to remote gl
                     this.addMessage(fnName, [x, y, width, height]);
+                };
+            } else if (fnName === "uniform1i") {
+                /**
+                 * @type {function(Handle, GLint):void}
+                 */
+                this.gl.uniform1i = (location, v0) => {
+                    this.addMessage(fnName, [location, v0]);
+                };
+            } else if (fnName === "uniform1f") {
+                /**
+                 * @type {function(Handle, GLfloat):void}
+                 */
+                this.gl.uniform1f = (location, v0) => {
+                    this.addMessage(fnName, [location, v0]);
+                };
+            } else if (fnName === "uniform3f") {
+                /**
+                 * @type {function(Handle, GLfloat, GLfloat, GLfloat):void}
+                 */
+                this.gl.uniform3f = (location, v0, v1, v2) => {
+                    this.addMessage(fnName, [location, v0, v1, v2]);
+                };
+            } else if (fnName === "uniform3fv") {
+                /**
+                 * @type {function(Handle, Float32Array, GLsizei=, GLsizei=):void}
+                 */
+                this.gl.uniform3fv = (location, data, srcOffset, srcLength) => {
+                    if (srcLength) {
+                        this.addMessage(fnName, [location, data, srcOffset, srcLength]);
+                    } else if (srcOffset) {
+                        this.addMessage(fnName, [location, data, srcOffset]);
+                    } else {
+                        this.addMessage(fnName, [location, data]);
+                    }
+                };
+            } else if (fnName === "uniformMatrix3fv") {
+                /**
+                 * @type {function(Handle, GLboolean, Float32Array, GLsizei=, GLsizei=):void}
+                 */
+                this.gl.uniformMatrix3fv = (location, transpose, data, srcOffset, srcLength) => {
+                    if (srcLength) {
+                        this.addMessage(fnName, [location, transpose, data, srcOffset, srcLength]);
+                    } else if (srcOffset) {
+                        this.addMessage(fnName, [location, transpose, data, srcOffset]);
+                    } else {
+                        this.addMessage(fnName, [location, transpose, data]);
+                    }
+                };
+            } else if (fnName === "uniformMatrix4fv") {
+                /**
+                 * @type {function(Handle, GLboolean, Float32Array, GLsizei=, GLsizei=):void}
+                 */
+                this.gl.uniformMatrix4fv = (location, transpose, data, srcOffset, srcLength) => {
+                    if (srcLength) {
+                        this.addMessage(fnName, [location, transpose, data, srcOffset, srcLength]);
+                    } else if (srcOffset) {
+                        this.addMessage(fnName, [location, transpose, data, srcOffset]);
+                    } else {
+                        this.addMessage(fnName, [location, transpose, data]);
+                    }
                 };
             } else {
                 this.gl[fnName] = (...args) => {
@@ -439,40 +612,6 @@ class GLCommandBufferContext {
                 }
             }
 
-            if (functionName === 'getExtension') {
-                const ext = arguments[0];
-
-                if (ext === 'OES_vertex_array_object') {
-                    if (realGl.getParameter(realGl.VERSION).includes('WebGL 1.0')) {
-                        const prefix = 'extVao-';
-
-                        if (!GLPROXY_ENABLE_EXTVAO) {
-                            return null;
-                        }
-
-                        if (realGl) {
-                            extVao = realGl.getExtension(ext);
-                        }
-                        // Mock the real VAO extension so that method calls on it get
-                        // proxied and sent through the glproxy with the prefix
-                        // 'extVao-'
-                        return {
-                            createVertexArrayOES: this.makeStub(prefix + 'createVertexArrayOES'),
-                            deleteVertexArrayOES: this.makeStub(prefix + 'deleteVertexArrayOES'),
-                            isVertexArrayOES: this.makeStub(prefix + 'isVertexArrayOES'),
-                            bindVertexArrayOES: this.makeStub(prefix + 'bindVertexArrayOES'),
-                        };
-                    } else {
-                        return {
-                            createVertexArrayOES: this.makeStub('createVertexArray'),
-                            deleteVertexArrayOES: this.makeStub('deleteVertexArray'),
-                            isVertexArrayOES: this.makeStub('isVertexArray'),
-                            bindVertexArrayOES: this.makeStub('bindVertexArray'),
-                        };
-                    }
-                }
-            }
-
             // glCommandBuferObject is the copy of the this pointer stored in the closure.
             // by requesting the commandbuffer from the object, we can change it between calls.
             let messageId = null;
@@ -481,86 +620,6 @@ class GLCommandBufferContext {
             } else {
                 console.error('No active command buffer set for gl context');
             }
-
-            if (realGl) {
-                const unclonedArgs = Array.from(arguments).map(a => {
-                    if (!a) {
-                        return a;
-                    }
-
-                    if (a.__uncloneableId && !a.__uncloneableObj) {
-                        console.error('invariant ruined');
-                    }
-
-                    if (a.__uncloneableObj) {
-                        return a.__uncloneableObj;
-                    }
-                    return a;
-                });
-
-                let res;
-                if (functionName.startsWith('extVao-')) {
-                    res = extVao[functionName.split('-')[1]].apply(extVao, unclonedArgs);
-                } else {
-                    //res = realGl[functionName].apply(realGl, unclonedArgs);
-                }
-
-                /*if (functionName === 'linkProgram') {
-                    const link_message = realGl.getProgramInfoLog(unclonedArgs[0]);
-                    if (link_message.length > 0) {
-                        const shaders = realGl.getAttachedShaders(unclonedArgs[0]);
-                        for (const shader of shaders) {
-                            const compile_message = realGl.getShaderInfoLog(shader);
-                            if (compile_message.length > 0) {
-                                const shaderType = realGl.getShaderParameter(shader, realGl.SHADER_TYPE);
-                                let shaderTypeStr = "<n/a>";
-                                switch (shaderType) {
-                                case realGl.VERTEX_SHADER:
-                                    shaderTypeStr = "Vertex";
-                                    break;
-                                case realGl.FRAGMENT_SHADER:
-                                    shaderTypeStr = "Fragment";
-                                    break;
-                                default:
-                                    break;
-                                }
-                                console.error(`${shaderTypeStr} shader error`, realGl, compile_message);
-                            }
-                        }
-                        console.error('Program link error', realGl, link_message);
-                    }
-                }*/
-
-
-                if (typeof res === 'object' && res !== null) {
-                    let proxy = new Proxy({
-                        __uncloneableId: messageId,
-                        __uncloneableObj: res,
-                    }, {
-                        get: function(obj, prop) {
-                            if (prop === 'hasOwnProperty' || prop.startsWith('__')) {
-                                return obj[prop];
-                            } else {
-                                // TODO this won't propagate to container
-                                const mocked = obj.__uncloneableObj[prop];
-                                if (typeof mocked === 'function') {
-                                    console.error('Unmockable inner function', prop);
-                                    return mocked.bind(obj.__uncloneableObj);
-                                }
-                                return mocked;
-                            }
-                        },
-                    });
-
-                    proxies.push(proxy);
-                    return proxy;
-                }
-                return res;
-            }
-
-            // if (functionName === 'getParameter') {
-            //   return cacheGetParameter[arguments[0]];
-            // }
         };
     }
 
@@ -586,7 +645,7 @@ class GLCommandBufferContext {
      * 
      * @param {string} name 
      * @param {Array<any>} args 
-     * @param {Handle} handle 
+     * @param {number} handle 
      */
     addMessageWithHandle(name, args, handle) {
         this.activeBuffer.addMessageWithHandle(name, args, handle);
@@ -597,10 +656,73 @@ class GLCommandBufferContext {
      * 
      * @param {string} name 
      * @param {Array<any>} args 
-     * @param {SharedBufferArray} resultBuffer
+     * @param {SharedArrayBuffer} resultBuffer
      */
     addMessageAndWait(name, args, resultBuffer) {
         this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
+    }
+}
+
+/**
+ * @typedef {import("./glState.js").GLState} GLState
+ * @typedef {import("./glState.js").WebGL} WebGL
+ * @typedef {import("./glState.js").Handle} Handle 
+ * @typedef {*} HandleObj
+ */
+
+class CommandId {
+    /**
+     * 
+     * @param {number} worker 
+     * @param {number} buffer 
+     * @param {number} command 
+     */
+    constructor(worker, buffer, command) {
+        /**
+         * @type {number}
+         */
+        this.worker = worker;
+
+        /**
+         * @type {number}
+         */
+        this.buffer = buffer;
+
+        /**
+         * @type {number}
+         */
+        this.command = command;
+    }
+}
+
+class Command {
+    /**
+     * 
+     * @param {string} name 
+     * @param {any[]} args 
+     * @param {number|null} handle
+     * @param {SharedArrayBuffer|null} responseBuffer
+     */
+    constructor(name, args, handle, responseBuffer) {
+        /**
+         * @type {string}
+         */
+        this.name = name;
+
+        /**
+         * @type {any[]}
+         */
+        this.args = structuredClone(args);
+
+        /**
+         * @type {number | null}
+         */
+        this.handle = handle;
+
+        /**
+         * @type {SharedArrayBuffer | null}
+         */
+        this.responseBuffer = responseBuffer;
     }
 }
 
@@ -639,26 +761,25 @@ class CommandBuffer {
          */
         this.synclock = synclock;
         /**
-         * @type {Array<{name: string, args: Array<any>, handle: Handle | null, responseBuffer: SharedArrayBuffer | null}>}
+         * @type {Array<Command>}
          */
-        this.commandBuffer = [];
+        this.commands = [];
+        /**
+         * @type {boolean}
+         */
+        this.isCleared = false;
     }
 
     /**
      * 
      * @param {string} funcName 
      * @param {Array<string>} args 
-     * @param {Handle | null} handle 
+     * @param {number | null} handle 
      * @param {SharedArrayBuffer | null} responseBuffer 
      */
     addMessageInternal(funcName, args, handle, responseBuffer) {
-        const message = {
-            name: funcName,
-            args: args,
-            handle: handle,
-            responseBuffer: responseBuffer
-        };
-        this.commandBuffer.push(message);
+        const message = new Command(funcName, args, handle, responseBuffer);
+        this.commands.push(message);
     }
 
     /**
@@ -686,7 +807,7 @@ class CommandBuffer {
      * Add a message to the command buffer to create an object referenced by the handle
      * @param {string} funcName 
      * @param {Array<any>} args 
-     * @param {Handle} handle
+     * @param {number} handle
      */
     addMessageWithHandle(funcName, args, handle) {
        this.addMessageInternal(funcName, args, handle, null);
@@ -694,15 +815,15 @@ class CommandBuffer {
 
     // Executes all the webGL commands stored in this buffer
     execute() {
-        if (this.commandBuffer.length > 0) {
+        if (this.commands.length > 0) {
             try {
                 let test = structuredClone(this.commandBuffer);
-                console.debug(test);
+                //console.debug(test);
                 postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: this.isRendering,
-                    commands: this.commandBuffer,
+                    commands: this.commands,
                 });
             }
             catch (e) {
@@ -715,15 +836,15 @@ class CommandBuffer {
         if (this.isRendering) {
             console.error("Render buffer not repeatable. The render buffer contains a command that sends back data to the tool, this is not allowed because of async nature of rendering commandbuffers");
             return;
-        }
-        if (this.commandBuffer.length > 0) {
+        } 
+        if (this.commands.length > 0) {
             try {
                 Atomics.store(this.synclock, 0, 0);
                 postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: false,
-                    commands: this.commandBuffer,
+                    commands: this.commands,
                 });
                 Atomics.wait(this.synclock, 0, 0);
             }
@@ -736,7 +857,8 @@ class CommandBuffer {
 
     // clears the whole buffer for reuse
     clear() {
-        this.commandBuffer = [];
+        this.commands = [];
+        this.isCleared = true;
     }
 }
 
@@ -772,3 +894,76 @@ class CommandBufferFactory {
         return commandBuffer;
     }
 }
+
+/**
+ * manages all received command buffers and the one that is used for rendering
+ * 
+ */
+class CommandBufferManager {
+    /**
+     * 
+     * @param {number} workerId 
+     */
+    constructor(workerId) {
+        /**
+         * @type {CommandBuffer[]}
+         */
+        this.commandBuffers = [];
+
+        /**
+         * @type {CommandBuffer}
+         */
+        this.renderCommandBuffer = new CommandBuffer(workerId, -1, true, []);
+    }
+
+    /**
+     * 
+     * @param {Message} commandBuffer 
+     */
+    onCommandBufferReceived(commandBuffer) {
+        //console.log(`cmd(${commandBuffer.workerId}): received buffer[${commandBuffer.commands.length}]`);
+        this.commandBuffers.push(commandBuffer);
+    
+    }
+
+    /**
+     * 
+     * @returns {CommandBuffer} the newest commandbuffer marked for rendering for which all resources have been loaded
+     */
+    getRenderCommandBuffer() {
+        while (this.commandBuffers.length > 0) {
+            const commandBuffer = this.commandBuffers[0];
+            if (commandBuffer.isRendering) {
+                // the command buffer was marked for rendering, remove it from the list and store it as the last known rendering command buffer 
+                this.commandBuffers.shift();
+                this.renderCommandBuffer = commandBuffer;
+            } else {
+                // the command buffer is marked for loading resources, return last know command buffer for rendering
+                return this.renderCommandBuffer;
+            }
+        }
+        return this.renderCommandBuffer;
+    }
+
+    /**
+     * 
+     * @returns {CommandBuffer | null} the next resource commandbuffer if it exists
+     */
+    getResourceCommandBuffer() {
+        while (this.commandBuffers.length > 0) {
+            const commandBuffer = this.commandBuffers[0];
+            this.commandBuffers.shift();
+            if (commandBuffer.isRendering) {
+               // the command buffer was marked for rendering, update the last known rendering frame buffer, since we've loaded all resources
+               this.renderCommandBuffer = commandBuffer;
+            } else {
+                // the command buffer was marked for resource loading, return it
+                return commandBuffer;
+            }
+        }
+        return null;
+    }
+}
+
+export {CommandId, Command, CommandBuffer, CommandBufferFactory, CommandBufferManager, GLCommandBufferContext};
+
