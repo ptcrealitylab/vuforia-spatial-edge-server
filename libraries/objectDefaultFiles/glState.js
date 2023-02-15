@@ -1,9 +1,3 @@
-if (typeof createNameSpace !== "undefined") {
-    createNameSpace("realityEditor.gui.glState");
-} else {
-    var realityEditor = {gui : {glState: {}}};
-}
-
 /**
  * Everything that is returned as a handle
  * @typedef {WebGLBuffer | WebGLTexture | null} HandleObj 
@@ -38,6 +32,11 @@ if (typeof createNameSpace !== "undefined") {
 /**
  * the parsed version of the NamedBooleanParameter class
  * @typedef {{name: string, value: boolean}} JSONNamedBooleanParameter
+ */
+
+/**
+ * the parsed version of the NamedBooleanArrayParameter class
+ * @typedef {{name: string, value: Array<boolean>}} JSONNamedBooleanArrayParameter
  */
 
 /**
@@ -152,6 +151,10 @@ class Handle extends Clonable {
      */
     static fromJSON(json) {
         return new Handle(json.handle);
+    }
+
+    valueOf() {
+        return this.handle;
     }
 }
 
@@ -288,6 +291,45 @@ class NamedStringParameter extends BaseNamedParameter {
      */
     static fromJSON(json) {
         return new NamedStringParameter(json.name, json.value);
+    }
+}
+
+/**
+ * @extends {BaseNamedParameter<Array<boolean>, NamedBooleanArrayParameter>}
+ */
+class NamedBooleanArrayParameter extends BaseNamedParameter{
+    /**
+     * 
+     * @param {string} name 
+     * @param {Array<boolean>} value 
+     */
+    constructor(name, value) {
+        super(name, value);
+    }
+
+     /**
+     * @override
+     * @returns {NamedBooleanArrayParameter}
+     */
+    clone() {
+        return new NamedBooleanArrayParameter(this.name, [...this.value]);
+    }
+
+    /**
+     * 
+     * @returns {JSONNamedBooleanArrayParameter}
+     */
+    toJSON() {
+        return {name: this.name, value: [...this.value]};
+    }
+
+    /**
+     * 
+     * @param {JSONNamedBooleanArrayParameter} json 
+     * @returns {NamedBooleanArrayParameter}
+     */
+    static fromJSON(json) {
+        return new NamedBooleanArrayParameter(json.name, [...json.value]);
     }
 }
 
@@ -967,6 +1009,7 @@ class DeviceDescription {
     static VERTEX_SHADER = 0x8B31;
     // WebGL 2.0
     static MAX_SAMPLES = 0x8D57;
+    static MAX_UNIFORM_BUFFER_BINDINGS = 0x8A2F;
     // EXT_color_buffer_half_float
     static FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT = 0x8211;
     static RGB16F_EXT = 0x881B;
@@ -1012,10 +1055,13 @@ class DeviceDescription {
         this.parameters.set(DeviceDescription.MAX_COMBINED_TEXTURE_IMAGE_UNITS, new NamedNumberParameter("MAX_COMBINED_TEXTURE_IMAGE_UNITS", gl.getParameter(DeviceDescription.MAX_COMBINED_TEXTURE_IMAGE_UNITS)));
         this.parameters.set(DeviceDescription.VERSION, new NamedStringParameter("VERSION", gl.getParameter(DeviceDescription.VERSION)));
         let maxSamples = 0;
+        let maxUniformBufferBindings = 0;
         if (gl instanceof WebGL2RenderingContext) {
             maxSamples = gl.getParameter(DeviceDescription.MAX_SAMPLES);
+            maxUniformBufferBindings = gl.getParameter(DeviceDescription.MAX_UNIFORM_BUFFER_BINDINGS);
         }
         this.parameters.set(DeviceDescription.MAX_SAMPLES, new NamedNumberParameter("MAX_SAMPLES", maxSamples));
+        this.parameters.set(DeviceDescription.MAX_UNIFORM_BUFFER_BINDINGS, new NamedNumberParameter("MAX_UNIFORM_BUFFER_BINDINGS", maxUniformBufferBindings));
 
         let maxTextureMaxAniso = 0;
         /**
@@ -1091,476 +1137,505 @@ class DeviceDescription {
     }
 }
 
-(function(exports) {
+/**
+ * Manages the state of the gl context
+ */
+class GLState {
     /**
-     * Manages the state of the gl context
+     * 
+     * @param {WebGL} gl 
+     * @param {Map<number, HandleObj>} unclonables 
+     * @param {Array<number>} viewport
      */
-    class GLState {
+    constructor(gl, unclonables, viewport) {
         /**
-         * 
-         * @param {WebGL} gl 
-         * @param {Map<number, HandleObj>} unclonables 
-         * @param {Array<number>} viewport
+         * @type {WebGL}
          */
-        constructor(gl, unclonables, viewport) {
-            /**
-             * @type {WebGL}
-             */
-            this.gl = gl;
+        this.gl = gl;
 
-            /**
-             * @type {Map<number, HandleObj>}
-             */
-            this.unclonables = unclonables;
+        /**
+         * @type {Map<number, HandleObj>}
+         */
+        this.unclonables = unclonables;
 
-            /**
-             * @type {WebGLProgram | null}
-             */
-            this.currentProgram = null;
+        /**
+         * @type {WebGLProgram | null}
+         */
+        this.currentProgram = null;
 
-            /**
-             * @type {GLenum}
-             */
-            this.activeTexture = this.gl.TEXTURE0;
+        /**
+         * @type {GLenum}
+         */
+        this.activeTexture = this.gl.TEXTURE0;
 
-            /**
-             * @type {Map<GLenum, NamedNumberParameter | NamedHandleParameter | NamedBooleanParameter | NamedFloat32ArrayParameter | NamedInt32ArrayParameter>}
-             */
-            this.parameters = new Map();
-            this.parameters.set(this.gl.ARRAY_BUFFER_BINDING, new NamedHandleParameter("ARRAY_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-            this.parameters.set(this.gl.BLEND, new NamedBooleanParameter("BLEND", false));
-            this.parameters.set(this.gl.COLOR_CLEAR_VALUE, new NamedFloat32ArrayParameter("COLOR_CLEAR_VALUE", new Float32Array([0, 0, 0, 0]))); 
-            this.parameters.set(this.gl.CULL_FACE, new NamedBooleanParameter("CULL_FACE", false));
-            this.parameters.set(this.gl.CULL_FACE_MODE, new NamedNumberParameter("CULL_FACE_MODE", this.gl.BACK));
-            this.parameters.set(this.gl.DEPTH_CLEAR_VALUE, new NamedNumberParameter("DEPTH_CLEAR_VALUE", 1));
-            this.parameters.set(this.gl.DEPTH_FUNC, new NamedNumberParameter("DEPTH_FUNC", this.gl.LESS));
-            this.parameters.set(this.gl.DEPTH_TEST, new NamedBooleanParameter("DEPTH_TEST", false));
-            this.parameters.set(this.gl.DITHER, new NamedBooleanParameter("DITHER", false));
-            this.parameters.set(this.gl.ELEMENT_ARRAY_BUFFER_BINDING, new NamedHandleParameter("ELEMENT_ARRAY_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-            this.parameters.set(this.gl.FRONT_FACE, new NamedNumberParameter("FRONT_FACE", this.gl.CCW));
-            this.parameters.set(this.gl.POLYGON_OFFSET_FILL, new NamedBooleanParameter("POLYGON_OFFSET_FILL", false));
-            this.parameters.set(this.gl.SAMPLE_ALPHA_TO_COVERAGE, new NamedBooleanParameter("SAMPLE_ALPHA_TO_COVERAGE", false));
-            this.parameters.set(this.gl.SAMPLE_COVERAGE, new NamedBooleanParameter("SAMPLE_COVERAGE", false));
-            this.parameters.set(this.gl.SCISSOR_BOX, new NamedInt32ArrayParameter("SCISSOR_BOX", new Int32Array([0, 0, 0, 0])));
-            this.parameters.set(this.gl.SCISSOR_TEST, new NamedBooleanParameter("SCISSOR_TEST", false));
-            this.parameters.set(this.gl.STENCIL_CLEAR_VALUE, new NamedNumberParameter("STENCIL_CLEAR_VALUE", 0));
-            this.parameters.set(this.gl.STENCIL_TEST, new NamedBooleanParameter("STENCIL_TEST", false));
-            this.parameters.set(this.gl.VIEWPORT, new NamedInt32ArrayParameter("VIEWPORT", new Int32Array(viewport))); 
-            if (this.gl instanceof WebGL2RenderingContext) {
-                this.parameters.set(this.gl.COPY_READ_BUFFER_BINDING, new NamedHandleParameter("COPY_READ_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-                this.parameters.set(this.gl.COPY_WRITE_BUFFER_BINDING, new NamedHandleParameter("COPY_WRITE_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-                this.parameters.set(this.gl.PIXEL_PACK_BUFFER_BINDING, new NamedHandleParameter("PIXEL_PACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-                this.parameters.set(this.gl.PIXEL_UNPACK_BUFFER_BINDING, new NamedHandleParameter("PIXEL_UNPACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-                this.parameters.set(this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING, new NamedHandleParameter("TRANSFORM_FEEDBACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
-                this.parameters.set(this.gl.UNIFORM_BUFFER_BINDING, new NamedHandleParameter("UNIFORM_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables))); 
-                this.parameters.set(this.gl.VERTEX_ARRAY_BINDING, new NamedHandleParameter("VERTEX_ARRAY_BINDING", GLState.getBufferHandle(null, unclonables))); 
-            }
-
-            /**
-             * @type {Map<GLenum, NamedTextureUnitStateParameter>}
-             */
-            this.textureBinds = new Map();
-            for (let i = 0 ; i < 32; ++i) {
-                this.textureBinds.set(this.gl.TEXTURE0 + i, new NamedTextureUnitStateParameter("TEXTURE" + i, new TextureUnitState(this.gl, this.gl.TEXTURE0 + i, unclonables)));
-            }
-
-            /**
-             * @type {WebGLContextAttributes | null}
-             */
-            this.contextAttributes = null;
+        /**
+         * @type {Map<GLenum, NamedNumberParameter | NamedHandleParameter | NamedBooleanParameter | NamedBooleanArrayParameter | NamedFloat32ArrayParameter | NamedInt32ArrayParameter>}
+         */
+        this.parameters = new Map();
+        this.parameters.set(this.gl.ARRAY_BUFFER_BINDING, new NamedHandleParameter("ARRAY_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+        this.parameters.set(this.gl.BLEND, new NamedBooleanParameter("BLEND", false));
+        this.parameters.set(this.gl.COLOR_CLEAR_VALUE, new NamedFloat32ArrayParameter("COLOR_CLEAR_VALUE", new Float32Array([0, 0, 0, 0]))); 
+        this.parameters.set(this.gl.COLOR_WRITEMASK, new NamedBooleanArrayParameter("COLOR_WRITEMASK", [true, true, true, true]))
+        this.parameters.set(this.gl.CULL_FACE, new NamedBooleanParameter("CULL_FACE", false));
+        this.parameters.set(this.gl.CULL_FACE_MODE, new NamedNumberParameter("CULL_FACE_MODE", this.gl.BACK));
+        this.parameters.set(this.gl.DEPTH_CLEAR_VALUE, new NamedNumberParameter("DEPTH_CLEAR_VALUE", 1));
+        this.parameters.set(this.gl.DEPTH_FUNC, new NamedNumberParameter("DEPTH_FUNC", this.gl.LESS));
+        this.parameters.set(this.gl.DEPTH_WRITEMASK, new NamedBooleanParameter("DEPTH_WRITEMASK", true));
+        this.parameters.set(this.gl.DEPTH_TEST, new NamedBooleanParameter("DEPTH_TEST", false));
+        this.parameters.set(this.gl.DITHER, new NamedBooleanParameter("DITHER", false));
+        this.parameters.set(this.gl.ELEMENT_ARRAY_BUFFER_BINDING, new NamedHandleParameter("ELEMENT_ARRAY_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+        this.parameters.set(this.gl.FRONT_FACE, new NamedNumberParameter("FRONT_FACE", this.gl.CCW));
+        this.parameters.set(this.gl.POLYGON_OFFSET_FILL, new NamedBooleanParameter("POLYGON_OFFSET_FILL", false));
+        this.parameters.set(this.gl.SAMPLE_ALPHA_TO_COVERAGE, new NamedBooleanParameter("SAMPLE_ALPHA_TO_COVERAGE", false));
+        this.parameters.set(this.gl.SAMPLE_COVERAGE, new NamedBooleanParameter("SAMPLE_COVERAGE", false));
+        this.parameters.set(this.gl.SCISSOR_BOX, new NamedInt32ArrayParameter("SCISSOR_BOX", new Int32Array([0, 0, 0, 0])));
+        this.parameters.set(this.gl.SCISSOR_TEST, new NamedBooleanParameter("SCISSOR_TEST", false));
+        this.parameters.set(this.gl.STENCIL_CLEAR_VALUE, new NamedNumberParameter("STENCIL_CLEAR_VALUE", 0));
+        this.parameters.set(this.gl.STENCIL_TEST, new NamedBooleanParameter("STENCIL_TEST", false));
+        this.parameters.set(this.gl.VIEWPORT, new NamedInt32ArrayParameter("VIEWPORT", new Int32Array(viewport))); 
+        if (this.gl instanceof WebGL2RenderingContext) {
+            this.parameters.set(this.gl.COPY_READ_BUFFER_BINDING, new NamedHandleParameter("COPY_READ_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+            this.parameters.set(this.gl.COPY_WRITE_BUFFER_BINDING, new NamedHandleParameter("COPY_WRITE_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+            this.parameters.set(this.gl.PIXEL_PACK_BUFFER_BINDING, new NamedHandleParameter("PIXEL_PACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+            this.parameters.set(this.gl.PIXEL_UNPACK_BUFFER_BINDING, new NamedHandleParameter("PIXEL_UNPACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+            this.parameters.set(this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING, new NamedHandleParameter("TRANSFORM_FEEDBACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
+            this.parameters.set(this.gl.UNIFORM_BUFFER_BINDING, new NamedHandleParameter("UNIFORM_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables))); 
+            this.parameters.set(this.gl.VERTEX_ARRAY_BINDING, new NamedHandleParameter("VERTEX_ARRAY_BINDING", GLState.getBufferHandle(null, unclonables))); 
         }
 
         /**
-         * Makes a deep copy of this class
-         * @returns A deep copy of this class
+         * @type {Map<GLenum, NamedTextureUnitStateParameter>}
          */
-        clone() {
-            let ret = new GLState(this.gl, this.unclonables, this.parameters.get(this.gl.VIEWPORT).value);
-            ret.currentProgram = this.currentProgram;
-            ret.activeTexture = this.activeTexture;
-            this.textureBinds.forEach((textureBind, key) => ret.textureBinds.set(key, textureBind.clone()));
-            this.parameters.forEach((parameter, key) => ret.parameters.set(key, parameter.clone()));
-            ret.contextAttributes = this.contextAttributes;
-            return ret;
+        this.textureBinds = new Map();
+        for (let i = 0 ; i < 32; ++i) {
+            this.textureBinds.set(this.gl.TEXTURE0 + i, new NamedTextureUnitStateParameter("TEXTURE" + i, new TextureUnitState(this.gl, this.gl.TEXTURE0 + i, unclonables)));
         }
 
         /**
-         * Copies the current state from the gl context
-         * @param {WebGL} gl - The gl context to copy from
-         * @param {Map<number, HandleObj>} unclonables
-         * @returns A new GLState instance corresponding to the given gl context
+         * @type {WebGLContextAttributes | null}
          */
-        static createFromGLContext(gl, unclonables) {
-            let ret = new GLState(gl, unclonables, [0, 0, 0, 0]);
-            ret.currentProgram = gl.getParameter(gl.CURRENT_PROGRAM);
-            ret.activeTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
-            ret.textureBinds.forEach((textureBind, key) => {
-                gl.activeTexture(key);
-                textureBind.value = TextureUnitState.createFromGLContext(gl, key, unclonables);
-            });
-            // restore original active texture
-            gl.activeTexture(ret.activeTexture);
-            ret.contextAttributes = gl.getContextAttributes();
-            let needHandle = [
-                gl.ARRAY_BUFFER_BINDING, 
-                gl.ELEMENT_ARRAY_BUFFER_BINDING
-            ];
-            if (gl instanceof WebGL2RenderingContext) {
-                needHandle.push(gl.COPY_READ_BUFFER_BINDING);
-                needHandle.push(gl.COPY_WRITE_BUFFER_BINDING);
-                needHandle.push(gl.TRANSFORM_FEEDBACK_BUFFER_BINDING);
-                needHandle.push(gl.UNIFORM_BUFFER_BINDING);
-                needHandle.push(gl.PIXEL_PACK_BUFFER_BINDING);
-                needHandle.push(gl.PIXEL_UNPACK_BUFFER_BINDING);
-                needHandle.push(gl.VERTEX_ARRAY_BINDING);
-            }
-            needHandle.forEach(key => {
-                let parameter = ret.parameters.get(key);
-                if (parameter !== undefined) {
-                    parameter.value = GLState.getBufferHandle(gl.getParameter(key), unclonables)
-                }
-            });
-            const nativeValues = [
-                gl.BLEND,
-                gl.COLOR_CLEAR_VALUE,
-                gl.CULL_FACE,
-                gl.CULL_FACE_MODE,
-                gl.DEPTH_CLEAR_VALUE,
-                gl.DEPTH_FUNC,
-                gl.DEPTH_TEST,
-                gl.DITHER,
-                gl.FRONT_FACE,
-                gl.POLYGON_OFFSET_FILL,
-                gl.SAMPLE_ALPHA_TO_COVERAGE,
-                gl.SAMPLE_COVERAGE,
-                gl.SCISSOR_BOX,
-                gl.SCISSOR_TEST,
-                gl.STENCIL_CLEAR_VALUE,
-                gl.STENCIL_TEST,
-                gl.VIEWPORT
-            ];
-            nativeValues.forEach(key => {
-                let parameter = ret.parameters.get(key);
-                if (parameter !== undefined) {
-                    parameter.value = gl.getParameter(key);
-                }
-            });
-            return ret;
-        }
+        this.contextAttributes = null;
+    }
 
-        /**
-         * @returns {JSONGLState}
-         */
-        toJSON() {
-            return {
-                unclonables: Object.fromEntries(this.unclonables.entries()),
-                currentProgram: this.currentProgram,
-                activeTexture: this.activeTexture,
-                textureBinds: Object.fromEntries(this.textureBinds.entries()),
-                parameters: Object.fromEntries(this.parameters.entries()),
-                contextAttributes: this.contextAttributes
-            }
-        }
+    /**
+     * Makes a deep copy of this class
+     * @returns A deep copy of this class
+     */
+    clone() {
+        let ret = new GLState(this.gl, this.unclonables, this.parameters.get(this.gl.VIEWPORT).value);
+        ret.currentProgram = this.currentProgram;
+        ret.activeTexture = this.activeTexture;
+        this.textureBinds.forEach((textureBind, key) => ret.textureBinds.set(key, textureBind.clone()));
+        this.parameters.forEach((parameter, key) => ret.parameters.set(key, parameter.clone()));
+        ret.contextAttributes = this.contextAttributes;
+        return ret;
+    }
 
-        /**
-         * @param {WebGLBuffer | null} buffer
-         * @param {Map<number, HandleObj>} unclonables 
-         */
-        static getBufferHandle(buffer, unclonables) {
-            let ret_handle = 0;
-            for (const [handle, obj] of unclonables) {
-                if (buffer === obj) {
-                    ret_handle = handle;
-                    break;
-                }
-            }
-            if (ret_handle === 0) {
-                // create a new internal handle (always negative)
-                let minValue = Math.min(...unclonables.keys());
-                ret_handle = ((!isFinite(minValue)) || (minValue > 0)) ? -1 : minValue - 1;
-                unclonables.set(ret_handle, buffer);
-            }
-            return new Handle(ret_handle);
+    /**
+     * Copies the current state from the gl context
+     * @param {WebGL} gl - The gl context to copy from
+     * @param {Map<number, HandleObj>} unclonables
+     * @returns A new GLState instance corresponding to the given gl context
+     */
+    static createFromGLContext(gl, unclonables) {
+        let ret = new GLState(gl, unclonables, [0, 0, 0, 0]);
+        ret.currentProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+        ret.activeTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
+        ret.textureBinds.forEach((textureBind, key) => {
+            gl.activeTexture(key);
+            textureBind.value = TextureUnitState.createFromGLContext(gl, key, unclonables);
+        });
+        // restore original active texture
+        gl.activeTexture(ret.activeTexture);
+        ret.contextAttributes = gl.getContextAttributes();
+        let needHandle = [
+            gl.ARRAY_BUFFER_BINDING, 
+            gl.ELEMENT_ARRAY_BUFFER_BINDING
+        ];
+        if (gl instanceof WebGL2RenderingContext) {
+            needHandle.push(gl.COPY_READ_BUFFER_BINDING);
+            needHandle.push(gl.COPY_WRITE_BUFFER_BINDING);
+            needHandle.push(gl.TRANSFORM_FEEDBACK_BUFFER_BINDING);
+            needHandle.push(gl.UNIFORM_BUFFER_BINDING);
+            needHandle.push(gl.PIXEL_PACK_BUFFER_BINDING);
+            needHandle.push(gl.PIXEL_UNPACK_BUFFER_BINDING);
+            needHandle.push(gl.VERTEX_ARRAY_BINDING);
         }
+        needHandle.forEach(key => {
+            let parameter = ret.parameters.get(key);
+            if (parameter !== undefined) {
+                parameter.value = GLState.getBufferHandle(gl.getParameter(key), unclonables)
+            }
+        });
+        const nativeValues = [
+            gl.BLEND,
+            gl.COLOR_CLEAR_VALUE,
+            gl.COLOR_WRITEMASK,
+            gl.CULL_FACE,
+            gl.CULL_FACE_MODE,
+            gl.DEPTH_CLEAR_VALUE,
+            gl.DEPTH_FUNC,
+            gl.DEPTH_WRITEMASK,
+            gl.DEPTH_TEST,
+            gl.DITHER,
+            gl.FRONT_FACE,
+            gl.POLYGON_OFFSET_FILL,
+            gl.SAMPLE_ALPHA_TO_COVERAGE,
+            gl.SAMPLE_COVERAGE,
+            gl.SCISSOR_BOX,
+            gl.SCISSOR_TEST,
+            gl.STENCIL_CLEAR_VALUE,
+            gl.STENCIL_TEST,
+            gl.VIEWPORT
+        ];
+        nativeValues.forEach(key => {
+            let parameter = ret.parameters.get(key);
+            if (parameter !== undefined) {
+                parameter.value = gl.getParameter(key);
+            }
+        });
+        return ret;
+    }
 
-        /**
-         * Updates this state to reflect the state of the gl context before/after executing this command
-         * @param {Command} command The command to check
-         */
-        preProcessOneCommand(command) {
-            if (command.name === "useProgram") {
-                this.currentProgram = command.args[0];   
-            } else if (command.name === "activeTexture") {
-                this.activetexture = command.args[0];
-            } else if (command.name === "bindBuffer") {
-                let bufferTargetToTargetBinding = new Map()
-                bufferTargetToTargetBinding.set(this.gl.ARRAY_BUFFER, this.gl.ARRAY_BUFFER_BINDING);
-                bufferTargetToTargetBinding.set(this.gl.ELEMENT_ARRAY_BUFFER, this.gl.ELEMENT_ARRAY_BUFFER_BINDING);
-                if (this.gl instanceof WebGL2RenderingContext) {
-                    bufferTargetToTargetBinding.set(this.gl.COPY_READ_BUFFER, this.gl.COPY_READ_BUFFER_BINDING);
-                    bufferTargetToTargetBinding.set(this.gl.COPY_WRITE_BUFFER, this.gl.COPY_WRITE_BUFFER_BINDING);
-                    bufferTargetToTargetBinding.set(this.gl.TRANSFORM_FEEDBACK_BUFFER, this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING);
-                    bufferTargetToTargetBinding.set(this.gl.UNIFORM_BUFFER, this.gl.UNIFORM_BUFFER_BINDING);
-                    bufferTargetToTargetBinding.set(this.gl.PIXEL_PACK_BUFFER, this.gl.PIXEL_PACK_BUFFER_BINDING);
-                    bufferTargetToTargetBinding.set(this.gl.PIXEL_UNPACK_BUFFER, this.gl.PIXEL_UNPACK_BUFFER_BINDING);
-                }
-                let bufferBinding = bufferTargetToTargetBinding.get(command.args[0]);
-                if (bufferBinding !== undefined) {
-                    let parameter = this.parameters.get(bufferBinding);
-                    if (parameter !== undefined) {
-                        parameter.value = command.args[1];
-                    }
-                }
-            } else if (command.name === "bindTexture") {
-                let textureBinding = this.textureBinds.get(this.activeTexture);
-                if (textureBinding !== undefined) {
-                    textureBinding.value.processOneCommand(command);
-                }
-            } else if (command.name === "bindVertexArray") {
-                if (this.gl instanceof WebGL2RenderingContext) {
-                    let parameter = this.parameters.get(this.gl.VERTEX_ARRAY_BINDING);
-                    if (parameter !== undefined) {
-                        parameter.value = command.args[0];
-                    }
-                }
-            } else if(command.name === "clearColor") {
-                let parameter = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
-                if (parameter !== undefined) {
-                    parameter.value = new Float32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
-                }
-            } else if(command.name === "clearDepth") {
-                let parameter = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
-                if (parameter !== undefined) {
-                    parameter.value = command.args[0];
-                }
-            } else if(command.name === "clearStencil") {
-                let parameter = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
-                if (parameter !== undefined) {
-                    parameter.value = command.args[0];
-                }
-            } else if(command.name === "cullFace") {
-                let parameter = this.parameters.get(this.gl.CULL_FACE_MODE);
-                if (parameter !== undefined) {
-                    parameter.value = command.args[0];
-                }
-            } else if(command.name === "depthFunc") {
-                let parameter = this.parameters.get(this.gl.DEPTH_FUNC);
-                if (parameter !== undefined) {
-                    parameter.value = command.args[0];
-                }
-            }else if ((command.name === "enable") || (command.name === "disable")) {
-                let parameter = this.parameters.get(command.args[0]);
-                if (parameter !== undefined) {
-                    parameter.value = command.name === "enable";
-                }
-            } else if(command.name === "frontFace") {
-                let parameter = this.parameters.get(this.gl.FRONT_FACE);
-                if (parameter !== undefined) {
-                    parameter.value = command.args[0];
-                }
-            } else if(command.name === "scissor") {
-                let parameter = this.parameters.get(this.gl.SCISSOR_BOX);
-                if (parameter !== undefined) {
-                    parameter.value = new Int32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
-                }
-            } else if(command.name === "viewport") {
-                let parameter = this.parameters.get(this.gl.VIEWPORT);
-                if (parameter !== undefined) {
-                    parameter.value = new Int32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
-                }
-            } 
-        }
-
-        /**
-         * Updates this state to reflect the state of the gl context after executing this command
-         * @param {Command} command The command to check
-         */
-        postProcessOneCommand(command) {
-            if (command.name === "deleteShader") {
-                this.unclonables.delete(command.args[0].handle);
-            }
-        }
-
-        /**
-         * Creates a state of a gl context after executing a command buffer using a known begin state
-         * @param {GLState} beginState - The state before execution
-         * @param {CommandBuffer} commandBuffer - The command buffer to process
-         * @returns A new GLState instance corresponding to the end state after executing the given command buffer and the given begin state
-         */
-        static createEndStateFromCommandBuffer(beginState, commandBuffer) {
-            let ret = beginState.clone();
-            for (let command of commandBuffer.commands) {
-                ret.preProcessOneCommand(command);
-                ret.postProcessOneCommand(command);
-            }
-            return ret;
-        }
-
-        /**
-         * Force set all state parameters, usefull if you don't know the previous state
-         */
-        applyAll() {
-            this.gl.useProgram(this.currentProgram);
-            let bufferTargets = [
-                {buffer: this.gl.ARRAY_BUFFER, binding: this.gl.ARRAY_BUFFER_BINDING},
-                {buffer: this.gl.ELEMENT_ARRAY_BUFFER, binding: this.gl.ELEMENT_ARRAY_BUFFER_BINDING},
-            ];
-            if (this.gl instanceof WebGL2RenderingContext) {
-                bufferTargets.push({buffer: this.gl.COPY_READ_BUFFER, binding: this.gl.COPY_READ_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.COPY_WRITE_BUFFER, binding: this.gl.COPY_WRITE_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.TRANSFORM_FEEDBACK_BUFFER, binding: this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.UNIFORM_BUFFER, binding: this.gl.UNIFORM_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.PIXEL_PACK_BUFFER, binding: this.gl.PIXEL_PACK_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.PIXEL_UNPACK_BUFFER, binding: this.gl.PIXEL_UNPACK_BUFFER_BINDING});
-            }
-            bufferTargets.forEach(target => {
-                let parameter = this.parameters.get(target.binding);
-                if ((parameter !== undefined) && (parameter.value instanceof Handle)) {
-                    let buffer =  this.unclonables.get(parameter.value.handle);
-                    if (buffer instanceof WebGLBuffer) {
-                        this.gl.bindBuffer(target.buffer, buffer);
-                    }
-                }
-            });
-            this.textureBinds.forEach((textureBind, key) => textureBind.value.forceApply());
-            this.gl.activeTexture(this.activeTexture);
-            const toggleParameters = [this.gl.BLEND, this.gl.CULL_FACE, this.gl.DEPTH_TEST, this.gl.DITHER, this.gl.POLYGON_OFFSET_FILL, this.gl.SAMPLE_ALPHA_TO_COVERAGE, this.gl.SAMPLE_COVERAGE, this.gl.SCISSOR_TEST, this.gl.STENCIL_TEST];
-            toggleParameters.forEach(key => {
-                let parameter = this.parameters.get(key);
-                if (parameter !== undefined) {
-                    this.gl[parameter.value ? "enable" : "disable"](key);
-                }
-            });
-            const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
-            if ((clearColor !== undefined) && (clearColor.value instanceof Float32Array)) {
-                this.gl.clearColor(clearColor.value[0], clearColor.value[1], clearColor.value[2], clearColor.value[3]);
-            }
-            const clearDepthValue = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
-            if ((clearDepthValue !== undefined) && (typeof clearDepthValue.value === "number")) {
-                this.gl.clearDepth(clearDepthValue.value);
-            }
-            const stencilClearValue = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
-            if ((stencilClearValue !== undefined) && (typeof stencilClearValue.value === "number")) {
-                this.gl.clearStencil(stencilClearValue.value);
-            }
-            const cullFaceMode = this.parameters.get(this.gl.CULL_FACE_MODE);
-            if ((cullFaceMode !== undefined) && (typeof cullFaceMode.value === "number")) {
-                this.gl.cullFace(cullFaceMode.value);
-            }
-            const depthFunc = this.parameters.get(this.gl.DEPTH_FUNC);
-            if ((depthFunc !== undefined) && (typeof depthFunc.value === "number")) {
-                this.gl.depthFunc(depthFunc.value);
-            }
-            const frontFace = this.parameters.get(this.gl.FRONT_FACE);
-            if ((frontFace !== undefined) && (typeof frontFace.value === "number")) {
-                this.gl.frontFace(frontFace.value);
-            }
-            const scissorBox = this.parameters.get(this.gl.SCISSOR_BOX);
-            if ((scissorBox !== undefined) && (scissorBox.value instanceof Int32Array)) {
-                this.gl.scissor(scissorBox.value[0], scissorBox.value[1], scissorBox.value[2], scissorBox.value[3]);
-            }
-            const viewport = this.parameters.get(this.gl.VIEWPORT);
-            if ((viewport !== undefined) && (viewport.value instanceof Int32Array)) {
-                //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
-            }
-            // never change the contextattributes
-        }
-
-        /**
-         * Sets the state by setting only the changed state variables
-         * @param {GLState} curState - the current state of the gl context
-         */
-        applyDiff(curState) {
-            if (curState.currentProgram !== this.currentProgram) {
-                this.gl.useProgram(this.currentProgram);
-            }
-            let bufferTargets = [
-                {buffer: this.gl.ARRAY_BUFFER, binding: this.gl.ARRAY_BUFFER_BINDING},
-                {buffer: this.gl.ELEMENT_ARRAY_BUFFER, binding: this.gl.ELEMENT_ARRAY_BUFFER_BINDING},
-            ];
-            if (this.gl instanceof WebGL2RenderingContext) {
-                bufferTargets.push({buffer: this.gl.COPY_READ_BUFFER, binding: this.gl.COPY_READ_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.COPY_WRITE_BUFFER, binding: this.gl.COPY_WRITE_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.TRANSFORM_FEEDBACK_BUFFER, binding: this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.UNIFORM_BUFFER, binding: this.gl.UNIFORM_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.PIXEL_PACK_BUFFER, binding: this.gl.PIXEL_PACK_BUFFER_BINDING});
-                bufferTargets.push({buffer: this.gl.PIXEL_UNPACK_BUFFER, binding: this.gl.PIXEL_UNPACK_BUFFER_BINDING});
-            }
-            for (const target of bufferTargets) {
-                const bufferBinding = this.parameters.get(target.binding);
-                const curBufferBinding = curState.parameters.get(target.binding);
-                if ((curBufferBinding !== undefined) && (bufferBinding !== undefined) && (curBufferBinding.value !== bufferBinding.value) && (bufferBinding.value instanceof Handle)) {
-                    const buffer = this.unclonables.get(bufferBinding.value.handle);
-                    if (buffer !== undefined) {
-                        this.gl.bindBuffer(target.buffer, buffer);
-                    }
-                }
-            }
-            this.textureBinds.forEach((textureBind, key) => {
-                const curTextureBind = curState.textureBinds.get(key);
-                if ((curTextureBind !== undefined)) {
-                    textureBind.value.apply(curTextureBind.value);
-                }
-            });
-            if (curState.activeTexture !== this.activeTexture) {
-                this.gl.activeTexture(this.activeTexture);
-            }
-            const toggleParameters = [this.gl.BLEND, this.gl.CULL_FACE, this.gl.DEPTH_TEST, this.gl.DITHER, this.gl.POLYGON_OFFSET_FILL, this.gl.SAMPLE_ALPHA_TO_COVERAGE, this.gl.SAMPLE_COVERAGE, this.gl.SCISSOR_TEST, this.gl.STENCIL_TEST];
-            toggleParameters.forEach(key => {
-                const curToggle = curState.parameters.get(key);
-                const toggle = this.parameters.get(key);
-                if ((curToggle !== undefined) && (toggle !== undefined) && (curToggle.value !== toggle.value)) {
-                    if (toggle.value) {
-                        this.gl.enable(key);
-                    } else {
-                        this.gl.disable(key);
-                    }
-                }
-            });
-            const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
-            const curClearColor = curState.parameters.get(this.gl.COLOR_CLEAR_VALUE);
-            if ((clearColor !== undefined) && (curClearColor !== undefined) && (curClearColor.value !== clearColor.value) && (clearColor.value instanceof Float32Array)) {
-                this.gl.clearColor(clearColor.value[0], clearColor.value[1], clearColor.value[2], clearColor.value[3]);
-            }
-            const clearDepth = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
-            const curClearDepth = curState.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
-            if ((clearDepth !== undefined) && (curClearDepth !== undefined) && (curClearDepth.value !== clearDepth.value) && (typeof clearDepth.value === "number")) {
-                this.gl.clearDepth(clearDepth.value);
-            }
-            const clearStencil = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
-            const curClearStencil = curState.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
-            if ((clearStencil !== undefined) && (curClearStencil !== undefined) && (curClearStencil.value !== clearStencil.value) && (typeof clearStencil.value === "number")) {
-                this.gl.clearStencil(clearStencil.value);
-            }
-            const cullFace = this.parameters.get(this.gl.CULL_FACE_MODE);
-            const curCullFace = curState.parameters.get(this.gl.CULL_FACE_MODE);
-            if ((cullFace !== undefined) && (curCullFace !== undefined) && (curCullFace.value !== cullFace.value) && (typeof cullFace.value === "number")) {
-                this.gl.cullFace(cullFace.value);
-            }
-            const depthFunc = this.parameters.get(this.gl.DEPTH_FUNC);
-            const curDepthFunc = curState.parameters.get(this.gl.DEPTH_FUNC);
-            if ((depthFunc !== undefined) && (curDepthFunc !== undefined) && (curDepthFunc.value !== depthFunc.value) && (typeof depthFunc.value === "number")) {
-                this.gl.depthFunc(depthFunc.value);
-            }
-            const frontFace = this.parameters.get(this.gl.FRONT_FACE);
-            const curFrontFace = curState.parameters.get(this.gl.FRONT_FACE);
-            if ((frontFace !== undefined) && (curFrontFace !== undefined) && (curFrontFace.value !== frontFace.value) && (typeof frontFace.value === "number")) {
-                this.gl.frontFace(frontFace.value);
-            }
-            const scissorBox = this.parameters.get(this.gl.SCISSOR_BOX);
-            const curScissorBox = curState.parameters.get(this.gl.SCISSOR_BOX);
-            if ((scissorBox !== undefined) && (curScissorBox !== undefined) && (curScissorBox.value !== scissorBox.value) && (scissorBox.value instanceof Int32Array)) {
-                this.gl.scissor(scissorBox.value[0], scissorBox.value[1], scissorBox.value[2], scissorBox.value[3]);
-            }
-            const viewport = this.parameters.get(this.gl.VIEWPORT);
-            const curViewport = curState.parameters.get(this.gl.VIEWPORT);
-            if ((viewport !== undefined) && (curViewport !== undefined) && (curViewport.value !== viewport.value) && (viewport.value instanceof Int32Array)) {
-                //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
-            }
-            // never change the context attributes
+    /**
+     * @returns {JSONGLState}
+     */
+    toJSON() {
+        return {
+            unclonables: Object.fromEntries(this.unclonables.entries()),
+            currentProgram: this.currentProgram,
+            activeTexture: this.activeTexture,
+            textureBinds: Object.fromEntries(this.textureBinds.entries()),
+            parameters: Object.fromEntries(this.parameters.entries()),
+            contextAttributes: this.contextAttributes
         }
     }
 
-    exports.GLState = GLState
-    exports.Handle = Handle
-})(realityEditor.gui.glState);
+    /**
+     * @param {WebGLBuffer | null} buffer
+     * @param {Map<number, HandleObj>} unclonables 
+     */
+    static getBufferHandle(buffer, unclonables) {
+        let ret_handle = 0;
+        for (const [handle, obj] of unclonables) {
+            if (buffer === obj) {
+                ret_handle = handle;
+                break;
+            }
+        }
+        if (ret_handle === 0) {
+            // create a new internal handle (always negative)
+            let minValue = Math.min(...unclonables.keys());
+            ret_handle = ((!isFinite(minValue)) || (minValue > 0)) ? -1 : minValue - 1;
+            unclonables.set(ret_handle, buffer);
+        }
+        return new Handle(ret_handle);
+    }
+
+    /**
+     * Updates this state to reflect the state of the gl context before/after executing this command
+     * @param {Command} command The command to check
+     */
+    preProcessOneCommand(command) {
+        if (command.name === "useProgram") {
+            this.currentProgram = command.args[0];   
+        } else if (command.name === "activeTexture") {
+            this.activetexture = command.args[0];
+        } else if (command.name === "bindBuffer") {
+            let bufferTargetToTargetBinding = new Map()
+            bufferTargetToTargetBinding.set(this.gl.ARRAY_BUFFER, this.gl.ARRAY_BUFFER_BINDING);
+            bufferTargetToTargetBinding.set(this.gl.ELEMENT_ARRAY_BUFFER, this.gl.ELEMENT_ARRAY_BUFFER_BINDING);
+            if (this.gl instanceof WebGL2RenderingContext) {
+                bufferTargetToTargetBinding.set(this.gl.COPY_READ_BUFFER, this.gl.COPY_READ_BUFFER_BINDING);
+                bufferTargetToTargetBinding.set(this.gl.COPY_WRITE_BUFFER, this.gl.COPY_WRITE_BUFFER_BINDING);
+                bufferTargetToTargetBinding.set(this.gl.TRANSFORM_FEEDBACK_BUFFER, this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING);
+                bufferTargetToTargetBinding.set(this.gl.UNIFORM_BUFFER, this.gl.UNIFORM_BUFFER_BINDING);
+                bufferTargetToTargetBinding.set(this.gl.PIXEL_PACK_BUFFER, this.gl.PIXEL_PACK_BUFFER_BINDING);
+                bufferTargetToTargetBinding.set(this.gl.PIXEL_UNPACK_BUFFER, this.gl.PIXEL_UNPACK_BUFFER_BINDING);
+            }
+            let bufferBinding = bufferTargetToTargetBinding.get(command.args[0]);
+            if (bufferBinding !== undefined) {
+                let parameter = this.parameters.get(bufferBinding);
+                if (parameter !== undefined) {
+                    parameter.value = command.args[1];
+                }
+            }
+        } else if (command.name === "bindTexture") {
+            let textureBinding = this.textureBinds.get(this.activeTexture);
+            if (textureBinding !== undefined) {
+                textureBinding.value.processOneCommand(command);
+            }
+        } else if (command.name === "bindVertexArray") {
+            if (this.gl instanceof WebGL2RenderingContext) {
+                let parameter = this.parameters.get(this.gl.VERTEX_ARRAY_BINDING);
+                if (parameter !== undefined) {
+                    parameter.value = command.args[0];
+                }
+            }
+        } else if(command.name === "clearColor") {
+            let parameter = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
+            if (parameter !== undefined) {
+                parameter.value = new Float32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
+            }
+        } else if(command.name === "clearDepth") {
+            let parameter = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if(command.name === "clearStencil") {
+            let parameter = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if(command.name === "colorMask") {
+            let parameter = this.parameters.get(this.gl.COLOR_WRITEMASK);
+            if (parameter !== undefined) {
+                parameter.value = [command.args[0], command.args[1], command.args[2], command.args[3]];
+            }
+        } else if(command.name === "cullFace") {
+            let parameter = this.parameters.get(this.gl.CULL_FACE_MODE);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if(command.name === "depthFunc") {
+            let parameter = this.parameters.get(this.gl.DEPTH_FUNC);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if(command.name === "depthMask") {
+            let parameter = this.parameters.get(this.gl.DEPTH_WRITEMASK);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if ((command.name === "enable") || (command.name === "disable")) {
+            let parameter = this.parameters.get(command.args[0]);
+            if (parameter !== undefined) {
+                parameter.value = command.name === "enable";
+            }
+        } else if(command.name === "frontFace") {
+            let parameter = this.parameters.get(this.gl.FRONT_FACE);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+        } else if(command.name === "scissor") {
+            let parameter = this.parameters.get(this.gl.SCISSOR_BOX);
+            if (parameter !== undefined) {
+                parameter.value = new Int32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
+            }
+        } else if(command.name === "viewport") {
+            let parameter = this.parameters.get(this.gl.VIEWPORT);
+            if (parameter !== undefined) {
+                parameter.value = new Int32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
+            }
+        } 
+    }
+
+    /**
+     * Updates this state to reflect the state of the gl context after executing this command
+     * @param {Command} command The command to check
+     */
+    postProcessOneCommand(command) {
+        if (command.name === "deleteShader") {
+            this.unclonables.delete(command.args[0].handle);
+        }
+    }
+
+    /**
+     * Creates a state of a gl context after executing a command buffer using a known begin state
+     * @param {GLState} beginState - The state before execution
+     * @param {CommandBuffer} commandBuffer - The command buffer to process
+     * @returns A new GLState instance corresponding to the end state after executing the given command buffer and the given begin state
+     */
+    static createEndStateFromCommandBuffer(beginState, commandBuffer) {
+        let ret = beginState.clone();
+        for (let command of commandBuffer.commands) {
+            ret.preProcessOneCommand(command);
+            ret.postProcessOneCommand(command);
+        }
+        return ret;
+    }
+
+    /**
+     * Force set all state parameters, usefull if you don't know the previous state
+     */
+    applyAll() {
+        this.gl.useProgram(this.currentProgram);
+        let bufferTargets = [
+            {buffer: this.gl.ARRAY_BUFFER, binding: this.gl.ARRAY_BUFFER_BINDING},
+            {buffer: this.gl.ELEMENT_ARRAY_BUFFER, binding: this.gl.ELEMENT_ARRAY_BUFFER_BINDING},
+        ];
+        if (this.gl instanceof WebGL2RenderingContext) {
+            bufferTargets.push({buffer: this.gl.COPY_READ_BUFFER, binding: this.gl.COPY_READ_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.COPY_WRITE_BUFFER, binding: this.gl.COPY_WRITE_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.TRANSFORM_FEEDBACK_BUFFER, binding: this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.UNIFORM_BUFFER, binding: this.gl.UNIFORM_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.PIXEL_PACK_BUFFER, binding: this.gl.PIXEL_PACK_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.PIXEL_UNPACK_BUFFER, binding: this.gl.PIXEL_UNPACK_BUFFER_BINDING});
+        }
+        bufferTargets.forEach(target => {
+            let parameter = this.parameters.get(target.binding);
+            if ((parameter !== undefined) && (parameter.value instanceof Handle)) {
+                let buffer =  this.unclonables.get(parameter.value.handle);
+                if (buffer instanceof WebGLBuffer) {
+                    this.gl.bindBuffer(target.buffer, buffer);
+                }
+            }
+        });
+        this.textureBinds.forEach((textureBind, key) => textureBind.value.forceApply());
+        this.gl.activeTexture(this.activeTexture);
+        const toggleParameters = [this.gl.BLEND, this.gl.CULL_FACE, this.gl.DEPTH_TEST, this.gl.DITHER, this.gl.POLYGON_OFFSET_FILL, this.gl.SAMPLE_ALPHA_TO_COVERAGE, this.gl.SAMPLE_COVERAGE, this.gl.SCISSOR_TEST, this.gl.STENCIL_TEST];
+        toggleParameters.forEach(key => {
+            let parameter = this.parameters.get(key);
+            if (parameter !== undefined) {
+                this.gl[parameter.value ? "enable" : "disable"](key);
+            }
+        });
+        const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
+        if ((clearColor !== undefined) && (clearColor.value instanceof Float32Array)) {
+            this.gl.clearColor(clearColor.value[0], clearColor.value[1], clearColor.value[2], clearColor.value[3]);
+        }
+        const colorMask = this.parameters.get(this.gl.COLOR_WRITEMASK);
+        if ((colorMask !== undefined) && (Array.isArray(colorMask.value))) {
+            this.gl.colorMask(colorMask.value[0], colorMask.value[1], colorMask.value[2], colorMask.value[3]);
+        }
+        const clearDepthValue = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
+        if ((clearDepthValue !== undefined) && (typeof clearDepthValue.value === "number")) {
+            this.gl.clearDepth(clearDepthValue.value);
+        }
+        const stencilClearValue = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
+        if ((stencilClearValue !== undefined) && (typeof stencilClearValue.value === "number")) {
+            this.gl.clearStencil(stencilClearValue.value);
+        }
+        const cullFaceMode = this.parameters.get(this.gl.CULL_FACE_MODE);
+        if ((cullFaceMode !== undefined) && (typeof cullFaceMode.value === "number")) {
+            this.gl.cullFace(cullFaceMode.value);
+        }
+        const depthFunc = this.parameters.get(this.gl.DEPTH_FUNC);
+        if ((depthFunc !== undefined) && (typeof depthFunc.value === "number")) {
+            this.gl.depthFunc(depthFunc.value);
+        }
+        const depthMask = this.parameters.get(this.gl.DEPTH_WRITEMASK);
+        if ((depthMask !== undefined) && (typeof depthMask.value === "boolean")) {
+            this.gl.depthMask(depthMask.value);
+        }
+        const frontFace = this.parameters.get(this.gl.FRONT_FACE);
+        if ((frontFace !== undefined) && (typeof frontFace.value === "number")) {
+            this.gl.frontFace(frontFace.value);
+        }
+        const scissorBox = this.parameters.get(this.gl.SCISSOR_BOX);
+        if ((scissorBox !== undefined) && (scissorBox.value instanceof Int32Array)) {
+            this.gl.scissor(scissorBox.value[0], scissorBox.value[1], scissorBox.value[2], scissorBox.value[3]);
+        }
+        const viewport = this.parameters.get(this.gl.VIEWPORT);
+        if ((viewport !== undefined) && (viewport.value instanceof Int32Array)) {
+            //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+        }
+        // never change the contextattributes
+    }
+
+    /**
+     * Sets the state by setting only the changed state variables
+     * @param {GLState} curState - the current state of the gl context
+     */
+    applyDiff(curState) {
+        if (curState.currentProgram !== this.currentProgram) {
+            this.gl.useProgram(this.currentProgram);
+        }
+        let bufferTargets = [
+            {buffer: this.gl.ARRAY_BUFFER, binding: this.gl.ARRAY_BUFFER_BINDING},
+            {buffer: this.gl.ELEMENT_ARRAY_BUFFER, binding: this.gl.ELEMENT_ARRAY_BUFFER_BINDING},
+        ];
+        if (this.gl instanceof WebGL2RenderingContext) {
+            bufferTargets.push({buffer: this.gl.COPY_READ_BUFFER, binding: this.gl.COPY_READ_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.COPY_WRITE_BUFFER, binding: this.gl.COPY_WRITE_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.TRANSFORM_FEEDBACK_BUFFER, binding: this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.UNIFORM_BUFFER, binding: this.gl.UNIFORM_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.PIXEL_PACK_BUFFER, binding: this.gl.PIXEL_PACK_BUFFER_BINDING});
+            bufferTargets.push({buffer: this.gl.PIXEL_UNPACK_BUFFER, binding: this.gl.PIXEL_UNPACK_BUFFER_BINDING});
+        }
+        for (const target of bufferTargets) {
+            const bufferBinding = this.parameters.get(target.binding);
+            const curBufferBinding = curState.parameters.get(target.binding);
+            if ((curBufferBinding !== undefined) && (bufferBinding !== undefined) && (curBufferBinding.value !== bufferBinding.value) && (bufferBinding.value instanceof Handle)) {
+                const buffer = this.unclonables.get(bufferBinding.value.handle);
+                if (buffer !== undefined) {
+                    this.gl.bindBuffer(target.buffer, buffer);
+                }
+            }
+        }
+        this.textureBinds.forEach((textureBind, key) => {
+            const curTextureBind = curState.textureBinds.get(key);
+            if ((curTextureBind !== undefined)) {
+                textureBind.value.apply(curTextureBind.value);
+            }
+        });
+        if (curState.activeTexture !== this.activeTexture) {
+            this.gl.activeTexture(this.activeTexture);
+        }
+        const toggleParameters = [this.gl.BLEND, this.gl.CULL_FACE, this.gl.DEPTH_TEST, this.gl.DITHER, this.gl.POLYGON_OFFSET_FILL, this.gl.SAMPLE_ALPHA_TO_COVERAGE, this.gl.SAMPLE_COVERAGE, this.gl.SCISSOR_TEST, this.gl.STENCIL_TEST];
+        toggleParameters.forEach(key => {
+            const curToggle = curState.parameters.get(key);
+            const toggle = this.parameters.get(key);
+            if ((curToggle !== undefined) && (toggle !== undefined) && (curToggle.value !== toggle.value)) {
+                if (toggle.value) {
+                    this.gl.enable(key);
+                } else {
+                    this.gl.disable(key);
+                }
+            }
+        });
+        const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
+        const curClearColor = curState.parameters.get(this.gl.COLOR_CLEAR_VALUE);
+        if ((clearColor !== undefined) && (curClearColor !== undefined) && (curClearColor.value !== clearColor.value) && (clearColor.value instanceof Float32Array)) {
+            this.gl.clearColor(clearColor.value[0], clearColor.value[1], clearColor.value[2], clearColor.value[3]);
+        }
+        const clearDepth = this.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
+        const curClearDepth = curState.parameters.get(this.gl.DEPTH_CLEAR_VALUE);
+        if ((clearDepth !== undefined) && (curClearDepth !== undefined) && (curClearDepth.value !== clearDepth.value) && (typeof clearDepth.value === "number")) {
+            this.gl.clearDepth(clearDepth.value);
+        }
+        const clearStencil = this.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
+        const curClearStencil = curState.parameters.get(this.gl.STENCIL_CLEAR_VALUE);
+        if ((clearStencil !== undefined) && (curClearStencil !== undefined) && (curClearStencil.value !== clearStencil.value) && (typeof clearStencil.value === "number")) {
+            this.gl.clearStencil(clearStencil.value);
+        }
+        const colorMask = this.parameters.get(this.gl.COLOR_WRITEMASK);
+        const curColorMask = curState.parameters.get(this.gl.COLOR_WRITEMASK);
+        if ((colorMask !== undefined) && (curColorMask !== undefined) && (curColorMask.value !== colorMask.value) && (Array.isArray(colorMask.value))) {
+            this.gl.colorMask(colorMask.value[0], colorMask.value[1], colorMask.value[2], colorMask.value[3]);
+        }
+        const cullFace = this.parameters.get(this.gl.CULL_FACE_MODE);
+        const curCullFace = curState.parameters.get(this.gl.CULL_FACE_MODE);
+        if ((cullFace !== undefined) && (curCullFace !== undefined) && (curCullFace.value !== cullFace.value) && (typeof cullFace.value === "number")) {
+            this.gl.cullFace(cullFace.value);
+        }
+        const depthFunc = this.parameters.get(this.gl.DEPTH_FUNC);
+        const curDepthFunc = curState.parameters.get(this.gl.DEPTH_FUNC);
+        if ((depthFunc !== undefined) && (curDepthFunc !== undefined) && (curDepthFunc.value !== depthFunc.value) && (typeof depthFunc.value === "number")) {
+            this.gl.depthFunc(depthFunc.value);
+        }
+        const depthMask = this.parameters.get(this.gl.DEPTH_WRITEMASK);
+        const curDepthMask = curState.parameters.get(this.gl.DEPTH_WRITEMASK);
+        if ((depthMask !== undefined) && (curDepthMask !== undefined) && (curDepthMask.value !== depthMask.value) && (typeof depthMask.value === "boolean")) {
+            this.gl.depthMask(depthMask.value);
+        }
+        const frontFace = this.parameters.get(this.gl.FRONT_FACE);
+        const curFrontFace = curState.parameters.get(this.gl.FRONT_FACE);
+        if ((frontFace !== undefined) && (curFrontFace !== undefined) && (curFrontFace.value !== frontFace.value) && (typeof frontFace.value === "number")) {
+            this.gl.frontFace(frontFace.value);
+        }
+        const scissorBox = this.parameters.get(this.gl.SCISSOR_BOX);
+        const curScissorBox = curState.parameters.get(this.gl.SCISSOR_BOX);
+        if ((scissorBox !== undefined) && (curScissorBox !== undefined) && (curScissorBox.value !== scissorBox.value) && (scissorBox.value instanceof Int32Array)) {
+            this.gl.scissor(scissorBox.value[0], scissorBox.value[1], scissorBox.value[2], scissorBox.value[3]);
+        }
+        const viewport = this.parameters.get(this.gl.VIEWPORT);
+        const curViewport = curState.parameters.get(this.gl.VIEWPORT);
+        if ((viewport !== undefined) && (curViewport !== undefined) && (curViewport.value !== viewport.value) && (viewport.value instanceof Int32Array)) {
+            //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+        }
+        // never change the context attributes
+    }
+}
+
+export {Handle, GLState, DeviceDescription};

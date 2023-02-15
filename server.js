@@ -1595,6 +1595,8 @@ function objectWebServer() {
         html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
         html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
         html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
+        html = html.replace('objectDefaultFiles/ThreejsInterface.js', level + 'objectDefaultFiles/ThreejsInterface.js');
+        html = html.replace('objectDefaultFiles/ThreejsWorker.js', level + 'objectDefaultFiles/ThreejsWorker.js');
 
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
@@ -1760,6 +1762,8 @@ function objectWebServer() {
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
             html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
             html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
+            html = html.replace('objectDefaultFiles/ThreejsInterface.js', level + 'objectDefaultFiles/ThreejsInterface.js');
+            html = html.replace('objectDefaultFiles/ThreejsWorker.js', level + 'objectDefaultFiles/ThreejsWorker.js');
 
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
