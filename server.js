@@ -572,6 +572,9 @@ function resetObjectTimeout(objectKey) {
 }
 exports.resetObjectTimeout = resetObjectTimeout;
 
+const HumanPoseFuser = require('./libraries/HumanPoseFuser');
+const humanPoseFuser = new HumanPoseFuser(objects, services.ip, version, protocol);
+
 var worldObjectName = '_WORLD_';
 if (isLightweightMobile || isStandaloneMobile) {
     worldObjectName += 'local';
@@ -1087,6 +1090,8 @@ function startSystem() {
 
     // HACK MK
     //recorder.initRecorder(objects);
+
+    humanPoseFuser.start();
 
     serverBeatSender(beatPort, false);
 }
@@ -3649,14 +3654,19 @@ function socketServer() {
                 if (object.type == 'human' && msg.publicData['whole_pose']) {
                     // unpack public data with the whole pose to the human pose object
                     if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
-                        typeof msg.publicData['whole_pose'].timestamp !== 'undefined' && 
-                        msg.publicData['whole_pose'].joints.length > 0) {
-                        // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
-                        object.updateJoints(msg.publicData['whole_pose'].joints);
-                        object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
-                        console.log('updating joints: obj=' + object.objectId + ', ts=' + object.lastUpdateDataTS, ', socket=' + socket.id);
-                        // keep the object alive
-                        resetObjectTimeout(msg.object);
+                        typeof msg.publicData['whole_pose'].timestamp !== 'undefined') {
+                        
+                        // add poses to huamn pose fusion (including empty poses when body tracking failed)
+                        humanPoseFuser.addPoseData(object.objectId, msg.publicData['whole_pose']);
+                         
+                        if (msg.publicData['whole_pose'].joints.length > 0) {
+                            // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
+                            object.updateJoints(msg.publicData['whole_pose'].joints);
+                            object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
+                            console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
+                            // keep the object alive
+                            resetObjectTimeout(msg.object);
+                        }
                     }
                 }
             }
@@ -4090,6 +4100,10 @@ function deleteObject(objectKey) {
         utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     }
     // try to clean up any other state that might be remaining
+
+    if (objectKey.includes('_HUMAN_')) {
+        humanPoseFuser.removePoseObject(objectKey);
+    }
     if (activeHeartbeats[objectKey]) {
         clearInterval(activeHeartbeats[objectKey]);
         delete activeHeartbeats[objectKey];
