@@ -1,9 +1,8 @@
 
-//const {HumanPoseObject} = require('./HumanPoseObject.js');
 const HumanPoseObject = require('./HumanPoseObject');
 const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
-const { resetObjectTimeout } = require('../server');
+const server = require('../server');
 
 // incoming HumanPoseObjects should be created with this joint schema
 const JOINTS = {
@@ -33,29 +32,17 @@ const JOINTS = {
 
 class HumanPoseFuser {
 
-    /* TODO:
-        /- create fused HumanPoseObject and add to objects
-
-        / - store past poses - msg.publicData['whole_pose']
-            / - clean too old poses 
-        / - start/stop fusing
-        - groups of pose objects from represnting the same person 
-            / - create fused object if there is spatial overlap of poses from 2 views
-            /?- add new pose objects to a group when fused pose has a spatial overlap with pose from new view
-            - should pastPoses contain data from fused human objects?
-            - should 1-2 frame older fused poses be returned by findPoseDataMatchingInTime()?
-        / - run every 100 ms
-        / - remove data for pose objects removed from global var 'objects' (extend function deleteObject(objectKey) )
-        - pass in empty poses with their data ts (this needs to be enabled in receivePoses callback)
-    */
-
-    constructor(objects, ip, version, protocol) {
+    constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort) {
+        // references to global data structures for objects
         this.objectsRef = objects;
-        
+        this.sceneGraphRef = sceneGraph;
+        this.objectLookupRef = objectLookup;
+
         // for HumanPoseObject creation
         this.ip = ip;
         this.version = version;
         this.protocol = protocol;
+        this.beatPort = beatPort;
 
         // recent history of poses for each existing HumanPoseObject
         // dictionary - key: objectId, value: { latestFusedDataTS, array of objects from publicData['whole_pose'] }
@@ -167,8 +154,7 @@ class HumanPoseFuser {
         // remove association of a given object to any fused human object
         this.humanObjectsOfFusedObject.deleteObject(objectId);
 
-        // remove a fused human object which lost all associated human objects
-        // TODO: remove fused human objects if less than 2 associated objects?
+        // remove fused human objects if it has less than 2 associated human objects
         if (fusedObjectId && this.humanObjectsOfFusedObject[fusedObjectId].length < 2) {
             delete this.humanObjectsOfFusedObject[fusedObjectId];
         }
@@ -276,7 +262,27 @@ class HumanPoseFuser {
         if (poseArr[selIndex].joints.length > 0) {
             this.objectsRef[fusedObjectId].updateJoints(poseArr[selIndex].joints);
             this.objectsRef[fusedObjectId].lastUpdateDataTS = poseArr[selIndex].timestamp;
-            resetObjectTimeout(fusedObjectId); // keep the object alive
+            server.resetObjectTimeout(fusedObjectId); // keep the object alive
+
+            // create copy and update name
+            let wholePose = Object.assign({}, poseArr[selIndex]);
+            let end = fusedObjectId.indexOf('pose1');
+            let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
+            wholePose.name = name; // 'server_pose1' in practise for now
+
+            // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
+            // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
+            let keys = this.objectsRef[fusedObjectId].getJointNodeInfo(0);
+            if (this.objectsRef.hasOwnProperty(keys.objectKey)) {
+                if (this.objectsRef[keys.objectKey].frames.hasOwnProperty(keys.frameKey)) {
+                    if (this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes.hasOwnProperty(keys.nodeKey)) {
+                        var data = this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes[keys.nodeKey].publicData;
+                        data['whole_pose'] = wholePose;
+                        // sent out message with this updated data to all subscribers (eg. remote viewer)
+                        server.socketHandler.sendPublicDataToAllSubscribers(keys.objectKey, keys.frameKey, keys.nodeKey, 0 /*sessionUuid*/);
+                    }
+                }
+            }
 
             console.log('updating joints: obj=' + fusedObjectId + ', data_ts=' + poseArr[selIndex].timestamp + ', update_ts=' + Date.now());
         }
@@ -336,6 +342,16 @@ class HumanPoseFuser {
                 if (this.humanObjectsOfFusedObject[fusedObjectId] === undefined) {
                     this.humanObjectsOfFusedObject[fusedObjectId] = ids;
                 }
+
+                // setup active heartbeat for this new object
+                server.objectBeatSender(this.beatPort, fusedObjectId, this.ip, false);
+
+                // add new object to different global data structures
+                this.sceneGraphRef.addObjectAndChildren(fusedObjectId, this.objectsRef[fusedObjectId]);
+                utilities.writeObject(this.objectLookupRef, this.objectsRef[fusedObjectId].name, fusedObjectId);
+
+                // TODO?: add to 'knownObjects' - it seems that locally created objects do not get added there in general, just to 'objects'
+
                 console.log('creating fused human obj=' + fusedObjectId);
             }
         }
