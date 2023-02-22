@@ -66,6 +66,15 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
     return this.objectId + jointName;
 };
 
+/**
+ * Helper function returns the UUID of a node based on the name of a joint.
+ * @param {string} jointName - e.g. JOINT_PELVIS, JOINT_FOOT_RIGHT
+ * @return {string} - e.g. objectUuidJOINT_PELVISstorage, objectUuidJOINT_FOOT_RIGHTstorage
+ */
+HumanPoseObject.prototype.getNodeKey = function(jointName) {
+    return this.objectId + jointName + 'storage';
+};
+
 // // matches the entries of the Azure Kinect Body Tracking SDK
 // // k4abt_joint_id_t (https://microsoft.github.io/Azure-Kinect-Body-Tracking/release/0.9.x/group__btenums.html#ga5fe6fa921525a37dec7175c91c473781)
 // // For out purposes, serves as a mapping from joint names to the index they appear in the socket message updating the joint positions
@@ -155,6 +164,10 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     return newFrame;
 };
 
+/**
+ * Update frame poses and public data of nodes based on a given joints state
+ * @param {Array.<{x, y, z, confidence}>} joints
+ */
 HumanPoseObject.prototype.updateJoints = function(joints) {
 
     // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
@@ -202,6 +215,22 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
         node.publicData.data = { confidence: jointInfo.confidence };
 
     }.bind(this));
+};
+
+/**
+ * @return { {objectKey, frameKey, nodeKey} } - keys of the storeData node of a given joint
+ */
+HumanPoseObject.prototype.getJointNodeInfo = function(jointIndex) {
+
+    var jointName = Object.values(this.poseJointSchema)[jointIndex];
+    var frameKey = this.getFrameKey(jointName);
+    var nodeKey = this.getNodeKey(jointName);
+
+    return {
+        objectKey: this.objectId,
+        frameKey: frameKey,
+        nodeKey: nodeKey
+    };
 };
 
 /**
