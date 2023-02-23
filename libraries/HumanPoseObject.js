@@ -51,6 +51,10 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     // Timestamp of the last update of pose (joint positions + related data such as joint confidences)
     // This is capture timestamp of the image used to compute the pose in the update. Units are miliseconds, but it is a floating-point number with nanosecond precision.
     this.lastUpdateDataTS = 0;
+    // Parent is defined when this human object is associated and supports a fused human object (therefore this object does not need to be analyzed/visualized ...)
+    // Parent is not defined for any fused human object or standalone human object not currently associated with a fused one.
+    // NOTE: this property can change over time and subscribers to this object should take that into account
+    this.parent = null;
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {

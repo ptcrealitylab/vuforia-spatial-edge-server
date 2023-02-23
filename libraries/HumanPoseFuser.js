@@ -89,9 +89,9 @@ class HumanPoseFuser {
         this.intervalTimer = null;
         // same frequency as body tracking in Toolbox app
         this.fuseIntervalMs = 100;
-        // keep in pastPoses data which are x ms in the past
-        this.pastIntervalMs = 1000;
-        // time interval into past to find corresponding poses across human pose objects
+        // keep in pastPoses data which are x ms in the past (on timeline of data ts)
+        this.pastIntervalMs = 10000;
+        // time interval into past to find corresponding poses across human pose objects (on timeline of data ts)
         this.recentIntervalMs = 500;
 
         this.maxDistanceForSamePerson = 300; // mm
@@ -146,21 +146,52 @@ class HumanPoseFuser {
 
     removePoseObject(objectId) {
 
-        // remove pose history of a given human object if there is any
+        let removeFusedObject = (fid) => {
+
+            let batchedUpdates = [];
+            // remove parent reference from its remaining associated human objects
+            for (let id of this.humanObjectsOfFusedObject[fid]) {
+                if (this.objectsRef[id] !== undefined) {
+                    this.objectsRef[id].parent = null;
+
+                    batchedUpdates.push({
+                        objectKey: id,
+                        frameKey: null,
+                        nodeKey: null,
+                        propertyPath: 'parent',
+                        newValue: null,
+                        editorId: 0    // TODO: some server identificator
+                    });
+                }
+            }
+
+            // remove all association data if the given object is a fused human object
+            delete this.humanObjectsOfFusedObject[fid];
+
+            // send out 'parent' property updates to all subscribers
+            server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
+        };
+
+        // remove pose history of a deleted human object if there is any
         delete this.pastPoses[objectId];
 
-        let fusedObjectId = this.humanObjectsOfFusedObject.getFusedObject(objectId);
+        if (this.humanObjectsOfFusedObject[objectId] === undefined) { // not a fused human object
 
-        // remove association of a given object to any fused human object
-        this.humanObjectsOfFusedObject.deleteObject(objectId);
+            let fusedObjectId = this.humanObjectsOfFusedObject.getFusedObject(objectId);
 
-        // remove fused human objects if it has less than 2 associated human objects
-        if (fusedObjectId && this.humanObjectsOfFusedObject[fusedObjectId].length < 2) {
-            delete this.humanObjectsOfFusedObject[fusedObjectId];
+            // remove association of a deleted object to any fused human object
+            this.humanObjectsOfFusedObject.deleteObject(objectId);
+
+            // remove fused human objects if it has less than 2 associated human objects
+            if (fusedObjectId && this.humanObjectsOfFusedObject[fusedObjectId].length < 2) {
+                removeFusedObject(fusedObjectId);
+            }
+
+            return;
         }
 
-        // remove association data if the given object is a fused human object
-        delete this.humanObjectsOfFusedObject[objectId];
+        // a fused human object is deleted
+        removeFusedObject(objectId);
     }
 
     cleanPastPoses() {
@@ -279,6 +310,7 @@ class HumanPoseFuser {
                         var data = this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes[keys.nodeKey].publicData;
                         data['whole_pose'] = wholePose;
                         // sent out message with this updated data to all subscribers (eg. remote viewer)
+                        // TODO: some server identificator instead of sessionUuid
                         server.socketHandler.sendPublicDataToAllSubscribers(keys.objectKey, keys.frameKey, keys.nodeKey, 0 /*sessionUuid*/);
                     }
                 }
@@ -309,6 +341,8 @@ class HumanPoseFuser {
 
         // TODO: maybe there should be a check whether poses assigned to an existing fused human object are still in spatial proximity
 
+        let batchedUpdates = [];
+
         // assign groups of spatially-close human objects to existing or new fused human objects
         for (let ids of poseObjsSamePerson) {
             // check if some objects in the group already belong to some fused human objects
@@ -332,6 +366,18 @@ class HumanPoseFuser {
                 // add unassigned human objects to a fused human object at the same location
                 for (let id of unassignedIds) {
                     this.humanObjectsOfFusedObject[fusedObjectId].push(id);
+
+                    // set parent reference pointing at a fused human object
+                    this.objectsRef[id].parent = fusedObjectId;
+
+                    batchedUpdates.push({
+                        objectKey: id,
+                        frameKey: null,
+                        nodeKey: null,
+                        propertyPath: 'parent',
+                        newValue: fusedObjectId,
+                        editorId: 0    // TODO: some server identificator
+                    });
                 }
             }
             else {
@@ -341,6 +387,20 @@ class HumanPoseFuser {
                 this.objectsRef[fusedObjectId] = new HumanPoseObject(this.ip, this.version, this.protocol, fusedObjectId, JOINTS);
                 if (this.humanObjectsOfFusedObject[fusedObjectId] === undefined) {
                     this.humanObjectsOfFusedObject[fusedObjectId] = ids;
+
+                    // set parent reference pointing at new fused human object
+                    for (let id of ids) {
+                        this.objectsRef[id].parent = fusedObjectId;
+
+                        batchedUpdates.push({
+                            objectKey: id,
+                            frameKey: null,
+                            nodeKey: null,
+                            propertyPath: 'parent',
+                            newValue: fusedObjectId,
+                            editorId: 0    // TODO: some server identificator
+                        });
+                    }
                 }
 
                 // setup active heartbeat for this new object
@@ -356,6 +416,8 @@ class HumanPoseFuser {
             }
         }
 
+        // send out 'parent' property updates to all subscribers
+        server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
     }
 
     // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
