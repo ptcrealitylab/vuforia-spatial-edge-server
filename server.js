@@ -1177,17 +1177,9 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
+function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
-    }
-
-    if (typeof oneTimeOnly === 'undefined') {
-        oneTimeOnly = false;
-    }
-
-    if (typeof immediate === 'undefined') {
-        immediate = false;
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
@@ -1293,11 +1285,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
         }
         // perturb the inverval a bit so that not all objects send the beat in the same time.
         activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
-    } 
+    }
     else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
-        let interval = immediate ? 0 : utilities.randomIntInc(1, 250);
+        let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
 
         setTimeout(function () {
             // send the beat
@@ -1324,7 +1316,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
                     client.close();
                 });
             }
-        }, interval);
+        }, delay);
     }
 }
 
