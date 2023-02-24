@@ -1174,15 +1174,12 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {string} thisVersion The version of the Object
  * @param {string} thisTcs The target checksum of the Object.
  * @param {boolean} oneTimeOnly if true the beat will only be sent once.
+ * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
+function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
-    }
-
-    if (typeof oneTimeOnly === 'undefined') {
-        oneTimeOnly = false;
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
@@ -1246,7 +1243,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     });
 
     if (!oneTimeOnly) {
-        activeHeartbeats[thisId] = setInterval(function () {
+
+        function sendBeat() {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
@@ -1279,10 +1277,20 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     });
                 }
             }
-        }, beatInterval + utilities.randomIntInc(-250, 250));
-    } else {
+        };
+
+        // send one beat immediately and then start interval timer triggering beats
+        if (immediate) {
+            sendBeat();
+        }
+        // perturb the inverval a bit so that not all objects send the beat in the same time.
+        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
+    }
+    else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
+        let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
+
         setTimeout(function () {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
@@ -1308,7 +1316,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     client.close();
                 });
             }
-        }, utilities.randomIntInc(1, 250));
+        }, delay);
     }
 }
 
@@ -2546,7 +2554,8 @@ function objectWebServer() {
 
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
-                        objectBeatSender(beatPort, objectId, objects[objectId].ip);
+                        // send the first beat immediately, so that there is a fast transmission of new object to all listeners
+                        objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
 
                         var sendObject = {
                             id: objectId,
