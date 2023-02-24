@@ -404,7 +404,7 @@ class HumanPoseFuser {
                 }
 
                 // setup active heartbeat for this new object
-                server.objectBeatSender(this.beatPort, fusedObjectId, this.ip, false);
+                server.objectBeatSender(this.beatPort, fusedObjectId, this.ip, false, true);
 
                 // add new object to different global data structures
                 this.sceneGraphRef.addObjectAndChildren(fusedObjectId, this.objectsRef[fusedObjectId]);
