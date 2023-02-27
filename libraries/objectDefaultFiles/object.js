@@ -1399,6 +1399,9 @@
             if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
             }
+            if (params && typeof params.full2D !== 'undefined') {
+                dataToPost.fullScreenFull2D = params.full2D;
+            }
 
             postDataToParent(dataToPost);
         };

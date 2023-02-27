@@ -38,13 +38,15 @@
      * @param {HTMLElement} rootElementWhenClosed - a containing div that will be rendered when closed (small 3D icon)
      * @param {boolean|undefined} isStackable - defaults to false
      * @param {boolean|undefined} areFramesOrdered - defaults to false
+     * @param {boolean|undefined} isFull2D - defaults to false
      */
-    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, isStackable, areFramesOrdered) {
+    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, isStackable, areFramesOrdered, isFull2D) {
         if (typeof compatibleFrameTypes === 'undefined' || compatibleFrameTypes.length === 0) {
             console.warn('You must specify at least one compatible frame type for this envelope');
         }
         if (typeof isStackable === 'undefined') { isStackable = false; }
         if (typeof areFramesOrdered === 'undefined') { areFramesOrdered = false; }
+        if (typeof isFull2D === 'undefined') { isFull2D = false; }
 
         /**
          * A pointer to the envelope frame's RealityInterface object, so that this can interact with the other JavaScript APIs
@@ -65,6 +67,11 @@
          * @type {boolean}
          */
         this.areFramesOrdered = areFramesOrdered;
+        /**
+         * If true, turns off overlay div so tool acts like 2D browser (touches are handled naturally, not thru proxy)
+         * @type {boolean}
+         */
+        this.isFull2D = isFull2D;
         /**
          * A map of all the frameIds -> frame data for each frame added to the envelope
          * @type {Object.<string, Object>}
@@ -208,7 +215,7 @@
             if (this.isOpen) { return; }
 
             this.isOpen = true;
-            this.realityInterface.setStickyFullScreenOn({animated: true}); // currently assumes envelopes want 'sticky' fullscreen, not regular
+            this.realityInterface.setStickyFullScreenOn({animated: true, full2D: this.isFull2D}); // currently assumes envelopes want 'sticky' fullscreen, not regular
             if (!this.isStackable) {
                 this.realityInterface.setExclusiveFullScreenOn(function() {
                     this.close(); // trigger all the side-effects related to the envelope closing
