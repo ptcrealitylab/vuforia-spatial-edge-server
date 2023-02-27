@@ -735,6 +735,7 @@
                 this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
                 this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
                 this.analyticsSetLens = makeSendStub('analyticsSetLens');
                 this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
                 this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
@@ -1659,6 +1660,17 @@
             postDataToParent({
                 analyticsSetDisplayRegion: {
                     displayRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {Array<{startTime: number, endTime: number}>} regionCards
+         */
+        this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
+            postDataToParent({
+                analyticsHydrateRegionCards: {
+                    regionCards,
                 },
             });
         };
