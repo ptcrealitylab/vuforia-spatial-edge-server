@@ -39,7 +39,7 @@ function pipeReadStream(req, res, readStream) {
     res.set('Vary', 'Accept-Encoding');
     res.set('Content-Type', 'application/json');
 
-    if (req.get('Accept-Encoding').includes('gzip')) {
+    if (req.get('Accept-Encoding') && req.get('Accept-Encoding').includes('gzip')) {
         res.set('Content-Encoding', 'gzip');
         readStream.pipe(res);
     } else {
