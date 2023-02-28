@@ -8,8 +8,6 @@ const recorder = require('../libraries/recorder.js');
 
 const router = express.Router();
 
-const gzipStream = zlib.createGzip();
-
 let patches = [];
 
 router.get('/logs', function(req, res) {
@@ -45,7 +43,9 @@ function pipeReadStream(req, res, readStream) {
         res.set('Content-Encoding', 'gzip');
         readStream.pipe(res);
     } else {
-        readStream.pipe(gzipStream).pipe(res);
+        const unzipStream = zlib.createGunzip();
+
+        readStream.pipe(unzipStream).pipe(res);
     }
 
 }
@@ -65,7 +65,8 @@ router.get('/logs/:logPath', function(req, res) {
         }
 
         const readStream = new stream.PassThrough();
-        readStream.end(new Buffer(JSON.stringify(recorder.timeObject)));
+        const gzipStream = zlib.createGzip();
+        readStream.end(Buffer.from(JSON.stringify(recorder.timeObject)));
         const compressedReadStream = readStream.pipe(gzipStream);
         pipeReadStream(req, res, compressedReadStream);
 
