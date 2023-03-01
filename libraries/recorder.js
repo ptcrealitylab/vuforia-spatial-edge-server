@@ -91,8 +91,7 @@ recorder.getCurrentLogName = function() {
     return 'objects_' + timeString + '.json';
 };
 
-recorder.getAndGuaranteeOutputFilename = function() {
-    const logName = recorder.getCurrentLogName();
+recorder.getAndGuaranteeOutputFilename = function(logName) {
     const outputFilename = path.join(logsPath, logName + '.gz');
 
     if (!fs.existsSync(logsPath)) {
@@ -103,6 +102,7 @@ recorder.getAndGuaranteeOutputFilename = function() {
 };
 
 recorder.persistToFile = function () {
+    let logName = recorder.getCurrentLogName();
     let timeObjectStr = JSON.stringify(recorder.timeObject);
     recorder.objectOld = {};
     recorder.timeObject = {};
@@ -110,7 +110,7 @@ recorder.persistToFile = function () {
     return new Promise((resolve, reject) => {
         let outputFilename;
         try {
-            outputFilename = recorder.getAndGuaranteeOutputFilename();
+            outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
         } catch (err) {
             console.error('Log dir creation failed', err);
             reject(err);
@@ -136,11 +136,12 @@ recorder.persistToFile = function () {
 };
 
 recorder.persistToFileSync = function() {
+    let logName = recorder.getCurrentLogName();
     let timeObjectStr = JSON.stringify(recorder.timeObject);
     recorder.objectOld = {};
     recorder.timeObject = {};
 
-    let outputFilename = recorder.getAndGuaranteeOutputFilename();
+    let outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
 
     const buffer = zlib.gzipSync(timeObjectStr);
     fs.writeFileSync(outputFilename, buffer);
