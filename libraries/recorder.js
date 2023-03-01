@@ -50,7 +50,6 @@ recorder.timeObject = {};
 recorder.intervalSave = null;
 recorder.intervalPersist = null;
 recorder.logsPath = logsPath;
-recorder.persisting = false;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
@@ -92,52 +91,62 @@ recorder.getCurrentLogName = function() {
     return 'objects_' + timeString + '.json';
 };
 
+recorder.getAndGuaranteeOutputFilename = function() {
+    const logName = recorder.getCurrentLogName();
+    const outputFilename = path.join(logsPath, logName + '.gz');
+
+    if (!fs.existsSync(logsPath)) {
+        fs.mkdirSync(logsPath, '0766');
+    }
+
+    return outputFilename;
+};
+
 recorder.persistToFile = function () {
+    let timeObjectStr = JSON.stringify(recorder.timeObject);
+    recorder.objectOld = {};
+    recorder.timeObject = {};
+
     return new Promise((resolve, reject) => {
-        if (recorder.persisting) {
-            resolve();
+        let outputFilename;
+        try {
+            outputFilename = recorder.getAndGuaranteeOutputFilename();
+        } catch (err) {
+            console.error('Log dir creation failed', err);
+            reject(err);
             return;
         }
-        recorder.persisting = true;
-        const logName = recorder.getCurrentLogName();
-        const outputFilename = path.join(logsPath, logName + '.gz');
 
-        if (!fs.existsSync(logsPath)) {
-            try {
-                fs.mkdirSync(logsPath, '0766');
-            } catch (err) {
-                console.error('Log dir creation failed', err);
-                recorder.persisting = false;
-                reject(err);
-                return;
-            }
-        }
-
-        zlib.gzip(JSON.stringify(recorder.timeObject), function(err, buffer) {
+        zlib.gzip(timeObjectStr, function(err, buffer) {
             if (err) {
                 console.error('Log compress failed', err);
-                recorder.persisting = false;
                 reject(err);
                 return;
             }
             fs.writeFile(outputFilename, buffer, function(writeErr) {
                 if (writeErr) {
                     console.error('Log persist failed', writeErr);
+                    reject(writeErr);
+                    return;
                 }
-                recorder.objectOld = {};
-                recorder.timeObject = {};
-                recorder.persisting = false;
                 resolve();
             });
         });
     });
 };
 
-recorder.saveState = function () {
-    if (recorder.persisting) {
-        return;
-    }
+recorder.persistToFileSync = function() {
+    let timeObjectStr = JSON.stringify(recorder.timeObject);
+    recorder.objectOld = {};
+    recorder.timeObject = {};
 
+    let outputFilename = recorder.getAndGuaranteeOutputFilename();
+
+    const buffer = zlib.gzipSync(timeObjectStr);
+    fs.writeFileSync(outputFilename, buffer);
+};
+
+recorder.saveState = function () {
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
     recorder.recurse(recorder.object, timeObject);
