@@ -11,21 +11,26 @@ const router = express.Router();
 let patches = [];
 
 router.get('/logs', function(req, res) {
-    fs.readdir(recorder.logsPath, function (err, files) {
-        if (err) {
-            res.json([]);
-            return;
-        }
-        const logNames = {};
-        for (let file of files) {
-            if (file.endsWith('.json.gz')) {
-                let jsonLogName = file.split('.')[0] + '.json';
-                logNames[jsonLogName] = true;
+    if (fs.existsSync(recorder.logsPath)) {
+        fs.readdir(recorder.logsPath, function (err, files) {
+            if (err) {
+                console.log('blargl err', err);
+                res.json([]);
+                return;
             }
-        }
-        logNames[recorder.getCurrentLogName()] = true;
-        res.json(Object.keys(logNames));
-    });
+            const logNames = {};
+            for (let file of files) {
+                if (file.endsWith('.json.gz')) {
+                    let jsonLogName = file.split('.')[0] + '.json';
+                    logNames[jsonLogName] = true;
+                }
+            }
+            logNames[recorder.getCurrentLogName()] = true;
+            res.json(Object.keys(logNames));
+        });
+    } else {
+        res.json([recorder.getCurrentLogName()]);
+    }
 });
 
 /**
