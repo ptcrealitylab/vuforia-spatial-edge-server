@@ -1096,17 +1096,15 @@ function startSystem() {
 
 async function exit() {
     hardwareAPI.shutdown();
-
-    try {
-        await recorder.stop();
-    } catch (err) {
-        console.error('Recorder error', err);
-    }
-
     process.exit();
 }
 
 process.on('SIGINT', exit);
+
+process.on('exit', function() {
+    // Always, even when crashing, try to persist the recorder log
+    recorder.persistToFileSync();
+});
 
 if (process.pid) {
     console.log('Reality Server server.js process is running with PID ' + process.pid);
