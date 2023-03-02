@@ -33,6 +33,17 @@ router.get('/logs', function(req, res) {
     }
 });
 
+router.post('/persist', function(req, res) {
+    recorder.persistToFile().then((logName) => {
+        res.json({
+            logName
+        });
+    }).catch(e => {
+        console.error('unable to persist', e);
+        res.status(500).json({error: 'unable to persist'});
+    });
+});
+
 /**
  * Pipe out read stream to res respecting the accept-encoding of req and
  * setting necessary headers
