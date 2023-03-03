@@ -19,8 +19,8 @@ const {objectsPath} = require('../config.js');
 
 const logsPath = path.join(objectsPath, '.objectLogs');
 
-// Persist every half hour
-const PERSIST_DELAY_MS = 30 * 60 * 1000;
+// Persist every ten minutes
+const PERSIST_DELAY_MS = 10 * 60 * 1000;
 
 // Flag to compress floating point numbers for ~20% average gains at a loss of precision
 const doCompressFloat = false;
