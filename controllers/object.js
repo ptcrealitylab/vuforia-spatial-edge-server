@@ -12,6 +12,35 @@ var objectsPath;
 var identityFolderName;
 var git;
 var sceneGraph;
+// needed for deleteObject
+let objectLookup;
+let activeHeartbeats;
+let knownObjects;
+let setAnchors;
+
+const deleteObject = function(objectID) {
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        return {
+            status: 404,
+            error: `Object ${objectID} not found`
+        }
+    }
+
+    try {
+        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors)
+    } catch (e) {
+        return {
+            status: 500,
+            error: `Error deleting object ${objectID}`
+        }
+    }
+
+    return {
+        status: 200,
+        message: `Deleted object ${objectID}`
+    }
+}
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -370,7 +399,8 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_,
+    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -378,9 +408,14 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     identityFolderName = identityFolderName_;
     git = git_;
     sceneGraph = sceneGraph_;
+    objectLookup = objectLookup_;
+    activeHeartbeats = activeHeartbeats_;
+    knownObjects = knownObjects_;
+    setAnchors = setAnchors_;
 };
 
 module.exports = {
+    deleteObject: deleteObject,
     uploadVideo: uploadVideo,
     uploadMediaFile: uploadMediaFile,
     saveCommit: saveCommit,
