@@ -2594,6 +2594,9 @@ function objectWebServer() {
 
                 res.send('ok');
             }
+
+            // deprecated route for deleting objects or frames
+            // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {
@@ -4592,7 +4595,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
