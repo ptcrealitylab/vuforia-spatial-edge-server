@@ -2594,6 +2594,9 @@ function objectWebServer() {
 
                 res.send('ok');
             }
+
+            // deprecated route for deleting objects or frames
+            // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {

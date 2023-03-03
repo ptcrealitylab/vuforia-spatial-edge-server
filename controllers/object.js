@@ -38,6 +38,7 @@ const deleteObject = function(objectID) {
 
     return {
         status: 200,
+        success: true,
         message: `Deleted object ${objectID}`
     }
 }
