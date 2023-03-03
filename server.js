@@ -1077,12 +1077,12 @@ function startSystem() {
     socketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
-    const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
+    const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
+    const avatarDeletionAgeMs = 5000; // how long an avatar object can stale be before being deleted
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 5000;
-    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
+    const humanDeletionAgeMs = 15000; // human objects are deleted if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
