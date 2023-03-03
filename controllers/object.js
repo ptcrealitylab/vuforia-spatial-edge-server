@@ -24,24 +24,24 @@ const deleteObject = function(objectID) {
         return {
             status: 404,
             error: `Object ${objectID} not found`
-        }
+        };
     }
 
     try {
-        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors)
+        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     } catch (e) {
         return {
             status: 500,
             error: `Error deleting object ${objectID}`
-        }
+        };
     }
 
     return {
         status: 200,
         success: true,
         message: `Deleted object ${objectID}`
-    }
-}
+    };
+};
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
