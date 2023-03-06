@@ -3775,7 +3775,7 @@ function socketServer() {
             }
             applyPropertyUpdate(node, update);
 
-            recorder.update();
+            // recorder.update();
         }
 
         socket.on('/update', function (msg) {
