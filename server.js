@@ -1078,7 +1078,7 @@ function startSystem() {
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
-    const avatarDeletionAgeMs = 5000; // how long an avatar object can stale be before being deleted
+    const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 5000;
