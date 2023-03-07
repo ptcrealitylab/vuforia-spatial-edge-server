@@ -87,6 +87,9 @@ recorder.stop = async function () {
  */
 recorder.getCurrentLogName = function() {
     const allTimes = Object.keys(recorder.timeObject);
+    if (allTimes.length === 0) {
+        allTimes.push(Date.now());
+    }
     const timeString = allTimes[0] + '-' + allTimes[allTimes.length - 1];
     return 'objects_' + timeString + '.json';
 };
