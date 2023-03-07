@@ -91,8 +91,11 @@ class HumanPoseFuser {
         this.fuseIntervalMs = 100;
         // keep in pastPoses data which are x ms in the past (on timeline of data ts)
         this.pastIntervalMs = 10000;
-        // time interval into past to find corresponding poses across human pose objects (on timeline of data ts)
+        // time interval into past to find corresponding poses across human objects (on timeline of data ts)
         this.recentIntervalMs = 500;
+        // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
+        this.confidenceIntervalMs = 500;
+        
 
         this.maxDistanceForSamePerson = 300; // mm
     }
@@ -141,10 +144,43 @@ class HumanPoseFuser {
                 poses: []
             };
         }
+
+        // extend pose object with overall confidence but prevent it to be copyable
+        let poseConfidence = this.computeOverallConfidence(wholePose.joints);
+        wholePose.poseConfidence = poseConfidence;
+        Object.defineProperty(wholePose, 'poseConfidence', { enumerable: false });
+
         this.pastPoses[objectId].poses.push(wholePose);
     }
 
-    removePoseObject(objectId) {
+    /**
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} poseJoints 
+     * @returns overall pose confidence
+     */
+    computeOverallConfidence(poseJoints) {
+
+        if (poseJoints.length == 0) {
+            return 0.0;
+        }
+
+        // limit to joints which are not synthetically computed,
+        // and keep just one 'head' joint - nose to limit an influence of head
+        const selectedJointNames = ['nose', 'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist', 'left_hip', 'right_hip', 'left_knee', 'right_knee', 'left_ankle', 'right_ankle'];
+
+        const joints = Object.values(JOINTS);
+        let sum = 0.0;
+        for (let name of selectedJointNames) {
+            const jointIndex = joints.indexOf(name);
+
+            if (jointIndex >= 0) {
+                sum += poseJoints[jointIndex].confidence;
+            }
+        }
+
+        return sum / selectedJointNames.length;
+    }
+
+    removeHumanObject(objectId) {
 
         let removeFusedObject = (fid) => {
 
@@ -249,13 +285,14 @@ class HumanPoseFuser {
         }
 
         // filter out poses older than recent past
+        // TODO: does this even come to play for 500ms when latestFusedDataTS is updated every 100ms ???
         let cutoffTS = latestTS - this.recentIntervalMs;
         let filteredMatchingPoses = Object.fromEntries(Object.entries(matchingPoses).filter(entry => entry[1].timestamp > cutoffTS));
 
         return filteredMatchingPoses;
     }
 
-    // @param {Array.<Object>.<number, number, number, number>} joints1/joints2
+    // @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1/joints2
     arePosesOfSamePerson(joints1, joints2) {
 
         // check distances between pelvis and neck
@@ -277,26 +314,86 @@ class HumanPoseFuser {
         return true;
     }
 
+    /**
+     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']; currently available poses for existing human objects
+     * @return {string | null} objectId
+     */
+    selectHumanObject(poseData) {
+
+        let bestObjectId = null;
+
+        let poseDataArr = Object.entries(poseData);
+        if (poseDataArr.length == 0) {
+            return bestObjectId;
+        }
+        if (poseDataArr.length == 1) {
+            bestObjectId = poseDataArr[0][0];
+            console.log('Recent total confidence: ' + bestObjectId + '=[single_choice]');
+            return bestObjectId;
+        }
+
+        // get the latest data timestamp
+        let latestTS = 0;
+        for (let pose of Object.values(poseData)) {
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+
+        let cutoffTS = latestTS - this.confidenceIntervalMs;
+        let str = "";
+        let maxTotalConfidence = -1.0;
+        // look at pose confidence history of currently considered human pose objects
+        for (let [objectId, currentPose] of poseDataArr) {
+            // aggregate pose confidence over recent frames
+            let totalConfidence = 0.0;
+            for (let pose of this.pastPoses[objectId].poses) {
+                if (pose.timestamp > cutoffTS && pose.timestamp < (currentPose.timestamp + 1.0)) {   // increase by one ms to ensure that the current pose is also included
+                    totalConfidence += pose.poseConfidence;
+                }
+            }
+
+            str += objectId + ' = ' + totalConfidence.toFixed(3) + ', ';
+
+            // pick the human object with the highest sum of individual confidences
+            if (totalConfidence > maxTotalConfidence) {
+                maxTotalConfidence = totalConfidence;
+                bestObjectId = objectId;
+            }
+        }
+        console.log('Recent total confidence: ', str);
+
+        if (!bestObjectId) {
+            console.warn('Cannot select the best object for a fused human object.');
+        }
+
+        return bestObjectId;
+    }
+
+    /**
+     * @param {string} fusedObjectId
+     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+     */
     updateFusedObject(fusedObjectId, poseData) {
 
         if (this.objectsRef[fusedObjectId] === undefined) {
             console.warn('Updating non-existent fused human pose object.');
-        }
-
-        let poseArr = Object.values(poseData);
-        if (poseArr.length == 0) {
             return;
         }
 
-        let selIndex = 0;
+        let selectedObjectId = this.selectHumanObject(poseData);
+        if (!selectedObjectId) {
+            return;
+        }
 
-        if (poseArr[selIndex].joints.length > 0) {
-            this.objectsRef[fusedObjectId].updateJoints(poseArr[selIndex].joints);
-            this.objectsRef[fusedObjectId].lastUpdateDataTS = poseArr[selIndex].timestamp;
+        if (poseData[selectedObjectId].joints.length > 0) {  // TODO: remove condition
+            this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
+            this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
             server.resetObjectTimeout(fusedObjectId); // keep the object alive
 
             // create copy and update name
-            let wholePose = Object.assign({}, poseArr[selIndex]);
+            // TODO: removal of confidence attribute
+            let wholePose = Object.assign({}, poseData[selectedObjectId]);
             let end = fusedObjectId.indexOf('pose1');
             let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
             wholePose.name = name; // 'server_pose1' in practise for now
@@ -316,7 +413,7 @@ class HumanPoseFuser {
                 }
             }
 
-            console.log('updating joints: obj=' + fusedObjectId + ', data_ts=' + poseArr[selIndex].timestamp + ', update_ts=' + Date.now());
+            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp + ', update_ts=' + Date.now());
         }
 
     }
@@ -420,10 +517,12 @@ class HumanPoseFuser {
         server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
     }
 
-    // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+    /**
+     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+     */
     fusePoseData(poseData) {
 
-        let poseGroups = {}; // dictionary with key: fusedObjectId, value: subset of dictionary poseData  
+        let poseGroups = {}; // dictionary with key: fusedObjectId, value: subset of dictionary poseData
         // group poses according to the fused human objects their are associated to
         for (let [id, pose] of Object.entries(poseData)) {
             let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
