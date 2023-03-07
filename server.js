@@ -4151,7 +4151,7 @@ function deleteObject(objectKey) {
     // try to clean up any other state that might be remaining
 
     if (objectKey.includes('_HUMAN_')) {
-        humanPoseFuser.removePoseObject(objectKey);
+        humanPoseFuser.removeHumanObject(objectKey);
     }
     if (activeHeartbeats[objectKey]) {
         clearInterval(activeHeartbeats[objectKey]);
