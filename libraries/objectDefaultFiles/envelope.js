@@ -40,9 +40,6 @@
      * @param {boolean|undefined} areFramesOrdered - defaults to false
      */
     function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, isStackable, areFramesOrdered) {
-        if (typeof compatibleFrameTypes === 'undefined' || compatibleFrameTypes.length === 0) {
-            console.warn('You must specify at least one compatible frame type for this envelope');
-        }
         if (typeof isStackable === 'undefined') { isStackable = false; }
         if (typeof areFramesOrdered === 'undefined') { areFramesOrdered = false; }
 
@@ -94,6 +91,10 @@
              * Triggered when a contained frame is deleted. Automatically updates ordering, etc, but you may need to update UI
              */
             onFrameDeleted: [],
+            /**
+             * Triggered when a contained frame is loaded.
+             */
+            onFrameLoaded: [],
             /**
              * Triggered when a contained frame sends a message to the envelope (e.g. "stepCompleted")
              */
@@ -204,7 +205,7 @@
         /**
          * API to trigger the envelope to open if it's closed, which means it becomes sticky fullscreen and triggers onOpen events
          */
-        Envelope.prototype.open = function() {
+        Envelope.prototype.open = function(options = { dontWrite: false }) {
             if (this.isOpen) { return; }
 
             this.isOpen = true;
@@ -221,13 +222,15 @@
                 open: true
             });
 
-            this.realityInterface.write('open', 1);
+            if (!options || !options.dontWrite) {
+                this.realityInterface.write('open', 1);
+            }
         };
 
         /**
          * API to trigger the envelope to close if it's open, which means it turns off fullscreen and triggers onClosed events
          */
-        Envelope.prototype.close = function() {
+        Envelope.prototype.close = function(options = { dontWrite: false }) {
             if (!this.isOpen) { return; }
 
             this.isOpen = false;
@@ -239,7 +242,9 @@
                 close: true
             });
 
-            this.realityInterface.write('open', 0);
+            if (!options || !options.dontWrite) {
+                this.realityInterface.write('open', 0);
+            }
         };
 
         /**
@@ -546,13 +551,13 @@
             if (typeof this.lastOpenValue === 'undefined') {
                 this.lastOpenValue = event.value;
             }
-            if (this.lastOpenValue === event.value) {
+            if (this.lastOpenValue === event.value && event.value === 0) {
                 return; // prevents it from closing itself when the node first loads or on duplicate data
             }
             if (event.value < 0.5) {
-                this.close();
+                this.close({ dontWrite: true });
             } else {
-                this.open();
+                this.open({ dontWrite: true });
             }
 
             this.lastOpenValue = event.value; // prevents duplicate reads (get triggered on sendRealityEditorSubscribe)
