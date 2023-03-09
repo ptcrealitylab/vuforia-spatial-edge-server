@@ -1560,7 +1560,7 @@ class GLState {
         }
         const viewport = this.parameters.get(this.gl.VIEWPORT);
         if ((viewport !== undefined) && (viewport.value instanceof Int32Array)) {
-            //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+            this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
         }
         // never change the contextattributes
     }
@@ -1664,9 +1664,18 @@ class GLState {
         const viewport = this.parameters.get(this.gl.VIEWPORT);
         const curViewport = curState.parameters.get(this.gl.VIEWPORT);
         if ((viewport !== undefined) && (curViewport !== undefined) && (curViewport.value !== viewport.value) && (viewport.value instanceof Int32Array)) {
-            //this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
+            this.gl.viewport(viewport.value[0], viewport.value[1], viewport.value[2], viewport.value[3]);
         }
         // never change the context attributes
+    }
+
+    onContextLost() {
+        const defaultState = new GLState(this.gl, this.unclonables, this.parameters.get(this.gl.VIEWPORT).value);
+        this.currentProgram = defaultState.currentProgram;
+        this.activeTexture = defaultState.activeTexture;
+        this.textureBinds = defaultState.textureBinds
+        this.parameters = defaultState.parameters;
+        this.contextAttributes = defaultState.contextAttributes;
     }
 }
 

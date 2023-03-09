@@ -5,7 +5,17 @@ import * as THREE from '/objectDefaultFiles/three/three.module.js';
  * interfaces with three.js and intializes the engine for the rest of the tool to use for rendering
  */
 class ThreejsWorker {
+    static STATE_CONSTRUCTED = 0;
+    static STATE_BOOTSTRAP = 1;
+    static STATE_BOOTSTRAP_DONE = 2;
+    static STATE_FRAME = 3;
+    static STATE_FRAME_DONE = 4;
+    static STATE_CONTEXT_LOST = 5;
+    static STATE_CONTEXT_RESTORED = 6;
+    static STATE_CONTEXT_RESTORED_DONE = 7;
+    
     constructor() {
+        this.clientState = ThreejsWorker.STATE_CONSTRUCTED;
         // some values will be set after the bootstrap message has been received
         this.lastProjectionMatrix = null;
         this.isProjectionMatrixSet = false;
@@ -41,71 +51,142 @@ class ThreejsWorker {
         }
         if (message.hasOwnProperty("name")) {
             if (message.name === "anchoredModelViewCallback") {
-                // setup the projection matrix
-                this.lastProjectionMatrix = message.projectionMatrix;
+                switch (this.clientState) {
+                    case ThreejsWorker.STATE_CONSTRUCTED:
+                    case ThreejsWorker.STATE_BOOTSTRAP_DONE:
+                    case ThreejsWorker.STATE_FRAME_DONE:
+                    case ThreejsWorker.STATE_CONTEXT_RESTORED_DONE:
+                        // setup the projection matrix
+                        this.lastProjectionMatrix = message.projectionMatrix;
+                        break;
+                    default:
+                        console.error("wrong state to set projectionMatrix clientState: " + this.clientState);
+                        break;
+                }
             } else if (message.name === "bootstrap") {
-                // finish initialisation
-                const {workerId, width, height, synclock} = message;
-                this.workerId = workerId;
-                this.synclock = synclock;
-
-                // create commandbuffer factory in order to create resource commandbuffers
-                this.glCommandBufferContext = new GLCommandBufferContext(message);
-                this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock);
-
-                // execute three.js startup
-                const bootstrapCommandBuffers = this.main(width, height, this.commandBufferFactory);
-
-                // send all created commandbuffers
-                for (const bootstrapCommandBuffer of bootstrapCommandBuffers) {
-                    bootstrapCommandBuffer.execute();
+                if (this.clientState == ThreejsWorker.STATE_CONSTRUCTED) {
+                    this.clientState = ThreejsWorker.STATE_BOOTSTRAP;
+                    // finish initialisation
+                    const {workerId, width, height, synclock} = message;
+                    this.workerId = workerId;
+                    this.synclock = synclock;
+    
+                    // create commandbuffer factory in order to create resource commandbuffers
+                    this.glCommandBufferContext = new GLCommandBufferContext(message);
+                    this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock);
+    
+                    // execute three.js startup
+                    const bootstrapCommandBuffers = this.main(width, height, this.commandBufferFactory);
+    
+                    // send all created commandbuffers
+                    for (const bootstrapCommandBuffer of bootstrapCommandBuffers) {
+                        bootstrapCommandBuffer.execute();
+                    }
+            
+                    // create standard rendering command buffer for reuse every frame
+                    this.frameCommandBuffer = this.commandBufferFactory.createAndActivate(true);
+    
+                    this.bootstrapProcessed = true;
+    
+                    // singnal end of frame
+                    self.postMessage({
+                        workerId: this.workerId,
+                        isFrameEnd: true,
+                    });
+                    this.clientState = ThreejsWorker.STATE_BOOTSTRAP_DONE;
+                } else {
+                    console.error("wrong state for bootstrap clientsState: " + this.clientState);
                 }
-        
-                // create standard rendering command buffer for reuse every frame
-                this.frameCommandBuffer = this.commandBufferFactory.createAndActivate(true);
-
-                this.bootstrapProcessed = true;
-                return;
             } else if (message.name === "frame") {
-                // safety checks
-                this.workerId = message.workerId;
-                if (!this.bootstrapProcessed) {
-                    console.log(`Can't render worker with id: ${this.workerId}, it has not yet finished initializing`);
-                    self.postMessage({
-                        workerId: this.workerId,
-                        isFrameEnd: true,
-                    });
-                    return;
+                switch (this.clientState) {
+                    case ThreejsWorker.STATE_BOOTSTRAP_DONE:
+                    case ThreejsWorker.STATE_FRAME_DONE:
+                    case ThreejsWorker.STATE_CONTEXT_RESTORED_DONE:
+                        this.clientState = ThreejsWorker.STATE_FRAME;
+                        // safety checks
+                        this.workerId = message.workerId;
+                        if (!this.bootstrapProcessed) {
+                            console.log(`Can't render worker with id: ${this.workerId}, it has not yet finished initializing`);
+                            self.postMessage({
+                                workerId: this.workerId,
+                                isFrameEnd: true,
+                            });
+                            return;
+                        }
+                        if (Date.now() - message.time > 300) {
+                            console.log('time drift detected');
+                            self.postMessage({
+                                workerId: this.workerId,
+                                isFrameEnd: true,
+                            });
+                            return;
+                        }
+        
+                        // erase the previous render command buffer
+                        this.frameCommandBuffer.clear();
+                        
+                        // try rendering with three.js
+                        try {
+                            this.frameCommandBuffer = this.render(message.time, this.frameCommandBuffer);
+                        } catch (err) {
+                            console.error('Error in gl-worker render fn', err);
+                        }
+        
+                        // send the commandbuffer (rendering or resource loading)
+                        this.frameCommandBuffer.execute();
+        
+                        // singnal end of frame
+                        self.postMessage({
+                            workerId: this.workerId,
+                            isFrameEnd: true,
+                        });
+                        this.clientState = ThreejsWorker.STATE_FRAME_DONE;
+                        break;
+                    default:
+                        console.error("wrong state for generating frames clientState: " + this.clientState);
                 }
-                if (Date.now() - message.time > 300) {
-                    console.log('time drift detected');
-                    self.postMessage({
-                        workerId: this.workerId,
-                        isFrameEnd: true,
-                    });
-                    return;
+            } else if (message.name === "context_lost") {
+                switch (this.clientState) {
+                    case ThreejsWorker.CONSTRUCTED:
+                    case ThreejsWorker.STATE_BOOTSTRAP_DONE:
+                    case ThreejsWorker.STATE_FRAME_DONE:
+                    case ThreejsWorker.STATE_CONTEXT_RESTORED_DONE:
+                        this.clientState = ThreejsWorker.STATE_CONTEXT_LOST;
+                        this.onContextLost();
+                        break;
+                    default:
+                        console.error("wrong state for lost context clientState: " + this.clientState);
+                        break;
                 }
-
-                // erase the previous render command buffer
-                this.frameCommandBuffer.clear();
-                
-                // try rendering with three.js
-                try {
-                    this.frameCommandBuffer = this.render(message.time, this.frameCommandBuffer);
-                } catch (err) {
-                    console.error('Error in gl-worker render fn', err);
+            } else if (message.name === "context_restored") {
+                if (this.clientState === ThreejsWorker.STATE_CONTEXT_LOST) {
+                    this.clientState = ThreejsWorker.STATE_CONTEXT_RESTORED;
+                    this.onContextRestored();        
+                    this.clientState = ThreejsWorker.STATE_CONTEXT_RESTORED_DONE;
+                } else {
+                    console.error("wrong state to restore state clientState: " + this.clientState);
                 }
-
-                // send the commandbuffer (rendering or resource loading)
-                this.frameCommandBuffer.execute();
-
-                // singnal end of frame
-                self.postMessage({
-                    workerId: this.workerId,
-                    isFrameEnd: true,
-                });
             }
         }
+    }
+
+    onContextLost() {
+        this.glCommandBufferContext.onContextLost();
+        this.fakeCanvas.webglcontextlost({preventDefault: () => {}});
+    }
+
+    onContextRestored() {
+        this.glCommandBufferContext.onContextRestored();
+
+        let restoreBuffer = this.commandBufferFactory.createAndActivate(true);
+        this.fakeCanvas.webglcontextrestored();
+        restoreBuffer.execute();
+        
+        // singnal end of frame
+        self.postMessage({
+            workerId: this.workerId,
+            isFrameEnd: true,
+        });
     }
 
     /**
@@ -234,6 +315,8 @@ class FakeCanvas {
         this.width = width;
         this.height = height;
         this.style = {width: width.toString() + "px", height: height.toString + "px"};
+        this.webglcontextlost = () => {};
+        this.webglcontextrestored = () => {};
     }
 
     /**
@@ -244,6 +327,11 @@ class FakeCanvas {
      */
     addEventListener(type, listener, useCapture) {
         console.warn("ThreeJS tries to implement the following eventlistener: " + type + " which is not implemented");
+        if (type === "webglcontextlost") {
+            this.webglcontextlost = listener;
+        } else if (type === "webglcontextrestored") {
+            this.webglcontextrestored = listener;
+        }
     }
 }
 

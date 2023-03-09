@@ -37,6 +37,8 @@ class GLCommandBufferContext {
          * @type {boolean} 
          */
         this.enableWebGL2 = true;
+
+        this.contextLost = false;
        
         // Create a fake gl context that pushes all called functions on the command buffer
         if (this.enableWebGL2) {
@@ -658,6 +660,11 @@ class GLCommandBufferContext {
      */
     setActiveCommandBuffer(commandBuffer) {
         this.activeBuffer = commandBuffer;
+        if (this.contextLost) {
+            this.activeBuffer.onContextLost();
+        } else {
+            this.activeBuffer.onContextRestored();
+        }
     }
 
     /**
@@ -689,6 +696,18 @@ class GLCommandBufferContext {
      */
     addMessageAndWait(name, args, resultBuffer) {
         this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
+    }
+
+    onContextLost() {
+        this.contextLost = true;
+        this.activeBuffer.onContextLost();
+    }
+
+    onContextRestored() {
+        this.activeBuffer.onContextRestored();
+        this.nextHandle = 1;
+        this.handles = {};
+        this.contextLost = false;
     }
 }
 
@@ -815,6 +834,8 @@ class CommandBuffer {
          * @type {boolean}
          */
         this.isCleared = false;
+
+        this.sendBuffers = true;
     }
 
     /**
@@ -863,9 +884,17 @@ class CommandBuffer {
        this.addMessageInternal(funcName, args, handle, null);
     }
 
+    onContextLost() {
+        this.sendBuffers = false;
+    }
+
+    onContextRestored() {
+        this.sendBuffers = true;
+    }
+
     // sends the commandbuffer to the server for execution
     execute() {
-        if (this.commands.length > 0) {
+        if (this.commands.length > 0 && this.sendBuffers) {
             try {
                 postMessage({
                     workerId: this.workerId,
@@ -888,7 +917,7 @@ class CommandBuffer {
             return;
         } 
         // do nothing if the command buffer is empty (sanity check)
-        if (this.commands.length > 0) {
+        if (this.commands.length > 0 && this.sendBuffers) {
             try {
                 // change the webworker state to waiting
                 Atomics.store(this.synclock, 0, 0);
@@ -898,6 +927,10 @@ class CommandBuffer {
                     commandBufferId: this.commandBufferId,
                     isRendering: false,
                     commands: this.commands,
+                });
+                postMessage({
+                    workerId: this.workerId,
+                    isFrameEnd: true
                 });
                 // await response
                 Atomics.wait(this.synclock, 0, 0);
@@ -975,6 +1008,14 @@ class CommandBufferManager {
          * @type {CommandBuffer}
          */
         this.renderCommandBuffer = new CommandBuffer(workerId, -1, true, []);
+    }
+
+    /**
+     * drops all command buffers and resets the state
+     */
+    onContextLost() {
+        this.commandBuffers = [];
+        this.renderCommandBuffer = new CommandBuffer(this.renderCommandBuffer.workerId, -1, true, []);
     }
 
     /**
