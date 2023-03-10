@@ -48,6 +48,9 @@ class HumanPoseFuser {
         // dictionary - key: objectId, value: { latestFusedDataTS, array of objects from publicData['whole_pose'] }
         this.pastPoses = {};
 
+        // dictionary - key: objectId of fused human object, value: objectId of associated human object which has currently best pose
+        this.bestHumanObjectForFusedObject = {};
+
         // dictionary - key: objectId of fused human object, value: array of objectId of associated human objects (original ones updated from Toolbox apps)
         this.humanObjectsOfFusedObject = {
             getFusedObject(objectId) {
@@ -96,8 +99,9 @@ class HumanPoseFuser {
         // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
         this.confidenceIntervalMs = 500;
         
-
+        
         this.maxDistanceForSamePerson = 300; // mm
+        this.minConfidenceDifference = 1.0;  // difference in total pose confidence over recent frames
     }
 
     start() {
@@ -204,6 +208,7 @@ class HumanPoseFuser {
 
             // remove all association data if the given object is a fused human object
             delete this.humanObjectsOfFusedObject[fid];
+            delete this.bestHumanObjectForFusedObject[fid];
 
             // send out 'parent' property updates to all subscribers
             server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
@@ -286,9 +291,14 @@ class HumanPoseFuser {
         }
 
         // filter out poses older than recent past
-        // TODO: does this even come to play for 500ms when latestFusedDataTS is updated every 100ms ???
         let cutoffTS = latestTS - this.recentIntervalMs;
         let filteredMatchingPoses = Object.fromEntries(Object.entries(matchingPoses).filter(entry => entry[1].timestamp > cutoffTS));
+        
+        // TODO: does this even come to play for 500ms when latestFusedDataTS is updated every 100ms ???
+        const numFiltered = Object.keys(matchingPoses).length - Object.keys(filteredMatchingPoses).length;
+        if (numFiltered > 0) {
+            console.log(`Filtered ${numFiltered} poses.`);
+        }
 
         return filteredMatchingPoses;
     }
@@ -318,10 +328,11 @@ class HumanPoseFuser {
     /**
      * Selects the best human object to update its parent fused human object based on presence and quality of received poses in recent past.
      * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
+     * @param {string} fusedObjectId - id of parent fused object
      * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']; currently available poses for existing human objects
      * @return {string | null} objectId
      */
-    selectHumanObject(poseData) {
+    selectHumanObject(fusedObjectId, poseData) {
 
         let bestObjectId = null;
 
@@ -332,6 +343,7 @@ class HumanPoseFuser {
         if (poseDataArr.length == 1) {
             bestObjectId = poseDataArr[0][0];
             console.log('Recent total confidence: ' + bestObjectId + '=[single_choice]');
+            this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
             return bestObjectId;
         }
 
@@ -345,7 +357,7 @@ class HumanPoseFuser {
 
         let cutoffTS = latestTS - this.confidenceIntervalMs;
         let str = "";
-        let maxTotalConfidence = -1.0;
+        let totalConfidences = [];
         // look at pose confidence history of currently considered human pose objects
         for (let [objectId, currentPose] of poseDataArr) {
             // aggregate pose confidence over recent frames
@@ -356,17 +368,40 @@ class HumanPoseFuser {
                 }
             }
 
+            totalConfidences.push({id: objectId, value: totalConfidence});
             str += objectId + ' = ' + totalConfidence.toFixed(3) + ', ';
-
-            // pick the human object with the highest sum of individual confidences
-            if (totalConfidence > maxTotalConfidence) {
-                maxTotalConfidence = totalConfidence;
-                bestObjectId = objectId;
-            }
         }
         console.log('Recent total confidence: ', str);
 
-        if (!bestObjectId) {
+        let currentBest; // undefined
+        if (totalConfidences.length > 0) {
+            // find the human object with the highest sum of individual confidences
+            currentBest = totalConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
+        }
+
+        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also undefined
+        const previousBest = totalConfidences.find(item => item.id == previousSelectedObject);
+        if (previousBest !== undefined && currentBest !== undefined) {
+            // add some hysteresis to select a different human object
+            if ((currentBest.value - previousBest.value) > this.minConfidenceDifference) {
+                bestObjectId = currentBest.id;
+            } else {
+                bestObjectId = previousBest.id;
+            }
+        } else if (previousBest !== undefined && currentBest == undefined) {
+            // keep the human object selected so far because there is no current candidate
+            bestObjectId = previousBest.id;
+        } else if (previousBest == undefined && currentBest !== undefined) {
+            // the human object selected so far is not available, switch to the current best
+            bestObjectId = currentBest.id;
+        } else {
+            // return null id below
+        }
+
+        if (bestObjectId) {
+            this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
+        }
+        else {
             console.warn('Cannot select the best object for a fused human object.');
         }
 
@@ -384,7 +419,7 @@ class HumanPoseFuser {
             return;
         }
 
-        let selectedObjectId = this.selectHumanObject(poseData);
+        let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
         if (!selectedObjectId) {
             return;
         }
