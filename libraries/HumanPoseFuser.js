@@ -115,15 +115,13 @@ class HumanPoseFuser {
     }
 
     fuse() {
-
-        // TODO: time this method
-
+        const start = Date.now();
         console.log('-- Fusing poses');
 
         let currentPoseData = this.findPoseDataMatchingInTime();
 
         for (let [objectId, pose] of Object.entries(currentPoseData)) {
-            console.log('obj=' + objectId + ', data_ts=' + pose.timestamp);
+            console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0) + ( (pose.joints.length == 0) ? ' (empty)' : '' ));
         }
 
         // TODO: set here latestFusedDataTS or leave it in findPoseDataMatchingInTime()
@@ -135,6 +133,9 @@ class HumanPoseFuser {
         this.fusePoseData(currentPoseData);
 
         this.cleanPastPoses();
+
+        const elapsedTimeMs = Date.now() - start;
+        console.log(`Fusion time: ${elapsedTimeMs}ms`);
     }
 
     addPoseData(objectId, wholePose) {
@@ -315,6 +316,8 @@ class HumanPoseFuser {
     }
 
     /**
+     * Selects the best human object to update its parent fused human object based on presence and quality of received poses in recent past.
+     * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
      * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']; currently available poses for existing human objects
      * @return {string | null} objectId
      */
@@ -386,36 +389,37 @@ class HumanPoseFuser {
             return;
         }
 
-        if (poseData[selectedObjectId].joints.length > 0) {  // TODO: remove condition
-            this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
-            this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
-            server.resetObjectTimeout(fusedObjectId); // keep the object alive
-
-            // create copy and update name
-            // TODO: removal of confidence attribute
-            let wholePose = Object.assign({}, poseData[selectedObjectId]);
-            let end = fusedObjectId.indexOf('pose1');
-            let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
-            wholePose.name = name; // 'server_pose1' in practise for now
-
-            // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
-            // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
-            let keys = this.objectsRef[fusedObjectId].getJointNodeInfo(0);
-            if (this.objectsRef.hasOwnProperty(keys.objectKey)) {
-                if (this.objectsRef[keys.objectKey].frames.hasOwnProperty(keys.frameKey)) {
-                    if (this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes.hasOwnProperty(keys.nodeKey)) {
-                        var data = this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes[keys.nodeKey].publicData;
-                        data['whole_pose'] = wholePose;
-                        // sent out message with this updated data to all subscribers (eg. remote viewer)
-                        // TODO: some server identificator instead of sessionUuid
-                        server.socketHandler.sendPublicDataToAllSubscribers(keys.objectKey, keys.frameKey, keys.nodeKey, 0 /*sessionUuid*/);
-                    }
-                }
-            }
-
-            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp + ', update_ts=' + Date.now());
+        if (poseData[selectedObjectId].joints.length == 0) {
+            console.log('not updating joints: obj=' + fusedObjectId);
+            return;
         }
 
+        this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
+        this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
+        server.resetObjectTimeout(fusedObjectId); // keep the object alive
+
+        // create copy and update name (confidence attribute not copied)
+        let wholePose = Object.assign({}, poseData[selectedObjectId]);
+        let end = fusedObjectId.indexOf('pose1');
+        let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
+        wholePose.name = name; // 'server_pose1' in practise for now
+
+        // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
+        // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
+        let keys = this.objectsRef[fusedObjectId].getJointNodeInfo(0);
+        if (this.objectsRef.hasOwnProperty(keys.objectKey)) {
+            if (this.objectsRef[keys.objectKey].frames.hasOwnProperty(keys.frameKey)) {
+                if (this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes.hasOwnProperty(keys.nodeKey)) {
+                    var data = this.objectsRef[keys.objectKey].frames[keys.frameKey].nodes[keys.nodeKey].publicData;
+                    data['whole_pose'] = wholePose;
+                    // sent out message with this updated data to all subscribers (eg. remote viewer)
+                    // TODO: some server identificator instead of sessionUuid
+                    server.socketHandler.sendPublicDataToAllSubscribers(keys.objectKey, keys.frameKey, keys.nodeKey, 0 /*sessionUuid*/);
+                }
+            }
+        }
+
+        console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
     }
 
     // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
@@ -425,7 +429,8 @@ class HumanPoseFuser {
         // compare all pairs of poses and store ones belonging to a same person
         // WARNING: it can create multiple fused human objects for the same person
         let poseObjsSamePerson = [];
-        let poseDataArr = Object.entries(poseData);
+        let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+
         outer: for (let i = 0; i < poseDataArr.length; i++) {
             for (let j = i + 1; j < poseDataArr.length; j++) {
                 if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints)) {
@@ -533,7 +538,7 @@ class HumanPoseFuser {
                 }
                 poseGroups[fid][id] = pose;
             }
-            //console.log('obj=' + objectId + ', data_ts=' + pose.timestamp);
+            //console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0));
         }
 
         for (let [fid, group] of Object.entries(poseGroups)) {

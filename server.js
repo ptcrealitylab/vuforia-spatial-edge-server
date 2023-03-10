@@ -3704,15 +3704,15 @@ function socketServer() {
                     // unpack public data with the whole pose to the human pose object
                     if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
                         typeof msg.publicData['whole_pose'].timestamp !== 'undefined') {
-                        
+
                         // add poses to huamn pose fusion (including empty poses when body tracking failed)
                         humanPoseFuser.addPoseData(object.objectId, msg.publicData['whole_pose']);
-                         
+
                         if (msg.publicData['whole_pose'].joints.length > 0) {
                             // if no pose is detected (empty joints array), don't update the object (even its update timestamp)  
                             object.updateJoints(msg.publicData['whole_pose'].joints);
                             object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
-                            console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
+                            console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
                             // keep the object alive
                             resetObjectTimeout(msg.object);
                         }
