@@ -20,6 +20,9 @@ class ThreejsInterface {
         this.spatialInterface.useWebGlWorker();
         this.spatialInterface.onSpatialInterfaceLoaded(this.onSpatialInterfaceLoaded.bind(this));
         this.synclock = null;
+        this.touchAnswerListener = null;
+        this.mouse = {x: 0, y: 0};
+        this.lastTouchResult = false;
     }
 
     /**
@@ -45,6 +48,7 @@ class ThreejsInterface {
         this.spatialInterface.addAnchoredModelViewListener(this.anchoredModelViewCallback.bind(this));
 
         this.spatialInterface.setMoveDelay(300);
+        this.spatialInterface.registerTouchDecider(this.touchDecider.bind(this));
     }
 
     /**
@@ -54,7 +58,12 @@ class ThreejsInterface {
     onMessageFromWorker(event) {
         const message = event.data;
         if (message) {
-            self.parent.postMessage(message, "*");
+            if ((this.touchAnswerListener !== null) && (typeof message === 'object') && (message.name === "touchDeciderAnswer")) {
+                this.lastTouchResult = message.result;
+                this.touchAnswerListener(true);
+            } else {
+                self.parent.postMessage(message, "*");
+            }
         }
     }
 
@@ -88,6 +97,40 @@ class ThreejsInterface {
                 this.worker.postMessage(message);
             }
         }
+    }
+
+    /**
+     * 
+     * @returns {Promise<boolean>}
+     */
+    makeWatchdog() {
+        return new Promise((res) => {
+            setTimeout(res, 3000, false);
+        });
+    }
+
+    async touchDecider(eventData) {
+        //1. sets the mouse position with a coordinate system where the center
+        //   of the screen is the origin
+        this.mouse.x = (eventData.x / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(eventData.y / window.innerHeight) * 2 + 1;
+
+        // if the webworker (containing the renderer) isn't sleeping, post touch message to analyse
+        if ((this.synclock !== null) && Atomics.load(this.synclock, 0) === 0) {
+             console.warn("tocuh decider locked worker, returning no touch");
+            return false;
+        }
+        this.worker.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});
+        let res = await Promise.race([this.makeWatchdog(), new Promise((result) => {
+            this.touchAnswerListener = result;
+        })]);
+        if (!res) {
+            console.warn("touch decider timeout, returning no touch");
+            this.touchAnswerListener = null;
+            return false;
+        }
+        this.touchAnswerListener = null;
+        return this.lastTouchResult;
     }
 }
 
