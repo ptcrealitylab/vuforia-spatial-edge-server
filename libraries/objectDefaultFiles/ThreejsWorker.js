@@ -111,6 +111,7 @@ class ThreejsWorker {
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
+                            this.clientState = ThreejsWorker.STATE_FRAME_DONE;
                             return;
                         }
                         if (Date.now() - message.time > 300) {
@@ -119,6 +120,7 @@ class ThreejsWorker {
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
+                            this.clientState = ThreejsWorker.STATE_FRAME_DONE;
                             return;
                         }
         
