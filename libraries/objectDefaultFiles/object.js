@@ -735,6 +735,7 @@
                 this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
                 this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
                 this.analyticsSetLens = makeSendStub('analyticsSetLens');
                 this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
                 this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
@@ -1664,6 +1665,17 @@
         };
 
         /**
+         * @param {Array<{startTime: number, endTime: number}>} regionCards
+         */
+        this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
+            postDataToParent({
+                analyticsHydrateRegionCards: {
+                    regionCards,
+                },
+            });
+        };
+
+        /**
          * @param {"reba"|"motion"} lens
          */
         this.analyticsSetLens = function analyticsSetLens(lens) {
@@ -2415,7 +2427,13 @@
     };
 
     function isDesktop() {
-        return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
+        const userAgent = window.navigator.userAgent;
+        const isWebView = userAgent.includes('Mobile') && !userAgent.includes('Safari');
+        const isIpad = /Macintosh/i.test(navigator.userAgent) &&
+            navigator.maxTouchPoints &&
+            navigator.maxTouchPoints > 1;
+
+        return !isWebView && !isIpad;
     }
 
     exports.spatialObject = spatialObject;

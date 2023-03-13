@@ -13,17 +13,17 @@
     "express-handlebars": "^5.3.5",
     "formidable": "^2.1.1",
     "ip": "^2.0.0",
-    "jimp": "^0.22.4",
+    "jimp": "^0.22.7",
     "module-alias": "^2.2.2",
-    "monaco-editor": "^0.35.0",
+    "monaco-editor": "^0.36.1",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.6.9",
     "node-persist": "^2.1.0",
     "request": "^2.*",
-    "simple-git": "^3.16.0",
+    "simple-git": "^3.17.0",
     "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.8.2",
-    "ws": "^8.12.0",
+    "ws": "^8.12.1",
     "xml2js": "^0.4.23"
   },
   "repository": {
@@ -31,10 +31,10 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^8.33.0",
-    "jsdoc": "^4.0.0",
+    "eslint": "^8.35.0",
+    "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
-    "puppeteer": "^19.6.3"
+    "puppeteer": "^19.7.2"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",

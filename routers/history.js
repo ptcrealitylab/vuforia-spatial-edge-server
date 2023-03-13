@@ -8,25 +8,39 @@ const recorder = require('../libraries/recorder.js');
 
 const router = express.Router();
 
-const gzipStream = zlib.createGzip();
-
 let patches = [];
 
 router.get('/logs', function(req, res) {
-    fs.readdir(recorder.logsPath, function (err, files) {
-        if (err) {
-            res.json([]);
-            return;
-        }
-        const logNames = {};
-        for (let file of files) {
-            if (file.endsWith('.json.gz')) {
-                let jsonLogName = file.split('.')[0] + '.json';
-                logNames[jsonLogName] = true;
+    if (fs.existsSync(recorder.logsPath)) {
+        fs.readdir(recorder.logsPath, function (err, files) {
+            if (err) {
+                console.log('blargl err', err);
+                res.json([]);
+                return;
             }
-        }
-        logNames[recorder.getCurrentLogName()] = true;
-        res.json(Object.keys(logNames));
+            const logNames = {};
+            for (let file of files) {
+                if (file.endsWith('.json.gz')) {
+                    let jsonLogName = file.split('.')[0] + '.json';
+                    logNames[jsonLogName] = true;
+                }
+            }
+            logNames[recorder.getCurrentLogName()] = true;
+            res.json(Object.keys(logNames));
+        });
+    } else {
+        res.json([recorder.getCurrentLogName()]);
+    }
+});
+
+router.post('/persist', function(req, res) {
+    recorder.persistToFile().then((logName) => {
+        res.json({
+            logName
+        });
+    }).catch(e => {
+        console.error('unable to persist', e);
+        res.status(500).json({error: 'unable to persist'});
     });
 });
 
@@ -41,11 +55,13 @@ function pipeReadStream(req, res, readStream) {
     res.set('Vary', 'Accept-Encoding');
     res.set('Content-Type', 'application/json');
 
-    if (req.get('Accept-Encoding').includes('gzip')) {
+    if (req.get('Accept-Encoding') && req.get('Accept-Encoding').includes('gzip')) {
         res.set('Content-Encoding', 'gzip');
         readStream.pipe(res);
     } else {
-        readStream.pipe(gzipStream).pipe(res);
+        const unzipStream = zlib.createGunzip();
+
+        readStream.pipe(unzipStream).pipe(res);
     }
 
 }
@@ -65,7 +81,8 @@ router.get('/logs/:logPath', function(req, res) {
         }
 
         const readStream = new stream.PassThrough();
-        readStream.end(new Buffer(JSON.stringify(recorder.timeObject)));
+        const gzipStream = zlib.createGzip();
+        readStream.end(Buffer.from(JSON.stringify(recorder.timeObject)));
         const compressedReadStream = readStream.pipe(gzipStream);
         pipeReadStream(req, res, compressedReadStream);
 
