@@ -34,6 +34,11 @@ class LocalUIApp {
         this.loadResources();
 
         this.app.use(cors());
+        this.app.use((req, res, next) => {
+            res.setHeader('Content-Security-Policy', `default-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; object-src 'self' blob: *; style-src 'self' *; frame-src 'self' *;`);
+            next();
+        });
+
         this.app.use('/addons/sources', (req, res) => {
             res.send(this.sources);
         });

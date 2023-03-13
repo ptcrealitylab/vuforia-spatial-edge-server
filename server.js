@@ -368,6 +368,11 @@ var cheerio = require('cheerio');
 // allow requests from all origins. TODO make it dependent on the local network. this is important for security
 webServer.use(cors());
 
+webServer.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', `default-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; object-src 'self' blob: *; style-src 'self' *; frame-src 'self' *;`);
+    next();
+});
+
 // Image resizing library, not available on mobile
 let Jimp = null;
 if (!isLightweightMobile) {
