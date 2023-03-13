@@ -34,7 +34,6 @@ class ThreejsWorker {
          */
         this.onRenderCallbacks = [];
         this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
     }
 
     /**
@@ -50,7 +49,18 @@ class ThreejsWorker {
             return;
         }
         if (message.hasOwnProperty("name")) {
-            if (message.name === "anchoredModelViewCallback") {
+            if (message.name === "touchDecider") {
+                let result = false;
+                if (this.clientState !== ThreejsWorker.STATE_CONTEXT_LOST) {
+                    //2. set the picking ray from the camera position and mouse coordinates
+                    this.raycaster.setFromCamera(new THREE.Vector2(message.mouse.x, message.mouse.y), this.camera);
+
+                    //3. compute intersections
+                    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                    result = intersects.length > 0;
+                }
+                self.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
+            } else if (message.name === "anchoredModelViewCallback") {
                 switch (this.clientState) {
                     case ThreejsWorker.STATE_CONSTRUCTED:
                     case ThreejsWorker.STATE_BOOTSTRAP_DONE:
@@ -328,7 +338,7 @@ class FakeCanvas {
      * @param {boolean} useCapture
      */
     addEventListener(type, listener, useCapture) {
-        console.warn("ThreeJS tries to implement the following eventlistener: " + type + " which is not implemented");
+        // we don't implement context creation error
         if (type === "webglcontextlost") {
             this.webglcontextlost = listener;
         } else if (type === "webglcontextrestored") {
