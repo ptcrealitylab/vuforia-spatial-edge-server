@@ -99,9 +99,10 @@ class HumanPoseFuser {
         // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
         this.confidenceIntervalMs = 500;
         
-        
+        // distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person
         this.maxDistanceForSamePerson = 300; // mm
-        this.minConfidenceDifference = 1.0;  // difference in total pose confidence over recent frames
+        // difference in total pose confidence over recent frames
+        this.minConfidenceDifference = 3.0;
     }
 
     start() {
@@ -340,12 +341,6 @@ class HumanPoseFuser {
         if (poseDataArr.length == 0) {
             return bestObjectId;
         }
-        if (poseDataArr.length == 1) {
-            bestObjectId = poseDataArr[0][0];
-            console.log('Recent total confidence: ' + bestObjectId + '=[single_choice]');
-            this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
-            return bestObjectId;
-        }
 
         // get the latest data timestamp
         let latestTS = 0;
@@ -358,12 +353,22 @@ class HumanPoseFuser {
         let cutoffTS = latestTS - this.confidenceIntervalMs;
         let str = "";
         let totalConfidences = [];
-        // look at pose confidence history of currently considered human pose objects
-        for (let [objectId, currentPose] of poseDataArr) {
+        // look at pose confidence history of all associated human pose objects
+        for (let objectId of this.humanObjectsOfFusedObject[fusedObjectId]) {
+
+            // check if there is a current pose of the object 
+            const poseItem = poseDataArr.find(item => item[0] == objectId);
+            let ts = 0;
+            if (poseItem !== undefined) {
+                ts = poseItem[1].timestamp;
+            } else {
+                ts = latestTS;
+            }
+
             // aggregate pose confidence over recent frames
             let totalConfidence = 0.0;
             for (let pose of this.pastPoses[objectId].poses) {
-                if (pose.timestamp > cutoffTS && pose.timestamp < (currentPose.timestamp + 1.0)) {   // increase by one ms to ensure that the current pose is also included
+                if (pose.timestamp > cutoffTS && pose.timestamp < (ts + 1.0)) {   // increase by one ms to ensure that the current pose is also included
                     totalConfidence += pose.poseConfidence;
                 }
             }
@@ -424,7 +429,7 @@ class HumanPoseFuser {
             return;
         }
 
-        if (poseData[selectedObjectId].joints.length == 0) {
+        if (poseData[selectedObjectId] == undefined || poseData[selectedObjectId].joints.length == 0) {
             console.log('not updating joints: obj=' + fusedObjectId);
             return;
         }
