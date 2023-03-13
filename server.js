@@ -1082,16 +1082,15 @@ function startSystem() {
     socketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
-    const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
+    const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
+    const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 1000; // 5000;
     const humanDeletionAgeMs = 10000; //15000; // human objects are deleted more aggressively if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
-    // HACK MK
-    //recorder.initRecorder(objects);
+    recorder.initRecorder(objects);
 
     humanPoseFuser.start();
 
@@ -1104,17 +1103,15 @@ function startSystem() {
 
 async function exit() {
     hardwareAPI.shutdown();
-
-    try {
-        await recorder.stop();
-    } catch (err) {
-        console.error('Recorder error', err);
-    }
-
     process.exit();
 }
 
 process.on('SIGINT', exit);
+
+process.on('exit', function() {
+    // Always, even when crashing, try to persist the recorder log
+    recorder.persistToFileSync();
+});
 
 if (process.pid) {
     console.log('Reality Server server.js process is running with PID ' + process.pid);
@@ -1185,17 +1182,9 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
+function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
-    }
-
-    if (typeof oneTimeOnly === 'undefined') {
-        oneTimeOnly = false;
-    }
-
-    if (typeof immediate === 'undefined') {
-        immediate = false;
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
@@ -1301,11 +1290,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
         }
         // perturb the inverval a bit so that not all objects send the beat in the same time.
         activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
-    } 
+    }
     else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
-        let interval = immediate ? 0 : utilities.randomIntInc(1, 250);
+        let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
 
         setTimeout(function () {
             // send the beat
@@ -1332,7 +1321,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly, immediate) {
                     client.close();
                 });
             }
-        }, interval);
+        }, delay);
     }
 }
 exports.objectBeatSender = objectBeatSender;
@@ -2613,6 +2602,9 @@ function objectWebServer() {
 
                 res.send('ok');
             }
+
+            // deprecated route for deleting objects or frames
+            // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {
@@ -3829,7 +3821,7 @@ function socketServer() {
             }
             applyPropertyUpdate(node, update);
 
-            recorder.update();
+            // recorder.update();
         }
 
         socket.on('/update', function (msg) {
@@ -4650,7 +4642,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
