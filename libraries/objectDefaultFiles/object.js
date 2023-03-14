@@ -1,3 +1,15 @@
+// eslint-disable-next-line no-unused-vars
+/* global workerId */
+
+/**
+ * @fileOverview
+ *
+ * object.js provides the SpatialInterface API, forming a bridge between the
+ * tool and the containing user interface. Calling a method on the
+ * SpatialInterface usually calls postMessage to send a message from the tool
+ * iframe to the user interface which will then take an action on behalf of the
+ * tool.
+ */
 (function(exports) {
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
@@ -472,10 +484,10 @@
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
 
-            function forElementAndParentsRecursively(elt, callback) {
-                callback(elt);
-                if (elt.parentNode && elt.parentNode.tagName !== 'HTML' && elt.parentNode !== document) {
-                    forElementAndParentsRecursively(elt.parentNode, callback);
+            function forElementAndParentsRecursively(element, callback) {
+                callback(element);
+                if (element.parentNode && element.parentNode.tagName !== 'HTML' && element.parentNode !== document) {
+                    forElementAndParentsRecursively(element.parentNode, callback);
                 }
             }
 
@@ -547,6 +559,7 @@
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
             console.log('set workerId to ' + msgContent.workerId);
+            // eslint-disable-next-line no-global-assign
             workerId = msgContent.workerId;
         }
     };
@@ -715,6 +728,20 @@
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
+                this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
+
+                this.analyticsAdd = makeSendStub('analyticsAdd');
+                this.analyticsRemove = makeSendStub('analyticsRemove');
+                this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
+                this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
+                this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
+                this.analyticsSetLens = makeSendStub('analyticsSetLens');
+                this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
+                this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
+                this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
+                this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1372,6 +1399,9 @@
             if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
             }
+            if (params && typeof params.full2D !== 'undefined') {
+                dataToPost.fullScreenFull2D = params.full2D;
+            }
 
             postDataToParent(dataToPost);
         };
@@ -1590,6 +1620,116 @@
 
             postDataToParent({
                 virtualizerRecording: false
+            });
+        };
+
+        this.analyticsAdd = function analyticsAdd() {
+            postDataToParent({
+                analyticsAdd: true,
+            });
+        };
+        this.analyticsRemove = function analyticsRemove() {
+            postDataToParent({
+                analyticsRemove: true,
+            });
+        };
+
+        /**
+         * @param {number} time - cursor time in ms
+         */
+        this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
+            postDataToParent({
+                analyticsSetCursorTime: {
+                    time,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} highlightRegion
+         */
+        this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
+            postDataToParent({
+                analyticsSetHighlightRegion: {
+                    highlightRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} displayRegion
+         */
+        this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
+            postDataToParent({
+                analyticsSetDisplayRegion: {
+                    displayRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {Array<{startTime: number, endTime: number}>} regionCards
+         */
+        this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
+            postDataToParent({
+                analyticsHydrateRegionCards: {
+                    regionCards,
+                },
+            });
+        };
+
+        /**
+         * @param {"reba"|"motion"} lens
+         */
+        this.analyticsSetLens = function analyticsSetLens(lens) {
+            postDataToParent({
+                analyticsSetLens: {
+                    lens,
+                },
+            });
+        };
+
+        /**
+         * @param {"bone"|"pose"} lensDetail
+         */
+        this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
+            postDataToParent({
+                analyticsSetLensDetail: {
+                    lensDetail,
+                },
+            });
+        };
+
+        /**
+         * @param {string} spaghettiAttachPoint - joint id
+         */
+        this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
+            postDataToParent({
+                analyticsSetSpaghettiAttachPoint: {
+                    spaghettiAttachPoint,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
+            postDataToParent({
+                analyticsSetSpaghettiVisible: {
+                    spaghettiVisible,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
+            postDataToParent({
+                analyticsSetAllClonesVisible: {
+                    allClonesVisible,
+                },
             });
         };
 
@@ -1951,6 +2091,20 @@
             });
         };
 
+        this.getEnvironmentVariables = function() {
+            postDataToParent({
+                getEnvironmentVariables: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
+                    if (typeof msgContent.environmentVariables !== 'undefined') {
+                        resolve(msgContent.environmentVariables);
+                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                    }
+                };
+            });
+        }
+
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
          * Hides the frame itself and instead populates a background context within the editor with this frame's contents
@@ -2276,7 +2430,13 @@
     };
 
     function isDesktop() {
-        return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
+        const userAgent = window.navigator.userAgent;
+        const isWebView = userAgent.includes('Mobile') && !userAgent.includes('Safari');
+        const isIpad = /Macintosh/i.test(navigator.userAgent) &&
+            navigator.maxTouchPoints &&
+            navigator.maxTouchPoints > 1;
+
+        return !isWebView && !isIpad;
     }
 
     exports.spatialObject = spatialObject;

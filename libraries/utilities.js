@@ -382,6 +382,11 @@ function executeWrite(objects) {
     let obj = firstKey;
     delete writeBufferList[firstKey];
 
+    if (!objects[obj]) { // if object was deleted while write is pending
+        isWriting = false;
+        return;
+    }
+
     // prepare to write
     var outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
