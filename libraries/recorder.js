@@ -19,8 +19,8 @@ const {objectsPath} = require('../config.js');
 
 const logsPath = path.join(objectsPath, '.objectLogs');
 
-// Persist every half hour
-const PERSIST_DELAY_MS = 30 * 60 * 1000;
+// Persist every ten minutes
+const PERSIST_DELAY_MS = 5 * 60 * 1000;
 
 // Flag to compress floating point numbers for ~20% average gains at a loss of precision
 const doCompressFloat = false;
@@ -50,7 +50,6 @@ recorder.timeObject = {};
 recorder.intervalSave = null;
 recorder.intervalPersist = null;
 recorder.logsPath = logsPath;
-recorder.persisting = false;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
@@ -82,52 +81,77 @@ recorder.stop = async function () {
     await recorder.persistToFile();
 };
 
+/**
+ * @return {string} current externally visible (uncompressed) log file name
+ * that would be used if the log were to persistToFile
+ */
+recorder.getCurrentLogName = function() {
+    const allTimes = Object.keys(recorder.timeObject);
+    if (allTimes.length === 0) {
+        allTimes.push(Date.now());
+    }
+    const timeString = allTimes[0] + '-' + allTimes[allTimes.length - 1];
+    return 'objects_' + timeString + '.json';
+};
+
+recorder.getAndGuaranteeOutputFilename = function(logName) {
+    const outputFilename = path.join(logsPath, logName + '.gz');
+
+    if (!fs.existsSync(logsPath)) {
+        fs.mkdirSync(logsPath, '0766');
+    }
+
+    return outputFilename;
+};
+
 recorder.persistToFile = function () {
+    let logName = recorder.getCurrentLogName();
+    let timeObjectStr = JSON.stringify(recorder.timeObject);
+    recorder.objectOld = {};
+    recorder.timeObject = {};
+
     return new Promise((resolve, reject) => {
-        if (recorder.persisting) {
-            resolve();
+        let outputFilename;
+        try {
+            outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
+        } catch (err) {
+            console.error('Log dir creation failed', err);
+            reject(err);
             return;
         }
-        recorder.persisting = true;
-        let timeString = Object.keys(recorder.timeObject)[0];
-        const outputFilename = path.join(logsPath, 'objects_' + timeString + '.json.gz');
 
-        if (!fs.existsSync(logsPath)) {
-            try {
-                fs.mkdirSync(logsPath, '0766');
-            } catch (err) {
-                console.error('Log dir creation failed', err);
-                recorder.persisting = false;
-                reject(err);
-                return;
-            }
-        }
-
-        zlib.gzip(JSON.stringify(recorder.timeObject), function(err, buffer) {
+        zlib.gzip(timeObjectStr, function(err, buffer) {
             if (err) {
                 console.error('Log compress failed', err);
-                recorder.persisting = false;
                 reject(err);
                 return;
             }
             fs.writeFile(outputFilename, buffer, function(writeErr) {
                 if (writeErr) {
                     console.error('Log persist failed', writeErr);
+                    reject(writeErr);
+                    return;
                 }
-                recorder.objectOld = {};
-                recorder.timeObject = {};
-                recorder.persisting = false;
-                resolve();
+                console.log(`persist ${logName} successful`);
+                resolve(logName);
             });
         });
     });
 };
 
-recorder.saveState = function () {
-    if (recorder.persisting) {
-        return;
-    }
+recorder.persistToFileSync = function() {
+    let logName = recorder.getCurrentLogName();
+    let timeObjectStr = JSON.stringify(recorder.timeObject);
+    recorder.objectOld = {};
+    recorder.timeObject = {};
 
+    let outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
+
+    const buffer = zlib.gzipSync(timeObjectStr);
+    fs.writeFileSync(outputFilename, buffer);
+};
+
+recorder.saveState = function () {
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
     recorder.recurse(recorder.object, timeObject);
@@ -195,6 +219,11 @@ recorder.recurse = function (obj, objectInTime, keyString) {
     for (const key in obj) { // works for objects and arrays
         if (!obj.hasOwnProperty(key)) {
             // Ignore inherited enumerable properties
+            continue;
+        }
+        // Ignore the special whole_pose property which duplicates changes to
+        // individual joint frame matrices
+        if (key === 'whole_pose' && keyString.includes('_HUMAN_')) {
             continue;
         }
         const item = obj[key];

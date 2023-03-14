@@ -1083,12 +1083,12 @@ function startSystem() {
     socketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    const avatarCheckIntervalMs = 10000; // how often to check if avatar objects are inactive
-    const avatarDeletionAgeMs = 60000; // how long an avatar object can stale be before being deleted
+    const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
+    const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
     const humanCheckIntervalMs = 5000;
-    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
+    const humanDeletionAgeMs = 15000; // human objects are deleted if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
@@ -1102,17 +1102,15 @@ function startSystem() {
 
 async function exit() {
     hardwareAPI.shutdown();
-
-    try {
-        await recorder.stop();
-    } catch (err) {
-        console.error('Recorder error', err);
-    }
-
     process.exit();
 }
 
 process.on('SIGINT', exit);
+
+process.on('exit', function() {
+    // Always, even when crashing, try to persist the recorder log
+    recorder.persistToFileSync();
+});
 
 if (process.pid) {
     console.log('Reality Server server.js process is running with PID ' + process.pid);
@@ -1180,15 +1178,12 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {string} thisVersion The version of the Object
  * @param {string} thisTcs The target checksum of the Object.
  * @param {boolean} oneTimeOnly if true the beat will only be sent once.
+ * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
+function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
-    }
-
-    if (typeof oneTimeOnly === 'undefined') {
-        oneTimeOnly = false;
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
@@ -1252,7 +1247,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     });
 
     if (!oneTimeOnly) {
-        activeHeartbeats[thisId] = setInterval(function () {
+
+        function sendBeat() {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
@@ -1285,10 +1281,20 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     });
                 }
             }
-        }, beatInterval + utilities.randomIntInc(-250, 250));
-    } else {
+        };
+
+        // send one beat immediately and then start interval timer triggering beats
+        if (immediate) {
+            sendBeat();
+        }
+        // perturb the inverval a bit so that not all objects send the beat in the same time.
+        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
+    }
+    else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
+        let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
+
         setTimeout(function () {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
@@ -1314,7 +1320,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     client.close();
                 });
             }
-        }, utilities.randomIntInc(1, 250));
+        }, delay);
     }
 }
 
@@ -2556,7 +2562,8 @@ function objectWebServer() {
 
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
-                        objectBeatSender(beatPort, objectId, objects[objectId].ip);
+                        // send the first beat immediately, so that there is a fast transmission of new object to all listeners
+                        objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
 
                         var sendObject = {
                             id: objectId,
@@ -2597,6 +2604,9 @@ function objectWebServer() {
 
                 res.send('ok');
             }
+
+            // deprecated route for deleting objects or frames
+            // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {
@@ -3778,7 +3788,7 @@ function socketServer() {
             }
             applyPropertyUpdate(node, update);
 
-            recorder.update();
+            // recorder.update();
         }
 
         socket.on('/update', function (msg) {
@@ -4595,7 +4605,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
