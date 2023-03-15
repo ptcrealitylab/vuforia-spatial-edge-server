@@ -49,3 +49,5 @@ libraries/objectLogs/*
 
 /docs
 /.vscode
+/*.code-workspace
+/*.njsproj
