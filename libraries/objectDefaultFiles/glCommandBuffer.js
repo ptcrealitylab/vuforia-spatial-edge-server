@@ -296,6 +296,7 @@ class GLCommandBufferContext {
                     let buffer = new SharedArrayBuffer(buffer_length);
                     this.addMessageAndWait("getActiveAttrib", [program, index], buffer);
                     // decode result
+                    // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
                     let utf8TextDecoder = new TextDecoder();
                     let texbuf = new Uint8Array(buffer_length - 8);
                     texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
@@ -316,6 +317,7 @@ class GLCommandBufferContext {
                     // request the actual response
                     let buffer = new SharedArrayBuffer(buffer_length);
                     // decode result
+                    // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
                     this.addMessageAndWait("getActiveUniform", [program, index], buffer);
                     let utf8TextDecoder = new TextDecoder();
                     let texbuf = new Uint8Array(buffer_length - 8);
@@ -572,7 +574,7 @@ class GLCommandBufferContext {
         }
         // copy over the gl constants to our fake webgl implmentation
         for (const constName in message.constants) {        
-            if (this.gl.hasOwnProperty(constName)) {
+            if (!this.gl.hasOwnProperty(constName)) {
                 this.gl[constName] = message.constants[constName];
             }
         }
@@ -745,7 +747,7 @@ class CommandId {
 }
 
 /**
- * as isngle command in the command buffer to be executed by the server
+ * as single command in the command buffer to be executed by the server
  */
 class Command {
     /**
@@ -1007,7 +1009,7 @@ class CommandBufferManager {
          * the rendering buffer starts as an empty commandbuffer, so the tool doesn't show until it is fully loaded.
          * @type {CommandBuffer}
          */
-        this.renderCommandBuffer = new CommandBuffer(workerId, -1, true, []);
+        this.renderCommandBuffer = new CommandBuffer(workerId, new Int32Array([1]), true, []);
     }
 
     /**

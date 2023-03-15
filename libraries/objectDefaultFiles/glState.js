@@ -852,7 +852,7 @@ class TextureUnitState {
         this.targets.set(TextureUnitState.TEXTURE_2D, new NamedTextureStateParameter("TEXTURE_2D", new TextureState(this.gl, TextureUnitState.TEXTURE_2D, unclonables)));
         this.targets.set(TextureUnitState.TEXTURE_CUBE_MAP, new NamedTextureStateParameter("TEXTURE_CUBE_MAP", new TextureState(this.gl, TextureUnitState.TEXTURE_CUBE_MAP, unclonables)));
         // WebGL 2.0
-        this.targets.set(TextureUnitState.TEXTURE_2D_ARRAY, new NamedTextureStateParameter("TEXTURES_2D_ARRAY", new TextureState(this.gl, TextureUnitState.TEXTURE_2D_ARRAY, unclonables)));    
+        this.targets.set(TextureUnitState.TEXTURE_2D_ARRAY, new NamedTextureStateParameter("TEXTURE_2D_ARRAY", new TextureState(this.gl, TextureUnitState.TEXTURE_2D_ARRAY, unclonables)));    
         this.targets.set(TextureUnitState.TEXTURE_3D, new NamedTextureStateParameter("TEXTURE_3D", new TextureState(this.gl, TextureUnitState.TEXTURE_3D, unclonables)));
             
     }
@@ -919,7 +919,7 @@ class TextureUnitState {
      */
     processOneCommand(command) {
         if (command.name === "bindTexture") {
-            let target = this.targets.get(command.args[0])
+            let target = this.targets.get(command.args[0]);
             if (target !== undefined) {
                 target.value.processOneCommand(command);
             }
