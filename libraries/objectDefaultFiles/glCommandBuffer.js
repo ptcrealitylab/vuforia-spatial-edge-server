@@ -572,12 +572,6 @@ class GLCommandBufferContext {
                 }
             }
         }
-        // copy over the gl constants to our fake webgl implmentation
-        for (const constName in message.constants) {        
-            if (!this.gl.hasOwnProperty(constName)) {
-                this.gl[constName] = message.constants[constName];
-            }
-        }
     }
 
     /**
