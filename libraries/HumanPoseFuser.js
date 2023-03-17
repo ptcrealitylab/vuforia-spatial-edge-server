@@ -98,11 +98,10 @@ class HumanPoseFuser {
         this.recentIntervalMs = 500;
         // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
         this.confidenceIntervalMs = 500;
-        
+        // difference in pose confidence to switch over to a different child human object
+        this.minConfidenceDifference = 0.2; 
         // distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person
         this.maxDistanceForSamePerson = 300; // mm
-        // difference in total pose confidence over recent frames
-        this.minConfidenceDifference = 3.0;
     }
 
     start() {
@@ -327,7 +326,7 @@ class HumanPoseFuser {
     }
 
     /**
-     * Selects the best human object to update its parent fused human object based on presence and quality of received poses in recent past.
+     * Selects the best human object to update its parent fused human object based on presence and confidence of poses received in recent past.
      * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
      * @param {string} fusedObjectId - id of parent fused object
      * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']; currently available poses for existing human objects
@@ -352,11 +351,11 @@ class HumanPoseFuser {
 
         let cutoffTS = latestTS - this.confidenceIntervalMs;
         let str = "";
-        let totalConfidences = [];
+        let candidateConfidences = [];
         // look at pose confidence history of all associated human pose objects
         for (let objectId of this.humanObjectsOfFusedObject[fusedObjectId]) {
 
-            // check if there is a current pose of the object 
+            // check if there is a current pose of the object
             const poseItem = poseDataArr.find(item => item[0] == objectId);
             let ts = 0;
             if (poseItem !== undefined) {
@@ -365,27 +364,42 @@ class HumanPoseFuser {
                 ts = latestTS;
             }
 
+            let objectConfidence = 0.0;
+
+            /*
+            // older less optimal approach
             // aggregate pose confidence over recent frames
-            let totalConfidence = 0.0;
             for (let pose of this.pastPoses[objectId].poses) {
                 if (pose.timestamp > cutoffTS && pose.timestamp < (ts + 1.0)) {   // increase by one ms to ensure that the current pose is also included
-                    totalConfidence += pose.poseConfidence;
+                    objectConfidence += pose.poseConfidence;
+                }
+            }
+            */
+
+            // get confidence of the most recent pose in the timeinterval
+            let objLatestTS = 0;
+            for (let pose of this.pastPoses[objectId].poses) {
+                if (pose.timestamp > cutoffTS && pose.timestamp < (ts + 1.0)) {   // increase by one ms to ensure that the current pose is also included
+                    if (pose.timestamp > objLatestTS) {
+                        objectConfidence = pose.poseConfidence;
+                        objLatestTS = pose.timestamp;
+                    }
                 }
             }
 
-            totalConfidences.push({id: objectId, value: totalConfidence});
-            str += objectId + ' = ' + totalConfidence.toFixed(3) + ', ';
+            candidateConfidences.push({id: objectId, value: objectConfidence});
+            str += objectId + ' = ' + objectConfidence.toFixed(3) + ', ';
         }
-        console.log('Recent total confidence: ', str);
+        console.log('Recent confidence: ', str);
 
         let currentBest; // undefined
-        if (totalConfidences.length > 0) {
-            // find the human object with the highest sum of individual confidences
-            currentBest = totalConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
+        if (candidateConfidences.length > 0) {
+            // find the human object with the highest confidence
+            currentBest = candidateConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
         }
 
-        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also undefined
-        const previousBest = totalConfidences.find(item => item.id == previousSelectedObject);
+        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also be undefined
+        const previousBest = candidateConfidences.find(item => item.id == previousSelectedObject);
         if (previousBest !== undefined && currentBest !== undefined) {
             // add some hysteresis to select a different human object
             if ((currentBest.value - previousBest.value) > this.minConfidenceDifference) {
@@ -493,7 +507,7 @@ class HumanPoseFuser {
             for (let id of ids) {
                 let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
                 if (fid) {
-                    // NOTE: there can be human objects in this group can be already assigned to different fused human objects 
+                    // NOTE: there can be human objects in this group which are already assigned to different fused human objects 
                     // not handling this properly at the moment
                     if (!fusedObjectId) {
                         fusedObjectId = fid;
