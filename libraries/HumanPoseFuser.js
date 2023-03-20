@@ -128,8 +128,6 @@ class HumanPoseFuser {
             console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0) + ( (pose.joints.length == 0) ? ' (empty)' : '' ));
         }
 
-        // TODO: set here latestFusedDataTS or leave it in findPoseDataMatchingInTime()
-
         this.assignPoseData(currentPoseData);
 
         console.log('Assignment to fused human objects: \n', this.humanObjectsOfFusedObject.print());
@@ -280,11 +278,21 @@ class HumanPoseFuser {
         for (let [objectId, objPoses] of Object.entries(this.pastPoses)) {
             if (objPoses.poses.length > 0) {
                 let ts = objPoses.poses.at(-1).timestamp;
-                if (ts > objPoses.latestFusedDataTS) {
+
+                if (this.humanObjectsOfFusedObject[objectId] !== undefined) {
+                    // a fused human object
                     matchingPoses[objectId] = objPoses.poses.at(-1);
-                    objPoses.latestFusedDataTS = ts;
                     if (ts > latestTS) {
                         latestTS = ts;
+                    }
+                } else {
+                    // a standard human object from the app
+                    if (ts > objPoses.latestFusedDataTS) {
+                        matchingPoses[objectId] = objPoses.poses.at(-1);
+                        objPoses.latestFusedDataTS = ts;
+                        if (ts > latestTS) {
+                            latestTS = ts;
+                        }
                     }
                 }
             }
@@ -294,7 +302,6 @@ class HumanPoseFuser {
         let cutoffTS = latestTS - this.recentIntervalMs;
         let filteredMatchingPoses = Object.fromEntries(Object.entries(matchingPoses).filter(entry => entry[1].timestamp > cutoffTS));
         
-        // TODO: does this even come to play for 500ms when latestFusedDataTS is updated every 100ms ???
         const numFiltered = Object.keys(matchingPoses).length - Object.keys(filteredMatchingPoses).length;
         if (numFiltered > 0) {
             console.log(`Filtered ${numFiltered} poses.`);
@@ -458,6 +465,9 @@ class HumanPoseFuser {
         let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
         wholePose.name = name; // 'server_pose1' in practise for now
 
+        // add also to pastPoses
+        this.addPoseData(fusedObjectId, wholePose);
+
         // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
         // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
         let keys = this.objectsRef[fusedObjectId].getJointNodeInfo(0);
@@ -479,27 +489,65 @@ class HumanPoseFuser {
     // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
     assignPoseData(poseData) {
 
-        // simple approach which fused one pair of pose streams into a new fused human object at a time
-        // compare all pairs of poses and store ones belonging to a same person
-        // WARNING: it can create multiple fused human objects for the same person
-        let poseObjsSamePerson = [];
+        // simple approach merging one pair of pose streams into a new fused human object at a time
+        
+        //???  WARNING: it can create multiple fused human objects for the same person when many cameras/apps are involved
+        //let poseObjsSamePerson = [];
         let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
 
-        outer: for (let i = 0; i < poseDataArr.length; i++) {
+        // poseDataArr contains poses of standard and fused human objects, store indices for both groups
+        // compare all pairs of poses and make binary matrix of spatial proximity
+        let proximityMatrix = Array.from(Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(false));
+        let standardIndices = [];
+        let fusedIndices = [];
+        for (let i = 0; i < poseDataArr.length; i++) {
+            proximityMatrix[i][i] = true;
+            if (this.humanObjectsOfFusedObject[poseDataArr[i][0]] !== undefined) {
+                fusedIndices.push(i);
+            } else {
+                standardIndices.push(i);
+            }
             for (let j = i + 1; j < poseDataArr.length; j++) {
                 if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints)) {
                     // introduce new set of related human objects
-                    poseObjsSamePerson.push([poseDataArr[i][0], poseDataArr[j][0]]);
-                    //break outer;
+                    //poseObjsSamePerson.push([poseDataArr[i][0], poseDataArr[j][0]]);
+                    proximityMatrix[i][j] = true;
+                    proximityMatrix[j][i] = true;
                 }
             }
+        }
+
+        for (let index of standardIndices) {
+            let id = poseDataArr[index][0];
+            let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
+            if (fid) {
+                // standard human object is already associated with a fused human object
+                // check if this fused object is available in the current frame
+                const fi = poseDataArr.findIndex(item => item[0] == fid);
+                if (fi >= 0) {
+                    // check if the poses are still at the same location
+                    if (!proximityMatrix[fi][index]) {
+                        // detach the standard object from the fused one
+
+                        // TODO !!!
+                    }
+                }
+                
+
+
+            }
+            
+
+            // try to associate the standard object with one of the fused objects available in the current frame
+
+            // TODO: make entry in batchedUpdates at the end
         }
 
         // TODO: maybe there should be a check whether poses assigned to an existing fused human object are still in spatial proximity
 
         let batchedUpdates = [];
 
-        // assign groups of spatially-close human objects to existing or new fused human objects
+        // assign poses of spatially-close human objects to existing or new fused human objects
         for (let ids of poseObjsSamePerson) {
             // check if some objects in the group already belong to some fused human objects
             let fusedObjectId = null;
@@ -512,8 +560,7 @@ class HumanPoseFuser {
                     if (!fusedObjectId) {
                         fusedObjectId = fid;
                     }
-                }
-                else {
+                } else {
                     unassignedIds.push(id);
                 }
             }
