@@ -1581,16 +1581,16 @@ function objectWebServer() {
         var html = fs.readFileSync(fileName, 'utf8');
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
-        html = html.replace('<script src="object.js"></script>', '');
-        html = html.replace('<script src="../resources/object.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
+        html = html.replace(/<script\s+src=["\']object\.js["\']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["\']\.\.\/resources\/object\.js["\']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["\']objectDefaultFiles\/object\.js["\']>\s*<\/script>/g, '');
 
-        html = html.replace('<script src="object-frames.js"></script>', '');
-        html = html.replace('<script src="../resources/object-frames.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
+        html = html.replace(/<script\s+src=["\']object\-frames\.js["\']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["\']\.\.\/resources\/object\-frames\.js["\']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["\']objectDefaultFiles\/object\-frames\.js["\']>\s*<\/script>/g, '');
 
-        html = html.replace('<script src="../resources/pep.min.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
+        html = html.replace(/<script\s+src=["\']\.\.\/resources\/pep\.min\.js["\']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["\']objectDefaultFiles\/pep\.min\.js["\']>\s*<\/script>/g, '');
 
         var level = '../';
         for (var i = 0; i < urlArray.length - 3; i++) {
@@ -1755,9 +1755,9 @@ function objectWebServer() {
 
             var html = fs.readFileSync(fileName, 'utf8');
 
-            html = html.replace('<script src="object.js"></script>', '');
-            html = html.replace('<script src="objectIO.js"></script>', '');
-            html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
+            html = html.replace(/<script\s+src=["\']object\.js["\']>\s*<\/script>/g, '');
+            html = html.replace(/<script\s+src=["\']objectIO\.js["\']>\s*<\/script>/g, '');
+            html = html.replace(/<script\s+src=["\']\/socket\.io\/socket\.io\.js["\']>\s*<\/script>/g, '');
 
             var level = '../';
             for (let i = 0; i < urlArray.length; i++) {
