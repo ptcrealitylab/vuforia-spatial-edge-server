@@ -717,6 +717,7 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.onWindowResized = makeSendStub('onWindowResized');
                 this.prefersAttachingToWorld = makeSendStub('prefersAttachingToWorld');
                 this.prefersAttachingToObjects = makeSendStub('prefersAttachingToObjects');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
@@ -1958,6 +1959,22 @@
         };
 
         this.changeToolSize = this.changeFrameSize;
+
+        let windowResizedCallbackCount = 0;
+        this.onWindowResized = function(callback) {
+            windowResizedCallbackCount++;
+            spatialObject.messageCallBacks[`onWindowResizedCall${windowResizedCallbackCount}`] = (msgContent) => {
+                if (typeof msgContent.onWindowResized === 'undefined') return;
+                callback({
+                    width: msgContent.onWindowResized.width,
+                    height: msgContent.onWindowResized.height
+                });
+            }
+
+            postDataToParent({
+                sendWindowResize: true
+            });
+        }
 
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
