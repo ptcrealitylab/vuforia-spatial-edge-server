@@ -183,8 +183,7 @@
         this.realityInterface.sendCreateNode(params.name, params.x, params.y, params.groundplane, params.type, params.noDuplicate);
         realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
 
-        // this adjusts the size of the body to be fullscreen based on accurate device screen size
-        realityInterface.getScreenDimensions(function(width, height) {
+        const adjustForScreenSize = (width, height) => {
             this.screenDimensions = {
                 width: width,
                 height: height
@@ -194,7 +193,14 @@
             // if necessary, reposition/resize any element with manual adjustments
             rootElementWhenOpen.style.width = width + 'px';
             rootElementWhenOpen.style.height = height + 'px';
-        }.bind(this));
+        }
+
+        // this adjusts the size of the body to be fullscreen based on accurate device screen size
+        realityInterface.getScreenDimensions(adjustForScreenSize);
+
+        realityInterface.onWindowResized(({width, height})=> {
+            adjustForScreenSize(width, height);
+        });
 
         // Manage the UI for open and closed states
         this.rootElementWhenOpen = rootElementWhenOpen;
