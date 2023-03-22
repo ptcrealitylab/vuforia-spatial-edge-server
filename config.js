@@ -17,6 +17,8 @@ const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjec
 // Look for objects in the user Documents directory instead of __dirname+"/objects"
 let objectsPath = spatialToolboxPath;
 
+const SIMULATE_CELLULAR_NETWORK = true;
+
 if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
     objectsPath = path.join(__dirname, 'spatialToolbox');
 }
@@ -36,3 +38,4 @@ if (!fs.existsSync(objectsPath)) {
 }
 
 module.exports.objectsPath = objectsPath;
+module.exports.SIMULATE_CELLULAR_NETWORK = SIMULATE_CELLULAR_NETWORK;

@@ -62,7 +62,7 @@ const path = require('path');
 const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
-const {objectsPath} = require('../config.js');
+const {objectsPath, SIMULATE_CELLULAR_NETWORK} = require('../config.js');
 
 const hardwareInterfaces = {};
 
@@ -727,6 +727,11 @@ exports.actionSender = function actionSender(action, timeToLive, beatport) {
     if (!timeToLive) timeToLive = 2;
     if (!beatport) beatport = 52316;
     //  console.log(action);
+    
+    if (SIMULATE_CELLULAR_NETWORK) {
+        console.warn('SIMULATE_CELLULAR_NETWORK=true, can\'t send UDP action message');
+        return;
+    }
 
     var HOST = '255.255.255.255';
     var message;
