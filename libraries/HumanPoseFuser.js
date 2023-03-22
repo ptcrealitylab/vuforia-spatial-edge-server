@@ -106,7 +106,7 @@ class HumanPoseFuser {
         this.batchedUpdates = {};
 
         /* Configuration parameters */
-
+        this.verbose = true;
         // same frequency as body tracking in Toolbox app
         this.fuseIntervalMs = 100;
         // keep in pastPoses data which are x ms in the past (on timeline of data ts)
@@ -139,17 +139,23 @@ class HumanPoseFuser {
 
     fuse() {
         const start = Date.now();
-        console.log('-- Fusing poses');
+        if (this.verbose) {
+            console.log('-- Fusing poses');
+        }
 
         let currentPoseData = this.findPoseDataMatchingInTime();
 
-        for (let [objectId, pose] of Object.entries(currentPoseData)) {
-            console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0) + ( (pose.joints.length == 0) ? ' (empty)' : '' ));
+        if (this.verbose) {
+            for (let [objectId, pose] of Object.entries(currentPoseData)) {
+                console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0) + ( (pose.joints.length == 0) ? ' (empty)' : '' ));
+            }
         }
 
         this.assignPoseData(currentPoseData);
 
-        console.log('Assignment to fused human objects: \n', this.humanObjectsOfFusedObject.print());
+        if (this.verbose) {
+            console.log('Assignment to fused human objects: \n', this.humanObjectsOfFusedObject.print());
+        }
 
         this.fusePoseData(currentPoseData);
 
@@ -158,8 +164,10 @@ class HumanPoseFuser {
 
         this.cleanPastPoses();
 
-        const elapsedTimeMs = Date.now() - start;
-        console.log(`Fusion time: ${elapsedTimeMs}ms`);
+        if (this.verbose) {
+            const elapsedTimeMs = Date.now() - start;
+            console.log(`Fusion time: ${elapsedTimeMs}ms`);
+        }
     }
 
     addPoseData(objectId, wholePose) {
@@ -207,7 +215,9 @@ class HumanPoseFuser {
 
     removeHumanObject(objectId) {
 
-        console.log('removing human obj=' + objectId);
+        if (this.verbose) {
+            console.log('removing human obj=' + objectId);
+        }
 
         // remove pose history of a deleted human object if there is any
         delete this.pastPoses[objectId];
@@ -317,7 +327,7 @@ class HumanPoseFuser {
         let filteredMatchingPoses = Object.fromEntries(Object.entries(matchingPoses).filter(entry => entry[1].timestamp > cutoffTS));
         
         const numFiltered = Object.keys(matchingPoses).length - Object.keys(filteredMatchingPoses).length;
-        if (numFiltered > 0) {
+        if (this.verbose && numFiltered > 0) {
             console.log(`Filtered ${numFiltered} poses.`);
         }
 
@@ -417,7 +427,9 @@ class HumanPoseFuser {
             candidateConfidences.push({id: objectId, value: objectConfidence});
             str += objectId + ' = ' + objectConfidence.toFixed(3) + ', ';
         }
-        console.log('Recent confidence: ', str);
+        if (this.verbose) {
+            console.log('Recent confidence: ', str);
+        }
 
         let currentBest; // undefined
         if (candidateConfidences.length > 0) {
@@ -471,7 +483,9 @@ class HumanPoseFuser {
         }
 
         if (poseData[selectedObjectId] == undefined || poseData[selectedObjectId].joints.length == 0) {
-            console.log('not updating joints: obj=' + fusedObjectId);
+            if (this.verbose) {
+                console.log('not updating joints: obj=' + fusedObjectId);
+            }
             return;
         }
 
@@ -502,21 +516,22 @@ class HumanPoseFuser {
                 }
             }
         }
-
-        console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
+        if (this.verbose) {
+            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
+        }
     }
 
     // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
     assignPoseData(poseData) {
 
         // filter empty poses or poses of (just!) removed human objects
-        let before = Object.entries(poseData).length;
+        //let before = Object.entries(poseData).length;
         let poseDataArr = Object.entries(poseData).filter(entry => 
             (entry[1].joints.length > 0 && (this.objectsRef[entry[0]] !== undefined))
         );
-        if (before != poseDataArr.length) {
+        /*if (before != poseDataArr.length) {
             console.log(`Pose data count: before=${before}, after=${poseDataArr.length}`);
-        }
+        }*/
 
         // compare all pairs of poses and make binary matrix of spatial proximity
         let proximityMatrix = Array.from(Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(false));
@@ -560,7 +575,9 @@ class HumanPoseFuser {
                         this.humanObjectsOfFusedObject.deleteObject(id);
                         parentValue = null;
                         unassignedStandardIndices.push(index);
-                        console.log('unassigning human obj=' + id + ' from ' + fid);
+                        if (this.verbose) {
+                            console.log('unassigning human obj=' + id + ' from ' + fid);
+                        }
                     }
                 }
             } else {
@@ -574,7 +591,9 @@ class HumanPoseFuser {
                         this.humanObjectsOfFusedObject[fid2].push(id);
                         parentValue = fid2;  // fused object id
                         assigned = true;
-                        console.log('assigning human obj=' + id + ' from ' + fid2);
+                        if (this.verbose) {
+                            console.log('assigning human obj=' + id + ' from ' + fid2);
+                        }
                         break;
                     }
                     // TODO (future): selection could be based on the smallest distance
@@ -653,8 +672,9 @@ class HumanPoseFuser {
                         newValue: fusedObjectId,
                         editorId: 0    // TODO: some server identificator
                     };
-
-                    console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
+                    if (this.verbose) {
+                        console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
+                    }
                 }
             }
             else {
@@ -718,7 +738,6 @@ class HumanPoseFuser {
                 }
                 poseGroups[fid][id] = pose;
             }
-            //console.log('obj=' + objectId + ', data_ts=' + pose.timestamp.toFixed(0));
         }
 
         for (let [fid, group] of Object.entries(poseGroups)) {
