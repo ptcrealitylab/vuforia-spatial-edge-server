@@ -97,11 +97,13 @@ class HumanPoseFuser {
                 }
                 return str;
             }
-            // TODO?: add objectId
 
         };
 
         this.intervalTimer = null;
+
+        // collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object
+        this.batchedUpdates = {};
 
         /* Configuration parameters */
 
@@ -150,6 +152,9 @@ class HumanPoseFuser {
         console.log('Assignment to fused human objects: \n', this.humanObjectsOfFusedObject.print());
 
         this.fusePoseData(currentPoseData);
+
+        // send out 'parent' property updates to all human objects from this frame to all subscribers
+        server.socketHandler.sendUpdateToAllSubscribers(Object.values(this.batchedUpdates));
 
         this.cleanPastPoses();
 
@@ -219,20 +224,19 @@ class HumanPoseFuser {
             }
 
         } else {  // a fused human object
-            let batchedUpdates = [];
             // remove parent reference from its remaining associated human objects
             for (let id of this.humanObjectsOfFusedObject[objectId]) {
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = null;
 
-                    batchedUpdates.push({
+                    this.batchedUpdates[id] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
                         propertyPath: 'parent',
                         newValue: null,
                         editorId: 0    // TODO: some server identificator
-                    });
+                    };
                 }
             }
 
@@ -240,8 +244,6 @@ class HumanPoseFuser {
             delete this.humanObjectsOfFusedObject[objectId];
             delete this.bestHumanObjectForFusedObject[objectId];
 
-            // send out 'parent' property updates to all subscribers
-            server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
         }
 
     }
@@ -540,10 +542,6 @@ class HumanPoseFuser {
                 }
             }
         }
-        
-        // collect all updates to 'parent' property of human objects
-        // dictionary so we keep just one change per human object
-        let batchedUpdates = {};
 
         // process poses of standard objects
         let unassignedStandardIndices = [];
@@ -588,7 +586,7 @@ class HumanPoseFuser {
 
             if (parentValue !== undefined) {
                 // make entry in batchedUpdates
-                batchedUpdates[id] = {
+                this.batchedUpdates[id] = {
                     objectKey: id,
                     frameKey: null,
                     nodeKey: null,
@@ -647,7 +645,7 @@ class HumanPoseFuser {
                     // set parent reference pointing at a fused human object
                     this.objectsRef[id].parent = fusedObjectId;
 
-                    batchedUpdates[id] = {
+                    this.batchedUpdates[id] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -671,7 +669,7 @@ class HumanPoseFuser {
                     for (let id of ids) {
                         this.objectsRef[id].parent = fusedObjectId;
 
-                        batchedUpdates[id] = {
+                        this.batchedUpdates[id] = {
                             objectKey: id,
                             frameKey: null,
                             nodeKey: null,
@@ -698,14 +696,10 @@ class HumanPoseFuser {
         // TODO (future): check if any fused objects are in spatial proximity and they should be merged
 
         // remove fused human objects if they have less than 2 associated human objects
-        // TODO: this also does batchedUpdates inside removeHumanObject, which could be merged with batched update here
         const idsToRemove = this.humanObjectsOfFusedObject.getFusedObjectsToRemove();
         for (let id of idsToRemove) {
             this.removeHumanObject(id);
         }
-
-        // send out 'parent' property updates to all subscribers
-        server.socketHandler.sendUpdateToAllSubscribers(Object.values(batchedUpdates));
     }
 
     /**
