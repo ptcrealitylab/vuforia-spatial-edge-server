@@ -76,12 +76,24 @@ class HumanPoseFuser {
                 }
             },
 
+            getFusedObjectsToRemove() {
+                let removedObjectIds = [];
+                for (let [fusedObjId, ids] of Object.entries(this)) {
+                    if (typeof(ids) === "function")
+                        continue;
+                    if (ids.length < 2) {
+                        removedObjectIds.push(fusedObjId);
+                    }
+                }
+                return removedObjectIds;
+            },
+
             print() {
                 let str = "";
                 for (let [objectId, ids] of Object.entries(this)) {
                     if (typeof(ids) === "function")
                         continue;
-                    str += objectId + ': ' + ids;
+                    str += objectId + ': ' + ids + '\n';
                 }
                 return str;
             }
@@ -90,6 +102,9 @@ class HumanPoseFuser {
         };
 
         this.intervalTimer = null;
+
+        /* Configuration parameters */
+
         // same frequency as body tracking in Toolbox app
         this.fuseIntervalMs = 100;
         // keep in pastPoses data which are x ms in the past (on timeline of data ts)
@@ -99,9 +114,11 @@ class HumanPoseFuser {
         // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
         this.confidenceIntervalMs = 500;
         // difference in pose confidence to switch over to a different child human object
-        this.minConfidenceDifference = 0.2; 
-        // distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person
+        this.minConfidenceDifference = 0.2;
+        // distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person (at the same timestamp)
         this.maxDistanceForSamePerson = 300; // mm
+        // max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s)
+        this.maxHumanVelocity = 2.0;  // unit: mm/ms
     }
 
     start() {
@@ -185,11 +202,26 @@ class HumanPoseFuser {
 
     removeHumanObject(objectId) {
 
-        let removeFusedObject = (fid) => {
+        console.log('removing human obj=' + objectId);
 
+        // remove pose history of a deleted human object if there is any
+        delete this.pastPoses[objectId];
+
+        if (this.humanObjectsOfFusedObject[objectId] === undefined) { // a standard human object
+            let fusedObjectId = this.humanObjectsOfFusedObject.getFusedObject(objectId);
+
+            // remove association of a deleted object to any fused human object
+            this.humanObjectsOfFusedObject.deleteObject(objectId);
+
+            // remove fused human objects if it has less than 2 associated human objects
+            if (fusedObjectId && this.humanObjectsOfFusedObject[fusedObjectId].length < 2) {
+                this.removeHumanObject(fusedObjectId);
+            }
+
+        } else {  // a fused human object
             let batchedUpdates = [];
             // remove parent reference from its remaining associated human objects
-            for (let id of this.humanObjectsOfFusedObject[fid]) {
+            for (let id of this.humanObjectsOfFusedObject[objectId]) {
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = null;
 
@@ -205,33 +237,13 @@ class HumanPoseFuser {
             }
 
             // remove all association data if the given object is a fused human object
-            delete this.humanObjectsOfFusedObject[fid];
-            delete this.bestHumanObjectForFusedObject[fid];
+            delete this.humanObjectsOfFusedObject[objectId];
+            delete this.bestHumanObjectForFusedObject[objectId];
 
             // send out 'parent' property updates to all subscribers
             server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
-        };
-
-        // remove pose history of a deleted human object if there is any
-        delete this.pastPoses[objectId];
-
-        if (this.humanObjectsOfFusedObject[objectId] === undefined) { // not a fused human object
-
-            let fusedObjectId = this.humanObjectsOfFusedObject.getFusedObject(objectId);
-
-            // remove association of a deleted object to any fused human object
-            this.humanObjectsOfFusedObject.deleteObject(objectId);
-
-            // remove fused human objects if it has less than 2 associated human objects
-            if (fusedObjectId && this.humanObjectsOfFusedObject[fusedObjectId].length < 2) {
-                removeFusedObject(fusedObjectId);
-            }
-
-            return;
         }
 
-        // a fused human object is deleted
-        removeFusedObject(objectId);
     }
 
     cleanPastPoses() {
@@ -310,8 +322,14 @@ class HumanPoseFuser {
         return filteredMatchingPoses;
     }
 
-    // @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1/joints2
-    arePosesOfSamePerson(joints1, joints2) {
+    /**
+     * Checks if two human poses can be considered from the same person
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2
+     * @param {number} maxDistance - distance threshold between two poses
+     * @return {boolean}
+     */
+    arePosesOfSamePerson(joints1, joints2, maxDistance) {
 
         // check distances between pelvis and neck
         let pelvisIndex = Object.values(JOINTS).indexOf('pelvis');
@@ -325,7 +343,7 @@ class HumanPoseFuser {
         let pelvisDist = sgUtils.positionDistance(joints1[pelvisIndex], joints2[pelvisIndex]);
         let neckDist = sgUtils.positionDistance(joints1[neckIndex], joints2[neckIndex]);
 
-        if (pelvisDist > this.maxDistanceForSamePerson || neckDist > this.maxDistanceForSamePerson) {
+        if (pelvisDist > maxDistance || neckDist > maxDistance) {
             return false;
         }
 
@@ -489,35 +507,48 @@ class HumanPoseFuser {
     // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
     assignPoseData(poseData) {
 
-        // simple approach merging one pair of pose streams into a new fused human object at a time
-        
-        //???  WARNING: it can create multiple fused human objects for the same person when many cameras/apps are involved
-        //let poseObjsSamePerson = [];
-        let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+        // filter empty poses or poses of (just!) removed human objects
+        let before = Object.entries(poseData).length;
+        let poseDataArr = Object.entries(poseData).filter(entry => 
+            (entry[1].joints.length > 0 && (this.objectsRef[entry[0]] !== undefined))
+        );
+        if (before != poseDataArr.length) {
+            console.log(`Pose data count: before=${before}, after=${poseDataArr.length}`);
+        }
 
-        // poseDataArr contains poses of standard and fused human objects, store indices for both groups
         // compare all pairs of poses and make binary matrix of spatial proximity
         let proximityMatrix = Array.from(Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(false));
         let standardIndices = [];
         let fusedIndices = [];
         for (let i = 0; i < poseDataArr.length; i++) {
             proximityMatrix[i][i] = true;
+            // poseDataArr contains poses of standard and fused human objects, store indices for each group
             if (this.humanObjectsOfFusedObject[poseDataArr[i][0]] !== undefined) {
                 fusedIndices.push(i);
             } else {
                 standardIndices.push(i);
             }
             for (let j = i + 1; j < poseDataArr.length; j++) {
-                if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints)) {
-                    // introduce new set of related human objects
-                    //poseObjsSamePerson.push([poseDataArr[i][0], poseDataArr[j][0]]);
+                // distance threshold is calculated from two components:
+                // - base deviation between poses at the same timestamp
+                // - max possible shift between poses from different timestamp due to person's movement (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
+                const distanceThreshold = this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(poseDataArr[i][1].timestamp - poseDataArr[j][1].timestamp);
+
+                if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints, distanceThreshold)) {
                     proximityMatrix[i][j] = true;
                     proximityMatrix[j][i] = true;
                 }
             }
         }
+        
+        // collect all updates to 'parent' property of human objects
+        // dictionary so we keep just one change per human object
+        let batchedUpdates = {};
 
+        // process poses of standard objects
+        let unassignedStandardIndices = [];
         for (let index of standardIndices) {
+            let parentValue;  // undefined on purpose to distinguish from null
             let id = poseDataArr[index][0];
             let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
             if (fid) {
@@ -527,36 +558,79 @@ class HumanPoseFuser {
                 if (fi >= 0) {
                     // check if the poses are still at the same location
                     if (!proximityMatrix[fi][index]) {
-                        // detach the standard object from the fused one
-
-                        // TODO !!!
+                        // detach the standard object from the fused human object so the pose is not used in subsequent fusion
+                        this.humanObjectsOfFusedObject.deleteObject(id);
+                        parentValue = null;
+                        unassignedStandardIndices.push(index);
+                        console.log('unassigning human obj=' + id + ' from ' + fid);
                     }
                 }
-                
-
-
+            } else {
+                // standard human object is not associated with any fused human object
+                // try to associate it with one of the fused objects available in the current frame
+                let assigned = false;
+                for (let findex of fusedIndices) {
+                    if (proximityMatrix[findex][index]) {
+                        // they are close, make association
+                        let fid2 = poseDataArr[findex][0];
+                        this.humanObjectsOfFusedObject[fid2].push(id);
+                        parentValue = fid2;  // fused object id
+                        assigned = true;
+                        console.log('assigning human obj=' + id + ' from ' + fid2);
+                        break;
+                    }
+                    // TODO (future): selection could be based on the smallest distance
+                }
+                if (!assigned) {
+                    unassignedStandardIndices.push(index);
+                }
             }
-            
 
-            // try to associate the standard object with one of the fused objects available in the current frame
-
-            // TODO: make entry in batchedUpdates at the end
+            if (parentValue !== undefined) {
+                // make entry in batchedUpdates
+                batchedUpdates[id] = {
+                    objectKey: id,
+                    frameKey: null,
+                    nodeKey: null,
+                    propertyPath: 'parent',
+                    newValue: parentValue,
+                    editorId: 0    // TODO: some server identificator
+                };
+            }
         }
 
-        // TODO: maybe there should be a check whether poses assigned to an existing fused human object are still in spatial proximity
+        // process poses of standard objects not associated with any existing fused objects
+        // create overlapping groups of spatially close poses
+        let poseObjsSamePerson = [];
+        for (let index of unassignedStandardIndices) {
+            // make group from all poses with close proximity to this one
+            let ids = [];
+            for (let j of unassignedStandardIndices) {
+                if (proximityMatrix[index][j]) {
+                    ids.push(poseDataArr[j][0]);
+                }
+            }
+            poseObjsSamePerson.push(ids);
+        }
 
-        let batchedUpdates = [];
-
-        // assign poses of spatially-close human objects to existing or new fused human objects
+        // simple approach: incremental merging groups of spatially-close poses into new fused human objects (one group at a time)
+        // WARNING: it can create multiple fused human objects for the same person when many cameras/apps are involved
+        // also, there can be issues with assigning to the same fused object a spatially stretched-out chain of poses
+        // TODO (future): proper proximity clustering with cycle consistency check
         for (let ids of poseObjsSamePerson) {
+
+            if (ids.length < 2) {
+                // single standalone pose which is not close to any other, nothing to do in terms of fusion
+                continue;
+            }
+
             // check if some objects in the group already belong to some fused human objects
             let fusedObjectId = null;
             let unassignedIds = [];
             for (let id of ids) {
                 let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
                 if (fid) {
-                    // NOTE: there can be human objects in this group which are already assigned to different fused human objects 
-                    // not handling this properly at the moment
+                    // NOTE: there could be human objects in this group which are already assigned to different fused human objects 
                     if (!fusedObjectId) {
                         fusedObjectId = fid;
                     }
@@ -573,14 +647,16 @@ class HumanPoseFuser {
                     // set parent reference pointing at a fused human object
                     this.objectsRef[id].parent = fusedObjectId;
 
-                    batchedUpdates.push({
+                    batchedUpdates[id] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
                         propertyPath: 'parent',
                         newValue: fusedObjectId,
                         editorId: 0    // TODO: some server identificator
-                    });
+                    };
+
+                    console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
                 }
             }
             else {
@@ -595,14 +671,14 @@ class HumanPoseFuser {
                     for (let id of ids) {
                         this.objectsRef[id].parent = fusedObjectId;
 
-                        batchedUpdates.push({
+                        batchedUpdates[id] = {
                             objectKey: id,
                             frameKey: null,
                             nodeKey: null,
                             propertyPath: 'parent',
                             newValue: fusedObjectId,
                             editorId: 0    // TODO: some server identificator
-                        });
+                        };
                     }
                 }
 
@@ -619,8 +695,17 @@ class HumanPoseFuser {
             }
         }
 
+        // TODO (future): check if any fused objects are in spatial proximity and they should be merged
+
+        // remove fused human objects if they have less than 2 associated human objects
+        // TODO: this also does batchedUpdates inside removeHumanObject, which could be merged with batched update here
+        const idsToRemove = this.humanObjectsOfFusedObject.getFusedObjectsToRemove();
+        for (let id of idsToRemove) {
+            this.removeHumanObject(id);
+        }
+
         // send out 'parent' property updates to all subscribers
-        server.socketHandler.sendUpdateToAllSubscribers(batchedUpdates);
+        server.socketHandler.sendUpdateToAllSubscribers(Object.values(batchedUpdates));
     }
 
     /**
