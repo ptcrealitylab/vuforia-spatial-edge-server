@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath} = require('./config');
+const {objectsPath, SIMULATE_CELLULAR_NETWORK} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -1179,6 +1179,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
     if (isLightweightMobile) {
         return;
     }
+    
+    if (SIMULATE_CELLULAR_NETWORK) {
+        console.warn('SIMULATE_CELLULAR_NETWORK=true, can\'t send heartbeat');
+        return;
+    }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
         console.log('already created beat for object: ' + thisId);
@@ -1309,7 +1314,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                     zone: zone
                 }));
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
-                    if (err) throw err;
+                    if (err) {
+                        // throw err;
+                        console.warn('error sending one-shot heartbeat', err);
+                    }
                     // close the socket as the function is only called once.
                     client.close();
                 });
