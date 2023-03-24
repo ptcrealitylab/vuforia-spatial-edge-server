@@ -4,7 +4,7 @@ const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
 
-// incoming HumanPoseObjects should be created with this joint schema
+/** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
     NOSE: 'nose',
     LEFT_EYE: 'left_eye',
@@ -30,28 +30,63 @@ const JOINTS = {
     PELVIS: 'pelvis', // synthetic
 };
 
-class HumanPoseFuser {
+/**
+ * The object with pose data incoming from Toolboxapps
+ * @typedef {Object} WholePoseData
+ * @property {string} name
+ * @property {number} timestamp
+ * @property {Array.<{x: number, y: number, z: number, confidence: number}> } joints
+ */
 
+/**
+ * @classdesc This class is manages fusion of human pose streams from several cameras (ToolboxApps) in situations where a same person is observed from multiple viewpoints.
+ * The current assumption is a single person in volumes observed by any number of cameras. However, the design aimed at several people and under certain conditions multiple people can be tracked already.
+ * It creates new HumanPoseObject directly on server if there are at least 2 poses at the same location at the same time reported by standard HumanPoseObjects spawned by ToolboxApps.
+ * The server-based objects are referred to as fused human objects and they provide final fused poses for each person. Standard human objects assigned to them have suppoting role and 
+ * their poses should not be used fo visualisation or analytics. However, the fused objects are dynamically created/deleted over time based on movement of a person through observed parts of space.
+ * Also, the assignment of standard human objects to the fused ones changes over time. This dynamic approach allows:
+ * - doing multi-view fusion only when it is needed
+ * - movement of cameras during session
+ * - limited support for multiple people
+ */
+class HumanPoseFuser {
+    /**
+     * @constructor
+     * @param {Array.<Object>} objects - global variable 'objects'
+     * @param {SceneGraph} sceneGraph - global variable 'sceneGraph'
+     * @param {Object.<string, Object>} objectLookup - global variable 'objectLookup'
+     * @param {string} ip
+     * @param {string} version
+     * @param {string} protocol
+     * @param {number} beatPort
+     */
     constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort) {
         // references to global data structures for objects
         this.objectsRef = objects;
         this.sceneGraphRef = sceneGraph;
         this.objectLookupRef = objectLookup;
 
-        // for HumanPoseObject creation
+        // properties for HumanPoseObject creation
         this.ip = ip;
         this.version = version;
         this.protocol = protocol;
         this.beatPort = beatPort;
 
-        // recent history of poses for each existing HumanPoseObject
-        // dictionary - key: objectId, value: { latestFusedDataTS, array of objects from publicData['whole_pose'] }
+        /** Recent history of poses for each existing human object.
+         * Dictionary - key: objectId, value: { ts of the last pose already fused, array of per-frame pose data }
+         * @type {Object.<string, {latestFusedDataTS: number, poses: Array.<WholePoseData>}>}
+         */
         this.pastPoses = {};
 
-        // dictionary - key: objectId of fused human object, value: objectId of associated human object which has currently best pose
+        /** Dictionary - key: objectId of fused human object, value: objectId of associated human object which has currently best pose
+         * @type {Object.<string, string>}
+         */
         this.bestHumanObjectForFusedObject = {};
 
-        // dictionary - key: objectId of fused human object, value: array of objectId of associated human objects (original ones updated from Toolbox apps)
+        /** Current assignment of standard human objects (coming from ToolboxApps) to fused human objects created by this class.
+         * Dictionary - key: objectId of fused human object, value: array of objectIds of associated human objects
+         * @type {Object.<string, Array.<string>>}
+         */
         this.humanObjectsOfFusedObject = {
             getFusedObject(objectId) {
                 for (let [fusedObjId, ids] of Object.entries(this)) {
@@ -100,29 +135,32 @@ class HumanPoseFuser {
 
         };
 
+        /** Timer to trigger main fuse() method. */
         this.intervalTimer = null;
 
-        // collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object
+        /** Dictionary which collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object */
         this.batchedUpdates = {};
 
         /* Configuration parameters */
+        /** Verbose logging */
         this.verbose = true;
-        // same frequency as body tracking in Toolbox app
+        /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
-        // keep in pastPoses data which are x ms in the past (on timeline of data ts)
+        /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
         this.pastIntervalMs = 10000;
-        // time interval into past to find corresponding poses across human objects (on timeline of data ts)
+        /** time interval into past to find corresponding poses across human objects (on timeline of data ts) */
         this.recentIntervalMs = 500;
-        // time interval into past to aggregate pose confidence for a human object (on timeline of data ts)
+        /** time interval into past to aggregate pose confidence for a human object (on timeline of data ts) */
         this.confidenceIntervalMs = 500;
-        // difference in pose confidence to switch over to a different child human object
+        /** difference in pose confidence to switch over to a different child human object */
         this.minConfidenceDifference = 0.2;
-        // distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person (at the same timestamp)
+        /** distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person (at the same timestamp) */
         this.maxDistanceForSamePerson = 300; // mm
-        // max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s)
+        /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
     }
 
+    /** Starts fusion of human poses. */
     start() {
         this.intervalTimer = setInterval(() => {
             this.fuse();
@@ -130,6 +168,7 @@ class HumanPoseFuser {
         this.fuseIntervalMs);
     }
 
+    /** Stops fusion of human poses. */
     stop() {
         if (this.intervalTimer) {
             clearInterval(this.intervalTimer);
@@ -137,6 +176,7 @@ class HumanPoseFuser {
         }
     }
 
+    /** Fuses the current set of pose updates across human objects. The main method run at regular intervals. */
     fuse() {
         const start = Date.now();
         if (this.verbose) {
@@ -186,9 +226,9 @@ class HumanPoseFuser {
         this.pastPoses[objectId].poses.push(wholePose);
     }
 
-    /**
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} poseJoints 
-     * @returns overall pose confidence
+    /** Computes overall confidence of whole pose from joint confidences.
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} poseJoints
+     * @returns {number} overall pose confidence
      */
     computeOverallConfidence(poseJoints) {
 
@@ -213,6 +253,9 @@ class HumanPoseFuser {
         return sum / selectedJointNames.length;
     }
 
+    /** Removes internal data about a given human object
+     * @param {string} objectId - identificator of human object
+     */
     removeHumanObject(objectId) {
 
         if (this.verbose) {
@@ -255,9 +298,9 @@ class HumanPoseFuser {
             delete this.bestHumanObjectForFusedObject[objectId];
 
         }
-
     }
 
+    /** Clears older poses in history across all human objects. */
     cleanPastPoses() {
         // get the latest data timestamp
         let latestTS = 0;
@@ -279,6 +322,11 @@ class HumanPoseFuser {
         }
     }
 
+    /**
+     * Removes poses of a given huamn object older than a specified timestamp. 
+     * @param {Array.<WholePoseData>} poseArr - poses
+     * @param {number} timestamp
+     */
     removeOldPoseData(poseArr, timestamp) {
         // the oldest data are at the start of array
         let deleteCount = 0;
@@ -291,8 +339,11 @@ class HumanPoseFuser {
         poseArr.splice(0, deleteCount);
     }
 
-    // Simple approach of taking the latest poses across human pose objects up to short interval into past (for now).
-    // @return {Object.<string, Object>} - key: HumanPoseObject.objectId, value: Object of publicData['whole_pose']
+    /**
+     * Finds corresponding set of poses in time across human objects.
+     * Simple approach of taking the latest poses across human pose objects up to short interval into past (for now).
+     * @returns {Object.<string, WholePoseData>} dictionary with key of objectId and value of single pose
+     */
     findPoseDataMatchingInTime() {
 
         let matchingPoses = {};
@@ -325,7 +376,7 @@ class HumanPoseFuser {
         // filter out poses older than recent past
         let cutoffTS = latestTS - this.recentIntervalMs;
         let filteredMatchingPoses = Object.fromEntries(Object.entries(matchingPoses).filter(entry => entry[1].timestamp > cutoffTS));
-        
+
         const numFiltered = Object.keys(matchingPoses).length - Object.keys(filteredMatchingPoses).length;
         if (this.verbose && numFiltered > 0) {
             console.log(`Filtered ${numFiltered} poses.`);
@@ -336,8 +387,8 @@ class HumanPoseFuser {
 
     /**
      * Checks if two human poses can be considered from the same person
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1 - joints of first pose
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2 - joints of second pose
      * @param {number} maxDistance - distance threshold between two poses
      * @return {boolean}
      */
@@ -366,7 +417,7 @@ class HumanPoseFuser {
      * Selects the best human object to update its parent fused human object based on presence and confidence of poses received in recent past.
      * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
      * @param {string} fusedObjectId - id of parent fused object
-     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']; currently available poses for existing human objects
+     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
      * @return {string | null} objectId
      */
     selectHumanObject(fusedObjectId, poseData) {
@@ -458,17 +509,16 @@ class HumanPoseFuser {
 
         if (bestObjectId) {
             this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
-        }
-        else {
+        } else {
             console.warn('Cannot select the best object for a fused human object.');
         }
 
         return bestObjectId;
     }
 
-    /**
-     * @param {string} fusedObjectId
-     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+    /** Updates a specified fused human object.
+     * @param {string} fusedObjectId - id of fused human object
+     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
      */
     updateFusedObject(fusedObjectId, poseData) {
 
@@ -521,12 +571,14 @@ class HumanPoseFuser {
         }
     }
 
-    // @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+    /** Assigns current poses of standard human object to existing fused human objects or creates new fused humans out of them.
+     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
+     */
     assignPoseData(poseData) {
 
         // filter empty poses or poses of (just!) removed human objects
         //let before = Object.entries(poseData).length;
-        let poseDataArr = Object.entries(poseData).filter(entry => 
+        let poseDataArr = Object.entries(poseData).filter(entry =>
             (entry[1].joints.length > 0 && (this.objectsRef[entry[0]] !== undefined))
         );
         /*if (before != poseDataArr.length) {
@@ -647,7 +699,7 @@ class HumanPoseFuser {
             for (let id of ids) {
                 let fid = this.humanObjectsOfFusedObject.getFusedObject(id);
                 if (fid) {
-                    // NOTE: there could be human objects in this group which are already assigned to different fused human objects 
+                    // NOTE: there could be human objects in this group which are already assigned to different fused human objects
                     if (!fusedObjectId) {
                         fusedObjectId = fid;
                     }
@@ -676,10 +728,9 @@ class HumanPoseFuser {
                         console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
                     }
                 }
-            }
-            else {
+            } else {
                 // whole group is unassigned, thus create new fused human object for it
-                // TODO?: add a string identifying the server  (equivalent to globalStates.tempUuid for devices) 
+                // TODO?: add a string identifying the server  (equivalent to globalStates.tempUuid for devices)
                 let fusedObjectId = '_HUMAN_' + 'server' + '_pose1' + utilities.uuidTime();
                 this.objectsRef[fusedObjectId] = new HumanPoseObject(this.ip, this.version, this.protocol, fusedObjectId, JOINTS);
                 if (this.humanObjectsOfFusedObject[fusedObjectId] === undefined) {
@@ -722,8 +773,9 @@ class HumanPoseFuser {
         }
     }
 
-    /**
-     * @param {Object.<string, Object>} poseData - dictionary with key: objectId, value: Object of publicData['whole_pose']
+    /** Fuses current poses of standard human objects to update poses of their respective fused human objects.
+     *  If a standard human object is standalone (not associated to any fused one), there is change to its pose.
+     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
      */
     fusePoseData(poseData) {
 
