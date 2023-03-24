@@ -1086,8 +1086,8 @@ function startSystem() {
     const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
     staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
-    const humanCheckIntervalMs = 5000; //1000; // 5000;
-    const humanDeletionAgeMs = 15000; //10000; //15000; // human objects are deleted more aggressively if they haven't been seen recently
+    const humanCheckIntervalMs = 3000;
+    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
     staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
 
     recorder.initRecorder(objects);
