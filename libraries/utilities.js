@@ -70,10 +70,17 @@ const identityFolderName = '.identity'; // TODO: get this from server.js
 
 var hardwareIdentity = path.join(objectsPath, identityFolderName);
 
-let callbacks = {};
-exports.setup = function(utilitiesCallbacks) {
-    callbacks = utilitiesCallbacks;
-}
+let socketReferences = {
+    realityEditorUpdateSocketArray: null
+};
+let callbacks = {
+    triggerUDPCallbacks: null
+};
+
+exports.setup = function(_socketReferences, _callbacks) {
+    socketReferences = _socketReferences;
+    callbacks = _callbacks;
+};
 
 exports.writeObject = function writeObject(objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -753,23 +760,60 @@ exports.actionSender = function actionSender(action, timeToLive, beatport) {
         client.setTTL(timeToLive);
         client.setMulticastTTL(timeToLive);
     });
-    // send the datagram
-    client.send(message, 0, message.length, beatport, HOST, function (err) {
+
+    sendWithFallback(client, beatport, HOST, {action: action}, {closeAfterSending: true});
+};
+
+/**
+ * Use this to send a UDP message over the provided client socket, with a fallback to send the message
+ * over websockets to all known clients if the network doesn't support UDP broadcasts.
+ * To use:
+ *   After setting up a `client = dgram.createSocket({type: 'udp4'})`, instead of writing client.send(...),
+ *   use utilities.sendWithFallback(client, ...)
+ * @param {dgram.Socket} client
+ * @param {number} PORT
+ * @param {string} HOST
+ * @param {Object} messageObject - e.g. {action: {reloadObject: {object, lastEditor}}} or (heartbeat) {id, ip, vn, ...}
+ * @param {{closeAfterSending: boolean, onErr: function?}} options
+ */
+function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAfterSending: true, onErr: null}) {
+    let message = Buffer.from(JSON.stringify(messageObject));
+
+    // send the datagram, or a websocket message if the datagram fails
+    client.send(message, 0, message.length, PORT, HOST, function (err) {
         if (err) {
             if (err.code === 'EMSGSIZE') {
                 console.error('actionSender: UDP Message Too Large.');
             } else {
-                if (callbacks.triggerUDPCallbacks) {
-                    callbacks.triggerUDPCallbacks({action: action});
+                let isActionMessage = messageObject.action;
+                let isBeatMessage = messageObject.id && messageObject.ip && messageObject.vn;
+                if (isActionMessage || isBeatMessage) {
+
+                    // send the message to clients on the local Wi-Fi network
+                    for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
+                        let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
+                        // console.log(`sending ${messageName} over websocket ${thisEditor} instead of UDP message`);
+                        io.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
+                    }
+
+                    // send to cloud-proxied clients and other subscribing modules
+                    if (callbacks.triggerUDPCallbacks) {
+                        callbacks.triggerUDPCallbacks(messageObject);
+                    }
                 } else {
                     console.log('You\'re not on a network. Can\'t send anything', err);
                 }
             }
+            if (options.onErr) {
+                options.onErr(err);
+            }
         }
-        client.close();
+        if (options.closeAfterSending) {
+            client.close();
+        }
     });
-
-};
+}
+exports.sendWithFallback = sendWithFallback;
 
 function doesObjectExist(objects, objectKey) {
     return objects.hasOwnProperty(objectKey);
