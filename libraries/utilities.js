@@ -77,8 +77,7 @@ let socketReferences = {
 let ioReference = null;
 
 let callbacks = {
-    triggerUDPCallbacks: null,
-    triggerSocketIoCallbacks: null
+    triggerUDPCallbacks: null
 };
 
 exports.setup = function(_socketReferences, _ioReference, _callbacks) {
