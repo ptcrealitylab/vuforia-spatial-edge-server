@@ -622,7 +622,7 @@ hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariab
 var utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
 }
-utilities.setup({realityEditorUpdateSocketArray}, utilitiesCallbacks);
+utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
