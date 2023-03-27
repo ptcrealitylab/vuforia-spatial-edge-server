@@ -62,13 +62,18 @@ const path = require('path');
 const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
-const {objectsPath, SIMULATE_CELLULAR_NETWORK} = require('../config.js');
+const {objectsPath} = require('../config.js');
 
 const hardwareInterfaces = {};
 
 const identityFolderName = '.identity'; // TODO: get this from server.js
 
 var hardwareIdentity = path.join(objectsPath, identityFolderName);
+
+let callbacks = {};
+exports.setup = function(utilitiesCallbacks) {
+    callbacks = utilitiesCallbacks;
+}
 
 exports.writeObject = function writeObject(objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
@@ -727,11 +732,6 @@ exports.actionSender = function actionSender(action, timeToLive, beatport) {
     if (!timeToLive) timeToLive = 2;
     if (!beatport) beatport = 52316;
     //  console.log(action);
-    
-    if (SIMULATE_CELLULAR_NETWORK) {
-        console.warn('SIMULATE_CELLULAR_NETWORK=true, can\'t send UDP action message');
-        return;
-    }
 
     var HOST = '255.255.255.255';
     var message;
@@ -759,7 +759,11 @@ exports.actionSender = function actionSender(action, timeToLive, beatport) {
             if (err.code === 'EMSGSIZE') {
                 console.error('actionSender: UDP Message Too Large.');
             } else {
-                console.log('You\'re not on a network. Can\'t send anything', err);
+                if (callbacks.triggerUDPCallbacks) {
+                    callbacks.triggerUDPCallbacks({action: action});
+                } else {
+                    console.log('You\'re not on a network. Can\'t send anything', err);
+                }
             }
         }
         client.close();
