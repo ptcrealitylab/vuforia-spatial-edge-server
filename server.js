@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, SIMULATE_CELLULAR_NETWORK} = require('./config');
+const {objectsPath} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -619,6 +619,13 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
+var utilitiesCallbacks = {
+    triggerUDPCallbacks: (msgContent) => {
+        hardwareAPI.triggerUDPCallbacks(msgContent);
+    }
+}
+utilities.setup(utilitiesCallbacks)
+
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
 console.log('Done');
@@ -1144,7 +1151,19 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
 
     if (oneTimeOnly) {
         client.send(message, 0, message.length, udpPort, udpHost, function (err) {
-            if (err) throw err;
+            if (err) {
+                if (hardwareAPI.triggerUDPCallbacks) {
+                    hardwareAPI.triggerUDPCallbacks({
+                        ip: services.ip,
+                        port: serverPort,
+                        vn: version,
+                        // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
+                        services: providedServices || [] // e.g. ['world'] if it can support a world object
+                    });
+                } else {
+                    console.log('You\'re not on a network. Can\'t send one-time server beat');
+                }
+            }
             client.close(); // close the socket as the function is only called once.
         });
         return;
@@ -1156,7 +1175,16 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
     setInterval(function () {
         client.send(message, 0, message.length, udpPort, udpHost, function (err) {
             if (err) {
-                console.log('You\'re not on a network. Can\'t send server beat', err);
+                // console.log('You\'re not on a network. Can\'t send server beat');
+                if (hardwareAPI.triggerUDPCallbacks) {
+                    hardwareAPI.triggerUDPCallbacks({
+                        ip: services.ip,
+                        port: serverPort,
+                        vn: version,
+                        // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
+                        services: providedServices || [] // e.g. ['world'] if it can support a world object
+                    });
+                }
             } else if (globalVariables.debug) {
                 console.log('sent server beat on port ' + udpPort + ' with services ' + JSON.stringify(providedServices || []));
             }
@@ -1177,11 +1205,6 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
 
 function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
-        return;
-    }
-    
-    if (SIMULATE_CELLULAR_NETWORK) {
-        console.warn('SIMULATE_CELLULAR_NETWORK=true, can\'t send heartbeat');
         return;
     }
 
@@ -1268,10 +1291,19 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                 }));
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
+                    
                     client.send(message, 0, message.length, PORT, HOST, function (err) {
                         if (err) {
-                            console.log('You\'re not on a network. Can\'t send anything', err);
-                            //throw err;
+                            // console.log('You\'re not on a network. Can\'t send beat');
+                            hardwareAPI.triggerUDPCallbacks({
+                                id: thisId,
+                                ip: services.ip,
+                                port: serverPort,
+                                vn: thisVersionNumber,
+                                pr: protocol,
+                                tcs: objects[thisId].tcs,
+                                zone: zone
+                            });
                             for (var key in objects) {
                                 objects[key].ip = services.ip;
                             }
@@ -1313,10 +1345,19 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                     tcs: objects[thisId].tcs,
                     zone: zone
                 }));
+
                 client.send(message, 0, message.length, PORT, HOST, function (err) {
                     if (err) {
-                        // throw err;
-                        console.warn('error sending one-shot heartbeat', err);
+                        // console.warn('error sending one-shot heartbeat', err);
+                        hardwareAPI.triggerUDPCallbacks({
+                            id: thisId,
+                            ip: services.ip,
+                            port: serverPort,
+                            vn: thisVersionNumber,
+                            pr: protocol,
+                            tcs: objects[thisId].tcs,
+                            zone: zone
+                        });
                     }
                     // close the socket as the function is only called once.
                     client.close();
@@ -4093,6 +4134,22 @@ function socketServer() {
     });
     this.io = io;
     console.log('socket.io started');
+
+    // emulates what the Edge Agent does – sending udp messages over realtime sockets if necessary,
+    // to enable full functionality on cellular networks or Wi-Fi networks that don't support UDP
+    hardwareAPI.subscribeToUDPMessages(msg => {
+        if (msg.matrixBroadcast) return;
+        if (msg.action) {
+            for (let thisEditor in realityEditorUpdateSocketArray) {
+                io.sockets.connected[thisEditor].emit('/udp/action', JSON.stringify(msg));
+            }
+        }
+        if (msg.id && msg.ip && msg.vn) {
+            for (let thisEditor in realityEditorUpdateSocketArray) {
+                io.sockets.connected[thisEditor].emit('/udp/beat', JSON.stringify(msg));
+            }
+        }
+    });
 }
 
 function deleteObjects(objectKeysToDelete) {
