@@ -73,12 +73,17 @@ var hardwareIdentity = path.join(objectsPath, identityFolderName);
 let socketReferences = {
     realityEditorUpdateSocketArray: null
 };
+
+let ioReference = null;
+
 let callbacks = {
-    triggerUDPCallbacks: null
+    triggerUDPCallbacks: null,
+    triggerSocketIoCallbacks: null
 };
 
-exports.setup = function(_socketReferences, _callbacks) {
+exports.setup = function(_socketReferences, _ioReference, _callbacks) {
     socketReferences = _socketReferences;
+    ioReference = _ioReference;
     callbacks = _callbacks;
 };
 
@@ -793,7 +798,7 @@ function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAft
                     for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
                         let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
                         // console.log(`sending ${messageName} over websocket ${thisEditor} instead of UDP message`);
-                        io.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
+                        ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
                     }
 
                     // send to cloud-proxied clients and other subscribing modules
