@@ -438,6 +438,7 @@ function Protocols() {
                         for (let key in msgContent.data) {
                             this.objectData.data[key] = msgContent.data[key];
                         }
+                        console.log(`engine.trigger(${msgContent.node} , ${this.objectData.processedData}`);
                         engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
                         // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                     }
@@ -3471,6 +3472,7 @@ function socketServer() {
                     var nodeName = frame.nodes[key].name;
                     publicData[nodeName] = frame.nodes[key].publicData;
 
+                    console.log(`emit('object')`);
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
@@ -4320,6 +4322,8 @@ var engine = {
             internalObjectDestination.data[key] = thisNode.processedData[key];
         }*/
         internalObjectDestination.data = utilities.deepCopy(thisNode.processedData);
+        
+        console.log(`this.hardwareAPI.readCall(${thisLink.nodeB} , ${internalObjectDestination.data})`);
 
         // trigger hardware API to push data to the objects
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);

@@ -913,10 +913,12 @@
         this.addReadListener = function (node, callback) {
             // TODO: add getIoTitle?
             self.ioObject.on('object', function (msg) {
+                console.log(`self.ioObject.on('object') [envelope]`);
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
                         if (thisMsg.data) {
+                            console.log(`thisMsg.node === spatialObject.frame + node  [envelope]`);
                             callback(thisMsg.data);
                         }
                     }
@@ -1209,7 +1211,7 @@
             });
         };
 
-        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate) {
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate, defaultValue) {
             var data = {
                 name: name,
                 x: x,
@@ -1223,6 +1225,9 @@
             }
             if (typeof noDuplicate !== 'undefined') {
                 data.noDuplicate = noDuplicate;
+            }
+            if (typeof defaultValue !== 'undefined') {
+                data.defaultValue = defaultValue;
             }
             postDataToParent({
                 createNode: data
@@ -2060,17 +2065,19 @@
             });
         };
 
+        let toolCreationCallbackCount = 0;
         this.wasToolJustCreated = function(callback) {
             if (typeof spatialObject.wasToolJustCreated === 'boolean') {
                 callback(spatialObject.wasToolJustCreated);
                 return;
             }
 
-            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+            let callbackName = 'toolCreationCall' + toolCreationCallbackCount;
+            spatialObject.messageCallBacks[callbackName] = function (msgContent) {
                 if (typeof msgContent.firstInitialization !== 'undefined') {
                     spatialObject.wasToolJustCreated = msgContent.firstInitialization;
                     callback(msgContent.firstInitialization);
-                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks[callbackName]; // only trigger it once
                 }
             };
         };
