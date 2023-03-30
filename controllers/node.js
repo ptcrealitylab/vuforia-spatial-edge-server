@@ -22,8 +22,14 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     let nodeBody = null;
     if (foundObject) {
         var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
-        if (foundFrame) {
+        if (foundFrame.nodes[nodeKey]) {
+            console.warn('trying to create a node multiple times');
+            errorMessage = 'Node ' + nodeKey + ' already exists';
+
+        } else if (foundFrame) {
             let node = new Node(body.name, body.type, objectKey, frameKey, nodeKey);
+            
+            // TODO: ignore if the node already exists
 
             // copy over any additionally-defined properties (node position)
             if (typeof body.x !== 'undefined') {
@@ -37,6 +43,10 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
             }
             if (typeof body.matrix !== 'undefined') {
                 node.matrix = body.matrix;
+            }
+
+            if (typeof body.data !== 'undefined' && typeof body.data.value !== 'undefined') {
+                node.data.value = body.data.value;
             }
 
             foundFrame.nodes[nodeKey] = node;
