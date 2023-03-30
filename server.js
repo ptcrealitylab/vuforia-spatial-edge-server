@@ -585,8 +585,10 @@ const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
+const tempUuid = utilities.uuidTime();   // UUID of current run of the server
+
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort);
+const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -2503,14 +2505,17 @@ function objectWebServer() {
                     let isAvatarObject = JSON.parse(req.body.isAvatar || 'false');
 
                     if (isWorldObject || isHumanObject || isAvatarObject) {
-                        let objectId = req.body.name + utilities.uuidTime();
+                        let objectId = req.body.name;
                         let objectType = 'object';
                         if (isWorldObject) {
                             objectType = 'world';
+                            objectId += utilities.uuidTime();
                         } else if (isHumanObject) {
                             objectType = 'human';
+                            objectId += ('_' + utilities.uuidTime());
                         } else if (isAvatarObject) {
                             objectType = 'avatar';
+                            objectId += utilities.uuidTime();
                         }
 
                         if (isHumanObject) {
