@@ -23,7 +23,7 @@
     "simple-git": "^3.17.0",
     "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.8.2",
-    "ws": "^8.12.1",
+    "ws": "^8.13.0",
     "xml2js": "^0.4.23"
   },
   "repository": {
@@ -31,10 +31,10 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^8.35.0",
+    "eslint": "^8.37.0",
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
-    "puppeteer": "^19.7.2"
+    "puppeteer": "^19.8.2"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
