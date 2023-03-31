@@ -736,14 +736,10 @@ function restActionSender(action) {
 /**
  * Broadcasts a JSON message over UDP
  * @param {*} action - JSON object with no specified structure, contains the message to broadcast
- * @param {number|undefined} timeToLive
- * @param {number|undefined} beatport
+ * @param {number} timeToLive
+ * @param {number} beatport
  */
-exports.actionSender = function actionSender(action, timeToLive, beatport) {
-    if (!timeToLive) timeToLive = 2;
-    if (!beatport) beatport = 52316;
-    //  console.log(action);
-
+exports.actionSender = function actionSender(action, timeToLive = 2, beatport = 52316) {
     var HOST = '255.255.255.255';
     var message;
 

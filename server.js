@@ -438,7 +438,6 @@ function Protocols() {
                         for (let key in msgContent.data) {
                             this.objectData.data[key] = msgContent.data[key];
                         }
-                        console.log(`engine.trigger(${msgContent.node} , ${this.objectData.processedData}`);
                         engine.trigger(msgContent.object, msgContent.frame, msgContent.node, this.objectData);
                         // return {object: msgContent.object, frame: msgContent.frame, node: msgContent.node, data: objectData};
                     }
