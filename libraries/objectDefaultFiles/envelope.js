@@ -170,8 +170,6 @@
 
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
-            
-            console.log('envelope was just created – init nodes');
 
             // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
             this.realityInterface.initNodeWithOptions('storage', {
@@ -188,21 +186,6 @@
                 attachToGroundPlane: false,
                 type: 'node',
                 defaultValue: this.opensWhenAdded ? 1 : 0
-            });
-
-            // setTimeout(() => {
-            //     let forceWrite = true;
-            //     // node, value, mode, unit, unitMin, unitMax, forceWrite
-            //     this.realityInterface.write('open', 1, 'f', false, 0, 1, forceWrite);
-            // }, 5000);
-
-            this.realityInterface.onSocketIoFullyInitialized(() => {
-                // let other messages propagate throughout the system first
-                setTimeout(() => {
-                    let forceWrite = true;
-                    // node, value, mode, unit, unitMin, unitMax, forceWrite
-                    this.realityInterface.write('open', 1, 'f', false, 0, 1, forceWrite);
-                }, 10);
             });
         });
 
