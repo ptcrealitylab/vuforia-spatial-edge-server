@@ -3420,6 +3420,26 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     }
 };
 
+socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid) {
+    let node = getNode(objectKey, frameKey, nodeKey);
+    if (!node) return;
+    
+    for (let socketId in realityEditorSocketArray) {
+        let subscriptionInfo = realityEditorSocketArray[socketId];
+        subscriptionInfo.filter(info => {
+            return info.object === objectKey && info.frame === frameKey;
+        }).forEach(_info => {
+            io.sockets.connected[socketId].emit('object', JSON.stringify({
+                object: objectKey,
+                frame: frameKey,
+                node: nodeKey,
+                data: node.data,
+                sessionUuid: sessionUuid || 0
+            }));
+        });
+    }
+}
+
 function socketServer() {
     io.on('connection', function (socket) {
         console.log('------------ connection', socket.id);
@@ -4590,7 +4610,7 @@ function setupControllers() {
     frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
-    nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
+    nodeController.setup(objects, globalVariables, objectsPath, sceneGraph, socketHandler);
     objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }

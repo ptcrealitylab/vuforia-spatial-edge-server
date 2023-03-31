@@ -166,34 +166,45 @@
             compatibleFrameTypes: this.compatibleFrameTypes
         });
 
+        realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
+            
+            console.log('envelope was just created – init nodes');
 
             // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
-            let params = {
-                name: 'storage',
+            this.realityInterface.initNodeWithOptions('storage', {
                 x: 0,
                 y: 0,
-                groundplane: false,
-                type: 'storeData',
-                noDuplicate: true // only create if doesn't already exist
-            };
-            this.realityInterface.sendCreateNode(params.name, params.x, params.y, params.groundplane, params.type, params.noDuplicate);
+                attachToGroundPlane: false,
+                type: 'storeData'
+            });
 
             // also ensure that there is a node called 'open' on the envelope frame to open or close it
-            params = {
-                name: 'open',
+            this.realityInterface.initNodeWithOptions('open', {
                 x: 0,
                 y: 0,
-                groundplane: false,
+                attachToGroundPlane: false,
                 type: 'node',
-                noDuplicate: true, // only create if doesn't already exist
                 defaultValue: this.opensWhenAdded ? 1 : 0
-            };
-            this.realityInterface.sendCreateNode(params.name, params.x, params.y, params.groundplane, params.type, params.noDuplicate, params.defaultValue);
-        });
+            });
 
-        realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+            // setTimeout(() => {
+            //     let forceWrite = true;
+            //     // node, value, mode, unit, unitMin, unitMax, forceWrite
+            //     this.realityInterface.write('open', 1, 'f', false, 0, 1, forceWrite);
+            // }, 5000);
+
+            this.realityInterface.onSocketIoFullyInitialized(() => {
+                // let other messages propagate throughout the system first
+                setTimeout(() => {
+                    let forceWrite = true;
+                    // node, value, mode, unit, unitMin, unitMax, forceWrite
+                    this.realityInterface.write('open', 1, 'f', false, 0, 1, forceWrite);
+                }, 10);
+            });
+        });
 
         const adjustForScreenSize = (width, height) => {
             this.screenDimensions = {
