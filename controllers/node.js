@@ -5,6 +5,7 @@ const Node = require('../models/Node');
 var objects = {};
 var globalVariables;
 var sceneGraph;
+var socketHandler;
 
 /**
  * Creates a node on the frame specified frame.
@@ -54,6 +55,12 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
             utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
             sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
+
+            // trigger the engine once when the node is added, so that tool iframes subscribing to this node will get the default value
+            // engine.trigger(objectKey, frameKey, nodeKey, node);
+            if (socketHandler && typeof socketHandler.sendDataToAllSubscribers === 'function') {
+                socketHandler.sendDataToAllSubscribers(objectKey, frameKey, nodeKey);
+            }
 
         } else {
             errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
@@ -229,10 +236,11 @@ const getNode = function (objectID, frameID, nodeID) {
     return utilities.getNode(objects, objectID, frameID, nodeID);
 };
 
-const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_, socketHandler_) {
     objects = objects_;
     globalVariables = globalVariables_;
     sceneGraph = sceneGraph_;
+    socketHandler = socketHandler_;
 };
 
 module.exports = {

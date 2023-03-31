@@ -596,6 +596,11 @@
 
         this.onSpatialInterfaceLoaded = this.onRealityInterfaceLoaded;
         spatialObject.onload = () => this.spatialInterfaceLoadedCallbacks.forEach(cb => cb());
+        
+        this.socketIoLoadedCallbacks = [];
+        this.onSocketIoFullyInitialized = function(callback) {
+            this.socketIoLoadedCallbacks.push(callback);
+        }
 
         // Adds the API functions that allow a frame to send and receive socket messages (e.g. write and addReadListener)
         if (typeof io !== 'undefined') {
@@ -630,7 +635,6 @@
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
-            this.initNode = makeIoStub('initNode');
 
             /**
              * Internet of Screens APIs
@@ -665,6 +669,8 @@
                 this.sendMessageToFrame = makeSendStub('sendMessageToFrame');
                 this.sendMessageToTool = makeSendStub('sendMessageToTool');
                 this.sendEnvelopeMessage = makeSendStub('sendEnvelopeMessage');
+                this.initNodeWithOptions = makeSendStub('initNodeWithOptions');
+                this.initNode = makeSendStub('initNode');
                 this.sendCreateNode = makeSendStub('sendCreateNode');
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
@@ -851,11 +857,58 @@
         this.ioObject.on('close', function() {
             console.log('frame socket closed');
         });
+        
+        // function retryWithDelay(functionToTry, delay, numTriesLeft, callbackWhenDone) {
+        //     functionToTry((err, result) => {
+        //         if (!err) {
+        //             return callbackWhenDone(null, result);
+        //         }
+        //         if (numTriesLeft === 0) {
+        //             return callbackWhenDone(err);
+        //         }
+        //         setTimeout(() => {
+        //             retryWithDelay(functionToTry, delay * 2, numTriesLeft - 1, callbackWhenDone);
+        //         }, delay);
+        //     });
+        // }
+        //
+        // /**
+        //  * Subscribes this socket to data values being written to nodes on this frame
+        //  */
+        // this.sendRealityEditorSubscribe = function (callback) {
+        //     console.log('attempt sendRealityEditorSubscribe');
+        //     // let timeoutFunction = () => {
+        //         if (spatialObject.object) {
+        //             self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
+        //                 object: spatialObject.object,
+        //                 frame: spatialObject.frame,
+        //                 protocol: spatialObject.protocol
+        //             }));
+        //             if (callback) {
+        //                 callback(null, { success: true });
+        //             }
+        //         } else {
+        //             if (callback) {
+        //                 callback(new Error(`spatialObject.object hasn't loaded yet`));
+        //             }
+        //         }
+        //     // };
+        //     // // Call it a few times to help ensure it succeeds
+        //     // setTimeout(timeoutFunction, 10);
+        //     // setTimeout(timeoutFunction, 50);
+        //     // setTimeout(timeoutFunction, 100);
+        //     // setTimeout(timeoutFunction, 1000);
+        // };
+        //
+        // retryWithDelay(this.sendRealityEditorSubscribe, 10, 10, (err, result) => {
+        //     console.log('this.sendRealityEditorSubscribe finished retrying', err, result);
+        // });
 
         /**
          * Subscribes this socket to data values being written to nodes on this frame
          */
         this.sendRealityEditorSubscribe = function () {
+            console.log('attempt sendRealityEditorSubscribe');
             var timeoutFunction = function() {
                 if (spatialObject.object) {
                     // console.log('emit sendRealityEditorSubscribe');
@@ -895,6 +948,7 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
+                console.log(`%c emitting value ${data.value} to node ${node}`, 'color: red');
                 self.ioObject.emit(getIoTitle('object'), JSON.stringify({
                     object: spatialObject.object,
                     frame: spatialObject.frame,
@@ -913,8 +967,8 @@
         this.addReadListener = function (node, callback) {
             // TODO: add getIoTitle?
             self.ioObject.on('object', function (msg) {
-                console.log(`self.ioObject.on('object') [envelope]`);
                 var thisMsg = JSON.parse(msg);
+                console.log(`%c self.ioObject.on('object') [envelope]: ${thisMsg.node} , ${thisMsg.data.value}`, 'color: yellow');
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
                         if (thisMsg.data) {
@@ -1113,43 +1167,6 @@
         };
 
         /**
-         * Declares a new node that should be created for this frame.
-         * @param {string} name - required
-         * @param type - required. (default type should be "node")
-         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} scaleFactor - optional. defaults to 1
-         * @param {number|undefined} defaultValue - optional. defaults to 0
-         */
-        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
-            if (typeof name === 'undefined' || typeof type === 'undefined') {
-                console.error('initNode must specify a name and a type');
-            }
-            var nodeData = {
-                name: name,
-                type: type
-            };
-            if (typeof x !== 'undefined') {
-                nodeData.x = x;
-            }
-            if (typeof y !== 'undefined') {
-                nodeData.y = y;
-            }
-            if (typeof scaleFactor !== 'undefined') {
-                nodeData.scaleFactor = scaleFactor;
-            }
-            if (typeof defaultValue !== 'undefined') {
-                nodeData.defaultValue = defaultValue;
-            }
-
-            postDataToParent({
-                initNode: {
-                    nodeData: nodeData
-                }
-            });
-        };
-
-        /**
          * @deprecated
          *
          * Backwards compatible for UI requesting a socket message with the value of a certain node
@@ -1182,6 +1199,10 @@
             this[pendingIo.name].apply(this, pendingIo.args);
         }
         this.pendingIos = [];
+
+        this.socketIoLoadedCallbacks.forEach(callback => {
+            callback();
+        });
     };
 
     SpatialInterface.prototype.injectPostMessageAPI = function() {
@@ -1211,27 +1232,60 @@
             });
         };
 
-        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate, defaultValue) {
-            var data = {
-                name: name,
-                x: x,
-                y: y
-            };
-            if (typeof attachToGroundPlane !== 'undefined') {
-                data.attachToGroundPlane = attachToGroundPlane;
+        /**
+         * Updated API to init a node. initNode and sendCreateNode invoke this.
+         * @param {string} name
+         * @param {Object} options
+         */
+        this.initNodeWithOptions = function(name, options = {}) {
+            if (typeof name === 'undefined') {
+                console.error('initNode must specify a name');
+                return;
             }
-            if (typeof nodeType !== 'undefined') {
-                data.nodeType = nodeType;
-            }
-            if (typeof noDuplicate !== 'undefined') {
-                data.noDuplicate = noDuplicate;
-            }
-            if (typeof defaultValue !== 'undefined') {
-                data.defaultValue = defaultValue;
-            }
+
+            const {
+                type = 'node',
+                x,
+                y,
+                scaleFactor,
+                defaultValue,
+                attachToGroundPlane
+            } = options;
+
+            let nodeData = { name, type, x, y, scaleFactor, defaultValue, attachToGroundPlane };
+
             postDataToParent({
-                createNode: data
+                initNode: {
+                    nodeData: nodeData
+                }
             });
+        }
+
+        /**
+         * @deprecated - use initNodeWithOptions instead
+         * Declares a new node that should be created for this frame.
+         * @param {string} name - required
+         * @param type - required. (default type should be "node")
+         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} scaleFactor - optional. defaults to 1
+         * @param {number|undefined} defaultValue - optional. defaults to 0
+         */
+        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type, x, y, scaleFactor, defaultValue });
+        };
+
+        /**
+         * @deprecated – use initNodeWithOptions instead
+         */
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, _noDuplicate, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type: nodeType, x, y, attachToGroundPlane, defaultValue });
         };
 
         this.sendMoveNode = function (name, x, y) {
