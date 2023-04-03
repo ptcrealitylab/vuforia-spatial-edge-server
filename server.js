@@ -3701,7 +3701,7 @@ function socketServer() {
                         if (msg.publicData['whole_pose'].joints.length > 0) {
                             object.updateJoints(msg.publicData['whole_pose'].joints);
                             object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
-                            console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
+                            //console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
                             // keep the object alive
                             resetObjectTimeout(msg.object);
                         }
