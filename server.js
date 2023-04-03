@@ -626,6 +626,11 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
+var utilitiesCallbacks = {
+    triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
+}
+utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
+
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
 console.log('Done');
@@ -1133,15 +1138,15 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
 
     services.ip = services.getIP();
 
-    const messageStr = JSON.stringify({
+    const messageObj = {
         ip: services.ip,
         port: serverPort,
         vn: version,
         // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
         services: providedServices || [] // e.g. ['world'] if it can support a world object
-    });
+    };
 
-    const message = Buffer.from(messageStr);
+    // const message = Buffer.from(JSON.stringify(messageObj));
 
     // creating the datagram
     const client = dgram.createSocket('udp4');
@@ -1152,24 +1157,15 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
     });
 
     if (oneTimeOnly) {
-        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
-            if (err) throw err;
-            client.close(); // close the socket as the function is only called once.
-        });
+        utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: true});
         return;
     }
 
     console.log('server has the following heartbeat services: ' + providedServices);
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
-    setInterval(function () {
-        client.send(message, 0, message.length, udpPort, udpHost, function (err) {
-            if (err) {
-                console.log('You\'re not on a network. Can\'t send server beat', err);
-            } else if (globalVariables.debug) {
-                console.log('sent server beat on port ' + udpPort + ' with services ' + JSON.stringify(providedServices || []));
-            }
-        });
+    setInterval(() => {
+        utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: false});
     }, beatInterval + utilities.randomIntInc(-250, 250));
 }
 
@@ -1225,7 +1221,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
     //  console.log('with version number: ' + thisVersionNumber);
 
     // json string to be sent
-    const messageStr = JSON.stringify({
+    const messageObj = {
         id: thisId,
         ip: services.ip,
         port: serverPort,
@@ -1233,10 +1229,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         pr: protocol,
         tcs: objects[thisId].tcs,
         zone: objects[thisId].zone || '',
-    });
+    };
 
     if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
-    if (globalVariables.debug) console.log('Sending beats... Content', messageStr);
+    if (globalVariables.debug) console.log('Sending beats... Content', JSON.stringify(messageObj));
 
     // creating the datagram
     var client = dgram.createSocket({
@@ -1261,7 +1257,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
                 services.ip = services.getIP();
 
-                const message = Buffer.from(JSON.stringify({
+                const messageObj ={
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1269,22 +1265,21 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                     pr: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
-                }));
+                };
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
-                    client.send(message, 0, message.length, PORT, HOST, function (err) {
-                        if (err) {
-                            console.log('You\'re not on a network. Can\'t send anything', err);
-                            //throw err;
-                            for (var key in objects) {
+                    
+                    utilities.sendWithFallback(client, PORT, HOST, messageObj, {
+                        closeAfterSending: false,
+                        onErr: (_err) => {
+                            for (let key in objects) {
                                 objects[key].ip = services.ip;
                             }
                         }
-                        // client is not being closed, as the beat is send ongoing
                     });
                 }
             }
-        };
+        }
 
         // send one beat immediately and then start interval timer triggering beats
         if (immediate) {
@@ -1308,7 +1303,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
                 services.ip = services.getIP();
 
-                var message = Buffer.from(JSON.stringify({
+                let messageObj = {
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1316,12 +1311,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                     pr: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
-                }));
-                client.send(message, 0, message.length, PORT, HOST, function (err) {
-                    if (err) throw err;
-                    // close the socket as the function is only called once.
-                    client.close();
-                });
+                };
+
+                utilities.sendWithFallback(client, PORT, HOST, messageObj, {closeAfterSending: true});
             }
         }, delay);
     }
