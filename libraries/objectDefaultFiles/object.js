@@ -630,7 +630,6 @@
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
-            this.initNode = makeIoStub('initNode');
 
             /**
              * Internet of Screens APIs
@@ -665,6 +664,8 @@
                 this.sendMessageToFrame = makeSendStub('sendMessageToFrame');
                 this.sendMessageToTool = makeSendStub('sendMessageToTool');
                 this.sendEnvelopeMessage = makeSendStub('sendEnvelopeMessage');
+                this.initNodeWithOptions = makeSendStub('initNodeWithOptions');
+                this.initNode = makeSendStub('initNode');
                 this.sendCreateNode = makeSendStub('sendCreateNode');
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
@@ -1111,43 +1112,6 @@
         };
 
         /**
-         * Declares a new node that should be created for this frame.
-         * @param {string} name - required
-         * @param type - required. (default type should be "node")
-         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} scaleFactor - optional. defaults to 1
-         * @param {number|undefined} defaultValue - optional. defaults to 0
-         */
-        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
-            if (typeof name === 'undefined' || typeof type === 'undefined') {
-                console.error('initNode must specify a name and a type');
-            }
-            var nodeData = {
-                name: name,
-                type: type
-            };
-            if (typeof x !== 'undefined') {
-                nodeData.x = x;
-            }
-            if (typeof y !== 'undefined') {
-                nodeData.y = y;
-            }
-            if (typeof scaleFactor !== 'undefined') {
-                nodeData.scaleFactor = scaleFactor;
-            }
-            if (typeof defaultValue !== 'undefined') {
-                nodeData.defaultValue = defaultValue;
-            }
-
-            postDataToParent({
-                initNode: {
-                    nodeData: nodeData
-                }
-            });
-        };
-
-        /**
          * @deprecated
          *
          * Backwards compatible for UI requesting a socket message with the value of a certain node
@@ -1209,24 +1173,60 @@
             });
         };
 
-        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate) {
-            var data = {
-                name: name,
-                x: x,
-                y: y
-            };
-            if (typeof attachToGroundPlane !== 'undefined') {
-                data.attachToGroundPlane = attachToGroundPlane;
+        /**
+         * Updated API to init a node. initNode and sendCreateNode invoke this.
+         * @param {string} name
+         * @param {Object} options
+         */
+        this.initNodeWithOptions = function(name, options = {}) {
+            if (typeof name === 'undefined') {
+                console.error('initNode must specify a name');
+                return;
             }
-            if (typeof nodeType !== 'undefined') {
-                data.nodeType = nodeType;
-            }
-            if (typeof noDuplicate !== 'undefined') {
-                data.noDuplicate = noDuplicate;
-            }
+
+            const {
+                type = 'node',
+                x,
+                y,
+                scaleFactor,
+                defaultValue,
+                attachToGroundPlane
+            } = options;
+
+            let nodeData = { name, type, x, y, scaleFactor, defaultValue, attachToGroundPlane };
+
             postDataToParent({
-                createNode: data
+                initNode: {
+                    nodeData: nodeData
+                }
             });
+        }
+
+        /**
+         * @deprecated - use initNodeWithOptions instead
+         * Declares a new node that should be created for this frame.
+         * @param {string} name - required
+         * @param type - required. (default type should be "node")
+         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} scaleFactor - optional. defaults to 1
+         * @param {number|undefined} defaultValue - optional. defaults to 0
+         */
+        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type, x, y, scaleFactor, defaultValue });
+        };
+
+        /**
+         * @deprecated – use initNodeWithOptions instead
+         */
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, _noDuplicate, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type: nodeType, x, y, attachToGroundPlane, defaultValue });
         };
 
         this.sendMoveNode = function (name, x, y) {
@@ -2060,17 +2060,19 @@
             });
         };
 
+        let toolCreationCallbackCount = 0;
         this.wasToolJustCreated = function(callback) {
             if (typeof spatialObject.wasToolJustCreated === 'boolean') {
                 callback(spatialObject.wasToolJustCreated);
                 return;
             }
 
-            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+            let callbackName = 'toolCreationCall' + toolCreationCallbackCount;
+            spatialObject.messageCallBacks[callbackName] = function (msgContent) {
                 if (typeof msgContent.firstInitialization !== 'undefined') {
                     spatialObject.wasToolJustCreated = msgContent.firstInitialization;
                     callback(msgContent.firstInitialization);
-                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks[callbackName]; // only trigger it once
                 }
             };
         };
