@@ -1,11 +1,11 @@
 const utilities = require('../libraries/utilities');
 const Node = require('../models/Node');
+const server = require('../server');
 
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
 var sceneGraph;
-var socketHandler;
 
 /**
  * Creates a node on the frame specified frame.
@@ -50,8 +50,8 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
 
     // send default value to all iframes subscribing to this node, in case they finished loading before node was added
-    if (socketHandler && typeof socketHandler.sendDataToAllSubscribers === 'function') {
-        socketHandler.sendDataToAllSubscribers(objectKey, frameKey, nodeKey);
+    if (server.socketHandler && typeof server.socketHandler.sendDataToAllSubscribers === 'function') {
+        server.socketHandler.sendDataToAllSubscribers(objectKey, frameKey, nodeKey);
     }
 
     let response = {
@@ -218,11 +218,10 @@ const getNode = function (objectID, frameID, nodeID) {
     return utilities.getNode(objects, objectID, frameID, nodeID);
 };
 
-const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_, socketHandler_) {
+const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     sceneGraph = sceneGraph_;
-    socketHandler = socketHandler_; // use this to trigger socketHandler.sendDataToAllSubscribers
 };
 
 module.exports = {
