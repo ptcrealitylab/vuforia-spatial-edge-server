@@ -3433,6 +3433,33 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
 };
 
 /**
+ * Helper function to trigger the addReadListeners for the data of a particular node (data value, not publicData)
+ * @param {string} objectKey
+ * @param {string} frameKey
+ * @param {string} nodeKey
+ * @param {string} sessionUuid – the uuid of the client sending the message, so the sender can ignore their own message
+ */
+socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid = '0') {
+    let node = getNode(objectKey, frameKey, nodeKey);
+    if (!node) return;
+
+    for (let socketId in realityEditorSocketArray) {
+        let subscriptionInfo = realityEditorSocketArray[socketId];
+        subscriptionInfo.filter(info => {
+            return info.object === objectKey && info.frame === frameKey;
+        }).forEach(_info => {
+            io.sockets.connected[socketId].emit('object', JSON.stringify({
+                object: objectKey,
+                frame: frameKey,
+                node: nodeKey,
+                data: node.data,
+                sessionUuid: sessionUuid
+            }));
+        });
+    }
+}
+
+/**
  * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
  * @param {Array.<Object>} batchedUpdates
  */
