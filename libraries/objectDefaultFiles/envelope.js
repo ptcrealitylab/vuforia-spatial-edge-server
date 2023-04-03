@@ -36,15 +36,13 @@
      * @param {Array.<string>} compatibleFrameTypes - array of types of frames that can be added to this envelope
      * @param {HTMLElement} rootElementWhenOpen - a containing div that will be rendered when open (fullscreen 2D)
      * @param {HTMLElement} rootElementWhenClosed - a containing div that will be rendered when closed (small 3D icon)
-     * @param {boolean|undefined} isStackable - defaults to false
-     * @param {boolean|undefined} areFramesOrdered - defaults to false
-     * @param {{}|undefined} options - additional options
+     * @param {boolean} isStackable - whether other envelopes can be opened while this one is open
+     * @param {boolean} areFramesOrdered - whether to keep track of the order of all added frames
+     * @param {boolean} isFull2D - whether to add background blur and remove the touch overlay div to stop proxying touches
+     * @param {boolean} opensWhenAdded - whether the envelope initially opens (just the first time it's added)
      */
     function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, 
-        isStackable, areFramesOrdered, options = {isFull2D: false, opensWhenAdded: false}) {
-        if (typeof isStackable === 'undefined') { isStackable = false; }
-        if (typeof areFramesOrdered === 'undefined') { areFramesOrdered = false; }
-
+        isStackable = false, areFramesOrdered = false, isFull2D = false, opensWhenAdded = false) {
         /**
          * A pointer to the envelope frame's RealityInterface object, so that this can interact with the other JavaScript APIs
          */
@@ -68,12 +66,12 @@
          * If true, turns off overlay div so tool acts like 2D browser (touches are handled naturally, not thru proxy)
          * @type {boolean}
          */
-        this.isFull2D = options.isFull2D;
+        this.isFull2D = isFull2D;
         /**
          * If true, automatically opens the first time it is added (but not on subsequent loads)
          * @type {boolean}
          */
-        this.opensWhenAdded = options.opensWhenAdded;
+        this.opensWhenAdded = opensWhenAdded;
         /**
          * A map of all the frameIds -> frame data for each frame added to the envelope
          * @type {Object.<string, Object>}
@@ -230,7 +228,6 @@
             this.realityInterface.setStickyFullScreenOn({animated: true, full2D: this.isFull2D}); // currently assumes envelopes want 'sticky' fullscreen, not regular
             if (!this.isStackable) {
                 this.realityInterface.setExclusiveFullScreenOn(function() {
-                    console.log('envelope close from exclusiveFullScreen');
                     this.close(); // trigger all the side-effects related to the envelope closing
                 }.bind(this));
             }
@@ -242,7 +239,6 @@
             });
 
             if (!options.dontWrite) {
-                console.log('envelope write 1');
                 this.realityInterface.write('open', 1);
             }
         };
@@ -263,7 +259,6 @@
             });
 
             if (!options.dontWrite) {
-                console.log('envelope write 0');
                 this.realityInterface.write('open', 0);
             }
         };
@@ -428,11 +423,9 @@
                 this.sendMessageToAllContainedFrames(msgContent.envelopeMessage.sendMessageToContents);
             }
             if (typeof msgContent.envelopeMessage.open !== 'undefined') {
-                console.log('envelope open from onWindowMessage');
                 this.open();
             }
             if (typeof msgContent.envelopeMessage.close !== 'undefined') {
-                console.log('envelope close from onWindowMessage');
                 this.close();
             }
         };
@@ -489,8 +482,6 @@
          * Updates the UI and relevant frame properties when the envelope should become fullscreen.
          */
         Envelope.prototype._defaultOnOpen = function() {
-            console.log('_defaultOnOpen');
-
             this.rootElementWhenClosed.style.display = 'none';
             this.rootElementWhenOpen.style.display = '';
             // change the iframe and touch overlay size (including visual feedback corners) when the frame changes size
@@ -503,8 +494,6 @@
          * Resets the UI and relevant frame properties when the envelope is closed.
          */
         Envelope.prototype._defaultOnClose = function() {
-            console.log('_defaultOnClose');
-
             this.rootElementWhenClosed.style.display = '';
             this.rootElementWhenOpen.style.display = 'none';
             // change the iframe and touch overlay size (including visual feedback corners) when the frame changes size
@@ -575,19 +564,15 @@
          * @param {Data} event
          */
         Envelope.prototype._defaultOpenNodeListener = function(event) {
-            console.log('envelope read listener triggered');
             if (typeof this.lastOpenValue === 'undefined') {
                 this.lastOpenValue = event.value;
             }
             if (this.lastOpenValue === 0 && event.value === 0) {
-                console.log('PREVENTED envelope close: already closed', event);
                 return; // prevents it from closing itself when the node first loads or on duplicate data
             }
             if (event.value < 0.5) {
-                console.log('envelope close from _defaultOpenNodeListener');
                 this.close({ dontWrite: true });
             } else {
-                console.log('envelope open from _defaultOpenNodeListener');
                 this.open({ dontWrite: true });
             }
 

@@ -596,11 +596,6 @@
 
         this.onSpatialInterfaceLoaded = this.onRealityInterfaceLoaded;
         spatialObject.onload = () => this.spatialInterfaceLoadedCallbacks.forEach(cb => cb());
-        
-        this.socketIoLoadedCallbacks = [];
-        this.onSocketIoFullyInitialized = function(callback) {
-            this.socketIoLoadedCallbacks.push(callback);
-        }
 
         // Adds the API functions that allow a frame to send and receive socket messages (e.g. write and addReadListener)
         if (typeof io !== 'undefined') {
@@ -857,58 +852,11 @@
         this.ioObject.on('close', function() {
             console.log('frame socket closed');
         });
-        
-        // function retryWithDelay(functionToTry, delay, numTriesLeft, callbackWhenDone) {
-        //     functionToTry((err, result) => {
-        //         if (!err) {
-        //             return callbackWhenDone(null, result);
-        //         }
-        //         if (numTriesLeft === 0) {
-        //             return callbackWhenDone(err);
-        //         }
-        //         setTimeout(() => {
-        //             retryWithDelay(functionToTry, delay * 2, numTriesLeft - 1, callbackWhenDone);
-        //         }, delay);
-        //     });
-        // }
-        //
-        // /**
-        //  * Subscribes this socket to data values being written to nodes on this frame
-        //  */
-        // this.sendRealityEditorSubscribe = function (callback) {
-        //     console.log('attempt sendRealityEditorSubscribe');
-        //     // let timeoutFunction = () => {
-        //         if (spatialObject.object) {
-        //             self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
-        //                 object: spatialObject.object,
-        //                 frame: spatialObject.frame,
-        //                 protocol: spatialObject.protocol
-        //             }));
-        //             if (callback) {
-        //                 callback(null, { success: true });
-        //             }
-        //         } else {
-        //             if (callback) {
-        //                 callback(new Error(`spatialObject.object hasn't loaded yet`));
-        //             }
-        //         }
-        //     // };
-        //     // // Call it a few times to help ensure it succeeds
-        //     // setTimeout(timeoutFunction, 10);
-        //     // setTimeout(timeoutFunction, 50);
-        //     // setTimeout(timeoutFunction, 100);
-        //     // setTimeout(timeoutFunction, 1000);
-        // };
-        //
-        // retryWithDelay(this.sendRealityEditorSubscribe, 10, 10, (err, result) => {
-        //     console.log('this.sendRealityEditorSubscribe finished retrying', err, result);
-        // });
 
         /**
          * Subscribes this socket to data values being written to nodes on this frame
          */
         this.sendRealityEditorSubscribe = function () {
-            console.log('attempt sendRealityEditorSubscribe');
             var timeoutFunction = function() {
                 if (spatialObject.object) {
                     // console.log('emit sendRealityEditorSubscribe');
@@ -948,7 +896,6 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
-                console.log(`%c emitting value ${data.value} to node ${node}`, 'color: red');
                 self.ioObject.emit(getIoTitle('object'), JSON.stringify({
                     object: spatialObject.object,
                     frame: spatialObject.frame,
@@ -968,11 +915,9 @@
             // TODO: add getIoTitle?
             self.ioObject.on('object', function (msg) {
                 var thisMsg = JSON.parse(msg);
-                console.log(`%c self.ioObject.on('object') [envelope]: ${thisMsg.node} , ${thisMsg.data.value}`, 'color: yellow');
                 if (typeof thisMsg.node !== 'undefined') {
                     if (thisMsg.node === spatialObject.frame + node) {
                         if (thisMsg.data) {
-                            console.log(`thisMsg.node === spatialObject.frame + node  [envelope]`);
                             callback(thisMsg.data);
                         }
                     }
@@ -1199,10 +1144,6 @@
             this[pendingIo.name].apply(this, pendingIo.args);
         }
         this.pendingIos = [];
-
-        this.socketIoLoadedCallbacks.forEach(callback => {
-            callback();
-        });
     };
 
     SpatialInterface.prototype.injectPostMessageAPI = function() {

@@ -3419,10 +3419,17 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     }
 };
 
-socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid) {
+/**
+ * Helper function to trigger the addReadListeners for the data of a particular node (data value, not publicData)
+ * @param {string} objectKey
+ * @param {string} frameKey
+ * @param {string} nodeKey
+ * @param {string} sessionUuid – the uuid of the client sending the message, so the sender can ignore their own message
+ */
+socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid = '0') {
     let node = getNode(objectKey, frameKey, nodeKey);
     if (!node) return;
-    
+
     for (let socketId in realityEditorSocketArray) {
         let subscriptionInfo = realityEditorSocketArray[socketId];
         subscriptionInfo.filter(info => {
@@ -3433,7 +3440,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
                 frame: frameKey,
                 node: nodeKey,
                 data: node.data,
-                sessionUuid: sessionUuid || 0
+                sessionUuid: sessionUuid
             }));
         });
     }
@@ -3491,7 +3498,6 @@ function socketServer() {
                     var nodeName = frame.nodes[key].name;
                     publicData[nodeName] = frame.nodes[key].publicData;
 
-                    console.log(`emit('object')`);
                     io.sockets.connected[socket.id].emit('object', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
@@ -4341,8 +4347,6 @@ var engine = {
             internalObjectDestination.data[key] = thisNode.processedData[key];
         }*/
         internalObjectDestination.data = utilities.deepCopy(thisNode.processedData);
-        
-        console.log(`this.hardwareAPI.readCall(${thisLink.nodeB} , ${internalObjectDestination.data})`);
 
         // trigger hardware API to push data to the objects
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);

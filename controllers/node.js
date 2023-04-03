@@ -222,7 +222,7 @@ const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_, s
     objects = objects_;
     globalVariables = globalVariables_;
     sceneGraph = sceneGraph_;
-    socketHandler = socketHandler_;
+    socketHandler = socketHandler_; // use this to trigger socketHandler.sendDataToAllSubscribers
 };
 
 module.exports = {
