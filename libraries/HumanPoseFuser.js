@@ -282,14 +282,14 @@ class HumanPoseFuser {
             // remove parent reference from its remaining associated human objects
             for (let id of this.humanObjectsOfFusedObject[objectId]) {
                 if (this.objectsRef[id] !== undefined) {
-                    this.objectsRef[id].parent = null;
+                    this.objectsRef[id].parent = 'none';
 
                     this.batchedUpdates[id] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
                         propertyPath: 'parent',
-                        newValue: null,
+                        newValue: 'none',
                         editorId: 0
                     };
                 }
@@ -626,7 +626,7 @@ class HumanPoseFuser {
                     if (!proximityMatrix[fi][index]) {
                         // detach the standard object from the fused human object so the pose is not used in subsequent fusion
                         this.humanObjectsOfFusedObject.removeStandardObject(id);
-                        parentValue = null;
+                        parentValue = 'none';
                         unassignedStandardIndices.push(index);
                         if (this.verbose) {
                             console.log('unassigning human obj=' + id + ' from ' + fid);
@@ -657,6 +657,9 @@ class HumanPoseFuser {
             }
 
             if (parentValue !== undefined) {
+                // set new parent reference
+                this.objectsRef[id].parent = parentValue;
+
                 // make entry in batchedUpdates
                 this.batchedUpdates[id] = {
                     objectKey: id,
