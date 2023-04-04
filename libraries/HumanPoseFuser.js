@@ -307,8 +307,11 @@ class HumanPoseFuser {
         // get the latest data timestamp
         let latestTS = 0;
         for (let objPoses of Object.values(this.pastPoses)) {
-            if (objPoses.poses.length > 0 && objPoses.poses.at(-1).timestamp > latestTS) {
-                latestTS = objPoses.poses.at(-1).timestamp;
+            if (objPoses.poses.length > 0) {
+                let latestPose = objPoses.poses[objPoses.poses.length - 1];
+                if (latestPose.timestamp > latestTS) {
+                    latestTS = latestPose.timestamp;
+                }
             }
         }
 
@@ -354,18 +357,19 @@ class HumanPoseFuser {
         let latestTS = 0;
         for (let [objectId, objPoses] of Object.entries(this.pastPoses)) {
             if (objPoses.poses.length > 0) {
-                let ts = objPoses.poses.at(-1).timestamp;
+                let latestPose = objPoses.poses[objPoses.poses.length - 1];
+                let ts = latestPose.timestamp;
 
                 if (this.humanObjectsOfFusedObject[objectId] !== undefined) {
                     // a fused human object
-                    matchingPoses[objectId] = objPoses.poses.at(-1);
+                    matchingPoses[objectId] = latestPose;
                     if (ts > latestTS) {
                         latestTS = ts;
                     }
                 } else {
                     // a standard human object from the app
                     if (ts > objPoses.latestFusedDataTS) {
-                        matchingPoses[objectId] = objPoses.poses.at(-1);
+                        matchingPoses[objectId] = latestPose;
                         objPoses.latestFusedDataTS = ts;
                         if (ts > latestTS) {
                             latestTS = ts;
