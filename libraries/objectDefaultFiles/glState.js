@@ -86,7 +86,7 @@
 
 /**
  *  the parsed version of the DeviceDescription class
- * @typedef {{supportedExtensions: string[], parameters: {}, shaderPrecisionFormats: {}}} JSONDeviceDescription
+ * @typedef {{supportedExtensions: string[], parameters: {}, shaderPrecisionFormats: {}, extColorBufferHalfFloat: {}, extTextureFilterAnisotropic: {}, webglDebugRendererInfo: {}}} JSONDeviceDescription
  */
 
 /**
@@ -1033,13 +1033,20 @@ class DeviceDescription {
     static MAX_VERTEX_ATTRIBS = 0x8869;
     static MAX_VERTEX_TEXTURE_IMAGE_UNITS = 0x8B4C;
     static MAX_VERTEX_UNIFORM_VECTORS = 0x8DFB;
+    static MAX_RENDERBUFFER_SIZE = 0x84E8;
+    static MAX_ARRAY_TEXTURE_LAYERS = 0x88FF;
     static MEDIUM_FLOAT = 0x8DF1;
     static MEDIUM_INT = 0x8DF4;
+    static VENDOR = 0x1F00;
+    static RENDERER = 0x1F01;
     static VERSION = 0x1F02;
     static VERTEX_SHADER = 0x8B31;
     // WebGL 2.0
     static MAX_SAMPLES = 0x8D57;
     static MAX_UNIFORM_BUFFER_BINDINGS = 0x8A2F;
+    // EXT_color_buffer_float
+    static RGBA32F_EXT = 0x881B;
+    static RGB32F_EXT = 0x881A;
     // EXT_color_buffer_half_float
     static FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT = 0x8211;
     static RGB16F_EXT = 0x881B;
@@ -1048,6 +1055,9 @@ class DeviceDescription {
     // EXT_texture_filter_anisotropic
     static MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
     static TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE;
+    // WEBGL_debug_renderer_info
+    static UNMASKED_VENDOR_WEBGL = 0x9245;
+    static UNMASKED_RENDERER_WEBGL = 0x9246;
     
     /**
      * 
@@ -1083,7 +1093,11 @@ class DeviceDescription {
         this.parameters.set(DeviceDescription.MAX_VARYING_VECTORS, new NamedNumberParameter("MAX_VARYING_VECTORS", gl.getParameter(DeviceDescription.MAX_VARYING_VECTORS)));
         this.parameters.set(DeviceDescription.MAX_FRAGMENT_UNIFORM_VECTORS, new NamedNumberParameter("MAX_FRAGMENT_UNIFORM_VECTORS", gl.getParameter(DeviceDescription.MAX_FRAGMENT_UNIFORM_VECTORS)));
         this.parameters.set(DeviceDescription.MAX_COMBINED_TEXTURE_IMAGE_UNITS, new NamedNumberParameter("MAX_COMBINED_TEXTURE_IMAGE_UNITS", gl.getParameter(DeviceDescription.MAX_COMBINED_TEXTURE_IMAGE_UNITS)));
+        this.parameters.set(DeviceDescription.MAX_RENDERBUFFER_SIZE, new NamedNumberParameter("MAX_RENDERBUFFER_SIZE", gl.getParameter(DeviceDescription.MAX_RENDERBUFFER_SIZE)));
+        this.parameters.set(DeviceDescription.MAX_ARRAY_TEXTURE_LAYERS, new NamedNumberParameter("MAX_ARRAY_TEXTURE_LAYERS", gl.getParameter(DeviceDescription.MAX_ARRAY_TEXTURE_LAYERS)));
         this.parameters.set(DeviceDescription.VERSION, new NamedStringParameter("VERSION", gl.getParameter(DeviceDescription.VERSION)));
+        this.parameters.set(DeviceDescription.VENDOR, new NamedStringParameter("VENDOR", gl.getParameter(DeviceDescription.VENDOR)));
+        this.parameters.set(DeviceDescription.RENDERER, new NamedStringParameter("RENDERER", gl.getParameter(DeviceDescription.RENDERER)));
         let maxSamples = 0;
         let maxUniformBufferBindings = 0;
         if (gl instanceof WebGL2RenderingContext) {
@@ -1104,13 +1118,25 @@ class DeviceDescription {
          */
         this.supportedExtensions = (supportedExtensions === null) ? [] : supportedExtensions;
         // enable all known extensions and send device bound values (the state object will handle extension state variables)
-        if ("EXT_texture_filter_anisotropic" in this.supportedExtensions) {
+        if (this.supportedExtensions.includes("EXT_texture_filter_anisotropic")) {
             const ext = gl.getExtension("EXT_texture_filter_anisotropic");
             if (ext !== null) {
                 maxTextureMaxAniso = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-            }
+            }   
         }
         this.parameters.set(DeviceDescription.MAX_TEXTURE_MAX_ANISOTROPY_EXT, new NamedNumberParameter("MAX_TEXTURE_MAX_ANISOTROPY_EXT", maxTextureMaxAniso));
+
+        let unmaskedVendorWebgl = "";
+        let unmaskedRendererWebgl = "";
+        if (this.supportedExtensions.includes("WEBGL_debug_renderer_info")) {
+            const ext = gl.getExtension("WEBGL_debug_renderer_info");
+            if (ext !== null) {
+                unmaskedVendorWebgl = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
+                unmaskedRendererWebgl = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+            }
+        }
+        this.parameters.set(DeviceDescription.UNMASKED_VENDOR_WEBGL, new NamedStringParameter("UNMASKED_VENDOR_WEBGL", unmaskedVendorWebgl));
+        this.parameters.set(DeviceDescription.UNMASKED_RENDERER_WEBGL, new NamedStringParameter("UNMASKED_RENDERER_WEBGL", unmaskedRendererWebgl));
     }
 
     /**
@@ -1204,6 +1230,14 @@ class GLState {
         this.parameters = new Map();
         this.parameters.set(this.gl.ARRAY_BUFFER_BINDING, new NamedHandleParameter("ARRAY_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
         this.parameters.set(this.gl.BLEND, new NamedBooleanParameter("BLEND", false));
+        this.parameters.set(this.gl.BLEND_COLOR, new NamedFloat32ArrayParameter("BLEND_COLOR", new Float32Array([0, 0, 0, 0])));
+        this.parameters.set(this.gl.BLEND_EQUATION, new NamedNumberParameter("BLEND_EQUATION", this.gl.FUNC_ADD));
+        this.parameters.set(this.gl.BLEND_EQUATION_RGB, new NamedNumberParameter("BLEND_EQUATION_RGB", this.gl.FUNC_ADD));
+        this.parameters.set(this.gl.BLEND_EQUATION_ALPHA, new NamedNumberParameter("BLEND_EQUATION_ALPHA", this.gl.FUNC_ADD));
+        this.parameters.set(this.gl.BLEND_DST_ALPHA, new NamedNumberParameter("BLEND_FUNC_DST_ALPHA", this.gl.ZERO));
+        this.parameters.set(this.gl.BLEND_DST_RGB, new NamedNumberParameter("BLEND_FUNC_DST_ALPHA", this.gl.ZERO));
+        this.parameters.set(this.gl.BLEND_SRC_ALPHA, new NamedNumberParameter("BLEND_FUNC_SRC_ALPHA", this.gl.ONE));
+        this.parameters.set(this.gl.BLEND_SRC_RGB, new NamedNumberParameter("BLEND_FUNC_SRC_ALPHA", this.gl.ONE));
         this.parameters.set(this.gl.COLOR_CLEAR_VALUE, new NamedFloat32ArrayParameter("COLOR_CLEAR_VALUE", new Float32Array([0, 0, 0, 0]))); 
         this.parameters.set(this.gl.COLOR_WRITEMASK, new NamedBooleanArrayParameter("COLOR_WRITEMASK", [true, true, true, true]))
         this.parameters.set(this.gl.CULL_FACE, new NamedBooleanParameter("CULL_FACE", false));
@@ -1231,6 +1265,7 @@ class GLState {
             this.parameters.set(this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING, new NamedHandleParameter("TRANSFORM_FEEDBACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
             this.parameters.set(this.gl.UNIFORM_BUFFER_BINDING, new NamedHandleParameter("UNIFORM_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables))); 
             this.parameters.set(this.gl.VERTEX_ARRAY_BINDING, new NamedHandleParameter("VERTEX_ARRAY_BINDING", GLState.getBufferHandle(null, unclonables))); 
+            this.parameters.set(this.gl.RENDERBUFFER_BINDING, new NamedHandleParameter("RENDERBUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
         }
 
         /**
@@ -1290,6 +1325,7 @@ class GLState {
             needHandle.push(gl.PIXEL_PACK_BUFFER_BINDING);
             needHandle.push(gl.PIXEL_UNPACK_BUFFER_BINDING);
             needHandle.push(gl.VERTEX_ARRAY_BINDING);
+            needHandle.push(gl.RENDERBUFFER_BINDING);
         }
         needHandle.forEach(key => {
             let parameter = ret.parameters.get(key);
@@ -1299,7 +1335,15 @@ class GLState {
         });
         const nativeValues = [
             gl.BLEND,
+            gl.BLEND_COLOR,
             gl.COLOR_CLEAR_VALUE,
+            gl.BLEND_EQUATION,
+            gl.BLEND_EQUATION_RGB,
+            gl.BLEND_EQUATION_ALPHA,
+            gl.BLEND_DST_ALPHA,
+            gl.BLEND_DST_RGB,
+            gl.BLEND_SRC_ALPHA,
+            gl.BLEND_SRC_RGB,
             gl.COLOR_WRITEMASK,
             gl.CULL_FACE,
             gl.CULL_FACE_MODE,
@@ -1403,6 +1447,81 @@ class GLState {
                 if (parameter !== undefined) {
                     parameter.value = command.args[0];
                 }
+            }
+         } else if (command.name === "bindRenderBuffer") {
+            let bufferTargetToTargetBinding = new Map()
+            bufferTargetToTargetBinding.set(this.gl.RENDERBUFFER, this.gl.RENDERBUFFER_BINDING);
+            let bufferBinding = bufferTargetToTargetBinding.get(command.args[0]);
+            if (bufferBinding !== undefined) {
+                let parameter = this.parameters.get(bufferBinding);
+                if (parameter !== undefined) {
+                    parameter.value = command.args[1];
+                }
+            }
+        } else if(command.name === "blendColor") {
+            let parameter = this.parameters.get(this.gl.BLEND_COLOR);
+            if (parameter !== undefined) {
+                parameter.value = new Float32Array([command.args[0], command.args[1], command.args[2], command.args[3]]);
+            }
+        } else if(command.name === "blendEquation") {
+            let parameter = this.parameters.get(this.gl.BLEND_EQUATION);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0];
+            }
+            let parameterRGB = this.parameters.get(this.gl.BLEND_EQUATION_RGB);
+            if (parameterRGB !== undefined) {
+                parameterRGB.value = command.args[0];
+            }
+            let parameterAlpha = this.parameters.get(this.gl.BLEND_EQUATION_ALPHA);
+            if (parameterAlpha !== undefined) {
+                parameterAlpha.value = command.args[0];
+            }
+        } else if(command.name === "blendEquationSeparate") {
+            let parameter = this.parameters.get(this.gl.BLEND_EQUATION);
+            if (parameter !== undefined) {
+                parameter.value = command.args[0] === command.args[1] ? command.args[0] : this.gl.INVALID_VALUE;
+            }
+            let parameterRGB = this.parameters.get(this.gl.BLEND_EQUATION_RGB);
+            if (parameterRGB !== undefined) {
+                parameterRGB.value = command.args[0];
+            }
+            let parameterAlpha = this.parameters.get(this.gl.BLEND_EQUATION_ALPHA);
+            if (parameterAlpha !== undefined) {
+                parameterAlpha.value = command.args[1];
+            }
+        } else if(command.name === "blendFunction") {
+            let parameterDstRGB = this.parameters.get(this.gl.BLEND_DST_RGB);
+            if (parameterDstRGB !== undefined) {
+                parameterDstRGB.value = command.args[0];
+            }
+            let parameterDstAlpha = this.parameters.get(this.gl.BLEND_DST_ALPHA);
+            if (parameterDstAlpha !== undefined) {
+                parameterDstAlpha.value = command.args[0];
+            }
+            let parameterSrcRGB = this.parameters.get(this.gl.BLEND_SRC_RGB);
+            if (parameterSrcRGB !== undefined) {
+                parameterSrcRGB.value = command.args[0];
+            }
+            let parameterSrcAlpha = this.parameters.get(this.gl.BLEND_SRC_ALPHA);
+            if (parameterSrcAlpha !== undefined) {
+                parameterSrcAlpha.value = command.args[0];
+            }
+        } else if(command.name === "blendFunctionSeparate") {
+            let parameterDstRGB = this.parameters.get(this.gl.BLEND_DST_RGB);
+            if (parameterDstRGB !== undefined) {
+                parameterDstRGB.value = command.args[1];
+            }
+            let parameterDstAlpha = this.parameters.get(this.gl.BLEND_DST_ALPHA);
+            if (parameterDstAlpha !== undefined) {
+                parameterDstAlpha.value = command.args[1];
+            }
+            let parameterSrcRGB = this.parameters.get(this.gl.BLEND_SRC_RGB);
+            if (parameterSrcRGB !== undefined) {
+                parameterSrcRGB.value = command.args[0];
+            }
+            let parameterSrcAlpha = this.parameters.get(this.gl.BLEND_SRC_ALPHA);
+            if (parameterSrcAlpha !== undefined) {
+                parameterSrcAlpha.value = command.args[0];
             }
         } else if(command.name === "clearColor") {
             let parameter = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
@@ -1513,6 +1632,13 @@ class GLState {
                 }
             }
         });
+        let rbParameter = this.parameters.get(this.gl.RENDERBUFFER_BINDING);
+        if ((rbParameter !== undefined) && (rbParameter.value instanceof Handle)) {
+            let buffer =  this.unclonables.get(rbParameter.value.handle);
+            if (buffer instanceof WebGLRenderbuffer) {
+                this.gl.bindRenderBuffer(this.gl.RENDERBUFFER, buffer);
+            }
+        }
         this.textureBinds.forEach((textureBind, key) => textureBind.value.forceApply());
         this.gl.activeTexture(this.activeTexture);
         const toggleParameters = [this.gl.BLEND, this.gl.CULL_FACE, this.gl.DEPTH_TEST, this.gl.DITHER, this.gl.POLYGON_OFFSET_FILL, this.gl.SAMPLE_ALPHA_TO_COVERAGE, this.gl.SAMPLE_COVERAGE, this.gl.SCISSOR_TEST, this.gl.STENCIL_TEST];
@@ -1522,6 +1648,23 @@ class GLState {
                 this.gl[parameter.value ? "enable" : "disable"](key);
             }
         });
+        const blendColor = this.parameters.get(this.gl.BLEND_COLOR);
+        if ((blendColor !== undefined) && (blendColor.value instanceof Float32Array)) {
+            this.gl.blendColor(blendColor.value[0], blendColor.value[1], blendColor.value[2], blendColor.value[3]);
+        }
+        const blendEquationAlpha = this.parameters.get(this.gl.BLEND_EQUATION_ALPHA);
+        const blendEquationRGB = this.parameters.get(this.gl.BLEND_EQUATION_RGB);
+
+        if ((blendEquationAlpha !== undefined) && (typeof blendEquationAlpha.value === "number") && (blendEquationRGB !== undefined) && (typeof blendEquationRGB.value === "number")) {
+            this.gl.blendEquationSeparate(blendEquationRGB.value, blendEquationAlpha.value);
+        }
+        const blendDstAlpha = this.parameters.get(this.gl.BLEND_DST_ALPHA);
+        const blendDstRGB = this.parameters.get(this.gl.BLEND_DST_RGB);
+        const blendSrcAlpha = this.parameters.get(this.gl.BLEND_SRC_ALPHA);
+        const blendSrcRGB = this.parameters.get(this.gl.BLEND_SRC_RGB);
+        if ((blendDstAlpha !== undefined) && (typeof blendDstAlpha.value === "number") && (blendDstRGB !== undefined) && (typeof blendDstRGB.value === "number") && (blendSrcAlpha !== undefined) && (typeof blendSrcAlpha.value === "number") && (blendSrcRGB !== undefined) && (typeof blendSrcRGB.value === "number")) {           
+            this.gl.blendFuncSeparate(blendSrcRGB.value, blendSrcAlpha.value, blendDstRGB.value, blendDstAlpha.value);
+        }
         const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
         if ((clearColor !== undefined) && (clearColor.value instanceof Float32Array)) {
             this.gl.clearColor(clearColor.value[0], clearColor.value[1], clearColor.value[2], clearColor.value[3]);
@@ -1595,6 +1738,14 @@ class GLState {
                 }
             }
         }
+        let rbParameter = this.parameters.get(this.gl.RENDERBUFFER_BINDING);
+        const curRbParameter = curState.parameters.get(this.gl.RENDERBUFFER_BINDING);
+        if ((curRbParameter !== undefined) && (rbParameter !== undefined) && (curRbParameter.value !== rbParameter.value) && (rbParameter.value instanceof Handle)) {
+            let buffer =  this.unclonables.get(rbParameter.value.handle);
+            if (buffer !== undefined) {
+                this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, buffer);
+            }
+        }
         this.textureBinds.forEach((textureBind, key) => {
             const curTextureBind = curState.textureBinds.get(key);
             if ((curTextureBind !== undefined)) {
@@ -1616,6 +1767,29 @@ class GLState {
                 }
             }
         });
+        const blendColor = this.parameters.get(this.gl.BLEND_COLOR);
+        const curBlendColor = curState.parameters.get(this.gl.BLEND_COLOR);
+        if ((blendColor !== undefined) && (curBlendColor !== undefined) && (curBlendColor.value !== blendColor.value) && (blendColor.value instanceof Float32Array)) {
+            this.gl.blendColor(blendColor.value[0], blendColor.value[1], blendColor.value[2], blendColor.value[3]);
+        }
+        const curBlendEquationAlpha = curState.parameters.get(this.gl.BLEND_EQUATION_ALPHA);
+        const curBlendEquationRGB = curState.parameters.get(this.gl.BLEND_EQUATION_RGB);
+        const blendEquationAlpha = this.parameters.get(this.gl.BLEND_EQUATION_ALPHA); 
+        const blendEquationRGB = this.parameters.get(this.gl.BLEND_EQUATION_RGB);
+        if ((blendEquationAlpha !== undefined) && (curBlendEquationAlpha !== undefined) && (typeof blendEquationAlpha.value === "number") && (blendEquationRGB !== undefined) && (curBlendEquationRGB !== undefined) && (typeof blendEquationRGB.value === "number") && ((curBlendEquationAlpha.value !== blendEquationAlpha.value) || (curBlendEquationRGB.value !== blendEquationRGB.value))) {
+            this.gl.blendEquationSeparate(blendEquationRGB.value, blendEquationAlpha.value);
+        }
+        const curBlendDstAlpha = curState.parameters.get(this.gl.BLEND_DST_ALPHA);
+        const curBlendDstRGB = curState.parameters.get(this.gl.BLEND_DST_RGB);
+        const curBlendSrcAlpha = curState.parameters.get(this.gl.BLEND_SRC_ALPHA);
+        const curBlendSrcRGB = curState.parameters.get(this.gl.BLEND_SRC_RGB);
+        const blendDstAlpha = this.parameters.get(this.gl.BLEND_DST_ALPHA); 
+        const blendDstRGB = this.parameters.get(this.gl.BLEND_DST_RGB);
+        const blendSrcAlpha = this.parameters.get(this.gl.BLEND_SRC_ALPHA); 
+        const blendSrcRGB = this.parameters.get(this.gl.BLEND_SRC_RGB);
+        if ((blendDstAlpha !== undefined) && (curBlendDstAlpha !== undefined) && (typeof blendDstAlpha.value === "number") && (blendDstRGB !== undefined) && (curBlendDstRGB !== undefined) && (blendSrcAlpha !== undefined) && (curBlendSrcAlpha !== undefined) && (typeof blendSrcAlpha.value === "number") && (blendSrcRGB !== undefined) && (curBlendSrcRGB !== undefined) && (typeof blendSrcRGB.value === "number") && ((curBlendDstAlpha.value !== blendDstAlpha.value) || (curBlendDstRGB.value !== blendDstRGB.value) || (curBlendSrcAlpha.value !== blendSrcAlpha.value) || (curBlendSrcRGB.value !== blendSrcRGB.value))) {
+            this.gl.blendFuncSeparate(blendSrcRGB.value, blendDstRGB.value, blendSrcAlpha.value, blendDstAlpha.value);
+        }
         const clearColor = this.parameters.get(this.gl.COLOR_CLEAR_VALUE);
         const curClearColor = curState.parameters.get(this.gl.COLOR_CLEAR_VALUE);
         if ((clearColor !== undefined) && (curClearColor !== undefined) && (curClearColor.value !== clearColor.value) && (clearColor.value instanceof Float32Array)) {

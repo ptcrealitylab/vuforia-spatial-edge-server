@@ -1,4 +1,4 @@
-import {Handle} from "./glState.js"
+import {DeviceDescription, GLState, Handle} from "./glState.js"
 
 /**
  * Creates a gl context that stores all received commands in the active command buffer object.
@@ -66,6 +66,27 @@ class GLCommandBufferContext {
                 this.gl.attachShader = (program, shader) => {
                     this.addMessage(fnName, [program, shader]);
                 };
+            } else if (fnName === "beginQuery") {
+                 /**
+                 * @type {function(GLenum, Handle):void}
+                 */ 
+                this.gl.beginQuery = (target, query) => {
+                    this.addMessage(fnName, [target, query]);
+                };
+             } else if (fnName === "beginTransformFeedback") {
+                 /**
+                 * @type {function(GLenum):void}
+                 */ 
+                this.gl.beginTransformFeedback = (primitiveMode) => {
+                    this.addMessage(fnName, [primitiveMode]);
+                };
+            } else if (fnName === "bindAttribLocation") {   
+                /**
+                 * @type {function(Handle, GLuint, string):void}
+                 */ 
+                this.gl.bindAttribLocation = (program, index, name) => {
+                    this.addMessage(fnName, [program, index, name]);
+                };
             } else if (fnName === "bindBuffer") {    
                 /**
                  * @type {function(GLenum, Handle):void}
@@ -88,6 +109,44 @@ class GLCommandBufferContext {
                     this.state.parameters[bufferTargetToTargetBinding[target]].value = buffer;
                     this.addMessage(fnName, [target, buffer]);
                 };
+            } else if (fnName === "bindBufferBase") {   
+                /**
+                 * @type {function(GLenum, GLuint, Handle):void}
+                 */ 
+                this.gl.bindBufferBase = (target, index, buffer) => {
+                    let bufferTargetToTargetBinding = {}
+                    bufferTargetToTargetBinding[this.gl.TRANSFORM_FEEDBACK_BUFFER] = this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING;
+                    bufferTargetToTargetBinding[this.gl.UNIFORM_BUFFER] = this.gl.UNIFORM_BUFFER_BINDING
+                    // todo: state tracking for non general binding points (index)
+                    this.addMessage(fnName, [target, index, buffer]);
+                };
+            } else if (fnName === "bindBufferRange") {   
+                /**
+                 * @type {function(GLenum, GLuint, Handle, GLintptr, GLsizeiptr):void}
+                 */ 
+                this.gl.bindBufferRange = (target, index, buffer, offset, size) => {
+                    let bufferTargetToTargetBinding = {}
+                    bufferTargetToTargetBinding[this.gl.TRANSFORM_FEEDBACK_BUFFER] = this.gl.TRANSFORM_FEEDBACK_BUFFER_BINDING;
+                    bufferTargetToTargetBinding[this.gl.UNIFORM_BUFFER] = this.gl.UNIFORM_BUFFER_BINDING
+                    // todo: state tracking for non general binding points (index)
+                    this.addMessage(fnName, [target, index, buffer, offset, size]);
+                };
+            } else if (fnName === "bindRenderbuffer") {   
+                /**
+                 * @type {function(GLenum, Handle):void}
+                 */ 
+                this.gl.bindRenderBuffer = (target, renderbuffer) => {
+                    this.state.parameters[this.gl.RENDERBUFFER_BINDING].value = renderbuffer;
+                    this.addMessage(fnName, [target, renderbuffer]);
+                };
+            } else if (fnName === "bindSampler") {
+                 /**
+                 * @type {function(GLuint, Handle):void}
+                 */ 
+                this.gl.bindSampler = (unit, sampler) => {
+                    // todo: statetracking in the texture unit
+                    this.addMessage(fnName, [unit, sampler]);
+                };    
             } else if (fnName === "bindTexture") {   
                 /**
                  * @type {function(GLenum, Handle):void}
@@ -96,12 +155,78 @@ class GLCommandBufferContext {
                     this.state.textureBinds[this.state.activeTexture].value.targets[target].value.texture = texture;
                     this.addMessage(fnName, [target, texture]);
                 };
+            } else if (fnName === "bindTransformFeedback") {
+                 /**
+                 * @type {function(GLenum, Handle):void}
+                 */ 
+                this.gl.bindTransformFeedback = (target, transformFeedback) => {
+                    // todo: statetracking
+                    this.addMessage(fnName, [target, transformFeedback]);
+                };  
             } else if (fnName === "bindVertexArray") {
                 /**
                  * @type {function(Handle):void}
                  */
                 this.gl.bindVertexArray = (vertexArray) => {
                     this.addMessage(fnName, [vertexArray])
+                }
+             } else if (fnName === "blendColor") {
+                /**
+                 * @type {function(GLclampf, GLclampf, GLclampf, GLclampf):void}
+                 */
+                this.gl.blendColor = (red, green, blue, alpha) => {
+                    this.state.parameters[this.gl.BLEND_COLOR].value = new Float32Array([red, green, blue, alpha]);
+                    this.addMessage(fnName, [red, green, blue, alpha]);
+                }
+            } else if (fnName === "blendEquation") {
+                /**
+                 * @type {function(GLenum):void}
+                 */
+                this.gl.blendEquation = (mode) => {
+                    this.state.parameters[this.gl.BLEND_EQUATION].value = mode;
+                    this.state.parameters[this.gl.BLEND_EQUATION_RGB].value = mode;
+                    this.state.parameters[this.gl.BLEND_EQUATION_ALPHA].value = mode;
+                    this.addMessage(fnName, [mode]);
+                }
+            } else if (fnName === "blendEquationSeparate") {
+                /**
+                 * @type {function(GLenum, GLenum):void}
+                 */
+                this.gl.blendEquationSeparate = (modeRGB, modeAlpha) => {
+                    this.state.parameters[this.gl.BLEND_EQUATION].value = modeRGB === modeAlpha ? modeRGB : this.gl.INVALID_ENUM;
+                    this.state.parameters[this.gl.BLEND_EQUATION_RGB].value = modeRGB;
+                    this.state.parameters[this.gl.BLEND_EQUATION_ALPHA].value = modeAlpha;
+                    this.addMessage(fnName, [modeRGB, modeAlpha]);
+                }
+            } else if (fnName === "blendFunc") {
+                /**
+                 * @type {function(GLenum, GLenum):void}
+                 */
+                this.gl.blendFunc = (sfactor, dfactor) => {
+                    this.state.parameters[this.gl.BLEND_SRC_RGB].value = sfactor;
+                    this.state.parameters[this.gl.BLEND_SRC_ALPHA].value = sfactor;
+                    this.state.parameters[this.gl.BLEND_DST_RGB].value = dfactor;
+                    this.state.parameters[this.gl.BLEND_DST_ALPHA].value = dfactor;
+                    this.addMessage(fnName, [sfactor, dfactor])
+                }
+             } else if (fnName === "blendFuncSeparate") {
+                /**
+                 * @type {function(GLenum, GLenum, GLenum, GLenum):void}
+                 */
+                this.gl.blendFuncSeparate = (srcRGB, dstRGB, srcAlpha, dstAlpha) => {
+                    this.state.parameters[this.gl.BLEND_SRC_RGB].value = srcRGB;
+                    this.state.parameters[this.gl.BLEND_SRC_ALPHA].value = srcAlpha;
+                    this.state.parameters[this.gl.BLEND_DST_RGB].value = dstRGB;
+                    this.state.parameters[this.gl.BLEND_DST_ALPHA].value = dstAlpha;
+                    this.addMessage(fnName, [srcRGB, dstRGB, srcAlpha, dstAlpha])
+                }
+             } else if (fnName === "blitFramebuffer") {
+                /**
+                 * @type {function(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum):void}
+                 */
+                this.gl.blitFramebuffer = (srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter) => {
+                    // todo: state tracking
+                    this.addMessage(fnName, [srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter])
                 }
             } else if (fnName === "bufferData") {   
                 /**
@@ -119,6 +244,32 @@ class GLCommandBufferContext {
                         args[1] = Array.from(args[1]);     
                     }
                     this.addMessage(fnName, args);
+                };
+            } else if (fnName === "bufferSubData") {   
+                /**
+                 *  @type {function(GLenum, GLenum):void | function(GLenum, GLsizeiptr, GLenum):void | function(GLenum, BufferSource | null, GLenum):void | function(GLenum, GLenum, GLuint):void | function(GLenum, BufferSource | null, GLenum, GLuint):void | function(GLenum, BufferSource | null, GLenum, GLuint, GLuint):void}
+                 */ 
+                this.gl.bufferSubData = (...arg) => {
+                    let args = Array.from(arg);
+                    if (args[2] instanceof Float32Array) {
+                        args[2] = {type: "Float32Array", data: new Float32Array(args[2])};
+                    } else if (args[2] instanceof Uint8Array) {
+                        args[2] = {type: "Uint8Array", data: new Uint8Array(args[2])};
+                    } else if (args[2] instanceof Uint16Array) {
+                        args[2] = {type: "Uint16Array", data: new Uint16Array(args[2])};
+                    } else if (args[2] instanceof Array) {
+                        args[2] = Array.from(args[2]);     
+                    }
+                    this.addMessage(fnName, args);
+                };
+            } else if (fnName === "checkFramebufferStatus") {   
+                /**
+                 * @type {function(GLenum):void}
+                 */ 
+                this.gl.checkFramebufferStatus = (target) => {
+                    let buffer = new SharedArrayBuffer(4);
+                    this.addMessageAndWait(fnName, [target], buffer);
+                    return new Uint32Array(buffer)[0];
                 };
             } else if (fnName === "clear") {   
                 /**
@@ -151,6 +302,15 @@ class GLCommandBufferContext {
                     this.state.parameters[this.gl.STENCIL_CLEAR_VALUE].value = s;
                     this.addMessage(fnName, [s]);
                 };
+            } else if (fnName === "clientWaitSync") {
+                /**
+                 * @type {function(Handle, GLbitfield, GLint64):GLenum}
+                 */    
+                this.gl.clientWaitSync = (sync, flags, timeout) => {
+                    let buffer = new SharedArrayBuffer(4);
+                    this.addMessageAndWait(fnName, [sync, flags, timeout], buffer);
+                    return new Uint32Array(buffer)[0];
+                };
             } else if (fnName === "colorMask") {
                 /**
                  * @type {function(GLboolean, GLboolean, GLboolean, GLboolean):void}
@@ -166,6 +326,70 @@ class GLCommandBufferContext {
                 this.gl.compileShader = (shader) => {
                     this.addMessage(fnName, [shader]);
                 };
+            } else if (fnName === "compressedTexImage2D") {   
+                this.gl.compressedTexImage2D = (...arg) => {
+                    let args = Array.from(arg);
+                    if (args.length > 6) {
+                        if (args[6] instanceof Float32Array) {
+                            args[6] = {type: "Float32Array", data: new Float32Array(args[6])};
+                        } else if (args[6] instanceof Uint8Array) {
+                            args[6] = {type: "Uint8Array", data: new Uint8Array(args[6])};
+                        } else if (args[6] instanceof Uint16Array) {
+                            args[6] = {type: "Uint16Array", data: new Uint16Array(args[6])};
+                        } else if (args[6] instanceof Array) {
+                            args[6] = Array.from(args[6]);     
+                        }
+                    }
+                    this.addMessage(fnName, Array.from(args));
+                };  
+            } else if (fnName === "compressedTexImage3D") {   
+                this.gl.compressedTexImage3D = (...arg) => {
+                    let args = Array.from(arg);
+                    if (args.length > 7) {
+                        if (args[7] instanceof Float32Array) {
+                            args[7] = {type: "Float32Array", data: new Float32Array(args[7])};
+                        } else if (args[7] instanceof Uint8Array) {
+                            args[7] = {type: "Uint8Array", data: new Uint8Array(args[7])};
+                        } else if (args[7] instanceof Uint16Array) {
+                            args[7] = {type: "Uint16Array", data: new Uint16Array(args[7])};
+                        } else if (args[7] instanceof Array) {
+                            args[7] = Array.from(args[7]);     
+                        }
+                    }
+                    this.addMessage(fnName, Array.from(args));
+                }; 
+            } else if (fnName === "compressedTexSubImage2D") {   
+                this.gl.compressedTexSubImage2D = (...arg) => {
+                    let args = Array.from(arg);
+                    if (args.length > 7) {
+                        if (args[7] instanceof Float32Array) {
+                            args[7] = {type: "Float32Array", data: new Float32Array(args[7])};
+                        } else if (args[7] instanceof Uint8Array) {
+                            args[7] = {type: "Uint8Array", data: new Uint8Array(args[7])};
+                        } else if (args[7] instanceof Uint16Array) {
+                            args[7] = {type: "Uint16Array", data: new Uint16Array(args[7])};
+                        } else if (args[7] instanceof Array) {
+                            args[7] = Array.from(args[7]);     
+                        }
+                    }
+                    this.addMessage(fnName, Array.from(args));
+                }; 
+            } else if (fnName === "compressedTexSubImage3D") {   
+                this.gl.compressedTexSubImage2D = (...arg) => {
+                    let args = Array.from(arg);
+                    if (args.length > 9) {
+                        if (args[9] instanceof Float32Array) {
+                            args[9] = {type: "Float32Array", data: new Float32Array(args[9])};
+                        } else if (args[9] instanceof Uint8Array) {
+                            args[9] = {type: "Uint8Array", data: new Uint8Array(args[9])};
+                        } else if (args[9] instanceof Uint16Array) {
+                            args[9] = {type: "Uint16Array", data: new Uint16Array(args[9])};
+                        } else if (args[9] instanceof Array) {
+                            args[9] = Array.from(args[9]);     
+                        }
+                    }
+                    this.addMessage(fnName, Array.from(args));
+                };       
             } else if (fnName === "createBuffer") {
                 /**
                  * @type {function():Handle}
@@ -180,6 +404,15 @@ class GLCommandBufferContext {
                  * @type {function():Handle}
                  */
                 this.gl.createProgram = () => {
+                    let handle = this.nextHandle++;
+                    this.addMessageWithHandle(fnName, [], handle);
+                    return new Handle(handle);
+                };
+            } else if (fnName === "createQuery") {
+                /**
+                 * @type {function():Handle}
+                 */
+                this.gl.createQuery = () => {
                     let handle = this.nextHandle++;
                     this.addMessageWithHandle(fnName, [], handle);
                     return new Handle(handle);
@@ -253,6 +486,14 @@ class GLCommandBufferContext {
                     this.state.parameters[cap].value = false;
                     this.addMessage(fnName, [cap]);
                 };
+            } else if (fnName === "disableVertexAttribArray") {  
+                /**
+                 * @type {function(GLuint):void}
+                 */  
+                this.gl.disableVertexAttribArray = (index) => {
+                    // todo state management
+                    this.addMessage(fnName, [index]);
+                };
             } else if (fnName === "drawElements") {
                 /**
                  * @type {function(GLenum, GLsizei, GLenum, GLintptr):void}
@@ -260,6 +501,15 @@ class GLCommandBufferContext {
                 this.gl.drawElements = (mode, count, type, offset) => {
                     this.addMessage(fnName, [mode, count, type, offset]);
                 };
+            } else if (fnName === "fenceSync") {
+                /**
+                 * @type {function(GLenum, GLbitfield):Handle}
+                 */
+                this.gl.fenceSync = (condition, flags) => {
+                    let handle = this.nextHandle++;
+                    this.addMessage(fnName, [condition, flags], handle);
+                    return new Handle(handle);
+                };    
             } else if (fnName === "enable") {    
                 /**
                  * @type {function(GLenum):void}
@@ -333,7 +583,8 @@ class GLCommandBufferContext {
                  */    
                 this.gl.getAttribLocation = (program, name) => {
                     let buffer = new SharedArrayBuffer(4);
-                    this.addMessageAndWait(fnName, [program, name], buffer);
+                    // prevent handle decoration for structured cloning
+                    this.addMessageAndWait(fnName, [new Handle(program.handle), name], buffer);
                     return new Int32Array(buffer)[0];
                 };
             } else if (fnName === "getContextAttributes") {
@@ -353,13 +604,29 @@ class GLCommandBufferContext {
                     // handle extension and its state
                     let ret = null;
                     if (name === "EXT_color_buffer_float") {
-                        ret = {};
+                        ret = {
+                            RGBA32F_EXT: DeviceDescription.RGBA32F_EXT,
+                            RGB32F_EXT: DeviceDescription.RGB32F_EXT
+                        };
                     } else if (name === "OES_texture_float_linear") {
                         ret = {};
                     } else if (name === "EXT_color_buffer_half_float") {
-                        ret = this.deviceDesc.extColorBufferHalfFloat;
+                        ret = {
+                            RGBA16F_EXT: DeviceDescription.RGBA16F_EXT,
+                            RGB16F_EXT: DeviceDescription.RGB16F_EXT,
+                            FRAMEBUFFER_ATTACHEMENT_COMPONENT_TYPE_EXT: DeviceDescription.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT,
+                            UNSIGNED_NORMALIZED_EXT: DeviceDescription.UNSIGNED_NORMALIZED_EXT
+                        };
                     } else if ((name === "EXT_texture_filter_anisotropic") || (name === "MOZ_EXT_texture_filter_anisotropic") || (name === "WEBKIT_EXT_texture_filter_anisotropic")) {
-                        ret = this.deviceDesc.extTextureFilterAnisotropic;
+                        ret = {
+                            MAX_TEXTURE_MAX_ANISOTROPY_EXT: DeviceDescription.MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+                            TEXTURE_MAX_ANISOTROPY_EXT: DeviceDescription.TEXTURE_MAX_ANISOTROPY_EXT
+                        };
+                    } else if (name === "WEBGL_debug_renderer_info") {
+                        ret = {
+                            UNMASKED_VENDOR_WEBGL: DeviceDescription.UNMASKED_VENDOR_WEBGL,
+                            UNMASKED_RENDERER_WEBGL: DeviceDescription.UNMASKED_RENDERER_WEBGL        
+                        };
                     }
                     // send to remote gl to enable extension
                     this.addMessage(fnName, [name]);
@@ -407,13 +674,25 @@ class GLCommandBufferContext {
                 this.gl.getSupportedExtensions = () => {
                     return this.deviceDesc.supportedExtensions;
                 };
+            } else if (fnName === "getUniformBlockIndex") {
+                /**
+                 * @type {function(Handle, string):Handle}
+                 */    
+                this.gl.getUniformBlockIndex = (program, uniformBlockName) => {
+                    //let handle = this.nextHandle++;
+                    let buffer = new SharedArrayBuffer(4);        
+                    // prevent spectre decoration (function) of the Handle to mess with the structured cloning
+                    this.addMessageAndWait(fnName, [new Handle(program.handle), uniformBlockName], buffer);
+                    return new Uint32Array(buffer)[0];
+                };
             } else if (fnName === "getUniformLocation") {
                 /**
                  * @type {function(Handle, string):Handle}
                  */    
                 this.gl.getUniformLocation = (program, name) => {
                     let handle = this.nextHandle++;
-                    this.addMessageWithHandle(fnName, [program, name], handle);
+                    // prevent spectre decoration (function) of the Handle to mess with the structured cloning
+                    this.addMessageWithHandle(fnName, [new Handle(program.handle), name], handle);
                     return new Handle(handle);
                 };
             } else if (fnName === "isEnabled") {
@@ -437,6 +716,14 @@ class GLCommandBufferContext {
                 this.gl.makeXRCompatible = () => {
                     this.addMessage(fnName, []);
                 };
+            } else if (fnName === "pixelStorei") {   
+                /**
+                 * @type {function(GLenum, GLenum):void}
+                 */ 
+                this.gl.pixelStorei = (pname, param) => {
+                    // todo state management
+                    this.addMessage(fnName, [pname, param]);
+                };
             } else if (fnName === "scissor") {
                 /**
                  * @type {function(GLint, GLint, GLsizei, GLsizei):void}
@@ -452,6 +739,27 @@ class GLCommandBufferContext {
                  */
                 this.gl.shaderSource = (shader, source) => {
                     this.addMessage(fnName, [shader, source]);
+                };
+            } else if (fnName === "stencilFunc") {
+                /**
+                 * @type {function(GLenum, GLint, GLuint):void}
+                 */
+                this.gl.stencilFunc = (func, ref, mask) => {
+                    this.addMessage(fnName, [func, ref, mask]);
+                };
+            } else if (fnName === "stencilMask") {
+                /**
+                 * @type {function(GLuint):void}
+                 */
+                this.gl.stencilMask = (mask) => {
+                    this.addMessage(fnName, [mask]);
+                };
+            } else if (fnName === "stencilOp") {
+                /**
+                 * @type {function(GLenum, GLenum, GLenum):void}
+                 */
+                this.gl.stencilOp = (fail, zfail, zpass) => {
+                    this.addMessage(fnName, [fail, zfail, zpass]);
                 };
             } else if (fnName === "texImage2D") {
                 /**
@@ -479,8 +787,8 @@ class GLCommandBufferContext {
                  * @type {function(Handle):void}
                  */
                 this.gl.useProgram = (program) => {
-                    // send to remote gl
-                    this.addMessage(fnName, [program]);
+                    // prevent handle decoration for structured cloning
+                    this.addMessage(fnName, [new Handle(program.handle)]);
                 };
             } else if (fnName === "vertexAttribDivisor") {
                 /**
@@ -538,6 +846,15 @@ class GLCommandBufferContext {
                     } else {
                         this.addMessage(fnName, [location, data]);
                     }
+                };
+            } else if (fnName === "uniformBlockBinding") {
+                /**
+                 * @type {function(Handle, Handle, GLuint):void}
+                 */
+                this.gl.uniformBlockBinding = (program, uniformBlockIndex, uniformBlockBinding) => {
+                    // todo state management
+                    // prevent handle decoration for structured cloning
+                    this.addMessage(fnName, [new Handle(program.handle), uniformBlockIndex, uniformBlockBinding]);
                 };
             } else if (fnName === "uniformMatrix3fv") {
                 /**
