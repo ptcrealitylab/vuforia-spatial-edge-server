@@ -76,6 +76,7 @@ class HumanPoseFuser {
 
         /** Recent history of poses for each existing human object.
          * Dictionary - key: objectId, value: { ts of the last pose already fused, array of per-frame pose data }
+         * Pose array is ordered with ascending timestamp
          * @type {Object.<string, {latestFusedDataTS: number, poses: Array.<WholePoseData>}>}
          */
         this.pastPoses = {};
@@ -84,6 +85,12 @@ class HumanPoseFuser {
          * @type {Object.<string, string>}
          */
         this.bestHumanObjectForFusedObject = {};
+
+        /** Dictionary of currently ongoing pose transitions across fused human objects
+         *  key: objectId of fused human object, value: { objectId of source human object, objectId of target human object, data ts of transition start }
+         * @type {Object.<string, {source: string, target: string, startTS: number} >}
+         */
+        this.transitionOfFusedObject = {};
 
         /** Current assignment of standard human objects (coming from ToolboxApps) to fused human objects created by this class.
          * Dictionary - key: objectId of fused human object, value: array of objectIds of associated human objects
@@ -145,7 +152,7 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = false;
+        this.verbose = true;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -160,6 +167,8 @@ class HumanPoseFuser {
         this.maxDistanceForSamePerson = 300; // mm
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
+        /** time interval to make smooth transition between two pose streams of fused human object */
+        this.transitionIntervalMs = 1000;
     }
 
     /** Starts fusion of human poses. */
@@ -295,10 +304,10 @@ class HumanPoseFuser {
                 }
             }
 
-            // remove all association data if the given object is a fused human object
+            // remove all related data if the given object is a fused human object
             delete this.humanObjectsOfFusedObject[objectId];
             delete this.bestHumanObjectForFusedObject[objectId];
-
+            delete this.transitionOfFusedObject[objectId];
         }
     }
 
@@ -430,6 +439,11 @@ class HumanPoseFuser {
 
         let bestObjectId = null;
 
+        if (this.transitionOfFusedObject[fusedObjectId]) {
+            // the fused object is in smooth pose transition, prevent change of best human object until it is finished
+            return (this.bestHumanObjectForFusedObject[fusedObjectId] || null); // can be also be undefined so turn to null
+        }
+
         let poseDataArr = Object.entries(poseData);
         if (poseDataArr.length == 0) {
             return bestObjectId;
@@ -447,7 +461,7 @@ class HumanPoseFuser {
         let str = "";
         let candidateConfidences = [];
         // look at pose confidence history of all associated human pose objects
-        for (let objectId of this.humanObjectsOfFusedObject[fusedObjectId]) {
+        for (let objectId of this.humanObjectsOfFusedObject[fusedObjectId]) { 
 
             // check if there is a current pose of the object
             const poseItem = poseDataArr.find(item => item[0] == objectId);
@@ -503,10 +517,10 @@ class HumanPoseFuser {
             } else {
                 bestObjectId = previousBest.id;
             }
-        } else if (previousBest !== undefined && currentBest == undefined) {
+        } else if (previousBest !== undefined && currentBest === undefined) {
             // keep the human object selected so far because there is no current candidate
             bestObjectId = previousBest.id;
-        } else if (previousBest == undefined && currentBest !== undefined) {
+        } else if (previousBest === undefined && currentBest !== undefined) {
             // the human object selected so far is not available, switch to the current best
             bestObjectId = currentBest.id;
         } else {
@@ -515,11 +529,37 @@ class HumanPoseFuser {
 
         if (bestObjectId) {
             this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
+
+            if (previousSelectedObject != bestObjectId) {
+                // change of the pose stream, start smooth transition
+                this.transitionOfFusedObject[fusedObjectId] = {source: previousSelectedObject, target: bestObjectId, startTS: latestTS};
+            }
         } else {
             console.warn('Cannot select the best object for a fused human object.');
         }
 
         return bestObjectId;
+    }
+
+    /**
+     * Interpolates linearly between source and target pose. This applies to joint 3D positions and confidences.
+     * @param {WholePoseData} sourcePose - pose from source human object
+     * @param {WholePoseData} targetPose - pose from target human object
+     * @param {number} alpha - weight of target data
+     * @return {WholePoseData} interpolated pose 
+     */
+    interpolatePose(sourcePose, targetPose, alpha) {
+
+        let pose = Object.assign({}, targetPose);  // copy name and timestamp from the target for now
+
+        pose.joints.forEach( (joint, index) => {
+            joint.x = (1.0 - alpha) * sourcePose.joints[index].x + alpha * targetPose.joints[index].x;
+            joint.y = (1.0 - alpha) * sourcePose.joints[index].y + alpha * targetPose.joints[index].y;
+            joint.z = (1.0 - alpha) * sourcePose.joints[index].z + alpha * targetPose.joints[index].z;
+            joint.confidence = (1.0 - alpha) * sourcePose.joints[index].confidence + alpha * targetPose.joints[index].confidence;
+        });
+
+        return pose;
     }
 
     /** Updates a specified fused human object.
@@ -538,22 +578,60 @@ class HumanPoseFuser {
             return;
         }
 
-        if (poseData[selectedObjectId] == undefined || poseData[selectedObjectId].joints.length == 0) {
+        let finalPose;  // undefined as default
+        // check if the fused object is in smooth transition
+        if (this.transitionOfFusedObject[fusedObjectId]) {
+
+            // get the latest data timestamp
+            let currentTS = 0;
+            for (let pose of Object.values(poseData)) {
+                if (pose.timestamp > currentTS) {
+                    currentTS = pose.timestamp;
+                }
+            }
+
+            // interpolate final pose to achieve a smooth transition after a change of the pose stream
+            if (this.transitionOfFusedObject[fusedObjectId].startTS + this.transitionIntervalMs < currentTS) {
+                // find non-empty pose with the most recent timestamp (before or at current frame defined by latestFusedDataTS). This helps with temporarily missing poses or finished tracking in the source pose stream
+                // do it for source and target pose stream 
+                let targetPose = pastPoses[this.transitionOfFusedObject[fusedObjectId].target].findLast(item => item.timestamp < (pastPoses[this.transitionOfFusedObject[fusedObjectId].target].latestFusedDataTS + 1) && item.joints.length > 0);
+                let sourcePose = pastPoses[this.transitionOfFusedObject[fusedObjectId].source].findLast(item => item.timestamp < (pastPoses[this.transitionOfFusedObject[fusedObjectId].source].latestFusedDataTS + 1) && item.joints.length > 0);
+
+                if (targetPose !== undefined && sourcePose !== undefined) {
+                    // compute interpolation weight based on time and clamp to 0-1 range
+                    let alpha = (currentTS - this.transitionOfFusedObject[fusedObjectId].startTS) / this.transitionIntervalMs;
+                    alpha = Math.min(Math.max(alpha, 0.0), 1.0);
+
+                    finalPose = this.interpolatePose(sourcePose, targetPose, alpha);
+                    finalPose.timestamp = currentTS;
+
+                    console.log('smooth transition: obj=' + fusedObjectId + ', alpha=' + alpha);
+                }
+            } else {
+                // finished the transition
+                delete this.transitionOfFusedObject[fusedObjectId];
+            }
+        } else {
+            // take directly current pose from the selected human object
+            finalPose = poseData[selectedObjectId];
+        }
+
+        if (finalPose === undefined || finalPose.joints.length == 0) {
             if (this.verbose) {
                 console.log('not updating joints: obj=' + fusedObjectId);
             }
             return;
         }
 
-        this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
-        this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
+        this.objectsRef[fusedObjectId].updateJoints(finalPose.joints);
+        this.objectsRef[fusedObjectId].lastUpdateDataTS = finalPose.timestamp;
         server.resetObjectTimeout(fusedObjectId); // keep the object alive
 
-        // create copy and update name (confidence attribute not copied)
-        let wholePose = Object.assign({}, poseData[selectedObjectId]);
+        // create copy and update name (whole-pose confidence attribute not copied)
+        let wholePose = Object.assign({}, finalPose);
         let end = fusedObjectId.indexOf('pose1');
         let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
-        wholePose.name = name; // 'server_pose1' in practise for now
+        wholePose.name = name; // 'server***_pose1' in practise for now
 
         // add also to pastPoses
         this.addPoseData(fusedObjectId, wholePose);
@@ -572,7 +650,7 @@ class HumanPoseFuser {
             }
         }
         if (this.verbose) {
-            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
+            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
         }
     }
 
