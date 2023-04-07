@@ -530,7 +530,7 @@ class HumanPoseFuser {
         if (bestObjectId) {
             this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
 
-            if (previousSelectedObject != bestObjectId) {
+            if (previousSelectedObject && previousSelectedObject != bestObjectId) {
                 // change of the pose stream, start smooth transition
                 this.transitionOfFusedObject[fusedObjectId] = {source: previousSelectedObject, target: bestObjectId, startTS: latestTS};
             }
@@ -591,11 +591,13 @@ class HumanPoseFuser {
             }
 
             // interpolate final pose to achieve a smooth transition after a change of the pose stream
-            if (this.transitionOfFusedObject[fusedObjectId].startTS + this.transitionIntervalMs < currentTS) {
+            if (currentTS < this.transitionOfFusedObject[fusedObjectId].startTS + this.transitionIntervalMs) {
                 // find non-empty pose with the most recent timestamp (before or at current frame defined by latestFusedDataTS). This helps with temporarily missing poses or finished tracking in the source pose stream
-                // do it for source and target pose stream 
-                let targetPose = pastPoses[this.transitionOfFusedObject[fusedObjectId].target].findLast(item => item.timestamp < (pastPoses[this.transitionOfFusedObject[fusedObjectId].target].latestFusedDataTS + 1) && item.joints.length > 0);
-                let sourcePose = pastPoses[this.transitionOfFusedObject[fusedObjectId].source].findLast(item => item.timestamp < (pastPoses[this.transitionOfFusedObject[fusedObjectId].source].latestFusedDataTS + 1) && item.joints.length > 0);
+                // do it for source and target pose stream
+                const sourcePosesReversed = [... this.pastPoses[this.transitionOfFusedObject[fusedObjectId].source].poses].reverse();
+                let sourcePose = sourcePosesReversed.find(item => item.timestamp < (this.pastPoses[this.transitionOfFusedObject[fusedObjectId].source].latestFusedDataTS + 1) && item.joints.length > 0);
+                const targetPosesReversed = [... this.pastPoses[this.transitionOfFusedObject[fusedObjectId].target].poses].reverse();
+                let targetPose = targetPosesReversed.find(item => item.timestamp < (this.pastPoses[this.transitionOfFusedObject[fusedObjectId].target].latestFusedDataTS + 1) && item.joints.length > 0);
 
                 if (targetPose !== undefined && sourcePose !== undefined) {
                     // compute interpolation weight based on time and clamp to 0-1 range
