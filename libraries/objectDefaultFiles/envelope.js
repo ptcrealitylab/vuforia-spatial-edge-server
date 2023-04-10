@@ -240,6 +240,7 @@
 
             if (!options.dontWrite) {
                 this.realityInterface.write('open', 1);
+                this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
             }
         };
 
