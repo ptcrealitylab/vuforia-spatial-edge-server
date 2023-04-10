@@ -42,8 +42,8 @@
     "test-quiet-simple": "npm run lint-quiet && NODE_ENV=test node test-simple.js",
     "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
     "test-older": "NODE_ENV=test node test-simple.js",
-    "lint": "eslint .",
-    "lint-quiet": "eslint . --quiet",
+    "lint": "./node_modules/.bin/eslint .",
+    "lint-quiet": "./node_modules/.bin/eslint . --quiet",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
     "start": "node index.js"
   },
