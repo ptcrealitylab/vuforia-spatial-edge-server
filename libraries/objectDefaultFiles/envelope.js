@@ -41,7 +41,7 @@
      * @param {boolean} isFull2D - whether to add background blur and remove the touch overlay div to stop proxying touches
      * @param {boolean} opensWhenAdded - whether the envelope initially opens (just the first time it's added)
      */
-    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, 
+    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed,
         isStackable = false, areFramesOrdered = false, isFull2D = false, opensWhenAdded = false) {
         /**
          * A pointer to the envelope frame's RealityInterface object, so that this can interact with the other JavaScript APIs
@@ -197,7 +197,7 @@
             // if necessary, reposition/resize any element with manual adjustments
             rootElementWhenOpen.style.width = width + 'px';
             rootElementWhenOpen.style.height = height + 'px';
-        }
+        };
 
         // this adjusts the size of the body to be fullscreen based on accurate device screen size
         realityInterface.getScreenDimensions(adjustForScreenSize);
