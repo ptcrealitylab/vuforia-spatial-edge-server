@@ -89,6 +89,11 @@
          */
         this.isOpen = false;
         /**
+         * Whether the envelope will receive touch events, and whether it should show interactable 2D UI
+         * @type {boolean}
+         */
+        this.hasFocus = true;
+        /**
          * Callbacks for various events from contained frames or the reality editor
          * @type {{onFrameAdded: Array, onFrameDeleted: Array, onMessageFromContainedFrame: Array, onOpen: Array, onClose: Array}}
          */
@@ -232,6 +237,8 @@
                 }.bind(this));
             }
 
+            this.focus();
+
             this.triggerCallbacks('onOpen', {});
 
             this.realityInterface.sendEnvelopeMessage({
@@ -262,6 +269,16 @@
                 this.realityInterface.write('open', 0);
             }
         };
+
+        Envelope.prototype.focus = function() {
+            this.hasFocus = true;
+            this.triggerCallbacks('onFocus', {});
+        }
+
+        Envelope.prototype.blur = function() {
+            this.hasFocus = false;
+            this.triggerCallbacks('onBlur', {});
+        }
 
         /**
          * API to subscribe to a compatible frame being added to the envelope.
@@ -325,6 +342,22 @@
         Envelope.prototype.onClose = function(callback) {
             this.addCallback('onClose', callback);
         };
+
+        /**
+         * API to respond to this envelope losing focus. Tools should subscribe to this and hide their 2D UI in response.
+         * @param callback
+         */
+        Envelope.prototype.onFocus = function(callback) {
+            this.addCallback('onFocus', callback);
+        }
+
+        /**
+         * API to respond to this envelope regaining focus. Tools should redisplay their 2D UI in response.
+         * @param callback
+         */
+        Envelope.prototype.onBlur = function(callback) {
+            this.addCallback('onBlur', callback);
+        }
 
         /**
          * API to be notified when the envelope has fully loaded its publicData.
@@ -427,6 +460,12 @@
             }
             if (typeof msgContent.envelopeMessage.close !== 'undefined') {
                 this.close();
+            }
+            if (typeof msgContent.envelopeMessage.focus !== 'undefined') {
+                this.focus();
+            }
+            if (typeof msgContent.envelopeMessage.blur !== 'undefined') {
+                this.blur();
             }
         };
 
