@@ -19,6 +19,9 @@ class ThreejsInterface {
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
         this.spatialInterface.onSpatialInterfaceLoaded(this.onSpatialInterfaceLoaded.bind(this));
+        /**
+         * @type {Int32Array|null}
+         */
         this.synclock = null;
         this.touchAnswerListener = null;
         this.mouse = {x: 0, y: 0};
