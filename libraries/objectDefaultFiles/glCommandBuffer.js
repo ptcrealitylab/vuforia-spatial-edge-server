@@ -1,6 +1,10 @@
 import {Handle} from "./glState.js"
 
 /**
+ * @typedef {GLuint} HandleObj
+ */
+
+/**
  * Creates a gl context that stores all received commands in the active command buffer object.
  * This allows us to switch buffers behind the scene and split up the stream of commands over multiple buffers.
  */
@@ -8,8 +12,14 @@ class GLCommandBufferContext {
     /**
      * 
      * @param {{glState: string, deviceDesc: string, functions: string[]}} message 
+     * @param {WebGLSyncStrategy} webGLSyncStrategy
      */
-    constructor(message) {
+    constructor(message, webGLSyncStrategy) {
+        /**
+         * @type {WebGLSyncStrategy}
+         */
+        this.webGLSyncStrategy = webGLSyncStrategy;
+
         /**
          * current webGL state of the server will equal a fresh webGL context with a default start state
          * @type {JSONGLState}
@@ -64,7 +74,9 @@ class GLCommandBufferContext {
                  * @type {function(Handle, Handle):void}
                  */ 
                 this.gl.attachShader = (program, shader) => {
-                    this.addMessage(fnName, [program, shader]);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.attachShader(this.activeBuffer, program, shader);
+                    }
                 };
             } else if (fnName === "bindBuffer") {    
                 /**
@@ -164,7 +176,9 @@ class GLCommandBufferContext {
                  * @type {function(Handle):void}
                  */ 
                 this.gl.compileShader = (shader) => {
-                    this.addMessage(fnName, [shader]);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.compileShader(this.activeBuffer, shader);
+                    }
                 };
             } else if (fnName === "createBuffer") {
                 /**
@@ -180,18 +194,22 @@ class GLCommandBufferContext {
                  * @type {function():Handle}
                  */
                 this.gl.createProgram = () => {
-                    let handle = this.nextHandle++;
-                    this.addMessageWithHandle(fnName, [], handle);
-                    return new Handle(handle);
+                    let handle = new Handle(this.nextHandle++);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.createProgram(this.activeBuffer, handle);
+                    }
+                    return handle;
                 };
             } else if (fnName === "createShader") {
                 /**
                  * @type {function():Handle}
                  */
                 this.gl.createShader = (type) => {
-                    let handle = this.nextHandle++;
-                    this.addMessageWithHandle(fnName, [type], handle);
-                    return new Handle(handle);
+                    let handle = new Handle(this.nextHandle++);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.createShader(this.activeBuffer, type, handle);
+                    }
+                    return handle;
                 };
             } else if (fnName === "createTexture") {
                 /**
@@ -227,7 +245,7 @@ class GLCommandBufferContext {
                     if (shader.handle > 0) {
                         delete this.state.unclonables[shader.handle];
                     }
-                    this.addMessage(fnName, [shader]);
+                    this.webGLSyncStrategy.deleteShader(this.activeBuffer, shader);
                 };
             } else if (fnName === "depthFunc") {
                 /**
@@ -288,53 +306,33 @@ class GLCommandBufferContext {
                  * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
                  */
                 this.gl.getActiveAttrib = (program, index) => {
-                    // request the size of the buffer needed for the response
-                    let buffer_length_buf = new SharedArrayBuffer(4); 
-                    this.addMessageAndWait("getActiveAttrib_bufferSize", [program, index], buffer_length_buf);
-                    const buffer_length = new Int32Array(buffer_length_buf)[0]
-                    // request the actual response
-                    let buffer = new SharedArrayBuffer(buffer_length);
-                    this.addMessageAndWait("getActiveAttrib", [program, index], buffer);
-                    // decode result
-                    // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
-                    let utf8TextDecoder = new TextDecoder();
-                    let texbuf = new Uint8Array(buffer_length - 8);
-                    texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
-                    let sizeTypeBufMem = new ArrayBuffer(8);
-                    new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
-                    let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
-                    return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+                    if (this.activeBuffer) {
+                        return this.webGLSyncStrategy.getActiveAttrib(this.activeBuffer, program, index);
+                    } else {
+                        return {name: "", size: 0, type: this.gl.INVALID_ENUM};
+                    }
                 };
             } else if (fnName === "getActiveUniform") {    
                 /**
                  * @type {function(Handle, GLuint):{name: string, size: GLsizei, type: GLenum}}}
                  */
                 this.gl.getActiveUniform = (program, index) => {
-                    // request the size of the buffer needed for the response
-                    let buffer_length_buf = new SharedArrayBuffer(4); 
-                    this.addMessageAndWait("getActiveUniform_bufferSize", [program, index], buffer_length_buf);
-                    const buffer_length = new Int32Array(buffer_length_buf)[0]
-                    // request the actual response
-                    let buffer = new SharedArrayBuffer(buffer_length);
-                    // decode result
-                    // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
-                    this.addMessageAndWait("getActiveUniform", [program, index], buffer);
-                    let utf8TextDecoder = new TextDecoder();
-                    let texbuf = new Uint8Array(buffer_length - 8);
-                    texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
-                    let sizeTypeBufMem = new ArrayBuffer(8);
-                    new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
-                    let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
-                    return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+                    if (this.activeBuffer) {
+                        return this.webGLSyncStrategy.getActiveUniform(this.activeBuffer, program, index);
+                    } else {
+                        return {name: "", size: 0, type: this.gl.INVALID_ENUM};
+                    }
                 };
             } else if (fnName === "getAttribLocation") {
                 /**
                  * @type {function(Handle, string):GLuint}
                  */    
                 this.gl.getAttribLocation = (program, name) => {
-                    let buffer = new SharedArrayBuffer(4);
-                    this.addMessageAndWait(fnName, [program, name], buffer);
-                    return new Int32Array(buffer)[0];
+                    if (this.activeBuffer) {
+                        return this.webGLSyncStrategy.getAttribLocation(this.activeBuffer, program, name);
+                    } else {
+                        return -1;
+                    }
                 };
             } else if (fnName === "getContextAttributes") {
                 /**
@@ -389,9 +387,11 @@ class GLCommandBufferContext {
                  * @type {function(Handle, GLenum):any}
                  */
                 this.gl.getProgramParameter = (program, pname) => {
-                    let result = new SharedArrayBuffer(4);
-                    this.addMessageAndWait(fnName, [program, pname], result);
-                    return new Int32Array(result)[0];
+                    if (this.activeBuffer) {
+                        return this.webGLSyncStrategy.getProgramParameter(this.activeBuffer, program, pname);
+                    } else {
+                        return -1;
+                    }
                 };
             } else if (fnName === "getShaderPrecisionFormat") {
                 /**
@@ -412,9 +412,11 @@ class GLCommandBufferContext {
                  * @type {function(Handle, string):Handle}
                  */    
                 this.gl.getUniformLocation = (program, name) => {
-                    let handle = this.nextHandle++;
-                    this.addMessageWithHandle(fnName, [program, name], handle);
-                    return new Handle(handle);
+                    let handle = new Handle(this.nextHandle++);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.getUniformLocation(this.activeBuffer, program, name, handle);
+                    }
+                    return handle;
                 };
             } else if (fnName === "isEnabled") {
                 /**
@@ -428,7 +430,9 @@ class GLCommandBufferContext {
                  * @type {function(Handle):void}
                  */
                 this.gl.linkProgram = (program) => {
-                    this.addMessage(fnName, [program]);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.linkProgram(this.activeBuffer, program);
+                    }
                 };
             } else if (fnName === "makeXRCompatible") {   
                 /**
@@ -451,7 +455,9 @@ class GLCommandBufferContext {
                  * @type {function(Handle, string):void}
                  */
                 this.gl.shaderSource = (shader, source) => {
-                    this.addMessage(fnName, [shader, source]);
+                    if (this.activeBuffer) {
+                        this.webGLSyncStrategy.shaderSource(this.activeBuffer, shader, source);
+                    }
                 };
             } else if (fnName === "texImage2D") {
                 /**
@@ -690,9 +696,9 @@ class GLCommandBufferContext {
      * @param {Array<any>} args 
      * @param {SharedArrayBuffer} resultBuffer
      */
-    addMessageAndWait(name, args, resultBuffer) {
+    /*addMessageAndWait(name, args, resultBuffer) {
         this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
-    }
+    }*/
 
     onContextLost() {
         this.contextLost = true;
@@ -788,7 +794,7 @@ class CommandBuffer {
     /**
      * 
      * @param {number} workerId 
-     * @param {Int32Array} synclock 
+     * @param {Int32Array|null} synclock 
      * @param {boolean} isRendering 
      * @param {string} debugName 
      */
@@ -815,7 +821,7 @@ class CommandBuffer {
         this.isRendering = isRendering;
         /**
          * sharedarraybuffer backed int32array that is used as a synchronization method between server and client
-         * @type {Int32Array}
+         * @type {Int32Array|null}
          */
         this.synclock = synclock;
         /**
@@ -958,6 +964,9 @@ class CommandBufferFactory {
      */
     constructor(workerId, glCommandBufferContext, synclock) {
         this.workerId = workerId;
+        /**
+         * @type {Int32Array|null}
+         */
         this.synclock = synclock;
         this.glCommandBufferContext = glCommandBufferContext;
     }
@@ -1003,7 +1012,7 @@ class CommandBufferManager {
          * the rendering buffer starts as an empty commandbuffer, so the tool doesn't show until it is fully loaded.
          * @type {CommandBuffer}
          */
-        this.renderCommandBuffer = new CommandBuffer(workerId, new Int32Array([1]), true, []);
+        this.renderCommandBuffer = new CommandBuffer(workerId, null, true);
     }
 
     /**
@@ -1011,7 +1020,7 @@ class CommandBufferManager {
      */
     onContextLost() {
         this.commandBuffers = [];
-        this.renderCommandBuffer = new CommandBuffer(this.renderCommandBuffer.workerId, -1, true, []);
+        this.renderCommandBuffer = new CommandBuffer(this.renderCommandBuffer.workerId, null, true);
     }
 
     /**
@@ -1065,5 +1074,445 @@ class CommandBufferManager {
     }
 }
 
-export {CommandId, Command, CommandBuffer, CommandBufferFactory, CommandBufferManager, GLCommandBufferContext};
+class WebGLSyncStrategy {
+    constructor() {
+
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {Handle} shader 
+     */
+    attachShader(cmdBuf, program, shader) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     */
+    compileShader(cmdBuf, shader) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} handle
+     */
+    createProgram(cmdBuf, handle) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {GLenum} type
+     * @param {Handle} handle
+     */
+    createShader(cmdBuf, type, handle) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader
+     */
+    deleteShader(cmdBuf, shader) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveAttrib(cmdBuf, program, index) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveUniform(cmdBuf, program, index) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @returns {GLint} 
+     */
+    getAttribLocation(cmdBuf, program, name) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @param {Handle} handle
+     */
+    getUniformLocation(cmdBuf, program, name, handle) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLenum} pname
+     * @returns {GLboolean|GLint|GLenum} 
+     */
+    getProgramParameter(cmdBuf, program, pname) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     */
+    linkProgram(cmdBuf, program) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     * @param {string} source 
+     */
+    shaderSource(cmdBuf, shader, source) {
+        throw new Error("Interface WebGLWaitStrategy not implemented");
+    }
+}
+
+class DuplicateWebGLSyncStrategy extends WebGLSyncStrategy {
+    constructor() {
+        super();
+        /**
+         * canvas, screen resolution is irrelevant since we're not rendering  
+         * @type {OffscreenCanvas}
+         */ 
+        this.canvas = new OffscreenCanvas(16, 16);
+
+        /**
+         * @type {WebGL|null}
+         */
+        let localGl = this.canvas.getContext("webgl2");
+        if (localGl === null) {
+            localGl = this.canvas.getContext("webgl");
+        }
+
+        if (localGl !== null) {
+            /**
+             * @type {WebGL}
+             */
+            this.gl = localGl;
+        }
+
+        /**
+         * list of handles opened by the client and used for argument resolution
+         * contains objects that are not transferable over the message system
+         * @type {Map<number, HandleObj>}
+         */
+        this.unclonables = new Map();
+
+        console.log("using: DuplicateWebGLSyncStrategy");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {Handle} shader 
+     */
+    attachShader(cmdBuf, program, shader) {
+        const localProgram = this.unclonables.get(program.handle);
+        const localShader = this.unclonables.get(shader.handle);
+        this.gl.attachShader(localProgram, localShader);
+        cmdBuf.addMessage("attachShader", [program, shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     */
+    compileShader(cmdBuf, shader) {
+        const localShader = this.unclonables.get(shader.handle);
+        this.gl.compileShader(localShader);
+        cmdBuf.addMessage("compileShader", [shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} handle
+     */
+    createProgram(cmdBuf, handle) {
+        const localProgram = this.gl.createProgram();
+        this.unclonables.set(handle.handle, localProgram);
+        cmdBuf.addMessageWithHandle("createProgram", [], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {GLenum} type
+     * @param {Handle} handle
+     */
+    createShader(cmdBuf, type, handle) {
+        const localShader = this.gl.createShader(type);
+        this.unclonables.set(handle.handle, localShader);
+        cmdBuf.addMessageWithHandle("createShader", [type], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader
+     */
+    deleteShader(cmdBuf, shader) {
+        this.unclonables.delete(shader.handle);
+        cmdBuf.addMessage("deleteShader", [shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveAttrib(cmdBuf, program, index) {
+        const localProgram = this.unclonables.get(program.handle);
+        const localAttribInfo = this.gl.getActiveAttrib(localProgram, index);
+        if (localAttribInfo !== null) {
+            return {name: localAttribInfo.name, size: localAttribInfo.size, type: localAttribInfo.type};
+        } else {
+            return {name: "", size: 0, type: 0};
+        }
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveUniform(cmdBuf, program, index) {
+        const localProgram = this.unclonables.get(program.handle);
+        const localUniformInfo = this.gl.getActiveUniform(localProgram, index);
+        if (localUniformInfo !== null) {
+            return {name: localUniformInfo.name, size: localUniformInfo.size, type: localUniformInfo.type};
+        } else {
+            return {name: "", size: 0, type: 0};
+        }
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @returns {GLint} 
+     */
+    getAttribLocation(cmdBuf, program, name) {
+        const localProgram = this.unclonables.get(program.handle);
+        return this.gl.getAttribLocation(localProgram, name);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @param {Handle} handle 
+     */
+    getUniformLocation(cmdBuf, program, name, handle) {
+        const localProgram = this.unclonables.get(program.handle);
+        const localLocation = this.gl.getUniformLocation(localProgram, name);
+        this.unclonables.set(handle.handle, localLocation);
+        cmdBuf.addMessageWithHandle("getUniformLocation", [program, name], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLenum} pname
+     * @returns {GLboolean|GLint|GLenum} 
+     */
+    getProgramParameter(cmdBuf, program, pname) {
+        const localProgram = this.unclonables.get(program.handle);
+        return this.gl.getProgramParameter(localProgram, pname);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     */
+    linkProgram(cmdBuf, program) {
+        const localProgram = this.unclonables.get(program.handle);
+        this.gl.linkProgram(localProgram);
+        cmdBuf.addMessage("linkProgram", [program]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     * @param {string} source 
+     */
+    shaderSource(cmdBuf, shader, source) {
+        const localShader = this.unclonables.get(shader.handle);
+        this.gl.shaderSource(localShader, source);
+        cmdBuf.addMessage("shaderSource", [shader, source]);
+    }
+}
+
+class BlockAndWaitWebGLSyncStrategy extends WebGLSyncStrategy {
+    constructor() {
+        super();
+        console.log("using: BlockAndWaitWebGLSyncStrategy");
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf 
+     * @param {Handle} program 
+     * @param {Handle} shader 
+     */
+    attachShader(cmdBuf, program, shader) {
+        cmdBuf.addMessage("attachShader", [program, shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     */
+    compileShader(cmdBuf, shader) {
+        cmdBuf.addMessage("compileShader", [shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} handle 
+     */
+    createProgram(cmdBuf, handle) {
+        cmdBuf.addMessageWithHandle("createProgram", [], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {GLenum} type
+     * @param {Handle} handle
+     */
+    createShader(cmdBuf, type, handle) {
+        cmdBuf.addMessageWithHandle("createShader", [type], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader
+     */
+    deleteShader(cmdBuf, shader) {
+        cmdBuf.addMessage("deleteShader", [shader]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveAttrib(cmdBuf, program, index) {
+        // request the size of the buffer needed for the response
+        let buffer_length_buf = new SharedArrayBuffer(4); 
+        cmdBuf.addMessageAndWait("getActiveAttrib_bufferSize", [program, index], buffer_length_buf);
+        const buffer_length = new Int32Array(buffer_length_buf)[0]
+        // request the actual response
+        let buffer = new SharedArrayBuffer(buffer_length);
+        cmdBuf.addMessageAndWait("getActiveAttrib", [program, index], buffer);
+        // decode result
+        // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
+        let utf8TextDecoder = new TextDecoder();
+        let texbuf = new Uint8Array(buffer_length - 8);
+        texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
+        let sizeTypeBufMem = new ArrayBuffer(8);
+        new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
+        let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
+        return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLuint} index
+     * @returns {{name: string, size: number, type: GLenum}} 
+     */
+    getActiveUniform(cmdBuf, program, index) {
+        // request the size of the buffer needed for the response
+        let buffer_length_buf = new SharedArrayBuffer(4); 
+        cmdBuf.addMessageAndWait("getActiveUniform_bufferSize", [program, index], buffer_length_buf);
+        const buffer_length = new Int32Array(buffer_length_buf)[0]
+        // request the actual response
+        let buffer = new SharedArrayBuffer(buffer_length);
+        // decode result
+        // keep in mind that the byte buffer contains a WebGLActiveInfo struct with a string, zero termination and 2 32-bit numbers so string + 9 bytes
+        cmdBuf.addMessageAndWait("getActiveUniform", [program, index], buffer);
+        let utf8TextDecoder = new TextDecoder();
+        let texbuf = new Uint8Array(buffer_length - 8);
+        texbuf.set(new Uint8Array(buffer, 0, buffer_length - 8));
+        let sizeTypeBufMem = new ArrayBuffer(8);
+        new Uint8Array(sizeTypeBufMem).set(new Uint8Array(buffer, buffer_length - 8, 8));
+        let sizeTypeBuf = new Int32Array(sizeTypeBufMem);
+        return {name: utf8TextDecoder.decode(texbuf).substring(0, buffer_length - 9), size: sizeTypeBuf[0], type: sizeTypeBuf[1]}
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @returns {GLint} 
+     */
+    getAttribLocation(cmdBuf, program, name) {
+        let buffer = new SharedArrayBuffer(4);
+        cmdBuf.addMessageAndWait("getAttribLocation", [program, name], buffer);
+        return new Int32Array(buffer)[0];
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {string} name
+     * @param {Handle} handle
+     */
+    getUniformLocation(cmdBuf, program, name, handle) {
+        cmdBuf.addMessageWithHandle("getUniformLocation", [program, name], handle.handle);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     * @param {GLenum} pname
+     * @returns {GLboolean|GLint|GLenum} 
+     */
+    getProgramParameter(cmdBuf, program, pname) {
+        let result = new SharedArrayBuffer(4);
+        cmdBuf.addMessageAndWait("getProgramParameter", [program, pname], result);
+        return new Int32Array(result)[0];
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} program 
+     */
+    linkProgram(cmdBuf, program) {
+        cmdBuf.addMessage("linkProgram", [program]);
+    }
+
+    /**
+     * @param {CommandBuffer} cmdBuf
+     * @param {Handle} shader 
+     * @param {string} source 
+     */
+    shaderSource(cmdBuf, shader, source) {
+        cmdBuf.addMessage("shaderSource", [shader, source]);
+    }
+}
+
+export {CommandId, Command, CommandBuffer, CommandBufferFactory, CommandBufferManager, GLCommandBufferContext, BlockAndWaitWebGLSyncStrategy, DuplicateWebGLSyncStrategy, WebGLSyncStrategy};
 
