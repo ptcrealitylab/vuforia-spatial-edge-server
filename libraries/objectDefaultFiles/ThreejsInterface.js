@@ -1,4 +1,4 @@
-import {MessageInterface, WebWorkerFactory} from "/objectDefaultFiles/Workerfactory.js"
+import {MessageInterface, WebWorkerFactory, useWebWorkers, DynamicScriptFactory} from "/objectDefaultFiles/WorkerFactory.js"
 
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
@@ -15,8 +15,16 @@ class ThreejsInterface {
      */
     constructor(spatialInterface, workerScript) {
         // some information will become available after the bootstrap message has been received
+        /**
+         * @type {SpatialInterface}
+         */
         this.spatialInterface = spatialInterface;
-        this.workerFactory = new WebWorkerFactory();
+
+        if (useWebWorkers()) {
+            this.workerFactory = new WebWorkerFactory();
+        } else {
+            this.workerFactory = new DynamicScriptFactory("dynamicScriptFactoryThreejsInterface");
+        }
         /**
          * @type {MessageInterface}
          */
@@ -29,7 +37,7 @@ class ThreejsInterface {
         /**
          * @type {Int32Array|null}
          */
-        this.synclock = null;
+        //this.synclock = null;
         this.touchAnswerListener = null;
         this.mouse = {x: 0, y: 0};
         this.lastTouchResult = false;
@@ -131,7 +139,7 @@ class ThreejsInterface {
 
         // if the webworker (containing the renderer) isn't sleeping, post touch message to analyse
         if ((this.synclock !== null) && Atomics.load(this.synclock, 0) === 0) {
-             console.warn("tocuh decider locked worker, returning no touch");
+            console.warn("tocuh decider locked worker, returning no touch");
             return false;
         }
         this.workerMessageInterface.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});

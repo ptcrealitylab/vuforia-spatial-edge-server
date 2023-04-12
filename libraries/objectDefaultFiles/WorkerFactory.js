@@ -147,28 +147,23 @@ class DynamicScriptMessageInterface extends MessageInterface {
 }
 
 class FactoryMessageInterface extends MessageInterface {
-    /**
-     * 
-     * @param {string} factoryName
-     * @param {number} id
-     */
-    constructor(factoryName, id) {
+    constructor() {
         super();
         /**
          * @type {DynamicScriptFactory}
          */
-        const factory = self[factoryName];
+        const factory = self[dynamicScriptFactoryName];
         if (factory) {
             /**
              * @type {DynamicScriptMessageInterface|undefined}
              */
-            this.externalMessageInterface = factory.getMessageInterfaceById(id);
+            this.externalMessageInterface = factory.getMessageInterfaceById(dynamicScriptId);
             if (!this.externalMessageInterface) {
-                throw new Error(`Factory doesn't have a DynamicScriptMessageInterface with id: ${id}`);
+                throw new Error(`Factory doesn't have a DynamicScriptMessageInterface with id: ${dynamicScriptId}`);
             }
             this.externalMessageInterface.setExternalMessageInterface(this);
         } else {
-            throw new Error(`Factory doesn't exist: ${factoryName}`);
+            throw new Error(`Factory doesn't exist: ${dynamicScriptFactoryName}`);
         }
 
         /**
@@ -209,7 +204,7 @@ class FactoryMessageInterface extends MessageInterface {
      * 
      * @param {MessageEvent} messageEvent 
      */
-    OnMessage(messageEvent) {
+    onMessage(messageEvent) {
         if (this.onMessageFunc) {
             this.onMessageFunc(messageEvent);
         } else {
@@ -222,7 +217,6 @@ class FactoryMessageInterface extends MessageInterface {
 
 class WorkerFactory {
     constructor() {
-
     }
 
     /**
@@ -278,11 +272,13 @@ class DynamicScriptFactory extends WorkerFactory {
         if (isModule) {
             scriptElem.setAttribute('type', 'module');
         }
-        scriptElem.setAttribute('src', scriptPath + '?dynamicScriptId=' + encodeURIComponent(this.nextId) + '&dynamicScriptFactoryName=' + encodeURIComponent(this.factoryName) + "");
+        scriptElem.setAttribute('src', scriptPath);// + '?dynamicScriptId=' + encodeURIComponent(this.nextId) + '&dynamicScriptFactoryName=' + encodeURIComponent(this.factoryName) + "");
+        self['dynamicScriptId'] = this.nextId;
+        self['dynamicScriptFactoryName'] = this.factoryName;
         const messageInterface = new DynamicScriptMessageInterface();
         this.workers.set(this.nextId, messageInterface);
-        this.nextId++;
-        document.appendChild(scriptElem);
+        this.nextId++; 
+        document.body.appendChild(scriptElem);
         return messageInterface;
     }
 
@@ -296,4 +292,15 @@ class DynamicScriptFactory extends WorkerFactory {
     }
 }
 
-export {MessageInterface, WorkerMessageInterface, SelfMessageInterface, DynamicScriptMessageInterface, WorkerFactory, WebWorkerFactory, DynamicScriptFactory};
+function useWebWorkers() {
+    const offscreenCanvas = new OffscreenCanvas(10, 10);
+    if (offscreenCanvas) {
+        offscreenCanvas.getContext("webgl");
+        if (offscreenCanvas) {
+            return false; //true;
+        }
+    }
+    return false;
+}
+
+export {MessageInterface, WorkerMessageInterface, SelfMessageInterface, DynamicScriptMessageInterface, FactoryMessageInterface, WorkerFactory, WebWorkerFactory, DynamicScriptFactory, useWebWorkers};
