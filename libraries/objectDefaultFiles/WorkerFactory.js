@@ -297,7 +297,7 @@ function useWebWorkers() {
     if (offscreenCanvas) {
         offscreenCanvas.getContext("webgl");
         if (offscreenCanvas) {
-            return false; //true;
+            return true;
         }
     }
     return false;

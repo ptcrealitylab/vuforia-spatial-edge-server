@@ -1189,9 +1189,11 @@ class DuplicateWebGLSyncStrategy extends WebGLSyncStrategy {
         super();
         /**
          * canvas, screen resolution is irrelevant since we're not rendering  
-         * @type {OffscreenCanvas}
+         * @type {HTMLCanvasElement}
          */ 
-        this.canvas = new OffscreenCanvas(16, 16);
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = 16;
+        this.canvas.height = 16;
 
         /**
          * @type {WebGL|null}
