@@ -101,7 +101,7 @@ class ThreejsWorker {
     
                     // create commandbuffer factory in order to create resource commandbuffers
                     this.glCommandBufferContext = new GLCommandBufferContext(message, webglSyncStrategy);
-                    this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock);
+                    this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock, this.messageInterface);
     
                     // execute three.js startup
                     const bootstrapCommandBuffers = this.main(width, height, this.commandBufferFactory);
@@ -165,7 +165,7 @@ class ThreejsWorker {
                         // send the commandbuffer (rendering or resource loading)
                         this.frameCommandBuffer.execute();
         
-                        // singnal end of frame
+                        // signal end of frame
                         this.messageInterface.postMessage({
                             workerId: this.workerId,
                             isFrameEnd: true,

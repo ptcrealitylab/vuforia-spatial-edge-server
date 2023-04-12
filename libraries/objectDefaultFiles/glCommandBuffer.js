@@ -1,3 +1,4 @@
+import { WorkerMessageInterface } from "/objectDefaultFiles/WorkerFactory.js";
 import {Handle} from "./glState.js"
 
 /**
@@ -689,17 +690,6 @@ class GLCommandBufferContext {
         this.activeBuffer.addMessageWithHandle(name, args, handle);
     }
 
-    /**
-     * Adds a message and waits until the server has executed the command and responded
-     * 
-     * @param {string} name 
-     * @param {Array<any>} args 
-     * @param {SharedArrayBuffer} resultBuffer
-     */
-    /*addMessageAndWait(name, args, resultBuffer) {
-        this.activeBuffer.addMessageAndWait(name, args, resultBuffer);
-    }*/
-
     onContextLost() {
         this.contextLost = true;
         this.activeBuffer.onContextLost();
@@ -796,9 +786,10 @@ class CommandBuffer {
      * @param {number} workerId 
      * @param {Int32Array|null} synclock 
      * @param {boolean} isRendering 
+     * @param {WorkerMessageInterface} messageInterface
      * @param {string} debugName 
      */
-    constructor(workerId, synclock, isRendering, debugName = "") {
+    constructor(workerId, synclock, isRendering, messageInterface, debugName = "") {
         /**
          * a command buffer can be given a name to identify it while debugging
          * @type {string}
@@ -838,6 +829,8 @@ class CommandBuffer {
         this.isCleared = false;
 
         this.sendBuffers = true;
+
+        this.messageInterface = messageInterface;
     }
 
     /**
@@ -898,7 +891,7 @@ class CommandBuffer {
     execute() {
         if (this.commands.length > 0 && this.sendBuffers) {
             try {
-                postMessage({
+                this.messageInterface.postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: this.isRendering,
@@ -924,13 +917,13 @@ class CommandBuffer {
                 // change the webworker state to waiting
                 Atomics.store(this.synclock, 0, 0);
                 // send command buffer
-                postMessage({
+                this.messageInterface.postMessage({
                     workerId: this.workerId,
                     commandBufferId: this.commandBufferId,
                     isRendering: false,
                     commands: this.commands,
                 });
-                postMessage({
+                this.messageInterface.postMessage({
                     workerId: this.workerId,
                     isFrameEnd: true
                 });
@@ -961,14 +954,16 @@ class CommandBufferFactory {
      * @param {number} workerId this worker's id
      * @param {GLCommandBufferContext} glCommandBufferContext the context used by outr fake webgl to find to correct commandbuffer to write to
      * @param {Int32Array} synclock synchronisation mechnism for synchroneous commands
+     * @param {WorkerMessageInterface} messageInterface
      */
-    constructor(workerId, glCommandBufferContext, synclock) {
+    constructor(workerId, glCommandBufferContext, synclock, messageInterface) {
         this.workerId = workerId;
         /**
          * @type {Int32Array|null}
          */
         this.synclock = synclock;
         this.glCommandBufferContext = glCommandBufferContext;
+        this.messageInterface = messageInterface;
     }
 
     /**
@@ -985,7 +980,7 @@ class CommandBufferFactory {
      * @returns {CommandBuffer} th newly created and activated commandbuffer
      */
     createAndActivate(isRendering) {
-        let commandBuffer = new CommandBuffer(this.workerId, this.synclock, isRendering);
+        let commandBuffer = new CommandBuffer(this.workerId, this.synclock, isRendering, this.messageInterface);
         this.glCommandBufferContext.setActiveCommandBuffer(commandBuffer);
         return commandBuffer;
     }
@@ -1012,7 +1007,7 @@ class CommandBufferManager {
          * the rendering buffer starts as an empty commandbuffer, so the tool doesn't show until it is fully loaded.
          * @type {CommandBuffer}
          */
-        this.renderCommandBuffer = new CommandBuffer(workerId, null, true);
+        this.renderCommandBuffer = new CommandBuffer(workerId, null, true, null);
     }
 
     /**
@@ -1020,7 +1015,7 @@ class CommandBufferManager {
      */
     onContextLost() {
         this.commandBuffers = [];
-        this.renderCommandBuffer = new CommandBuffer(this.renderCommandBuffer.workerId, null, true);
+        this.renderCommandBuffer = new CommandBuffer(this.renderCommandBuffer.workerId, null, true, null);
     }
 
     /**
