@@ -1,4 +1,5 @@
 import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer, BlockAndWaitWebGLSyncStrategy, DuplicateWebGLSyncStrategy, WebGLSyncStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
+import {MessageInterface} from '/objectDefaultFiles/WorkerFactory.js';
 import * as THREE from '/objectDefaultFiles/three/three.module.js';
 
 /**
@@ -14,7 +15,11 @@ class ThreejsWorker {
     static STATE_CONTEXT_RESTORED = 6;
     static STATE_CONTEXT_RESTORED_DONE = 7;
     
-    constructor() {
+    /**
+     * 
+     * @param {MessageInterface} messageInterface 
+     */
+    constructor(messageInterface) {
         this.clientState = ThreejsWorker.STATE_CONSTRUCTED;
         // some values will be set after the bootstrap message has been received
         this.lastProjectionMatrix = null;
@@ -37,6 +42,11 @@ class ThreejsWorker {
          */
         this.onRenderCallbacks = [];
         this.raycaster = new THREE.Raycaster();
+
+        /**
+         * @type {MessageInterface}
+         */
+        this.messageInterface = messageInterface;
     }
 
     /**
@@ -62,7 +72,7 @@ class ThreejsWorker {
                     const intersects = this.raycaster.intersectObjects(this.scene.children, true);
                     result = intersects.length > 0;
                 }
-                self.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
+                this.messageInterface.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
             } else if (message.name === "anchoredModelViewCallback") {
                 switch (this.clientState) {
                     case ThreejsWorker.STATE_CONSTRUCTED:
@@ -107,7 +117,7 @@ class ThreejsWorker {
                     this.bootstrapProcessed = true;
     
                     // singnal end of frame
-                    self.postMessage({
+                    this.messageInterface.postMessage({
                         workerId: this.workerId,
                         isFrameEnd: true,
                     });
@@ -125,7 +135,7 @@ class ThreejsWorker {
                         this.workerId = message.workerId;
                         if (!this.bootstrapProcessed) {
                             console.log(`Can't render worker with id: ${this.workerId}, it has not yet finished initializing`);
-                            self.postMessage({
+                            this.messageInterface.postMessage({
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
@@ -134,7 +144,7 @@ class ThreejsWorker {
                         }
                         if (Date.now() - message.time > 300) {
                             console.log('time drift detected');
-                            self.postMessage({
+                            this.messageInterface.postMessage({
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
@@ -156,7 +166,7 @@ class ThreejsWorker {
                         this.frameCommandBuffer.execute();
         
                         // singnal end of frame
-                        self.postMessage({
+                        this.messageInterface.postMessage({
                             workerId: this.workerId,
                             isFrameEnd: true,
                         });
@@ -203,7 +213,7 @@ class ThreejsWorker {
         restoreBuffer.execute();
         
         // singnal end of frame
-        self.postMessage({
+        this.messageInterface.postMessage({
             workerId: this.workerId,
             isFrameEnd: true,
         });

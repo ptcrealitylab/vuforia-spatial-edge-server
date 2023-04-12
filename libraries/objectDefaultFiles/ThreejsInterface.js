@@ -1,3 +1,5 @@
+import {WorkerMessageInterface} from "/objectDefaultFiles/Workerfactory.js"
+
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
  */
@@ -9,12 +11,14 @@ class ThreejsInterface {
     /**
      * 
      * @param {SpatialInterface} spatialInterface
-     * @param {Worker} worker
+     * @param {string} workerScript
      */
-    constructor(spatialInterface, worker) {
+    constructor(spatialInterface, workerScript) {
         // some information will become available after the bootstrap message has been received
         this.spatialInterface = spatialInterface;
-        this.worker = worker;
+        const worker = new Worker(workerScript, {type: 'module'});
+        this.messageInterface = new WorkerMessageInterface(worker);
+        this.messageInterface.setOnMessage(this.onMessageFromWorker.bind(this));
         this.workerId = -1;
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
@@ -28,13 +32,17 @@ class ThreejsInterface {
         this.lastTouchResult = false;
     }
 
+    getMessageInterface() {
+        return this.messageInterface;
+    }
+
     /**
      * this message is used to setup the projection matrix in the webworker
      * @param {Float32Array} modelViewMatrix 
      * @param {Float32Array} projectionMatrix 
      */
     anchoredModelViewCallback(modelViewMatrix, projectionMatrix) {
-        this.worker.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
+        this.messageInterface.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
     }
 
     /**
@@ -97,7 +105,7 @@ class ThreejsInterface {
                     });
                 }
             } else {
-                this.worker.postMessage(message);
+                this.messageInterface.postMessage(message);
             }
         }
     }
