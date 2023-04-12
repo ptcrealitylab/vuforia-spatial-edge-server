@@ -1,4 +1,4 @@
-import {WorkerMessageInterface} from "/objectDefaultFiles/Workerfactory.js"
+import {MessageInterface, WebWorkerFactory} from "/objectDefaultFiles/Workerfactory.js"
 
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
@@ -16,9 +16,12 @@ class ThreejsInterface {
     constructor(spatialInterface, workerScript) {
         // some information will become available after the bootstrap message has been received
         this.spatialInterface = spatialInterface;
-        const worker = new Worker(workerScript, {type: 'module'});
-        this.messageInterface = new WorkerMessageInterface(worker);
-        this.messageInterface.setOnMessage(this.onMessageFromWorker.bind(this));
+        this.workerFactory = new WebWorkerFactory();
+        /**
+         * @type {MessageInterface}
+         */
+        this.workerMessageInterface = this.workerFactory.createWorker(workerScript, true);
+        this.workerMessageInterface.setOnMessage(this.onMessageFromWorker.bind(this));
         this.workerId = -1;
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
@@ -32,8 +35,8 @@ class ThreejsInterface {
         this.lastTouchResult = false;
     }
 
-    getMessageInterface() {
-        return this.messageInterface;
+    getWorkerMessageInterface() {
+        return this.workerMessageInterface;
     }
 
     /**
@@ -42,7 +45,7 @@ class ThreejsInterface {
      * @param {Float32Array} projectionMatrix 
      */
     anchoredModelViewCallback(modelViewMatrix, projectionMatrix) {
-        this.messageInterface.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
+        this.workerMessageInterface.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
     }
 
     /**
@@ -105,7 +108,7 @@ class ThreejsInterface {
                     });
                 }
             } else {
-                this.messageInterface.postMessage(message);
+                this.workerMessageInterface.postMessage(message);
             }
         }
     }
@@ -131,7 +134,7 @@ class ThreejsInterface {
              console.warn("tocuh decider locked worker, returning no touch");
             return false;
         }
-        this.worker.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});
+        this.workerMessageInterface.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});
         let res = await Promise.race([this.makeWatchdog(), new Promise((result) => {
             this.touchAnswerListener = result;
         })]);
