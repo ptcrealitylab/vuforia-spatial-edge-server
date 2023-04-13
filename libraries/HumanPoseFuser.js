@@ -3,6 +3,7 @@ const HumanPoseObject = require('./HumanPoseObject');
 const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
+//const { Matrix } = require('ml-matrix');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
@@ -30,12 +31,21 @@ const JOINTS = {
     PELVIS: 'pelvis', // synthetic
 };
 
+const FusionMethod = Object.freeze({
+    BestSingleView: 'BestSingleView',
+    MultiViewTriangulation: 'MultiViewTriangulation'
+});
+
 /**
  * The object with pose data incoming from Toolboxapps
  * @typedef {Object} WholePoseData
  * @property {string} name
- * @property {number} timestamp
  * @property {Array.<{x: number, y: number, z: number, confidence: number}> } joints
+ * @property {number} timestamp
+ * @property {Array.<number>} imageSize
+ * @property {Array.<number>} focalLength
+ * @property {Array.<number>} principalPoint
+ * @property {Array.<number>} transformW2C
  */
 
 /**
@@ -76,6 +86,7 @@ class HumanPoseFuser {
 
         /** Recent history of poses for each existing human object.
          * Dictionary - key: objectId, value: { ts of the last pose already fused, array of per-frame pose data }
+         * Pose array is ordered with ascending timestamp
          * @type {Object.<string, {latestFusedDataTS: number, poses: Array.<WholePoseData>}>}
          */
         this.pastPoses = {};
@@ -145,7 +156,7 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = false;
+        this.verbose = true;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -160,6 +171,8 @@ class HumanPoseFuser {
         this.maxDistanceForSamePerson = 300; // mm
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
+
+        this.fusionMethod = 'MultiViewTriangulation';
     }
 
     /** Starts fusion of human poses. */
@@ -212,12 +225,27 @@ class HumanPoseFuser {
         }
     }
 
+    /**
+     * Adds new pose for a human object.
+     * @param {string} objectId - id of human object
+     * @param {WholePoseData} wholePose - pose
+     */
     addPoseData(objectId, wholePose) {
         if (this.pastPoses[objectId] === undefined) {
             this.pastPoses[objectId] = {
                 latestFusedDataTS: 0,
                 poses: []
             };
+        }
+
+        if (wholePose.joints && wholePose.joints.length > 0) {
+            // check presence of all necessary data
+            if (! ((wholePose.imageSize && wholePose.imageSize.length == 2) &&
+                  (wholePose.focalLength && wholePose.focalLength.length == 2) &&
+                  (wholePose.principalPoint && wholePose.principalPoint.length == 2) &&
+                  (wholePose.transformW2C && wholePose.transformW2C.length == 16)) ) {
+                console.warn('Incomplete or incorrect pose data.');
+            }
         }
 
         // extend pose object with overall confidence but prevent it to be copyable
@@ -522,9 +550,23 @@ class HumanPoseFuser {
         return bestObjectId;
     }
 
+    // TODO
+    // 
+    // triangulateJoint()
+
+    /** Triangulates a set of poses associated with a fused human object.
+     * @param {string} fusedObjectId - id of fused human object
+     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} triangulated 3D pose
+     */
+    triangulatePose(fusedObjectId, poseData) {
+        return null;
+    }
+
     /** Updates a specified fused human object.
      * @param {string} fusedObjectId - id of fused human object
-     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
+     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
+     * @
      */
     updateFusedObject(fusedObjectId, poseData) {
 
@@ -533,27 +575,41 @@ class HumanPoseFuser {
             return;
         }
 
-        let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
-        if (!selectedObjectId) {
-            return;
+        let finalPose;  // undefined as default
+
+        switch (this.fusionMethod) {
+        case FusionMethod.MultiViewTriangulation: {
+            break;
+        }
+        case FusionMethod.BestSingleView: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                return;
+            }
+            // take directly current pose from the selected human object
+            finalPose = poseData[selectedObjectId];
+            break;
+        }
+        default:
+            console.error('Unknown fusion method.');
         }
 
-        if (poseData[selectedObjectId] == undefined || poseData[selectedObjectId].joints.length == 0) {
+        if (finalPose === undefined || finalPose.joints.length == 0) {
             if (this.verbose) {
                 console.log('not updating joints: obj=' + fusedObjectId);
             }
             return;
         }
 
-        this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
-        this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
+        this.objectsRef[fusedObjectId].updateJoints(finalPose.joints);
+        this.objectsRef[fusedObjectId].lastUpdateDataTS = finalPose.timestamp;
         server.resetObjectTimeout(fusedObjectId); // keep the object alive
 
         // create copy and update name (confidence attribute not copied)
-        let wholePose = Object.assign({}, poseData[selectedObjectId]);
+        let wholePose = Object.assign({}, finalPose);
         let end = fusedObjectId.indexOf('pose1');
         let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
-        wholePose.name = name; // 'server_pose1' in practise for now
+        wholePose.name = name; // 'server***_pose1' in practise for now
 
         // add also to pastPoses
         this.addPoseData(fusedObjectId, wholePose);
@@ -572,7 +628,8 @@ class HumanPoseFuser {
             }
         }
         if (this.verbose) {
-            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
+            // TODO: based on algorithm
+            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
         }
     }
 
