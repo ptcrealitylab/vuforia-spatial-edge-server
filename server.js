@@ -3708,15 +3708,17 @@ function socketServer() {
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
 
-            // frequently updated objects like avatar and human pose are excluded from writing to file
             var object = getObject(msg.object);
             if (object) {
+                // frequently updated objects like avatar and human pose are excluded from writing to file
                 if (object.type !== 'avatar' && object.type !== 'human') {
                     utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
                 }
 
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
                 if (object.type == 'human' && msg.publicData['whole_pose']) {
+                    // TODO: clear additional framedata from the message which are not needed on other clients, so they are not transmitted by sendPublicDataToAllSubscribers below
+
                     // unpack public data with the whole pose to the human pose object
                     if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
                         typeof msg.publicData['whole_pose'].timestamp !== 'undefined') {
@@ -3728,7 +3730,7 @@ function socketServer() {
                         if (msg.publicData['whole_pose'].joints.length > 0) {
                             object.updateJoints(msg.publicData['whole_pose'].joints);
                             object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
-                            //console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
+                            console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
                             // keep the object alive
                             resetObjectTimeout(msg.object);
                         }
