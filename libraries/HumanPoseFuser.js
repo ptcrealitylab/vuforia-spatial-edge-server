@@ -3,7 +3,7 @@ const HumanPoseObject = require('./HumanPoseObject');
 const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
-//const { Matrix } = require('ml-matrix');
+const { Matrix, SingularValueDecomposition } = require('ml-matrix');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
@@ -42,10 +42,11 @@ const FusionMethod = Object.freeze({
  * @property {string} name
  * @property {Array.<{x: number, y: number, z: number, confidence: number}> } joints
  * @property {number} timestamp
- * @property {Array.<number>} imageSize
- * @property {Array.<number>} focalLength
- * @property {Array.<number>} principalPoint
- * @property {Array.<number>} transformW2C
+ * @property {Array.<number>} imageSize - [optional]
+ * @property {Array.<number>} focalLength - [optional]
+ * @property {Array.<number>} principalPoint - [optional]
+ * @property {Array.<number>} transformW2C - [optional]
+ * @property {number} poseConfidence - [optional]
  */
 
 /**
@@ -69,7 +70,7 @@ class HumanPoseFuser {
      * @param {string} version
      * @param {string} protocol
      * @param {number} beatPort
-     * @param {string} serverUuid 
+     * @param {string} serverUuid
      */
     constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort, serverUuid) {
         // references to global data structures for objects
@@ -168,11 +169,11 @@ class HumanPoseFuser {
         /** difference in pose confidence to switch over to a different child human object */
         this.minConfidenceDifference = 0.2;
         /** distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person (at the same timestamp) */
-        this.maxDistanceForSamePerson = 300; // mm
+        this.maxDistanceForSamePerson = 1000; // 300; // mm  // MK HACK: increased for debugging
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
 
-        this.fusionMethod = 'MultiViewTriangulation';
+        this.fusionMethod = 'MultiViewTriangulation'; // 'BestSingleView'; 
     }
 
     /** Starts fusion of human poses. */
@@ -238,17 +239,31 @@ class HumanPoseFuser {
             };
         }
 
-        if (wholePose.joints && wholePose.joints.length > 0) {
-            // check presence of all necessary data
-            if (! ((wholePose.imageSize && wholePose.imageSize.length == 2) &&
-                  (wholePose.focalLength && wholePose.focalLength.length == 2) &&
-                  (wholePose.principalPoint && wholePose.principalPoint.length == 2) &&
-                  (wholePose.transformW2C && wholePose.transformW2C.length == 16)) ) {
-                console.warn('Incomplete or incorrect pose data.');
+        let isFusedObject = this.humanObjectsOfFusedObject[objectId] !== undefined;
+        if (!isFusedObject) {
+            // pose of a standard human object from the app
+
+            if (wholePose.joints && wholePose.joints.length > 0) {
+                // check presence of all necessary data if it is not an empty pose (but we still record its timestamp)
+                if (! ((wholePose.imageSize && wholePose.imageSize.length == 2) &&
+                      (wholePose.focalLength && wholePose.focalLength.length == 2) &&
+                      (wholePose.principalPoint && wholePose.principalPoint.length == 2) &&
+                      (wholePose.transformW2C && wholePose.transformW2C.length == 16)) ) {
+                    console.warn('Incomplete or incorrect pose data.');
+                }
             }
+
+            // prevent optional properties being copiable into a fused pose where they don't have a meaning
+            Object.defineProperties(wholePose, {
+                imageSize: {enumerable: false},
+                focalLength: {enumerable: false},
+                principalPoint: {enumerable: false},
+                transformW2C: {enumerable: false}
+            });
         }
 
         // extend pose object with overall confidence but prevent it to be copyable
+        // NOTE: currently used just in fusion method which selects the best single view
         let poseConfidence = this.computeOverallConfidence(wholePose.joints);
         wholePose.poseConfidence = poseConfidence;
         Object.defineProperty(wholePose, 'poseConfidence', { enumerable: false });
@@ -451,7 +466,7 @@ class HumanPoseFuser {
      * Selects the best human object to update its parent fused human object based on presence and confidence of poses received in recent past.
      * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
      * @param {string} fusedObjectId - id of parent fused object
-     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
+     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
      * @return {string | null} objectId
      */
     selectHumanObject(fusedObjectId, poseData) {
@@ -543,30 +558,167 @@ class HumanPoseFuser {
 
         if (bestObjectId) {
             this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
-        } else {
-            console.warn('Cannot select the best object for a fused human object.');
         }
 
         return bestObjectId;
     }
 
-    // TODO
-    // 
-    // triangulateJoint()
+    /**
+     * 
+     * @param {*} projectionMatrices - 3x4 transform matrices per view
+     * @param {*} points2D 
+     * @param {*} weights 
+     * @return {Array.<number> | null}
+     */
+    triangulatePoint(projectionMatrices, points2D, weights) {
+
+        let point3D = [];
+
+        try {  // to catch any exception from mljs lib
+            let AArr = [];  // row by row
+            for (let v = 0; v < projectionMatrices.length; v++) {
+                const P = projectionMatrices[v];
+
+                AArr.push(Matrix.sub(P.getRowVector(2).mul(points2D[v][0]), P.getRowVector(0)).mul(weights[v]).getRow(0));
+                AArr.push(Matrix.sub(P.getRowVector(2).mul(points2D[v][1]), P.getRowVector(1)).mul(weights[v]).getRow(0));
+            }
+
+            // solve homogeneous system A*x = 0
+            // set options to save computation
+            const svdOptions = {
+                computeLeftSingularVectors: false,
+                computeRightSingularVectors: true,
+                autoTranspose: false
+            };
+            let A = new Matrix(AArr);
+            let svd = new SingularValueDecomposition(A, svdOptions);
+
+            if (svd.rank < A.columns) {
+                // cannot get 3D point from under-constrained system
+                return null;
+            }
+
+            // search for the smallest singular value to pick one of right singular vectors
+            let singularValues = svd.diagonal; // Array
+            let orderedSingularValues = [];
+            for (let i = 0; i < singularValues.length; i++) {
+                orderedSingularValues.push([i, singularValues[i]]);
+            }
+            orderedSingularValues.sort((a, b) => a[1] - b[1]); // in ascending order
+            let x = svd.rightSingularVectors.getColumnVector(orderedSingularValues[0][0]); // select the vector for the smallest singular value
+            let nx = Matrix.div(x, x.get(3, 0));  // normalise to get 3D position
+
+            // NOTE: can singular value and especially related singular vector a zero vector?
+            if (Math.abs(orderedSingularValues[0][1]) < svd.threshold) {
+                console.warn(`Near-zero singular value: ${orderedSingularValues[0][1]}; x = ${x}; nx = ${nx}`);
+            }
+
+            point3D = [nx.get(0, 0), nx.get(1, 0), nx.get(2, 0)];
+
+        } catch (error) {
+            console.warn('Point triangulation: ' + error);
+            return null;
+        }
+
+        return point3D;
+    }
 
     /** Triangulates a set of poses associated with a fused human object.
-     * @param {string} fusedObjectId - id of fused human object
-     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
-     * @return {WholePoseData | null} triangulated 3D pose
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} triangulated 3D pose or null when failed
      */
-    triangulatePose(fusedObjectId, poseData) {
-        return null;
+    triangulatePose(poseDataArr) {
+        // prepare data
+        let projectionMatrices = []; // per-view
+        let jointsInView = []; // joint 2D positions + confidences per view
+        let latestTS = 0; // the latest data timestamp
+        for (let [id, pose] of poseDataArr) {
+            // create calibration matrix (defined row by row)
+            let K = new Matrix([
+                [pose.focalLength[0], 0, pose.principalPoint[0]],
+                [0, pose.focalLength[1], pose.principalPoint[1]],
+                [0, 0, 1]
+            ]);
+            // create 3x4 transform matrix (defined row by row)
+            // 4x4 transformW2C is stored column-wise in 1D array 
+            let T = new Matrix([
+                [pose.transformW2C[0], pose.transformW2C[4], pose.transformW2C[8],  pose.transformW2C[12]],
+                [pose.transformW2C[1], pose.transformW2C[5], pose.transformW2C[9],  pose.transformW2C[13]],
+                [pose.transformW2C[2], pose.transformW2C[6], pose.transformW2C[10], pose.transformW2C[14]]
+            ]);
+            // compute full projection matrix
+            let P = K.mmul(T);
+
+            // TODO: don't triangulate synthetic joints
+            // project all joint 3D points to 2D positions in the view (in pixel units)
+            let joints2D = [];
+            for (let joint of pose.joints) {
+                // project to 2D position (image xy axes are according to Vuforia API / OpenGL)
+                const p3d = Matrix.columnVector([joint.x, joint.y, joint.z, 1]);
+                let p2d = P.mmul(p3d);
+                p2d.div(p2d.get(2, 0));
+
+                let ix = p2d.get(0, 0);
+                let iy = p2d.get(1, 0);
+                if ((ix > 0) && (ix < pose.imageSize[0]) && (iy > 0) && (iy < pose.imageSize[1])) {
+                    // projects into the bounds of original image
+                    joints2D.push({ix: ix, iy: iy, confidence: joint.confidence});
+                } else {
+                    // give zero weight
+                    joints2D.push({ix: ix, iy: iy, confidence: 0.0});
+                }
+            }
+
+            jointsInView.push(joints2D);
+            projectionMatrices.push(P);
+
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+
+        // prepare output pose
+        let mvPose = {
+            name: '',
+            timestamp: latestTS,
+            joints: []
+        };
+
+        // triangulate individual joints
+        const numJoints = jointsInView[0].length;
+        const numViews = jointsInView.length;
+        for (let j = 0; j < numJoints; j++) {
+
+            // TODO: use confidence for weighting
+            let weights = [];
+            let points2D = [];
+            for (let v = 0; v < numViews; v++) {
+                points2D.push([jointsInView[v][j].ix, jointsInView[v][j].iy]);
+                weights.push(1.0);
+            }
+            let point3D = this.triangulatePoint(projectionMatrices, points2D, weights);
+
+            if (point3D) {
+                // TODO: compute new 'multiview' confidence
+                mvPose.joints.push({x: point3D[0], y: point3D[1], z: point3D[2], confidence: 1.0});
+            }
+            else {
+                // TODO
+                //mvPose.joints.push(null);
+                mvPose.joints.push({x: 0.0, y: 0.0, z: 0.0, confidence: 0.0});
+            }
+
+        }
+
+        // TODO: check if joint entry is not null and come up with approximate position
+
+
+        return mvPose;
     }
 
     /** Updates a specified fused human object.
      * @param {string} fusedObjectId - id of fused human object
      * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
-     * @
      */
     updateFusedObject(fusedObjectId, poseData) {
 
@@ -576,18 +728,45 @@ class HumanPoseFuser {
         }
 
         let finalPose;  // undefined as default
+        let fusedObjectIds = [];  // ids used in the fusion
 
         switch (this.fusionMethod) {
         case FusionMethod.MultiViewTriangulation: {
+            // filter empty poses
+            let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+            if (poseDataArr.length == 0) {
+                // no data in current frame, do nothing
+            } else if (poseDataArr.length == 1) {
+                // single view is currently updating the fused object
+                // TODO: no update when poses from all expected views are not present (as in FusionMethod.BestSingleView) 
+                //      but need to allow for the situation when there is just single human object associated with the fused object
+                // TODO: too volatile swithing between multiview and single view (hysteresis before switching to it?)
+                // finalPose = poseDataArr[0][1];
+                // fusedObjectIds.push(poseDataArr[0][0]);
+            } else {
+                // actual multiview fusion
+                let mvPose = this.triangulatePose(poseDataArr);
+                if (!mvPose) {
+                    console.warn('Failed to triangulate 3D pose.');
+                } else {
+                    // take directly current pose from the selected human object
+                    finalPose = mvPose;
+                    for (let [objectId, pose] of poseDataArr) {
+                        fusedObjectIds.push(objectId);
+                    }
+                }
+            }
             break;
         }
         case FusionMethod.BestSingleView: {
             let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
             if (!selectedObjectId) {
-                return;
+                console.warn('Cannot select the best object for a fused human object.');
+            } else {
+                // take directly current pose from the selected human object (can be undefined in the current frame)
+                finalPose = poseData[selectedObjectId];
+                fusedObjectIds.push(selectedObjectId);
             }
-            // take directly current pose from the selected human object
-            finalPose = poseData[selectedObjectId];
             break;
         }
         default:
@@ -605,13 +784,13 @@ class HumanPoseFuser {
         this.objectsRef[fusedObjectId].lastUpdateDataTS = finalPose.timestamp;
         server.resetObjectTimeout(fusedObjectId); // keep the object alive
 
-        // create copy and update name (confidence attribute not copied)
+        // create copy and update name (unnecessary properties not copied)
         let wholePose = Object.assign({}, finalPose);
         let end = fusedObjectId.indexOf('pose1');
         let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
         wholePose.name = name; // 'server***_pose1' in practise for now
 
-        // add also to pastPoses
+        // add also to pastPoses (unnecessary properties not stored)
         this.addPoseData(fusedObjectId, wholePose);
 
         // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
@@ -628,8 +807,7 @@ class HumanPoseFuser {
             }
         }
         if (this.verbose) {
-            // TODO: based on algorithm
-            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
+            console.log('updating joints: obj=' + fusedObjectId + ' with [' + fusedObjectIds + '], data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
         }
     }
 
