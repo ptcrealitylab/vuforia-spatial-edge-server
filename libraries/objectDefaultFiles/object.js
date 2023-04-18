@@ -732,8 +732,10 @@
                 this.promptForArea = makeSendStub('promptForArea');
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
 
-                this.analyticsAdd = makeSendStub('analyticsAdd');
-                this.analyticsRemove = makeSendStub('analyticsRemove');
+                this.analyticsOpen = makeSendStub('analyticsOpen');
+                this.analyticsClose = makeSendStub('analyticsClose');
+                this.analyticsFocus = makeSendStub('analyticsFocus');
+                this.analyticsBlur = makeSendStub('analyticsBlur');
                 this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
                 this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
@@ -1624,14 +1626,35 @@
             });
         };
 
-        this.analyticsAdd = function analyticsAdd() {
+        this.analyticsOpen = function analyticsOpen() {
             postDataToParent({
-                analyticsAdd: true,
+                analyticsOpen: {
+                    frame: spatialObject.frame,
+                },
             });
         };
-        this.analyticsRemove = function analyticsRemove() {
+
+        this.analyticsClose = function analyticsClose() {
             postDataToParent({
-                analyticsRemove: true,
+                analyticsClose: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsFocus = function analyticsFocus() {
+            postDataToParent({
+                analyticsFocus: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsBlur = function analyticsBlur() {
+            postDataToParent({
+                analyticsBlur: {
+                    frame: spatialObject.frame,
+                },
             });
         };
 
