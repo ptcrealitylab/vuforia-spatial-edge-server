@@ -45,4 +45,4 @@ libraries/objectLogs/*
 
 .node-persist
 
-/addons/*
+#/addons/*
