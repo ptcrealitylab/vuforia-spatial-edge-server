@@ -8,17 +8,17 @@ class MessageInterface {
 
     /**
      * send a message to the object
-     * @param {Object} message
+     * @param {Object} _
      */
-    postMessage(message) {
+    postMessage(_) {
         throw new Error("Interface Messageinterface not implemented");
     }
 
     /**
      * set function to receive messages from the object
-     * @param {function(MessageEvent):void} func
+     * @param {function(MessageEvent):void} _
      */
-    setOnMessage(func) {
+    setOnMessage(_) {
         throw new Error("Interface MessageInterface not implemented");
     }
 }
@@ -63,7 +63,6 @@ class SelfMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {Object} message
      */
     postMessage(message) {
@@ -71,7 +70,6 @@ class SelfMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {function(MessageEvent):void} func
      */
     setOnMessage(func) {
@@ -83,7 +81,7 @@ class SelfMessageInterface extends MessageInterface {
  * implmenets the generalized post message protocol for dynamicly loaded scripts
  * used for communication between the main thread and the script
  * works with FactoryMessageInterface for communication in the opposite direction
- * Requires a FactoryMessageInterface to function completely, initialize with a call to setExternalMessageInterface 
+ * Requires a FactoryMessageInterface to function completely, initialize with a call to setExternalMessageInterface
  */
 class DynamicScriptMessageInterface extends MessageInterface {
     constructor() {
@@ -145,7 +143,7 @@ class DynamicScriptMessageInterface extends MessageInterface {
     }
 
     /**
-     * @param {MessageEvent} messageEvent 
+     * @param {MessageEvent} messageEvent
      */
     onMessage(messageEvent) {
         if (this.onMessageFunc) {
@@ -156,7 +154,6 @@ class DynamicScriptMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {FactoryMessageInterface} messageInterface the other half of this communicationchannel
      */
     setExternalMessageInterface(messageInterface) {
@@ -181,7 +178,6 @@ class DynamicScriptMessageInterface extends MessageInterface {
  */
 class FactoryMessageInterface extends MessageInterface {
     /**
-     * 
      * @param {DynamicScriptFactory} factory
      */
     constructor(factory) {
@@ -235,7 +231,7 @@ class FactoryMessageInterface extends MessageInterface {
 
     /**
      * if we receive a mesage but there is no callback store the message for later
-     * @param {MessageEvent} messageEvent 
+     * @param {MessageEvent} messageEvent
      */
     onMessage(messageEvent) {
         if (this.onMessageFunc) {
@@ -255,11 +251,11 @@ class WorkerFactory {
 
     /**
      * Creates a new script and returns a communication interface through which messages can be send
-     * @param {string} scriptPath path to the script
-     * @param {boolean} isModule wether the loaded script is a module or normal javascript
+     * @param {string} _scriptPath path to the script
+     * @param {boolean} _isModule wether the loaded script is a module or normal javascript
      * @returns {MessageInterface} communication interface
      */
-    createWorker(scriptPath, isModule) {
+    createWorker(_scriptPath, _isModule) {
         throw new Error("Interface WorkerFactory not implemented");
     }
 }
@@ -312,7 +308,7 @@ class DynamicScriptFactory extends WorkerFactory {
         this.lastId = this.nextId;
         const messageInterface = new DynamicScriptMessageInterface();
         this.workers.set(this.nextId, messageInterface);
-        this.nextId++; 
+        this.nextId++;
         // start script execution
         document.body.appendChild(scriptElem);
         return messageInterface;
@@ -320,7 +316,7 @@ class DynamicScriptFactory extends WorkerFactory {
 
     /**
      * used by FactoryMessageInterface to find the main thread's DynamicScriptMessageInterface using the given id
-     * @param {number} id dynamicScriptId/unique number identifying the dynamically loaded script 
+     * @param {number} id dynamicScriptId/unique number identifying the dynamically loaded script
      * @returns {DynamicScriptMessageInterface | undefined}
      */
     getMessageInterfaceById(id) {

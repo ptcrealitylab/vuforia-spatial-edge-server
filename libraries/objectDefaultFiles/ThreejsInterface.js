@@ -1,8 +1,8 @@
-import {MessageInterface, WorkerFactory} from "/objectDefaultFiles/WorkerFactory.js"
-import {WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js"
+import {WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
 
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
+ * @typedef {import("./WorkerFactory.js").MessageInterface} MessageInterface
  */
 
 /**
@@ -10,7 +10,6 @@ import {WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js"
  */
 class ThreejsInterface {
     /**
-     * 
      * @param {SpatialInterface} spatialInterface
      * @param {string} workerScript
      */
@@ -20,7 +19,7 @@ class ThreejsInterface {
          * @type {SpatialInterface}
          */
         this.spatialInterface = spatialInterface;
-       
+
         /**
          * @type {MessageInterface}
          */
@@ -45,8 +44,8 @@ class ThreejsInterface {
 
     /**
      * this message is used to setup the projection matrix in the webworker
-     * @param {Float32Array} modelViewMatrix 
-     * @param {Float32Array} projectionMatrix 
+     * @param {Float32Array} modelViewMatrix
+     * @param {Float32Array} projectionMatrix
      */
     anchoredModelViewCallback(modelViewMatrix, projectionMatrix) {
         this.workerMessageInterface.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
@@ -71,7 +70,7 @@ class ThreejsInterface {
 
     /**
      * receives messages from the webworker to send to the server
-     * @param {MessageEvent<any>} event 
+     * @param {MessageEvent<any>} event
      */
     onMessageFromWorker(event) {
         const message = event.data;
@@ -88,7 +87,7 @@ class ThreejsInterface {
     /**
      * receives messages from the server to send through to the webworker
      * some messages influence the spatial interface and are intercepted before passing them on
-     * @param {MessageEvent<any>} event 
+     * @param {MessageEvent<any>} event
      */
     onMessageFromServer(event) {
         const message = event.data;
@@ -118,7 +117,6 @@ class ThreejsInterface {
     }
 
     /**
-     * 
      * @returns {Promise<boolean>}
      */
     makeWatchdog() {
