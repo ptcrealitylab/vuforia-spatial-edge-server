@@ -1,3 +1,15 @@
+// eslint-disable-next-line no-unused-vars
+/* global workerId */
+
+/**
+ * @fileOverview
+ *
+ * object.js provides the SpatialInterface API, forming a bridge between the
+ * tool and the containing user interface. Calling a method on the
+ * SpatialInterface usually calls postMessage to send a message from the tool
+ * iframe to the user interface which will then take an action on behalf of the
+ * tool.
+ */
 (function(exports) {
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
@@ -472,10 +484,10 @@
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
 
-            function forElementAndParentsRecursively(elt, callback) {
-                callback(elt);
-                if (elt.parentNode && elt.parentNode.tagName !== 'HTML' && elt.parentNode !== document) {
-                    forElementAndParentsRecursively(elt.parentNode, callback);
+            function forElementAndParentsRecursively(element, callback) {
+                callback(element);
+                if (element.parentNode && element.parentNode.tagName !== 'HTML' && element.parentNode !== document) {
+                    forElementAndParentsRecursively(element.parentNode, callback);
                 }
             }
 
@@ -547,6 +559,7 @@
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
             console.log('set workerId to ' + msgContent.workerId);
+            // eslint-disable-next-line no-global-assign
             workerId = msgContent.workerId;
         }
     };
@@ -617,7 +630,6 @@
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
-            this.initNode = makeIoStub('initNode');
 
             /**
              * Internet of Screens APIs
@@ -652,6 +664,8 @@
                 this.sendMessageToFrame = makeSendStub('sendMessageToFrame');
                 this.sendMessageToTool = makeSendStub('sendMessageToTool');
                 this.sendEnvelopeMessage = makeSendStub('sendEnvelopeMessage');
+                this.initNodeWithOptions = makeSendStub('initNodeWithOptions');
+                this.initNode = makeSendStub('initNode');
                 this.sendCreateNode = makeSendStub('sendCreateNode');
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
@@ -704,6 +718,7 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.onWindowResized = makeSendStub('onWindowResized');
                 this.prefersAttachingToWorld = makeSendStub('prefersAttachingToWorld');
                 this.prefersAttachingToObjects = makeSendStub('prefersAttachingToObjects');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
@@ -715,6 +730,22 @@
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
+                this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
+
+                this.analyticsOpen = makeSendStub('analyticsOpen');
+                this.analyticsClose = makeSendStub('analyticsClose');
+                this.analyticsFocus = makeSendStub('analyticsFocus');
+                this.analyticsBlur = makeSendStub('analyticsBlur');
+                this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
+                this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
+                this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
+                this.analyticsSetLens = makeSendStub('analyticsSetLens');
+                this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
+                this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
+                this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
+                this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1083,43 +1114,6 @@
         };
 
         /**
-         * Declares a new node that should be created for this frame.
-         * @param {string} name - required
-         * @param type - required. (default type should be "node")
-         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} scaleFactor - optional. defaults to 1
-         * @param {number|undefined} defaultValue - optional. defaults to 0
-         */
-        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
-            if (typeof name === 'undefined' || typeof type === 'undefined') {
-                console.error('initNode must specify a name and a type');
-            }
-            var nodeData = {
-                name: name,
-                type: type
-            };
-            if (typeof x !== 'undefined') {
-                nodeData.x = x;
-            }
-            if (typeof y !== 'undefined') {
-                nodeData.y = y;
-            }
-            if (typeof scaleFactor !== 'undefined') {
-                nodeData.scaleFactor = scaleFactor;
-            }
-            if (typeof defaultValue !== 'undefined') {
-                nodeData.defaultValue = defaultValue;
-            }
-
-            postDataToParent({
-                initNode: {
-                    nodeData: nodeData
-                }
-            });
-        };
-
-        /**
          * @deprecated
          *
          * Backwards compatible for UI requesting a socket message with the value of a certain node
@@ -1181,24 +1175,60 @@
             });
         };
 
-        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate) {
-            var data = {
-                name: name,
-                x: x,
-                y: y
-            };
-            if (typeof attachToGroundPlane !== 'undefined') {
-                data.attachToGroundPlane = attachToGroundPlane;
+        /**
+         * Updated API to init a node. initNode and sendCreateNode invoke this.
+         * @param {string} name
+         * @param {Object} options
+         */
+        this.initNodeWithOptions = function(name, options = {}) {
+            if (typeof name === 'undefined') {
+                console.error('initNode must specify a name');
+                return;
             }
-            if (typeof nodeType !== 'undefined') {
-                data.nodeType = nodeType;
-            }
-            if (typeof noDuplicate !== 'undefined') {
-                data.noDuplicate = noDuplicate;
-            }
+
+            const {
+                type = 'node',
+                x,
+                y,
+                scaleFactor,
+                defaultValue,
+                attachToGroundPlane
+            } = options;
+
+            let nodeData = { name, type, x, y, scaleFactor, defaultValue, attachToGroundPlane };
+
             postDataToParent({
-                createNode: data
+                initNode: {
+                    nodeData: nodeData
+                }
             });
+        }
+
+        /**
+         * @deprecated - use initNodeWithOptions instead
+         * Declares a new node that should be created for this frame.
+         * @param {string} name - required
+         * @param type - required. (default type should be "node")
+         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} scaleFactor - optional. defaults to 1
+         * @param {number|undefined} defaultValue - optional. defaults to 0
+         */
+        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type, x, y, scaleFactor, defaultValue });
+        };
+
+        /**
+         * @deprecated – use initNodeWithOptions instead
+         */
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, _noDuplicate, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type: nodeType, x, y, attachToGroundPlane, defaultValue });
         };
 
         this.sendMoveNode = function (name, x, y) {
@@ -1371,6 +1401,9 @@
 
             if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
+            }
+            if (params && typeof params.full2D !== 'undefined') {
+                dataToPost.fullScreenFull2D = params.full2D;
             }
 
             postDataToParent(dataToPost);
@@ -1590,6 +1623,137 @@
 
             postDataToParent({
                 virtualizerRecording: false
+            });
+        };
+
+        this.analyticsOpen = function analyticsOpen() {
+            postDataToParent({
+                analyticsOpen: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsClose = function analyticsClose() {
+            postDataToParent({
+                analyticsClose: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsFocus = function analyticsFocus() {
+            postDataToParent({
+                analyticsFocus: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsBlur = function analyticsBlur() {
+            postDataToParent({
+                analyticsBlur: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        /**
+         * @param {number} time - cursor time in ms
+         */
+        this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
+            postDataToParent({
+                analyticsSetCursorTime: {
+                    time,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} highlightRegion
+         */
+        this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
+            postDataToParent({
+                analyticsSetHighlightRegion: {
+                    highlightRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} displayRegion
+         */
+        this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
+            postDataToParent({
+                analyticsSetDisplayRegion: {
+                    displayRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {Array<{startTime: number, endTime: number}>} regionCards
+         */
+        this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
+            postDataToParent({
+                analyticsHydrateRegionCards: {
+                    regionCards,
+                },
+            });
+        };
+
+        /**
+         * @param {"reba"|"motion"} lens
+         */
+        this.analyticsSetLens = function analyticsSetLens(lens) {
+            postDataToParent({
+                analyticsSetLens: {
+                    lens,
+                },
+            });
+        };
+
+        /**
+         * @param {"bone"|"pose"} lensDetail
+         */
+        this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
+            postDataToParent({
+                analyticsSetLensDetail: {
+                    lensDetail,
+                },
+            });
+        };
+
+        /**
+         * @param {string} spaghettiAttachPoint - joint id
+         */
+        this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
+            postDataToParent({
+                analyticsSetSpaghettiAttachPoint: {
+                    spaghettiAttachPoint,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
+            postDataToParent({
+                analyticsSetSpaghettiVisible: {
+                    spaghettiVisible,
+                },
+            });
+        };
+
+        /**
+         * @param {boolean} allClonesVisible
+         */
+        this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
+            postDataToParent({
+                analyticsSetAllClonesVisible: {
+                    allClonesVisible,
+                },
             });
         };
 
@@ -1819,6 +1983,22 @@
 
         this.changeToolSize = this.changeFrameSize;
 
+        let windowResizedCallbackCount = 0;
+        this.onWindowResized = function(callback) {
+            windowResizedCallbackCount++;
+            spatialObject.messageCallBacks[`onWindowResizedCall${windowResizedCallbackCount}`] = (msgContent) => {
+                if (typeof msgContent.onWindowResized === 'undefined') return;
+                callback({
+                    width: msgContent.onWindowResized.width,
+                    height: msgContent.onWindowResized.height
+                });
+            }
+
+            postDataToParent({
+                sendWindowResize: true
+            });
+        }
+
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
          * @param {function} callback
@@ -1903,17 +2083,19 @@
             });
         };
 
+        let toolCreationCallbackCount = 0;
         this.wasToolJustCreated = function(callback) {
             if (typeof spatialObject.wasToolJustCreated === 'boolean') {
                 callback(spatialObject.wasToolJustCreated);
                 return;
             }
 
-            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+            let callbackName = 'toolCreationCall' + toolCreationCallbackCount;
+            spatialObject.messageCallBacks[callbackName] = function (msgContent) {
                 if (typeof msgContent.firstInitialization !== 'undefined') {
                     spatialObject.wasToolJustCreated = msgContent.firstInitialization;
                     callback(msgContent.firstInitialization);
-                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks[callbackName]; // only trigger it once
                 }
             };
         };
@@ -1950,6 +2132,20 @@
                 errorNotification: errorMessageText
             });
         };
+
+        this.getEnvironmentVariables = function() {
+            postDataToParent({
+                getEnvironmentVariables: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
+                    if (typeof msgContent.environmentVariables !== 'undefined') {
+                        resolve(msgContent.environmentVariables);
+                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                    }
+                };
+            });
+        }
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
@@ -2276,7 +2472,13 @@
     };
 
     function isDesktop() {
-        return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
+        const userAgent = window.navigator.userAgent;
+        const isWebView = userAgent.includes('Mobile') && !userAgent.includes('Safari');
+        const isIpad = /Macintosh/i.test(navigator.userAgent) &&
+            navigator.maxTouchPoints &&
+            navigator.maxTouchPoints > 1;
+
+        return !isWebView && !isIpad;
     }
 
     exports.spatialObject = spatialObject;

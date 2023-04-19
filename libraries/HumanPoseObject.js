@@ -47,6 +47,14 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     this.isHumanPose = true;
     this.type = 'human';
     this.isWorldObject = false;
+    this.poseJointSchema = poseJointSchema;
+    // Timestamp of the last update of pose (joint positions + related data such as joint confidences)
+    // This is capture timestamp of the image used to compute the pose in the update. Units are miliseconds, but it is a floating-point number with nanosecond precision.
+    this.lastUpdateDataTS = 0;
+    // Parent is defined when this human object is associated and supports a fused human object (therefore this object does not need to be analyzed/visualized ...)
+    // Parent is 'none' for any fused human object or standalone human object not currently associated with a fused one.
+    // NOTE: this property can change over time and subscribers to this object should take that into account
+    this.parent = 'none';
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
@@ -60,6 +68,15 @@ HumanPoseObject.prototype.getName = function(bodyId) {
  */
 HumanPoseObject.prototype.getFrameKey = function(jointName) {
     return this.objectId + jointName;
+};
+
+/**
+ * Helper function returns the UUID of a node based on the name of a joint.
+ * @param {string} jointName - e.g. JOINT_PELVIS, JOINT_FOOT_RIGHT
+ * @return {string} - e.g. objectUuidJOINT_PELVISstorage, objectUuidJOINT_FOOT_RIGHTstorage
+ */
+HumanPoseObject.prototype.getNodeKey = function(jointName) {
+    return this.objectId + jointName + 'storage';
 };
 
 // // matches the entries of the Azure Kinect Body Tracking SDK
@@ -124,7 +141,7 @@ HumanPoseObject.prototype.getFrameKey = function(jointName) {
 HumanPoseObject.prototype.createPoseFrames = function(poseJointSchema) {
     var frames = {};
     Object.values(poseJointSchema).forEach(function(jointName) {
-        frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName);
+        frames[ this.getFrameKey(jointName) ] = this.createFrame(jointName, true);
     }.bind(this));
     return frames;
 };
@@ -142,8 +159,8 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     newFrame.ar.scale = 1;
 
     if (shouldCreateNode) {
-        let nodeName = 'value';
-        var newNode = new Node(nodeName, 'node', this.objectId, newFrame.uuid, newFrame.uuid + nodeName);
+        let nodeName = 'storage';
+        var newNode = new Node(nodeName, 'storeData', this.objectId, newFrame.uuid, newFrame.uuid + nodeName);
         newFrame.nodes[newNode.uuid] = newNode;
         newNode.scale = 0.2; // nodes currently have a problem of being rendered too large by default, so decrease scale
     }
@@ -151,15 +168,17 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     return newFrame;
 };
 
-HumanPoseObject.prototype.updateJointPositions = function(joints) {
+/**
+ * Update frame poses and public data of nodes based on a given joints state
+ * @param {Array.<{x, y, z, confidence}>} joints
+ */
+HumanPoseObject.prototype.updateJoints = function(joints) {
 
-    // converts joint position from meters to mm scale
-    var scale = 1000;
-
+    // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
     var objPos = {
-        x: joints[0].x * scale, // right now uses the pelvis as the object's center, but could change to any other joint (e.g. head might make sense)
-        y: joints[0].y * scale,
-        z: joints[0].z * scale
+        x: joints[0].x,
+        y: joints[0].y,
+        z: joints[0].z
     };
 
     this.matrix = [
@@ -170,24 +189,52 @@ HumanPoseObject.prototype.updateJointPositions = function(joints) {
     ];
 
     // update the position of each frame based on the poseInfo
-    joints.forEach(function(position, i) {
-        var jointName = Object.keys(this.POSE_JOINTS)[i];
+    joints.forEach(function(jointInfo, index) {
+        var jointName = Object.values(this.poseJointSchema)[index];
         var frame = this.frames[this.getFrameKey(jointName)];
-        if (frame) {
-            var scaledPosition = {
-                x: position.x * scale, // meter to mm scale
-                y: position.y * scale,
-                z: position.z * scale
-            };
-            // frame positions are relative to object
-            frame.ar.matrix = [
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                scaledPosition.x - objPos.x, scaledPosition.y - objPos.y, scaledPosition.z - objPos.z, 1
-            ];
+        if (!frame) {
+            console.warn('couldn\'t find frame for joint ' + jointName + ' (' + index + ')');
+            return;
         }
+
+        var position = {
+            x: jointInfo.x,
+            y: jointInfo.y,
+            z: jointInfo.z
+        };
+        // frame positions are relative to object
+        frame.ar.matrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            position.x - objPos.x, position.y - objPos.y, position.z - objPos.z, 1
+        ];
+
+        var node = Object.values(frame.nodes).find(obj => obj.name === 'storage');
+        if (!node || !node.publicData.data) {
+            console.warn('couldn\'t find node public data for joint ' + jointName + ' (' + index + ')');
+            return;
+        }
+
+        node.publicData.data = { confidence: jointInfo.confidence };
+
     }.bind(this));
+};
+
+/**
+ * @return { {objectKey, frameKey, nodeKey} } - keys of the storeData node of a given joint
+ */
+HumanPoseObject.prototype.getJointNodeInfo = function(jointIndex) {
+
+    var jointName = Object.values(this.poseJointSchema)[jointIndex];
+    var frameKey = this.getFrameKey(jointName);
+    var nodeKey = this.getNodeKey(jointName);
+
+    return {
+        objectKey: this.objectId,
+        frameKey: frameKey,
+        nodeKey: nodeKey
+    };
 };
 
 /**

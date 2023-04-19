@@ -196,24 +196,24 @@ Example 2: sends two updates at once to update the x and y properties of a node
 
 ```javascript
 serverSocket.emit('/batchedUpdate', JSON.stringify({
-	batchedUpdates: [
-		{
-			objectKey: "test_Peoqk0h4lgb",
+  batchedUpdates: [
+    {
+      objectKey: "test_Peoqk0h4lgb",
       frameKey: "test_Peoqk0h4lgbcommunicationIheoqop8cs05",
       nodeKey: "test_Peoqk0h4lgbcommunicationIheoqop8cs05value",
       propertyPath: 'x',
       newValue: 200,
       editorId: "4Q19ow5g"
-		},
-		{
-			objectKey: "test_Peoqk0h4lgb",
+    },
+    {
+      objectKey: "test_Peoqk0h4lgb",
       frameKey: "test_Peoqk0h4lgbcommunicationIheoqop8cs05",
       nodeKey: "test_Peoqk0h4lgbcommunicationIheoqop8cs05value",
       propertyPath: 'y',
       newValue: 300,
       editorId: "4Q19ow5g"
-		}
-	]
+    }
+  ]
 }));
 ```
 
@@ -228,8 +228,8 @@ Example:
 ```javascript
 serverSocket.emit('/subscribe/objectUpdates', JSON.stringify({editorId: tempDeviceId}));
 serverSocket.on('/update/object/matrix', function(msg) {
-	let msgData = JSON.parse(msg);
-	console.log(msgData.editorId, msgData.objectKey, msgData.propertyPath, msgData.newValue);
+  let msgData = JSON.parse(msg);
+  console.log(msgData.editorId, msgData.objectKey, msgData.propertyPath, msgData.newValue);
 });
 ```
 
@@ -241,10 +241,10 @@ Example:
 
 ```javascript
 serverSocket.emit('/update/object/matrix', JSON.stringify({
-	objectKey: "test_Peoqk0h4lgb",
-	matrix: [1,0,0,0,0,1,0,0,0,0,1,0,1000,2000,0,1],
-	worldId: "_WORLD_instantScan_yay1j3zgtoe",
-	editorId: "4Q19ow5g" // random ID for this device
+  objectKey: "test_Peoqk0h4lgb",
+  matrix: [1,0,0,0,0,1,0,0,0,0,1,0,1000,2000,0,1],
+  worldId: "_WORLD_instantScan_yay1j3zgtoe",
+  editorId: "4Q19ow5g" // random ID for this device
 }));
 ```
 
@@ -265,8 +265,8 @@ Example:
 ```javascript
 serverSocket.emit('/subscribe/cameraMatrix', JSON.stringify({editorId: tempDeviceId}));
 serverSocket.on('/cameraMatrix', function(msg) {
-	let msgData = JSON.parse(msg);
-	console.log(msgData.editorId, msgData.cameraMatrix);
+  let msgData = JSON.parse(msg);
+  console.log(msgData.editorId, msgData.cameraMatrix);
 });
 ```
 
@@ -280,8 +280,8 @@ Example:
 
 ```javascript
 serverSocket.emit('/cameraMatrix', JSON.stringify({
-	cameraMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-	editorId: "4Q19ow5g" // random ID for this device
+  cameraMatrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+  editorId: "4Q19ow5g" // random ID for this device
 }));
 ```
 
