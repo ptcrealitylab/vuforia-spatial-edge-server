@@ -173,7 +173,8 @@ class HumanPoseFuser {
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
 
-        this.fusionMethod = 'MultiViewTriangulation'; // 'BestSingleView'; 
+        this.fusionMethod = 'MultiViewTriangulation'; // 'BestSingleView';
+        this.viewWeighting = true;
     }
 
     /** Starts fusion of human poses. */
@@ -564,10 +565,10 @@ class HumanPoseFuser {
     }
 
     /**
-     * 
+     * Triangulates 3d position of a single point from 2D observations in multiple views
      * @param {*} projectionMatrices - 3x4 transform matrices per view
-     * @param {*} points2D 
-     * @param {*} weights 
+     * @param {*} points2D - 2d positions per view
+     * @param {*} weights - weighting of individual views
      * @return {Array.<number> | null}
      */
     triangulatePoint(projectionMatrices, points2D, weights) {
@@ -649,7 +650,7 @@ class HumanPoseFuser {
             // compute full projection matrix
             let P = K.mmul(T);
 
-            // TODO: don't triangulate synthetic joints
+            // TODO: don't triangulate synthetic joints ?
             // project all joint 3D points to 2D positions in the view (in pixel units)
             let joints2D = [];
             for (let joint of pose.joints) {
@@ -664,7 +665,7 @@ class HumanPoseFuser {
                     // projects into the bounds of original image
                     joints2D.push({ix: ix, iy: iy, confidence: joint.confidence});
                 } else {
-                    // give zero weight
+                    // give zero weight since it is outside of image boundary
                     joints2D.push({ix: ix, iy: iy, confidence: 0.0});
                 }
             }
@@ -688,13 +689,16 @@ class HumanPoseFuser {
         const numJoints = jointsInView[0].length;
         const numViews = jointsInView.length;
         for (let j = 0; j < numJoints; j++) {
-
-            // TODO: use confidence for weighting
             let weights = [];
             let points2D = [];
             for (let v = 0; v < numViews; v++) {
                 points2D.push([jointsInView[v][j].ix, jointsInView[v][j].iy]);
-                weights.push(1.0);
+                if (this.viewWeighting) {
+                    // weight individual observations according to joint confidence
+                    weights.push(jointsInView[v][j].confidence);
+                } else {
+                    weights.push(1.0);
+                }
             }
             let point3D = this.triangulatePoint(projectionMatrices, points2D, weights);
 
