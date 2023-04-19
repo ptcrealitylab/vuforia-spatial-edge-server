@@ -1,4 +1,4 @@
-import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer, BlockAndWaitWebGLSyncStrategy, DuplicateWebGLSyncStrategy, WebGLSyncStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
+import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer, WebGLSyncStrategy, WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
 import {MessageInterface} from '/objectDefaultFiles/WorkerFactory.js';
 import * as THREE from '/objectDefaultFiles/three/three.module.js';
 
@@ -93,14 +93,9 @@ class ThreejsWorker {
                     const {workerId, width, height, synclock} = message;
                     this.workerId = workerId;
                     this.synclock = synclock;
-
-                    /**
-                     * @type {WebGLSyncStrategy}
-                     */
-                    const webglSyncStrategy = (this.synclock === null) ? new DuplicateWebGLSyncStrategy() : new BlockAndWaitWebGLSyncStrategy(); 
     
                     // create commandbuffer factory in order to create resource commandbuffers
-                    this.glCommandBufferContext = new GLCommandBufferContext(message, webglSyncStrategy);
+                    this.glCommandBufferContext = new GLCommandBufferContext(message, WebGLStrategy.getInstance().syncStrategy);
                     this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock, this.messageInterface);
     
                     // execute three.js startup
