@@ -1,9 +1,13 @@
+/**
+ * Generalized postMessage interface
+ * It enables us to send messages to scripts executing in the same or a different thread
+ */
 class MessageInterface {
     constructor() {
     }
 
     /**
-     * 
+     * send a message to the object
      * @param {Object} message
      */
     postMessage(message) {
@@ -11,7 +15,7 @@ class MessageInterface {
     }
 
     /**
-     * 
+     * set function to receive messages from the object
      * @param {function(MessageEvent):void} func
      */
     setOnMessage(func) {
@@ -19,10 +23,14 @@ class MessageInterface {
     }
 }
 
+/**
+ * Wraps a Worker object to implement the generalized message interface
+ * it will allow communication with the wrapped web worker
+ * Works in tandem with SelfMessageInterface which provides communication in the opposite direction
+ */
 class WorkerMessageInterface extends MessageInterface {
     /**
-     * 
-     * @param {Worker} worker
+     * @param {Worker} worker the worker object to wrap
      */
     constructor(worker) {
         super();
@@ -30,7 +38,6 @@ class WorkerMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {Object} message
      */
     postMessage(message) {
@@ -38,7 +45,6 @@ class WorkerMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {function(MessageEvent):void} func
      */
     setOnMessage(func) {
@@ -46,6 +52,11 @@ class WorkerMessageInterface extends MessageInterface {
     }
 }
 
+/**
+ * Wraps the global self object and implements the generalized send message interface
+ * Used to communicate from the worker thread with the main thread
+ * Works together with WorkerMessageInterface to provide communication in the other direction
+ */
 class SelfMessageInterface extends MessageInterface {
     constructor() {
         super();
@@ -68,39 +79,50 @@ class SelfMessageInterface extends MessageInterface {
     }
 }
 
+/**
+ * implmenets the generalized post message protocol for dynamicly loaded scripts
+ * used for communication between the main thread and the script
+ * works with FactoryMessageInterface for communication in the opposite direction
+ * Requires a FactoryMessageInterface to function completely, initialize with a call to setExternalMessageInterface 
+ */
 class DynamicScriptMessageInterface extends MessageInterface {
     constructor() {
         super();
         /**
+         * stores messages that are send before a FactoryMessageInterface has been set
          * @type {Array<Object>}
          */
         this.sendMessageBuffer = [];
 
         /**
+         * stores messages that are received before a receive function has been set
          * @type {Array<MessageEvent>}
          */
         this.receivedMessageEventBuffer = [];
 
         /**
+         * callback that will receive messages
          * @type {(function(MessageEvent):void)|null}
          */
         this.onMessageFunc = null;
 
         /**
+         * reference to the FactoryMessageInterface linked to this one for communication with the script
+         * it's a weak reference to prevent cyclic reference counting causing a memory leak
+         * the main thread owns the dynamicly loaded script not the otherway around
          * @type {WeakRef<FactoryMessageInterface>|null}
          */
         this.externalMessageInterface = null;
     }
 
     /**
-     *
      * @param {Object} message
      */
     postMessage(message) {
         if (this.externalMessageInterface) {
             const localExternalMessageInterface = this.externalMessageInterface.deref();
             if (!localExternalMessageInterface) {
-                throw new Error('No externalMessageInterface');
+                throw new Error('externalMessageInterface could not be dereferenced');
             }
             const messageEvent = new MessageEvent('message', {data: message});
             localExternalMessageInterface.onMessage(messageEvent);
@@ -110,18 +132,19 @@ class DynamicScriptMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
      * @param {function(MessageEvent):void} func
      */
     setOnMessage(func) {
+        if (this.onMessageFunc) console.warn("Changing onMessage callback");
         this.onMessageFunc = func;
+        // if there are messages stored in the buffer (messages send before configuring this call back) send them now (fifo)
         for (let bufferedMessageEvent of this.receivedMessageEventBuffer) {
             func(bufferedMessageEvent);
         }
+        this.receivedMessageEventBuffer = [];
     }
 
     /**
-     * 
      * @param {MessageEvent} messageEvent 
      */
     onMessage(messageEvent) {
@@ -134,52 +157,61 @@ class DynamicScriptMessageInterface extends MessageInterface {
 
     /**
      * 
-     * @param {FactoryMessageInterface} messageInterface 
+     * @param {FactoryMessageInterface} messageInterface the other half of this communicationchannel
      */
     setExternalMessageInterface(messageInterface) {
+        if (this.externalMessageInterface) console.warn("Changing externalMessageInterface");
         this.externalMessageInterface = new WeakRef(messageInterface);
+        // if we have send/saved messages before this configuration was complete, send them now (fifo)
         for (let bufferedMessage of this.sendMessageBuffer) {
             const bufferedMessageEvent = new MessageEvent('message', {data: bufferedMessage});
             messageInterface.onMessage(bufferedMessageEvent);
         }
-
+        this.sendMessageBuffer = [];
     }
 }
 
+/**
+ * communication interface for communicating from the dynamicly loaded script to the main thread
+ * before construction the following global variables should be set:
+ * self.dynamicScriptFactoryName
+ * self.dynamicScriptId
+ * we use these to pass information to the loaded script, this works since we load scripts synchroneously and they get executed before returning from the initiated load call
+ * after script loading is done these variables should not be used, since they will be reused for the next script we will load dynamicaly
+ */
 class FactoryMessageInterface extends MessageInterface {
-    constructor() {
+    /**
+     * 
+     * @param {DynamicScriptFactory} factory
+     */
+    constructor(factory) {
         super();
-        /**
-         * @type {DynamicScriptFactory}
-         */
-        const factory = self[dynamicScriptFactoryName];
-        if (factory) {
-            /**
-             * @type {DynamicScriptMessageInterface|undefined}
-             */
-            this.externalMessageInterface = factory.getMessageInterfaceById(dynamicScriptId);
-            if (!this.externalMessageInterface) {
-                throw new Error(`Factory doesn't have a DynamicScriptMessageInterface with id: ${dynamicScriptId}`);
-            }
-            this.externalMessageInterface.setExternalMessageInterface(this);
-        } else {
-            throw new Error(`Factory doesn't exist: ${dynamicScriptFactoryName}`);
-        }
 
         /**
+         * @type {DynamicScriptMessageInterface|undefined}
+         */
+        this.externalMessageInterface = factory.getMessageInterfaceById(factory.lastId);
+        if (!this.externalMessageInterface) {
+            throw new Error(`Factory doesn't have a DynamicScriptMessageInterface with id: ${factory.lastId}`);
+        }
+        // connect both classes to establish communication
+        this.externalMessageInterface.setExternalMessageInterface(this);
+
+        /**
+         * buffer for temporary storage in case messages are received while the callback isn't configured
          * @type {Array<MessageEvent>}
          */
         this.receivedMessageEventBuffer = [];
 
         /**
+         * mesage received callback
          * @type {(function(MessageEvent):void)|null};
          */
         this.onMessageFunc = null;
     }
 
     /**
-     * 
-     * @param {Object} message 
+     * @param {Object} message
      */
     postMessage(message) {
         const messageEvent = new MessageEvent('message', {data: message});
@@ -190,18 +222,19 @@ class FactoryMessageInterface extends MessageInterface {
     }
 
     /**
-     * 
-     * @param {function(MessageEvent):void} func 
+     * @param {function(MessageEvent):void} func
      */
     setOnMessage(func) {
+        if (this.onMessageFunc) console.warn("Changing onMessage callback");
         this.onMessageFunc = func;
+        // if there are stored messages send them (fifo)
         for (let bufferedMessageEvent of this.receivedMessageEventBuffer) {
             func(bufferedMessageEvent);
         }
     }
 
     /**
-     * 
+     * if we receive a mesage but there is no callback store the message for later
      * @param {MessageEvent} messageEvent 
      */
     onMessage(messageEvent) {
@@ -213,32 +246,36 @@ class FactoryMessageInterface extends MessageInterface {
     }
 }
 
-
-
+/**
+ * Factory class that loads scripts using either WebWorker or dynamic script loading strategies
+ */
 class WorkerFactory {
     constructor() {
     }
 
     /**
-     * @param {string} scriptPath
-     * @param {boolean} isModule
-     * @returns {MessageInterface}
+     * Creates a new script and returns a communication interface through which messages can be send
+     * @param {string} scriptPath path to the script
+     * @param {boolean} isModule wether the loaded script is a module or normal javascript
+     * @returns {MessageInterface} communication interface
      */
     createWorker(scriptPath, isModule) {
         throw new Error("Interface WorkerFactory not implemented");
     }
 }
 
+/**
+ * WebWorker strategy for the worker factory
+ */
 class WebWorkerFactory extends WorkerFactory {
     constructor() {
         super();
     }
 
     /**
-     * 
-     * @param {string} scriptPath
-     * @param {boolean} isModule
-     * @returns {MessageInterface} 
+     * @param {string} scriptPath path to the script
+     * @param {boolean} isModule wether the loaded script is a module or normal javascript
+     * @returns {MessageInterface} communication interface
      */
     createWorker(scriptPath, isModule) {
         const webWorker = new Worker(scriptPath, {type: isModule ? "module" : "classic"});
@@ -246,45 +283,44 @@ class WebWorkerFactory extends WorkerFactory {
     }
 }
 
+/**
+ * dynamic script loading strategy for the WorkerFactory
+ */
 class DynamicScriptFactory extends WorkerFactory {
-    /**
-     * 
-     * @param {string} factoryName
-     */
-    constructor(factoryName) {
+    constructor() {
         super();
-        this.factoryName = factoryName;
-        self[factoryName] = this;
         /**
          * @type {Map<number, DynamicScriptMessageInterface>}
          */
         this.workers = new Map();
         this.nextId = 1;
+        this.lastId = 0;
     }
 
     /**
-     * 
-     * @param {string} scriptPath
-     * @param {boolean} isModule
+     * @param {string} scriptPath path to the script
+     * @param {boolean} isModule wether the loaded script is a module or normal javascript
+     * @returns {MessageInterface} communication interface
      */
     createWorker(scriptPath, isModule) {
         const scriptElem = document.createElement('script');
         if (isModule) {
             scriptElem.setAttribute('type', 'module');
         }
-        scriptElem.setAttribute('src', scriptPath);// + '?dynamicScriptId=' + encodeURIComponent(this.nextId) + '&dynamicScriptFactoryName=' + encodeURIComponent(this.factoryName) + "");
-        self['dynamicScriptId'] = this.nextId;
-        self['dynamicScriptFactoryName'] = this.factoryName;
+        scriptElem.setAttribute('src', scriptPath);
+        // set global variables to communicate connection point to scriptside FactoryMessageInterface
+        this.lastId = this.nextId;
         const messageInterface = new DynamicScriptMessageInterface();
         this.workers.set(this.nextId, messageInterface);
         this.nextId++; 
+        // start script execution
         document.body.appendChild(scriptElem);
         return messageInterface;
     }
 
     /**
-     * 
-     * @param {number} id
+     * used by FactoryMessageInterface to find the main thread's DynamicScriptMessageInterface using the given id
+     * @param {number} id dynamicScriptId/unique number identifying the dynamically loaded script 
      * @returns {DynamicScriptMessageInterface | undefined}
      */
     getMessageInterfaceById(id) {
@@ -292,15 +328,4 @@ class DynamicScriptFactory extends WorkerFactory {
     }
 }
 
-function useWebWorkers() {
-    const offscreenCanvas = new OffscreenCanvas(10, 10);
-    if (offscreenCanvas) {
-        offscreenCanvas.getContext("webgl");
-        if (offscreenCanvas) {
-            return true;
-        }
-    }
-    return false;
-}
-
-export {MessageInterface, WorkerMessageInterface, SelfMessageInterface, DynamicScriptMessageInterface, FactoryMessageInterface, WorkerFactory, WebWorkerFactory, DynamicScriptFactory, useWebWorkers};
+export {MessageInterface, WorkerMessageInterface, SelfMessageInterface, DynamicScriptMessageInterface, FactoryMessageInterface, WorkerFactory, WebWorkerFactory, DynamicScriptFactory};

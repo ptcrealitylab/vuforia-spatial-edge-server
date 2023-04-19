@@ -1,4 +1,5 @@
-import {MessageInterface, WebWorkerFactory, useWebWorkers, DynamicScriptFactory} from "/objectDefaultFiles/WorkerFactory.js"
+import {MessageInterface, WorkerFactory} from "/objectDefaultFiles/WorkerFactory.js"
+import {WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js"
 
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
@@ -19,16 +20,11 @@ class ThreejsInterface {
          * @type {SpatialInterface}
          */
         this.spatialInterface = spatialInterface;
-
-        if (useWebWorkers()) {
-            this.workerFactory = new WebWorkerFactory();
-        } else {
-            this.workerFactory = new DynamicScriptFactory("dynamicScriptFactoryThreejsInterface");
-        }
+       
         /**
          * @type {MessageInterface}
          */
-        this.workerMessageInterface = this.workerFactory.createWorker(workerScript, true);
+        this.workerMessageInterface = WebGLStrategy.getInstance().workerFactory.createWorker(workerScript, true);
         this.workerMessageInterface.setOnMessage(this.onMessageFromWorker.bind(this));
         this.workerId = -1;
         this.prefersAttachingToWorld = true;

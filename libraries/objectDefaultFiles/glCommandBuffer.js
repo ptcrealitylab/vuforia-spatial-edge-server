@@ -1,4 +1,4 @@
-import { WorkerMessageInterface } from "/objectDefaultFiles/WorkerFactory.js";
+import { WorkerMessageInterface, WorkerFactory, WebWorkerFactory, DynamicScriptFactory, SelfMessageInterface, FactoryMessageInterface } from "/objectDefaultFiles/WorkerFactory.js";
 import {Handle} from "./glState.js"
 
 /**
@@ -1069,6 +1069,11 @@ class CommandBufferManager {
     }
 }
 
+/**
+ * webgl synchronization strategy, all webgl functions that have responses that can't be returned by handles, need to be handeled in a special way
+ * since commandbuffers can change from call to call, without much effect on the code being executed in the strategies you have to supply it with every call
+ * this prevents having to retieve the current commandbuffer for every call, while it might be obvious which one to use by the callee
+ */
 class WebGLSyncStrategy {
     constructor() {
 
@@ -1184,11 +1189,17 @@ class WebGLSyncStrategy {
     }
 }
 
+/**
+ * this strategy creates a local webgl context and uses it to duplicate each command that has an effect on the targeted functions
+ * the idea is that we can return information form the local webgl context to predict what value(s) the actual webgl context would return
+ * this strategy doesn't block the main webgl context, because the local context can return the requested information, as a result this strategy doesn't forward all commands to the main thread
+ */
 class DuplicateWebGLSyncStrategy extends WebGLSyncStrategy {
     constructor() {
         super();
         /**
          * canvas, screen resolution is irrelevant since we're not rendering  
+         * needed to create a context
          * @type {HTMLCanvasElement}
          */ 
         this.canvas = document.createElement('canvas');
@@ -1361,6 +1372,11 @@ class DuplicateWebGLSyncStrategy extends WebGLSyncStrategy {
     }
 }
 
+/**
+ * this strategy is compatible only with webworkers, when information is beingrequested that we can't handle with handles, we will pause the pipeline, pausing the WebWorker and wait for the main thread to return the correct answer
+ * the current buffer is eneded and sent to the main thread for processing, when that's done, the code will continue where it left off with a nes empty resource buffer
+ * render command buffers are not compatible with this strategy, since the break up of the buffer makes it non repeating
+ */
 class BlockAndWaitWebGLSyncStrategy extends WebGLSyncStrategy {
     constructor() {
         super();
@@ -1511,5 +1527,71 @@ class BlockAndWaitWebGLSyncStrategy extends WebGLSyncStrategy {
     }
 }
 
-export {CommandId, Command, CommandBuffer, CommandBufferFactory, CommandBufferManager, GLCommandBufferContext, BlockAndWaitWebGLSyncStrategy, DuplicateWebGLSyncStrategy, WebGLSyncStrategy};
+class WebGLStrategy {
+    /**
+     * @type {WebGLStrategy|null}
+     */
+    static instance = null;
+
+    /**
+     * for internal use only
+     * @param {WorkerFactory} workerFactory 
+     * @param {WebGLSyncStrategy} syncStrategy 
+     */
+    constructor(workerFactory, syncStrategy) {
+        /**
+         * @type {WorkerFactory}
+         */
+        this.workerFactory = workerFactory;
+
+        /**
+         * @type {WebGLSyncStrategy}
+         */
+        this.syncStrategy = syncStrategy;
+    }
+
+    /**
+     * Decides which strategy combination to use
+     * @returns {boolean}
+     */
+    static useThreads() {
+        const offscreenCanvas = new OffscreenCanvas(10, 10);
+        if (offscreenCanvas === null) return false;
+        return offscreenCanvas && offscreenCanvas.getContext("webgl");
+    }
+
+    /**
+     * determines which strategy to use.
+     * At the moment we check if we can create an offscreen webgl canvas, if we can we will use webworkers if not, we will use dynamic script loading
+     * this script should return the same configuration when called from different contexts and threads, 
+     * @returns {WebGLStrategy}
+     */
+    static getInstance() {
+        if (!WebGLStrategy.instance)
+        {
+            if (this.useThreads()) {
+                WebGLStrategy.instance = new WebGLStrategy(new WebWorkerFactory(), new BlockAndWaitWebGLSyncStrategy());
+            } else {
+                WebGLStrategy.instance = new WebGLStrategy(new DynamicScriptFactory(), new DuplicateWebGLSyncStrategy());
+            }
+        }
+        return WebGLStrategy.instance;
+    }
+
+    /**
+     * gets script side message interface without creating additional WebGLStrategy instances
+     * @returns {MessageInterface}
+     */
+    static getScriptSideInterface() {
+        if (WebGLStrategy.useThreads()) {
+            return new SelfMessageInterface();
+        } else {
+             // when we don't use threads, the instance will be part of the same context and will already be there
+             return new FactoryMessageInterface(WebGLStrategy.getInstance().workerFactory);
+        }
+    }
+}
+
+
+export {CommandId, Command, CommandBuffer, CommandBufferFactory, CommandBufferManager, GLCommandBufferContext, BlockAndWaitWebGLSyncStrategy, DuplicateWebGLSyncStrategy, WebGLSyncStrategy, WebGLStrategy};
 
