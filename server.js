@@ -585,7 +585,7 @@ const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
-const tempUuid = utilities.uuidTime();   // UUID of current run of the server
+const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);

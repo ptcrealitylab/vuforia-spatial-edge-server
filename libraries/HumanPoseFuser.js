@@ -140,12 +140,14 @@ class HumanPoseFuser {
         /** Timer to trigger main fuse() method. */
         this.intervalTimer = null;
 
-        /** Dictionary which collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object */
+        /** Dictionary which collects all updates to properties of human objects in current run of fusion (currently properties 'parent' and 'updatedByChildren')
+         * It is a dictionary of dictionaries so we keep just one change per human object per its property
+         */
         this.batchedUpdates = {};
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = false;
+        this.verbose = true;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -201,8 +203,14 @@ class HumanPoseFuser {
 
         this.fusePoseData(currentPoseData);
 
-        // send out 'parent' property updates to all human objects from this frame to all subscribers
-        server.socketHandler.sendUpdateToAllSubscribers(Object.values(this.batchedUpdates));
+        // send out property updates to all human objects from this frame to all subscribers
+        let batchedUpdatesArr = [];
+        for (let objectData of Object.values(this.batchedUpdates)) {
+            for (let propertyData of Object.values(objectData)) {
+                batchedUpdatesArr.push(propertyData);
+            }
+        }
+        server.socketHandler.sendUpdateToAllSubscribers(batchedUpdatesArr);
 
         this.cleanPastPoses();
 
@@ -284,7 +292,10 @@ class HumanPoseFuser {
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = 'none';
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -494,7 +505,7 @@ class HumanPoseFuser {
             currentBest = candidateConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
         }
 
-        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also be undefined
+        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also undefined
         const previousBest = candidateConfidences.find(item => item.id == previousSelectedObject);
         if (previousBest !== undefined && currentBest !== undefined) {
             // add some hysteresis to select a different human object
@@ -534,6 +545,30 @@ class HumanPoseFuser {
         }
 
         let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+
+        // detect change in the subset of associated (child) human objects which currently update their fused object
+        const equalArrays = (a, b) => a.length === b.length && a.every((element, index) => element === b[index]);
+        let arr = [];
+        if (selectedObjectId) {
+            arr.push(selectedObjectId);
+        }
+        if (!equalArrays(arr, this.objectsRef[fusedObjectId].updatedByChildren)) {
+            // a change detected, we need to update the property
+            this.objectsRef[fusedObjectId].updatedByChildren = []; //arr;
+
+            if (this.batchedUpdates[fusedObjectId] === undefined) {
+                this.batchedUpdates[fusedObjectId] = {};
+            }
+            this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                objectKey: fusedObjectId,
+                frameKey: null,
+                nodeKey: null,
+                propertyPath: 'updatedByChildren',
+                newValue: arr,
+                editorId: 0
+            };
+        }
+
         if (!selectedObjectId) {
             return;
         }
@@ -665,7 +700,10 @@ class HumanPoseFuser {
                 this.objectsRef[id].parent = parentValue;
 
                 // make entry in batchedUpdates
-                this.batchedUpdates[id] = {
+                if (this.batchedUpdates[id] === undefined) {
+                    this.batchedUpdates[id] = {};
+                }
+                this.batchedUpdates[id]['parent'] = {
                     objectKey: id,
                     frameKey: null,
                     nodeKey: null,
@@ -724,7 +762,10 @@ class HumanPoseFuser {
                     // set parent reference pointing at a fused human object
                     this.objectsRef[id].parent = fusedObjectId;
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -747,7 +788,10 @@ class HumanPoseFuser {
                     for (let id of ids) {
                         this.objectsRef[id].parent = fusedObjectId;
 
-                        this.batchedUpdates[id] = {
+                        if (this.batchedUpdates[id] === undefined) {
+                            this.batchedUpdates[id] = {};
+                        }
+                        this.batchedUpdates[id]['parent'] = {
                             objectKey: id,
                             frameKey: null,
                             nodeKey: null,
@@ -756,6 +800,21 @@ class HumanPoseFuser {
                             editorId: 0
                         };
                     }
+
+                    // add property specific for fused human objects (not defined in standard human objects from apps)
+                    this.objectsRef[fusedObjectId].updatedByChildren = ['none']; // HACK
+
+                    if (this.batchedUpdates[fusedObjectId] === undefined) {
+                        this.batchedUpdates[fusedObjectId] = {};
+                    }
+                    this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                        objectKey: fusedObjectId,
+                        frameKey: null,
+                        nodeKey: null,
+                        propertyPath: 'updatedByChildren',
+                        newValue: [],
+                        editorId: 0
+                    };
                 }
 
                 // setup active heartbeat for this new object
