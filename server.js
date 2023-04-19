@@ -1379,7 +1379,7 @@ function objectBeatServer() {
         udpServer.close();
     });
 
-    udpServer.on('message', function (msg) {
+    udpServer.on('message', function (msg, rinfo) {
 
         var msgContent;
         // check if object ping
@@ -1419,7 +1419,9 @@ function objectBeatServer() {
             hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
             // }
         } else {
-            hardwareAPI.triggerUDPCallbacks(msgContent);
+            if (rinfo.address !== services.ip) {
+                hardwareAPI.triggerUDPCallbacks(msgContent);
+            }
         }
 
     });
