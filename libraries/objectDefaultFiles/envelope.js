@@ -36,16 +36,13 @@
      * @param {Array.<string>} compatibleFrameTypes - array of types of frames that can be added to this envelope
      * @param {HTMLElement} rootElementWhenOpen - a containing div that will be rendered when open (fullscreen 2D)
      * @param {HTMLElement} rootElementWhenClosed - a containing div that will be rendered when closed (small 3D icon)
-     * @param {boolean|undefined} isStackable - defaults to false
-     * @param {boolean|undefined} areFramesOrdered - defaults to false
+     * @param {boolean} isStackable - whether other envelopes can be opened while this one is open
+     * @param {boolean} areFramesOrdered - whether to keep track of the order of all added frames
+     * @param {boolean} isFull2D - whether to add background blur and remove the touch overlay div to stop proxying touches
+     * @param {boolean} opensWhenAdded - whether the envelope initially opens (just the first time it's added)
      */
-    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed, isStackable, areFramesOrdered) {
-        if (typeof compatibleFrameTypes === 'undefined' || compatibleFrameTypes.length === 0) {
-            console.warn('You must specify at least one compatible frame type for this envelope');
-        }
-        if (typeof isStackable === 'undefined') { isStackable = false; }
-        if (typeof areFramesOrdered === 'undefined') { areFramesOrdered = false; }
-
+    function Envelope(realityInterface, compatibleFrameTypes, rootElementWhenOpen, rootElementWhenClosed,
+        isStackable = false, areFramesOrdered = false, isFull2D = false, opensWhenAdded = false) {
         /**
          * A pointer to the envelope frame's RealityInterface object, so that this can interact with the other JavaScript APIs
          */
@@ -66,6 +63,16 @@
          */
         this.areFramesOrdered = areFramesOrdered;
         /**
+         * If true, turns off overlay div so tool acts like 2D browser (touches are handled naturally, not thru proxy)
+         * @type {boolean}
+         */
+        this.isFull2D = isFull2D;
+        /**
+         * If true, automatically opens the first time it is added (but not on subsequent loads)
+         * @type {boolean}
+         */
+        this.opensWhenAdded = opensWhenAdded;
+        /**
          * A map of all the frameIds -> frame data for each frame added to the envelope
          * @type {Object.<string, Object>}
          */
@@ -82,6 +89,11 @@
          */
         this.isOpen = false;
         /**
+         * Whether the envelope will receive touch events, and whether it should show interactable 2D UI
+         * @type {boolean}
+         */
+        this.hasFocus = true;
+        /**
          * Callbacks for various events from contained frames or the reality editor
          * @type {{onFrameAdded: Array, onFrameDeleted: Array, onMessageFromContainedFrame: Array, onOpen: Array, onClose: Array}}
          */
@@ -94,6 +106,10 @@
              * Triggered when a contained frame is deleted. Automatically updates ordering, etc, but you may need to update UI
              */
             onFrameDeleted: [],
+            /**
+             * Triggered when a contained frame is loaded.
+             */
+            onFrameLoaded: [],
             /**
              * Triggered when a contained frame sends a message to the envelope (e.g. "stepCompleted")
              */
@@ -153,31 +169,30 @@
             compatibleFrameTypes: this.compatibleFrameTypes
         });
 
-        // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
-        let params = {
-            name: 'storage',
-            x: 0,
-            y: 0,
-            groundplane: false,
-            type: 'storeData',
-            noDuplicate: true // only create if doesn't already exist
-        };
-        this.realityInterface.sendCreateNode(params.name, params.x, params.y, params.groundplane, params.type, params.noDuplicate);
-
-        // also ensure that there is a node called 'open' on the envelope frame to open or close it
-        params = {
-            name: 'open',
-            x: 0,
-            y: 0,
-            groundplane: false,
-            type: 'node',
-            noDuplicate: true // only create if doesn't already exist
-        };
-        this.realityInterface.sendCreateNode(params.name, params.x, params.y, params.groundplane, params.type, params.noDuplicate);
         realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
 
-        // this adjusts the size of the body to be fullscreen based on accurate device screen size
-        realityInterface.getScreenDimensions(function(width, height) {
+        this.realityInterface.wasToolJustCreated(justCreated => {
+            if (!justCreated) return;
+
+            // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
+            this.realityInterface.initNodeWithOptions('storage', {
+                x: 0,
+                y: 0,
+                attachToGroundPlane: false,
+                type: 'storeData'
+            });
+
+            // also ensure that there is a node called 'open' on the envelope frame to open or close it
+            this.realityInterface.initNodeWithOptions('open', {
+                x: 0,
+                y: 0,
+                attachToGroundPlane: false,
+                type: 'node',
+                defaultValue: this.opensWhenAdded ? 1 : 0
+            });
+        });
+
+        const adjustForScreenSize = (width, height) => {
             this.screenDimensions = {
                 width: width,
                 height: height
@@ -187,7 +202,14 @@
             // if necessary, reposition/resize any element with manual adjustments
             rootElementWhenOpen.style.width = width + 'px';
             rootElementWhenOpen.style.height = height + 'px';
-        }.bind(this));
+        };
+
+        // this adjusts the size of the body to be fullscreen based on accurate device screen size
+        realityInterface.getScreenDimensions(adjustForScreenSize);
+
+        realityInterface.onWindowResized(({width, height})=> {
+            adjustForScreenSize(width, height);
+        });
 
         // Manage the UI for open and closed states
         this.rootElementWhenOpen = rootElementWhenOpen;
@@ -204,16 +226,18 @@
         /**
          * API to trigger the envelope to open if it's closed, which means it becomes sticky fullscreen and triggers onOpen events
          */
-        Envelope.prototype.open = function() {
+        Envelope.prototype.open = function(options = { dontWrite: false }) {
             if (this.isOpen) { return; }
 
             this.isOpen = true;
-            this.realityInterface.setStickyFullScreenOn({animated: true}); // currently assumes envelopes want 'sticky' fullscreen, not regular
+            this.realityInterface.setStickyFullScreenOn({animated: true, full2D: this.isFull2D}); // currently assumes envelopes want 'sticky' fullscreen, not regular
             if (!this.isStackable) {
                 this.realityInterface.setExclusiveFullScreenOn(function() {
                     this.close(); // trigger all the side-effects related to the envelope closing
                 }.bind(this));
             }
+
+            this.focus();
 
             this.triggerCallbacks('onOpen', {});
 
@@ -221,13 +245,16 @@
                 open: true
             });
 
-            this.realityInterface.write('open', 1);
+            if (!options.dontWrite) {
+                this.realityInterface.write('open', 1);
+                this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
+            }
         };
 
         /**
          * API to trigger the envelope to close if it's open, which means it turns off fullscreen and triggers onClosed events
          */
-        Envelope.prototype.close = function() {
+        Envelope.prototype.close = function(options = { dontWrite: false }) {
             if (!this.isOpen) { return; }
 
             this.isOpen = false;
@@ -239,8 +266,20 @@
                 close: true
             });
 
-            this.realityInterface.write('open', 0);
+            if (!options.dontWrite) {
+                this.realityInterface.write('open', 0);
+            }
         };
+
+        Envelope.prototype.focus = function() {
+            this.hasFocus = true;
+            this.triggerCallbacks('onFocus', {});
+        }
+
+        Envelope.prototype.blur = function() {
+            this.hasFocus = false;
+            this.triggerCallbacks('onBlur', {});
+        }
 
         /**
          * API to subscribe to a compatible frame being added to the envelope.
@@ -304,6 +343,22 @@
         Envelope.prototype.onClose = function(callback) {
             this.addCallback('onClose', callback);
         };
+
+        /**
+         * API to respond to this envelope losing focus. Tools should subscribe to this and hide their 2D UI in response.
+         * @param callback
+         */
+        Envelope.prototype.onFocus = function(callback) {
+            this.addCallback('onFocus', callback);
+        }
+
+        /**
+         * API to respond to this envelope regaining focus. Tools should redisplay their 2D UI in response.
+         * @param callback
+         */
+        Envelope.prototype.onBlur = function(callback) {
+            this.addCallback('onBlur', callback);
+        }
 
         /**
          * API to be notified when the envelope has fully loaded its publicData.
@@ -406,6 +461,12 @@
             }
             if (typeof msgContent.envelopeMessage.close !== 'undefined') {
                 this.close();
+            }
+            if (typeof msgContent.envelopeMessage.focus !== 'undefined') {
+                this.focus();
+            }
+            if (typeof msgContent.envelopeMessage.blur !== 'undefined') {
+                this.blur();
             }
         };
 
@@ -546,13 +607,13 @@
             if (typeof this.lastOpenValue === 'undefined') {
                 this.lastOpenValue = event.value;
             }
-            if (this.lastOpenValue === event.value) {
+            if (this.lastOpenValue === 0 && event.value === 0) {
                 return; // prevents it from closing itself when the node first loads or on duplicate data
             }
             if (event.value < 0.5) {
-                this.close();
+                this.close({ dontWrite: true });
             } else {
-                this.open();
+                this.open({ dontWrite: true });
             }
 
             this.lastOpenValue = event.value; // prevents duplicate reads (get triggered on sendRealityEditorSubscribe)
@@ -651,7 +712,11 @@
         Envelope.prototype.triggerCallbacks = function(callbackName, msgContent) {
             if (this.callbacks[callbackName]) { // only trigger for callbacks that have been set
                 this.callbacks[callbackName].forEach(function(addedCallback) {
-                    addedCallback(msgContent);
+                    try {
+                        addedCallback(msgContent);
+                    } catch (e) {
+                        console.warn('error in envelope callback: ' + callbackName, e);
+                    }
                 });
             }
         };

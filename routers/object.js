@@ -10,6 +10,14 @@ const logicNodeController = require('../controllers/logicNode.js');
 const nodeController = require('../controllers/node.js');
 const objectController = require('../controllers/object.js');
 
+router.delete('/:object', (req, res) => {
+    if (!utilities.isValidId(req.params.object)) {
+        res.status(400).send('Invalid object id. Must be alphanumeric.');
+        return;
+    }
+    res.send(objectController.deleteObject(req.params.object));
+});
+
 // logic links
 router.post('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/addBlockLink/', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
