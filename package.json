@@ -34,7 +34,7 @@
     "eslint": "^8.38.0",
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
-    "puppeteer": "^19.8.5"
+    "puppeteer": "^19.9.1"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
