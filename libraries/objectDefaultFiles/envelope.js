@@ -169,7 +169,9 @@
             compatibleFrameTypes: this.compatibleFrameTypes
         });
 
-        realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+        if (!this.isFull2D) {
+            realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+        }
 
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
@@ -182,14 +184,16 @@
                 type: 'storeData'
             });
 
-            // also ensure that there is a node called 'open' on the envelope frame to open or close it
-            this.realityInterface.initNodeWithOptions('open', {
-                x: 0,
-                y: 0,
-                attachToGroundPlane: false,
-                type: 'node',
-                defaultValue: this.opensWhenAdded ? 1 : 0
-            });
+            if (!this.isFull2D) {
+                // also ensure that there is a node called 'open' on the envelope frame to open or close it
+                this.realityInterface.initNodeWithOptions('open', {
+                    x: 0,
+                    y: 0,
+                    attachToGroundPlane: false,
+                    type: 'node',
+                    defaultValue: this.opensWhenAdded ? 1 : 0
+                });
+            }
         });
 
         const adjustForScreenSize = (width, height) => {
@@ -246,7 +250,9 @@
             });
 
             if (!options.dontWrite) {
-                this.realityInterface.write('open', 1);
+                if (!this.isFull2D) {
+                    this.realityInterface.write('open', 1);
+                }
                 this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
             }
         };
@@ -267,7 +273,9 @@
             });
 
             if (!options.dontWrite) {
-                this.realityInterface.write('open', 0);
+                if (!this.isFull2D) {
+                    this.realityInterface.write('open', 0);
+                }
             }
         };
 
