@@ -180,7 +180,6 @@
 
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
-
             this.wasToolJustCreated = true;
 
             // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
@@ -192,7 +191,9 @@
             });
 
             if (!this.isFull2D) {
-                // also ensure that there is a node called 'open' on the envelope frame to open or close it
+                // set a flag so that we don't open the envelope minimized the first time it reads its own node value
+                this.dontBlurOnNextOpen = true;
+                // ensure that there is a node called 'open' on the envelope frame to open or close it
                 this.realityInterface.initNodeWithOptions('open', {
                     x: 0,
                     y: 0,
@@ -643,8 +644,9 @@
 
                 // when the tool opens in response to another client writing to the 'open' node, open minimized (not focused)
                 // we have to ignore when wasToolJustCreated, as the tool initially learns its open state from the node
-                if (!this.wasToolJustCreated) {
+                if (!this.dontBlurOnNextOpen) {
                     this.blur();
+                    this.dontBlurOnNextOpen = false;
                 }
             }
 
