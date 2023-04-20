@@ -73,6 +73,11 @@
          */
         this.opensWhenAdded = opensWhenAdded;
         /**
+         * True on the first session when the tool gets added
+         * @type {boolean}
+         */
+        this.wasToolJustCreated = false;
+        /**
          * A map of all the frameIds -> frame data for each frame added to the envelope
          * @type {Object.<string, Object>}
          */
@@ -175,6 +180,7 @@
 
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
+            this.wasToolJustCreated = true;
 
             // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
             this.realityInterface.initNodeWithOptions('storage', {
@@ -185,7 +191,9 @@
             });
 
             if (!this.isFull2D) {
-                // also ensure that there is a node called 'open' on the envelope frame to open or close it
+                // set a flag so that we don't open the envelope minimized the first time it reads its own node value
+                this.dontBlurOnNextOpen = true;
+                // ensure that there is a node called 'open' on the envelope frame to open or close it
                 this.realityInterface.initNodeWithOptions('open', {
                     x: 0,
                     y: 0,
@@ -282,11 +290,22 @@
         Envelope.prototype.focus = function() {
             this.hasFocus = true;
             this.triggerCallbacks('onFocus', {});
+
+            this.realityInterface.sendEnvelopeMessage({
+                focus: true
+            });
+
+            // focusing on a tool also "refreshes it" as the most recent tool
+            this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
         }
 
         Envelope.prototype.blur = function() {
             this.hasFocus = false;
             this.triggerCallbacks('onBlur', {});
+
+            this.realityInterface.sendEnvelopeMessage({
+                blur: true
+            });
         }
 
         /**
@@ -622,6 +641,13 @@
                 this.close({ dontWrite: true });
             } else {
                 this.open({ dontWrite: true });
+
+                // when the tool opens in response to another client writing to the 'open' node, open minimized (not focused)
+                // we have to ignore when wasToolJustCreated, as the tool initially learns its open state from the node
+                if (!this.dontBlurOnNextOpen) {
+                    this.blur();
+                    this.dontBlurOnNextOpen = false;
+                }
             }
 
             this.lastOpenValue = event.value; // prevents duplicate reads (get triggered on sendRealityEditorSubscribe)
