@@ -548,13 +548,18 @@ class HumanPoseFuser {
 
         // detect change in the subset of associated (child) human objects which currently update their fused object
         const equalArrays = (a, b) => a.length === b.length && a.every((element, index) => element === b[index]);
+
+        // because of recorder limitations this cannot be an empty array. Instead we place 'none' item.
         let arr = [];
         if (selectedObjectId) {
             arr.push(selectedObjectId);
         }
+        else {
+            arr.push('none');
+        }
         if (!equalArrays(arr, this.objectsRef[fusedObjectId].updatedByChildren)) {
             // a change detected, we need to update the property
-            this.objectsRef[fusedObjectId].updatedByChildren = []; //arr;
+            this.objectsRef[fusedObjectId].updatedByChildren = arr;
 
             if (this.batchedUpdates[fusedObjectId] === undefined) {
                 this.batchedUpdates[fusedObjectId] = {};
@@ -802,7 +807,7 @@ class HumanPoseFuser {
                     }
 
                     // add property specific for fused human objects (not defined in standard human objects from apps)
-                    this.objectsRef[fusedObjectId].updatedByChildren = ['none']; // HACK
+                    this.objectsRef[fusedObjectId].updatedByChildren = ['none'];
 
                     if (this.batchedUpdates[fusedObjectId] === undefined) {
                         this.batchedUpdates[fusedObjectId] = {};
@@ -812,7 +817,7 @@ class HumanPoseFuser {
                         frameKey: null,
                         nodeKey: null,
                         propertyPath: 'updatedByChildren',
-                        newValue: [],
+                        newValue: ['none'],
                         editorId: 0
                     };
                 }
