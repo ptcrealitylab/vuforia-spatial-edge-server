@@ -59,7 +59,7 @@ class HumanPoseFuser {
      * @param {string} version
      * @param {string} protocol
      * @param {number} beatPort
-     * @param {string} serverUuid 
+     * @param {string} serverUuid
      */
     constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort, serverUuid) {
         // references to global data structures for objects
@@ -147,7 +147,7 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = true;
+        this.verbose = false;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -553,8 +553,7 @@ class HumanPoseFuser {
         let arr = [];
         if (selectedObjectId) {
             arr.push(selectedObjectId);
-        }
-        else {
+        } else {
             arr.push('none');
         }
         if (!equalArrays(arr, this.objectsRef[fusedObjectId].updatedByChildren)) {
