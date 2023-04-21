@@ -1664,6 +1664,7 @@
         this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
             postDataToParent({
                 analyticsSetCursorTime: {
+                    frame: spatialObject.frame,
                     time,
                 },
             });
@@ -1675,6 +1676,7 @@
         this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
             postDataToParent({
                 analyticsSetHighlightRegion: {
+                    frame: spatialObject.frame,
                     highlightRegion,
                 },
             });
@@ -1686,6 +1688,7 @@
         this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
             postDataToParent({
                 analyticsSetDisplayRegion: {
+                    frame: spatialObject.frame,
                     displayRegion,
                 },
             });
@@ -1697,6 +1700,7 @@
         this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
             postDataToParent({
                 analyticsHydrateRegionCards: {
+                    frame: spatialObject.frame,
                     regionCards,
                 },
             });
@@ -1708,6 +1712,7 @@
         this.analyticsSetLens = function analyticsSetLens(lens) {
             postDataToParent({
                 analyticsSetLens: {
+                    frame: spatialObject.frame,
                     lens,
                 },
             });
@@ -1719,6 +1724,7 @@
         this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
             postDataToParent({
                 analyticsSetLensDetail: {
+                    frame: spatialObject.frame,
                     lensDetail,
                 },
             });
@@ -1730,6 +1736,7 @@
         this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
             postDataToParent({
                 analyticsSetSpaghettiAttachPoint: {
+                    frame: spatialObject.frame,
                     spaghettiAttachPoint,
                 },
             });
@@ -1741,6 +1748,7 @@
         this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
             postDataToParent({
                 analyticsSetSpaghettiVisible: {
+                    frame: spatialObject.frame,
                     spaghettiVisible,
                 },
             });
@@ -1752,6 +1760,7 @@
         this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
             postDataToParent({
                 analyticsSetAllClonesVisible: {
+                    frame: spatialObject.frame,
                     allClonesVisible,
                 },
             });
