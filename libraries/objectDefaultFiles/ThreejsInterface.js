@@ -32,7 +32,7 @@ class ThreejsInterface {
         /**
          * @type {Int32Array|null}
          */
-        //this.synclock = null;
+        this.synclock = null;
         this.touchAnswerListener = null;
         this.mouse = {x: 0, y: 0};
         this.lastTouchResult = false;
