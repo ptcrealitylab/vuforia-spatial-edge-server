@@ -1371,6 +1371,7 @@ function objectBeatServer() {
     udpServer.on('error', function (err) {
         console.log('server error', err);
         udpServer.close();
+        exit();
     });
 
     udpServer.on('message', function (msg, rinfo) {
