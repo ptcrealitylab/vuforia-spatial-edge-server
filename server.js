@@ -1370,11 +1370,16 @@ function objectBeatServer() {
         type: 'udp4',
         reuseAddr: true,
     });
+
     udpServer.on('error', function (err) {
         console.error('udpServer error', err);
 
+        // Permanently log so that it's clear udp support is down
+        setInterval(() => {
+            console.warn('udpServer closed due to error', err);
+        }, 5000);
+
         udpServer.close();
-        exit();
     });
 
     udpServer.on('message', function (msg) {
