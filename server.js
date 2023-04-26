@@ -1369,7 +1369,8 @@ function objectBeatServer() {
         reuseAddr: true,
     });
     udpServer.on('error', function (err) {
-        console.log('server error', err);
+        console.error('udpServer error', err);
+
         udpServer.close();
         exit();
     });
