@@ -640,12 +640,17 @@
             if (event.value < 0.5) {
                 this.close({ dontWrite: true });
             } else {
+                let alreadyOpen = this.isOpen;
                 this.open({ dontWrite: true });
 
                 // when the tool opens in response to another client writing to the 'open' node, open minimized (not focused)
                 // we have to ignore when wasToolJustCreated, as the tool initially learns its open state from the node
                 if (!this.dontBlurOnNextOpen) {
-                    this.blur();
+                    // Already open due to local user input, don't override our
+                    // local state to blurred
+                    if (!alreadyOpen) {
+                        this.blur();
+                    }
                     this.dontBlurOnNextOpen = false;
                 }
             }
