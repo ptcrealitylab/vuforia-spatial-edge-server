@@ -1209,7 +1209,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-        console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        if (objects[thisId].tcs) {
+            console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        }
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
