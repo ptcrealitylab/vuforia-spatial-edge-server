@@ -4099,6 +4099,24 @@ function socketServer() {
             }
         });
 
+        /**
+         * Handles messages from local remote operators who don't have access
+         * to sending actions through the cloud proxy or native udp broadcast
+         */
+        socket.on('udp/action', function(msgRaw) {
+            let msg;
+            try {
+                msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+            } catch (_) {
+                // parse failed
+            }
+            if (!msg || !msg.action) {
+                return;
+            }
+
+            handleActionMessage(msg.action);
+        });
+
         socket.on('/disconnectEditor', function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
             console.log('received /disconnectEditor with editorId: ' + msg.editorId);
