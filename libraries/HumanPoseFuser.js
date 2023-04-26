@@ -33,20 +33,21 @@ const JOINTS = {
 
 const FusionMethod = Object.freeze({
     BestSingleView: 'BestSingleView',
+    BestSingleViewWithMultiviewCorrection: 'BestSingleViewWithMultiviewCorrection',
     MultiViewTriangulation: 'MultiViewTriangulation'
 });
 
 /**
- * The object with pose data incoming from Toolboxapps
+ * The object with pose data incoming from Toolbox apps or computed by HumanPoseFuser
  * @typedef {Object} WholePoseData
  * @property {string} name
  * @property {Array.<{x: number, y: number, z: number, confidence: number}> } joints
  * @property {number} timestamp
- * @property {Array.<number>} imageSize - [optional]
- * @property {Array.<number>} focalLength - [optional]
- * @property {Array.<number>} principalPoint - [optional]
- * @property {Array.<number>} transformW2C - [optional]
- * @property {number} poseConfidence - [optional]
+ * @property {Array.<number>} imageSize - [optional] present only in standard human objects
+ * @property {Array.<number>} focalLength - [optional] present only in standard human objects
+ * @property {Array.<number>} principalPoint - [optional] present only in standard human objects
+ * @property {Array.<number>} transformW2C - [optional] present only in standard human objects
+ * @property {number} poseConfidence - [optional] computed in HumanPoseFuser and present just temporarily
  */
 
 /**
@@ -149,6 +150,12 @@ class HumanPoseFuser {
 
         };
 
+        /** Current translation offset betwen standard human objects (coming from ToolboxApps) and their parent (fused) human objects created by this class.
+         * Dictionary - key: objectId of standard human object, value: 3d translation vector (from standard to fused human object)
+         * @type {Object.<string, Array.<number>>}
+         */
+        this.offsetOfHumanObject = {};
+
         /** Timer to trigger main fuse() method. */
         this.intervalTimer = null;
 
@@ -173,7 +180,7 @@ class HumanPoseFuser {
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
 
-        this.fusionMethod = 'MultiViewTriangulation'; // 'BestSingleView';
+        this.fusionMethod = 'BestSingleViewWithMultiviewCorrection'; //'MultiViewTriangulation'; // 'BestSingleView';
         this.viewWeighting = true;
     }
 
@@ -322,9 +329,14 @@ class HumanPoseFuser {
                 this.removeHumanObject(fusedObjectId);
             }
 
+            delete this.offsetOfHumanObject[objectId];
+
+            // TODO (future): if the object is currently in bestHumanObjectForFusedObject, remove the entry
+
         } else {  // a fused human object
-            // remove parent reference from its remaining associated human objects
+            // remove relevant data from its remaining associated human objects
             for (let id of this.humanObjectsOfFusedObject[objectId]) {
+                // remove parent reference
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = 'none';
 
@@ -337,6 +349,9 @@ class HumanPoseFuser {
                         editorId: 0
                     };
                 }
+
+                // remove the offset to the fused object being deleted
+                delete this.offsetOfHumanObject[id];
             }
 
             // remove all association data if the given object is a fused human object
@@ -629,6 +644,10 @@ class HumanPoseFuser {
      * @return {WholePoseData | null} triangulated 3D pose or null when failed
      */
     triangulatePose(poseDataArr) {
+        if (poseDataArr.length < 2) {
+            return null;
+        }
+
         // prepare data
         let projectionMatrices = []; // per-view
         let jointsInView = []; // joint 2D positions + confidences per view
@@ -720,6 +739,49 @@ class HumanPoseFuser {
         return mvPose;
     }
 
+    /**
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     */
+    computeCorrectionOffsets(poseDataArr) {
+
+        let mvPose = this.triangulatePose(poseDataArr);
+        if (!mvPose) {
+            console.warn('Failed to triangulate skeleton root.');
+            return;
+        }
+
+        let pelvisIndex = Object.values(JOINTS).indexOf('pelvis');
+
+        const mvPoint = mvPose.joints[pelvisIndex];
+        for (let [objectId, pose] of poseDataArr) {
+            const point = pose.joints[pelvisIndex];
+            this.offsetOfHumanObject[objectId] = [mvPoint.x - point.x, mvPoint.y - point.y, mvPoint.z - point.z];
+        }
+
+        return;
+    }
+
+    /** Shift human pose by 3D translation.
+     * @param {WholePoseData} pose - input pose
+     * @param {Array.<number>} offset - 3d translation vector
+     * @return {WholePoseData} shifted 3D pose
+     */
+    applyOffsetToPose(pose, offset) {
+        // prepare output pose
+        let outPose = {
+            name: pose.name,
+            timestamp: pose.timestamp,
+            joints: []
+        };
+
+        // move individual joints
+        for (let joint of pose.joints) {
+            outPose.joints.push({x: joint.x + offset[0], y: joint.y + offset[1], z: joint.z + offset[2], confidence: joint.confidence});
+        }
+
+        return outPose;
+    }
+
     /** Updates a specified fused human object.
      * @param {string} fusedObjectId - id of fused human object
      * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
@@ -742,8 +804,9 @@ class HumanPoseFuser {
                 // no data in current frame, do nothing
             } else if (poseDataArr.length == 1) {
                 // single view is currently updating the fused object
-                // TODO: no update when poses from all expected views are not present (as in FusionMethod.BestSingleView) 
-                //      but need to allow for the situation when there is just single human object associated with the fused object
+                // currently, no update when poses from all expected views are not present (as in FusionMethod.BestSingleView)
+
+                // TODO: need to allow for the situation when there is just single human object associated with the fused object
                 // TODO: too volatile swithing between multiview and single view (hysteresis before switching to it?)
                 // finalPose = poseDataArr[0][1];
                 // fusedObjectIds.push(poseDataArr[0][0]);
@@ -758,6 +821,24 @@ class HumanPoseFuser {
                     for (let [objectId, pose] of poseDataArr) {
                         fusedObjectIds.push(objectId);
                     }
+                }
+            }
+            break;
+        }
+        case FusionMethod.BestSingleViewWithMultiviewCorrection: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                console.warn('Cannot select the best object for a fused human object.');
+            } else {
+                // filter empty poses
+                let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+                this.computeCorrectionOffsets(poseDataArr);
+
+                // take current pose from the selected human object and apply the correction offset
+                // the pose can be undefined in the current frame and offset might not be estimated yet
+                if (poseData[selectedObjectId] !== undefined && this.offsetOfHumanObject[selectedObjectId] !== undefined) {
+                    finalPose = this.applyOffsetToPose(poseData[selectedObjectId], this.offsetOfHumanObject[selectedObjectId]);
+                    fusedObjectIds.push(selectedObjectId);
                 }
             }
             break;
@@ -912,6 +993,9 @@ class HumanPoseFuser {
                     newValue: parentValue,
                     editorId: 0
                 };
+
+                // remove the previous offset if it exists (just in case for both unassign and assign from/to fused object)
+                delete this.offsetOfHumanObject[id];
             }
         }
 
@@ -971,6 +1055,10 @@ class HumanPoseFuser {
                         newValue: fusedObjectId,
                         editorId: 0
                     };
+
+                    // remove the previous offset if it exists (just in case)
+                    delete this.offsetOfHumanObject[id];
+
                     if (this.verbose) {
                         console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
                     }
@@ -994,6 +1082,9 @@ class HumanPoseFuser {
                             newValue: fusedObjectId,
                             editorId: 0
                         };
+
+                        // remove the previous offset if it exists (just in case)
+                        delete this.offsetOfHumanObject[id];
                     }
                 }
 
