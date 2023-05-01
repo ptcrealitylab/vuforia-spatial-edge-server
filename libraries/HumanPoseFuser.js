@@ -750,12 +750,37 @@ class HumanPoseFuser {
             return;
         }
 
-        let pelvisIndex = Object.values(JOINTS).indexOf('pelvis');
+        // select torso joints which are not synthetically computed and derive more robust 'torso' offset
+        const selectedJointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+        const joints = Object.values(JOINTS);
 
-        const mvPoint = mvPose.joints[pelvisIndex];
+        // across all human objects from individual views
         for (let [objectId, pose] of poseDataArr) {
-            const point = pose.joints[pelvisIndex];
-            this.offsetOfHumanObject[objectId] = [mvPoint.x - point.x, mvPoint.y - point.y, mvPoint.z - point.z];
+            let weightSum = 0.0;
+            let offset = [0.0, 0.0, 0.0];
+            // weighted average of the offset for a pose across selected joints
+            for (let name of selectedJointNames) {
+                const jointIndex = joints.indexOf(name);
+                if (jointIndex < 0) {
+                    continue;  // did not find the joint name
+                }
+
+                const mvPoint = mvPose.joints[jointIndex];
+                const point = pose.joints[jointIndex];
+
+                /* collect confidence across views
+                for (let [objectId, pose] of poseDataArr) {
+                    const point = pose.joints[jointIndex];
+                } */
+
+                offset[0] += point.confidence * (mvPoint.x - point.x);
+                offset[1] += point.confidence * (mvPoint.y - point.y);
+                offset[2] += point.confidence * (mvPoint.z - point.z);
+                weightSum += point.confidence;
+            }
+            offset[0] /= weightSum; offset[1] /= weightSum; offset[2] /= weightSum;
+
+            this.offsetOfHumanObject[objectId] = offset;
         }
 
         return;
