@@ -585,7 +585,7 @@ const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
-const tempUuid = utilities.uuidTime();   // UUID of current run of the server
+const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
@@ -1209,7 +1209,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-        console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        if (objects[thisId].tcs) {
+            console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        }
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1368,8 +1370,15 @@ function objectBeatServer() {
         type: 'udp4',
         reuseAddr: true,
     });
+
     udpServer.on('error', function (err) {
-        console.log('server error', err);
+        console.error('udpServer error', err);
+
+        // Permanently log so that it's clear udp support is down
+        setInterval(() => {
+            console.warn('udpServer closed due to error', err);
+        }, 5000);
+
         udpServer.close();
     });
 
@@ -4097,6 +4106,24 @@ function socketServer() {
                 // notify each editor to reload the frame with the new node it has
                 utilities.actionSender({reloadFrame: {object: objectKey, frame: frameKey}, lastEditor: null});
             }
+        });
+
+        /**
+         * Handles messages from local remote operators who don't have access
+         * to sending actions through the cloud proxy or native udp broadcast
+         */
+        socket.on('udp/action', function(msgRaw) {
+            let msg;
+            try {
+                msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+            } catch (_) {
+                // parse failed
+            }
+            if (!msg || !msg.action) {
+                return;
+            }
+
+            handleActionMessage(msg.action);
         });
 
         socket.on('/disconnectEditor', function(msgRaw) {

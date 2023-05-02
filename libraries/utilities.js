@@ -781,33 +781,33 @@ function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAft
 
     // send the datagram, or a websocket message if the datagram fails
     client.send(message, 0, message.length, PORT, HOST, function (err) {
+        let isActionMessage = messageObject.action;
+        let isBeatMessage = messageObject.id && messageObject.ip && messageObject.vn;
+        if (isActionMessage || isBeatMessage) {
+
+            // send the message to clients on the local Wi-Fi network
+            for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
+                let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
+                // console.log(`sending ${messageName} over websocket ${thisEditor} instead of UDP message`);
+                ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
+            }
+
+            // send to cloud-proxied clients and other subscribing modules
+            if (callbacks.triggerUDPCallbacks) {
+                callbacks.triggerUDPCallbacks(messageObject);
+            }
+        }
+
         if (err) {
             if (err.code === 'EMSGSIZE') {
                 console.error('actionSender: UDP Message Too Large.');
-            } else {
-                let isActionMessage = messageObject.action;
-                let isBeatMessage = messageObject.id && messageObject.ip && messageObject.vn;
-                if (isActionMessage || isBeatMessage) {
-
-                    // send the message to clients on the local Wi-Fi network
-                    for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
-                        let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
-                        // console.log(`sending ${messageName} over websocket ${thisEditor} instead of UDP message`);
-                        ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
-                    }
-
-                    // send to cloud-proxied clients and other subscribing modules
-                    if (callbacks.triggerUDPCallbacks) {
-                        callbacks.triggerUDPCallbacks(messageObject);
-                    }
-                } else {
-                    console.log('You\'re not on a network. Can\'t send anything', err);
-                }
             }
+
             if (options.onErr) {
                 options.onErr(err);
             }
         }
+
         if (options.closeAfterSending) {
             client.close();
         }
