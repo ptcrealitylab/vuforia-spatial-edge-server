@@ -159,7 +159,9 @@ class HumanPoseFuser {
         /** Timer to trigger main fuse() method. */
         this.intervalTimer = null;
 
-        /** Dictionary which collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object */
+        /** Dictionary which collects all updates to properties of human objects in current run of fusion (currently properties 'parent' and 'updatedByChildren')
+         * It is a dictionary of dictionaries so we keep just one change per human object per its property
+         */
         this.batchedUpdates = {};
 
         /* Configuration parameters */
@@ -223,8 +225,14 @@ class HumanPoseFuser {
 
         this.fusePoseData(currentPoseData);
 
-        // send out 'parent' property updates to all human objects from this frame to all subscribers
-        server.socketHandler.sendUpdateToAllSubscribers(Object.values(this.batchedUpdates));
+        // send out property updates to all human objects from this frame to all subscribers
+        let batchedUpdatesArr = [];
+        for (let objectData of Object.values(this.batchedUpdates)) {
+            for (let propertyData of Object.values(objectData)) {
+                batchedUpdatesArr.push(propertyData);
+            }
+        }
+        server.socketHandler.sendUpdateToAllSubscribers(batchedUpdatesArr);
 
         this.cleanPastPoses();
 
@@ -340,7 +348,10 @@ class HumanPoseFuser {
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = 'none';
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -553,7 +564,7 @@ class HumanPoseFuser {
             currentBest = candidateConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
         }
 
-        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also be undefined
+        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also undefined
         const previousBest = candidateConfidences.find(item => item.id == previousSelectedObject);
         if (previousBest !== undefined && currentBest !== undefined) {
             // add some hysteresis to select a different human object
@@ -819,7 +830,9 @@ class HumanPoseFuser {
         }
 
         let finalPose;  // undefined as default
-        let fusedObjectIds = [];  // ids used in the fusion
+        // standard object ids used in the fusion
+        // because of recorder limitations this cannot be an empty array when used for updatedByChildren property at the end. Instead we place 'none' item when it is meant to be empty.
+        let updatedByChildren = [];
 
         switch (this.fusionMethod) {
         case FusionMethod.MultiViewTriangulation: {
@@ -840,11 +853,12 @@ class HumanPoseFuser {
                 let mvPose = this.triangulatePose(poseDataArr);
                 if (!mvPose) {
                     console.warn('Failed to triangulate 3D pose.');
+                    updatedByChildren.push('none');
                 } else {
                     // take directly current pose from the selected human object
                     finalPose = mvPose;
                     for (let [objectId, pose] of poseDataArr) {
-                        fusedObjectIds.push(objectId);
+                        updatedByChildren.push(objectId);
                     }
                 }
             }
@@ -854,6 +868,7 @@ class HumanPoseFuser {
             let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
             if (!selectedObjectId) {
                 console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
             } else {
                 // filter empty poses
                 let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
@@ -863,8 +878,8 @@ class HumanPoseFuser {
                 // the pose can be undefined in the current frame and offset might not be estimated yet
                 if (poseData[selectedObjectId] !== undefined && this.offsetOfHumanObject[selectedObjectId] !== undefined) {
                     finalPose = this.applyOffsetToPose(poseData[selectedObjectId], this.offsetOfHumanObject[selectedObjectId]);
-                    fusedObjectIds.push(selectedObjectId);
                 }
+                updatedByChildren.push(selectedObjectId);
             }
             break;
         }
@@ -872,15 +887,36 @@ class HumanPoseFuser {
             let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
             if (!selectedObjectId) {
                 console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
             } else {
                 // take directly current pose from the selected human object (can be undefined in the current frame)
                 finalPose = poseData[selectedObjectId];
-                fusedObjectIds.push(selectedObjectId);
+                updatedByChildren.push(selectedObjectId);
             }
             break;
         }
         default:
             console.error('Unknown fusion method.');
+        }
+
+        // detect change in the subset of associated (child) human objects which currently update their fused object
+        const equalArrays = (a, b) => a.length === b.length && a.every((element, index) => element === b[index]);
+
+        if (!equalArrays(updatedByChildren, this.objectsRef[fusedObjectId].updatedByChildren)) {
+            // a change detected, we need to update the property
+            this.objectsRef[fusedObjectId].updatedByChildren = updatedByChildren;
+
+            if (this.batchedUpdates[fusedObjectId] === undefined) {
+                this.batchedUpdates[fusedObjectId] = {};
+            }
+            this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                objectKey: fusedObjectId,
+                frameKey: null,
+                nodeKey: null,
+                propertyPath: 'updatedByChildren',
+                newValue: updatedByChildren,
+                editorId: 0
+            };
         }
 
         if (finalPose === undefined || finalPose.joints.length == 0) {
@@ -917,7 +953,7 @@ class HumanPoseFuser {
             }
         }
         if (this.verbose) {
-            console.log('updating joints: obj=' + fusedObjectId + ' with [' + fusedObjectIds + '], data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
+            console.log('updating joints: obj=' + fusedObjectId + ' with [' + updatedByChildren + '], data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
         }
     }
 
@@ -1010,7 +1046,10 @@ class HumanPoseFuser {
                 this.objectsRef[id].parent = parentValue;
 
                 // make entry in batchedUpdates
-                this.batchedUpdates[id] = {
+                if (this.batchedUpdates[id] === undefined) {
+                    this.batchedUpdates[id] = {};
+                }
+                this.batchedUpdates[id]['parent'] = {
                     objectKey: id,
                     frameKey: null,
                     nodeKey: null,
@@ -1072,7 +1111,10 @@ class HumanPoseFuser {
                     // set parent reference pointing at a fused human object
                     this.objectsRef[id].parent = fusedObjectId;
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -1099,7 +1141,10 @@ class HumanPoseFuser {
                     for (let id of ids) {
                         this.objectsRef[id].parent = fusedObjectId;
 
-                        this.batchedUpdates[id] = {
+                        if (this.batchedUpdates[id] === undefined) {
+                            this.batchedUpdates[id] = {};
+                        }
+                        this.batchedUpdates[id]['parent'] = {
                             objectKey: id,
                             frameKey: null,
                             nodeKey: null,
@@ -1111,6 +1156,21 @@ class HumanPoseFuser {
                         // remove the previous offset if it exists (just in case)
                         delete this.offsetOfHumanObject[id];
                     }
+
+                    // add property specific for fused human objects (not defined in standard human objects from apps)
+                    this.objectsRef[fusedObjectId].updatedByChildren = ['none'];
+
+                    if (this.batchedUpdates[fusedObjectId] === undefined) {
+                        this.batchedUpdates[fusedObjectId] = {};
+                    }
+                    this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                        objectKey: fusedObjectId,
+                        frameKey: null,
+                        nodeKey: null,
+                        propertyPath: 'updatedByChildren',
+                        newValue: ['none'],
+                        editorId: 0
+                    };
                 }
 
                 // setup active heartbeat for this new object
