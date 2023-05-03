@@ -73,6 +73,11 @@
          */
         this.opensWhenAdded = opensWhenAdded;
         /**
+         * True on the first session when the tool gets added
+         * @type {boolean}
+         */
+        this.wasToolJustCreated = false;
+        /**
          * A map of all the frameIds -> frame data for each frame added to the envelope
          * @type {Object.<string, Object>}
          */
@@ -169,10 +174,13 @@
             compatibleFrameTypes: this.compatibleFrameTypes
         });
 
-        realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+        if (!this.isFull2D) {
+            realityInterface.addReadListener('open', this._defaultOpenNodeListener.bind(this));
+        }
 
         this.realityInterface.wasToolJustCreated(justCreated => {
             if (!justCreated) return;
+            this.wasToolJustCreated = true;
 
             // automatically ensure that there is a node called 'storage' on the envelope frame to store the publicData
             this.realityInterface.initNodeWithOptions('storage', {
@@ -182,14 +190,18 @@
                 type: 'storeData'
             });
 
-            // also ensure that there is a node called 'open' on the envelope frame to open or close it
-            this.realityInterface.initNodeWithOptions('open', {
-                x: 0,
-                y: 0,
-                attachToGroundPlane: false,
-                type: 'node',
-                defaultValue: this.opensWhenAdded ? 1 : 0
-            });
+            if (!this.isFull2D) {
+                // set a flag so that we don't open the envelope minimized the first time it reads its own node value
+                this.dontBlurOnNextOpen = true;
+                // ensure that there is a node called 'open' on the envelope frame to open or close it
+                this.realityInterface.initNodeWithOptions('open', {
+                    x: 0,
+                    y: 0,
+                    attachToGroundPlane: false,
+                    type: 'node',
+                    defaultValue: this.opensWhenAdded ? 1 : 0
+                });
+            }
         });
 
         const adjustForScreenSize = (width, height) => {
@@ -246,7 +258,9 @@
             });
 
             if (!options.dontWrite) {
-                this.realityInterface.write('open', 1);
+                if (!this.isFull2D) {
+                    this.realityInterface.write('open', 1);
+                }
                 this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
             }
         };
@@ -267,18 +281,31 @@
             });
 
             if (!options.dontWrite) {
-                this.realityInterface.write('open', 0);
+                if (!this.isFull2D) {
+                    this.realityInterface.write('open', 0);
+                }
             }
         };
 
         Envelope.prototype.focus = function() {
             this.hasFocus = true;
             this.triggerCallbacks('onFocus', {});
+
+            this.realityInterface.sendEnvelopeMessage({
+                focus: true
+            });
+
+            // focusing on a tool also "refreshes it" as the most recent tool
+            this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
         }
 
         Envelope.prototype.blur = function() {
             this.hasFocus = false;
             this.triggerCallbacks('onBlur', {});
+
+            this.realityInterface.sendEnvelopeMessage({
+                blur: true
+            });
         }
 
         /**
@@ -613,7 +640,19 @@
             if (event.value < 0.5) {
                 this.close({ dontWrite: true });
             } else {
+                let alreadyOpen = this.isOpen;
                 this.open({ dontWrite: true });
+
+                // when the tool opens in response to another client writing to the 'open' node, open minimized (not focused)
+                // we have to ignore when wasToolJustCreated, as the tool initially learns its open state from the node
+                if (!this.dontBlurOnNextOpen) {
+                    // Already open due to local user input, don't override our
+                    // local state to blurred
+                    if (!alreadyOpen) {
+                        this.blur();
+                    }
+                    this.dontBlurOnNextOpen = false;
+                }
             }
 
             this.lastOpenValue = event.value; // prevents duplicate reads (get triggered on sendRealityEditorSubscribe)
