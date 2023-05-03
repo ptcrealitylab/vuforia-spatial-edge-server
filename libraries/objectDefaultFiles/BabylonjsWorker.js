@@ -1,4 +1,5 @@
-import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer} from "/objectDefaultFiles/glCommandBuffer.js";
+import {GLCommandBufferContext, CommandBufferFactory, CommandBuffer, WebGLSyncStrategy, WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
+import {MessageInterface} from '/objectDefaultFiles/WorkerFactory.js';
 import '/objectDefaultFiles/babylon/babylon.max.js';
 
 /**
@@ -14,7 +15,11 @@ class BabylonjsWorker {
     static STATE_CONTEXT_RESTORED = 6;
     static STATE_CONTEXT_RESTORED_DONE = 7;
     
-    constructor() {
+    /**
+     * 
+     * @param {MessageInterface} messageInterface 
+     */
+    constructor(messageInterface) {
         this.clientState = BabylonjsWorker.STATE_CONSTRUCTED;
         // some values will be set after the bootstrap message has been received
         this.lastProjectionMatrix = null;
@@ -33,6 +38,11 @@ class BabylonjsWorker {
          * @type {Array<function(number):void>}
          */
         this.onRenderCallbacks = [];
+
+        /**
+         * @type {MessageInterface}
+         */
+        this.messageInterface = messageInterface;
     }
 
     /**
@@ -56,7 +66,7 @@ class BabylonjsWorker {
 
                     result = pickInfo.hit;
                 }
-                self.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
+                this.messageInterface.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
             } else if (message.name === "anchoredModelViewCallback") {
                 switch (this.clientState) {
                     case BabylonjsWorker.STATE_CONSTRUCTED:
@@ -65,6 +75,9 @@ class BabylonjsWorker {
                     case BabylonjsWorker.STATE_CONTEXT_RESTORED_DONE:
                         // setup the projection matrix
                         this.lastProjectionMatrix = message.projectionMatrix;
+                        // invert z axis
+                        //this.lastProjectionMatrix[10] = -this.lastProjectionMatrix[10];
+                        //this.lastProjectionMatrix[11] = -this.lastProjectionMatrix[11];
                         break;
                     default:
                         console.error("wrong state to set projectionMatrix clientState: " + this.clientState);
@@ -79,8 +92,8 @@ class BabylonjsWorker {
                     this.synclock = synclock;
     
                     // create commandbuffer factory in order to create resource commandbuffers
-                    this.glCommandBufferContext = new GLCommandBufferContext(message);
-                    this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock);
+                    this.glCommandBufferContext = new GLCommandBufferContext(message, WebGLStrategy.getInstance().syncStrategy);
+                    this.commandBufferFactory = new CommandBufferFactory(this.workerId, this.glCommandBufferContext, this.synclock, this.messageInterface);
     
                     // execute three.js startup
                     const bootstrapCommandBuffers = this.main(width, height, this.commandBufferFactory);
@@ -96,7 +109,7 @@ class BabylonjsWorker {
                     this.bootstrapProcessed = true;
     
                     // singnal end of frame
-                    self.postMessage({
+                    this.messageInterface.postMessage({
                         workerId: this.workerId,
                         isFrameEnd: true,
                     });
@@ -114,7 +127,7 @@ class BabylonjsWorker {
                         this.workerId = message.workerId;
                         if (!this.bootstrapProcessed) {
                             console.log(`Can't render worker with id: ${this.workerId}, it has not yet finished initializing`);
-                            self.postMessage({
+                            this.messageInterface.postMessage({
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
@@ -123,7 +136,7 @@ class BabylonjsWorker {
                         }
                         if (Date.now() - message.time > 300) {
                             console.log('time drift detected');
-                            self.postMessage({
+                            this.messageInterface.postMessage({
                                 workerId: this.workerId,
                                 isFrameEnd: true,
                             });
@@ -145,7 +158,7 @@ class BabylonjsWorker {
                         this.frameCommandBuffer.execute();
         
                         // singnal end of frame
-                        self.postMessage({
+                        this.messageInterface.postMessage({
                             workerId: this.workerId,
                             isFrameEnd: true,
                         });
@@ -192,7 +205,7 @@ class BabylonjsWorker {
         restoreBuffer.execute();
         
         // singnal end of frame
-        self.postMessage({
+        this.messageInterface.postMessage({
             workerId: this.workerId,
             isFrameEnd: true,
         });
@@ -263,7 +276,7 @@ class BabylonjsWorker {
         if (!this.isProjectionMatrixSet && this.lastProjectionMatrix && this.lastProjectionMatrix.length === 16) {
             // replace the projection matrix
             let matrix = new BABYLON.Matrix();
-            setMatrixFromArray(matrix, this.lastProjectionMatrix);
+            setProjectionMatrixFromArray(matrix, this.lastProjectionMatrix);
             this.scene.setTransformMatrix(BABYLON.Matrix.Identity(), matrix);
             this.isProjectionMatrixSet = true;
         }
@@ -356,13 +369,21 @@ class FakeCanvas extends HTMLCanvasElement {
 }
 
 /**
- * converts an Float32Array to a BABYLON.Matrix
+ * converts a Float32Array (THREE.js projection matrix) to a BABYLON.Matrix
+ * @param {BABYLON.Matrix} matrix
+ * @param {Float32Array} array
+ */
+function setProjectionMatrixFromArray(matrix, array) {
+    matrix.copyFrom(BABYLON.Matrix.FromArray([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]).multiply(BABYLON.Matrix.FromArray(array)));
+}
+
+/**
+ * converts a Float32Array to a BABYLON.Matrix
  * @param {BABYLON.Matrix} matrix
  * @param {Float32Array} array
  */
 function setMatrixFromArray(matrix, array) {
-    matrix.copyFrom(BABYLON.Matrix.FromArray(array));
-    matrix = BABYLON.Matrix.Transpose(matrix);
+    matrix.copyFrom(BABYLON.Matrix.FromArray([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]).multiply(BABYLON.Matrix.FromArray(array)).multiply(BABYLON.Matrix.FromArray([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1])));
 }
 
 export {BabylonjsWorker, setMatrixFromArray};
