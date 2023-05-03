@@ -160,7 +160,7 @@ exports.clearObject = function (objectUuid, toolUuid) {
         }
     }
     //TODO: clear links too
-    console.log('object is all cleared');
+    // console.log('object is all cleared');
 };
 
 exports.removeAllNodes = function (object, tool) {
@@ -482,7 +482,7 @@ exports.setTool = function (object, tool, newTool, dirName) {
 
 exports.addNode = function (object, tool, node, type, position) {
     var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
-    console.log('hardwareInterfaces.addNode objectID: ', objectID, object);
+    console.log(`hardwareInterfaces.addNode ${node} to ${tool} on ${object}`);
 
     if (!objectID) {
         console.log('Creating new object for hardware node', object);

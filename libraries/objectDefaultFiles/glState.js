@@ -743,7 +743,7 @@ class TextureState {
         targetToTargetBinding.set(gl.TEXTURE_2D, gl.TEXTURE_BINDING_2D);
         targetToTargetBinding.set(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_BINDING_CUBE_MAP);
         // add "|| gl.hasOwnProperty("TEXTURE_3D")" here to support khronos's own debug layer
-        if (gl instanceof WebGL2RenderingContext) {
+        if (gl instanceof WebGL2RenderingContext || gl.hasOwnProperty("TEXTURE_3D")) {
             targetToTargetBinding.set(gl.TEXTURE_3D, gl.TEXTURE_BINDING_3D);
             targetToTargetBinding.set(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_BINDING_2D_ARRAY);
         }
@@ -1100,7 +1100,8 @@ class DeviceDescription {
         this.parameters.set(DeviceDescription.RENDERER, new NamedStringParameter("RENDERER", gl.getParameter(DeviceDescription.RENDERER)));
         let maxSamples = 0;
         let maxUniformBufferBindings = 0;
-        if (gl instanceof WebGL2RenderingContext) {
+        // add "|| gl.hasOwnProperty("TEXTURE_3D")" here to support khronos's own debug layer
+        if (gl instanceof WebGL2RenderingContext || gl.hasOwnProperty("TEXTURE_3D")) {
             maxSamples = gl.getParameter(DeviceDescription.MAX_SAMPLES);
             maxUniformBufferBindings = gl.getParameter(DeviceDescription.MAX_UNIFORM_BUFFER_BINDINGS);
         }
@@ -1257,7 +1258,8 @@ class GLState {
         this.parameters.set(this.gl.STENCIL_CLEAR_VALUE, new NamedNumberParameter("STENCIL_CLEAR_VALUE", 0));
         this.parameters.set(this.gl.STENCIL_TEST, new NamedBooleanParameter("STENCIL_TEST", false));
         this.parameters.set(this.gl.VIEWPORT, new NamedInt32ArrayParameter("VIEWPORT", new Int32Array(viewport))); 
-        if (this.gl instanceof WebGL2RenderingContext) {
+        // add "|| gl.hasOwnProperty("TEXTURE_3D")" here to support khronos's own debug layer
+        if (this.gl instanceof WebGL2RenderingContext || gl.hasOwnProperty("TEXTURE_3D")) {
             this.parameters.set(this.gl.COPY_READ_BUFFER_BINDING, new NamedHandleParameter("COPY_READ_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
             this.parameters.set(this.gl.COPY_WRITE_BUFFER_BINDING, new NamedHandleParameter("COPY_WRITE_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));
             this.parameters.set(this.gl.PIXEL_PACK_BUFFER_BINDING, new NamedHandleParameter("PIXEL_PACK_BUFFER_BINDING", GLState.getBufferHandle(null, unclonables)));

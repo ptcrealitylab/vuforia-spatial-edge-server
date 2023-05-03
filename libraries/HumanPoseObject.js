@@ -51,6 +51,10 @@ function HumanPoseObject(ip, version, protocol, objectId, poseJointSchema) {
     // Timestamp of the last update of pose (joint positions + related data such as joint confidences)
     // This is capture timestamp of the image used to compute the pose in the update. Units are miliseconds, but it is a floating-point number with nanosecond precision.
     this.lastUpdateDataTS = 0;
+    // Parent is defined when this human object is associated and supports a fused human object (therefore this object does not need to be analyzed/visualized ...)
+    // Parent is 'none' for any fused human object or standalone human object not currently associated with a fused one.
+    // NOTE: this property can change over time and subscribers to this object should take that into account
+    this.parent = 'none';
 }
 
 HumanPoseObject.prototype.getName = function(bodyId) {
@@ -64,6 +68,15 @@ HumanPoseObject.prototype.getName = function(bodyId) {
  */
 HumanPoseObject.prototype.getFrameKey = function(jointName) {
     return this.objectId + jointName;
+};
+
+/**
+ * Helper function returns the UUID of a node based on the name of a joint.
+ * @param {string} jointName - e.g. JOINT_PELVIS, JOINT_FOOT_RIGHT
+ * @return {string} - e.g. objectUuidJOINT_PELVISstorage, objectUuidJOINT_FOOT_RIGHTstorage
+ */
+HumanPoseObject.prototype.getNodeKey = function(jointName) {
+    return this.objectId + jointName + 'storage';
 };
 
 // // matches the entries of the Azure Kinect Body Tracking SDK
@@ -155,6 +168,10 @@ HumanPoseObject.prototype.createFrame = function(jointName, shouldCreateNode) {
     return newFrame;
 };
 
+/**
+ * Update frame poses and public data of nodes based on a given joints state
+ * @param {Array.<{x, y, z, confidence}>} joints
+ */
 HumanPoseObject.prototype.updateJoints = function(joints) {
 
     // right now uses the nose as the object's center, but could change to any other joint (e.g. head might make sense)
@@ -202,6 +219,22 @@ HumanPoseObject.prototype.updateJoints = function(joints) {
         node.publicData.data = { confidence: jointInfo.confidence };
 
     }.bind(this));
+};
+
+/**
+ * @return { {objectKey, frameKey, nodeKey} } - keys of the storeData node of a given joint
+ */
+HumanPoseObject.prototype.getJointNodeInfo = function(jointIndex) {
+
+    var jointName = Object.values(this.poseJointSchema)[jointIndex];
+    var frameKey = this.getFrameKey(jointName);
+    var nodeKey = this.getNodeKey(jointName);
+
+    return {
+        objectKey: this.objectId,
+        frameKey: frameKey,
+        nodeKey: nodeKey
+    };
 };
 
 /**

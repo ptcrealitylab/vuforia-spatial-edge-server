@@ -1,5 +1,8 @@
+import {WebGLStrategy} from "/objectDefaultFiles/glCommandBuffer.js";
+
 /**
  * @typedef {import("./object.js").SpatialInterface} SpatialInterface
+ * @typedef {import("./WorkerFactory.js").MessageInterface} MessageInterface
  */
 
 /**
@@ -9,12 +12,19 @@ class BabylonjsInterface {
     /**
      * 
      * @param {SpatialInterface} spatialInterface
-     * @param {Worker} worker
+     * @param {string} workerScript
      */
-    constructor(spatialInterface, worker) {
+    constructor(spatialInterface, workerScript) {
         // some information will become available after the bootstrap message has been received
+        /**
+         * @type {SpatialInterface}
+         */
         this.spatialInterface = spatialInterface;
-        this.worker = worker;
+
+        /**
+         * @type {MessageInterface}
+         */
+        this.workerMessageInterface = WebGLStrategy.getInstance().workerFactory.createWorker(workerScript, true);
         this.workerId = -1;
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
@@ -25,13 +35,18 @@ class BabylonjsInterface {
         this.lastTouchResult = false;
     }
 
+    getWorkerMessageInterface() {
+        return this.workerMessageInterface;
+    }
+
+
     /**
      * this message is used to setup the projection matrix in the webworker
      * @param {Float32Array} modelViewMatrix 
      * @param {Float32Array} projectionMatrix 
      */
     anchoredModelViewCallback(modelViewMatrix, projectionMatrix) {
-        this.worker.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
+        this.workerMessageInterface.postMessage({name: "anchoredModelViewCallback", projectionMatrix: projectionMatrix});
     }
 
     /**
@@ -94,7 +109,7 @@ class BabylonjsInterface {
                     });
                 }
             } else {
-                this.worker.postMessage(message);
+                this.workerMessageInterface.postMessage(message);
             }
         }
     }
@@ -120,7 +135,7 @@ class BabylonjsInterface {
              console.warn("tocuh decider locked worker, returning no touch");
             return false;
         }
-        this.worker.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});
+        this.workerMessageInterface.postMessage({name: "touchDecider", mouse: this.mouse, workerId: this.workerId});
         let res = await Promise.race([this.makeWatchdog(), new Promise((result) => {
             this.touchAnswerListener = result;
         })]);
