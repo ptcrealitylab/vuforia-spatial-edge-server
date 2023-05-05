@@ -31,10 +31,17 @@ const JOINTS = {
     PELVIS: 'pelvis', // synthetic
 };
 
+/** Enum for the method for fusing poses for the same person from several views/toolbox apps. */
 const FusionMethod = Object.freeze({
     BestSingleView: 'BestSingleView',
     BestSingleViewWithMultiviewCorrection: 'BestSingleViewWithMultiviewCorrection',
     MultiViewTriangulation: 'MultiViewTriangulation'
+});
+
+/** Enum for the metric used for selecting the best pose across several views/toolbox apps. */
+const ViewSelectionMetric = Object.freeze({
+    JointConfidence: 'JointConfidence',
+    JointConfidence_Distance: 'JointConfidence_Distance'
 });
 
 /**
@@ -166,7 +173,7 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = true;
+        this.verbose = false;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -181,9 +188,12 @@ class HumanPoseFuser {
         this.maxDistanceForSamePerson = 300; // mm
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
-
-        this.fusionMethod = 'BestSingleViewWithMultiviewCorrection'; //'MultiViewTriangulation'; // 'BestSingleView';
+        /** method for fusing poses for the same person from several views/toolbox apps. */
+        this.fusionMethod = 'BestSingleView'; // 'BestSingleViewWithMultiviewCorrection';
+        /** weighting individual observations according to joint confidence in multiview triangulation */
         this.viewWeighting = true;
+        /** metric used for selecting the best pose across several views/toolbox apps */
+        this.viewSelectionMetric = 'JointConfidence_Distance'; // 'JointConfidence';
     }
 
     /** Starts fusion of human poses. */
@@ -269,29 +279,73 @@ class HumanPoseFuser {
                 }
             }
 
+            // extend pose object with overall confidence but prevent it to be copyable
+            // NOTE: currently used just in fusion method which selects the best single view
+            wholePose.poseConfidence = this.computeOverallConfidence(wholePose);
+
             // prevent optional properties being copiable into a fused pose where they don't have a meaning
             Object.defineProperties(wholePose, {
                 imageSize: {enumerable: false},
                 focalLength: {enumerable: false},
                 principalPoint: {enumerable: false},
-                transformW2C: {enumerable: false}
+                transformW2C: {enumerable: false},
+                poseConfidence: {enumerable: false}
             });
         }
 
-        // extend pose object with overall confidence but prevent it to be copyable
-        // NOTE: currently used just in fusion method which selects the best single view
-        let poseConfidence = this.computeOverallConfidence(wholePose.joints);
-        wholePose.poseConfidence = poseConfidence;
-        Object.defineProperty(wholePose, 'poseConfidence', { enumerable: false });
-
         this.pastPoses[objectId].poses.push(wholePose);
+    }
+
+    /** Computes overall confidence of whole pose from joint confidences.
+     * @param {WholePoseData>} pose
+     * @returns {number} overall pose confidence in range [0, 1] (0 = no confidence)
+     */
+    computeOverallConfidence(pose) {
+        let finalConfidence = 0;
+        let poseConfidence = this.computePoseConfidence(pose.joints);
+
+        switch (this.viewSelectionMetric) {
+        case ViewSelectionMetric.JointConfidence: {
+            finalConfidence = poseConfidence;
+            break;
+        }
+        case ViewSelectionMetric.JointConfidence_Distance: {
+            if (pose.joints.length == 0) {
+                finalConfidence = 0.0;
+                break;
+            }
+            let cameraDistance = this.calculateDistanceToCamera(pose.joints, pose.transformW2C);
+
+            // distance threholds in mm units
+            const minDistance = 500;
+            const maxReliableDistance = 2500;
+            const maxDistance = 5000;
+            const distanceWeight = 0.33;
+
+            // zero output confidence when the human pose is in a distance outside operating range of depth sensor
+            if (cameraDistance < minDistance || cameraDistance > maxDistance) {
+                finalConfidence = 0.0;
+            } else {
+                // calculate distance-based confidence in range [0,1]; 0 at maxDistance and 1 at maxReliableDistance
+                let distanceConfidence = (cameraDistance < maxReliableDistance) ? 1.0 : ((maxDistance - cameraDistance) / (maxDistance - maxReliableDistance));
+
+                // weighted combination of two metrics; stays in the range [0,1]
+                finalConfidence = (1.0 - distanceWeight) * poseConfidence + distanceWeight * distanceConfidence;
+            }
+            break;
+        }
+        default:
+            console.error('Unknown selection metric.');
+        }
+
+        return finalConfidence;
     }
 
     /** Computes overall confidence of whole pose from joint confidences.
      * @param {Array.< {x: number, y: number, z: number, confidence: number} >} poseJoints
      * @returns {number} overall pose confidence
      */
-    computeOverallConfidence(poseJoints) {
+    computePoseConfidence(poseJoints) {
 
         if (poseJoints.length == 0) {
             return 0.0;
@@ -312,6 +366,40 @@ class HumanPoseFuser {
         }
 
         return sum / selectedJointNames.length;
+    }
+
+    /**
+     * Calculates depth of whole pose from its camera/view (not 3D euclidean distance).
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints
+     * @param {Array.<number>} cameraPose - 4x4 transform from world to camera CS
+     * @returns {number}
+     */
+    calculateDistanceToCamera(joints, cameraPose) {
+        // create 3x4 transform matrix (defined row by row)
+        // cameraPose is stored column-wise in 1D array
+        let T = new Matrix([
+            [cameraPose[0], cameraPose[4], cameraPose[8],  cameraPose[12]],
+            [cameraPose[1], cameraPose[5], cameraPose[9],  cameraPose[13]],
+            [cameraPose[2], cameraPose[6], cameraPose[10], cameraPose[14]]
+        ]);
+
+        const selectedJointNames = ['pelvis', 'neck'];
+        const jointNames = Object.values(JOINTS);
+        let depth = 0.0;
+        let count = 0;
+        for (let name of selectedJointNames) {
+            const jointIndex = jointNames.indexOf(name);
+            if (jointIndex >= 0) {
+                // transfrom to camera CS where z axis is along viewing direction
+                const p3dW = Matrix.columnVector([joints[jointIndex].x, joints[jointIndex].y, joints[jointIndex].z, 1]);
+                let p3dC = T.mmul(p3dW);
+                depth += p3dC.get(2, 0);
+                count++;
+            }
+        }
+        depth /= count;
+
+        return Math.abs(depth);
     }
 
     /** Removes internal data about a given human object
@@ -684,7 +772,7 @@ class HumanPoseFuser {
                 [0, 0, 1]
             ]);
             // create 3x4 transform matrix (defined row by row)
-            // 4x4 transformW2C is stored column-wise in 1D array 
+            // 4x4 transformW2C is stored column-wise in 1D array
             let T = new Matrix([
                 [pose.transformW2C[0], pose.transformW2C[4], pose.transformW2C[8],  pose.transformW2C[12]],
                 [pose.transformW2C[1], pose.transformW2C[5], pose.transformW2C[9],  pose.transformW2C[13]],
