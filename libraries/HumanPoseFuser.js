@@ -178,7 +178,7 @@ class HumanPoseFuser {
         /** difference in pose confidence to switch over to a different child human object */
         this.minConfidenceDifference = 0.2;
         /** distance threshold between selected joints (neck, pelvis) to consider two 3d poses beloging to the same person (at the same timestamp) */
-        this.maxDistanceForSamePerson = 1000; // 300; // mm  // MK HACK: increased for debugging
+        this.maxDistanceForSamePerson = 300; // mm
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
 
@@ -462,13 +462,30 @@ class HumanPoseFuser {
     }
 
     /**
-     * Checks if two human poses can be considered from the same person
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1 - joints of first pose
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2 - joints of second pose
-     * @param {number} maxDistance - distance threshold between two poses
+     * Checks if two human poses can be considered from the same person. It is configurable based on the scenario when this check is needed.
+     * @param {number} distance - distance between two poses (as computed by calculateDistanceBetweenPoses)
+     * @param {number} ts1 - timestamp of first pose
+     * @param {number} ts2 - timestamp of second pose
+     * @param {number} multiplier - multiplier of distance threshold
      * @return {boolean}
      */
-    arePosesOfSamePerson(joints1, joints2, maxDistance) {
+    arePosesOfSamePerson(distance, ts1, ts2, multiplier = 1.0) {
+        // distance threshold is calculated from two components:
+        // - base deviation between poses at the same timestamp
+        // - max possible shift between poses from different timestamp due to person's movement 
+        //   (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
+        const distanceThreshold = multiplier * this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(ts1 - ts2);
+
+        return distance < distanceThreshold;
+    }
+
+    /**
+     * Calculate a distance metric between two human poses
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1 - joints of first pose
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2 - joints of second pose
+     * @return {number}
+     */
+    calculateDistanceBetweenPoses(joints1, joints2) {
 
         // check distances between pelvis and neck
         let pelvisIndex = Object.values(JOINTS).indexOf('pelvis');
@@ -476,17 +493,13 @@ class HumanPoseFuser {
 
         if (pelvisIndex < 0 || neckIndex < 0) {
             // this should not really happen in correct joint schema
-            return false;
+            return Infinity;
         }
 
         let pelvisDist = sgUtils.positionDistance(joints1[pelvisIndex], joints2[pelvisIndex]);
         let neckDist = sgUtils.positionDistance(joints1[neckIndex], joints2[neckIndex]);
 
-        if (pelvisDist > maxDistance || neckDist > maxDistance) {
-            return false;
-        }
-
-        return true;
+        return Math.max(pelvisDist, neckDist);
     }
 
     /**
@@ -971,12 +984,12 @@ class HumanPoseFuser {
             console.log(`Pose data count: before=${before}, after=${poseDataArr.length}`);
         }*/
 
-        // compare all pairs of poses and make binary matrix of spatial proximity
-        let proximityMatrix = Array.from(new Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(false));
+        // compare all pairs of poses and make a matrix of spatial proximity
+        let proximityMatrix = Array.from(new Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(0.0));
         let standardIndices = [];
         let fusedIndices = [];
         for (let i = 0; i < poseDataArr.length; i++) {
-            proximityMatrix[i][i] = true;
+            proximityMatrix[i][i] = 0.0;
             // poseDataArr contains poses of standard and fused human objects, store indices for each group
             if (this.humanObjectsOfFusedObject[poseDataArr[i][0]] !== undefined) {
                 fusedIndices.push(i);
@@ -984,15 +997,7 @@ class HumanPoseFuser {
                 standardIndices.push(i);
             }
             for (let j = i + 1; j < poseDataArr.length; j++) {
-                // distance threshold is calculated from two components:
-                // - base deviation between poses at the same timestamp
-                // - max possible shift between poses from different timestamp due to person's movement (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
-                const distanceThreshold = this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(poseDataArr[i][1].timestamp - poseDataArr[j][1].timestamp);
-
-                if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints, distanceThreshold)) {
-                    proximityMatrix[i][j] = true;
-                    proximityMatrix[j][i] = true;
-                }
+                proximityMatrix[i][j] = proximityMatrix[j][i] = this.calculateDistanceBetweenPoses(poseDataArr[i][1].joints, poseDataArr[j][1].joints);
             }
         }
 
@@ -1007,8 +1012,8 @@ class HumanPoseFuser {
                 // check if this fused object is available in the current frame
                 const fi = poseDataArr.findIndex(item => item[0] == fid);
                 if (fi >= 0) {
-                    // check if the poses are still at the same location
-                    if (!proximityMatrix[fi][index]) {
+                    // check if the poses are still at the same location, but apply some hysteresis by increasing distance threshold 
+                    if (!this.arePosesOfSamePerson(proximityMatrix[fi][index], poseDataArr[fi][1].timestamp, poseDataArr[index][1].timestamp, 3)) {
                         // detach the standard object from the fused human object so the pose is not used in subsequent fusion
                         this.humanObjectsOfFusedObject.removeStandardObject(id);
                         parentValue = 'none';
@@ -1023,7 +1028,7 @@ class HumanPoseFuser {
                 // try to associate it with one of the fused objects available in the current frame
                 let assigned = false;
                 for (let findex of fusedIndices) {
-                    if (proximityMatrix[findex][index]) {
+                    if (this.arePosesOfSamePerson(proximityMatrix[findex][index], poseDataArr[findex][1].timestamp, poseDataArr[index][1].timestamp)) {
                         // they are close, make association
                         let fid2 = poseDataArr[findex][0];
                         this.humanObjectsOfFusedObject[fid2].push(id);
@@ -1070,7 +1075,7 @@ class HumanPoseFuser {
             // make group from all poses with close proximity to this one
             let ids = [];
             for (let j of unassignedStandardIndices) {
-                if (proximityMatrix[index][j]) {
+                if (this.arePosesOfSamePerson(proximityMatrix[index][j], poseDataArr[index][1].timestamp, poseDataArr[j][1].timestamp)) {
                     ids.push(poseDataArr[j][0]);
                 }
             }
