@@ -225,6 +225,9 @@ recorder.recurse = function (obj, objectInTime, keyString) {
         if (key === 'whole_pose' && keyString.includes('_HUMAN_')) {
             continue;
         }
+        if (keyString.includes('_AVATAR_')) {
+            continue;
+        }
         const item = obj[key];
         if (typeof item === 'object') {
 
