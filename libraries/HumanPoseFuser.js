@@ -560,7 +560,7 @@ class HumanPoseFuser {
     arePosesOfSamePerson(distance, ts1, ts2, multiplier = 1.0) {
         // distance threshold is calculated from two components:
         // - base deviation between poses at the same timestamp
-        // - max possible shift between poses from different timestamp due to person's movement 
+        // - max possible shift between poses from different timestamp due to person's movement
         //   (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
         const distanceThreshold = multiplier * this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(ts1 - ts2);
 
@@ -764,7 +764,7 @@ class HumanPoseFuser {
         let projectionMatrices = []; // per-view
         let jointsInView = []; // joint 2D positions + confidences per view
         let latestTS = 0; // the latest data timestamp
-        for (let [id, pose] of poseDataArr) {
+        for (let [_id, pose] of poseDataArr) {
             // create calibration matrix (defined row by row)
             let K = new Matrix([
                 [pose.focalLength[0], 0, pose.principalPoint[0]],
@@ -834,19 +834,16 @@ class HumanPoseFuser {
             let point3D = this.triangulatePoint(projectionMatrices, points2D, weights);
 
             if (point3D) {
-                // TODO: compute new 'multiview' confidence
+                // TODO (future): compute new 'multiview' confidence
                 mvPose.joints.push({x: point3D[0], y: point3D[1], z: point3D[2], confidence: 1.0});
-            }
-            else {
-                // TODO
-                //mvPose.joints.push(null);
+            } else {
+                // failed to compute joint position, give zero confidence
                 mvPose.joints.push({x: 0.0, y: 0.0, z: 0.0, confidence: 0.0});
             }
 
         }
 
-        // TODO: check if joint entry is not null and come up with approximate position
-
+        // TODO (future): check if joint was not computed and come up with approximate position
 
         return mvPose;
     }
@@ -858,7 +855,9 @@ class HumanPoseFuser {
 
         let mvPose = this.triangulatePose(poseDataArr);
         if (!mvPose) {
-            console.warn('Failed to triangulate skeleton root.');
+            if (this.verbose) {
+                console.warn('Failed to triangulate skeleton for offset.');
+            }
             return;
         }
 
@@ -876,23 +875,22 @@ class HumanPoseFuser {
                 if (jointIndex < 0) {
                     continue;  // did not find the joint name
                 }
-
-                const mvPoint = mvPose.joints[jointIndex];
                 const point = pose.joints[jointIndex];
-
-                /* collect confidence across views
-                for (let [objectId, pose] of poseDataArr) {
-                    const point = pose.joints[jointIndex];
-                } */
-
-                offset[0] += point.confidence * (mvPoint.x - point.x);
-                offset[1] += point.confidence * (mvPoint.y - point.y);
-                offset[2] += point.confidence * (mvPoint.z - point.z);
-                weightSum += point.confidence;
+                const mvPoint = mvPose.joints[jointIndex];
+                if (mvPoint.confidence > 0.0) {
+                    offset[0] += point.confidence * (mvPoint.x - point.x);
+                    offset[1] += point.confidence * (mvPoint.y - point.y);
+                    offset[2] += point.confidence * (mvPoint.z - point.z);
+                    weightSum += point.confidence;
+                }
             }
-            offset[0] /= weightSum; offset[1] /= weightSum; offset[2] /= weightSum;
 
-            this.offsetOfHumanObject[objectId] = offset;
+            if (weightSum > 0.0) {
+                offset[0] /= weightSum; offset[1] /= weightSum; offset[2] /= weightSum;
+                this.offsetOfHumanObject[objectId] = offset;
+            } else {
+                console.warn('Failed to compute correction offset.');
+            }
         }
 
         return;
@@ -958,7 +956,7 @@ class HumanPoseFuser {
                 } else {
                     // take directly current pose from the selected human object
                     finalPose = mvPose;
-                    for (let [objectId, pose] of poseDataArr) {
+                    for (let [objectId, _pose] of poseDataArr) {
                         updatedByChildren.push(objectId);
                     }
                 }
@@ -1100,7 +1098,7 @@ class HumanPoseFuser {
                 // check if this fused object is available in the current frame
                 const fi = poseDataArr.findIndex(item => item[0] == fid);
                 if (fi >= 0) {
-                    // check if the poses are still at the same location, but apply some hysteresis by increasing distance threshold 
+                    // check if the poses are still at the same location, but apply some hysteresis by increasing distance threshold
                     if (!this.arePosesOfSamePerson(proximityMatrix[fi][index], poseDataArr[fi][1].timestamp, poseDataArr[index][1].timestamp, 3)) {
                         // detach the standard object from the fused human object so the pose is not used in subsequent fusion
                         this.humanObjectsOfFusedObject.removeStandardObject(id);
