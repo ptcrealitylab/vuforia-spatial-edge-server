@@ -173,14 +173,14 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = false;
+        this.verbose = true;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
         this.pastIntervalMs = 10000;
         /** time interval into past to find corresponding poses across human objects (on timeline of data ts) */
         this.recentIntervalMs = 500;
-        /** time interval into past to aggregate pose confidence for a human object (on timeline of data ts) */
+        /** time interval into past to assess pose confidence for a human object (on timeline of data ts) */
         this.confidenceIntervalMs = 500;
         /** difference in pose confidence to switch over to a different child human object */
         this.minConfidenceDifference = 0.2;
@@ -855,8 +855,16 @@ class HumanPoseFuser {
 
         let mvPose = this.triangulatePose(poseDataArr);
         if (!mvPose) {
+            // initialise zero offset when triangulation failed, so the 'uncorrected' poses can be still reported later on
+            for (let [objectId, _pose] of poseDataArr) {
+                if (this.offsetOfHumanObject[objectId] == undefined) {
+                    this.offsetOfHumanObject[objectId] = [0.0, 0.0, 0.0];
+                }
+            }
+
+            // TODO: here could be check of time elapsed since the last offset update. If it's over some time threshold, all offsets could be zeroed
             if (this.verbose) {
-                console.warn('Failed to triangulate skeleton for offset.');
+                console.warn('Failed to triangulate skeleton for offset .');
             }
             return;
         }
@@ -889,6 +897,9 @@ class HumanPoseFuser {
                 offset[0] /= weightSum; offset[1] /= weightSum; offset[2] /= weightSum;
                 this.offsetOfHumanObject[objectId] = offset;
             } else {
+                if (this.offsetOfHumanObject[objectId] == undefined) {
+                    this.offsetOfHumanObject[objectId] = [0.0, 0.0, 0.0];
+                }
                 console.warn('Failed to compute correction offset.');
             }
         }
