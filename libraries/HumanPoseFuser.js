@@ -194,6 +194,8 @@ class HumanPoseFuser {
         this.viewWeighting = true;
         /** metric used for selecting the best pose across several views/toolbox apps */
         this.viewSelectionMetric = 'JointConfidence_Distance'; // 'JointConfidence';
+        /** weight of distance-based confidence wrt. predicted pose confidence for viewSelectionMetric == 'JointConfidence_Distance' */
+        this.distanceWeight = 0.33;
     }
 
     /** Starts fusion of human poses. */
@@ -317,10 +319,10 @@ class HumanPoseFuser {
             let cameraDistance = this.calculateDistanceToCamera(pose.joints, pose.transformW2C);
 
             // distance threholds in mm units
+            // based on iPhone/iPad Lidar operating range
             const minDistance = 500;
             const maxReliableDistance = 2500;
             const maxDistance = 5000;
-            const distanceWeight = 0.33;
 
             // zero output confidence when the human pose is in a distance outside operating range of depth sensor
             if (cameraDistance < minDistance || cameraDistance > maxDistance) {
@@ -330,7 +332,7 @@ class HumanPoseFuser {
                 let distanceConfidence = (cameraDistance < maxReliableDistance) ? 1.0 : ((maxDistance - cameraDistance) / (maxDistance - maxReliableDistance));
 
                 // weighted combination of two metrics; stays in the range [0,1]
-                finalConfidence = (1.0 - distanceWeight) * poseConfidence + distanceWeight * distanceConfidence;
+                finalConfidence = (1.0 - this.distanceWeight) * poseConfidence + this.distanceWeight * distanceConfidence;
             }
             break;
         }
@@ -372,7 +374,7 @@ class HumanPoseFuser {
      * Calculates depth of whole pose from its camera/view (not 3D euclidean distance).
      * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints
      * @param {Array.<number>} cameraPose - 4x4 transform from world to camera CS
-     * @returns {number}
+     * @returns {number} depth in mm
      */
     calculateDistanceToCamera(joints, cameraPose) {
         // create 3x4 transform matrix (defined row by row)
