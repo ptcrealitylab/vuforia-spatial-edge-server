@@ -34,6 +34,7 @@ const JOINTS = {
 /** Enum for the method for fusing poses for the same person from several views/toolbox apps. */
 const FusionMethod = Object.freeze({
     BestSingleView: 'BestSingleView',
+    BestSingleViewWithCorrection: 'BestSingleViewWithCorrection',
     BestSingleViewWithMultiviewCorrection: 'BestSingleViewWithMultiviewCorrection',
     MultiViewTriangulation: 'MultiViewTriangulation'
 });
@@ -189,7 +190,7 @@ class HumanPoseFuser {
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
         /** method for fusing poses for the same person from several views/toolbox apps. */
-        this.fusionMethod = 'BestSingleView'; // 'BestSingleViewWithMultiviewCorrection';
+        this.fusionMethod = 'BestSingleView'; // 'BestSingleViewWithCorrection'; // 'BestSingleViewWithMultiviewCorrection';
         /** weighting individual observations according to joint confidence in multiview triangulation */
         this.viewWeighting = true;
         /** metric used for selecting the best pose across several views/toolbox apps */
@@ -753,6 +754,55 @@ class HumanPoseFuser {
         return point3D;
     }
 
+    /** Interpolates a set of poses associated with a fused human object with confidence weighting
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} triangulated 3D pose or null when failed
+     */
+    interpolatePose(poseDataArr) {
+        if (poseDataArr.length < 2) {
+            return null;
+        }
+
+        // prepare output pose
+        let latestTS = 0; // the latest data timestamp
+        for (let [_id, pose] of poseDataArr) {
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+        let interpPose = {
+            name: '',
+            timestamp: latestTS,
+            joints: []
+        };
+
+        // triangulate individual joints
+        const numJoints = poseDataArr[0][1].joints.length;
+        for (let j = 0; j < numJoints; j++) {
+            let point3D = [0, 0, 0];
+            let weightSum = 0.0;
+            for (let [_id, pose] of poseDataArr) {
+                let weight = (this.viewWeighting) ? pose.joints[j].confidence : 1.0;
+                point3D[0] += weight * pose.joints[j].x;
+                point3D[1] += weight * pose.joints[j].y;
+                point3D[2] += weight * pose.joints[j].z;
+                weightSum += weight;
+            }
+
+            if (weightSum > 0.0) {
+                point3D[0] /= weightSum; point3D[1] /= weightSum; point3D[2] /= weightSum;
+                // TODO (future): compute new 'multiview' confidence
+                interpPose.joints.push({x: point3D[0], y: point3D[1], z: point3D[2], confidence: 1.0});
+            } else {
+                // failed to compute joint position, give zero confidence
+                interpPose.joints.push({x: 0.0, y: 0.0, z: 0.0, confidence: 0.0});
+            }
+
+        }
+
+        return interpPose;
+    }
+
     /** Triangulates a set of poses associated with a fused human object.
      * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
      * @return {WholePoseData | null} triangulated 3D pose or null when failed
@@ -850,13 +900,26 @@ class HumanPoseFuser {
         return mvPose;
     }
 
-    /**
-     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+    /** Computes translation offsets for poses from individual views/toolbox apps and their 'fused' pose calculated by a chosen method.
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current non-empty poses for human objects associated with the fused object
+     * @param {string} fusionMethod - method of fusing multiple 3d poses
      */
-    computeCorrectionOffsets(poseDataArr) {
+    computeCorrectionOffsets(poseDataArr, fusionMethod) {
 
-        let mvPose = this.triangulatePose(poseDataArr);
-        if (!mvPose) {
+        let fusedPose = null;
+        switch (fusionMethod) {
+        case FusionMethod.BestSingleViewWithCorrection: {
+            fusedPose = this.interpolatePose(poseDataArr);
+            break;
+        }
+        case FusionMethod.BestSingleViewWithMultiviewCorrection: {
+            fusedPose = this.triangulatePose(poseDataArr);
+            break;
+        }
+        default: console.error('Unknown fusion method.');
+        }
+
+        if (!fusedPose) {
             // initialise zero offset when triangulation failed, so the 'uncorrected' poses can be still reported later on
             for (let [objectId, _pose] of poseDataArr) {
                 if (this.offsetOfHumanObject[objectId] == undefined) {
@@ -866,7 +929,7 @@ class HumanPoseFuser {
 
             // TODO: here could be check of time elapsed since the last offset update. If it's over some time threshold, all offsets could be zeroed
             if (this.verbose) {
-                console.warn('Failed to triangulate skeleton for offset .');
+                console.warn('Failed to fuse skeleton for correction offsets.');
             }
             return;
         }
@@ -886,11 +949,11 @@ class HumanPoseFuser {
                     continue;  // did not find the joint name
                 }
                 const point = pose.joints[jointIndex];
-                const mvPoint = mvPose.joints[jointIndex];
-                if (mvPoint.confidence > 0.0) {
-                    offset[0] += point.confidence * (mvPoint.x - point.x);
-                    offset[1] += point.confidence * (mvPoint.y - point.y);
-                    offset[2] += point.confidence * (mvPoint.z - point.z);
+                const fPoint = fusedPose.joints[jointIndex];
+                if (fPoint.confidence > 0.0) {
+                    offset[0] += point.confidence * (fPoint.x - point.x);
+                    offset[1] += point.confidence * (fPoint.y - point.y);
+                    offset[2] += point.confidence * (fPoint.z - point.z);
                     weightSum += point.confidence;
                 }
             }
@@ -984,7 +1047,26 @@ class HumanPoseFuser {
             } else {
                 // filter empty poses
                 let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
-                this.computeCorrectionOffsets(poseDataArr);
+                this.computeCorrectionOffsets(poseDataArr, this.fusionMethod);
+
+                // take current pose from the selected human object and apply the correction offset
+                // the pose can be undefined in the current frame and offset might not be estimated yet
+                if (poseData[selectedObjectId] !== undefined && this.offsetOfHumanObject[selectedObjectId] !== undefined) {
+                    finalPose = this.applyOffsetToPose(poseData[selectedObjectId], this.offsetOfHumanObject[selectedObjectId]);
+                }
+                updatedByChildren.push(selectedObjectId);
+            }
+            break;
+        }
+        case FusionMethod.BestSingleViewWithCorrection: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
+            } else {
+                // filter empty poses
+                let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+                this.computeCorrectionOffsets(poseDataArr, this.fusionMethod);
 
                 // take current pose from the selected human object and apply the correction offset
                 // the pose can be undefined in the current frame and offset might not be estimated yet
