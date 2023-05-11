@@ -2516,7 +2516,7 @@ function objectWebServer() {
                             objectId += ('_' + utilities.uuidTime());
                         } else if (isAvatarObject) {
                             objectType = 'avatar';
-                            objectId += utilities.uuidTime();
+                            // objectId += utilities.uuidTime();
                         }
 
                         if (isHumanObject) {
