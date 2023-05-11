@@ -3822,6 +3822,8 @@ function socketServer() {
             target[keys[keys.length - 1]] = update.newValue;
         }
 
+        const knownUnknownObjects = {};
+
         /**
          * Alters objects based on the change described by `update`
          * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
@@ -3834,6 +3836,18 @@ function socketServer() {
             let obj = objects[update.objectKey];
             if (!obj) {
                 console.warn('update of unknown object', update);
+                const objectKey = update.objectKey;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
+                }
                 return;
             }
             if (!update.frameKey) {
