@@ -3503,6 +3503,13 @@ function socketServer() {
         socketHandler.socket = socket;
         //console.log('connected to socket ' + socket.id);
 
+        /**
+         * @type {{[objectKey: string]: bool}}
+         * tracks if we have already sent a reloadObject message in response to
+         * an unknown objectKey
+         */
+        const knownUnknownObjects = {};
+
         socket.on('/subscribe/realityEditor', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
@@ -3745,6 +3752,20 @@ function socketServer() {
                         }
                     }
                 }
+            } else {
+                console.warn('publicData update of unknown object', msg);
+                const objectKey = msg.object;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
+                }
             }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it
@@ -3821,8 +3842,6 @@ function socketServer() {
             }
             target[keys[keys.length - 1]] = update.newValue;
         }
-
-        const knownUnknownObjects = {};
 
         /**
          * Alters objects based on the change described by `update`
