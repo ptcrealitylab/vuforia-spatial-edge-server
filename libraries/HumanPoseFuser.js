@@ -190,11 +190,11 @@ class HumanPoseFuser {
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
         /** method for fusing poses for the same person from several views/toolbox apps. */
-        this.fusionMethod = 'BestSingleView'; // 'BestSingleViewWithCorrection'; // 'BestSingleViewWithMultiviewCorrection';
+        this.fusionMethod = FusionMethod.BestSingleView; // FusionMethod.BestSingleViewWithCorrection; // FusionMethod.BestSingleViewWithMultiviewCorrection;
         /** weighting individual observations according to joint confidence in multiview triangulation */
         this.viewWeighting = true;
         /** metric used for selecting the best pose across several views/toolbox apps */
-        this.viewSelectionMetric = 'JointConfidence_Distance'; // 'JointConfidence';
+        this.viewSelectionMetric = ViewSelectionMetric.JointConfidence_Distance; // ViewSelectionMetric.JointConfidence;
         /** weight of distance-based confidence wrt. predicted pose confidence for viewSelectionMetric == 'JointConfidence_Distance' */
         this.distanceWeight = 0.33;
     }
