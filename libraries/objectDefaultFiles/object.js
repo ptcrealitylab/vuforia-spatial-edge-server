@@ -731,6 +731,7 @@
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
+                this.getUserDetails = makeSendStub('getUserDetails');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -2151,6 +2152,23 @@
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
                         delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                    }
+                };
+            });
+        }
+
+        /**
+         * Get the user's name and any other details about their session that the app knows
+         */
+        this.getUserDetails = function() {
+            postDataToParent({
+                getUserDetails: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
+                    if (typeof msgContent.userDetails !== 'undefined') {
+                        resolve(msgContent.userDetails);
+                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
                     }
                 };
             });
