@@ -731,6 +731,7 @@
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
+                this.getUserDetails = makeSendStub('getUserDetails');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -1664,6 +1665,7 @@
         this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
             postDataToParent({
                 analyticsSetCursorTime: {
+                    frame: spatialObject.frame,
                     time,
                 },
             });
@@ -1675,6 +1677,7 @@
         this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
             postDataToParent({
                 analyticsSetHighlightRegion: {
+                    frame: spatialObject.frame,
                     highlightRegion,
                 },
             });
@@ -1686,6 +1689,7 @@
         this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
             postDataToParent({
                 analyticsSetDisplayRegion: {
+                    frame: spatialObject.frame,
                     displayRegion,
                 },
             });
@@ -1697,6 +1701,7 @@
         this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
             postDataToParent({
                 analyticsHydrateRegionCards: {
+                    frame: spatialObject.frame,
                     regionCards,
                 },
             });
@@ -1708,6 +1713,7 @@
         this.analyticsSetLens = function analyticsSetLens(lens) {
             postDataToParent({
                 analyticsSetLens: {
+                    frame: spatialObject.frame,
                     lens,
                 },
             });
@@ -1719,6 +1725,7 @@
         this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
             postDataToParent({
                 analyticsSetLensDetail: {
+                    frame: spatialObject.frame,
                     lensDetail,
                 },
             });
@@ -1730,6 +1737,7 @@
         this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
             postDataToParent({
                 analyticsSetSpaghettiAttachPoint: {
+                    frame: spatialObject.frame,
                     spaghettiAttachPoint,
                 },
             });
@@ -1741,6 +1749,7 @@
         this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
             postDataToParent({
                 analyticsSetSpaghettiVisible: {
+                    frame: spatialObject.frame,
                     spaghettiVisible,
                 },
             });
@@ -1752,6 +1761,7 @@
         this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
             postDataToParent({
                 analyticsSetAllClonesVisible: {
+                    frame: spatialObject.frame,
                     allClonesVisible,
                 },
             });
@@ -2142,6 +2152,23 @@
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
                         delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                    }
+                };
+            });
+        }
+
+        /**
+         * Get the user's name and any other details about their session that the app knows
+         */
+        this.getUserDetails = function() {
+            postDataToParent({
+                getUserDetails: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
+                    if (typeof msgContent.userDetails !== 'undefined') {
+                        resolve(msgContent.userDetails);
+                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
                     }
                 };
             });
