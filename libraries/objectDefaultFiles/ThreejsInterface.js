@@ -28,6 +28,11 @@ class ThreejsInterface {
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
         this.spatialInterface.onSpatialInterfaceLoaded(this.onSpatialInterfaceLoaded.bind(this));
+        this.spatialInterface.onWindowResized(({width, height}) => {
+            this.workerMessageInterface.postMessage({name: "onWindowResized", width: width, height: height});
+            // trigger resending of projection matrix
+            this.spatialInterface.subscribeToMatrix();
+        });
         /**
          * @type {Int32Array|null}
          */
@@ -65,6 +70,7 @@ class ThreejsInterface {
 
         this.spatialInterface.setMoveDelay(300);
         this.spatialInterface.registerTouchDecider(this.touchDecider.bind(this));
+
     }
 
     /**
