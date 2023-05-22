@@ -73,6 +73,15 @@ class ThreejsWorker {
                     result = intersects.length > 0;
                 }
                 this.messageInterface.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
+            } else if (message.name === "onWindowResized") {
+                if (this.fakeCanvas) {
+                    this.fakeCanvas.width = message.width;
+                    this.fakeCanvas.height = message.height;
+                }
+                if (this.renderer) {
+                    this.renderer.setSize(message.width, message.height);
+                }
+                this.isProjectionMatrixSet = false;
             } else if (message.name === "anchoredModelViewCallback") {
                 switch (this.clientState) {
                     case ThreejsWorker.STATE_CONSTRUCTED:
@@ -207,7 +216,7 @@ class ThreejsWorker {
         this.fakeCanvas.webglcontextrestored();
         restoreBuffer.execute();
         
-        // singnal end of frame
+        // signal end of frame
         this.messageInterface.postMessage({
             workerId: this.workerId,
             isFrameEnd: true,

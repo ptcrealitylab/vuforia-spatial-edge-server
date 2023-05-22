@@ -29,6 +29,11 @@ class BabylonjsInterface {
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
         this.spatialInterface.onSpatialInterfaceLoaded(this.onSpatialInterfaceLoaded.bind(this));
+        this.spatialInterface.onWindowResized(({width, height}) => {
+            this.workerMessageInterface.postMessage({name: "onWindowResized", width: width, height: height});
+            // trigger resending of projection matrix
+            this.spatialInterface.subscribeToMatrix();
+        });
         this.synclock = null;
         this.touchAnswerListener = null;
         this.mouse = {x: 0, y: 0};

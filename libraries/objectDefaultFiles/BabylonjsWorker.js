@@ -67,6 +67,17 @@ class BabylonjsWorker {
                     result = pickInfo.hit;
                 }
                 this.messageInterface.postMessage({workerId: this.workerId, name: "touchDeciderAnswer", result: result});
+            } else if (message.name === "onWindowResized") {
+                if (this.fakeCanvas) {
+                    this.fakeCanvas.width = message.width;
+                    this.fakeCanvas.height = message.height;
+                    this.fakeCanvas.style.width = message.width.toString() + "px";
+                    this.fakeCanvas.style.height = message.height.toString() + "px";
+                }
+                if (this.engine) {
+                    this.engine.setRenderDimmensions(message.width, message.height);
+                }
+                this.isProjectionMatrixSet = false;
             } else if (message.name === "anchoredModelViewCallback") {
                 switch (this.clientState) {
                     case BabylonjsWorker.STATE_CONSTRUCTED:
