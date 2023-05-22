@@ -3,6 +3,7 @@ const HumanPoseObject = require('./HumanPoseObject');
 const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
+const { Matrix, SingularValueDecomposition } = require('ml-matrix');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
@@ -30,12 +31,31 @@ const JOINTS = {
     PELVIS: 'pelvis', // synthetic
 };
 
+/** Enum for the method for fusing poses for the same person from several views/toolbox apps. */
+const FusionMethod = Object.freeze({
+    BestSingleView: 'BestSingleView',
+    BestSingleViewWithCorrection: 'BestSingleViewWithCorrection',
+    BestSingleViewWithMultiviewCorrection: 'BestSingleViewWithMultiviewCorrection',
+    MultiViewTriangulation: 'MultiViewTriangulation'
+});
+
+/** Enum for the metric used for selecting the best pose across several views/toolbox apps. */
+const ViewSelectionMetric = Object.freeze({
+    JointConfidence: 'JointConfidence',
+    JointConfidence_Distance: 'JointConfidence_Distance'
+});
+
 /**
- * The object with pose data incoming from Toolboxapps
+ * The object with pose data incoming from Toolbox apps or computed by HumanPoseFuser
  * @typedef {Object} WholePoseData
  * @property {string} name
- * @property {number} timestamp
  * @property {Array.<{x: number, y: number, z: number, confidence: number}> } joints
+ * @property {number} timestamp
+ * @property {Array.<number>} imageSize - [optional] present only in standard human objects
+ * @property {Array.<number>} focalLength - [optional] present only in standard human objects
+ * @property {Array.<number>} principalPoint - [optional] present only in standard human objects
+ * @property {Array.<number>} transformW2C - [optional] present only in standard human objects
+ * @property {number} poseConfidence - [optional] computed in HumanPoseFuser and present just temporarily
  */
 
 /**
@@ -59,7 +79,7 @@ class HumanPoseFuser {
      * @param {string} version
      * @param {string} protocol
      * @param {number} beatPort
-     * @param {string} serverUuid 
+     * @param {string} serverUuid
      */
     constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort, serverUuid) {
         // references to global data structures for objects
@@ -76,6 +96,7 @@ class HumanPoseFuser {
 
         /** Recent history of poses for each existing human object.
          * Dictionary - key: objectId, value: { ts of the last pose already fused, array of per-frame pose data }
+         * Pose array is ordered with ascending timestamp
          * @type {Object.<string, {latestFusedDataTS: number, poses: Array.<WholePoseData>}>}
          */
         this.pastPoses = {};
@@ -137,10 +158,18 @@ class HumanPoseFuser {
 
         };
 
+        /** Current translation offset betwen standard human objects (coming from ToolboxApps) and their parent (fused) human objects created by this class.
+         * Dictionary - key: objectId of standard human object, value: 3d translation vector (from standard to fused human object)
+         * @type {Object.<string, Array.<number>>}
+         */
+        this.offsetOfHumanObject = {};
+
         /** Timer to trigger main fuse() method. */
         this.intervalTimer = null;
 
-        /** Dictionary which collects all updates to 'parent' property of human objects in current run of fusion. It is a dictionary so we keep just one change per human object */
+        /** Dictionary which collects all updates to properties of human objects in current run of fusion (currently properties 'parent' and 'updatedByChildren')
+         * It is a dictionary of dictionaries so we keep just one change per human object per its property
+         */
         this.batchedUpdates = {};
 
         /* Configuration parameters */
@@ -152,7 +181,7 @@ class HumanPoseFuser {
         this.pastIntervalMs = 10000;
         /** time interval into past to find corresponding poses across human objects (on timeline of data ts) */
         this.recentIntervalMs = 500;
-        /** time interval into past to aggregate pose confidence for a human object (on timeline of data ts) */
+        /** time interval into past to assess pose confidence for a human object (on timeline of data ts) */
         this.confidenceIntervalMs = 500;
         /** difference in pose confidence to switch over to a different child human object */
         this.minConfidenceDifference = 0.2;
@@ -160,6 +189,14 @@ class HumanPoseFuser {
         this.maxDistanceForSamePerson = 300; // mm
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
+        /** method for fusing poses for the same person from several views/toolbox apps. */
+        this.fusionMethod = FusionMethod.BestSingleView; // FusionMethod.BestSingleViewWithCorrection; // FusionMethod.BestSingleViewWithMultiviewCorrection;
+        /** weighting individual observations according to joint confidence in multiview triangulation */
+        this.viewWeighting = true;
+        /** metric used for selecting the best pose across several views/toolbox apps */
+        this.viewSelectionMetric = ViewSelectionMetric.JointConfidence_Distance; // ViewSelectionMetric.JointConfidence;
+        /** weight of distance-based confidence wrt. predicted pose confidence for viewSelectionMetric == 'JointConfidence_Distance' */
+        this.distanceWeight = 0.33;
     }
 
     /** Starts fusion of human poses. */
@@ -201,8 +238,14 @@ class HumanPoseFuser {
 
         this.fusePoseData(currentPoseData);
 
-        // send out 'parent' property updates to all human objects from this frame to all subscribers
-        server.socketHandler.sendUpdateToAllSubscribers(Object.values(this.batchedUpdates));
+        // send out property updates to all human objects from this frame to all subscribers
+        let batchedUpdatesArr = [];
+        for (let objectData of Object.values(this.batchedUpdates)) {
+            for (let propertyData of Object.values(objectData)) {
+                batchedUpdatesArr.push(propertyData);
+            }
+        }
+        server.socketHandler.sendUpdateToAllSubscribers(batchedUpdatesArr);
 
         this.cleanPastPoses();
 
@@ -212,6 +255,11 @@ class HumanPoseFuser {
         }
     }
 
+    /**
+     * Adds new pose for a human object.
+     * @param {string} objectId - id of human object
+     * @param {WholePoseData} wholePose - pose
+     */
     addPoseData(objectId, wholePose) {
         if (this.pastPoses[objectId] === undefined) {
             this.pastPoses[objectId] = {
@@ -220,19 +268,87 @@ class HumanPoseFuser {
             };
         }
 
-        // extend pose object with overall confidence but prevent it to be copyable
-        let poseConfidence = this.computeOverallConfidence(wholePose.joints);
-        wholePose.poseConfidence = poseConfidence;
-        Object.defineProperty(wholePose, 'poseConfidence', { enumerable: false });
+        let isFusedObject = this.humanObjectsOfFusedObject[objectId] !== undefined;
+        if (!isFusedObject) {
+            // pose of a standard human object from the app
+
+            if (wholePose.joints && wholePose.joints.length > 0) {
+                // check presence of all necessary data if it is not an empty pose (but we still record its timestamp)
+                if (! ((wholePose.imageSize && wholePose.imageSize.length == 2) &&
+                      (wholePose.focalLength && wholePose.focalLength.length == 2) &&
+                      (wholePose.principalPoint && wholePose.principalPoint.length == 2) &&
+                      (wholePose.transformW2C && wholePose.transformW2C.length == 16)) ) {
+                    console.warn('Incomplete or incorrect pose data.');
+                }
+            }
+
+            // extend pose object with overall confidence but prevent it to be copyable
+            // NOTE: currently used just in fusion method which selects the best single view
+            wholePose.poseConfidence = this.computeOverallConfidence(wholePose);
+
+            // prevent optional properties being copiable into a fused pose where they don't have a meaning
+            Object.defineProperties(wholePose, {
+                imageSize: {enumerable: false},
+                focalLength: {enumerable: false},
+                principalPoint: {enumerable: false},
+                transformW2C: {enumerable: false},
+                poseConfidence: {enumerable: false}
+            });
+        }
 
         this.pastPoses[objectId].poses.push(wholePose);
+    }
+
+    /** Computes overall confidence of whole pose from joint confidences.
+     * @param {WholePoseData>} pose
+     * @returns {number} overall pose confidence in range [0, 1] (0 = no confidence)
+     */
+    computeOverallConfidence(pose) {
+        let finalConfidence = 0;
+        let poseConfidence = this.computePoseConfidence(pose.joints);
+
+        switch (this.viewSelectionMetric) {
+        case ViewSelectionMetric.JointConfidence: {
+            finalConfidence = poseConfidence;
+            break;
+        }
+        case ViewSelectionMetric.JointConfidence_Distance: {
+            if (pose.joints.length == 0) {
+                finalConfidence = 0.0;
+                break;
+            }
+            let cameraDistance = this.calculateDistanceToCamera(pose.joints, pose.transformW2C);
+
+            // distance threholds in mm units
+            // based on iPhone/iPad Lidar operating range
+            const minDistance = 500;
+            const maxReliableDistance = 2500;
+            const maxDistance = 5000;
+
+            // zero output confidence when the human pose is in a distance outside operating range of depth sensor
+            if (cameraDistance < minDistance || cameraDistance > maxDistance) {
+                finalConfidence = 0.0;
+            } else {
+                // calculate distance-based confidence in range [0,1]; 0 at maxDistance and 1 at maxReliableDistance
+                let distanceConfidence = (cameraDistance < maxReliableDistance) ? 1.0 : ((maxDistance - cameraDistance) / (maxDistance - maxReliableDistance));
+
+                // weighted combination of two metrics; stays in the range [0,1]
+                finalConfidence = (1.0 - this.distanceWeight) * poseConfidence + this.distanceWeight * distanceConfidence;
+            }
+            break;
+        }
+        default:
+            console.error('Unknown selection metric.');
+        }
+
+        return finalConfidence;
     }
 
     /** Computes overall confidence of whole pose from joint confidences.
      * @param {Array.< {x: number, y: number, z: number, confidence: number} >} poseJoints
      * @returns {number} overall pose confidence
      */
-    computeOverallConfidence(poseJoints) {
+    computePoseConfidence(poseJoints) {
 
         if (poseJoints.length == 0) {
             return 0.0;
@@ -253,6 +369,40 @@ class HumanPoseFuser {
         }
 
         return sum / selectedJointNames.length;
+    }
+
+    /**
+     * Calculates depth of whole pose from its camera/view (not 3D euclidean distance).
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints
+     * @param {Array.<number>} cameraPose - 4x4 transform from world to camera CS
+     * @returns {number} depth in mm
+     */
+    calculateDistanceToCamera(joints, cameraPose) {
+        // create 3x4 transform matrix (defined row by row)
+        // cameraPose is stored column-wise in 1D array
+        let T = new Matrix([
+            [cameraPose[0], cameraPose[4], cameraPose[8],  cameraPose[12]],
+            [cameraPose[1], cameraPose[5], cameraPose[9],  cameraPose[13]],
+            [cameraPose[2], cameraPose[6], cameraPose[10], cameraPose[14]]
+        ]);
+
+        const selectedJointNames = ['pelvis', 'neck'];
+        const jointNames = Object.values(JOINTS);
+        let depth = 0.0;
+        let count = 0;
+        for (let name of selectedJointNames) {
+            const jointIndex = jointNames.indexOf(name);
+            if (jointIndex >= 0) {
+                // transfrom to camera CS where z axis is along viewing direction
+                const p3dW = Matrix.columnVector([joints[jointIndex].x, joints[jointIndex].y, joints[jointIndex].z, 1]);
+                let p3dC = T.mmul(p3dW);
+                depth += p3dC.get(2, 0);
+                count++;
+            }
+        }
+        depth /= count;
+
+        return Math.abs(depth);
     }
 
     /** Removes internal data about a given human object
@@ -278,13 +428,21 @@ class HumanPoseFuser {
                 this.removeHumanObject(fusedObjectId);
             }
 
+            delete this.offsetOfHumanObject[objectId];
+
+            // TODO (future): if the object is currently in bestHumanObjectForFusedObject, remove the entry
+
         } else {  // a fused human object
-            // remove parent reference from its remaining associated human objects
+            // remove relevant data from its remaining associated human objects
             for (let id of this.humanObjectsOfFusedObject[objectId]) {
+                // remove parent reference
                 if (this.objectsRef[id] !== undefined) {
                     this.objectsRef[id].parent = 'none';
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -293,6 +451,9 @@ class HumanPoseFuser {
                         editorId: 0
                     };
                 }
+
+                // remove the offset to the fused object being deleted
+                delete this.offsetOfHumanObject[id];
             }
 
             // remove all association data if the given object is a fused human object
@@ -392,13 +553,30 @@ class HumanPoseFuser {
     }
 
     /**
-     * Checks if two human poses can be considered from the same person
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1 - joints of first pose
-     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2 - joints of second pose
-     * @param {number} maxDistance - distance threshold between two poses
+     * Checks if two human poses can be considered from the same person. It is configurable based on the scenario when this check is needed.
+     * @param {number} distance - distance between two poses (as computed by calculateDistanceBetweenPoses)
+     * @param {number} ts1 - timestamp of first pose
+     * @param {number} ts2 - timestamp of second pose
+     * @param {number} multiplier - multiplier of distance threshold
      * @return {boolean}
      */
-    arePosesOfSamePerson(joints1, joints2, maxDistance) {
+    arePosesOfSamePerson(distance, ts1, ts2, multiplier = 1.0) {
+        // distance threshold is calculated from two components:
+        // - base deviation between poses at the same timestamp
+        // - max possible shift between poses from different timestamp due to person's movement
+        //   (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
+        const distanceThreshold = multiplier * this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(ts1 - ts2);
+
+        return distance < distanceThreshold;
+    }
+
+    /**
+     * Calculate a distance metric between two human poses
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints1 - joints of first pose
+     * @param {Array.< {x: number, y: number, z: number, confidence: number} >} joints2 - joints of second pose
+     * @return {number}
+     */
+    calculateDistanceBetweenPoses(joints1, joints2) {
 
         // check distances between pelvis and neck
         let pelvisIndex = Object.values(JOINTS).indexOf('pelvis');
@@ -406,24 +584,20 @@ class HumanPoseFuser {
 
         if (pelvisIndex < 0 || neckIndex < 0) {
             // this should not really happen in correct joint schema
-            return false;
+            return Infinity;
         }
 
         let pelvisDist = sgUtils.positionDistance(joints1[pelvisIndex], joints2[pelvisIndex]);
         let neckDist = sgUtils.positionDistance(joints1[neckIndex], joints2[neckIndex]);
 
-        if (pelvisDist > maxDistance || neckDist > maxDistance) {
-            return false;
-        }
-
-        return true;
+        return Math.max(pelvisDist, neckDist);
     }
 
     /**
      * Selects the best human object to update its parent fused human object based on presence and confidence of poses received in recent past.
      * Note that it can select an object (from app/view) which received empty pose since the last fusion run.
      * @param {string} fusedObjectId - id of parent fused object
-     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
+     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
      * @return {string | null} objectId
      */
     selectHumanObject(fusedObjectId, poseData) {
@@ -494,7 +668,7 @@ class HumanPoseFuser {
             currentBest = candidateConfidences.reduce( (max, current) => { return max.value > current.value ? max : current; } );
         }
 
-        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also be undefined
+        const previousSelectedObject = this.bestHumanObjectForFusedObject[fusedObjectId]; // can be also undefined
         const previousBest = candidateConfidences.find(item => item.id == previousSelectedObject);
         if (previousBest !== undefined && currentBest !== undefined) {
             // add some hysteresis to select a different human object
@@ -515,16 +689,313 @@ class HumanPoseFuser {
 
         if (bestObjectId) {
             this.bestHumanObjectForFusedObject[fusedObjectId] = bestObjectId;
-        } else {
-            console.warn('Cannot select the best object for a fused human object.');
         }
 
         return bestObjectId;
     }
 
+    /**
+     * Triangulates 3d position of a single point from 2D observations in multiple views
+     * @param {*} projectionMatrices - 3x4 transform matrices per view
+     * @param {*} points2D - 2d positions per view
+     * @param {*} weights - weighting of individual views
+     * @return {Array.<number> | null}
+     */
+    triangulatePoint(projectionMatrices, points2D, weights) {
+
+        let point3D = [];
+
+        try {  // to catch any exception from mljs lib
+            let AArr = [];  // row by row
+            for (let v = 0; v < projectionMatrices.length; v++) {
+                const P = projectionMatrices[v];
+
+                AArr.push(Matrix.sub(P.getRowVector(2).mul(points2D[v][0]), P.getRowVector(0)).mul(weights[v]).getRow(0));
+                AArr.push(Matrix.sub(P.getRowVector(2).mul(points2D[v][1]), P.getRowVector(1)).mul(weights[v]).getRow(0));
+            }
+
+            // solve homogeneous system A*x = 0
+            // set options to save computation
+            const svdOptions = {
+                computeLeftSingularVectors: false,
+                computeRightSingularVectors: true,
+                autoTranspose: false
+            };
+            let A = new Matrix(AArr);
+            let svd = new SingularValueDecomposition(A, svdOptions);
+
+            if (svd.rank < A.columns) {
+                // cannot get 3D point from under-constrained system
+                return null;
+            }
+
+            // search for the smallest singular value to pick one of right singular vectors
+            let singularValues = svd.diagonal; // Array
+            let orderedSingularValues = [];
+            for (let i = 0; i < singularValues.length; i++) {
+                orderedSingularValues.push([i, singularValues[i]]);
+            }
+            orderedSingularValues.sort((a, b) => a[1] - b[1]); // in ascending order
+            let x = svd.rightSingularVectors.getColumnVector(orderedSingularValues[0][0]); // select the vector for the smallest singular value
+            let nx = Matrix.div(x, x.get(3, 0));  // normalise to get 3D position
+
+            // NOTE: can singular value and especially related singular vector a zero vector?
+            if (Math.abs(orderedSingularValues[0][1]) < svd.threshold) {
+                console.warn(`Near-zero singular value: ${orderedSingularValues[0][1]}; x = ${x}; nx = ${nx}`);
+            }
+
+            point3D = [nx.get(0, 0), nx.get(1, 0), nx.get(2, 0)];
+
+        } catch (error) {
+            console.warn('Point triangulation: ' + error);
+            return null;
+        }
+
+        return point3D;
+    }
+
+    /** Interpolates a set of poses associated with a fused human object with confidence weighting
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} triangulated 3D pose or null when failed
+     */
+    interpolatePose(poseDataArr) {
+        if (poseDataArr.length < 2) {
+            return null;
+        }
+
+        // prepare output pose
+        let latestTS = 0; // the latest data timestamp
+        for (let [_id, pose] of poseDataArr) {
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+        let interpPose = {
+            name: '',
+            timestamp: latestTS,
+            joints: []
+        };
+
+        // triangulate individual joints
+        const numJoints = poseDataArr[0][1].joints.length;
+        for (let j = 0; j < numJoints; j++) {
+            let point3D = [0, 0, 0];
+            let weightSum = 0.0;
+            for (let [_id, pose] of poseDataArr) {
+                let weight = (this.viewWeighting) ? pose.joints[j].confidence : 1.0;
+                point3D[0] += weight * pose.joints[j].x;
+                point3D[1] += weight * pose.joints[j].y;
+                point3D[2] += weight * pose.joints[j].z;
+                weightSum += weight;
+            }
+
+            if (weightSum > 0.0) {
+                point3D[0] /= weightSum; point3D[1] /= weightSum; point3D[2] /= weightSum;
+                // TODO (future): compute new 'multiview' confidence
+                interpPose.joints.push({x: point3D[0], y: point3D[1], z: point3D[2], confidence: 1.0});
+            } else {
+                // failed to compute joint position, give zero confidence
+                interpPose.joints.push({x: 0.0, y: 0.0, z: 0.0, confidence: 0.0});
+            }
+
+        }
+
+        return interpPose;
+    }
+
+    /** Triangulates a set of poses associated with a fused human object.
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} triangulated 3D pose or null when failed
+     */
+    triangulatePose(poseDataArr) {
+        if (poseDataArr.length < 2) {
+            return null;
+        }
+
+        // prepare data
+        let projectionMatrices = []; // per-view
+        let jointsInView = []; // joint 2D positions + confidences per view
+        let latestTS = 0; // the latest data timestamp
+        for (let [_id, pose] of poseDataArr) {
+            // create calibration matrix (defined row by row)
+            let K = new Matrix([
+                [pose.focalLength[0], 0, pose.principalPoint[0]],
+                [0, pose.focalLength[1], pose.principalPoint[1]],
+                [0, 0, 1]
+            ]);
+            // create 3x4 transform matrix (defined row by row)
+            // 4x4 transformW2C is stored column-wise in 1D array
+            let T = new Matrix([
+                [pose.transformW2C[0], pose.transformW2C[4], pose.transformW2C[8],  pose.transformW2C[12]],
+                [pose.transformW2C[1], pose.transformW2C[5], pose.transformW2C[9],  pose.transformW2C[13]],
+                [pose.transformW2C[2], pose.transformW2C[6], pose.transformW2C[10], pose.transformW2C[14]]
+            ]);
+            // compute full projection matrix
+            let P = K.mmul(T);
+
+            // TODO: don't triangulate synthetic joints ?
+            // project all joint 3D points to 2D positions in the view (in pixel units)
+            let joints2D = [];
+            for (let joint of pose.joints) {
+                // project to 2D position (image xy axes are according to Vuforia API / OpenGL)
+                const p3d = Matrix.columnVector([joint.x, joint.y, joint.z, 1]);
+                let p2d = P.mmul(p3d);
+                p2d.div(p2d.get(2, 0));
+
+                let ix = p2d.get(0, 0);
+                let iy = p2d.get(1, 0);
+                if ((ix > 0) && (ix < pose.imageSize[0]) && (iy > 0) && (iy < pose.imageSize[1])) {
+                    // projects into the bounds of original image
+                    joints2D.push({ix: ix, iy: iy, confidence: joint.confidence});
+                } else {
+                    // give zero weight since it is outside of image boundary
+                    joints2D.push({ix: ix, iy: iy, confidence: 0.0});
+                }
+            }
+
+            jointsInView.push(joints2D);
+            projectionMatrices.push(P);
+
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+
+        // prepare output pose
+        let mvPose = {
+            name: '',
+            timestamp: latestTS,
+            joints: []
+        };
+
+        // triangulate individual joints
+        const numJoints = jointsInView[0].length;
+        const numViews = jointsInView.length;
+        for (let j = 0; j < numJoints; j++) {
+            let weights = [];
+            let points2D = [];
+            for (let v = 0; v < numViews; v++) {
+                points2D.push([jointsInView[v][j].ix, jointsInView[v][j].iy]);
+                if (this.viewWeighting) {
+                    // weight individual observations according to joint confidence
+                    weights.push(jointsInView[v][j].confidence);
+                } else {
+                    weights.push(1.0);
+                }
+            }
+            let point3D = this.triangulatePoint(projectionMatrices, points2D, weights);
+
+            if (point3D) {
+                // TODO (future): compute new 'multiview' confidence
+                mvPose.joints.push({x: point3D[0], y: point3D[1], z: point3D[2], confidence: 1.0});
+            } else {
+                // failed to compute joint position, give zero confidence
+                mvPose.joints.push({x: 0.0, y: 0.0, z: 0.0, confidence: 0.0});
+            }
+
+        }
+
+        // TODO (future): check if joint was not computed and come up with approximate position
+
+        return mvPose;
+    }
+
+    /** Computes translation offsets for poses from individual views/toolbox apps and their 'fused' pose calculated by a chosen method.
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current non-empty poses for human objects associated with the fused object
+     * @param {string} fusionMethod - method of fusing multiple 3d poses
+     */
+    computeCorrectionOffsets(poseDataArr, fusionMethod) {
+
+        let fusedPose = null;
+        switch (fusionMethod) {
+        case FusionMethod.BestSingleViewWithCorrection: {
+            fusedPose = this.interpolatePose(poseDataArr);
+            break;
+        }
+        case FusionMethod.BestSingleViewWithMultiviewCorrection: {
+            fusedPose = this.triangulatePose(poseDataArr);
+            break;
+        }
+        default: console.error('Unknown fusion method.');
+        }
+
+        if (!fusedPose) {
+            // initialise zero offset when triangulation failed, so the 'uncorrected' poses can be still reported later on
+            for (let [objectId, _pose] of poseDataArr) {
+                if (this.offsetOfHumanObject[objectId] == undefined) {
+                    this.offsetOfHumanObject[objectId] = [0.0, 0.0, 0.0];
+                }
+            }
+
+            // TODO: here could be check of time elapsed since the last offset update. If it's over some time threshold, all offsets could be zeroed
+            if (this.verbose) {
+                console.warn('Failed to fuse skeleton for correction offsets.');
+            }
+            return;
+        }
+
+        // select torso joints which are not synthetically computed and derive more robust 'torso' offset
+        const selectedJointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+        const joints = Object.values(JOINTS);
+
+        // across all human objects from individual views
+        for (let [objectId, pose] of poseDataArr) {
+            let weightSum = 0.0;
+            let offset = [0.0, 0.0, 0.0];
+            // weighted average of the offset for a pose across selected joints
+            for (let name of selectedJointNames) {
+                const jointIndex = joints.indexOf(name);
+                if (jointIndex < 0) {
+                    continue;  // did not find the joint name
+                }
+                const point = pose.joints[jointIndex];
+                const fPoint = fusedPose.joints[jointIndex];
+                if (fPoint.confidence > 0.0) {
+                    offset[0] += point.confidence * (fPoint.x - point.x);
+                    offset[1] += point.confidence * (fPoint.y - point.y);
+                    offset[2] += point.confidence * (fPoint.z - point.z);
+                    weightSum += point.confidence;
+                }
+            }
+
+            if (weightSum > 0.0) {
+                offset[0] /= weightSum; offset[1] /= weightSum; offset[2] /= weightSum;
+                this.offsetOfHumanObject[objectId] = offset;
+            } else {
+                if (this.offsetOfHumanObject[objectId] == undefined) {
+                    this.offsetOfHumanObject[objectId] = [0.0, 0.0, 0.0];
+                }
+                console.warn('Failed to compute correction offset.');
+            }
+        }
+
+        return;
+    }
+
+    /** Shift human pose by 3D translation.
+     * @param {WholePoseData} pose - input pose
+     * @param {Array.<number>} offset - 3d translation vector
+     * @return {WholePoseData} shifted 3D pose
+     */
+    applyOffsetToPose(pose, offset) {
+        // prepare output pose
+        let outPose = {
+            name: pose.name,
+            timestamp: pose.timestamp,
+            joints: []
+        };
+
+        // move individual joints
+        for (let joint of pose.joints) {
+            outPose.joints.push({x: joint.x + offset[0], y: joint.y + offset[1], z: joint.z + offset[2], confidence: joint.confidence});
+        }
+
+        return outPose;
+    }
+
     /** Updates a specified fused human object.
      * @param {string} fusedObjectId - id of fused human object
-     * @param {Object.<string, WholePoseData>} poseData - current poses for existing human objects
+     * @param {Object.<string, WholePoseData>} poseData - current poses for human objects associated with the fused object
      */
     updateFusedObject(fusedObjectId, poseData) {
 
@@ -533,29 +1004,133 @@ class HumanPoseFuser {
             return;
         }
 
-        let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
-        if (!selectedObjectId) {
-            return;
+        let finalPose;  // undefined as default
+        // standard object ids used in the fusion
+        // because of recorder limitations this cannot be an empty array when used for updatedByChildren property at the end. Instead we place 'none' item when it is meant to be empty.
+        let updatedByChildren = [];
+
+        switch (this.fusionMethod) {
+        case FusionMethod.MultiViewTriangulation: {
+            // filter empty poses
+            let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+            if (poseDataArr.length == 0) {
+                // no data in current frame, do nothing
+            } else if (poseDataArr.length == 1) {
+                // single view is currently updating the fused object
+                // currently, no update when poses from all expected views are not present (as in FusionMethod.BestSingleView)
+
+                // TODO: need to allow for the situation when there is just single human object associated with the fused object
+                // TODO: too volatile swithing between multiview and single view (hysteresis before switching to it?)
+                // finalPose = poseDataArr[0][1];
+                // fusedObjectIds.push(poseDataArr[0][0]);
+            } else {
+                // actual multiview fusion
+                let mvPose = this.triangulatePose(poseDataArr);
+                if (!mvPose) {
+                    console.warn('Failed to triangulate 3D pose.');
+                    updatedByChildren.push('none');
+                } else {
+                    // take directly current pose from the selected human object
+                    finalPose = mvPose;
+                    for (let [objectId, _pose] of poseDataArr) {
+                        updatedByChildren.push(objectId);
+                    }
+                }
+            }
+            break;
+        }
+        case FusionMethod.BestSingleViewWithMultiviewCorrection: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
+            } else {
+                // filter empty poses
+                let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+                this.computeCorrectionOffsets(poseDataArr, this.fusionMethod);
+
+                // take current pose from the selected human object and apply the correction offset
+                // the pose can be undefined in the current frame and offset might not be estimated yet
+                if (poseData[selectedObjectId] !== undefined && this.offsetOfHumanObject[selectedObjectId] !== undefined) {
+                    finalPose = this.applyOffsetToPose(poseData[selectedObjectId], this.offsetOfHumanObject[selectedObjectId]);
+                }
+                updatedByChildren.push(selectedObjectId);
+            }
+            break;
+        }
+        case FusionMethod.BestSingleViewWithCorrection: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
+            } else {
+                // filter empty poses
+                let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+                this.computeCorrectionOffsets(poseDataArr, this.fusionMethod);
+
+                // take current pose from the selected human object and apply the correction offset
+                // the pose can be undefined in the current frame and offset might not be estimated yet
+                if (poseData[selectedObjectId] !== undefined && this.offsetOfHumanObject[selectedObjectId] !== undefined) {
+                    finalPose = this.applyOffsetToPose(poseData[selectedObjectId], this.offsetOfHumanObject[selectedObjectId]);
+                }
+                updatedByChildren.push(selectedObjectId);
+            }
+            break;
+        }
+        case FusionMethod.BestSingleView: {
+            let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
+            if (!selectedObjectId) {
+                console.warn('Cannot select the best object for a fused human object.');
+                updatedByChildren.push('none');
+            } else {
+                // take directly current pose from the selected human object (can be undefined in the current frame)
+                finalPose = poseData[selectedObjectId];
+                updatedByChildren.push(selectedObjectId);
+            }
+            break;
+        }
+        default:
+            console.error('Unknown fusion method.');
         }
 
-        if (poseData[selectedObjectId] == undefined || poseData[selectedObjectId].joints.length == 0) {
+        // detect change in the subset of associated (child) human objects which currently update their fused object
+        const equalArrays = (a, b) => a.length === b.length && a.every((element, index) => element === b[index]);
+
+        if (!equalArrays(updatedByChildren, this.objectsRef[fusedObjectId].updatedByChildren)) {
+            // a change detected, we need to update the property
+            this.objectsRef[fusedObjectId].updatedByChildren = updatedByChildren;
+
+            if (this.batchedUpdates[fusedObjectId] === undefined) {
+                this.batchedUpdates[fusedObjectId] = {};
+            }
+            this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                objectKey: fusedObjectId,
+                frameKey: null,
+                nodeKey: null,
+                propertyPath: 'updatedByChildren',
+                newValue: updatedByChildren,
+                editorId: 0
+            };
+        }
+
+        if (finalPose === undefined || finalPose.joints.length == 0) {
             if (this.verbose) {
                 console.log('not updating joints: obj=' + fusedObjectId);
             }
             return;
         }
 
-        this.objectsRef[fusedObjectId].updateJoints(poseData[selectedObjectId].joints);
-        this.objectsRef[fusedObjectId].lastUpdateDataTS = poseData[selectedObjectId].timestamp;
+        this.objectsRef[fusedObjectId].updateJoints(finalPose.joints);
+        this.objectsRef[fusedObjectId].lastUpdateDataTS = finalPose.timestamp;
         server.resetObjectTimeout(fusedObjectId); // keep the object alive
 
-        // create copy and update name (confidence attribute not copied)
-        let wholePose = Object.assign({}, poseData[selectedObjectId]);
+        // create copy and update name (unnecessary properties not copied)
+        let wholePose = Object.assign({}, finalPose);
         let end = fusedObjectId.indexOf('pose1');
         let name = fusedObjectId.substring('_HUMAN_'.length, end + 'pose1'.length);
-        wholePose.name = name; // 'server_pose1' in practise for now
+        wholePose.name = name; // 'server***_pose1' in practise for now
 
-        // add also to pastPoses
+        // add also to pastPoses (unnecessary properties not stored)
         this.addPoseData(fusedObjectId, wholePose);
 
         // update public data of a selected node to enable transmission of new pose state to clients (eg. remote operator viewer)
@@ -572,7 +1147,7 @@ class HumanPoseFuser {
             }
         }
         if (this.verbose) {
-            console.log('updating joints: obj=' + fusedObjectId + ' with ' + selectedObjectId + ', data_ts=' + poseData[selectedObjectId].timestamp.toFixed(0) + ', update_ts=' + Date.now());
+            console.log('updating joints: obj=' + fusedObjectId + ' with [' + updatedByChildren + '], data_ts=' + finalPose.timestamp.toFixed(0) + ', update_ts=' + Date.now());
         }
     }
 
@@ -590,12 +1165,12 @@ class HumanPoseFuser {
             console.log(`Pose data count: before=${before}, after=${poseDataArr.length}`);
         }*/
 
-        // compare all pairs of poses and make binary matrix of spatial proximity
-        let proximityMatrix = Array.from(new Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(false));
+        // compare all pairs of poses and make a matrix of spatial proximity
+        let proximityMatrix = Array.from(new Array(poseDataArr.length), () => new Array(poseDataArr.length).fill(0.0));
         let standardIndices = [];
         let fusedIndices = [];
         for (let i = 0; i < poseDataArr.length; i++) {
-            proximityMatrix[i][i] = true;
+            proximityMatrix[i][i] = 0.0;
             // poseDataArr contains poses of standard and fused human objects, store indices for each group
             if (this.humanObjectsOfFusedObject[poseDataArr[i][0]] !== undefined) {
                 fusedIndices.push(i);
@@ -603,15 +1178,7 @@ class HumanPoseFuser {
                 standardIndices.push(i);
             }
             for (let j = i + 1; j < poseDataArr.length; j++) {
-                // distance threshold is calculated from two components:
-                // - base deviation between poses at the same timestamp
-                // - max possible shift between poses from different timestamp due to person's movement (this is to accomodate in particular comparisons between fused pose from previous frame and current pose from standard human object)
-                const distanceThreshold = this.maxDistanceForSamePerson + this.maxHumanVelocity * Math.abs(poseDataArr[i][1].timestamp - poseDataArr[j][1].timestamp);
-
-                if (this.arePosesOfSamePerson(poseDataArr[i][1].joints, poseDataArr[j][1].joints, distanceThreshold)) {
-                    proximityMatrix[i][j] = true;
-                    proximityMatrix[j][i] = true;
-                }
+                proximityMatrix[i][j] = proximityMatrix[j][i] = this.calculateDistanceBetweenPoses(poseDataArr[i][1].joints, poseDataArr[j][1].joints);
             }
         }
 
@@ -626,8 +1193,8 @@ class HumanPoseFuser {
                 // check if this fused object is available in the current frame
                 const fi = poseDataArr.findIndex(item => item[0] == fid);
                 if (fi >= 0) {
-                    // check if the poses are still at the same location
-                    if (!proximityMatrix[fi][index]) {
+                    // check if the poses are still at the same location, but apply some hysteresis by increasing distance threshold
+                    if (!this.arePosesOfSamePerson(proximityMatrix[fi][index], poseDataArr[fi][1].timestamp, poseDataArr[index][1].timestamp, 3)) {
                         // detach the standard object from the fused human object so the pose is not used in subsequent fusion
                         this.humanObjectsOfFusedObject.removeStandardObject(id);
                         parentValue = 'none';
@@ -642,7 +1209,7 @@ class HumanPoseFuser {
                 // try to associate it with one of the fused objects available in the current frame
                 let assigned = false;
                 for (let findex of fusedIndices) {
-                    if (proximityMatrix[findex][index]) {
+                    if (this.arePosesOfSamePerson(proximityMatrix[findex][index], poseDataArr[findex][1].timestamp, poseDataArr[index][1].timestamp)) {
                         // they are close, make association
                         let fid2 = poseDataArr[findex][0];
                         this.humanObjectsOfFusedObject[fid2].push(id);
@@ -665,7 +1232,10 @@ class HumanPoseFuser {
                 this.objectsRef[id].parent = parentValue;
 
                 // make entry in batchedUpdates
-                this.batchedUpdates[id] = {
+                if (this.batchedUpdates[id] === undefined) {
+                    this.batchedUpdates[id] = {};
+                }
+                this.batchedUpdates[id]['parent'] = {
                     objectKey: id,
                     frameKey: null,
                     nodeKey: null,
@@ -673,6 +1243,9 @@ class HumanPoseFuser {
                     newValue: parentValue,
                     editorId: 0
                 };
+
+                // remove the previous offset if it exists (just in case for both unassign and assign from/to fused object)
+                delete this.offsetOfHumanObject[id];
             }
         }
 
@@ -683,7 +1256,7 @@ class HumanPoseFuser {
             // make group from all poses with close proximity to this one
             let ids = [];
             for (let j of unassignedStandardIndices) {
-                if (proximityMatrix[index][j]) {
+                if (this.arePosesOfSamePerson(proximityMatrix[index][j], poseDataArr[index][1].timestamp, poseDataArr[j][1].timestamp)) {
                     ids.push(poseDataArr[j][0]);
                 }
             }
@@ -724,7 +1297,10 @@ class HumanPoseFuser {
                     // set parent reference pointing at a fused human object
                     this.objectsRef[id].parent = fusedObjectId;
 
-                    this.batchedUpdates[id] = {
+                    if (this.batchedUpdates[id] === undefined) {
+                        this.batchedUpdates[id] = {};
+                    }
+                    this.batchedUpdates[id]['parent'] = {
                         objectKey: id,
                         frameKey: null,
                         nodeKey: null,
@@ -732,6 +1308,10 @@ class HumanPoseFuser {
                         newValue: fusedObjectId,
                         editorId: 0
                     };
+
+                    // remove the previous offset if it exists (just in case)
+                    delete this.offsetOfHumanObject[id];
+
                     if (this.verbose) {
                         console.log('assigning human obj=' + id + ' from ' + fusedObjectId);
                     }
@@ -747,7 +1327,10 @@ class HumanPoseFuser {
                     for (let id of ids) {
                         this.objectsRef[id].parent = fusedObjectId;
 
-                        this.batchedUpdates[id] = {
+                        if (this.batchedUpdates[id] === undefined) {
+                            this.batchedUpdates[id] = {};
+                        }
+                        this.batchedUpdates[id]['parent'] = {
                             objectKey: id,
                             frameKey: null,
                             nodeKey: null,
@@ -755,7 +1338,25 @@ class HumanPoseFuser {
                             newValue: fusedObjectId,
                             editorId: 0
                         };
+
+                        // remove the previous offset if it exists (just in case)
+                        delete this.offsetOfHumanObject[id];
                     }
+
+                    // add property specific for fused human objects (not defined in standard human objects from apps)
+                    this.objectsRef[fusedObjectId].updatedByChildren = ['none'];
+
+                    if (this.batchedUpdates[fusedObjectId] === undefined) {
+                        this.batchedUpdates[fusedObjectId] = {};
+                    }
+                    this.batchedUpdates[fusedObjectId]['updatedByChildren'] = {
+                        objectKey: fusedObjectId,
+                        frameKey: null,
+                        nodeKey: null,
+                        propertyPath: 'updatedByChildren',
+                        newValue: ['none'],
+                        editorId: 0
+                    };
                 }
 
                 // setup active heartbeat for this new object
