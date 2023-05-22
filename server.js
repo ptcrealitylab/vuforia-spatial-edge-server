@@ -591,7 +591,7 @@ const sceneGraph = new SceneGraph(true);
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
 
-const tempUuid = utilities.uuidTime();   // UUID of current run of the server
+const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
@@ -1215,7 +1215,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-        console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        if (objects[thisId].tcs) {
+            console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        }
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1374,12 +1376,19 @@ function objectBeatServer() {
         type: 'udp4',
         reuseAddr: true,
     });
+
     udpServer.on('error', function (err) {
-        console.log('server error', err);
+        console.error('udpServer error', err);
+
+        // Permanently log so that it's clear udp support is down
+        setInterval(() => {
+            console.warn('udpServer closed due to error', err);
+        }, 5000);
+
         udpServer.close();
     });
 
-    udpServer.on('message', function (msg, rinfo) {
+    udpServer.on('message', function (msg) {
 
         var msgContent;
         // check if object ping
@@ -1419,9 +1428,7 @@ function objectBeatServer() {
             hardwareAPI.triggerMatrixCallbacks(msgContent.matrixBroadcast);
             // }
         } else {
-            if (rinfo.address !== services.ip) {
-                hardwareAPI.triggerUDPCallbacks(msgContent);
-            }
+            hardwareAPI.triggerUDPCallbacks(msgContent);
         }
 
     });
@@ -2519,7 +2526,7 @@ function objectWebServer() {
                             objectId += ('_' + utilities.uuidTime());
                         } else if (isAvatarObject) {
                             objectType = 'avatar';
-                            objectId += utilities.uuidTime();
+                            // objectId += utilities.uuidTime();
                         }
 
                         if (isHumanObject) {
@@ -3506,6 +3513,13 @@ function socketServer() {
         socketHandler.socket = socket;
         //console.log('connected to socket ' + socket.id);
 
+        /**
+         * @type {{[objectKey: string]: bool}}
+         * tracks if we have already sent a reloadObject message in response to
+         * an unknown objectKey
+         */
+        const knownUnknownObjects = {};
+
         socket.on('/subscribe/realityEditor', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
@@ -3720,15 +3734,17 @@ function socketServer() {
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
 
-            // frequently updated objects like avatar and human pose are excluded from writing to file
             var object = getObject(msg.object);
             if (object) {
+                // frequently updated objects like avatar and human pose are excluded from writing to file
                 if (object.type !== 'avatar' && object.type !== 'human') {
                     utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
                 }
 
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
                 if (object.type == 'human' && msg.publicData['whole_pose']) {
+                    // TODO: clear additional framedata from the message which are not needed on other clients, so they are not transmitted by sendPublicDataToAllSubscribers below
+
                     // unpack public data with the whole pose to the human pose object
                     if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
                         typeof msg.publicData['whole_pose'].timestamp !== 'undefined') {
@@ -3745,6 +3761,20 @@ function socketServer() {
                             resetObjectTimeout(msg.object);
                         }
                     }
+                }
+            } else {
+                console.warn('publicData update of unknown object', msg);
+                const objectKey = msg.object;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
                 }
             }
 
@@ -3835,6 +3865,18 @@ function socketServer() {
             let obj = objects[update.objectKey];
             if (!obj) {
                 console.warn('update of unknown object', update);
+                const objectKey = update.objectKey;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
+                }
                 return;
             }
             if (!update.frameKey) {
@@ -4107,6 +4149,24 @@ function socketServer() {
                 // notify each editor to reload the frame with the new node it has
                 utilities.actionSender({reloadFrame: {object: objectKey, frame: frameKey}, lastEditor: null});
             }
+        });
+
+        /**
+         * Handles messages from local remote operators who don't have access
+         * to sending actions through the cloud proxy or native udp broadcast
+         */
+        socket.on('udp/action', function(msgRaw) {
+            let msg;
+            try {
+                msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+            } catch (_) {
+                // parse failed
+            }
+            if (!msg || !msg.action) {
+                return;
+            }
+
+            handleActionMessage(msg.action);
         });
 
         socket.on('/disconnectEditor', function(msgRaw) {
