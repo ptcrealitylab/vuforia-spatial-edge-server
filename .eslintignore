@@ -6,6 +6,7 @@ dropzone.js
 *.min.js
 /libraries/logicInterfaces.js
 /libraries/objectDefaultFiles/three
+/libraries/objectDefaultFiles/babylon
 /addons
 
 # Various paths added by test runner
