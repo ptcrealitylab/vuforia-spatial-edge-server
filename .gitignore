@@ -46,6 +46,7 @@ libraries/objectLogs/*
 .node-persist
 
 /addons/*
+/out/*
 
 /docs
 /.vscode
