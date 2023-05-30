@@ -825,15 +825,15 @@ class HumanPoseFuser {
             ]);
             // create 3x4 transform matrix (defined row by row)
             // 4x4 transformW2C is stored column-wise in 1D array
+            // Note: y and z coords are negated so the camera CS is defined as in Vuforia CL. Then it works correctly with calibration matrix (also defined as in Vuforia CL)
             let T = new Matrix([
                 [pose.transformW2C[0], pose.transformW2C[4], pose.transformW2C[8],  pose.transformW2C[12]],
-                [pose.transformW2C[1], pose.transformW2C[5], pose.transformW2C[9],  pose.transformW2C[13]],
-                [pose.transformW2C[2], pose.transformW2C[6], pose.transformW2C[10], pose.transformW2C[14]]
+                [-pose.transformW2C[1], -pose.transformW2C[5], -pose.transformW2C[9],  -pose.transformW2C[13]],
+                [-pose.transformW2C[2], -pose.transformW2C[6], -pose.transformW2C[10], -pose.transformW2C[14]]
             ]);
             // compute full projection matrix
             let P = K.mmul(T);
 
-            // TODO: don't triangulate synthetic joints ?
             // project all joint 3D points to 2D positions in the view (in pixel units)
             let joints2D = [];
             for (let joint of pose.joints) {
