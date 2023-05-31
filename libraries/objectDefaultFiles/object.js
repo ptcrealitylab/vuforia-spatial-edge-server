@@ -171,7 +171,11 @@
         var url = null;
         let urlSplit = null;
         if (parseInt(Number(defaultPort))) {
-            url = location.protocol + '//localhost:' + defaultPort;
+            if (object.ip === spatialObject.serverIp) {
+                url = location.protocol + '//localhost:' + defaultPort;
+            } else {
+                url = location.protocol + '//' + object.ip + ':' + defaultPort;
+            }
         } else {
             urlSplit = location.pathname.split('/');
             for (let i = 0; i < urlSplit.length; i++) {
@@ -182,7 +186,7 @@
                 }
             }
 
-            url = location.protocol + '//localhost:';
+            url = location.protocol + '//' + object.ip + ':';
             if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  '' + 443; else url += '' + 80;
             if (urlObj.n) url += '/n/' + urlObj.n;
             if (urlObj.i) url += '/i/' + urlObj.i;
