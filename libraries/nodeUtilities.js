@@ -23,10 +23,10 @@ exports.setup = function (_objects, _sceneGraph, _knownObjects, _socketArray, _g
 
 exports.deepCopy = utilities.deepCopy;
 
-exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
-    let thisObjectKey = _object;
-    if (!(_object in objects)) {
-        thisObjectKey = utilities.getObjectIdFromTargetOrObjectFile(_object, objectsPath);
+exports.searchNodeByType = function (nodeType, object, tool, node, callback) {
+    let thisObjectKey = object;
+    if (!(object in objects)) {
+        thisObjectKey = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
     if (!tool && !node) {
@@ -47,7 +47,7 @@ exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
         });
 
     } else if (!tool) {
-        utilities.forEachFrameInObject(thisObject, function (tool, toolKey) {
+        utilities.forEachFrameInObject(thisObject, function (thisTool, toolKey) {
             let thisNode = utilities.getFrame(objects, thisObjectKey, toolKey, node);
             if (!thisNode) {
                 if (thisNode.type === nodeType) callback(thisObjectKey, toolKey, node);
@@ -62,7 +62,7 @@ exports.createLink = function (originObject, _originTool, originNode, destinatio
     if (!utilities.getFrame(objects, originObject, _originTool)) {
         originTool = originObject + _originTool;
     }
-    var linkBody = new Link();
+    let linkBody = new Link();
     linkBody.objectA = originObject;
     linkBody.frameA = originTool;
     linkBody.nodeA = originNode;

@@ -15,40 +15,7 @@ xhr.onload = function() {
     }
 };
 
-require(['vs/editor/editor.main'], function() {
-    var value = '';
-    if (xhr.readyState === 4) { // if xhr is done
-        value = xhr.responseText;
-    }
-
-    editor = monaco.editor.create(container, {
-        value: value,
-        language: 'html'
-    });
-
-    editor.addListener('contentChanged', updatePreview);
-
-    function updatePreview() {
-        var value = editor.getValue();
-        if (saveTimeout) {
-            window.clearTimeout(saveTimeout);
-        }
-        saveTimeout = window.setTimeout(save, 250);
-    }
-
-    function save() {
-        var saveXhr = new XMLHttpRequest();
-        saveXhr.open('PUT', document.location);
-        saveXhr.onload = function() {
-            previewFrame.src = previewFrame.src;
-        };
-        var formData = new FormData();
-        formData.append('content', editor.getValue());
-        saveXhr.setRequestHeader('Content-Type', 'application/json');
-        saveXhr.send(JSON.stringify({content: editor.getValue()}));
-        saveTimeout = null;
-    }
-});
+require(['vs/editor/editor.main']);
 
 previewFrame.addEventListener('load', function() {
     var data = {
