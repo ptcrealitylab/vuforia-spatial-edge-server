@@ -2443,7 +2443,7 @@ function objectWebServer() {
                                     type: 'storeData',
                                     x: 0,
                                     y: 0
-                                }
+                                };
                                 nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {
                                     console.log('added node to frame... ', statusCode, responseContents);
                                 });
@@ -3961,7 +3961,7 @@ function socketServer() {
                     let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
                     matchingAvatarKeys.push(matchingKeys);
                 });
-                
+
                 console.log('delete avatar objects: ', matchingAvatarKeys.flat());
                 matchingAvatarKeys.flat().forEach(avatarObjectKey => {
                     if (objects[avatarObjectKey]) {

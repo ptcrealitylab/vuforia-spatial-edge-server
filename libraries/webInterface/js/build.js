@@ -7,7 +7,7 @@
  * @api public
  */
 
-function require(path, parent, orig) {
+function require(path) {
     var resolved = require.resolve(path);
 
     // lookup failed
@@ -172,7 +172,7 @@ require.relative = function(parent) {
 
     function localRequire(path) {
         var resolved = localRequire.resolve(path);
-        return require(resolved, parent, path);
+        return require(resolved);
     }
 
     /**
@@ -224,7 +224,7 @@ require.register("component-emitter/index.js", function(exports, require, module
     function Emitter(obj) {
         if (obj)
             return mixin(obj);
-    };
+    }
 
     /**
      * Mixin the emitter properties.
@@ -2006,12 +2006,12 @@ require.register("enyo-opentip/lib/opentip.js", function(exports, require, modul
     var Opentip, firstAdapter, i, mouseMoved, mousePosition, mousePositionObservers, position, vendors, _i, _len, _ref,
         __slice = [].slice,
         __indexOf = [].indexOf || function(item) {
-                for (var i = 0, l = this.length; i < l; i++) {
-                    if (i in this && this[i] === item)
-                        return i;
-                }
-                return - 1;
-            },
+            for (var i = 0, l = this.length; i < l; i++) {
+                if (i in this && this[i] === item)
+                    return i;
+            }
+            return - 1;
+        },
         __hasProp = {}.hasOwnProperty;
 
     Opentip = (function() {
@@ -2217,22 +2217,22 @@ require.register("enyo-opentip/lib/opentip.js", function(exports, require, modul
                 hideOn = this.options.hideOn instanceof Array ? this.options.hideOn[i] : this.options.hideOn;
                 if (typeof hideTrigger === "string") {
                     switch (hideTrigger) {
-                        case "trigger":
-                            hideOn = hideOn || "mouseout";
-                            hideTriggerElement = this.triggerElement;
-                            break;
-                        case "tip":
-                            hideOn = hideOn || "mouseover";
-                            hideTriggerElement = this.container;
-                            break;
-                        case "target":
-                            hideOn = hideOn || "mouseover";
-                            hideTriggerElement = this.options.target;
-                            break;
-                        case "closeButton":
-                            break;
-                        default:
-                            throw new Error("Unknown hide trigger: " + hideTrigger + ".");
+                    case "trigger":
+                        hideOn = hideOn || "mouseout";
+                        hideTriggerElement = this.triggerElement;
+                        break;
+                    case "tip":
+                        hideOn = hideOn || "mouseover";
+                        hideTriggerElement = this.container;
+                        break;
+                    case "target":
+                        hideOn = hideOn || "mouseover";
+                        hideTriggerElement = this.options.target;
+                        break;
+                    case "closeButton":
+                        break;
+                    default:
+                        throw new Error("Unknown hide trigger: " + hideTrigger + ".");
                     }
                 } else {
                     hideOn = hideOn || "mouseover";
@@ -2402,33 +2402,33 @@ require.register("enyo-opentip/lib/opentip.js", function(exports, require, modul
                     }
                 };
                 switch (state) {
-                    case "showing":
-                        _ref = this.hideTriggers;
-                        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                            trigger = _ref[_j];
-                            observeOrStop(trigger.element, trigger.event, this.bound.prepareToHide);
-                        }
-                        observeOrStop((document.onresize != null ? document : window), "resize", this.bound.reposition);
-                        observeOrStop(window, "scroll", this.bound.reposition);
-                        break;
-                    case "visible":
-                        _ref1 = this.showTriggersWhenVisible;
-                        for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
-                            trigger = _ref1[_k];
-                            observeOrStop(trigger.element, trigger.event, this.bound.prepareToShow);
-                        }
-                        break;
-                    case "hiding":
-                        _ref2 = this.showTriggers;
-                        for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
-                            trigger = _ref2[_l];
-                            observeOrStop(trigger.element, trigger.event, this.bound.prepareToShow);
-                        }
-                        break;
-                    case "hidden":
-                        break;
-                    default:
-                        throw new Error("Unknown state: " + state);
+                case "showing":
+                    _ref = this.hideTriggers;
+                    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                        trigger = _ref[_j];
+                        observeOrStop(trigger.element, trigger.event, this.bound.prepareToHide);
+                    }
+                    observeOrStop((document.onresize != null ? document : window), "resize", this.bound.reposition);
+                    observeOrStop(window, "scroll", this.bound.reposition);
+                    break;
+                case "visible":
+                    _ref1 = this.showTriggersWhenVisible;
+                    for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+                        trigger = _ref1[_k];
+                        observeOrStop(trigger.element, trigger.event, this.bound.prepareToShow);
+                    }
+                    break;
+                case "hiding":
+                    _ref2 = this.showTriggers;
+                    for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
+                        trigger = _ref2[_l];
+                        observeOrStop(trigger.element, trigger.event, this.bound.prepareToShow);
+                    }
+                    break;
+                case "hidden":
+                    break;
+                default:
+                    throw new Error("Unknown state: " + state);
                 }
             }
             return null;
@@ -2774,17 +2774,17 @@ require.register("enyo-opentip/lib/opentip.js", function(exports, require, modul
                 if (sticksOut[0]) {
                     needsRepositioning = true;
                     switch (sticksOut[0]) {
-                        case this.STICKS_OUT_LEFT:
-                            tipJoint.setHorizontal("left");
-                            if (this.options.targetJoint) {
-                                targetJoint.setHorizontal("right");
-                            }
-                            break;
-                        case this.STICKS_OUT_RIGHT:
-                            tipJoint.setHorizontal("right");
-                            if (this.options.targetJoint) {
-                                targetJoint.setHorizontal("left");
-                            }
+                    case this.STICKS_OUT_LEFT:
+                        tipJoint.setHorizontal("left");
+                        if (this.options.targetJoint) {
+                            targetJoint.setHorizontal("right");
+                        }
+                        break;
+                    case this.STICKS_OUT_RIGHT:
+                        tipJoint.setHorizontal("right");
+                        if (this.options.targetJoint) {
+                            targetJoint.setHorizontal("left");
+                        }
                     }
                 }
             }
@@ -2792,17 +2792,17 @@ require.register("enyo-opentip/lib/opentip.js", function(exports, require, modul
                 if (sticksOut[1]) {
                     needsRepositioning = true;
                     switch (sticksOut[1]) {
-                        case this.STICKS_OUT_TOP:
-                            tipJoint.setVertical("top");
-                            if (this.options.targetJoint) {
-                                targetJoint.setVertical("bottom");
-                            }
-                            break;
-                        case this.STICKS_OUT_BOTTOM:
-                            tipJoint.setVertical("bottom");
-                            if (this.options.targetJoint) {
-                                targetJoint.setVertical("top");
-                            }
+                    case this.STICKS_OUT_TOP:
+                        tipJoint.setVertical("top");
+                        if (this.options.targetJoint) {
+                            targetJoint.setVertical("bottom");
+                        }
+                        break;
+                    case this.STICKS_OUT_BOTTOM:
+                        tipJoint.setVertical("bottom");
+                        if (this.options.targetJoint) {
+                            targetJoint.setVertical("top");
+                        }
                     }
                 }
             }
@@ -3842,24 +3842,24 @@ require.register("component-jquery/index.js", function(exports, require, module)
         var
         // The deferred used on DOM ready
             readyList,
-        // A central reference to the root jQuery(document)
+            // A central reference to the root jQuery(document)
             rootjQuery,
-        // Support: IE<9
-        // For `typeof node.method` instead of `node.method !== undefined`
+            // Support: IE<9
+            // For `typeof node.method` instead of `node.method !== undefined`
             core_strundefined = typeof undefined,
-        // Use the correct document accordingly with window argument (sandbox)
+            // Use the correct document accordingly with window argument (sandbox)
             document = window.document,
             location = window.location,
-        // Map over jQuery in case of overwrite
+            // Map over jQuery in case of overwrite
             _jQuery = window.jQuery,
-        // Map over the $ in case of overwrite
+            // Map over the $ in case of overwrite
             _$ = window.$,
-        // [[Class]] -> type pairs
+            // [[Class]] -> type pairs
             class2type = {},
-        // List of deleted data cache ids, so we can reuse them
+            // List of deleted data cache ids, so we can reuse them
             core_deletedIds = [],
             core_version = "1.9.1",
-        // Save a reference to some core methods
+            // Save a reference to some core methods
             core_concat = core_deletedIds.concat,
             core_push = core_deletedIds.push,
             core_slice = core_deletedIds.slice,
@@ -3867,36 +3867,36 @@ require.register("component-jquery/index.js", function(exports, require, module)
             core_toString = class2type.toString,
             core_hasOwn = class2type.hasOwnProperty,
             core_trim = core_version.trim,
-        // Define a local copy of jQuery
+            // Define a local copy of jQuery
             jQuery = function( selector, context ) {
                 // The jQuery object is actually just the init constructor 'enhanced'
                 return new jQuery.fn.init( selector, context, rootjQuery );
             },
-        // Used for matching numbers
+            // Used for matching numbers
             core_pnum = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source,
-        // Used for splitting on whitespace
+            // Used for splitting on whitespace
             core_rnotwhite = /\S+/g,
-        // Make sure we trim BOM and NBSP (here's looking at you, Safari 5.0 and IE)
+            // Make sure we trim BOM and NBSP (here's looking at you, Safari 5.0 and IE)
             rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,
-        // A simple way to check for HTML strings
-        // Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
-        // Strict HTML recognition (#11290: must start with <)
+            // A simple way to check for HTML strings
+            // Prioritize #id over <tag> to avoid XSS via location.hash (#9521)
+            // Strict HTML recognition (#11290: must start with <)
             rquickExpr = /^(?:(<[\w\W]+>)[^>]*|#([\w-]*))$/,
-        // Match a standalone tag
+            // Match a standalone tag
             rsingleTag = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
-        // JSON RegExp
+            // JSON RegExp
             rvalidchars = /^[\],:{}\s]*$/,
             rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g,
             rvalidescape = /\\(?:["\\\/bfnrt]|u[\da-fA-F]{4})/g,
             rvalidtokens = /"[^"\\\r\n]*"|true|false|null|-?(?:\d+\.|)\d+(?:[eE][+-]?\d+|)/g,
-        // Matches dashed string for camelizing
+            // Matches dashed string for camelizing
             rmsPrefix = /^-ms-/,
             rdashAlpha = /-([\da-z])/gi,
-        // Used by jQuery.camelCase as callback to replace()
+            // Used by jQuery.camelCase as callback to replace()
             fcamelCase = function( all, letter ) {
                 return letter.toUpperCase();
             },
-        // The ready event handler
+            // The ready event handler
             completed = function( event ) {
 
                 // readyState === "complete" is good enough for us to call the dom ready in oldIE
@@ -3905,7 +3905,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     jQuery.ready();
                 }
             },
-        // Clean-up method for dom ready events
+            // Clean-up method for dom ready events
             detach = function() {
                 if ( document.addEventListener ) {
                     document.removeEventListener( "DOMContentLoaded", completed, false );
@@ -4262,7 +4262,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     return String( obj );
                 }
                 return typeof obj === "object" || typeof obj === "function" ?
-                class2type[ core_toString.call(obj) ] || "object" :
+                    class2type[ core_toString.call(obj) ] || "object" :
                     typeof obj;
             },
 
@@ -4354,8 +4354,8 @@ require.register("component-jquery/index.js", function(exports, require, module)
                         // Make sure the incoming data is actual JSON
                         // Logic borrowed from http://json.org/json2.js
                         if ( rvalidchars.test( data.replace( rvalidescape, "@" )
-                                .replace( rvalidtokens, "]" )
-                                .replace( rvalidbraces, "")) ) {
+                            .replace( rvalidtokens, "]" )
+                            .replace( rvalidbraces, "")) ) {
 
                             return ( new Function( "return " + data ) )();
                         }
@@ -4375,7 +4375,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     if ( window.DOMParser ) {
                         // Standard
                         tmp = new DOMParser();
-                        xml = tmp.parseFromString( data , "text/xml" );
+                        xml = tmp.parseFromString( data, "text/xml" );
                     } else {
                         // IE
                         xml = new ActiveXObject( "Microsoft.XMLDOM" );
@@ -4812,21 +4812,21 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             var // Flag to know if list is currently firing
                 firing,
-            // Last fire value (for non-forgettable lists)
+                // Last fire value (for non-forgettable lists)
                 memory,
-            // Flag to know if list was already fired
+                // Flag to know if list was already fired
                 fired,
-            // End of the loop when firing
+                // End of the loop when firing
                 firingLength,
-            // Index of currently firing callback (modified by remove if needed)
+                // Index of currently firing callback (modified by remove if needed)
                 firingIndex,
-            // First callback to fire (used internally by add and fireWith)
+                // First callback to fire (used internally by add and fireWith)
                 firingStart,
-            // Actual callback list
+                // Actual callback list
                 list = [],
-            // Stack of fire calls for repeatable lists
+                // Stack of fire calls for repeatable lists
                 stack = !options.once && [],
-            // Fire callbacks
+                // Fire callbacks
                 fire = function( data ) {
                     memory = options.memory && data;
                     fired = true;
@@ -4853,7 +4853,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                         }
                     }
                 },
-            // Actual Callbacks object
+                // Actual Callbacks object
                 self = {
                     // Add a callback or a collection of callbacks to the list
                     add: function() {
@@ -5060,11 +5060,11 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 var i = 0,
                     resolveValues = core_slice.call( arguments ),
                     length = resolveValues.length,
-                // the count of uncompleted subordinates
+                    // the count of uncompleted subordinates
                     remaining = length !== 1 || ( subordinate && jQuery.isFunction( subordinate.promise ) ) ? length : 0,
-                // the master Deferred. If resolveValues consist of only a single Deferred, just use that.
+                    // the master Deferred. If resolveValues consist of only a single Deferred, just use that.
                     deferred = remaining === 1 ? subordinate : jQuery.Deferred(),
-                // Update function for both resolve and progress values
+                    // Update function for both resolve and progress values
                     updateFunc = function( i, contexts, values ) {
                         return function( value ) {
                             contexts[ i ] = this;
@@ -5362,14 +5362,14 @@ require.register("component-jquery/index.js", function(exports, require, module)
             var thisCache, ret,
                 internalKey = jQuery.expando,
                 getByName = typeof name === "string",
-            // We have to handle DOM nodes and JS objects differently because IE6-7
-            // can't GC object references properly across the DOM-JS boundary
+                // We have to handle DOM nodes and JS objects differently because IE6-7
+                // can't GC object references properly across the DOM-JS boundary
                 isNode = elem.nodeType,
-            // Only DOM nodes need the global jQuery cache; JS object data is
-            // attached directly to the object so GC can occur automatically
+                // Only DOM nodes need the global jQuery cache; JS object data is
+                // attached directly to the object so GC can occur automatically
                 cache = isNode ? jQuery.cache : elem,
-            // Only defining an ID for JS objects if its cache already exists allows
-            // the code to shortcut on the same path as a DOM node with no cache
+                // Only defining an ID for JS objects if its cache already exists allows
+                // the code to shortcut on the same path as a DOM node with no cache
                 id = isNode ? elem[ internalKey ] : elem[ internalKey ] && internalKey;
 
             // Avoid doing any more work than we need to when trying to get data on an
@@ -5452,7 +5452,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             var i, l, thisCache,
                 isNode = elem.nodeType,
-            // See jQuery.data for more information
+                // See jQuery.data for more information
                 cache = isNode ? jQuery.cache : elem,
                 id = isNode ? elem[ jQuery.expando ] : jQuery.expando;
 
@@ -5747,11 +5747,11 @@ require.register("component-jquery/index.js", function(exports, require, module)
             _queueHooks: function( elem, type ) {
                 var key = type + "queueHooks";
                 return jQuery._data( elem, key ) || jQuery._data( elem, key, {
-                        empty: jQuery.Callbacks("once memory").add(function() {
-                            jQuery._removeData( elem, type + "queue" );
-                            jQuery._removeData( elem, key );
-                        })
-                    });
+                    empty: jQuery.Callbacks("once memory").add(function() {
+                        jQuery._removeData( elem, type + "queue" );
+                        jQuery._removeData( elem, key );
+                    })
+                });
             }
         });
 
@@ -6090,7 +6090,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                             // oldIE doesn't update selected after form reset (#2551)
                             if ( ( option.selected || i === index ) &&
-                                    // Don't return options that are disabled or in a disabled optgroup
+                            // Don't return options that are disabled or in a disabled optgroup
                                 ( jQuery.support.optDisabled ? !option.disabled : option.getAttribute("disabled") === null ) &&
                                 ( !option.parentNode.disabled || !jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
 
@@ -6299,11 +6299,11 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 var
                 // Use .prop to determine if this attribute is understood as boolean
                     prop = jQuery.prop( elem, name ),
-                // Fetch it accordingly
+                    // Fetch it accordingly
                     attr = typeof prop === "boolean" && elem.getAttribute( name ),
                     detail = typeof prop === "boolean" ?
                         getSetInput && getSetAttribute ?
-                        attr != null :
+                            attr != null :
                             // oldIE fabricates an empty string for missing boolean attributes
                             // and conflates checked/selected into attroperties
                             ruseDefault.test( name ) ?
@@ -6775,7 +6775,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                     event.type = i > 1 ?
                         bubbleType :
-                    special.bindType || type;
+                        special.bindType || type;
 
                     // jQuery handler
                     handle = ( jQuery._data( cur, "events" ) || {})[ event.type ] && jQuery._data( cur, "handle" );
@@ -6913,7 +6913,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                                 if ( matches[ sel ] === undefined ) {
                                     matches[ sel ] = handleObj.needsContext ?
-                                    jQuery( sel, this ).index( cur ) >= 0 :
+                                        jQuery( sel, this ).index( cur ) >= 0 :
                                         jQuery.find( sel, this, null, [ cur ] ).length;
                                 }
                                 if ( matches[ sel ] ) {
@@ -6956,7 +6956,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     this.fixHooks[ type ] = fixHook =
                         rmouseEvent.test( type ) ? this.mouseHooks :
                             rkeyEvent.test( type ) ? this.keyHooks :
-                            {};
+                                {};
                 }
                 copy = fixHook.props ? this.props.concat( fixHook.props ) : this.props;
 
@@ -7376,7 +7376,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
         jQuery.fn.extend({
 
             on: function( types, selector, data, fn, /*INTERNAL*/
-                          one ) {
+                one ) {
                 var type, origFn;
 
                 // Types can be a map of types/handlers
@@ -7507,7 +7507,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 compile,
                 hasDuplicate,
                 outermostContext,
-            // Local document vars
+                // Local document vars
                 setDocument,
                 document,
                 docElem,
@@ -7517,7 +7517,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 matches,
                 contains,
                 sortOrder,
-            // Instance-specific data
+                // Instance-specific data
                 expando = "sizzle" + - (new Date()),
                 preferredDoc = window.document,
                 support = {},
@@ -7526,48 +7526,48 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 classCache = createCache(),
                 tokenCache = createCache(),
                 compilerCache = createCache(),
-            // General-purpose constants
+                // General-purpose constants
                 strundefined = typeof undefined,
                 MAX_NEGATIVE = 1 << 31,
-            // Array methods
+                // Array methods
                 arr = [],
                 pop = arr.pop,
                 push = arr.push,
                 slice = arr.slice,
-            // Use a stripped-down indexOf if we can't use a native one
+                // Use a stripped-down indexOf if we can't use a native one
                 indexOf = arr.indexOf || function( elem ) {
-                        var i = 0,
-                            len = this.length;
-                        for ( ; i < len; i++ ) {
-                            if ( this[i] === elem ) {
-                                return i;
-                            }
+                    var i = 0,
+                        len = this.length;
+                    for ( ; i < len; i++ ) {
+                        if ( this[i] === elem ) {
+                            return i;
                         }
-                        return - 1;
-                    },
+                    }
+                    return - 1;
+                },
 
-            // Regular expressions
+                // Regular expressions
 
-            // Whitespace characters http://www.w3.org/TR/css3-selectors/#whitespace
+                // Whitespace characters http://www.w3.org/TR/css3-selectors/#whitespace
                 whitespace = "[\\x20\\t\\r\\n\\f]",
-            // http://www.w3.org/TR/css3-syntax/#characters
+                // http://www.w3.org/TR/css3-syntax/#characters
                 characterEncoding = "(?:\\\\.|[\\w-]|[^\\x00-\\xa0])+",
-            // Loosely modeled on CSS identifier characters
-            // An unquoted value should be a CSS identifier http://www.w3.org/TR/css3-selectors/#attribute-selectors
-            // Proper syntax: http://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
+                // Loosely modeled on CSS identifier characters
+                // An unquoted value should be a CSS identifier http://www.w3.org/TR/css3-selectors/#attribute-selectors
+                // Proper syntax: http://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
                 identifier = characterEncoding.replace( "w", "w#" ),
-            // Acceptable operators http://www.w3.org/TR/selectors/#attribute-selectors
+                // Acceptable operators http://www.w3.org/TR/selectors/#attribute-selectors
                 operators = "([*^$|!~]?=)",
                 attributes = "\\[" + whitespace + "*(" + characterEncoding + ")" + whitespace +
                     "*(?:" + operators + whitespace + "*(?:(['\"])((?:\\\\.|[^\\\\])*?)\\3|(" + identifier + ")|)|)" + whitespace + "*\\]",
-            // Prefer arguments quoted,
-            //   then not containing pseudos/brackets,
-            //   then attribute selectors/non-parenthetical expressions,
-            //   then anything else
-            // These preferences are here to reduce the number of selectors
-            //   needing tokenize in the PSEUDO preFilter
+                // Prefer arguments quoted,
+                //   then not containing pseudos/brackets,
+                //   then attribute selectors/non-parenthetical expressions,
+                //   then anything else
+                // These preferences are here to reduce the number of selectors
+                //   needing tokenize in the PSEUDO preFilter
                 pseudos = ":(" + characterEncoding + ")(?:\\(((['\"])((?:\\\\.|[^\\\\])*?)\\3|((?:\\\\.|[^\\\\()[\\]]|" + attributes.replace( 3, 8 ) + ")*)|.*)\\)|)",
-            // Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
+                // Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
                 rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),
                 rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
                 rcombinators = new RegExp( "^" + whitespace + "*([\\x20\\t\\r\\n\\f>+~])" + whitespace + "*" ),
@@ -7590,13 +7590,13 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 },
                 rsibling = /[\x20\t\r\n\f]*[+~]/,
                 rnative = /^[^{]+\{\s*\[native code/,
-            // Easily-parseable/retrievable ID or TAG or CLASS selectors
+                // Easily-parseable/retrievable ID or TAG or CLASS selectors
                 rquickExpr = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/,
                 rinputs = /^(?:input|select|textarea|button)$/i,
                 rheader = /^h\d$/i,
                 rescape = /'|\\/g,
                 rattributeQuotes = /\=[\x20\t\r\n\f]*([^'"\]]*)[\x20\t\r\n\f]*\]/g,
-            // CSS escapes http://www.w3.org/TR/CSS21/syndata.html#escaped-characters
+                // CSS escapes http://www.w3.org/TR/CSS21/syndata.html#escaped-characters
                 runescape = /\\([\da-fA-F]{1,6}[\x20\t\r\n\f]?|.)/g,
                 funescape = function( _, escaped ) {
                     var high = "0x" + escaped - 0x10000;
@@ -7680,7 +7680,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             function Sizzle( selector, context, results, seed ) {
                 var match, elem, m, nodeType,
-                // QSA vars
+                    // QSA vars
                     i, groups, old, nid, newContext, newSelector;
 
                 if ( ( context ? context.ownerDocument || context : preferredDoc ) !== document ) {
@@ -7855,9 +7855,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                     // Test
                     var pass = doc.getElementsByName &&
-                            // buggy browsers will return fewer than the correct 2
+                    // buggy browsers will return fewer than the correct 2
                         doc.getElementsByName( expando ).length === 2 +
-                            // buggy browsers will return more than the correct 0
+                        // buggy browsers will return more than the correct 0
                         doc.getElementsByName( expando + 0 ).length;
                     support.getIdNotName = !doc.getElementById( expando );
 
@@ -7873,15 +7873,15 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     return div.firstChild && typeof div.firstChild.getAttribute !== strundefined &&
                         div.firstChild.getAttribute("href") === "#";
                 }) ?
-                {} :
-                {
-                    "href": function( elem ) {
-                        return elem.getAttribute( "href", 2 );
-                    },
-                    "type": function( elem ) {
-                        return elem.getAttribute("type");
-                    }
-                };
+                    {} :
+                    {
+                        "href": function( elem ) {
+                            return elem.getAttribute( "href", 2 );
+                        },
+                        "type": function( elem ) {
+                            return elem.getAttribute("type");
+                        }
+                    };
 
                 // ID find and filter
                 if ( support.getIdNotName ) {
@@ -8044,10 +8044,10 @@ require.register("component-jquery/index.js", function(exports, require, module)
                         var adown = a.nodeType === 9 ? a.documentElement : a,
                             bup = b && b.parentNode;
                         return a === bup || !!( bup && bup.nodeType === 1 && (
-                                adown.contains ?
-                                    adown.contains( bup ) :
+                            adown.contains ?
+                                adown.contains( bup ) :
                                 a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16
-                            ));
+                        ));
                     } :
                     function( a, b ) {
                         if ( b ) {
@@ -8164,8 +8164,8 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                         // IE 9's matchesSelector returns false on disconnected nodes
                         if ( ret || support.disconnectedMatch ||
-                                // As well, disconnected nodes are said to be in a document
-                                // fragment in IE 9
+                        // As well, disconnected nodes are said to be in a document
+                        // fragment in IE 9
                             elem.document && elem.document.nodeType !== 11 ) {
                             return ret;
                         }
@@ -8413,9 +8413,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                             // Strip excess characters from unquoted arguments
                         } else if ( unquoted && rpseudo.test( unquoted ) &&
-                                // Get excess from tokenize (recursively)
+                        // Get excess from tokenize (recursively)
                             (excess = tokenize( unquoted, true )) &&
-                                // advance to the next closing parenthesis
+                        // advance to the next closing parenthesis
                             (excess = unquoted.indexOf( ")", unquoted.length - excess ) - unquoted.length) ) {
 
                             // excess is a negative index
@@ -8523,7 +8523,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                                         node = nodeIndex && parent.childNodes[ nodeIndex ];
 
                                         while ( (node = ++nodeIndex && node && node[ dir ] ||
-                                            // Fallback to seeking `elem` from the start
+                                        // Fallback to seeking `elem` from the start
                                         (diff = nodeIndex = 0) || start.pop()) ) {
 
                                             // When found, cache indexes on `parent` and break
@@ -8661,7 +8661,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                             do {
                                 if ( (elemLang = documentIsXML ?
                                     elem.getAttribute("xml:lang") || elem.getAttribute("lang") :
-                                        elem.lang) ) {
+                                    elem.lang) ) {
 
                                     elemLang = elemLang.toLowerCase();
                                     return elemLang === lang || elemLang.indexOf( lang + "-" ) === 0;
@@ -8991,9 +8991,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
                         preMap = [],
                         postMap = [],
                         preexisting = results.length,
-                    // Get initial elements from seed or context
+                        // Get initial elements from seed or context
                         elems = seed || multipleContexts( selector || "*", context.nodeType ? [ context ] : context, [] ),
-                    // Prefilter to get matcher input, preserving a map for seed-results synchronization
+                        // Prefilter to get matcher input, preserving a map for seed-results synchronization
                         matcherIn = preFilter && ( seed || !selector ) ?
                             condense( elems, preMap, preFilter, context, xml ) :
                             elems,
@@ -9073,7 +9073,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     leadingRelative = Expr.relative[ tokens[0].type ],
                     implicitRelative = leadingRelative || Expr.relative[" "],
                     i = leadingRelative ? 1 : 0,
-                // The foundational matcher ensures that elements are reachable from top-level context(s)
+                    // The foundational matcher ensures that elements are reachable from top-level context(s)
                     matchContext = addCombinator( function( elem ) {
                         return elem === checkContext;
                     }, implicitRelative, true ),
@@ -9082,9 +9082,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     }, implicitRelative, true ),
                     matchers = [ function( elem, context, xml ) {
                         return ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
-                                (checkContext = context).nodeType ?
-                                    matchContext( elem, context, xml ) :
-                                    matchAnyContext( elem, context, xml ) );
+                            (checkContext = context).nodeType ?
+                                matchContext( elem, context, xml ) :
+                                matchAnyContext( elem, context, xml ) );
                     }
                     ];
 
@@ -9132,9 +9132,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
                             unmatched = seed && [],
                             outermost = expandContext != null,
                             contextBackup = outermostContext,
-                        // We must always have either seed elements or context
+                            // We must always have either seed elements or context
                             elems = seed || byElement && Expr.find["TAG"]( "*", expandContext && context.parentNode || context ),
-                        // Use integer dirruns iff this is the outermost matcher
+                            // Use integer dirruns iff this is the outermost matcher
                             dirrunsUnique = (dirruns += contextBackup == null ? 1 : Math.random() || 0.1);
 
                         if ( outermost ) {
@@ -9291,9 +9291,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
                             if ( (find = Expr.find[ type ]) ) {
                                 // Search, expanding context for leading sibling combinators
                                 if ( (seed = find(
-                                        token.matches[0].replace( runescape, funescape ),
-                                        rsibling.test( tokens[0].type ) && context.parentNode || context
-                                    )) ) {
+                                    token.matches[0].replace( runescape, funescape ),
+                                    rsibling.test( tokens[0].type ) && context.parentNode || context
+                                )) ) {
 
                                     // If seed is empty or no tokens remain, we can return early
                                     tokens.splice( i, 1 );
@@ -9349,7 +9349,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             rparentsprev = /^(?:parents|prev(?:Until|All))/,
             isSimple = /^.[^:#\[\.,]*$/,
             rneedsContext = jQuery.expr.match.needsContext,
-        // methods guaranteed to produce a unique set when starting from a unique set
+            // methods guaranteed to produce a unique set when starting from a unique set
             guaranteedUnique = {
                 children: true,
                 contents: true,
@@ -9408,10 +9408,10 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             is: function( selector ) {
                 return !!selector && (
-                        typeof selector === "string" ?
-                            // If this is a positional/relative selector, check membership in the returned set
-                            // so $("p:first").is("p:last") won't return true for a doc with two "p".
-                            rneedsContext.test( selector ) ?
+                    typeof selector === "string" ?
+                    // If this is a positional/relative selector, check membership in the returned set
+                    // so $("p:first").is("p:last") won't return true for a doc with two "p".
+                        rneedsContext.test( selector ) ?
                             jQuery( selector, this.context ).index( this[0] ) >= 0 :
                             jQuery.filter( selector, this ).length > 0 :
                         this.filter( selector ).length > 0 );
@@ -9472,7 +9472,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             addBack: function( selector ) {
                 return this.add( selector == null ?
-                        this.prevObject : this.prevObject.filter(selector)
+                    this.prevObject : this.prevObject.filter(selector)
                 );
             }
         });
@@ -9525,7 +9525,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             },
             contents: function( elem ) {
                 return jQuery.nodeName( elem, "iframe" ) ?
-                elem.contentDocument || elem.contentWindow.document :
+                    elem.contentDocument || elem.contentWindow.document :
                     jQuery.merge( [], elem.childNodes );
             }
         }, function( name, fn ) {
@@ -9646,12 +9646,12 @@ require.register("component-jquery/index.js", function(exports, require, module)
             rhtml = /<|&#?\w+;/,
             rnoInnerhtml = /<(?:script|style|link)/i,
             manipulation_rcheckableType = /^(?:checkbox|radio)$/i,
-        // checked="checked" or checked
+            // checked="checked" or checked
             rchecked = /checked\s*(?:[^=]|=\s*.checked.)/i,
             rscriptType = /^$|\/(?:java|ecma)script/i,
             rscriptTypeMasked = /^true\/(.*)/,
             rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g,
-        // We have to close these tags to support XHTML (#13200)
+            // We have to close these tags to support XHTML (#13200)
             wrapMap = {
                 option: [ 1, "<select multiple='multiple'>", "</select>" ],
                 legend: [ 1, "<fieldset>", "</fieldset>" ],
@@ -10240,7 +10240,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 var j, elem, contains,
                     tmp, tag, tbody, wrap,
                     l = elems.length,
-                // Ensure a safe fragment
+                    // Ensure a safe fragment
                     safe = createSafeFragment( context ),
                     nodes = [],
                     i = 0;
@@ -10361,7 +10361,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             },
 
             cleanData: function( elems, /* internal */
-                                 acceptData ) {
+                acceptData ) {
                 var elem, type, id, data,
                     i = 0,
                     internalKey = jQuery.expando,
@@ -10418,8 +10418,8 @@ require.register("component-jquery/index.js", function(exports, require, module)
             ralpha = /alpha\([^)]*\)/i,
             ropacity = /opacity\s*=\s*([^)]*)/,
             rposition = /^(top|right|bottom|left)$/,
-        // swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
-        // see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+            // swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
+            // see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
             rdisplayswap = /^(none|table(?!-c[ea]).+)/,
             rmargin = /^margin/,
             rnumsplit = new RegExp( "^(" + core_pnum + ")(.*)$", "i" ),
@@ -10733,7 +10733,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             curCSS = function( elem, name, _computed ) {
                 var width, minWidth, maxWidth,
                     computed = _computed || getStyles( elem ),
-                // getPropertyValue is only needed for .css('filter') in IE9, see #12537
+                    // getPropertyValue is only needed for .css('filter') in IE9, see #12537
                     ret = computed ? computed.getPropertyValue( name ) || computed[ name ] : undefined,
                     style = elem.style;
 
@@ -10820,7 +10820,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             var matches = rnumsplit.exec( value );
             return matches ?
                 // Guard against undefined "subtract", e.g., when used as in cssHooks
-            Math.max( 0, matches[ 1 ] - ( subtract || 0 ) ) + ( matches[ 2 ] || "px" ) :
+                Math.max( 0, matches[ 1 ] - ( subtract || 0 ) ) + ( matches[ 2 ] || "px" ) :
                 value;
         }
 
@@ -10902,7 +10902,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     valueIsBorderBox,
                     styles
                 )
-                ) + "px";
+            ) + "px";
         }
 
         // Try to determine the default display value of an element
@@ -10962,13 +10962,13 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 set: function( elem, value, extra ) {
                     var styles = extra && getStyles( elem );
                     return setPositiveNumber( elem, value, extra ?
-                            augmentWidthOrHeight(
-                                elem,
-                                name,
-                                extra,
-                                jQuery.support.boxSizing && jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-                                styles
-                            ) : 0
+                        augmentWidthOrHeight(
+                            elem,
+                            name,
+                            extra,
+                            jQuery.support.boxSizing && jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+                            styles
+                        ) : 0
                     );
                 }
             };
@@ -10979,7 +10979,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 get: function( elem, computed ) {
                     // IE uses filters for opacity
                     return ropacity.test( (computed && elem.currentStyle ? elem.currentStyle.filter : elem.style.filter) || "" ) ?
-                    ( 0.01 * parseFloat( RegExp.$1 ) ) + "" :
+                        ( 0.01 * parseFloat( RegExp.$1 ) ) + "" :
                         computed ? "1" : "";
                 },
 
@@ -11013,7 +11013,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     // otherwise, set new filter values
                     style.filter = ralpha.test( filter ) ?
                         filter.replace( ralpha, opacity ) :
-                    filter + " " + opacity;
+                        filter + " " + opacity;
                 }
             };
         }
@@ -11028,9 +11028,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
                             // WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
                             // Work around by temporarily setting element display to inline-block
                             return jQuery.swap( elem, {
-                                    "display": "inline-block"
-                                },
-                                curCSS, [ elem, "marginRight" ] );
+                                "display": "inline-block"
+                            },
+                            curCSS, [ elem, "marginRight" ] );
                         }
                     }
                 };
@@ -11047,7 +11047,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                                 computed = curCSS( elem, prop );
                                 // if curCSS returns percentage, fallback to offset
                                 return rnumnonpx.test( computed ) ?
-                                jQuery( elem ).position()[ prop ] + "px" :
+                                    jQuery( elem ).position()[ prop ] + "px" :
                                     computed;
                             }
                         }
@@ -11080,7 +11080,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 expand: function( value ) {
                     var i = 0,
                         expanded = {},
-                    // assumes a single number if not a string
+                        // assumes a single number if not a string
                         parts = typeof value === "string" ? value.split(" ") : [ value ];
 
                     for ( ; i < 4; i++ ) {
@@ -11131,10 +11131,10 @@ require.register("component-jquery/index.js", function(exports, require, module)
                                         value: val.replace( rCRLF, "\r\n" )
                                     };
                                 }) :
-                            {
-                                name: elem.name,
-                                value: val.replace( rCRLF, "\r\n" )
-                            };
+                                {
+                                    name: elem.name,
+                                    value: val.replace( rCRLF, "\r\n" )
+                                };
                     }).get();
             }
         });
@@ -11225,14 +11225,14 @@ require.register("component-jquery/index.js", function(exports, require, module)
             rhash = /#.*$/,
             rts = /([?&])_=[^&]*/,
             rheaders = /^(.*?):[ \t]*([^\r\n]*)\r?$/mg, // IE leaves an \r character at EOL
-        // #7653, #8125, #8152: local protocol detection
+            // #7653, #8125, #8152: local protocol detection
             rlocalProtocol = /^(?:about|app|app-storage|.+-extension|file|res|widget):$/,
             rnoContent = /^(?:GET|HEAD)$/,
             rprotocol = /^\/\//,
             rurl = /^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/,
-        // Keep a copy of the old load method
+            // Keep a copy of the old load method
             _load = jQuery.fn.load,
-        /* Prefilters
+            /* Prefilters
          * 1) They are useful to introduce custom dataTypes (see ajax/jsonp.js for an example)
          * 2) These are called:
          *    - BEFORE asking for a transport
@@ -11242,13 +11242,13 @@ require.register("component-jquery/index.js", function(exports, require, module)
          * 5) execution will start with transport dataType and THEN continue down to "*" if needed
          */
             prefilters = {},
-        /* Transports bindings
+            /* Transports bindings
          * 1) key is the dataType
          * 2) the catchall symbol "*" can be used
          * 3) selection will start with transport dataType and THEN go to "*" if needed
          */
             transports = {},
-        // Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
+            // Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
             allTypes = "*/".concat("*");
 
         // #8138, IE may throw an exception when accessing
@@ -11526,40 +11526,40 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
                 var // Cross-domain detection vars
                     parts,
-                // Loop variable
+                    // Loop variable
                     i,
-                // URL without anti-cache param
+                    // URL without anti-cache param
                     cacheURL,
-                // Response headers as string
+                    // Response headers as string
                     responseHeadersString,
-                // timeout handle
+                    // timeout handle
                     timeoutTimer,
-                // To know if global events are to be dispatched
+                    // To know if global events are to be dispatched
                     fireGlobals,
                     transport,
-                // Response headers
+                    // Response headers
                     responseHeaders,
-                // Create the final options object
+                    // Create the final options object
                     s = jQuery.ajaxSetup( {}, options ),
-                // Callbacks context
+                    // Callbacks context
                     callbackContext = s.context || s,
-                // Context for global events is callbackContext if it is a DOM node or jQuery collection
+                    // Context for global events is callbackContext if it is a DOM node or jQuery collection
                     globalEventContext = s.context && ( callbackContext.nodeType || callbackContext.jquery ) ?
                         jQuery( callbackContext ) :
                         jQuery.event,
-                // Deferreds
+                    // Deferreds
                     deferred = jQuery.Deferred(),
                     completeDeferred = jQuery.Callbacks("once memory"),
-                // Status-dependent callbacks
+                    // Status-dependent callbacks
                     statusCode = s.statusCode || {},
-                // Headers (they are sent all at once)
+                    // Headers (they are sent all at once)
                     requestHeaders = {},
                     requestHeadersNames = {},
-                // The jqXHR state
+                    // The jqXHR state
                     state = 0,
-                // Default abort message
+                    // Default abort message
                     strAbort = "canceled",
-                // Fake xhr
+                    // Fake xhr
                     jqXHR = {
                         readyState: 0,
 
@@ -11703,7 +11703,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                             // If there is already a '_' parameter, set its value
                             cacheURL.replace( rts, "$1_=" + ajax_nonce++ ) :
                             // Otherwise add one to the end
-                        cacheURL + ( ajax_rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + ajax_nonce++;
+                            cacheURL + ( ajax_rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + ajax_nonce++;
                     }
                 }
 
@@ -11726,7 +11726,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                 jqXHR.setRequestHeader(
                     "Accept",
                     s.dataTypes[ 0 ] && s.accepts[ s.dataTypes[0] ] ?
-                    s.accepts[ s.dataTypes[0] ] + ( s.dataTypes[ 0 ] !== "*" ? ", " + allTypes + "; q=0.01" : "" ) :
+                        s.accepts[ s.dataTypes[0] ] + ( s.dataTypes[ 0 ] !== "*" ? ", " + allTypes + "; q=0.01" : "" ) :
                         s.accepts[ "*" ]
                 );
 
@@ -11979,7 +11979,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             var conv2, current, conv, tmp,
                 converters = {},
                 i = 0,
-            // Work with a copy of dataTypes in case we need to modify it for conversion
+                // Work with a copy of dataTypes in case we need to modify it for conversion
                 dataTypes = s.dataTypes.slice(),
                 prev = dataTypes[ 0 ];
 
@@ -12168,9 +12168,9 @@ require.register("component-jquery/index.js", function(exports, require, module)
 
             var callbackName, overwritten, responseContainer,
                 jsonProp = s.jsonp !== false && ( rjsonp.test( s.url ) ?
-                        "url" :
+                    "url" :
                     typeof s.data === "string" && !( s.contentType || "" ).indexOf("application/x-www-form-urlencoded") && rjsonp.test( s.data ) && "data"
-                    );
+                );
 
             // Handle iff the expected data type is "jsonp" or we have a parameter to set
             if ( jsonProp || s.dataTypes[ 0 ] === "jsonp" ) {
@@ -12232,14 +12232,14 @@ require.register("component-jquery/index.js", function(exports, require, module)
         });
         var xhrCallbacks, xhrSupported,
             xhrId = 0,
-        // #5280: Internet Explorer will keep connections alive if we don't abort on unload
+            // #5280: Internet Explorer will keep connections alive if we don't abort on unload
             xhrOnUnloadAbort = window.ActiveXObject && function() {
-                    // Abort all pending requests
-                    var key;
-                    for ( key in xhrCallbacks ) {
-                        xhrCallbacks[ key ]( undefined, true );
-                    }
-                };
+                // Abort all pending requests
+                var key;
+                for ( key in xhrCallbacks ) {
+                    xhrCallbacks[ key ]( undefined, true );
+                }
+            };
 
         // Functions to create xhrs
         function createStandardXHR() {
@@ -12526,7 +12526,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     }
                     var currentTime = fxNow || createFxNow(),
                         remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-                    // archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
+                        // archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
                         temp = remaining / animation.duration || 0,
                         percent = 1 - temp,
                         index = 0,
@@ -12564,8 +12564,8 @@ require.register("component-jquery/index.js", function(exports, require, module)
                     },
                     stop: function( gotoEnd ) {
                         var index = 0,
-                        // if we are going to the end, we want to run all the tweens
-                        // otherwise we skip this part
+                            // if we are going to the end, we want to run all the tweens
+                            // otherwise we skip this part
                             length = gotoEnd ? animation.tweens.length : 0;
                         if ( stopped ) {
                             return this;
@@ -13355,7 +13355,7 @@ require.register("component-jquery/index.js", function(exports, require, module)
             return jQuery.isWindow( elem ) ?
                 elem :
                 elem.nodeType === 9 ?
-                elem.defaultView || elem.parentWindow :
+                    elem.defaultView || elem.parentWindow :
                     false;
         }
         // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
