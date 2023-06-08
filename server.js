@@ -74,7 +74,10 @@ try {
         // Since process.send is async, just hold the server for preventing more errors
     }
 }
+
 const _logger = require('./logger');
+const {objectsPath} = require('./config');
+const {providedServices} = require('./services');
 
 const os = require('os');
 const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
@@ -88,8 +91,9 @@ const globalVariables = {
     // Send more debug messages to console
     debug: false,
     isMobile: isLightweightMobile && !isStandaloneMobile,
-    // Prohibit saving to file system if we're on mobile or just running tests
-    saveToDisk: (!isLightweightMobile && process.env.NODE_ENV !== 'test') || isStandaloneMobile,
+    // Prohibit saving to file system if we're in a mobile env that doesn't
+    // support that
+    saveToDisk: !isLightweightMobile || isStandaloneMobile,
     // Create an object for attaching frames to the world
     worldObject: isLightweightMobile || isStandaloneMobile,
     listenForHumanPose: false,
@@ -113,11 +117,11 @@ const globalVariables = {
 var serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
-const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other.
+const beatPort = 52316;            // this is the port for UDP broadcasting so that the objects find each other
+exports.beatPort = beatPort;
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
-
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
@@ -133,17 +137,6 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 const fs = require('fs');       // Filesystem library
 const path = require('path');
 const DecompressZip = require('decompress-zip');
-
-const spatialToolboxPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjects');
-
-// All objects are stored in this folder:
-// Look for objects in the user Documents directory instead of __dirname+"/objects"
-let objectsPath = spatialToolboxPath;
-
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
-    objectsPath = path.join(__dirname, 'spatialToolbox');
-}
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
@@ -165,6 +158,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
+console.log('loaded hardwareInterfacePaths', hardwareInterfacePaths);
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
@@ -210,6 +204,12 @@ services.getIP = function () {
     let interfaceNames;
     try {
         interfaceNames = this.networkInterface.getInterfaces({ipVersion: 4});
+        let interfaceNamesFiltered = interfaceNames.filter((interfaceName) => {
+            return !interfaceName.startsWith('utun'); // discard docker's virtual network interface on mac
+        });
+        if (interfaceNamesFiltered.length > 0) {
+            interfaceNames = interfaceNamesFiltered;
+        }
     } catch (e) {
         console.error('getInterfaces failed', e);
         return this.ip;
@@ -270,22 +270,7 @@ exports.getIP = services.getIP.bind(services);
 
 services.ip = services.getIP(); //ip.address();
 
-var bodyParser = require('body-parser');  // body parsing middleware
 var express = require('express'); // Web Sever library
-
-// Default back to old realityObjects dir if it exists
-if (!fs.existsSync(objectsPath) &&
-    objectsPath === spatialToolboxPath &&
-    fs.existsSync(oldRealityObjectsPath)) {
-    console.warn('Please rename your realityobjects directory to spatialToolbox');
-    objectsPath = oldRealityObjectsPath;
-}
-
-// create objects folder at objectsPath if necessary
-if (!fs.existsSync(objectsPath)) {
-    console.log('created objects directory at ' + objectsPath);
-    fs.mkdirSync(objectsPath);
-}
 
 var identityFolderName = '.identity';
 
@@ -367,11 +352,11 @@ if (isLightweightMobile) {
     hardwareAPI = require('./libraries/hardwareInterfaces');
 }
 
-// This file hosts the constructor and class methods for human pose objects (generated from kinect skeleton data)
+// This file hosts the constructor and class methods for human pose objects (generated by human body tracking)
 const HumanPoseObject = require('./libraries/HumanPoseObject');
 
 var git;
-if (isLightweightMobile || process.env.NODE_ENV === 'test') {
+if (isStandaloneMobile || isLightweightMobile || process.env.NODE_ENV === 'test') {
     git = null;
 } else {
     git = require('./libraries/gitInterface');
@@ -581,6 +566,13 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
+const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
+const staleObjectCleaner = new StaleObjectCleaner(objects, deleteObject);
+function resetObjectTimeout(objectKey) {
+    staleObjectCleaner.resetObjectTimeout(objectKey);
+}
+exports.resetObjectTimeout = resetObjectTimeout;
+
 var worldObjectName = '_WORLD_';
 if (isLightweightMobile || isStandaloneMobile) {
     worldObjectName += 'local';
@@ -589,8 +581,14 @@ var worldObject;
 
 const SceneGraph = require('./libraries/sceneGraph/SceneGraph');
 const sceneGraph = new SceneGraph(true);
+
 const WorldGraph = require('./libraries/sceneGraph/WorldGraph');
 const worldGraph = new WorldGraph(sceneGraph);
+
+const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
+
+const HumanPoseFuser = require('./libraries/HumanPoseFuser');
+const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -622,11 +620,16 @@ var hardwareAPICallbacks = {
         engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write: function (objectID) {
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
+
+var utilitiesCallbacks = {
+    triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
+}
+utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
@@ -661,7 +664,7 @@ console.log('ready to start internal servers');
 
 hardwareAPI.reset();
 
-console.log('found ' + Object.keys(hardwareInterfaceModules).length + ' enabled hardware interfaces');
+console.log('found ' + Object.keys(hardwareInterfaceModules).join(', ') + ' enabled hardware interfaces');
 console.log('starting internal Server.');
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
@@ -700,7 +703,7 @@ function loadObjects() {
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i], objectsPath);
+        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
         console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -788,6 +791,10 @@ function loadObjects() {
         }
     }
 
+    // delete each object that represented a client that was connected to the server in its last session
+    // this needs to happen before hardwareAPI.reset, or the object will get corrupted when its nodes are parsed
+    removeAvatarAndHumanPoseFiles();
+
     hardwareAPI.reset();
 
     sceneGraph.recomputeGraph();
@@ -847,6 +854,7 @@ function loadWorldObject() {
     worldObject.port = serverPort;
     worldObject.name = worldObjectName;
     worldObject.isWorldObject = true;
+    worldObject.type = 'world';
 
     // try to read previously saved data to overwrite the default world object
     if (globalVariables.saveToDisk) {
@@ -965,7 +973,7 @@ function setAnchors() {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
+            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -981,7 +989,7 @@ function setAnchors() {
 
     // check if there is an initialized World Object
     for (let key in objects) {
-        if (objects[key].isWorldObject) {
+        if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
             let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
             let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
@@ -1014,7 +1022,7 @@ function setAnchors() {
     }
 }
 
-function removeAvatarFiles() {
+function removeAvatarAndHumanPoseFiles() {
     let objectsToDelete = [];
 
     // load all object folders
@@ -1026,15 +1034,21 @@ function removeAvatarFiles() {
         tempFiles.splice(0, 1);
     }
 
-    tempFiles.forEach(function (objectKey) {
-        if (objectKey.includes('_AVATAR_')) {
-            objectsToDelete.push(objectKey);
+    tempFiles.forEach(objectFolderName => {
+        if (objectFolderName.indexOf('_AVATAR_') === 0 || objectFolderName.indexOf('_HUMAN_') === 0) {
+            objectsToDelete.push(objectFolderName);
         }
     });
 
-    objectsToDelete.forEach(objectKey => {
-        console.log('deleting object: ' + objectKey);
-        fs.rmdirSync(path.join(objectsPath, objectKey), {recursive: true});
+    objectsToDelete.forEach(objectFolderName => {
+        let objectKey = utilities.readObject(objectLookup, objectFolderName);
+
+        if (objects[objectKey]) {
+            console.log('deleting avatar/humanPose object: ' + objectFolderName);
+            deleteObject(objectKey);
+        } else {
+            console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
+        }
     });
 }
 
@@ -1047,9 +1061,6 @@ function removeAvatarFiles() {
  **/
 
 function startSystem() {
-    // delete each object that represented a client that was connected to the server in its last session
-    removeAvatarFiles();
-
     // make sure that the system knows about the state of anchors.
     setAnchors();
 
@@ -1077,20 +1088,37 @@ function startSystem() {
     // removes socket connections to objects that are no longer linked.
     socketUpdaterInterval();
 
+    // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
+    const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
+    const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
+    staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
+
+    const humanCheckIntervalMs = 3000;
+    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
+    staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
+
     recorder.initRecorder(objects);
+
+    humanPoseFuser.start();
+
+    serverBeatSender(beatPort, false);
 }
 
 /**********************************************************************************************************************
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
 
-function exit() {
+async function exit() {
     hardwareAPI.shutdown();
-
     process.exit();
 }
 
 process.on('SIGINT', exit);
+
+process.on('exit', function() {
+    // Always, even when crashing, try to persist the recorder log
+    recorder.persistToFileSync();
+});
 
 if (process.pid) {
     console.log('Reality Server server.js process is running with PID ' + process.pid);
@@ -1100,6 +1128,47 @@ if (process.pid) {
  ******************************************** Emitter/Client/Sender ***************************************************
  **********************************************************************************************************************/
 
+// send a message on a repeated interval, advertising this server and the services it supports
+function serverBeatSender(udpPort, oneTimeOnly = true) {
+    if (isLightweightMobile) {
+        return;
+    }
+
+    const udpHost = '255.255.255.255';
+
+    services.ip = services.getIP();
+
+    const messageObj = {
+        ip: services.ip,
+        port: serverPort,
+        vn: version,
+        // zone: serverSettings.zone || '', // todo: provide zone on a per-server level
+        services: providedServices || [] // e.g. ['world'] if it can support a world object
+    };
+
+    // const message = Buffer.from(JSON.stringify(messageObj));
+
+    // creating the datagram
+    const client = dgram.createSocket('udp4');
+    client.bind(function () {
+        client.setBroadcast(true);
+        client.setTTL(timeToLive);
+        client.setMulticastTTL(timeToLive);
+    });
+
+    if (oneTimeOnly) {
+        utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: true});
+        return;
+    }
+
+    console.log('server has the following heartbeat services: ' + providedServices);
+
+    // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
+    setInterval(() => {
+        utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: false});
+    }, beatInterval + utilities.randomIntInc(-250, 250));
+}
+
 /**
  * @desc Sends out a Heartbeat broadcast via UDP in the local network.
  * @param {Number} PORT The port where to start the Beat
@@ -1108,15 +1177,12 @@ if (process.pid) {
  * @param {string} thisVersion The version of the Object
  * @param {string} thisTcs The target checksum of the Object.
  * @param {boolean} oneTimeOnly if true the beat will only be sent once.
+ * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
+function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
-    }
-
-    if (typeof oneTimeOnly === 'undefined') {
-        oneTimeOnly = false;
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
@@ -1143,7 +1209,9 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-        console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        if (objects[thisId].tcs) {
+            console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
+        }
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1155,7 +1223,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     //  console.log('with version number: ' + thisVersionNumber);
 
     // json string to be sent
-    const messageStr = JSON.stringify({
+    const messageObj = {
         id: thisId,
         ip: services.ip,
         port: serverPort,
@@ -1163,10 +1231,10 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
         pr: protocol,
         tcs: objects[thisId].tcs,
         zone: objects[thisId].zone || '',
-    });
+    };
 
     if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
-    if (globalVariables.debug) console.log('Sending beats... Content', messageStr);
+    if (globalVariables.debug) console.log('Sending beats... Content', JSON.stringify(messageObj));
 
     // creating the datagram
     var client = dgram.createSocket({
@@ -1180,7 +1248,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
     });
 
     if (!oneTimeOnly) {
-        activeHeartbeats[thisId] = setInterval(function () {
+
+        function sendBeat() {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
                 // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
@@ -1190,7 +1259,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                const message = Buffer.from(JSON.stringify({
+                const messageObj ={
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1198,25 +1267,34 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     pr: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
-                }));
+                };
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
-                    client.send(message, 0, message.length, PORT, HOST, function (err) {
-                        if (err) {
-                            console.log('You\'re not on a network. Can\'t send anything', err);
-                            //throw err;
-                            for (var key in objects) {
+                    
+                    utilities.sendWithFallback(client, PORT, HOST, messageObj, {
+                        closeAfterSending: false,
+                        onErr: (_err) => {
+                            for (let key in objects) {
                                 objects[key].ip = services.ip;
                             }
                         }
-                        // client is not being closed, as the beat is send ongoing
                     });
                 }
             }
-        }, beatInterval + utilities.randomIntInc(-250, 250));
-    } else {
+        }
+
+        // send one beat immediately and then start interval timer triggering beats
+        if (immediate) {
+            sendBeat();
+        }
+        // perturb the inverval a bit so that not all objects send the beat in the same time.
+        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
+    }
+    else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
+        let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
+
         setTimeout(function () {
             // send the beat
             if (thisId in objects && !objects[thisId].deactivated) {
@@ -1227,7 +1305,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
 
                 services.ip = services.getIP();
 
-                var message = Buffer.from(JSON.stringify({
+                let messageObj = {
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1235,16 +1313,14 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly) {
                     pr: protocol,
                     tcs: objects[thisId].tcs,
                     zone: zone
-                }));
-                client.send(message, 0, message.length, PORT, HOST, function (err) {
-                    if (err) throw err;
-                    // close the socket as the function is only called once.
-                    client.close();
-                });
+                };
+
+                utilities.sendWithFallback(client, PORT, HOST, messageObj, {closeAfterSending: true});
             }
-        }, utilities.randomIntInc(1, 250));
+        }, delay);
     }
 }
+exports.objectBeatSender = objectBeatSender;
 
 /**********************************************************************************************************************
  ******************************************** Server Objects **********************************************************
@@ -1263,13 +1339,24 @@ function handleActionMessage(action) {
         for (let key in objects) {
             objectBeatSender(beatPort, key, objects[key].ip, true);
         }
+        serverBeatSender(beatPort);
         return;
     }
+
+    // non-string actions can be processed after this point
+    action = (typeof action === 'string') ? JSON.parse(action) : action;
+
     if (action.type === 'SceneGraphEventMessage') {
         if (action.ip === services.getIP()) { // UDP also broadcasts to yourself
             return;
         }
         worldGraph.handleMessage(action);
+    }
+
+    // clients can use this to signal that the avatar objects are still being used
+    if (action.type === 'keepObjectAlive') {
+        // console.log('received keepObjectAlive for ' + action.objectKey);
+        resetObjectTimeout(action.objectKey);
     }
 }
 
@@ -1283,8 +1370,15 @@ function objectBeatServer() {
         type: 'udp4',
         reuseAddr: true,
     });
+
     udpServer.on('error', function (err) {
-        console.log('server error', err);
+        console.error('udpServer error', err);
+
+        // Permanently log so that it's clear udp support is down
+        setInterval(() => {
+            console.warn('udpServer closed due to error', err);
+        }, 5000);
+
         udpServer.close();
     });
 
@@ -1441,10 +1535,11 @@ function objectWebServer() {
         }
     });
     // define the body parser
-    webServer.use(bodyParser.urlencoded({
-        extended: true
+    webServer.use(express.urlencoded({
+        extended: true,
+        limit: '5mb',
     }));
-    webServer.use(bodyParser.json());
+    webServer.use(express.json({limit: '5mb'}));
     // define a couple of static directory routs
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
@@ -1607,7 +1702,7 @@ function objectWebServer() {
             } else {
                 try {
                     res.sendFile(filename, {
-                        root: utilities.getVideoDir(objectsPath, identityFolderName, isLightweightMobile),
+                        root: utilities.getVideoDir(identityFolderName, isLightweightMobile),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
@@ -1736,12 +1831,14 @@ function objectWebServer() {
     const objectRouter = require('./routers/object');
     const logicRouter = require('./routers/logic');
     const spatialRouter = require('./routers/spatial');
+    const historyRouter = require('./routers/history');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
     spatialRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
     webServer.use('/spatial', spatialRouter.router);
+    webServer.use('/history', historyRouter.router);
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
@@ -1960,8 +2057,12 @@ function objectWebServer() {
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
         });
-        // restart the server from the web frontend to load
 
+        // Proxies requests to toolboxedge.net, for CORS video playback
+        const toolboxEdgeProxyRequestHandler = require('./libraries/serverHelpers/toolboxEdgeProxyRequestHandler.js');
+        webServer.get('/proxy/*', toolboxEdgeProxyRequestHandler);
+
+        // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
             if (process.send) {
                 process.send('restart');
@@ -2384,7 +2485,7 @@ function objectWebServer() {
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                 res.send('ok');
             }
 
@@ -2397,7 +2498,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    utilities.createFolder(req.body.name, objectsPath, globalVariables.debug);
+                    utilities.createFolder(req.body.name, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2405,26 +2506,37 @@ function objectWebServer() {
                     let isAvatarObject = JSON.parse(req.body.isAvatar || 'false');
 
                     if (isWorldObject || isHumanObject || isAvatarObject) {
-                        let objectId = req.body.name + utilities.uuidTime();
-                        objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
-                        objects[objectId].name = req.body.name;
-                        objects[objectId].port = serverPort;
-                        objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
+                        let objectId = req.body.name;
                         let objectType = 'object';
                         if (isWorldObject) {
                             objectType = 'world';
+                            objectId += utilities.uuidTime();
                         } else if (isHumanObject) {
                             objectType = 'human';
+                            objectId += ('_' + utilities.uuidTime());
                         } else if (isAvatarObject) {
                             objectType = 'avatar';
+                            // objectId += utilities.uuidTime();
                         }
+
+                        if (isHumanObject) {
+                            // special constructor for HumanPoseObject that also creates a frame for each joint
+                            objects[objectId] = new HumanPoseObject(services.ip, version, protocol, objectId, JSON.parse(req.body.poseJointSchema));
+                        } else {
+                            objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
+                        }
+
+                        objects[objectId].name = req.body.name;
+                        objects[objectId].port = serverPort;
+                        objects[objectId].isWorldObject = isWorldObject; // backwards compatible world objects
+
                         objects[objectId].type = objectType;
 
                         if (typeof req.body.worldId !== 'undefined') {
                             objects[objectId].worldId = req.body.worldId;
                         }
 
-                        utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                        utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
                         // automatically create a tool and a node on the avatar object
@@ -2432,10 +2544,10 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, 'local');
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
-                                utilities.writeObjectToFile(objects, objectId, objectsPath, globalVariables.saveToDisk);
+                                utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
                                 // now add a publicData storage node to the tool
                                 let nodeInfo = {
@@ -2448,13 +2560,14 @@ function objectWebServer() {
                                     console.log('added node to frame... ', statusCode, responseContents);
                                 });
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objectsPath, globalVariables.debug, objects[objectId].frames[toolId].location);
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, objects[objectId].frames[toolId].location);
                             }
                         }
 
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
-                        objectBeatSender(beatPort, objectId, objects[objectId].ip);
+                        // send the first beat immediately, so that there is a fast transmission of new object to all listeners
+                        objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
 
                         var sendObject = {
                             id: objectId,
@@ -2481,20 +2594,23 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, 'local');
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objectsPath, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
 
                 res.send('ok');
             }
+
+            // deprecated route for deleting objects or frames
+            // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
 
                 var deleteFolderRecursive = function (folderDel) {
@@ -2563,7 +2679,7 @@ function objectWebServer() {
                         }
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
                     sceneGraph.removeElementAndChildren(frameNameKey);
@@ -2894,11 +3010,13 @@ function objectWebServer() {
 
                                 // create the object data and respond to the webFrontend once the XML file is confirmed to exist
                                 function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
+                                    let thisObjectId = utilities.readObject(objectLookup, req.params.id);
+
                                     if (err) {
                                         console.log(err);
                                     } else {
                                         // create the object if needed / possible
-                                        if (typeof objects[thisObjectId] === 'undefined') { // TODO: thisObjectId is always undefined?
+                                        if (typeof objects[thisObjectId] === 'undefined') {
                                             console.log('creating object from target file ' + tmpFolderFile);
                                             // createObjectFromTarget(tmpFolderFile);
                                             createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
@@ -2918,7 +3036,6 @@ function objectWebServer() {
                                     let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
 
                                     var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
-                                    var thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
@@ -2938,11 +3055,11 @@ function objectWebServer() {
                                         };
 
                                         thisObject.tcs = utilities.generateChecksums(objects, fileList);
-                                        utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                        utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                         setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
-                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id, objectsPath);
+                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId != thisObjectId) {
                                             console.log('removed old heartbeat for', oldObjectId);
                                             clearInterval(activeHeartbeats[oldObjectId]);
@@ -3105,7 +3222,7 @@ function objectWebServer() {
 
                                                 thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
-                                                utilities.writeObjectToFile(objects, thisObjectId, objectsPath, globalVariables.saveToDisk);
+                                                utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                                 setAnchors();
                                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3207,7 +3324,7 @@ function objectWebServer() {
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
-                utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             }
             res.send('ok');
         });
@@ -3239,8 +3356,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
     if (fs.existsSync(folder)) {
         console.log('folder exists');
-        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar, objectsPath);
-        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar, objectsPath);
+        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
+        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
         console.log('got ID: objectIDXML');
         if (objectIDXML && objectIDXML.length > 13) {
             objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
@@ -3250,6 +3367,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
                 objects[objectIDXML].isWorldObject = true;
+                objects[objectIDXML].type = 'world';
                 objects[objectIDXML].timestamp = Date.now();
             }
 
@@ -3288,7 +3406,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             hardwareAPI.reset();
 
             console.log('weiter im text ' + objectIDXML);
-            utilities.writeObjectToFile(objects, objectIDXML, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
 
             sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
@@ -3309,7 +3427,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     if (node) {
         for (var thisEditor in realityEditorSocketArray) {
             realityEditorSocketArray[thisEditor].forEach((thisObj) => {
-                if (objectKey === thisObj.object) {
+                if (objectKey === thisObj.object && frameKey === thisObj.frame) {
                     io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,
@@ -3323,11 +3441,74 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     }
 };
 
+/**
+ * Helper function to trigger the addReadListeners for the data of a particular node (data value, not publicData)
+ * @param {string} objectKey
+ * @param {string} frameKey
+ * @param {string} nodeKey
+ * @param {string} sessionUuid – the uuid of the client sending the message, so the sender can ignore their own message
+ */
+socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid = '0') {
+    let node = getNode(objectKey, frameKey, nodeKey);
+    if (!node) return;
+
+    for (let socketId in realityEditorSocketArray) {
+        let subscriptionInfo = realityEditorSocketArray[socketId];
+        subscriptionInfo.filter(info => {
+            return info.object === objectKey && info.frame === frameKey;
+        }).forEach(_info => {
+            io.sockets.connected[socketId].emit('object', JSON.stringify({
+                object: objectKey,
+                frame: frameKey,
+                node: nodeKey,
+                data: node.data,
+                sessionUuid: sessionUuid
+            }));
+        });
+    }
+}
+
+/**
+ * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
+ * @param {Array.<Object>} batchedUpdates
+ */
+socketHandler.sendUpdateToAllSubscribers = function (batchedUpdates) {
+    if (!batchedUpdates) { return; }
+    if (batchedUpdates.length == 0) { return; }
+    let senderId = batchedUpdates[0].editorId;
+
+    let msgContent = {};
+    msgContent.batchedUpdates = batchedUpdates;
+
+    for (const socketId in realityEditorUpdateSocketArray) {
+        realityEditorUpdateSocketArray[socketId].forEach((sub) => {
+            if (senderId === sub.editorId) {
+                //  console.log('dont send updates to the editor that triggered it');
+                return;
+            }
+
+            let thisSocket = io.sockets.connected[socketId];
+            if (thisSocket) {
+                thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+            }
+        });
+    }
+};
+
+exports.socketHandler = socketHandler;
+
 function socketServer() {
     io.on('connection', function (socket) {
-        console.log('------------ ', socket.id);
+        console.log('------------ connection', socket.id);
         socketHandler.socket = socket;
         //console.log('connected to socket ' + socket.id);
+
+        /**
+         * @type {{[objectKey: string]: bool}}
+         * tracks if we have already sent a reloadObject message in response to
+         * an unknown objectKey
+         */
+        const knownUnknownObjects = {};
 
         socket.on('/subscribe/realityEditor', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
@@ -3542,8 +3723,49 @@ function socketServer() {
                 }
             }
             hardwareAPI.readPublicDataCall(msg.object, msg.frame, msg.node, thisPublicData);
-            if (objects[msg.object] && objects[msg.object].type !== 'avatar') {
-                utilities.writeObjectToFile(objects, msg.object, objectsPath, globalVariables.saveToDisk);
+
+            var object = getObject(msg.object);
+            if (object) {
+                // frequently updated objects like avatar and human pose are excluded from writing to file
+                if (object.type !== 'avatar' && object.type !== 'human') {
+                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                }
+
+                // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
+                if (object.type == 'human' && msg.publicData['whole_pose']) {
+                    // TODO: clear additional framedata from the message which are not needed on other clients, so they are not transmitted by sendPublicDataToAllSubscribers below
+
+                    // unpack public data with the whole pose to the human pose object
+                    if (typeof msg.publicData['whole_pose'].joints !== 'undefined' &&
+                        typeof msg.publicData['whole_pose'].timestamp !== 'undefined') {
+
+                        // add poses to huamn pose fusion (including empty poses when body tracking failed)
+                        humanPoseFuser.addPoseData(object.objectId, msg.publicData['whole_pose']);
+
+                        // if no pose is detected (empty joints array), don't update the object (even its update timestamp)
+                        if (msg.publicData['whole_pose'].joints.length > 0) {
+                            object.updateJoints(msg.publicData['whole_pose'].joints);
+                            object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
+                            //console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
+                            // keep the object alive
+                            resetObjectTimeout(msg.object);
+                        }
+                    }
+                }
+            } else {
+                console.warn('publicData update of unknown object', msg);
+                const objectKey = msg.object;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
+                }
             }
 
             // msg.sessionUuid isused to exclude sending public data to the session that sent it
@@ -3584,8 +3806,8 @@ function socketServer() {
         });
 
         socket.on('/object/screenObject', function (_msg) {
-            var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
-            hardwareAPI.screenObjectCall(JSON.parse(msg));
+            let msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
+            hardwareAPI.screenObjectCall(msg);
         });
 
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
@@ -3604,8 +3826,75 @@ function socketServer() {
             }
         });
 
+        /**
+         * Applies update to object based on the property path and new value found within
+         * @param {any} obj
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyPropertyUpdate(obj, update) {
+            let keys = update.propertyPath.split('.');
+            let target = obj;
+            for (let key of keys.slice(0, -1)) {
+                if (!obj.hasOwnProperty(key)) {
+                    obj[key] = {};
+                }
+                target = obj[key];
+            }
+            target[keys[keys.length - 1]] = update.newValue;
+        }
+
+        /**
+         * Alters objects based on the change described by `update`
+         * @param {{objectKey: string, frameKey: string?, nodeKey: string?, propertyPath: string, newValue: any}} update
+         */
+        function applyUpdate(update) {
+            if (!update.objectKey) {
+                console.error('malformed update', update);
+                return;
+            }
+            let obj = objects[update.objectKey];
+            if (!obj) {
+                console.warn('update of unknown object', update);
+                const objectKey = update.objectKey;
+                if (!knownUnknownObjects[objectKey]) {
+                    knownUnknownObjects[objectKey] = true;
+                    utilities.actionSender({
+                        reloadObject: {
+                            object: objectKey,
+                        },
+                    });
+                    setTimeout(() => {
+                        delete knownUnknownObjects[objectKey];
+                    }, 2000);
+                }
+                return;
+            }
+            if (!update.frameKey) {
+                applyPropertyUpdate(obj, update);
+                return;
+            }
+            let frame = obj.frames[update.frameKey];
+            if (!frame) {
+                console.warn('update of unknown object frame', update);
+                return;
+            }
+            if (!update.nodeKey) {
+                applyPropertyUpdate(frame, update);
+                return;
+            }
+            let node = frame.nodes[update.nodeKey];
+            if (!node) {
+                console.warn('update of unknown object frame node', update);
+                return;
+            }
+            applyPropertyUpdate(node, update);
+
+            // recorder.update();
+        }
+
         socket.on('/update', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            applyUpdate(msgContent);
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -3632,6 +3921,12 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
+            let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
+
+            for (let update of batchedUpdates) {
+                resetObjectTimeout(update.objectKey);
+                applyUpdate(update);
+            }
 
             for (const socketId in realityEditorUpdateSocketArray) {
                 const subList = realityEditorUpdateSocketArray[socketId];
@@ -3644,6 +3939,10 @@ function socketServer() {
                         //  console.log('dont send updates to the editor that triggered it');
                         return;
                     }
+                    if (senderId && senderId === sub.editorId) {
+                        return; // properly retrieve the editorId from one of the batchedUpdates in case the overall message doesn't have it
+                    }
+
                     var thisSocket = io.sockets.connected[socketId];
                     if (thisSocket) {
                         thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
@@ -3793,99 +4092,6 @@ function socketServer() {
             }
         });
 
-        // create or update the position of a HumanPoseObject
-        socket.on('/update/humanPoses', function (msg) {
-            if (!globalVariables.listenForHumanPose) {
-                return;
-            }
-            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            if (!msgContent) {
-                return;
-            }
-
-            // if no poses changed this frame, don't clog the network with sending the same information
-            var didAnythingChange = false;
-            forEachHumanPoseObject(function (objectKey, thisObject) {
-                thisObject.wasUpdated = false;
-            });
-
-            msgContent.forEach(function (poseInfo) {
-                var objectId = HumanPoseObject.getObjectId(poseInfo.id);
-                var thisObject = objects[objectId];
-                if (!doesObjectExist(objectId)) {
-                    // create an object if needed
-                    const ip = services.ip;
-                    objects[objectId] = new HumanPoseObject(ip, version, protocol, poseInfo.id);
-                    thisObject = objects[objectId];
-                    // advertise to editors
-                    objectBeatSender(beatPort, objectId, thisObject.ip, true);
-                    // currently doesn't writeObjectToFile, because I've found no need for human objects to persist
-                }
-                // update the position of each frame based on the poseInfo
-                thisObject.updateJointPositions(poseInfo.joints);
-                thisObject.wasUpdated = true; // flags objects to be deleted if they are not updated
-                didAnythingChange = true;
-            });
-
-            // check if any Human Objects were not contained in msgContent, and delete them
-            forEachHumanPoseObject(function (objectKey, thisObject) {
-                if (!thisObject.wasUpdated) {
-                    console.log('delete human pose object', objectKey);
-                    didAnythingChange = true;
-                    try {
-                        objects[objectKey].deconstruct();
-                    } catch (e) {
-                        console.warn('(Human) Object exists without proper prototype: ' + objectKey, e);
-                    }
-                    delete objects[objectKey];
-                    // todo: delete folder recursive if necessary?
-                    // ^ might not actually be needed, why would human object need to persist?
-                }
-            });
-
-            if (!didAnythingChange) {
-                return;
-            }
-
-            // send updated objects / positions to all known editors. right now piggybacks on sockets opened for other realtime communications.
-            for (var socketId in realityEditorObjectMatrixSocketArray) {
-                var thisSocket = io.sockets.connected[socketId];
-                if (thisSocket) {
-                    // sends an array of objectIds for the visible poses in this timestep
-                    var visibleHumanPoseObjects = Object.keys(objects).filter(function (objectKey) {
-                        return objects[objectKey].isHumanPose;
-                    });
-                    var updateResponse = {
-                        visibleHumanPoseObjects: visibleHumanPoseObjects
-                    };
-                    // also sends all object JSON data for each visible pose object
-                    var objectData = {};
-                    visibleHumanPoseObjects.forEach(function (objectKey) {
-                        objectData[objectKey] = objects[objectKey];
-                    });
-                    updateResponse.objectData = objectData;
-
-                    // TODO: we should only need to send object matrix, and each frame.ar (x,y,matrix) for each pose object
-                    // this doesn't work right now because we also need the full JSON to instantly create the object on the client for a newly detected pose
-                    // but there might be a way in the future to only send full data for objects that are newly detected
-                    // to reduce the bandwidth used by constantly sending object/frame/pose information to all clients
-                    // var compressedObjectData = {};
-                    // visibleHumanPoseObjects.forEach(function(objectKey) {
-                    //     compressedObjectData[objectKey] = {
-                    //         ip: objects[objectKey].ip
-                    //         matrix: objects[objectKey].matrix
-                    //     };
-                    //     for (var frameKey in objects[objectKey].frames) {
-                    //         compressedObjectData[frameKey] = objects[objectKey].frames[frameKey].ar;
-                    //     }
-                    // });
-                    // updateResponse.compressedObjectData = compressedObjectData;
-
-                    thisSocket.emit('/update/humanPoses', JSON.stringify(updateResponse));
-                }
-            }
-        });
-
         socket.on('node/setup', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (!msgContent) {
@@ -3935,6 +4141,37 @@ function socketServer() {
             }
         });
 
+        /**
+         * Handles messages from local remote operators who don't have access
+         * to sending actions through the cloud proxy or native udp broadcast
+         */
+        socket.on('udp/action', function(msgRaw) {
+            let msg;
+            try {
+                msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+            } catch (_) {
+                // parse failed
+            }
+            if (!msg || !msg.action) {
+                return;
+            }
+
+            handleActionMessage(msg.action);
+        });
+
+        socket.on('/disconnectEditor', function(msgRaw) {
+            let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
+            console.log('received /disconnectEditor with editorId: ' + msg.editorId);
+
+            console.log('delete avatar objects associated with ' + msg.editorId);
+            let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
+            deleteObjects(avatarKeys);
+
+            console.log('delete human pose objects associated with ' + msg.editorId);
+            let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(msg.editorId));
+            deleteObjects(humanPoseKeys);
+        });
+
         socket.on('disconnect', function () {
 
             if (socket.id in realityEditorSocketArray) {
@@ -3944,7 +4181,7 @@ function socketServer() {
 
             if (socket.id in realityEditorBlockSocketArray) {
                 realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    utilities.writeObjectToFile(objects, thisObj.object, objectsPath, globalVariables.saveToDisk);
+                    utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
                 });
                 delete realityEditorBlockSocketArray[socket.id];
@@ -3956,25 +4193,16 @@ function socketServer() {
             }
 
             if (socket.id in realityEditorUpdateSocketArray) {
-                let matchingAvatarKeys = [];
+
+                let keysToDelete = [];
                 realityEditorUpdateSocketArray[socket.id].forEach(entry => {
-                    let matchingKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
-                    matchingAvatarKeys.push(matchingKeys);
+                    let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
+                    let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(entry.editorId));
+                    keysToDelete.push(avatarKeys);
+                    keysToDelete.push(humanPoseKeys);
                 });
 
-                console.log('delete avatar objects: ', matchingAvatarKeys.flat());
-                matchingAvatarKeys.flat().forEach(avatarObjectKey => {
-                    if (objects[avatarObjectKey]) {
-                        utilities.deleteObject(objects[avatarObjectKey].name, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
-                    } else {
-                        // try to clean up any other state that might be remaining
-                        clearInterval(activeHeartbeats[avatarObjectKey]);
-                        delete activeHeartbeats[avatarObjectKey];
-                        delete knownObjects[avatarObjectKey];
-                        delete objectLookup[avatarObjectKey];
-                        sceneGraph.removeElementAndChildren(avatarObjectKey);
-                    }
-                });
+                deleteObjects(keysToDelete.flat());
 
                 delete realityEditorUpdateSocketArray[socket.id];
             }
@@ -3986,6 +4214,31 @@ function socketServer() {
     });
     this.io = io;
     console.log('socket.io started');
+}
+
+function deleteObjects(objectKeysToDelete) {
+    objectKeysToDelete.forEach(objectKey => {
+        deleteObject(objectKey);
+    });
+}
+
+function deleteObject(objectKey) {
+    if (objects[objectKey]) {
+        utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+    }
+    // try to clean up any other state that might be remaining
+
+    if (objectKey.includes('_HUMAN_')) {
+        humanPoseFuser.removeHumanObject(objectKey);
+    }
+    if (activeHeartbeats[objectKey]) {
+        clearInterval(activeHeartbeats[objectKey]);
+        delete activeHeartbeats[objectKey];
+    }
+    delete knownObjects[objectKey];
+    delete objectLookup[objectKey];
+    delete objects[objectKey];
+    sceneGraph.removeElementAndChildren(objectKey);
 }
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
@@ -4475,7 +4728,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 

@@ -12,6 +12,36 @@ var objectsPath;
 var identityFolderName;
 var git;
 var sceneGraph;
+// needed for deleteObject
+let objectLookup;
+let activeHeartbeats;
+let knownObjects;
+let setAnchors;
+
+const deleteObject = function(objectID) {
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        return {
+            status: 404,
+            error: `Object ${objectID} not found`
+        };
+    }
+
+    try {
+        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+    } catch (e) {
+        return {
+            status: 500,
+            error: `Error deleting object ${objectID}`
+        };
+    }
+
+    return {
+        status: 200,
+        success: true,
+        message: `Deleted object ${objectID}`
+    };
+};
 
 const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
@@ -20,7 +50,7 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(objectsPath, identityFolderName, globalVariables.isMobile, object.name);
+        var videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -159,7 +189,7 @@ const setMatrix = function(objectID, body, callback) {
     }
 
     if (object.type !== 'avatar') {
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 
     sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
@@ -217,7 +247,7 @@ const memoryUpload = function(objectID, req, callback) {
             obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
             obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
 
@@ -230,7 +260,7 @@ const memoryUpload = function(objectID, req, callback) {
 const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.deactivateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -241,7 +271,7 @@ const deactivate = function(objectID, callback) {
 const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.activateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -256,7 +286,7 @@ const setVisualization = function(objectID, vis, callback) {
     }
     try {
         object.visualization = vis;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         callback(200, 'ok');
     } catch (e) {
         callback(500, {success: false, error: e.message});
@@ -329,7 +359,7 @@ const generateXml = function(objectID, body, callback) {
             if (object) {
                 object.targetSize.width = parseFloat(msgObject.width);
                 object.targetSize.height = parseFloat(msgObject.height);
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             }
         }
     });
@@ -370,7 +400,8 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_,
+    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -378,9 +409,14 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     identityFolderName = identityFolderName_;
     git = git_;
     sceneGraph = sceneGraph_;
+    objectLookup = objectLookup_;
+    activeHeartbeats = activeHeartbeats_;
+    knownObjects = knownObjects_;
+    setAnchors = setAnchors_;
 };
 
 module.exports = {
+    deleteObject: deleteObject,
     uploadVideo: uploadVideo,
     uploadMediaFile: uploadMediaFile,
     saveCommit: saveCommit,

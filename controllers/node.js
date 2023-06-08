@@ -1,10 +1,10 @@
 const utilities = require('../libraries/utilities');
 const Node = require('../models/Node');
+const server = require('../server');
 
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
-var objectsPath;
 var sceneGraph;
 
 /**
@@ -12,56 +12,54 @@ var sceneGraph;
  * @param {string} objectKey
  * @param {string} frameKey
  * @param {string} nodeKey
- * @param {*} req
- * @param {*} res
- * @todo don't pass in req and res, instead callback that triggers status code / err / res
+ * @param {Object} body
+ * @param {function} callback
  */
 const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
-    var errorMessage = null;
-
-    var foundObject = utilities.getObject(objects, objectKey);
-    let nodeBody = null;
-    if (foundObject) {
-        var foundFrame = utilities.getFrame(objects, objectKey, frameKey);
-        if (foundFrame) {
-            let node = new Node(body.name, body.type, objectKey, frameKey, nodeKey);
-
-            // copy over any additionally-defined properties (node position)
-            if (typeof body.x !== 'undefined') {
-                node.x = body.x;
-            }
-            if (typeof body.y !== 'undefined') {
-                node.y = body.y;
-            }
-            if (typeof body.scale !== 'undefined') {
-                node.scale = body.scale;
-            }
-            if (typeof body.matrix !== 'undefined') {
-                node.matrix = body.matrix;
-            }
-
-            foundFrame.nodes[nodeKey] = node;
-            nodeBody = node;
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
-            utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
-            sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
-
-        } else {
-            errorMessage = 'Object ' + objectKey + ' frame ' + frameKey + ' not found';
-        }
-    } else {
-        errorMessage = 'Object ' + objectKey + ' not found';
+    let object = utilities.getObject(objects, objectKey);
+    if (!object) {
+        callback(404, {failure: true, error: `Object ${objectKey} not found.` });
+        return;
     }
 
-    if (errorMessage) {
-        callback(404, {failure: true, error: errorMessage});
-    } else {
-        let response = {success: 'true'};
-        if (nodeBody) {
-            response.node = JSON.stringify(nodeBody);
-        }
-        callback(200, response);
+    let frame = utilities.getFrame(objects, objectKey, frameKey);
+    if (!frame) {
+        callback(404, {failure: true, error: `Frame ${frameKey} not found.`});
+        return;
     }
+
+    if (frame.nodes[nodeKey]) {
+        console.warn('trying to create a node multiple times');
+        callback(500, {failure: true, error: `Trying to create a node that already exists; skipping.`});
+        return;
+    }
+
+    let node = new Node(body.name, body.type, objectKey, frameKey, nodeKey);
+
+    // copy over any additionally-defined properties (x, y, scale, matrix, data, etc.)
+    for (let key in body) {
+        if (node.hasOwnProperty(key)) {
+            node[key] = body[key];
+            // console.log(`addNodeToFrame copied over value ${key}=${body[key]}`);
+        }
+    }
+
+    frame.nodes[nodeKey] = node;
+    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+    utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
+    sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
+
+    // send default value to all iframes subscribing to this node, in case they finished loading before node was added
+    if (server.socketHandler && typeof server.socketHandler.sendDataToAllSubscribers === 'function') {
+        server.socketHandler.sendDataToAllSubscribers(objectKey, frameKey, nodeKey);
+    }
+
+    let response = {
+        success: 'true',
+        node: node
+    };
+
+    callback(200, response);
 };
 
 /**
@@ -88,7 +86,7 @@ const addNodeLock = function (objectKey, frameKey, nodeKey, body) {
             foundNode.lockPassword = newLockPassword;
             foundNode.lockType = newLockType;
 
-            utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'added';
@@ -120,7 +118,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
             foundNode.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'deleted';
@@ -198,7 +196,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,
@@ -223,7 +221,6 @@ const getNode = function (objectID, frameID, nodeID) {
 const setup = function (objects_, globalVariables_, objectsPath_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
-    objectsPath = objectsPath_;
     sceneGraph = sceneGraph_;
 };
 
