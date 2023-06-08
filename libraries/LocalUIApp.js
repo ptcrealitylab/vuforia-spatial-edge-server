@@ -2,6 +2,7 @@ const cors = require('cors');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const toolboxEdgeProxyRequestHandler = require('./serverHelpers/toolboxEdgeProxyRequestHandler.js');
 
 const contentScriptDir = 'content_scripts';
 const contentStyleDir = 'content_styles';
@@ -62,6 +63,7 @@ class LocalUIApp {
             }
             res.status(403).send('access prohibited to non-script non-style file');
         });
+        this.app.get('/proxy/*', toolboxEdgeProxyRequestHandler);
         if (this.userinterfacePath && fs.existsSync(this.userinterfacePath)) {
             this.app.use(express.static(this.userinterfacePath));
         } else {

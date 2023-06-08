@@ -6,7 +6,6 @@ var objects = {};
 var blockModules;
 var globalVariables;
 var engine;
-var objectsPath;
 
 /**
  * Adds a new block with the provided blockID to the specified node.
@@ -66,7 +65,7 @@ const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: body.lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         console.log('added block: ' + blockID);
         updateStatus = 'added';
@@ -107,7 +106,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
             reloadNode: {object: objectID, frame: nodeID, node: nodeID},
             lastEditor: lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
     }
     return updateStatus;
@@ -138,7 +137,7 @@ const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
                 foundBlock.x = body.x;
                 foundBlock.y = body.y;
 
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                 utilities.actionSender({
                     reloadNode: {object: objectID, frame: frameID, node: nodeID},
                     lastEditor: body.lastEditor
@@ -216,7 +215,6 @@ const setup = function (objects_, blockModules_, globalVariables_, engine_, obje
     blockModules = blockModules_;
     globalVariables = globalVariables_;
     engine = engine_;
-    objectsPath = objectsPath_;
 };
 
 module.exports = {

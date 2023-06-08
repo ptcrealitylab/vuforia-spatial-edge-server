@@ -126,7 +126,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     tempFiles.forEach(function(objectKey) {
 
         var thisObjectKey = objectKey;
-        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
+        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         }

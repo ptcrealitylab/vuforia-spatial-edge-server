@@ -1,7 +1,10 @@
 const debugGlWorker = false;
-const GLPROXY_ENABLE_EXTVAO = false;
+const GLPROXY_ENABLE_EXTVAO = true;
 
-let gl = {};
+let gl = {
+    enableWebGL2: true,
+};
+
 let id = Math.random();
 let proxies = [];
 const wantsResponse = false;
@@ -77,27 +80,29 @@ function makeStub(functionName) {
             }
         }
 
-        if (functionName === 'texImage2D') {
-            let elt = args[args.length - 1];
-            if (elt.tagName === 'IMG') {
-                let width = elt.width;
-                let height = elt.height;
-                let canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                let gfx = canvas.getContext('2d');
-                gfx.width = width;
-                gfx.height = height;
-                gfx.drawImage(elt, 0, 0, width, height);
-                let imageData = gfx.getImageData(0, 0, width, height);
-                args[args.length - 1] = imageData;
-            } else if (elt.tagName === 'CANVAS' ||
-                 (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
-                let width = elt.width;
-                let height = elt.height;
-                let gfx = elt.getContext('2d');
-                let imageData = gfx.getImageData(0, 0, width, height);
-                args[args.length - 1] = imageData;
+        if (functionName === 'texImage2D' || functionName === 'texSubImage2D') {
+            for (let i = 0; i < args.length; i++) {
+                let elt = args[i];
+                if (elt.tagName === 'IMG') {
+                    let width = elt.width;
+                    let height = elt.height;
+                    let canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    let gfx = canvas.getContext('2d');
+                    gfx.width = width;
+                    gfx.height = height;
+                    gfx.drawImage(elt, 0, 0, width, height);
+                    let imageData = gfx.getImageData(0, 0, width, height);
+                    args[i] = imageData;
+                } else if (elt.tagName === 'CANVAS' ||
+                     (typeof OffscreenCanvas !== 'undefined' && elt instanceof OffscreenCanvas)) {
+                    let width = elt.width;
+                    let height = elt.height;
+                    let gfx = elt.getContext('2d');
+                    let imageData = gfx.getImageData(0, 0, width, height);
+                    args[i] = imageData;
+                }
             }
         }
 
@@ -105,23 +110,33 @@ function makeStub(functionName) {
             const ext = arguments[0];
 
             if (ext === 'OES_vertex_array_object') {
-                const prefix = 'extVao-';
-                if (!GLPROXY_ENABLE_EXTVAO) {
-                    return null;
-                }
+                if (realGl.getParameter(realGl.VERSION).includes('WebGL 1.0')) {
+                    const prefix = 'extVao-';
 
-                if (realGl) {
-                    extVao = realGl.getExtension(ext);
+                    if (!GLPROXY_ENABLE_EXTVAO) {
+                        return null;
+                    }
+
+                    if (realGl) {
+                        extVao = realGl.getExtension(ext);
+                    }
+                    // Mock the real VAO extension so that method calls on it get
+                    // proxied and sent through the glproxy with the prefix
+                    // 'extVao-'
+                    return {
+                        createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
+                        deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
+                        isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
+                        bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
+                    };
+                } else {
+                    return {
+                        createVertexArrayOES: makeStub('createVertexArray'),
+                        deleteVertexArrayOES: makeStub('deleteVertexArray'),
+                        isVertexArrayOES: makeStub('isVertexArray'),
+                        bindVertexArrayOES: makeStub('bindVertexArray'),
+                    };
                 }
-                // Mock the real VAO extension so that method calls on it get
-                // proxied and sent through the glproxy with the prefix
-                // 'extVao-'
-                return {
-                    createVertexArrayOES: makeStub(prefix + 'createVertexArrayOES'),
-                    deleteVertexArrayOES: makeStub(prefix + 'deleteVertexArrayOES'),
-                    isVertexArrayOES: makeStub(prefix + 'isVertexArrayOES'),
-                    bindVertexArrayOES: makeStub(prefix + 'bindVertexArrayOES'),
-                };
             }
         }
 
@@ -156,6 +171,21 @@ function makeStub(functionName) {
             } else {
                 res = realGl[functionName].apply(realGl, unclonedArgs);
             }
+
+            if (functionName === 'compileShader') {
+                const message = realGl.getShaderInfoLog(unclonedArgs[0]);
+                if (message.length > 0) {
+                    console.error('Shader error', realGl, message);
+                }
+            }
+
+            if (functionName === 'linkProgram') {
+                const message = realGl.getProgramInfoLog(unclonedArgs[0]);
+                if (message.length > 0) {
+                    console.error('Program error', realGl, message);
+                }
+            }
+
 
             if (typeof res === 'object' && res !== null) {
                 let proxy = new Proxy({
@@ -206,19 +236,14 @@ window.addEventListener('message', function(event) {
     }
 
     if (message.name === 'bootstrap') {
+        if (gl.enableWebGL2) {
+            gl = Object.create(WebGL2RenderingContext.prototype);
+        } else {
+            gl = Object.create(WebGLRenderingContext.prototype);
+        }
         for (const fnName of message.functions) {
             gl[fnName] = makeStub(fnName);
         }
-
-        gl = new Proxy(gl, {
-            get: function(obj, prop) {
-                // TODO dynamically stub
-                // if (typeof obj[prop] === 'function') {
-                // }
-                return obj[prop];
-            },
-        });
-
 
         for (const constName in message.constants) {
             gl[constName] = message.constants[constName];
@@ -260,11 +285,15 @@ window.addEventListener('message', function(event) {
 
         frameCommandBuffer = [];
 
-        if (render) {
-            render(message.time);
-        }
-        if (window.glProxy.render) {
-            window.glProxy.render(message.time);
+        try {
+            if (render) {
+                render(message.time);
+            }
+            if (window.glProxy.render) {
+                window.glProxy.render(message.time);
+            }
+        } catch (err) {
+            console.error('Error in gl-worker render fn', err);
         }
 
         if (frameCommandBuffer.length > 0) {
@@ -362,21 +391,14 @@ class ThreejsInterface {
 
     main({width, height}) {
         this.spatialInterface.changeFrameSize(width, height);
-        if (THREE.WebGL1Renderer) {
-            this.realRenderer = new THREE.WebGL1Renderer({alpha: true});
-        } else {
-            this.realRenderer = new THREE.WebGLRenderer({alpha: true});
-        }
+        this.canvas = document.createElement('canvas');
+        realGl = this.canvas.getContext('webgl2');
+        this.realRenderer = new THREE.WebGLRenderer({context: realGl, alpha: true});
         this.realRenderer.debug.checkShaderErrors = false;
         this.realRenderer.setPixelRatio(window.devicePixelRatio);
         this.realRenderer.setSize(width, height);
-        realGl = this.realRenderer.getContext();
 
-        if (THREE.WebGL1Renderer) {
-            this.renderer = new THREE.WebGL1Renderer({context: gl, alpha: true});
-        } else {
-            this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
-        }
+        this.renderer = new THREE.WebGLRenderer({context: gl, alpha: true});
         this.renderer.debug.checkShaderErrors = false;
         this.renderer.setSize(width, height);
 
@@ -392,7 +414,15 @@ class ThreejsInterface {
         this.lastProjectionMatrix = projectionMatrix;
     }
 
-    render(now) {
+    getRealGl() {
+        return realGl;
+    }
+
+    getGl() {
+        return gl;
+    }
+
+    preRender(now) {
         if (!this.camera) {
             console.warn('rendering too early');
             return;
@@ -410,11 +440,15 @@ class ThreejsInterface {
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
+    }
+
+    render(now) {
+        this.preRender(now);
 
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
                 this.renderer.render(this.scene, this.camera);
-                if (this.done && this.realGl && this.pendingLoads === 0) {
+                if (this.done && realGl && this.pendingLoads === 0) {
                     for (let proxy of proxies) {
                         proxy.__uncloneableObj = null;
                         delete proxy.__uncloneableObj;
@@ -423,8 +457,6 @@ class ThreejsInterface {
                     proxies = [];
                     this.realRenderer.dispose();
                     this.realRenderer.forceContextLoss();
-                    this.realRenderer.context = null;
-                    this.realRenderer.domElement = null;
                     this.realRenderer = null;
                     // eslint-disable-next-line no-global-assign
                     realGl = null;
@@ -449,5 +481,29 @@ class ThreejsInterface {
             array[2], array[6], array[10], array[14],
             array[3], array[7], array[11], array[15]
         );
+    }
+}
+
+// eslint-disable-next-line no-unused-vars
+class ThreejsFakeProxyInterface extends ThreejsInterface {
+    constructor(spatialInterface, injectThree) {
+        super(spatialInterface, injectThree);
+    }
+
+    main({width, height}) {
+        super.main({width, height});
+        this.canvas.width = width;
+        this.canvas.height = height;
+        document.body.appendChild(this.canvas);
+    }
+
+    render(now) {
+        this.preRender(now);
+
+        if (this.isProjectionMatrixSet) {
+            if (this.realRenderer && this.scene && this.camera) {
+                this.realRenderer.render(this.scene, this.camera);
+            }
+        }
     }
 }
