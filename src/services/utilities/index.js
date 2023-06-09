@@ -1,58 +1,70 @@
+// Classes
 let FileAccess = require('./fileAccess.js');
 let MemoryAccess = require('./memoryAccess.js');
 let Network = require('./network.js');
 let CoreUtilities = require('./utilities.js');
 let NodeUtilities = require('./nodeUtilities.js');
+let Modules = require('./modules.js');
+
+// Modules
+const ObjectModel = require('../../models/ObjectModel');
+
+// Libraries
+let fs = require('fs');
+let xml2js = require('xml2js');
+let ip = require('ip');
+let path = require('path');
+let os = require('os');
+
+// Environment 
+let root = require('../../../getAppRootFolder');
+let config = require('../../../config.js')
 
 class Utilities extends CoreUtilities {
     /**
      * Utilities
      * @param {object} dependencies
      * @param {object} dependencies.objects
-     * @param {object} dependencies.fs
-     * @param {object} dependencies.xml2js
-     * @param {object} dependencies.ip
      * @param {function} dependencies.ObjectModel
-     * @param {object} dependencies.path
      * @param {object} dependencies.knownObjects
-     * @param {function} dependencies.nodeFetch
-     * @param {object} dependencies.os
-     * @param {object} dependencies.dgram
-     * @param {function} dependencies.request
      * @param {object} dependencies.root const root = require('../getAppRootFolder');
+     * @param {object} dependencies.config configuration file in root server folder;
      **/
-    constructor(dependencies) {
+    constructor() {
         super({
-            fs: dependencies.fs
+            fs: fs
         });
         this.fileAccess = new FileAccess({
-            fs: dependencies.fs,
-            xml2js: dependencies.xml2js,
-            ip: dependencies.ip,
-            ObjectModel: dependencies.ObjectModel,
-            path: dependencies.path,
-            os: dependencies.os,
-            root: dependencies.root
+            fs: fs,
+            xml2js: xml2js,
+            ip: ip,
+            ObjectModel: ObjectModel,
+            path: path,
+            os: os,
+            root: root,
+            config: config
         });
         this.memoryAccess = new MemoryAccess({
-            fs: dependencies.fs,
-            path: dependencies.path,
+            fs: fs,
+            path: path,
+            fileAccess: this.fileAccess,
             network: this.network
         });
-        this.network = new Network({
+       /* this.network = new Network({
             knownObjects: dependencies.knownObjects,
             nodeFetch: dependencies.nodeFetch,
             dgram: dependencies.dgram,
             request: dependencies.request
-        });
+        });*/
         this.nodeUtilities = new NodeUtilities({
             deepCopy: this.deepCopy,
             uuidTime: this.uuidTime,
-            objects: dependencies.objects,
+            objects: null,
             fileAccess: this.fileAccess,
             memoryAccess: this.memoryAccess,
             network: this.network
         });
+        this.modules = new Modules();
     }
 }
 

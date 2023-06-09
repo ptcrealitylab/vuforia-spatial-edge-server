@@ -4,6 +4,8 @@ const path = require('path');
 const root = require('../getAppRootFolder');
 
 var utilities = require('./utilities');
+let server = require('../src/index').server;
+
 var identityFile = '/.identity/object.json';
 
 const {objectsPath} = require('../config.js');
@@ -18,7 +20,7 @@ function saveCommit(object, objects, callback) {
         object.framesHistory = JSON.parse(JSON.stringify(object.frames));
 
         // todo; replace with a try-catch ?
-        utilities.writeObjectToFile(objects, object.objectId, true);
+        server.services.utility.fileAccess.writeObjectToFile(objects, object.objectId, true);
 
         git.checkIsRepo(function (err) {
             if (err) {
@@ -50,7 +52,7 @@ function resetToLastCommit(object, objects, callback) {
                 if (err) {
                     console.warn('Error resetting to last commit', err);
                 }
-                utilities.updateObject(objectFolderName, objects);
+                server.services.utility.fileAccess.updateObject(objectFolderName, objects);
                 utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                 callback();
             });

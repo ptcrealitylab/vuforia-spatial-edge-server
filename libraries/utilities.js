@@ -53,7 +53,6 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
-
 const xml2js = require('xml2js');
 const fs = require('fs');
 const ip = require('ip');       // get the device IP address library
@@ -63,6 +62,8 @@ const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
 const {objectsPath} = require('../config.js');
+
+
 
 const hardwareInterfaces = {};
 
@@ -97,7 +98,7 @@ exports.readObject = function readObject(objectLookup, folder) {
         return null;
     }
 };
-
+/*
 exports.createFolder = function createFolder(folderVar, debug) {
 
     var folder = objectsPath + '/' + folderVar + '/';
@@ -138,9 +139,9 @@ exports.createFolder = function createFolder(folderVar, debug) {
         //  writeObjectToFile(tempFolderName);
     }
      **/
-};
+//};
 
-
+/*
 exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
@@ -185,11 +186,13 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
         //  writeObjectToFile(tempFolderName);
     }
 };
-
+*/
 /**
  * Recursively delete a folder and its contents
  * @param {string} folder - path to folder
  */
+
+/*
 function deleteFolderRecursive(folder) {
     if (fs.existsSync(folder)) {
         fs.readdirSync(folder).forEach(function (file) {
@@ -204,12 +207,13 @@ function deleteFolderRecursive(folder) {
     }
 }
 exports.deleteFolderRecursive = deleteFolderRecursive;
-
+*/
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
  * @param objectKey
  * @param frameKey
  */
+/*
 exports.deleteFrameFolder = function (objectName, frameName) {
     console.log('objectName', objectName);
     console.log('frameName', frameName);
@@ -230,7 +234,7 @@ exports.deleteFrameFolder = function (objectName, frameName) {
         deleteFolderRecursive(folderPath);
     }
 };
-
+*/
 /**
  * Generates a random number between the two inputs, inclusive.
  * @param {number} min - The minimum possible value.
@@ -250,7 +254,7 @@ exports.uuidTime = function () {
     while (stampUuidTime.length < 11) stampUuidTime = abcUuidTime.charAt(Math.floor(Math.random() * abcUuidTime.length)) + stampUuidTime;
     return '_' + stampUuidTime;
 };
-
+/*
 function getObjectIdFromTargetOrObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
@@ -295,7 +299,8 @@ function getObjectIdFromTargetOrObjectFile(folderName) {
     }
 }
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
-
+*/
+/*
 function getAnchorIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
@@ -316,12 +321,13 @@ function getAnchorIdFromObjectFile(folderName) {
     }
 }
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
-
+*/
 /**
  *
  * @param {string} folderName
  * @return {Array.<float>}
  */
+/*
 exports.getTargetSizeFromTarget = function getTargetSizeFromTarget(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
@@ -357,7 +363,7 @@ exports.getTargetSizeFromTarget = function getTargetSizeFromTarget(folderName) {
 
     return resultXML;
 };
-
+*/
 
 let writeBufferList = {};
 let isWriting = false;
@@ -369,6 +375,7 @@ let isWriting = false;
  * @param {string}   object    - The key used to look up the object in the objects array
  * @param {boolean}   writeToFile  - Give permission to write to file.
  */
+/*
 exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToFile) {
     if (writeToFile) {
         writeBufferList[object] = objectsPath;
@@ -376,6 +383,8 @@ exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToF
     // trigger write process
     executeWrite(objects);
 };
+
+ */
 
 function executeWrite(objects) {
     // console.log('execute write');
@@ -537,7 +546,7 @@ exports.generateChecksums = function generateChecksums(objects, fileArray) {
     return checksumText;
 };
 
-
+/*
 exports.updateObject = function updateObject(objectName, objects) {
     console.log('update ', objectName);
 
@@ -623,6 +632,7 @@ exports.updateObject = function updateObject(objectName, objects) {
     }
     return null;
 };
+*/
 
 exports.deleteObject = function deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     console.log('Deleting object: ' + objectName);
@@ -660,6 +670,7 @@ exports.deleteObject = function deleteObject(objectName, objects, objectLookup, 
     this.actionSender({reloadObject: {object: objectKey} });
 };
 
+/*
 exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterfaceName) {
 
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
@@ -713,7 +724,7 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
     };
     return this.read;
 };
-
+*/
 function restActionSender(action) {
     const { knownObjects } = require('../server');
     const ipSet = new Set();
@@ -1016,6 +1027,7 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
  * @param objectName
  * @return {string}
  */
+/*
 function getVideoDir(identityFolderNameArg, isMobile, objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
@@ -1033,7 +1045,7 @@ function getVideoDir(identityFolderNameArg, isMobile, objectName) {
 }
 
 exports.getVideoDir = getVideoDir;
-
+*/
 // Ensures id is alphanumeric or -_
 function isValidId(id) {
     return id.match(/^[A-Za-z0-9_ -]+$/);
