@@ -44,6 +44,7 @@
  */
 
 var utilities = require('./utilities');
+let server = require('../src/index').server;
 var fs = require('fs');
 var debug = false;
 var path = require('path');
@@ -126,7 +127,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
     tempFiles.forEach(function(objectKey) {
 
         var thisObjectKey = objectKey;
-        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+        var tempKey = server.services.utility.fileAccess.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         }

@@ -1,4 +1,6 @@
 const utilities = require('../libraries/utilities');
+let Utility = require('../src/services/utilities/index.js');
+const utility = new Utility()
 const Block = require('../models/Block');
 
 // Variables populated from server.js with setup()
@@ -65,7 +67,7 @@ const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: body.lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         console.log('added block: ' + blockID);
         updateStatus = 'added';
@@ -106,7 +108,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
             reloadNode: {object: objectID, frame: nodeID, node: nodeID},
             lastEditor: lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
     }
     return updateStatus;
@@ -137,7 +139,7 @@ const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
                 foundBlock.x = body.x;
                 foundBlock.y = body.y;
 
-                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+                utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                 utilities.actionSender({
                     reloadNode: {object: objectID, frame: frameID, node: nodeID},
                     lastEditor: body.lastEditor

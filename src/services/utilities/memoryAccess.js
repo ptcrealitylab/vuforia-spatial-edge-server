@@ -11,6 +11,7 @@ class MemoryAccess {
         this.fs = dependencies.fs;
         this.path = dependencies.path;
         this.network = dependencies.network;
+        this.fileAccess = dependencies.fileAccess
     }
 
     // todo memory
@@ -28,14 +29,11 @@ class MemoryAccess {
     }
 
     // todo memory
-    deleteObject(objectName, objects, objectsPath, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+    deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
         console.log('Deleting object: ' + objectName);
 
-        let objectFolderPath = this.path.join(objectsPath, objectName);
-        if (this.fs.existsSync(objectFolderPath)) {
-            this.fs.rmdirSync(objectFolderPath, {recursive: true});
-        }
-
+        this.fileAccess.deleteObject(objectName, objectsPath);
+        
         let objectKey = this.readObject(objectLookup, objectName);
 
         if (objectKey && objects[objectKey]) {

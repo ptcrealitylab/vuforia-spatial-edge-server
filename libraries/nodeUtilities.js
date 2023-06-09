@@ -1,4 +1,5 @@
 const utilities = require('./utilities');
+let server = require('../src/index');
 const Link = require('../models/Link');
 var linkController;
 // Pointers populated from server.js with setup()
@@ -16,7 +17,7 @@ exports.deepCopy = utilities.deepCopy;
 exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
     let thisObjectKey = _object;
     if (!(_object in objects)) {
-        thisObjectKey = utilities.getObjectIdFromTargetOrObjectFile(_object);
+        thisObjectKey = server.services.utility.fileAccess.getObjectIdFromTargetOrObjectFile(_object);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
     if (!tool && !node) {
