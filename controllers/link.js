@@ -1,4 +1,6 @@
 const utilities = require('../libraries/utilities');
+let Utility = require('../src/services/utilities/index.js');
+const utility = new Utility()
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -96,7 +98,7 @@ const newLink = function (objectID, frameID, linkID, body) {
             foundFrame.links[linkID] = body;
             console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
             // check if link is complex data type. If yes trigger engine only for this single link
             if (foundFrame.nodes.hasOwnProperty(body.nodeA)) {
@@ -159,7 +161,7 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
 
         delete foundFrame.links[linkKey];
 
-        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
@@ -212,7 +214,7 @@ const addLinkLock = function (objectKey, frameKey, linkKey, body) {
             foundLink.lockType = newLockType;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: object}});
 
             updateStatus = 'added';
@@ -246,7 +248,7 @@ const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
             foundLink.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: objectKey}});
 
             updateStatus = 'deleted';

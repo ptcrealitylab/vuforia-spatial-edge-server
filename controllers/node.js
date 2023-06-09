@@ -1,4 +1,6 @@
 const utilities = require('../libraries/utilities');
+let Utility = require('../src/services/utilities/index.js');
+const utility = new Utility()
 const Node = require('../models/Node');
 const server = require('../server');
 
@@ -45,7 +47,7 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     }
 
     frame.nodes[nodeKey] = node;
-    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+    utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: body.lastEditor});
     sceneGraph.addNode(objectKey, frameKey, nodeKey, node, node.matrix);
 
@@ -86,7 +88,7 @@ const addNodeLock = function (objectKey, frameKey, nodeKey, body) {
             foundNode.lockPassword = newLockPassword;
             foundNode.lockType = newLockType;
 
-            utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'added';
@@ -118,7 +120,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
             foundNode.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadNode: {object: objectKey, frame: frameKey, node: nodeKey}});
 
             updateStatus = 'deleted';
@@ -196,7 +198,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,

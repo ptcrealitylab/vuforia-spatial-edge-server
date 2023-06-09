@@ -1,4 +1,6 @@
 const utilities = require('../libraries/utilities');
+let Utility = require('../src/services/utilities/index.js');
+const utility = new Utility()
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -37,7 +39,7 @@ const addLogicLink = function (objectID, frameID, nodeID, linkID, body) {
             });
             // check if there are new connections associated with the new link.
             // write the object state to the permanent storage.
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
             console.log('added link: ' + linkID);
             updateStatus = 'added';
@@ -59,7 +61,7 @@ const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor)
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         console.log('deleted link: ' + linkID);
         updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;

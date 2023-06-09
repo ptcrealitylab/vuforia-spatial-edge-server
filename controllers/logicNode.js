@@ -2,6 +2,8 @@ const fs = require('fs');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const EdgeBlock = require('../models/EdgeBlock');
+let Utility = require('../src/services/utilities/index.js');
+const utility = new Utility()
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -43,7 +45,7 @@ const addLogicNode = function (objectID, frameID, nodeID, body) {
         newNode.type = 'logic';
 
         // call an action that asks all devices to reload their links, once the links are changed.
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         utilities.actionSender({
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: body.lastEditor
@@ -88,7 +90,7 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
               }
           }*/
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         utilities.actionSender({
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: lastEditor
@@ -133,7 +135,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 
         // if anything updated, write to disk and broadcast updates to editors
         if (updateStatus === 'ok') {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadObject: {object: objectID, frame: frameID, node: nodeID},
                 lastEditor: body.lastEditor
@@ -155,7 +157,7 @@ function rename(objectID, frameID, nodeID, body, callback) {
 
         node.name = body.nodeName;
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
@@ -224,7 +226,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
 
                     if (node) {
                         node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+                        utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                         utilities.actionSender({
                             loadLogicIcon: {
                                 object: objectID,

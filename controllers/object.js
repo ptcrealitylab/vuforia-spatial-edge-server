@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
+let server = require('../src/index').server;
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -28,7 +29,7 @@ const deleteObject = function(objectID) {
     }
 
     try {
-        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        server.services.utility.memoryAccess.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     } catch (e) {
         return {
             status: 500,
@@ -50,7 +51,7 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, object.name);
+        var videoDir = server.services.utility.fileAccess.getVideoDir(identityFolderName, globalVariables.isMobile, object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -189,7 +190,7 @@ const setMatrix = function(objectID, body, callback) {
     }
 
     if (object.type !== 'avatar') {
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 
     sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
@@ -247,7 +248,7 @@ const memoryUpload = function(objectID, req, callback) {
             obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
             obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
 
@@ -260,7 +261,7 @@ const memoryUpload = function(objectID, req, callback) {
 const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.deactivateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -271,7 +272,7 @@ const deactivate = function(objectID, callback) {
 const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.activateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -286,7 +287,7 @@ const setVisualization = function(objectID, vis, callback) {
     }
     try {
         object.visualization = vis;
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         callback(200, 'ok');
     } catch (e) {
         callback(500, {success: false, error: e.message});
@@ -359,7 +360,7 @@ const generateXml = function(objectID, body, callback) {
             if (object) {
                 object.targetSize.width = parseFloat(msgObject.width);
                 object.targetSize.height = parseFloat(msgObject.height);
-                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+                server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             }
         }
     });
