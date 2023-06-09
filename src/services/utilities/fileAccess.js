@@ -9,6 +9,7 @@ class FileAccess {
      * @param {object} dependencies.path
      * @param {object} dependencies.os
      * @param {object} dependencies.root const root = require('../getAppRootFolder');
+     * @param {object} dependencies.config configuration file in root server folder;
      **/
     constructor(dependencies) {
         // node Modules
@@ -20,6 +21,7 @@ class FileAccess {
         // project
         // this.ObjectModel = dependencies.ObjectModel;
         this.ObjectModel = dependencies.ObjectModel;
+        this.objectsPath = dependencies.config.objectsPath;
         this.root = dependencies.root;
         this.identityFolderName = '.identity';
         this.writeBufferList = {};
@@ -82,23 +84,23 @@ class FileAccess {
             console.log('Could not load settings.json for: ' + hardwareInterfaceName);
             this.hardwareInterfaces[hardwareInterfaceName] = {};
         }
-
+        let that = this;
         this.read = function (settingsName, defaultvalue) {
-            if (typeof this.hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
+            if (typeof that.hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
                 if (typeof defaultvalue !== 'undefined')
-                    this.hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
+                    that.hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
                 else {
-                    this.hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
+                    that.hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
                 }
             }
-            return this.hardwareInterfaces[hardwareInterfaceName][settingsName];
+            return that.hardwareInterfaces[hardwareInterfaceName][settingsName];
         };
         return this.read;
     }
 
-    createFolder(folderVar, objectsPath, debug) {
-        let folder = objectsPath + '/' + folderVar + '/';
-        let identity = objectsPath + '/' + folderVar + '/' + this.identityFolderName + '/';
+    createFolder(folderVar, debug) {
+        let folder = this.objectsPath + '/' + folderVar + '/';
+        let identity = this.objectsPath + '/' + folderVar + '/' + this.identityFolderName + '/';
         if (debug) console.log('Creating folder: ' + folder);
 
         if (!this.fs.existsSync(folder)) {
@@ -118,9 +120,9 @@ class FileAccess {
         }
     }
 
-    createFrameFolder(folderVar, frameVar, dirnameO, objectsPath, debug, location) {
+    createFrameFolder(folderVar, frameVar, dirnameO, debug, location) {
         if (location === 'global') return;
-        let folder = objectsPath + '/' + folderVar + '/';
+        let folder = this.objectsPath + '/' + folderVar + '/';
         let identity = folder + this.identityFolderName + '/';
         let firstFrame = folder + frameVar + '/';
         if (debug) console.log('Creating application (frame) folder: ' + folder);
@@ -149,8 +151,8 @@ class FileAccess {
             });
 
             try {
-                this.fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(this.fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
-                this.fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(this.fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/bird.png'));
+                this.fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(this.fs.createWriteStream(this.objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
+                this.fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(this.fs.createWriteStream(this.objectsPath + '/' + folderVar + '/' + frameVar + '/bird.png'));
             } catch (e) {
                 if (debug) console.error('Could not copy source files', e);
             }
@@ -180,13 +182,12 @@ class FileAccess {
      * Deletes a directory from the hierarchy. Intentionally limit behaviour to frames so that you don't delete something more important.
      * @param objectName
      * @param frameName
-     * @param objectsPath
      */
-    deleteFrameFolder(objectName, frameName, objectsPath) {
+    deleteFrameFolder(objectName, frameName) {
         console.log('objectName', objectName);
         console.log('frameName', frameName);
 
-        let folderPath = objectsPath + '/' + objectName + '/' + frameName;
+        let folderPath = this.objectsPath + '/' + objectName + '/' + frameName;
         console.log('delete frame folder', folderPath);
 
         let acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light'];
@@ -208,14 +209,14 @@ class FileAccess {
      * @param {string} folderName
      * @param {string} objectsPath
      **/
-    getObjectIdFromTargetOrObjectFile(folderName, objectsPath) {
+    getObjectIdFromTargetOrObjectFile(folderName) {
 
         if (folderName === 'allTargetsPlaceholder') {
             return 'allTargetsPlaceholder000000000000';
         }
 
-        let xmlFile = objectsPath + '/' + folderName + '/' + this.identityFolderName + '/target/target.xml';
-        let jsonFile = objectsPath + '/' + folderName + '/' + this.identityFolderName + '/object.json';
+        let xmlFile = this.objectsPath + '/' + folderName + '/' + this.identityFolderName + '/target/target.xml';
+        let jsonFile = this.objectsPath + '/' + folderName + '/' + this.identityFolderName + '/object.json';
 
         if (this.fs.existsSync(xmlFile)) {
             let resultXML = '';
@@ -249,13 +250,13 @@ class FileAccess {
         }
     }
 
-    getAnchorIdFromObjectFile(folderName, objectsPath) {
+    getAnchorIdFromObjectFile(folderName) {
 
         if (folderName === 'allTargetsPlaceholder') {
             return 'allTargetsPlaceholder000000000000';
         }
 
-        let jsonFile = objectsPath + '/' + folderName + '/object.json';
+        let jsonFile = this.objectsPath + '/' + folderName + '/object.json';
 
         if (this.fs.existsSync(jsonFile)) {
             let thisObject = JSON.parse(this.fs.readFileSync(jsonFile, 'utf8'));
@@ -272,15 +273,14 @@ class FileAccess {
     /**
      *
      * @param folderName
-     * @param objectsPath
      * @return {string}
      */
-    getTargetSizeFromTarget(folderName, objectsPath) {
+    getTargetSizeFromTarget(folderName) {
         if (folderName === 'allTargetsPlaceholder') {
             return 'allTargetsPlaceholder000000000000';
         }
 
-        let xmlFile = objectsPath + '/' + folderName + '/' + this.identityFolderName + '/target/target.xml';
+        let xmlFile = this.objectsPath + '/' + folderName + '/' + this.identityFolderName + '/target/target.xml';
         let resultXML = {
             width: 0.3, // default width and height for not crashing if there isn't a size in the xml
             height: 0.3
@@ -314,12 +314,11 @@ class FileAccess {
      * (Writes the object state to permanent storage)
      * @param {object}   objects - The array of objects
      * @param {string}   object    - The key used to look up the object in the objects array
-     * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
      * @param {boolean}   writeToFile  - Give permission to write to file.
      **/
-    writeObjectToFile(objects, object, objectsPath, writeToFile) {
+    writeObjectToFile(objects, object, writeToFile) {
         if (writeToFile) {
-            this.writeBufferList[object] = objectsPath;
+            this.writeBufferList[object] = this.objectsPath;
         }
         // trigger write process
         this.executeWrite(objects);
@@ -343,12 +342,17 @@ class FileAccess {
 
         // copy the first item and delete it from the buffer list
         let firstKey = Object.keys(this.writeBufferList)[0];
-        let objectsPath = this.writeBufferList[firstKey];
+        let objectsPathBuffered = this.writeBufferList[firstKey];
         let obj = firstKey;
         delete this.writeBufferList[firstKey];
 
+        if (!objects[obj]) { // if object was deleted while write is pending
+            this.isWriting = false;
+            return;
+        }
+
         // prepare to write
-        let outputFilename = objectsPath + '/' + objects[obj].name + '/' + this.identityFolderName + '/object.json';
+        let outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + this.identityFolderName + '/object.json';
         let objectData = objects[obj];
         console.log('writing:', obj);
         // write file
@@ -366,8 +370,8 @@ class FileAccess {
     updateObject(objectName, objects) {
         console.log('update ', objectName);
 
-        let objectFolderList = this.fs.readdirSync(this.homedir).filter(function (file) {
-            return this.fs.statSync(this.homedir + '/' + file).isDirectory();
+        let objectFolderList = this.fs.readdirSync(this.objectsPath).filter(function (file) {
+            return this.fs.statSync(this.path.join(this.objectsPath, file)).isDirectory();
         });
 
         try {
@@ -381,7 +385,7 @@ class FileAccess {
 
         for (let i = 0; i < objectFolderList.length; i++) {
             if (objectFolderList[i] === objectName) {
-                let tempFolderName = this.getObjectIdFromTargetOrObjectFile(objectFolderList[i], this.homedir);
+                let tempFolderName = this.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
                 console.log('TempFolderName: ' + tempFolderName);
 
                 if (tempFolderName !== null) {
@@ -391,7 +395,7 @@ class FileAccess {
 
                     // try to read a saved previous state of the object
                     try {
-                        objects[tempFolderName] = JSON.parse(this.fs.readFileSync(this.homedir + '/' + objectFolderList[i] + '/' + this.identityFolderName + '/object.json', 'utf8'));
+                        objects[tempFolderName] = JSON.parse(this.fs.readFileSync(this.objectsPath + '/' + objectFolderList[i] + '/' + this.identityFolderName + '/object.json', 'utf8'));
                         objects[tempFolderName].ip = this.ip.address();
 
                         // this is for transforming old lists to new lists
@@ -399,9 +403,9 @@ class FileAccess {
                             objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName]['objectValues'];
                             delete objects[tempFolderName]['objectValues'];
                         }
-                        if (typeof objects[tempFolderName]['objectValues'] !== 'undefined') {
+                        if (typeof objects[tempFolderName]['objectLinks'] !== 'undefined') {
                             objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName]['objectLinks'];
-                            delete objects[tempFolderName]['objectValues'];
+                            delete objects[tempFolderName]['objectLinks'];
                         }
 
                         if (typeof objects[tempFolderName].nodes !== 'undefined') {
@@ -448,21 +452,27 @@ class FileAccess {
         return null;
     }
 
+     deleteObject (objectName, objectsPath) {
+        let objectFolderPath = this.path.join(objectsPath, objectName);
+        if (this.fs.existsSync(objectFolderPath)) {
+            this.fs.rmdirSync(objectFolderPath, {recursive: true});
+        }
+    }
+    
     /**
      * Helper function to return the absolute path to the directory that should contain all
      * video files for the provided object name. (makes dir if necessary)
-     * @param objectsPath
      * @param identityFolderNameArg
      * @param isMobile
      * @param objectName
      * @return {string}
      */
-    getVideoDir(objectsPath, identityFolderNameArg, isMobile, objectName) {
-        let videoDir = objectsPath; // on mobile, put videos directly in object home dir
+    getVideoDir(identityFolderNameArg, isMobile, objectName) {
+        let videoDir = this.objectsPath; // on mobile, put videos directly in object home dir
 
         // directory differs on mobile due to inability to call mkdir
         if (!isMobile) {
-            videoDir = this.path.join(objectsPath, objectName, identityFolderNameArg, 'videos');
+            videoDir = this.path.join(this.objectsPath, objectName, identityFolderNameArg, 'videos');
 
             if (!this.fs.existsSync(videoDir)) {
                 console.log('make videoDir');

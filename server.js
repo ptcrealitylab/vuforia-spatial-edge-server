@@ -522,15 +522,15 @@ function Protocols() {
 // This variable will hold the entire tree of all objects and their sub objects.
 var objects = {};
 
-const availableModules = require('./libraries/availableModules');
+const global = require('./src/global/index');
 
 const nodeFolderLoader = new AddonFolderLoader(nodePaths);
 const nodeTypeModules = nodeFolderLoader.loadModules();   // Will hold all available data point interfaces
-availableModules.setNodes(nodeTypeModules);
+global.modules.setNodes(nodeTypeModules);
 
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
-availableModules.setBlocks(blockModules);
+global.modules.setBlocks(blockModules);
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
@@ -590,9 +590,28 @@ const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
+
+
+/**********************************************************************************************************************
+ ******************************************** Classes *********************************************************
+ **********************************************************************************************************************/
+
+let server = require('./src/index.js').server;
+
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
 
 
 console.log('Starting the Server');
@@ -620,7 +639,7 @@ var hardwareAPICallbacks = {
         engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write: function (objectID) {
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        server.services.utility.fileAccess.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
@@ -651,7 +670,7 @@ console.log('started');
 if (!isLightweightMobile) {
     hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
     hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
-    availableModules.setHardwareInterfaces(hardwareInterfaceModules);
+    global.modules.setHardwareInterfaces(hardwareInterfaceModules);
 
     // statically serve the "public" directory in each hardware interface
     for (let folderName in hardwareInterfaceLoader.folderMap) {
@@ -703,7 +722,7 @@ function loadObjects() {
     }
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
+        var tempFolderName = server.services.utility.fileAccess.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
         console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
@@ -973,7 +992,7 @@ function setAnchors() {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+            let tempKey = server.services.utility.fileAccess.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -1702,7 +1721,8 @@ function objectWebServer() {
             } else {
                 try {
                     res.sendFile(filename, {
-                        root: utilities.getVideoDir(identityFolderName, isLightweightMobile),
+                        //todo there is a bug here, where there is no object name, however the function requires it. Argument is set to undefined but should be fixed
+                        root: server.services.utility.fileAccess.getVideoDir(identityFolderName, isLightweightMobile, undefined),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
@@ -2443,7 +2463,7 @@ function objectWebServer() {
                 }
                 const folderDel = __dirname + req.path.substr(4);
                 if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
+                    server.services.utility.fileAccess.deleteFolderRecursive(folderDel);
                 } else {
                     fs.unlinkSync(folderDel);
                 }
@@ -2469,7 +2489,7 @@ function objectWebServer() {
                 var folderDel = objectsPath + '/' + req.body.name;
 
                 if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
+                    server.services.utility.fileAccess.deleteFolderRecursive(folderDel);
                 } else {
                     fs.unlinkSync(folderDel);
                 }
@@ -2485,7 +2505,7 @@ function objectWebServer() {
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                server.services.utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                 res.send('ok');
             }
 
@@ -2498,7 +2518,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    utilities.createFolder(req.body.name, globalVariables.debug);
+                    server.services.utility.fileAccess.createFolder(req.body.name, globalVariables.debug);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2536,7 +2556,7 @@ function objectWebServer() {
                             objects[objectId].worldId = req.body.worldId;
                         }
 
-                        utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                        server.services.utility.fileAccess.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
                         // automatically create a tool and a node on the avatar object
@@ -2544,10 +2564,10 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, 'local');
+                                server.services.utility.fileAccess.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
-                                utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                                server.services.utility.fileAccess.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
                                 // now add a publicData storage node to the tool
                                 let nodeInfo = {
@@ -2560,7 +2580,7 @@ function objectWebServer() {
                                     console.log('added node to frame... ', statusCode, responseContents);
                                 });
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, objects[objectId].frames[toolId].location);
+                                server.services.utility.fileAccess.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, objects[objectId].frames[toolId].location);
                             }
                         }
 
@@ -2594,14 +2614,14 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, 'local');
+                        server.services.utility.fileAccess.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                        server.services.utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        server.services.utility.fileAccess.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2612,21 +2632,7 @@ function objectWebServer() {
             // deprecated route for deleting objects or frames
             // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
-
-                var deleteFolderRecursive = function (folderDel) {
-                    if (fs.existsSync(folderDel)) {
-                        fs.readdirSync(folderDel).forEach(function (file) {
-                            var curPath = folderDel + '/' + file;
-                            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                deleteFolderRecursive(curPath);
-                            } else { // delete file
-                                fs.unlinkSync(curPath);
-                            }
-                        });
-                        fs.rmdirSync(folderDel);
-                    }
-                };
-
+                
                 if (!utilities.isValidId(req.body.name)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2665,7 +2671,7 @@ function objectWebServer() {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
-                    deleteFolderRecursive(folderDelFrame);
+                    server.services.utility.fileAccess.deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
@@ -2679,7 +2685,7 @@ function objectWebServer() {
                         }
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                    server.services.utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
                     sceneGraph.removeElementAndChildren(frameNameKey);
@@ -2689,7 +2695,7 @@ function objectWebServer() {
                 } else {
 
                     var folderDel = objectsPath + '/' + req.body.name;
-                    deleteFolderRecursive(folderDel);
+                    server.services.utility.fileAccess.deleteFolderRecursive(folderDel);
 
                     var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
 
@@ -2834,7 +2840,7 @@ function objectWebServer() {
 
                     if (fs.existsSync(folderDel)) {
                         if (fs.lstatSync(folderDel).isDirectory()) {
-                            utilities.deleteFolderRecursive(folderDel);
+                            server.services.utility.fileAccess.deleteFolderRecursive(folderDel);
                         } else {
                             fs.unlinkSync(folderDel);
                         }
@@ -3055,11 +3061,11 @@ function objectWebServer() {
                                         };
 
                                         thisObject.tcs = utilities.generateChecksums(objects, fileList);
-                                        utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                        server.services.utility.fileAccess.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                         setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
-                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
+                                        var oldObjectId = server.services.utility.fileAccess.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId != thisObjectId) {
                                             console.log('removed old heartbeat for', oldObjectId);
                                             clearInterval(activeHeartbeats[oldObjectId]);
@@ -3222,7 +3228,7 @@ function objectWebServer() {
 
                                                 thisObject.tcs = utilities.generateChecksums(objects, fileList);
 
-                                                utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                                server.services.utility.fileAccess.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                                 setAnchors();
                                                 objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3324,7 +3330,7 @@ function objectWebServer() {
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                server.services.utility.fileAccess.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             }
             res.send('ok');
         });
@@ -3356,8 +3362,8 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
     if (fs.existsSync(folder)) {
         console.log('folder exists');
-        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
-        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
+        var objectIDXML = server.services.utility.fileAccess.getObjectIdFromTargetOrObjectFile(folderVar);
+        var objectSizeXML = server.services.utility.fileAccess.getTargetSizeFromTarget(folderVar);
         console.log('got ID: objectIDXML');
         if (objectIDXML && objectIDXML.length > 13) {
             objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
@@ -3406,7 +3412,7 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
             hardwareAPI.reset();
 
             console.log('weiter im text ' + objectIDXML);
-            utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+            server.services.utility.fileAccess.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
 
             sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
@@ -3728,7 +3734,7 @@ function socketServer() {
             if (object) {
                 // frequently updated objects like avatar and human pose are excluded from writing to file
                 if (object.type !== 'avatar' && object.type !== 'human') {
-                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                    server.services.utility.fileAccess.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
                 }
 
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
@@ -4181,7 +4187,7 @@ function socketServer() {
 
             if (socket.id in realityEditorBlockSocketArray) {
                 realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
+                    utility.fileAccess.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
                 });
                 delete realityEditorBlockSocketArray[socket.id];
@@ -4224,7 +4230,7 @@ function deleteObjects(objectKeysToDelete) {
 
 function deleteObject(objectKey) {
     if (objects[objectKey]) {
-        utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        utility.memoryAccess.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     }
     // try to clean up any other state that might be remaining
 
@@ -4744,3 +4750,5 @@ function checkInit(init) {
         hardwareAPI.initialize();
     }
 }
+
+

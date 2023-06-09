@@ -1,6 +1,5 @@
 const Data = require('./Data.js');
-const availableModules = require('../libraries/availableModules');
-
+const global = require('../global/index')
 /**
  * Constructor used to define every nodes generated in the Object. It does not need to contain its own ID
  * since the object is created within the nodes with the ID as object name.
@@ -36,7 +35,7 @@ function Node(name, type, objectId, frameId, nodeId) {
     this.stress = 0;
 
     // load the publicData/privateData from the properties defined by this node type
-    let nodeTypes = availableModules.getNodes();
+    let nodeTypes = global.modules.getNodes();
     if (typeof nodeTypes[type] === 'undefined') {
         console.warn('Trying to create an unsupported node type (' + type + ')');
         this.privateData = {};
@@ -58,7 +57,7 @@ function Node(name, type, objectId, frameId, nodeId) {
  * Triggers the exports.setup function defined in the add-on for this node type
  */
 Node.prototype.setupProgram = function() {
-    let nodeTypes = availableModules.getNodes();
+    let nodeTypes = global.modules.getNodes();
     if (typeof nodeTypes[this.type] === 'undefined') {
         console.warn('Trying to setup an unsupported node type (' + this.type + ')');
     } else {
@@ -74,7 +73,7 @@ Node.prototype.setupProgram = function() {
  * Triggers the exports.onRemove function defined in the add-on for this node type
  */
 Node.prototype.deconstruct = function() {
-    let nodeTypes = availableModules.getNodes();
+    let nodeTypes = global.modules.getNodes();
     if (typeof nodeTypes[this.type] === 'undefined') {
         console.warn('Trying to deconstruct an unsupported node type (' + this.type + ')');
     } else {
