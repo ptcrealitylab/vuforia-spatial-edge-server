@@ -289,6 +289,7 @@ for (const frameLibPath of frameLibPaths) {
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
+exports.webServer = webServer;
 
 if (!isLightweightMobile) {
     webServer.set('views', 'libraries/webInterface/views');
@@ -314,6 +315,11 @@ var cheerio = require('cheerio');
 
 // use the cors cross origin REST model
 webServer.use(cors());
+webServer.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    next();
+});
 // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
 webServer.options('*', cors());
 
@@ -1586,16 +1592,16 @@ function objectWebServer() {
         var html = fs.readFileSync(fileName, 'utf8');
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
-        html = html.replace('<script src="object.js"></script>', '');
-        html = html.replace('<script src="../resources/object.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/object.js"></script>', '');
+        html = html.replace(/<script\s+src=["']object\.js["']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["']\.\.\/resources\/object\.js["']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["']objectDefaultFiles\/object\.js["']>\s*<\/script>/g, '');
 
-        html = html.replace('<script src="object-frames.js"></script>', '');
-        html = html.replace('<script src="../resources/object-frames.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/object-frames.js"></script>', '');
+        html = html.replace(/<script\s+src=["']object-frames\.js["']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["']\.\.\/resources\/object-frames\.js["']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["']objectDefaultFiles\/object-frames\.js["']>\s*<\/script>/g, '');
 
-        html = html.replace('<script src="../resources/pep.min.js"></script>', '');
-        html = html.replace('<script src="objectDefaultFiles/pep.min.js"></script>', '');
+        html = html.replace(/<script\s+src=["']\.\.\/resources\/pep\.min\.js["']>\s*<\/script>/g, '');
+        html = html.replace(/<script\s+src=["']objectDefaultFiles\/pep\.min\.js["']>\s*<\/script>/g, '');
 
         var level = '../';
         for (var i = 0; i < urlArray.length - 3; i++) {
@@ -1604,8 +1610,10 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
         html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
-
-        html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+        html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
+        html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
+        html = html.replace('objectDefaultFiles/ThreejsInterface.js', level + 'objectDefaultFiles/ThreejsInterface.js');
+        html = html.replace('objectDefaultFiles/ThreejsWorker.js', level + 'objectDefaultFiles/ThreejsWorker.js');
 
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
@@ -1758,9 +1766,9 @@ function objectWebServer() {
 
             var html = fs.readFileSync(fileName, 'utf8');
 
-            html = html.replace('<script src="object.js"></script>', '');
-            html = html.replace('<script src="objectIO.js"></script>', '');
-            html = html.replace('<script src="/socket.io/socket.io.js"></script>', '');
+            html = html.replace(/<script\s+src=["']object\.js["']>\s*<\/script>/g, '');
+            html = html.replace(/<script\s+src=["']objectIO\.js["']>\s*<\/script>/g, '');
+            html = html.replace(/<script\s+src=["']\/socket\.io\/socket\.io\.js["']>\s*<\/script>/g, '');
 
             var level = '../';
             for (let i = 0; i < urlArray.length; i++) {
@@ -1769,8 +1777,10 @@ function objectWebServer() {
 
             html = html.replace('objectDefaultFiles/envelope.js', level + 'objectDefaultFiles/envelope.js');
             html = html.replace('objectDefaultFiles/envelopeContents.js', level + 'objectDefaultFiles/envelopeContents.js');
-
-            html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
+            html = html.replace('objectDefaultFiles/glState.js', level + 'objectDefaultFiles/glState.js');
+            html = html.replace('objectDefaultFiles/glCommandBuffer.js', level + 'objectDefaultFiles/glCommandBuffer.js');
+            html = html.replace('objectDefaultFiles/ThreejsInterface.js', level + 'objectDefaultFiles/ThreejsInterface.js');
+            html = html.replace('objectDefaultFiles/ThreejsWorker.js', level + 'objectDefaultFiles/ThreejsWorker.js');
 
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';

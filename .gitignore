@@ -47,3 +47,8 @@ libraries/objectLogs/*
 
 /addons/*
 /out/*
+
+/docs
+/.vscode
+/*.code-workspace
+/*.njsproj

@@ -34,6 +34,13 @@ class LocalUIApp {
         this.loadResources();
 
         this.app.use(cors());
+        this.app.use((req, res, next) => {
+            res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+            res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+            next();
+        });
+        // allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
+        this.app.options('*', cors());
         this.app.use('/addons/sources', (req, res) => {
             res.send(this.sources);
         });

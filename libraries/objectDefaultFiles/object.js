@@ -171,7 +171,11 @@
         var url = null;
         let urlSplit = null;
         if (parseInt(Number(defaultPort))) {
-            url = location.protocol + '//' + object.ip + ':' + defaultPort;
+            if (object.ip === spatialObject.serverIp) {
+                url = location.protocol + '//localhost:' + defaultPort;
+            } else {
+                url = location.protocol + '//' + object.ip + ':' + defaultPort;
+            }
         } else {
             urlSplit = location.pathname.split('/');
             for (let i = 0; i < urlSplit.length; i++) {
