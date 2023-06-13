@@ -24,7 +24,6 @@ class ThreejsInterface {
          * @type {MessageInterface}
          */
         this.workerMessageInterface = WebGLStrategy.getInstance().workerFactory.createWorker(workerScript, true);
-        this.workerMessageInterface.setOnMessage(this.onMessageFromWorker.bind(this));
         this.workerId = -1;
         this.prefersAttachingToWorld = true;
         this.spatialInterface.useWebGlWorker();
