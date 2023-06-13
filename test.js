@@ -35,7 +35,7 @@ require('./server.js');
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
-        'http://localhost:8081/',
+        'http://localhost:8080/userinterface',
         {
             timeout: 60 * 1000,
         },
