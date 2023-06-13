@@ -3,7 +3,7 @@ import {MessageInterface} from '/objectDefaultFiles/WorkerFactory.js';
 import '/objectDefaultFiles/babylon/babylon.max.js';
 
 /**
- * interfaces with three.js and intializes the engine for the rest of the tool to use for rendering
+ * interfaces with babylon.js and intializes the engine for the rest of the tool to use for rendering
  */
 class BabylonjsWorker {
     static STATE_CONSTRUCTED = 0;
@@ -46,7 +46,7 @@ class BabylonjsWorker {
     }
 
     /**
-     * receives messages from the ThreeInteface client class
+     * receives messages from the BabylonInterface client class
      * @param {MessageEvent<any>} event 
      */
     onMessageFromInterface(event) {
@@ -295,7 +295,7 @@ class BabylonjsWorker {
         for (let callback of this.onRenderCallbacks) {
             callback(now);
         }
-        // render the scene using three.js if posible
+        // render the scene using babylon.js if posible
         if (this.isProjectionMatrixSet) {
             if (this.scene) {
                 this.scene.render();
@@ -341,7 +341,7 @@ class HTMLCanvasElement {
 }
 
 /**
- * Fake canvas element to make sure threejs initializes correctly
+ * Fake canvas element to make sure babylonjs initializes correctly
  */
 class FakeCanvas extends HTMLCanvasElement {
     /**
@@ -380,7 +380,7 @@ class FakeCanvas extends HTMLCanvasElement {
 }
 
 /**
- * converts a Float32Array (THREE.js projection matrix) to a BABYLON.Matrix
+ * converts a Float32Array (three.js projection matrix) to a BABYLON.Matrix
  * @param {BABYLON.Matrix} matrix
  * @param {Float32Array} array
  */
