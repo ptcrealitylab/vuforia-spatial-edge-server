@@ -61,7 +61,7 @@ realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
-let remoteOperatorUrl = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
+let remoteOperatorUrl = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8080/userinterface';
 let isRemoteOperatorSupported = false;
 
 realityServer.initialize = function () {
