@@ -1383,6 +1383,19 @@ class CommandBufferManager {
         }
         return null;
     }
+
+    /**
+     * non destructively returns the first resource command buffer (for debug purposes)
+     * @returns {CommandBuffer|null} the first resource command buffer
+     */
+    peekResourceCommandBuffer() {
+        for (const commandBuffer of this.commandBuffers) {
+            if (!commandBuffer.isRendering) {
+                return commandBuffer;
+            }
+        }
+        return null;
+    }
 }
 
 /**
@@ -1889,7 +1902,7 @@ class WebGLStrategy {
     static useThreads() {
         const offscreenCanvas = new OffscreenCanvas(10, 10);
         if (offscreenCanvas === null) return false;
-        return offscreenCanvas && offscreenCanvas.getContext("webgl");
+        return false && offscreenCanvas && offscreenCanvas.getContext("webgl");
     }
 
     /**
