@@ -1551,6 +1551,7 @@ function objectWebServer() {
     console.log('SELECTED UI PATH: ' + selectedUiPath);
     const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
     localUserInterfaceApp.setup();
+    localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
     localUserInterfaceApp.listen(serverUserInterfaceAppPort);
 
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
