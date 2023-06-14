@@ -108,7 +108,7 @@ class DynamicScriptMessageInterface extends MessageInterface {
          * reference to the FactoryMessageInterface linked to this one for communication with the script
          * it's a weak reference to prevent cyclic reference counting causing a memory leak
          * the main thread owns the dynamicly loaded script not the otherway around
-         * @type {WeakRef<FactoryMessageInterface>|null}
+         * @type {FactoryMessageInterface|null}
          */
         this.externalMessageInterface = null;
     }
@@ -118,12 +118,11 @@ class DynamicScriptMessageInterface extends MessageInterface {
      */
     postMessage(message) {
         if (this.externalMessageInterface) {
-            const localExternalMessageInterface = this.externalMessageInterface.deref();
-            if (!localExternalMessageInterface) {
-                throw new Error('externalMessageInterface could not be dereferenced');
+            if (!this.externalMessageInterface) {
+                throw new Error('externalMessageInterface sending message before finishing initialization');
             }
             const messageEvent = new MessageEvent('message', {data: message});
-            localExternalMessageInterface.onMessage(messageEvent);
+            this.externalMessageInterface.onMessage(messageEvent);
         } else {
             this.sendMessageBuffer.push(message);
         }
@@ -158,7 +157,7 @@ class DynamicScriptMessageInterface extends MessageInterface {
      */
     setExternalMessageInterface(messageInterface) {
         if (this.externalMessageInterface) console.warn("Changing externalMessageInterface");
-        this.externalMessageInterface = new WeakRef(messageInterface);
+        this.externalMessageInterface = messageInterface;
         // if we have send/saved messages before this configuration was complete, send them now (fifo)
         for (let bufferedMessage of this.sendMessageBuffer) {
             const bufferedMessageEvent = new MessageEvent('message', {data: bufferedMessage});
