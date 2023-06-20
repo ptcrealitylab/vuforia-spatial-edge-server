@@ -36,3 +36,6 @@ if (!fs.existsSync(objectsPath)) {
 }
 
 module.exports.objectsPath = objectsPath;
+
+// this is the port for UDP broadcasting so that the objects find each other
+module.exports.beatPort = 52316;
