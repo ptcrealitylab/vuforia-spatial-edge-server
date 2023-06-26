@@ -62,7 +62,7 @@ const path = require('path');
 const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
-const {objectsPath} = require('../config.js');
+const {objectsPath, beatPort} = require('../config.js');
 
 const hardwareInterfaces = {};
 
@@ -737,9 +737,8 @@ function restActionSender(action) {
  * Broadcasts a JSON message over UDP
  * @param {*} action - JSON object with no specified structure, contains the message to broadcast
  * @param {number} timeToLive
- * @param {number} beatport
  */
-exports.actionSender = function actionSender(action, timeToLive = 2, beatport = 52316) {
+exports.actionSender = function actionSender(action, timeToLive = 2) {
     var HOST = '255.255.255.255';
     var message;
 
@@ -761,7 +760,7 @@ exports.actionSender = function actionSender(action, timeToLive = 2, beatport = 
         client.setMulticastTTL(timeToLive);
     });
 
-    sendWithFallback(client, beatport, HOST, {action: action}, {closeAfterSending: true});
+    sendWithFallback(client, beatPort, HOST, {action: action}, {closeAfterSending: true});
 };
 
 /**
