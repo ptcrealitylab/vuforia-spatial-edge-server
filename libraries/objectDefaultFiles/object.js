@@ -28,7 +28,7 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
-        serverIp: '127.0.0.1',
+        serverIp: 'localhost',
         serverPort: '8080',
         matrices: {
             modelView: [],
@@ -746,6 +746,8 @@
                 this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
                 this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
                 this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
+
+                this.getOAuthToken = makeSendStub('getOAuthToken');
 
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
@@ -1765,6 +1767,31 @@
                     allClonesVisible,
                 },
             });
+        };
+
+        /**
+         * Makes an OAuth request at `authorizationUrl`, requires the OAuth flow to redirect to navigate://<toolbox>
+         * Will not call `callback` on initial OAuth flow, as the whole app gets reloaded
+         * TODO: Write correct redirect URIs above
+         * @param {object} urls - OAuth Authorization and Access Token URL
+         * @param {string} clientId - OAuth client ID
+         * @param {string} clientSecret - OAuth client secret
+         * @param {function} callback - Callback function executed once OAuth flow completes
+         */
+        this.getOAuthToken = function(urls, clientId, clientSecret, callback) {
+            postDataToParent({
+                getOAuthToken: {
+                    frame: spatialObject.frame,
+                    clientId: clientId,
+                    clientSecret: clientSecret,
+                    urls
+                }
+            });
+            spatialObject.messageCallBacks.onOAuthToken = function (msgContent) {
+                if (typeof msgContent.onOAuthToken !== 'undefined') {
+                    callback(msgContent.onOAuthToken.token, msgContent.onOAuthToken.error);
+                }
+            };
         };
 
         this.getScreenshotBase64 = function(callback) {
