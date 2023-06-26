@@ -194,9 +194,9 @@ services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
     if (isLightweightMobile || isStandaloneMobile) {
-        this.ips.interfaces['mobile'] = '127.0.0.1';
+        this.ips.interfaces['mobile'] = 'localhost';
         this.ips.activeInterface = 'mobile';
-        return '127.0.0.1';
+        return 'localhost';
     }
 
     // Get All available interfaces
@@ -216,7 +216,7 @@ services.getIP = function () {
 
     for (let key in interfaceNames) {
         let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
-        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1') tempIps.splice(key2, 1);
+        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1' || tempIps[key2] === 'localhost') tempIps.splice(key2, 1);
         this.ips.interfaces[interfaceNames[key]] = tempIps[0];
     }
 
@@ -587,6 +587,7 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
+const {oauthRefreshRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -2059,8 +2060,12 @@ function objectWebServer() {
         });
 
         // Proxies requests to toolboxedge.net, for CORS video playback
-        const toolboxEdgeProxyRequestHandler = require('./libraries/serverHelpers/toolboxEdgeProxyRequestHandler.js');
-        webServer.get('/proxy/*', toolboxEdgeProxyRequestHandler);
+        const proxyRequestHandler = require('./libraries/serverHelpers/proxyRequestHandler.js');
+        webServer.get('/proxy/*', proxyRequestHandler);
+
+        const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
+        webServer.post('/oauthRefresh/*', oauthRefreshRequestHandler);
+        webServer.post('/oauthAcquire/*', oauthAcquireRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
