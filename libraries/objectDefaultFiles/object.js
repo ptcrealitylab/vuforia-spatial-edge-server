@@ -749,6 +749,8 @@
 
                 this.getOAuthToken = makeSendStub('getOAuthToken');
 
+                this.patchHydrate = makeSendStub('patchHydrate');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1792,6 +1794,18 @@
                     callback(msgContent.onOAuthToken.token, msgContent.onOAuthToken.error);
                 }
             };
+        };
+
+        /**
+         * @param {Object} serialization
+         */
+        this.patchHydrate = function patchHydrate(serialization) {
+            postDataToParent({
+                patchHydrate: {
+                    frame: spatialObject.frame,
+                    serialization,
+                },
+            });
         };
 
         this.getScreenshotBase64 = function(callback) {
