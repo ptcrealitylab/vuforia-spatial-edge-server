@@ -737,15 +737,8 @@
                 this.analyticsClose = makeSendStub('analyticsClose');
                 this.analyticsFocus = makeSendStub('analyticsFocus');
                 this.analyticsBlur = makeSendStub('analyticsBlur');
-                this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
-                this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
                 this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
-                this.analyticsSetLens = makeSendStub('analyticsSetLens');
-                this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
-                this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
-                this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
-                this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
 
                 this.getOAuthToken = makeSendStub('getOAuthToken');
 
@@ -1664,30 +1657,6 @@
         };
 
         /**
-         * @param {number} time - cursor time in ms
-         */
-        this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
-            postDataToParent({
-                analyticsSetCursorTime: {
-                    frame: spatialObject.frame,
-                    time,
-                },
-            });
-        };
-
-        /**
-         * @param {TimeRegion} highlightRegion
-         */
-        this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
-            postDataToParent({
-                analyticsSetHighlightRegion: {
-                    frame: spatialObject.frame,
-                    highlightRegion,
-                },
-            });
-        };
-
-        /**
          * @param {TimeRegion} displayRegion
          */
         this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
@@ -1707,66 +1676,6 @@
                 analyticsHydrateRegionCards: {
                     frame: spatialObject.frame,
                     regionCards,
-                },
-            });
-        };
-
-        /**
-         * @param {"reba"|"motion"} lens
-         */
-        this.analyticsSetLens = function analyticsSetLens(lens) {
-            postDataToParent({
-                analyticsSetLens: {
-                    frame: spatialObject.frame,
-                    lens,
-                },
-            });
-        };
-
-        /**
-         * @param {"bone"|"pose"} lensDetail
-         */
-        this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
-            postDataToParent({
-                analyticsSetLensDetail: {
-                    frame: spatialObject.frame,
-                    lensDetail,
-                },
-            });
-        };
-
-        /**
-         * @param {string} spaghettiAttachPoint - joint id
-         */
-        this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
-            postDataToParent({
-                analyticsSetSpaghettiAttachPoint: {
-                    frame: spatialObject.frame,
-                    spaghettiAttachPoint,
-                },
-            });
-        };
-
-        /**
-         * @param {boolean} allClonesVisible
-         */
-        this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
-            postDataToParent({
-                analyticsSetSpaghettiVisible: {
-                    frame: spatialObject.frame,
-                    spaghettiVisible,
-                },
-            });
-        };
-
-        /**
-         * @param {boolean} allClonesVisible
-         */
-        this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
-            postDataToParent({
-                analyticsSetAllClonesVisible: {
-                    frame: spatialObject.frame,
-                    allClonesVisible,
                 },
             });
         };
