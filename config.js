@@ -9,8 +9,21 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const yargs = require('yargs');
 
-const spatialToolboxPath = path.join(os.homedir(), 'Documents', 'spatialToolbox');
+const argv = yargs
+    .option('spatialToolboxPath', {
+        description: 'The absolute path to the spatialToolbox directory (default ~/Documents/spatialToolbox)',
+        type: 'string',
+    })
+    .option('udpPort', {
+        description: 'The port on which udp discovery broadcasts occur (default 52316)',
+        type: 'number',
+    })
+    .help()
+    .argv;
+
+const spatialToolboxPath = argv.spatialToolboxPath || path.join(os.homedir(), 'Documents', 'spatialToolbox');
 const oldRealityObjectsPath = path.join(os.homedir(), 'Documents', 'realityobjects');
 
 // All objects are stored in this folder:
@@ -38,4 +51,4 @@ if (!fs.existsSync(objectsPath)) {
 module.exports.objectsPath = objectsPath;
 
 // this is the port for UDP broadcasting so that the objects find each other
-module.exports.beatPort = 52316;
+module.exports.beatPort = argv.udpPort || 52316;
