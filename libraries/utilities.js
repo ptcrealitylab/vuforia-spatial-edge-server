@@ -698,7 +698,9 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
 
     } catch (e) {
         console.log('Could not load settings.json for: ' + hardwareInterfaceName);
-        hardwareInterfaces[hardwareInterfaceName] = {};
+        if (!hardwareInterfaces[hardwareInterfaceName]) {
+            hardwareInterfaces[hardwareInterfaceName] = {};
+        }
     }
 
     this.read = function (settingsName, defaultvalue) {
