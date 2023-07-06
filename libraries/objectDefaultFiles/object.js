@@ -743,6 +743,7 @@
                 this.getOAuthToken = makeSendStub('getOAuthToken');
 
                 this.patchHydrate = makeSendStub('patchHydrate');
+                this.patchSetShaderMode = makeSendStub('patchSetShaderMode');
 
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
@@ -1713,6 +1714,18 @@
                 patchHydrate: {
                     frame: spatialObject.frame,
                     serialization,
+                },
+            });
+        };
+
+        /**
+         * @param {string} shaderMode - Part of ShaderMode enum (see remote operator addon)
+         */
+        this.patchSetShaderMode = function patchSetShaderMode(shaderMode) {
+            postDataToParent({
+                patchSetShaderMode: {
+                    frame: spatialObject.frame,
+                    shaderMode,
                 },
             });
         };
