@@ -23,7 +23,7 @@
     "request": "^2.*",
     "simple-git": "^3.19.1",
     "toolsocket": "github:ptcrealitylab/toolsocket",
-    "winston": "^3.9.0",
+    "winston": "^3.10.0",
     "ws": "^8.13.0",
     "xml2js": "^0.6.0",
     "yargs": "^17.7.2"
