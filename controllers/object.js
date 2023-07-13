@@ -93,6 +93,25 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     }
 };
 
+function simplifyFilename(filename) {
+    // Remove any special characters and replace them with hyphens
+    filename = filename.replace(/[^\w\s.-]/g, '-');
+
+    // Remove any leading or trailing spaces
+    filename = filename.trim();
+
+    // Replace consecutive spaces with a single hyphen
+    filename = filename.replace(/\s+/g, '-');
+
+    // Remove any consecutive hyphens or underscores
+    filename = filename.replace(/[-_]{2,}/g, '-');
+
+    // Remove any non-alphanumeric characters except hyphens, underscores, and periods
+    filename = filename.replace(/[^\w-.]/g, '');
+
+    return filename;
+}
+
 function uploadMediaFile(objectID, req, callback) {
     console.log('received media file for', objectID);
 
@@ -120,6 +139,7 @@ function uploadMediaFile(objectID, req, callback) {
     });
 
     let mediaUuid = utilities.uuidTime();
+    let simplifiedFilename = null;
     let newFilepath = null;
 
     form.on('fileBegin', function (name, file) {
@@ -127,8 +147,10 @@ function uploadMediaFile(objectID, req, callback) {
 
         let filepath = file.path || file.filepath;
         // rename uploaded file using mediaUuid that is passed back to client
-        let extension = path.extname(filepath);
-        newFilepath = form.uploadDir + '/' + mediaUuid + extension;
+        // let extension = path.extname(filepath);
+        simplifiedFilename = simplifyFilename(file.originalFilename);
+        newFilepath = path.join(form.uploadDir, `${mediaUuid}_${simplifiedFilename}`);
+        // newFilepath = form.uploadDir + '/' + mediaUuid + extension;
 
         if (fs.existsSync(newFilepath)) {
             console.log('deleted old raw file');
@@ -146,7 +168,12 @@ function uploadMediaFile(objectID, req, callback) {
     form.parse(req, function (err, fields) {
         console.log('successfully uploaded image', err, fields);
 
-        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: newFilepath});
+        callback(200, {
+            success: true,
+            mediaUuid: mediaUuid,
+            rawFilepath: newFilepath,
+            fileName: `${mediaUuid}_${simplifiedFilename}` // mediaUuid + path.extname(newFilepath)
+        });
     });
 }
 
