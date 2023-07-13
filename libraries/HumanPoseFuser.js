@@ -4,6 +4,7 @@ const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
 const { Matrix, SingularValueDecomposition } = require('ml-matrix');
+const SkeletonFitting = require('./SkeletonFitting.js');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
@@ -82,6 +83,17 @@ class HumanPoseFuser {
      * @param {string} serverUuid
      */
     constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort, serverUuid) {
+
+        //this.skeletonFittingReady = false;
+        this.skeletonFittingModule = null;
+        SkeletonFitting().then(module => {
+            this.skeletonFittingModule = module;
+            //this.skeletonFittingReady = true;
+        },
+        error => {
+            console.error('Loading of skeleton fitting failed.');
+        });
+
         // references to global data structures for objects
         this.objectsRef = objects;
         this.sceneGraphRef = sceneGraph;
@@ -1083,8 +1095,59 @@ class HumanPoseFuser {
                 console.warn('Cannot select the best object for a fused human object.');
                 updatedByChildren.push('none');
             } else {
-                // take directly current pose from the selected human object (can be undefined in the current frame)
                 finalPose = poseData[selectedObjectId];
+                if (this.skeletonFittingModule) {
+
+                    if (finalPose !== undefined && finalPose.joints.length != 0) {
+
+                        const start = Date.now();
+
+                        const inputJointPositionsArr = [
+                            [finalPose.joints[21].x, finalPose.joints[21].y, finalPose.joints[21].z], // Pelvis
+                            [finalPose.joints[11].x, finalPose.joints[11].y, finalPose.joints[11].z], // LeftHip
+                            [finalPose.joints[13].x, finalPose.joints[13].y, finalPose.joints[13].z], // LeftKnee
+                            [finalPose.joints[15].x, finalPose.joints[15].y, finalPose.joints[15].z]  // LeftAnkle
+                        ];
+                        var inputJointPositions = new this.skeletonFittingModule.Vector2d();
+                        inputJointPositionsArr.forEach(arr => {
+                            var v = new this.skeletonFittingModule.Vectord();
+                            arr.forEach(val => v.push_back(val));
+                            inputJointPositions.push_back(v);
+                        });
+
+                        var jointPositions = this.skeletonFittingModule.computePoseSkeletonModel(inputJointPositions);
+
+                        if (jointPositions.size() != 0) {
+                            // Pelvis
+                            finalPose.joints[21].x = jointPositions.get(0).get(0);
+                            finalPose.joints[21].y = jointPositions.get(0).get(1);
+                            finalPose.joints[21].z = jointPositions.get(0).get(2);
+                            // LeftHip
+                            finalPose.joints[11].x = jointPositions.get(1).get(0);
+                            finalPose.joints[11].y = jointPositions.get(1).get(1);
+                            finalPose.joints[11].z = jointPositions.get(1).get(2);
+                            // LeftKnee
+                            finalPose.joints[13].x = jointPositions.get(2).get(0);
+                            finalPose.joints[13].y = jointPositions.get(2).get(1);
+                            finalPose.joints[13].z = jointPositions.get(2).get(2);
+                            // LeftAnkle
+                            finalPose.joints[15].x = jointPositions.get(3).get(0);
+                            finalPose.joints[15].y = jointPositions.get(3).get(1);
+                            finalPose.joints[15].z = jointPositions.get(3).get(2);
+                        }
+
+                        /*if (this.verbose)*/ {
+                            const elapsedTimeMs = Date.now() - start;
+                            console.log(`Skeleton fitting time: ${elapsedTimeMs}ms`);
+                        }
+                    }
+                }
+                else {
+                    console.warn('Skeleton fitting is not loaded yet.');
+                }
+
+                // take directly current pose from the selected human object (can be undefined in the current frame)
+                //finalPose = poseData[selectedObjectId];
                 updatedByChildren.push(selectedObjectId);
             }
             break;
