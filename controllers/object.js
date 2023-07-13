@@ -102,12 +102,12 @@ function uploadMediaFile(objectID, req, callback) {
         return;
     }
 
-    var mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
+    let mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
     if (!fs.existsSync(mediaDir)) {
         fs.mkdirSync(mediaDir);
     }
 
-    var form = new formidable.IncomingForm({
+    let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
         keepExtensions: true
         // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
@@ -125,8 +125,9 @@ function uploadMediaFile(objectID, req, callback) {
     form.on('fileBegin', function (name, file) {
         console.log('fileBegin loading', name, file);
 
+        let filepath = file.path || file.filepath;
         // rename uploaded file using mediaUuid that is passed back to client
-        let extension = path.extname(file.path);
+        let extension = path.extname(filepath);
         newFilepath = form.uploadDir + '/' + mediaUuid + extension;
 
         if (fs.existsSync(newFilepath)) {
@@ -134,8 +135,12 @@ function uploadMediaFile(objectID, req, callback) {
             fs.unlinkSync(newFilepath);
         }
 
-        console.log('upload ' + file.path + ' to ' + newFilepath);
-        file.path = newFilepath;
+        console.log('upload ' + filepath + ' to ' + newFilepath);
+        if (file.path) {
+            file.path = newFilepath;
+        } else if (file.filepath) {
+            file.filepath = newFilepath;
+        }
     });
 
     form.parse(req, function (err, fields) {
