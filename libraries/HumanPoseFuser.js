@@ -32,6 +32,9 @@ const JOINTS = {
     PELVIS: 'pelvis', // synthetic
 };
 
+/** Mapping from joint ordering in SkeletonFitting module to the ordering in JOINTS schema. */
+const JOINTS_MAP = [21, 11, 13, 15, 12, 14, 16, 20, 19, 18, 17, 0, 5, 7, 9, 6, 8, 10, 1, 3, 2, 4];
+
 /** Enum for the method for fusing poses for the same person from several views/toolbox apps. */
 const FusionMethod = Object.freeze({
     BestSingleView: 'BestSingleView',
@@ -1102,44 +1105,33 @@ class HumanPoseFuser {
 
                         const start = Date.now();
 
-                        const inputJointPositionsArr = [
-                            [finalPose.joints[21].x, finalPose.joints[21].y, finalPose.joints[21].z], // Pelvis
-                            [finalPose.joints[11].x, finalPose.joints[11].y, finalPose.joints[11].z], // LeftHip
-                            [finalPose.joints[13].x, finalPose.joints[13].y, finalPose.joints[13].z], // LeftKnee
-                            [finalPose.joints[15].x, finalPose.joints[15].y, finalPose.joints[15].z]  // LeftAnkle
-                        ];
                         var inputJointPositions = new this.skeletonFittingModule.Vector2d();
-                        inputJointPositionsArr.forEach(arr => {
-                            var v = new this.skeletonFittingModule.Vectord();
-                            arr.forEach(val => v.push_back(val));
-                            inputJointPositions.push_back(v);
-                        });
+                        for (let ind of JOINTS_MAP) {
+                            var pos = new this.skeletonFittingModule.Vectord();
+                            pos.push_back(finalPose.joints[ind].x);
+                            pos.push_back(finalPose.joints[ind].y);
+                            pos.push_back(finalPose.joints[ind].z);
+                            inputJointPositions.push_back(pos);
+                        }
 
-                        var jointPositions = this.skeletonFittingModule.computePoseSkeletonModel(inputJointPositions);
+                        var jointPositions = this.skeletonFittingModule.initializePoseSkeletonModel(inputJointPositions);
 
                         if (jointPositions.size() != 0) {
-                            // Pelvis
-                            finalPose.joints[21].x = jointPositions.get(0).get(0);
-                            finalPose.joints[21].y = jointPositions.get(0).get(1);
-                            finalPose.joints[21].z = jointPositions.get(0).get(2);
-                            // LeftHip
-                            finalPose.joints[11].x = jointPositions.get(1).get(0);
-                            finalPose.joints[11].y = jointPositions.get(1).get(1);
-                            finalPose.joints[11].z = jointPositions.get(1).get(2);
-                            // LeftKnee
-                            finalPose.joints[13].x = jointPositions.get(2).get(0);
-                            finalPose.joints[13].y = jointPositions.get(2).get(1);
-                            finalPose.joints[13].z = jointPositions.get(2).get(2);
-                            // LeftAnkle
-                            finalPose.joints[15].x = jointPositions.get(3).get(0);
-                            finalPose.joints[15].y = jointPositions.get(3).get(1);
-                            finalPose.joints[15].z = jointPositions.get(3).get(2);
+                            for (var i = 0; i < jointPositions.size(); i++) {
+                                var ind = JOINTS_MAP[i];
+                                finalPose.joints[ind].x = jointPositions.get(i).get(0);
+                                finalPose.joints[ind].y = jointPositions.get(i).get(1);
+                                finalPose.joints[ind].z = jointPositions.get(i).get(2);
+                            }
                         }
 
                         /*if (this.verbose)*/ {
                             const elapsedTimeMs = Date.now() - start;
                             console.log(`Skeleton fitting time: ${elapsedTimeMs}ms`);
                         }
+                        // TODO: don't do new/delete very frame
+                        this.deleteVector2d(inputJointPositions);
+                        this.deleteVector2d(jointPositions);
                     }
                 }
                 else {
@@ -1467,6 +1459,13 @@ class HumanPoseFuser {
             this.updateFusedObject(fid, group);
         }
 
+    }
+
+    deleteVector2d(vector2d) {
+        for (var i = 0; i < vector2d.size(); i++) {
+            vector2d.get(i).delete();
+        }
+        vector2d.delete();
     }
 
 }
