@@ -1571,15 +1571,15 @@ function objectWebServer() {
             return;
         }
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
-
-        if (!fs.existsSync(fileName)) {
+        let fileNameWithoutQueryParams = fileName.split('?')[0];
+        if (!fs.existsSync(fileNameWithoutQueryParams)) {
             next();
             return;
         }
 
         // Non HTML files just get sent normally
         if (urlArray[urlArray.length - 1].indexOf('html') === -1) {
-            res.sendFile(fileName);
+            res.sendFile(fileNameWithoutQueryParams);
             return;
         }
 

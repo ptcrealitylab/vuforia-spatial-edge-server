@@ -149,7 +149,8 @@ function uploadMediaFile(objectID, req, callback) {
         // rename uploaded file using mediaUuid that is passed back to client
         // let extension = path.extname(filepath);
         simplifiedFilename = simplifyFilename(file.originalFilename);
-        newFilepath = path.join(form.uploadDir, `${mediaUuid}_${simplifiedFilename}`);
+        // newFilepath = path.join(form.uploadDir, `${mediaUuid}_${simplifiedFilename}`);
+        newFilepath = path.join(form.uploadDir, simplifiedFilename);
         // newFilepath = form.uploadDir + '/' + mediaUuid + extension;
 
         if (fs.existsSync(newFilepath)) {
@@ -172,7 +173,8 @@ function uploadMediaFile(objectID, req, callback) {
             success: true,
             mediaUuid: mediaUuid,
             rawFilepath: newFilepath,
-            fileName: `${mediaUuid}_${simplifiedFilename}` // mediaUuid + path.extname(newFilepath)
+            // fileName: `${mediaUuid}_${simplifiedFilename}` // mediaUuid + path.extname(newFilepath)
+            fileName: simplifiedFilename // mediaUuid + path.extname(newFilepath)
         });
     });
 }
