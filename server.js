@@ -216,7 +216,7 @@ services.getIP = function () {
 
     for (let key in interfaceNames) {
         let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
-        for (let key2 in tempIps) if (tempIps[key2] === '127.0.0.1' || tempIps[key2] === 'localhost') tempIps.splice(key2, 1);
+        tempIps = tempIps.filter(ip => !['127.0.0.1', 'localhost'].includes(ip));
         this.ips.interfaces[interfaceNames[key]] = tempIps[0];
     }
 
