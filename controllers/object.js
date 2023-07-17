@@ -93,6 +93,8 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     }
 };
 
+// takes a filename (plus extension) and removes special characters and
+// anything non-alphanumeric other than hyphens, underscores, periods
 function simplifyFilename(filename) {
     // Remove any special characters and replace them with hyphens
     filename = filename.replace(/[^\w\s.-]/g, '-');
@@ -128,7 +130,7 @@ function uploadMediaFile(objectID, req, callback) {
 
     let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
-        keepExtensions: true,
+        keepExtensions: true
         // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
 
