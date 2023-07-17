@@ -682,7 +682,6 @@
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
                 this.setStickinessOff = makeSendStub('setStickinessOff');
-                this.setFull2D = makeSendStub('setFull2D');
                 this.setExclusiveFullScreenOn = makeSendStub('setExclusiveFullScreenOn');
                 this.setExclusiveFullScreenOff = makeSendStub('setExclusiveFullScreenOff');
                 this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
@@ -1386,16 +1385,6 @@
 
             postDataToParent(dataToPost);
         };
-
-        /**
-         * Removes or adds the touch overlay div from the tool, without affecting fullscreen status
-         * @param {boolean} enabled
-         */
-        this.setFull2D = function (enabled) {
-            postDataToParent({
-                full2D: enabled
-            });
-        }
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';

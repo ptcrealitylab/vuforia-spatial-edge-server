@@ -1571,6 +1571,7 @@ function objectWebServer() {
             return;
         }
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
+        // we need to check without any ?options=xyz at the end or it might not find the file
         let fileNameWithoutQueryParams = fileName.split('?')[0];
         if (!fs.existsSync(fileNameWithoutQueryParams)) {
             next();
@@ -1584,7 +1585,7 @@ function objectWebServer() {
         }
 
         // HTML files get object.js injected
-        var html = fs.readFileSync(fileName, 'utf8');
+        var html = fs.readFileSync(fileNameWithoutQueryParams, 'utf8');
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
