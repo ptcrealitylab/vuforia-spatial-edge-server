@@ -128,8 +128,8 @@ function uploadMediaFile(objectID, req, callback) {
 
     let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
-        keepExtensions: true
-        // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
+        keepExtensions: true,
+        // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
 
     console.log('created form');
@@ -138,27 +138,23 @@ function uploadMediaFile(objectID, req, callback) {
         callback(500, err);
     });
 
-    let mediaUuid = utilities.uuidTime();
+    let mediaUuid = utilities.uuidTime(); // deprecated
     let simplifiedFilename = null;
     let newFilepath = null;
 
     form.on('fileBegin', function (name, file) {
         console.log('fileBegin loading', name, file);
 
-        let filepath = file.path || file.filepath;
-        // rename uploaded file using mediaUuid that is passed back to client
-        // let extension = path.extname(filepath);
+        // simplify the filename so that it only contains alphanumeric, hyphens, underscores, and periods
         simplifiedFilename = simplifyFilename(file.originalFilename);
-        // newFilepath = path.join(form.uploadDir, `${mediaUuid}_${simplifiedFilename}`);
         newFilepath = path.join(form.uploadDir, simplifiedFilename);
-        // newFilepath = form.uploadDir + '/' + mediaUuid + extension;
 
         if (fs.existsSync(newFilepath)) {
             console.log('deleted old raw file');
             fs.unlinkSync(newFilepath);
         }
 
-        console.log('upload ' + filepath + ' to ' + newFilepath);
+        // old formidable library uses file.path, new version uses file.filepath
         if (file.path) {
             file.path = newFilepath;
         } else if (file.filepath) {
@@ -171,10 +167,9 @@ function uploadMediaFile(objectID, req, callback) {
 
         callback(200, {
             success: true,
-            mediaUuid: mediaUuid,
-            rawFilepath: newFilepath,
-            // fileName: `${mediaUuid}_${simplifiedFilename}` // mediaUuid + path.extname(newFilepath)
-            fileName: simplifiedFilename // mediaUuid + path.extname(newFilepath)
+            mediaUuid: mediaUuid, // deprecated field
+            fileName: simplifiedFilename, // the "title" of the file
+            rawFilepath: newFilepath // this is the actual path to the resource
         });
     });
 }
