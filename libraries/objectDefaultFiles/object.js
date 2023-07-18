@@ -28,7 +28,7 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
-        serverIp: '127.0.0.1',
+        serverIp: 'localhost',
         serverPort: '8080',
         matrices: {
             modelView: [],
@@ -739,15 +739,13 @@
                 this.analyticsClose = makeSendStub('analyticsClose');
                 this.analyticsFocus = makeSendStub('analyticsFocus');
                 this.analyticsBlur = makeSendStub('analyticsBlur');
-                this.analyticsSetCursorTime = makeSendStub('analyticsSetCursorTime');
-                this.analyticsSetHighlightRegion = makeSendStub('analyticsSetHighlightRegion');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
                 this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
-                this.analyticsSetLens = makeSendStub('analyticsSetLens');
-                this.analyticsSetLensDetail = makeSendStub('analyticsSetLensDetail');
-                this.analyticsSetSpaghettiAttachPoint = makeSendStub('analyticsSetSpaghettiAttachPoint');
-                this.analyticsSetSpaghettiVisible = makeSendStub('analyticsSetSpaghettiVisible');
-                this.analyticsSetAllClonesVisible = makeSendStub('analyticsSetAllClonesVisible');
+
+                this.getOAuthToken = makeSendStub('getOAuthToken');
+
+                this.patchHydrate = makeSendStub('patchHydrate');
+                this.patchSetShaderMode = makeSendStub('patchSetShaderMode');
 
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
@@ -1662,30 +1660,6 @@
         };
 
         /**
-         * @param {number} time - cursor time in ms
-         */
-        this.analyticsSetCursorTime = function analyticsSetCursorTime(time) {
-            postDataToParent({
-                analyticsSetCursorTime: {
-                    frame: spatialObject.frame,
-                    time,
-                },
-            });
-        };
-
-        /**
-         * @param {TimeRegion} highlightRegion
-         */
-        this.analyticsSetHighlightRegion = function analyticsSetHighlightRegion(highlightRegion) {
-            postDataToParent({
-                analyticsSetHighlightRegion: {
-                    frame: spatialObject.frame,
-                    highlightRegion,
-                },
-            });
-        };
-
-        /**
          * @param {TimeRegion} displayRegion
          */
         this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
@@ -1710,61 +1684,50 @@
         };
 
         /**
-         * @param {"reba"|"motion"} lens
+         * Makes an OAuth request at `authorizationUrl`, requires the OAuth flow to redirect to navigate://<toolbox>
+         * Will not call `callback` on initial OAuth flow, as the whole app gets reloaded
+         * TODO: Write correct redirect URIs above
+         * @param {object} urls - OAuth Authorization and Access Token URL
+         * @param {string} clientId - OAuth client ID
+         * @param {string} clientSecret - OAuth client secret
+         * @param {function} callback - Callback function executed once OAuth flow completes
          */
-        this.analyticsSetLens = function analyticsSetLens(lens) {
+        this.getOAuthToken = function(urls, clientId, clientSecret, callback) {
             postDataToParent({
-                analyticsSetLens: {
+                getOAuthToken: {
                     frame: spatialObject.frame,
-                    lens,
+                    clientId: clientId,
+                    clientSecret: clientSecret,
+                    urls
+                }
+            });
+            spatialObject.messageCallBacks.onOAuthToken = function (msgContent) {
+                if (typeof msgContent.onOAuthToken !== 'undefined') {
+                    callback(msgContent.onOAuthToken.token, msgContent.onOAuthToken.error);
+                }
+            };
+        };
+
+        /**
+         * @param {Object} serialization
+         */
+        this.patchHydrate = function patchHydrate(serialization) {
+            postDataToParent({
+                patchHydrate: {
+                    frame: spatialObject.frame,
+                    serialization,
                 },
             });
         };
 
         /**
-         * @param {"bone"|"pose"} lensDetail
+         * @param {string} shaderMode - Part of ShaderMode enum (see remote operator addon)
          */
-        this.analyticsSetLensDetail = function analyticsSetLensDetail(lensDetail) {
+        this.patchSetShaderMode = function patchSetShaderMode(shaderMode) {
             postDataToParent({
-                analyticsSetLensDetail: {
+                patchSetShaderMode: {
                     frame: spatialObject.frame,
-                    lensDetail,
-                },
-            });
-        };
-
-        /**
-         * @param {string} spaghettiAttachPoint - joint id
-         */
-        this.analyticsSetSpaghettiAttachPoint = function analyticsSetSpaghettiAttachPoint(spaghettiAttachPoint) {
-            postDataToParent({
-                analyticsSetSpaghettiAttachPoint: {
-                    frame: spatialObject.frame,
-                    spaghettiAttachPoint,
-                },
-            });
-        };
-
-        /**
-         * @param {boolean} allClonesVisible
-         */
-        this.analyticsSetSpaghettiVisible = function analyticsSetSpaghettiVisible(spaghettiVisible) {
-            postDataToParent({
-                analyticsSetSpaghettiVisible: {
-                    frame: spatialObject.frame,
-                    spaghettiVisible,
-                },
-            });
-        };
-
-        /**
-         * @param {boolean} allClonesVisible
-         */
-        this.analyticsSetAllClonesVisible = function analyticsSetAllClonesVisible(allClonesVisible) {
-            postDataToParent({
-                analyticsSetAllClonesVisible: {
-                    frame: spatialObject.frame,
-                    allClonesVisible,
+                    shaderMode,
                 },
             });
         };

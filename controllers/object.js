@@ -93,6 +93,27 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
     }
 };
 
+// takes a filename (plus extension) and removes special characters and
+// anything non-alphanumeric other than hyphens, underscores, periods
+function simplifyFilename(filename) {
+    // Remove any special characters and replace them with hyphens
+    filename = filename.replace(/[^\w\s.-]/g, '-');
+
+    // Remove any leading or trailing spaces
+    filename = filename.trim();
+
+    // Replace consecutive spaces with a single hyphen
+    filename = filename.replace(/\s+/g, '-');
+
+    // Remove any consecutive hyphens or underscores
+    filename = filename.replace(/[-_]{2,}/g, '-');
+
+    // Remove any non-alphanumeric characters except hyphens, underscores, and periods
+    filename = filename.replace(/[^\w-.]/g, '');
+
+    return filename;
+}
+
 function uploadMediaFile(objectID, req, callback) {
     console.log('received media file for', objectID);
 
@@ -102,15 +123,15 @@ function uploadMediaFile(objectID, req, callback) {
         return;
     }
 
-    var mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
+    let mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
     if (!fs.existsSync(mediaDir)) {
         fs.mkdirSync(mediaDir);
     }
 
-    var form = new formidable.IncomingForm({
+    let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
         keepExtensions: true
-        // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
+        // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
 
     console.log('created form');
@@ -119,29 +140,39 @@ function uploadMediaFile(objectID, req, callback) {
         callback(500, err);
     });
 
-    let mediaUuid = utilities.uuidTime();
+    let mediaUuid = utilities.uuidTime(); // deprecated
+    let simplifiedFilename = null;
     let newFilepath = null;
 
     form.on('fileBegin', function (name, file) {
         console.log('fileBegin loading', name, file);
 
-        // rename uploaded file using mediaUuid that is passed back to client
-        let extension = path.extname(file.path);
-        newFilepath = form.uploadDir + '/' + mediaUuid + extension;
+        // simplify the filename so that it only contains alphanumeric, hyphens, underscores, and periods
+        simplifiedFilename = simplifyFilename(file.originalFilename);
+        newFilepath = path.join(form.uploadDir, simplifiedFilename);
 
         if (fs.existsSync(newFilepath)) {
             console.log('deleted old raw file');
             fs.unlinkSync(newFilepath);
         }
 
-        console.log('upload ' + file.path + ' to ' + newFilepath);
-        file.path = newFilepath;
+        // old formidable library uses file.path, new version uses file.filepath
+        if (file.path) {
+            file.path = newFilepath;
+        } else if (file.filepath) {
+            file.filepath = newFilepath;
+        }
     });
 
     form.parse(req, function (err, fields) {
         console.log('successfully uploaded image', err, fields);
 
-        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: newFilepath});
+        callback(200, {
+            success: true,
+            mediaUuid: mediaUuid, // deprecated field
+            fileName: simplifiedFilename, // the "title" of the file
+            rawFilepath: newFilepath // this is the actual path to the resource
+        });
     });
 }
 
