@@ -447,7 +447,21 @@ class ThreejsInterface {
 
         if (this.isProjectionMatrixSet) {
             if (this.renderer && this.scene && this.camera) {
+                const curCamPosition = new THREE.Vector3()
+                curCamPosition.copy(this.camera.position);
+                const curCamScale = new THREE.Vector3();
+                curCamScale.copy(this.camera.scale);
+                const curCamQuaternion = new THREE.Quaternion();
+                curCamQuaternion.copy(this.camera.quaternion);
+                this.camera.position.copy(new THREE.Vector3(0, 0, 0));
+                this.camera.scale.copy(new THREE.Vector3(1, 1, 1));
+                this.camera.quaternion.copy(THREE.Quaternion.identity);
+
                 this.renderer.render(this.scene, this.camera);
+                
+                this.camera.position.copy(curCamPosition);
+                this.camera.scale.copy(curCamScale);
+                this.camera.quaternion.copy(curCamQuaternion);
                 if (this.done && realGl && this.pendingLoads === 0) {
                     for (let proxy of proxies) {
                         proxy.__uncloneableObj = null;
