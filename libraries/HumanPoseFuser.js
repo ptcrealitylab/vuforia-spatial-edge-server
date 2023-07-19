@@ -40,7 +40,8 @@ const FusionMethod = Object.freeze({
     BestSingleView: 'BestSingleView',
     BestSingleViewWithCorrection: 'BestSingleViewWithCorrection',
     BestSingleViewWithMultiviewCorrection: 'BestSingleViewWithMultiviewCorrection',
-    MultiViewTriangulation: 'MultiViewTriangulation'
+    MultiViewTriangulation: 'MultiViewTriangulation',
+    MultiViewSkeletonFitting: 'MultiViewSkeletonFitting'
 });
 
 /** Enum for the metric used for selecting the best pose across several views/toolbox apps. */
@@ -205,7 +206,7 @@ class HumanPoseFuser {
         /** max velocity of whole body - picked 2 m/s (average walking speed is 1.4 m/s) */
         this.maxHumanVelocity = 2.0;  // unit: mm/ms
         /** method for fusing poses for the same person from several views/toolbox apps. */
-        this.fusionMethod = FusionMethod.BestSingleView; // FusionMethod.BestSingleViewWithCorrection; // FusionMethod.BestSingleViewWithMultiviewCorrection;
+        this.fusionMethod = FusionMethod.MultiViewSkeletonFitting; //FusionMethod.BestSingleView; // FusionMethod.BestSingleViewWithCorrection; // FusionMethod.BestSingleViewWithMultiviewCorrection;
         /** weighting individual observations according to joint confidence in multiview triangulation */
         this.viewWeighting = true;
         /** metric used for selecting the best pose across several views/toolbox apps */
@@ -915,6 +916,79 @@ class HumanPoseFuser {
         return mvPose;
     }
 
+    /** Fits kinematic skeleton to a set of poses associated with a fused human object.
+     * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @return {WholePoseData | null} fitted 3D pose or null when failed
+     */
+    fitPose(poseDataArr) {
+
+        if (!this.skeletonFittingModule) {
+            console.warn('Skeleton fitting is not loaded yet.');
+            return null;
+        }
+        if (poseDataArr.length < 2) {
+            return null;
+        }
+
+        const start = Date.now();
+
+        // prepare data
+        let cameras = new this.skeletonFittingModule.CameraVector(); // per-view
+        let inputJointsPerView = new this.skeletonFittingModule.JointVector2d(); // per-view
+        let latestTS = 0; // the latest data timestamp
+        for (let [_id, pose] of poseDataArr) {
+            cameras.push_back({
+                fx: pose.focalLength[0],
+                fy: pose.focalLength[1],
+                cx: pose.principalPoint[0],
+                cy: pose.principalPoint[1],
+                transformW2C: pose.transformW2C
+            });
+
+            // reorder joint objects to be compatible with skeletonFittingModule
+            let jointsVec = new this.skeletonFittingModule.JointVector(); // will be deleted later by deleteVector2d()
+            for (let ind of JOINTS_MAP) {
+                jointsVec.push_back(pose.joints[ind]);
+            }
+            inputJointsPerView.push_back(jointsVec);
+
+            if (pose.timestamp > latestTS) {
+                latestTS = pose.timestamp;
+            }
+        }
+
+        // prepare output pose
+        const numJoints = poseDataArr[0][1].joints.length;
+        let fittedPose = {
+            name: '',
+            timestamp: latestTS,
+            joints: Array(numJoints).fill({})
+        };
+
+        let joints = this.skeletonFittingModule.computePoseMultiView2D(inputJointsPerView, cameras);
+
+        if (joints.size() != 0) {
+            for (let i = 0; i < joints.size(); i++) {
+                fittedPose.joints[JOINTS_MAP[i]] = joints.get(i);
+            }
+        }
+        else { // fitting failed, return empty pose 
+            fittedPose = null;
+        }
+
+        // TODO: don't do new/delete very frame
+        this.deleteVector2d(inputJointsPerView);
+        joints.delete();
+        cameras.delete();
+
+        /*if (this.verbose)*/ {
+            const elapsedTimeMs = Date.now() - start;
+            console.log(`Skeleton fitting time: ${elapsedTimeMs}ms`);
+        }
+
+        return fittedPose;
+    }
+
     /** Computes translation offsets for poses from individual views/toolbox apps and their 'fused' pose calculated by a chosen method.
      * @param {Array.< [string, WholePoseData] >} poseDataArr - current non-empty poses for human objects associated with the fused object
      * @param {string} fusionMethod - method of fusing multiple 3d poses
@@ -1054,6 +1128,29 @@ class HumanPoseFuser {
             }
             break;
         }
+        case FusionMethod.MultiViewSkeletonFitting: {
+            // filter empty poses
+            let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
+            if (poseDataArr.length == 0) {
+                // no data in current frame, do nothing
+            } else if (poseDataArr.length == 1) {
+                // single view is currently updating the fused object
+                // currently, no update when poses from all expected views are not present (as in FusionMethod.BestSingleView)
+            } else {
+                let fittedPose = this.fitPose(poseDataArr);
+                if (!fittedPose) {
+                    console.warn('Failed to fit 3D pose.');
+                    updatedByChildren.push('none');
+                } else {
+                    // take directly current pose from the selected human object
+                    finalPose = fittedPose;
+                    for (let [objectId, _pose] of poseDataArr) {
+                        updatedByChildren.push(objectId);
+                    }
+                }
+            }
+            break;
+        }
         case FusionMethod.BestSingleViewWithMultiviewCorrection: {
             let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);
             if (!selectedObjectId) {
@@ -1102,10 +1199,9 @@ class HumanPoseFuser {
                 if (this.skeletonFittingModule) {
 
                     if (finalPose !== undefined && finalPose.joints.length != 0) {
-
                         const start = Date.now();
 
-                        var inputJointPositions = new this.skeletonFittingModule.Vector2d();
+                        var inputJointPositions = new this.skeletonFittingModule.JointVector2d();
                         for (let ind of JOINTS_MAP) {
                             var pos = new this.skeletonFittingModule.Vectord();
                             pos.push_back(finalPose.joints[ind].x);
@@ -1114,7 +1210,8 @@ class HumanPoseFuser {
                             inputJointPositions.push_back(pos);
                         }
 
-                        var jointPositions = this.skeletonFittingModule.initializePoseSkeletonModel(inputJointPositions);
+                        // var jointPositions = this.skeletonFittingModule.initializePoseSkeletonModel(inputJointPositions);
+                        var jointPositions = this.skeletonFittingModule.computePoseSkeletonModel(inputJointPositions);
 
                         if (jointPositions.size() != 0) {
                             for (var i = 0; i < jointPositions.size(); i++) {
