@@ -190,7 +190,7 @@ class HumanPoseFuser {
 
         /* Configuration parameters */
         /** Verbose logging */
-        this.verbose = false;
+        this.verbose = true;
         /** same frequency as body tracking in Toolbox app */
         this.fuseIntervalMs = 100;
         /** time interval into past to keep in data in pastPoses (on timeline of data ts) */
@@ -918,15 +918,17 @@ class HumanPoseFuser {
 
     /** Fits kinematic skeleton to a set of poses associated with a fused human object.
      * @param {Array.< [string, WholePoseData] >} poseDataArr - current poses for human objects associated with the fused object
+     * @param {number} selectedObjectIndex - index into poseDataArr for the pose from the best view
      * @return {WholePoseData | null} fitted 3D pose or null when failed
      */
-    fitPose(poseDataArr) {
+    fitPose(poseDataArr, selectedObjectIndex) {
 
         if (!this.skeletonFittingModule) {
             console.warn('Skeleton fitting is not loaded yet.');
             return null;
         }
         if (poseDataArr.length < 2) {
+            console.warn('Poses from less than 2 views.');
             return null;
         }
 
@@ -965,7 +967,7 @@ class HumanPoseFuser {
             joints: Array(numJoints).fill({})
         };
 
-        let joints = this.skeletonFittingModule.computePoseMultiView2D(inputJointsPerView, cameras);
+        let joints = this.skeletonFittingModule.computePoseMultiView2D(inputJointsPerView, cameras, selectedObjectIndex);
 
         if (joints.size() != 0) {
             for (let i = 0; i < joints.size(); i++) {
@@ -1104,15 +1106,10 @@ class HumanPoseFuser {
             let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
             if (poseDataArr.length == 0) {
                 // no data in current frame, do nothing
-            } else if (poseDataArr.length == 1) {
-                // single view is currently updating the fused object
-                // currently, no update when poses from all expected views are not present (as in FusionMethod.BestSingleView)
-
+            } else {
                 // TODO: need to allow for the situation when there is just single human object associated with the fused object
                 // TODO: too volatile swithing between multiview and single view (hysteresis before switching to it?)
-                // finalPose = poseDataArr[0][1];
-                // fusedObjectIds.push(poseDataArr[0][0]);
-            } else {
+
                 // actual multiview fusion
                 let mvPose = this.triangulatePose(poseDataArr);
                 if (!mvPose) {
@@ -1133,11 +1130,18 @@ class HumanPoseFuser {
             let poseDataArr = Object.entries(poseData).filter(entry => entry[1].joints.length > 0);
             if (poseDataArr.length == 0) {
                 // no data in current frame, do nothing
-            } else if (poseDataArr.length == 1) {
-                // single view is currently updating the fused object
-                // currently, no update when poses from all expected views are not present (as in FusionMethod.BestSingleView)
             } else {
-                let fittedPose = this.fitPose(poseDataArr);
+                // TODO: need to allow for the situation when there is just single human object associated with the fused object
+
+                let selectedObjectId = this.selectHumanObject(fusedObjectId, poseData);  // result can be null
+                // check if the selected object is available in the current frame
+                let selectedObjectIndex = poseDataArr.findIndex(item => item[0] == selectedObjectId);
+                if (selectedObjectIndex < 0) {
+                    console.warn('Cannot select the best pose for a fused human object.');
+                    selectedObjectIndex = 0; // default to any object
+                }
+
+                let fittedPose = this.fitPose(poseDataArr, selectedObjectIndex);
                 if (!fittedPose) {
                     console.warn('Failed to fit 3D pose.');
                     updatedByChildren.push('none');
@@ -1195,48 +1199,8 @@ class HumanPoseFuser {
                 console.warn('Cannot select the best object for a fused human object.');
                 updatedByChildren.push('none');
             } else {
-                finalPose = poseData[selectedObjectId];
-                if (this.skeletonFittingModule) {
-
-                    if (finalPose !== undefined && finalPose.joints.length != 0) {
-                        const start = Date.now();
-
-                        var inputJointPositions = new this.skeletonFittingModule.JointVector2d();
-                        for (let ind of JOINTS_MAP) {
-                            var pos = new this.skeletonFittingModule.Vectord();
-                            pos.push_back(finalPose.joints[ind].x);
-                            pos.push_back(finalPose.joints[ind].y);
-                            pos.push_back(finalPose.joints[ind].z);
-                            inputJointPositions.push_back(pos);
-                        }
-
-                        // var jointPositions = this.skeletonFittingModule.initializePoseSkeletonModel(inputJointPositions);
-                        var jointPositions = this.skeletonFittingModule.computePoseSkeletonModel(inputJointPositions);
-
-                        if (jointPositions.size() != 0) {
-                            for (var i = 0; i < jointPositions.size(); i++) {
-                                var ind = JOINTS_MAP[i];
-                                finalPose.joints[ind].x = jointPositions.get(i).get(0);
-                                finalPose.joints[ind].y = jointPositions.get(i).get(1);
-                                finalPose.joints[ind].z = jointPositions.get(i).get(2);
-                            }
-                        }
-
-                        /*if (this.verbose)*/ {
-                            const elapsedTimeMs = Date.now() - start;
-                            console.log(`Skeleton fitting time: ${elapsedTimeMs}ms`);
-                        }
-                        // TODO: don't do new/delete very frame
-                        this.deleteVector2d(inputJointPositions);
-                        this.deleteVector2d(jointPositions);
-                    }
-                }
-                else {
-                    console.warn('Skeleton fitting is not loaded yet.');
-                }
-
                 // take directly current pose from the selected human object (can be undefined in the current frame)
-                //finalPose = poseData[selectedObjectId];
+                finalPose = poseData[selectedObjectId];
                 updatedByChildren.push(selectedObjectId);
             }
             break;
