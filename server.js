@@ -144,6 +144,7 @@ const addonPaths = [
 
 const Addons = require('./libraries/addons/Addons');
 const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
+const AddonSecretsLoader = require('./libraries/addons/AddonSecretsLoader');
 
 const addons = new Addons(addonPaths);
 const addonFolders = addons.listAddonFolders();
@@ -531,6 +532,11 @@ availableModules.setNodes(nodeTypeModules);
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
 availableModules.setBlocks(blockModules);
+
+const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
+const getToolSecrets = (toolName) => {
+    return addonSecrets[path.basename(path.dirname(frameFolderLoader.resolvePath(toolName)))];
+}
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
