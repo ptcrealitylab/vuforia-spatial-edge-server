@@ -16,6 +16,7 @@ module.exports = {
             try {
                 secrets[addon] = JSON.parse(fs.readFileSync(secretsPath, 'utf8'));
             } catch (e) {
+                console.error(`Improperly formatted secrets.json at ${secretsPath}`);
             }
         });
         return secrets;
