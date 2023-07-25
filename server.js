@@ -534,9 +534,10 @@ const blockModules = blockFolderLoader.loadModules();   // Will hold all availab
 availableModules.setBlocks(blockModules);
 
 const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
-const getToolSecrets = (toolName) => {
-    return addonSecrets[path.basename(path.dirname(frameFolderLoader.resolvePath(toolName)))];
+const getFrameSecrets = (frameName) => {
+    return addonSecrets[path.basename(path.dirname(frameFolderLoader.resolvePath(frameName)))];
 }
+exports.getFrameSecrets = getFrameSecrets;
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
@@ -594,7 +595,6 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const {oauthRefreshRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -2072,8 +2072,8 @@ function objectWebServer() {
         webServer.get('/proxy/*', proxyRequestHandler);
 
         const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
-        webServer.post('/oauthRefresh/*', oauthRefreshRequestHandler);
-        webServer.post('/oauthAcquire/*', oauthAcquireRequestHandler);
+        webServer.post('/oauthRefresh', oauthRefreshRequestHandler);
+        webServer.post('/oauthAcquire', oauthAcquireRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {

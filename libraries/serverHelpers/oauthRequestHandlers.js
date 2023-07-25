@@ -1,13 +1,18 @@
 const fetch = require('node-fetch');
 const querystring = require('querystring');
+const { getFrameSecrets } = require('../../server');
 
 const oauthRefreshRequestHandler = (req, res) => {
-    const refreshUrl = req.params[0]; // TODO: get this from the tool somehow to prevent leaking secret to any supplied url
+    const frameName = req.body.frameName;
+    const secrets = getFrameSecrets(frameName);
+    const refreshUrl = secrets["refreshUrl"];
+    const clientId = secrets["clientId"];
+    const clientSecret = secrets["clientSecret"];
     const data = {
         'grant_type': 'refresh_token',
         'refresh_token': req.body.refresh_token,
-        'client_id': req.body.client_id,
-        'client_secret': req.body.client_secret,
+        'client_id': clientId,
+        'client_secret': clientSecret,
     };
     fetch(refreshUrl, {
         method: 'POST',
@@ -25,13 +30,17 @@ const oauthRefreshRequestHandler = (req, res) => {
 };
 
 const oauthAcquireRequestHandler = (req, res) => {
-    const acquireUrl = req.params[0]; // TODO: get this from the addon somehow to prevent leaking secret to any client-supplied url (e.g. via postman)
+    const frameName = req.body.frameName;
+    const secrets = getFrameSecrets(frameName);
+    const acquireUrl = secrets["acquireUrl"];
+    const clientId = secrets["clientId"];
+    const clientSecret = secrets["clientSecret"];
     const data = {
         'grant_type': 'authorization_code',
         'code': req.body.code,
         'redirect_uri': req.body.redirect_uri,
-        'client_id': req.body.client_id,
-        'client_secret': req.body.client_secret,
+        'client_id': clientId,
+        'client_secret': clientSecret,
     };
     fetch(acquireUrl, {
         method: 'POST',
