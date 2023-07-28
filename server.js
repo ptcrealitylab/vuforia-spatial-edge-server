@@ -535,7 +535,13 @@ availableModules.setBlocks(blockModules);
 
 const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
 const getFrameSecrets = (frameName) => {
-    return addonSecrets[path.basename(path.dirname(frameFolderLoader.resolvePath(frameName)))];
+    const frameFolderPath = frameFolderLoader.resolvePath(frameName);
+    const addonFolderPath = path.dirname(frameFolderPath);
+    const addonName = path.basename(addonFolderPath);
+    if (!addonSecrets[addonName]) {
+        throw new Error(`Addon ${addonName} does not have any registered secrets`);
+    }
+    return addonSecrets[addonName];
 }
 exports.getFrameSecrets = getFrameSecrets;
 
