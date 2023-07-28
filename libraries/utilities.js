@@ -576,7 +576,7 @@ exports.updateObject = function updateObject(objectName, objects) {
 exports.deleteObject = function deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
     if (fs.existsSync(objectFolderPath)) {
-        fs.rmSync(objectFolderPath, {recursive: true});
+        fs.rmdirSync(objectFolderPath, {recursive: true});
     }
 
     let objectKey = this.readObject(objectLookup, objectName);
