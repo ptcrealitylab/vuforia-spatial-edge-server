@@ -4,7 +4,17 @@ const { getFrameSecrets } = require('../../server');
 
 const oauthRefreshRequestHandler = (req, res) => {
     const frameName = req.body.frameName;
-    const secrets = getFrameSecrets(frameName);
+    if (!frameName) {
+        res.status(400).send({error: 'Missing frameName parameter'});
+        return;
+    }
+    let secrets;
+    try {
+        secrets = getFrameSecrets(frameName);
+    } catch (e) {
+        res.status(400).send({error: `Invalid frameName "${frameName}"`});
+        return;
+    }
     const refreshUrl = secrets["refreshUrl"];
     const clientId = secrets["clientId"];
     const clientSecret = secrets["clientSecret"];
@@ -21,17 +31,33 @@ const oauthRefreshRequestHandler = (req, res) => {
         },
         body: querystring.stringify(data)
     }).then(response => {
-        return response.json();
-    }).then(data => {
-        res.send(data);
+        if (response.status !== 200) {
+            response.json().then(data => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(data);
+            }).catch(_error => {});
+        } else {
+            response.json().then(data => {
+                res.send(data);
+            }).catch(_error => {});
+        }
     }).catch(error => {
-        res.send(error);
+        res.status(400).send(error);
     });
 };
 
 const oauthAcquireRequestHandler = (req, res) => {
     const frameName = req.body.frameName;
-    const secrets = getFrameSecrets(frameName);
+    if (!frameName) {
+        res.status(400).send({error: 'Missing frameName parameter'});
+        return;
+    }
+    let secrets;
+    try {
+        secrets = getFrameSecrets(frameName);
+    } catch (e) {
+        res.status(400).send({error: `Invalid frameName "${frameName}"`});
+        return;
+    }
     const acquireUrl = secrets["acquireUrl"];
     const clientId = secrets["clientId"];
     const clientSecret = secrets["clientSecret"];
@@ -49,11 +75,17 @@ const oauthAcquireRequestHandler = (req, res) => {
         },
         body: querystring.stringify(data)
     }).then(response => {
-        return response.json();
-    }).then(data => {
-        res.send(data);
+        if (response.status !== 200) {
+            response.json().then(data => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(data);
+            }).catch(_error => {});
+        } else {
+            response.json().then(data => {
+                res.send(data);
+            }).catch(_error => {});
+        }
     }).catch(error => {
-        res.send(error);
+        res.status(400).send(error);
     });
 };
 
