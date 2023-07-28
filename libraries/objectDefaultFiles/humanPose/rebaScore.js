@@ -50,7 +50,7 @@ function calculateXAngle(skel, jointARaw, jointBRaw) {
     const jointB = jointToPoseNet(jointBRaw);
 
     if (typeof skel == 'undefined') {
-        console.log('the skel is undefined');
+        console.error('the skel is undefined');
         return 'undefined';
     }
 
@@ -72,7 +72,7 @@ function  calculateYAngle(skel, jointARaw, jointBRaw) {
     const jointB = jointToPoseNet(jointBRaw);
 
     if (typeof skel == 'undefined') {
-        console.log('the skel is undefined');
+        console.error('the skel is undefined');
         return 'undefined';
     }
     /* if joint is undefined skip over this iteration */
@@ -106,7 +106,7 @@ function calculateZAngle(skel, jointARaw, jointBRaw) {
     const jointB = jointToPoseNet(jointBRaw);
 
     if (typeof skel == 'undefined') {
-        console.log('the skel is undefined');
+        console.error('the skel is undefined');
         return 'undefined';
     }
     /* if joint is undefined skip over this iteration */

@@ -75,7 +75,7 @@ function makeStub(functionName) {
                 } else if (args[i] instanceof Array) {
                     args[i] = Array.from(args[i]);
                 } else {
-                    if (debugGlWorker) console.log('Uncloned arg', args[i]);
+                    if (debugGlWorker) console.warn('Uncloned arg', args[i]);
                 }
             }
         }
@@ -275,7 +275,7 @@ window.addEventListener('message', function(event) {
 
     if (message.name === 'frame') {
         if (Date.now() - message.time > 300) {
-            console.log('time drift detected');
+            if (debugGlWorker) console.warn('time drift detected');
             window.parent.postMessage({
                 workerId,
                 isFrameEnd: true,

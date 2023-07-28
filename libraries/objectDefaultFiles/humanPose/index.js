@@ -20,8 +20,6 @@ import * as utils from './utils.js';
     let lastRenderedPoses = {};
 
     function initService() {
-        console.log('init humanPose module', network, draw, utils);
-
         realityEditor.app.callbacks.subscribeToPoses((poseJoints) => {
             let pose = utils.makePoseFromJoints('device' + globalStates.tempUuid + '_pose1', poseJoints);
             let poseObjectName = utils.getPoseObjectName(pose);
@@ -73,7 +71,7 @@ import * as utils from './utils.js';
                     lastRenderedPoses[id] = utils.getPoseStringFromObject(obj);
                 }
             } catch (e) {
-                console.warn('error in renderHumanPoseObjects', e);
+                console.error('error in renderHumanPoseObjects', e);
             }
         });
     }
@@ -92,8 +90,6 @@ import * as utils from './utils.js';
     function tryUpdatingPoseObject(pose, humanPoseObject) {
         // update the object position to be the average of the pose.joints
         // update each of the tool's positions to be the position of the joint relative to the average
-        console.log('try updating pose object', pose, humanPoseObject);
-
         pose.joints.forEach((jointInfo, index) => {
             let jointName = Object.values(utils.JOINTS)[index];
             let frameId = Object.keys(humanPoseObject.frames).find(key => {
@@ -127,7 +123,6 @@ import * as utils from './utils.js';
 
         realityEditor.network.utilities.verifyObjectNameNotOnWorldServer(worldObject, poseObjectName, () => {
             network.addHumanPoseObject(worldObject.objectId, poseObjectName, (data) => {
-                console.log('added new human pose object', data);
                 nameIdMap[poseObjectName] = data.id;
                 // myAvatarId = data.id;
                 // connectionStatus.isMyAvatarCreated = true;
@@ -135,12 +130,12 @@ import * as utils from './utils.js';
                 delete objectsInProgress[poseObjectName];
 
             }, (err) => {
-                console.warn('unable to add human pose object to server', err);
+                console.error('unable to add human pose object to server', err);
                 delete objectsInProgress[poseObjectName];
 
             });
         }, () => {
-            console.warn('human pose already exists on server');
+            console.error('human pose already exists on server');
             delete objectsInProgress[poseObjectName];
 
         });
