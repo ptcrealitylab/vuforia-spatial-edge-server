@@ -131,7 +131,6 @@ recorder.persistToFile = function () {
                     reject(writeErr);
                     return;
                 }
-                console.log(`persist ${logName} successful`);
                 resolve(logName);
             });
         });

@@ -44,7 +44,6 @@ if (!fs.existsSync(objectsPath) &&
 
 // create objects folder at objectsPath if necessary
 if (!fs.existsSync(objectsPath)) {
-    console.log('created objects directory at ' + objectsPath);
     fs.mkdirSync(objectsPath);
 }
 
