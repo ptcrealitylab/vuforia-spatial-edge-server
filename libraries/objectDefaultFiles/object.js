@@ -735,6 +735,7 @@
                 this.getUserDetails = makeSendStub('getUserDetails');
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getMainCameraMatrix = makeSendStub('getMainCameraMatrix');
+                this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -2174,6 +2175,20 @@
                         // console.log(msgContent.mainCameraMatrix);
                         resolve(msgContent.mainCameraMatrix);
                         delete spatialObject.messageCallBacks['mainCameraMatrixResult'];
+                    }
+                }
+            })
+        }
+        
+        this.getSpatialCursorEvent = function() {
+            postDataToParent({
+                getSpatialCursorEvent: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
+                    if (typeof msgContent.spatialCursorEvent !== 'undefined') {
+                        resolve(msgContent.spatialCursorEvent);
+                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
                     }
                 }
             })
