@@ -128,6 +128,14 @@
              */
             onClose: [],
             /**
+             * Triggered when the envelope takes focus.
+             */
+            onFocus: [],
+            /**
+             * Triggered when the user minimizes the envelope, or another non-stackable envelope kicks this one out of fullscreen
+             */
+            onBlur: [],
+            /**
              * Triggered when the envelope loads new persistent data (about which frames it contains). Functions as an onload method.
              */
             onPublicDataLoaded: []
@@ -588,7 +596,6 @@
                     this._receiveScreenPosition(message.sourceFrame, message.msgContent.containedFrameMessage.screenPosition, message.msgContent.containedFrameMessage.worldCoordinates);
                 }
 
-                // console.warn('contents received envelope message', msgContent, sourceFrame, destinationFrame);
                 this.triggerCallbacks('onMessageFromContainedFrame', message.msgContent.containedFrameMessage);
             }
         };
@@ -613,7 +620,6 @@
          * @param {{containedFrames: Object|undefined, frameIdOrdering: Array.<string>|undefined}} savedContents
          */
         Envelope.prototype._defaultPublicDataListener = function(savedContents) {
-            console.log('saved envelope contents', savedContents);
             if (typeof savedContents.containedFrames !== 'undefined') {
                 this.containedFrames = savedContents.containedFrames;
                 this.containedFramesUpdated();
@@ -737,7 +743,6 @@
             if (this.areFramesOrdered) {
                 envelopeContents.frameIdOrdering = this.frameIdOrdering;
             }
-            console.log('savePersistentData', envelopeContents);
             this.realityInterface.writePublicData('storage', 'envelopeContents',  envelopeContents);
         };
 
@@ -754,7 +759,7 @@
                     try {
                         addedCallback(msgContent);
                     } catch (e) {
-                        console.warn('error in envelope callback: ' + callbackName, e);
+                        console.error('error in envelope callback: ' + callbackName, e);
                     }
                 });
             }
@@ -806,12 +811,9 @@
         Envelope.prototype.subscribeToPosition = function(frameId, callback, subscribe3d) {
             if (typeof subscriptions[frameId] !== 'undefined') {
                 // subscriptions[frameId] = {};
-                console.warn('currently only supports one subscription per frameId...');
-                console.warn('cancelling previous subscription and subscribing again.');
+                console.warn('currently only supports one subscription per frameId... cancelling previous subscription and subscribing again.');
             }
             subscriptions[frameId] = callback;
-            // console.log('subscribed to position for ' + frameId);
-            // console.log(subscriptions);
 
             let value = subscribe3d ? '3d' : true;
 
@@ -831,7 +833,6 @@
             if (typeof thisCallback !== 'function') {
                 return;
             }
-            // console.log('envelope learned contained frame position');
             let displayWidth = screenPosition.lowerRight.x - screenPosition.upperLeft.x;
             let displayHeight = screenPosition.lowerRight.y - screenPosition.upperLeft.y;
 

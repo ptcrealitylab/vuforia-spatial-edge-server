@@ -132,7 +132,6 @@ router.post('/:objectName/frame/:frameName/link/:linkName/addLink/', function (r
         res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
         return;
     }
-    console.log('routed by 2');
     res.status(200).send(linkController.newLink(req.params.objectName, req.params.frameName, req.params.linkName, req.body));
 });
 router.post('/:objectName/link/:linkName/', function (req, res) {
@@ -140,7 +139,6 @@ router.post('/:objectName/link/:linkName/', function (req, res) {
         res.status(400).send('Invalid object or link name. Must be alphanumeric.');
         return;
     }
-    console.log('routed by 1');
     res.status(200).send(linkController.newLink(req.params.objectName, req.params.objectName, req.params.linkName, req.body));
 });
 router.post('/:objectName/linkLock/:linkName/', function (req, res) {
