@@ -14,7 +14,7 @@ router.get('/logs', function(req, res) {
     if (fs.existsSync(recorder.logsPath)) {
         fs.readdir(recorder.logsPath, function (err, files) {
             if (err) {
-                console.log('blargl err', err);
+                console.error('Failed to read recorder logs directory', err);
                 res.json([]);
                 return;
             }
@@ -104,7 +104,6 @@ router.post('/patches', function(req, res) {
     }
     for (let patch of patches) {
         if (patch.key === req.body.key) {
-            console.warn('duplicate patch');
             res.send('patch uploaded');
             return;
         }
