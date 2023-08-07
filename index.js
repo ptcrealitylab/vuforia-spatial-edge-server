@@ -19,7 +19,6 @@ function startNewChild() {
 
 function onChildMessage(message) {
     if (message === 'restart') {
-        console.log('message from child:', message);
         child.removeListener('exit', onChildCrash);
         child.kill();
         startNewChild();

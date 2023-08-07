@@ -67,7 +67,7 @@ class LocalUIApp {
         if (this.userinterfacePath && fs.existsSync(this.userinterfacePath)) {
             this.app.use(express.static(this.userinterfacePath));
         } else {
-            console.warn('LocalUIApp missing userinterfacePath');
+            console.error(`${this.userinterfacePath} does not exist, unable to serve LocalUIApp UI`);
         }
     }
 
