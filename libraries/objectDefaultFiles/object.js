@@ -729,7 +729,6 @@
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
                 this.getUserDetails = makeSendStub('getUserDetails');
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
-                this.getMainCameraMatrix = makeSendStub('getMainCameraMatrix');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
@@ -2134,21 +2133,6 @@
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
                         delete spatialObject.messageCallBacks['areaTargetMeshResult'];
-                    }
-                }
-            })
-        }
-        
-        this.getMainCameraMatrix = function() {
-            postDataToParent({
-                getMainCameraMatrix: true
-            });
-            return new Promise((resolve, reject) => {
-                spatialObject.messageCallBacks.mainCameraMatrixResult = function (msgContent) {
-                    if (typeof msgContent.mainCameraMatrix !== 'undefined') {
-                        // console.log(msgContent.mainCameraMatrix);
-                        resolve(msgContent.mainCameraMatrix);
-                        delete spatialObject.messageCallBacks['mainCameraMatrixResult'];
                     }
                 }
             })
