@@ -728,6 +728,8 @@
                 this.promptForArea = makeSendStub('promptForArea');
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
                 this.getUserDetails = makeSendStub('getUserDetails');
+                this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
+                this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -2120,6 +2122,34 @@
                     }
                 };
             });
+        }
+        
+        this.getAreaTargetMesh = function() {
+            postDataToParent({
+                getAreaTargetMesh: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
+                    if (typeof msgContent.areaTargetMesh !== 'undefined') {
+                        resolve(msgContent.areaTargetMesh);
+                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                    }
+                }
+            })
+        }
+        
+        this.getSpatialCursorEvent = function() {
+            postDataToParent({
+                getSpatialCursorEvent: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
+                    if (typeof msgContent.spatialCursorEvent !== 'undefined') {
+                        resolve(msgContent.spatialCursorEvent);
+                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                    }
+                }
+            })
         }
 
         /**
