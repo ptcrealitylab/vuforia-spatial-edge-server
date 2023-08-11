@@ -1,5 +1,6 @@
 const HUMAN_POSE_ID_PREFIX = '_HUMAN_';
 
+// Obsolete - not used
 const JOINTS = {
     NOSE: 'nose',
     LEFT_EYE: 'left_eye',
@@ -27,6 +28,7 @@ const JOINTS = {
     // RIGHT_HAND: 'right hand synthetic',
 };
 
+// Obsolete - not used
 const JOINT_CONNECTIONS = {
     elbowWristLeft: [JOINTS.LEFT_WRIST, JOINTS.LEFT_ELBOW], // 0
     shoulderElbowLeft: [JOINTS.LEFT_ELBOW, JOINTS.LEFT_SHOULDER],
