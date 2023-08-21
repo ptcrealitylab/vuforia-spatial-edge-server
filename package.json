@@ -18,7 +18,7 @@
     "module-alias": "^2.2.3",
     "monaco-editor": "^0.41.0",
     "network-interfaces": "^1.1.0",
-    "node-fetch": "^2.6.12",
+    "node-fetch": "^2.6.13",
     "node-persist": "^2.1.0",
     "request": "^2.*",
     "simple-git": "^3.19.1",
