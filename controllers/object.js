@@ -57,9 +57,7 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
             keepExtensions: true,
             accept: 'video/mp4'
         });
-
-        console.log('created form for video');
-
+        
         form.on('error', function (err) {
             callback(500, err);
         });
@@ -67,29 +65,24 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
         var rawFilepath = form.uploadDir + '/' + videoID + '.mp4';
 
         if (fs.existsSync(rawFilepath)) {
-            console.log('deleted old raw file');
             fs.unlinkSync(rawFilepath);
         }
 
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
-            console.log('fileBegin loading', name, file);
         });
 
         form.parse(reqForForm, function (err, fields) {
-
             if (err) {
-                console.log('error parsing', err);
+                console.error('error parsing object video upload', err);
                 callback(500, err);
                 return;
             }
-
-            console.log('successfully created video file', err, fields);
-
+            
             callback(200, {success: true});
         });
     } catch (e) {
-        console.warn('error parsing video upload', e);
+        console.error('error parsing video upload', e);
     }
 };
 
@@ -115,8 +108,6 @@ function simplifyFilename(filename) {
 }
 
 function uploadMediaFile(objectID, req, callback) {
-    console.log('received media file for', objectID);
-
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'object ' + objectID + ' not found');
@@ -133,9 +124,7 @@ function uploadMediaFile(objectID, req, callback) {
         keepExtensions: true
         // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
-
-    console.log('created form');
-
+    
     form.on('error', function (err) {
         callback(500, err);
     });
@@ -145,14 +134,11 @@ function uploadMediaFile(objectID, req, callback) {
     let newFilepath = null;
 
     form.on('fileBegin', function (name, file) {
-        console.log('fileBegin loading', name, file);
-
         // simplify the filename so that it only contains alphanumeric, hyphens, underscores, and periods
         simplifiedFilename = simplifyFilename(file.originalFilename);
         newFilepath = path.join(form.uploadDir, simplifiedFilename);
 
         if (fs.existsSync(newFilepath)) {
-            console.log('deleted old raw file');
             fs.unlinkSync(newFilepath);
         }
 
@@ -165,8 +151,6 @@ function uploadMediaFile(objectID, req, callback) {
     });
 
     form.parse(req, function (err, fields) {
-        console.log('successfully uploaded image', err, fields);
-
         callback(200, {
             success: true,
             mediaUuid: mediaUuid, // deprecated field
@@ -211,11 +195,9 @@ const setMatrix = function(objectID, body, callback) {
     }
 
     object.matrix = body.matrix;
-    // console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
     if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
         object.worldId = body.worldId;
-        console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
         sceneGraph.updateObjectWorldId(objectID, object.worldId);
     }
 
@@ -281,9 +263,7 @@ const memoryUpload = function(objectID, req, callback) {
             utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
-
-        console.log('successfully created memory');
-
+        
         callback(200, {success: true});
     });
 };
@@ -331,7 +311,6 @@ const zipBackup = function(objectId, req, res) {
         res.status(500).send('zipBackup unavailable on mobile');
         return;
     }
-    console.log('sending zipBackup', objectId);
 
     if (!fs.existsSync(path.join(objectsPath, objectId))) {
         res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
@@ -355,14 +334,6 @@ const generateXml = function(objectID, body, callback) {
     var msgObject = body;
     var objectName = msgObject.name;
 
-    console.log(objectID, msgObject);
-
-    console.log('support inferred aspect ratio of image targets');
-    console.log('support object targets');
-
-    // var isImageTarget = true;
-    // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
-
     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
         '   <Tracking>\n' +
@@ -373,10 +344,8 @@ const generateXml = function(objectID, body, callback) {
     let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
     if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir);
-        console.log('created directory: ' + targetDir);
     }
 
-    console.log('am I here!');
     var xmlOutFile = path.join(targetDir, 'target.xml');
 
     fs.writeFile(xmlOutFile, documentcreate, function (err) {
