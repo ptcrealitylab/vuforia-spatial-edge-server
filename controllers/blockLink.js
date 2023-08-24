@@ -39,7 +39,6 @@ const addLogicLink = function (objectID, frameID, nodeID, linkID, body) {
             // write the object state to the permanent storage.
             utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-            console.log('added link: ' + linkID);
             updateStatus = 'added';
         } else {
             updateStatus = 'found endless Loop';
@@ -61,7 +60,6 @@ const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor)
         });
         utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-        console.log('deleted link: ' + linkID);
         updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;
     }
     return updateStatus;
