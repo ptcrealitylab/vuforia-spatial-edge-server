@@ -67,7 +67,12 @@ function pipeReadStream(req, res, readStream) {
 }
 
 router.get('/logs/:logPath', function(req, res) {
-    // res.json(recorder.timeObject);
+    let logPath = path.join(recorder.logsPath, req.params.logPath);
+    if (logPath.endsWith('.gz')) {
+        res.sendFile(logPath);
+        return;
+    }
+
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
     if (!fs.existsSync(compressedLogPath)) {
         // Compare only the start `objects_${startTime}` bit of the current log
