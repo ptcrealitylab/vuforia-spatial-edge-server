@@ -1550,6 +1550,8 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
+        html = html.replace('objectDefaultFiles/styles/', level + 'objectDefaultFiles/styles/');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
