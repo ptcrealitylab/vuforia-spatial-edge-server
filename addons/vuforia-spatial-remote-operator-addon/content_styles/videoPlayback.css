@@ -1,0 +1,405 @@
+.videoPreview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    background-color: rgba(255,255,255,0.5);
+}
+
+.videoPreviewContainer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: matrix3d(-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    width: 256px;
+    height: 144px;
+    background-color: black;
+}
+
+.timelineBox {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    /*background-color: rgba(0,0,0,0.8);*/
+    /*border: 1px solid rgba(0, 255, 255, 0.5);*/
+    width: 100px;
+    height: 100px;
+}
+
+#timelineContainer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 130px;
+    /*pointer-events: none;*/
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 3000, 1);
+}
+
+#timelineVisibilityBox {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 120px;
+    height: 100%;
+    border-radius: 5px 0 0 5px;
+}
+
+#timelineTrackBox {
+    position: absolute;
+    left: calc(120px + 4px);
+    top: 0;
+    width: calc(100% - 120px - 60px - 2 * 4px);
+    height: 100%;
+}
+
+#timelineTrackScrollBox {
+    position: absolute;
+    left: 0;
+    top: -300px;
+    width: 100%;
+    height: calc(100% + 300px);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#timelineTrackScrollBoxInner {
+    position: absolute;
+    left: 0;
+    top: 300px;
+    width: 100%;
+    height: calc(100% - 300px);
+    pointer-events: auto;
+}
+
+#timelineTracksContainer {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 10px);
+}
+
+#timelinePlayhead {
+    position: absolute;
+    left: 10px;
+    top: calc(-20px + 4px);
+    /*height: calc(100% + 20px);*/
+    height: 100%;
+    width: 20px;
+    cursor: pointer;
+    filter: saturate(0) brightness(1.5);
+}
+
+#timelinePlayheadDot {
+    position: absolute;
+    left: 20px;
+    bottom: 3px;
+    height: 10px;
+    width: 10px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 1.0); /* rgba(255, 210, 0, 1.0); */
+    z-index: 1; /* go in front of the scroll bar */
+    pointer-events: none;
+}
+
+#timelinePlayhead:hover {
+    filter: brightness(120%) saturate(60%);
+    -webkit-filter: brightness(120%) saturate(60%);
+}
+
+.timelinePlayheadPlaying {
+    filter: hue-rotate(-60deg) saturate(400%) !important;
+    -webkit-filter: hue-rotate(-120deg) saturate(400%) !important;
+}
+
+.timelinePlayheadSelected {
+    filter: hue-rotate(-120deg) saturate(400%) !important;
+    -webkit-filter: hue-rotate(-120deg) saturate(400%) !important;
+}
+
+#timelineVideoPreviewContainer {
+    position: absolute;
+    left: -128px;
+    top: -168px;
+    width: 256px;
+    height: 144px;
+    /*display: none;*/
+    transform-origin: left bottom;
+    transform: scale(0.6);
+    border: 4px solid rgba(0, 0, 0, 0.8);
+}
+
+#timelineTimestampDisplay {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    height: 48px;
+    color: rgb(255,255,255);
+}
+
+#timelineDateDisplay {
+    position: absolute;
+    left: 0;
+    top: 30px;
+    font-size: 11px;
+    width: 100%;
+    text-align: center;
+    height: 48px;
+    color: rgb(255,255,255);
+}
+
+#timelineCalendarButton {
+    position: absolute;
+    left: calc((120px - 48px)/2);
+    top: 50px;
+    width: 48px;
+    height: 48px;
+    text-align: center;
+    cursor: pointer;
+    filter: saturate(0) brightness(1.5);
+}
+
+#timelineCalendarButton:hover {
+    /*opacity: 0.7;*/
+    filter: saturate(0.5) brightness(1) !important;
+}
+
+/*.timelineVideoPreviewHidden {*/
+/*}*/
+
+.timelineVideoPreviewPlaying {
+    display: inline !important;
+}
+
+.timelineVideoPreviewSelected {
+    display: inline !important;
+}
+
+.timelineVideoPreviewNoTrack {
+    /*display: none !important;*/
+    visibility: hidden;
+}
+
+.timelineVideoPreviewNoSource {
+    /*display: none !important;*/
+    opacity: 0.2;
+}
+
+.timelineInnerVideoNoSource {
+    display: none !important;
+}
+
+.timelineTrack {
+    position: absolute;
+    background-color: rgba(75, 75, 75, 0.5);
+    /*border-radius: 7px;*/
+    left: 20px;
+    width: calc(100% - 2 * (20px + 4px));
+    /*cursor: pointer;*/
+    overflow: hidden;
+}
+
+/*.timelineTrack:hover {*/
+/*    background-color: rgba(0,255,255, 0.2);*/
+/*}*/
+
+.selectedTrack {
+    background-color: rgba(255,255,255, 0.2);
+    border: 2px solid rgba(255,255,255, 0.5);
+    margin: -2px;
+}
+
+.timelineSegment {
+    position: absolute;
+    background-color: rgba(255,255,255, 0.5);
+    border-radius: 5px;
+    top: 0;
+    height: 100%;
+    z-index: 100;
+}
+
+/*.timelineSegment:hover {*/
+/*    !*background-color: rgba(0,255,255, 0.7);*!*/
+/*    !*border: 2px solid white;*!*/
+/*    box-shadow: 0 0 5px black;*/
+/*}*/
+
+.timelineSegmentPlaying {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.selectedSegment {
+    background-color: rgba(255,255,255, 0.9);
+    /*border: 2px solid rgba(255,255,255, 0.5);*/
+}
+
+#timelineControlsBox {
+    position: absolute;
+    left: calc(100% - 60px);
+    top: 0;
+    width: 60px;
+    height: 100%;
+    border-radius: 0 5px 5px 0;
+}
+
+.timelineControlButton {
+    position: absolute;
+    width: calc(60px - 2 * 5px);
+    height: calc(60px - 2 * 5px);
+    cursor: pointer;
+}
+
+.timelineControlButton:hover {
+    /*opacity: 0.7;*/
+    filter: saturate(0.5) brightness(1) !important;
+}
+
+#timelinePlayButton {
+    left: 5px;
+    top: 10px;
+    filter: saturate(0) brightness(1.5);
+}
+
+/*#timelineSeekButton {*/
+/*    left: 5px;*/
+/*    top: calc(2 * 5px + (60px - 2 * 5px));*/
+/*}*/
+
+#timelineSpeedButton {
+    left: 5px;
+    top: calc(2 * 10px + (60px - 2 * 5px));
+    /*top: calc(3 * 5px + 2 * (60px - 2 * 5px));*/
+    filter: saturate(0) brightness(1.5);
+}
+
+.hiddenTimeline {
+    display: none;
+}
+
+#colorVideoCanvas {
+    position: absolute;
+    left: 20px;
+    top: 100px;
+    width: 960px;
+    height: 540px;
+    transform-origin: left top;
+    transform: matrix3d(0.5, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    background-color: rgba(255,255,255, 0.1);
+}
+
+#depthVideoCanvas {
+    position: absolute;
+    left: 520px;
+    top: 100px;
+    width: 256px;
+    height: 144px;
+    transform-origin: left top;
+    transform: matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    background-color: rgba(255,255,255, 0.1);
+}
+
+#poseCanvas {
+    position: absolute;
+    left: 20px;
+    top: 100px;
+    width: 8px;
+    height: 8px;
+    transform-origin: left top;
+    transform: matrix3d(10, 0, 0, 0, 0, 10, 0, 0, 0, 0, 1, 0, 0, 0, 1000, 1);
+    z-index: 1000;
+    background-color: rgba(255,255,255, 0.2);
+}
+
+.timelineCalendarVisible {
+    display: inline;
+    top: -325px !important;
+}
+
+.timelineCalendarHidden {
+    display: none;
+}
+
+#timelineZoomBar {
+    position: absolute;
+    left: 10px;
+    bottom: 5px;
+    filter: saturate(0) brightness(1.5);
+}
+
+#timelineZoomBar:hover {
+    filter: saturate(0.5) brightness(1) !important;
+}
+
+#zoomSliderBackground {
+    position: relative;
+    width: 100px;
+    height: 20px;
+}
+
+#zoomSliderHandle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 15px;
+    top: 2px;
+    cursor: pointer;
+}
+
+.timelineScrollBarContainer {
+    position: absolute;
+    background-color: rgba(255,255,255,0.3);
+    border-radius: 5px;
+    height: 10px;
+    /*transition: opacity 0.5s ease-in-out;*/
+}
+
+.timelineScrollBarHandle {
+    position: relative;
+    left: 0;
+    top: 0;
+    background-color: rgba(155,155,155,1.0);
+    border-radius: 5px;
+    height: 10px;
+    cursor: pointer;
+}
+
+.timelineScrollBarHandle:hover {
+    background-color: rgba(125,185,185,1.0);
+}
+
+.timelineScrollBarFadeout {
+    opacity: 0;
+    animation: scrollbarFadeout 0.5s;
+}
+
+.timelineScrollBarNoData {
+    visibility: hidden;
+}
+
+@keyframes scrollbarFadeout {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+#timelineScrollBar {
+    left: 20px;
+    bottom: 3px;
+    width: calc(100% - 2 * (20px + 4px));
+}
+
+.hiddenScrollBar {
+    display: none;
+}

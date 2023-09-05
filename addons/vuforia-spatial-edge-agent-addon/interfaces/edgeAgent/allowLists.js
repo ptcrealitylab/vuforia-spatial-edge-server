@@ -1,0 +1,40 @@
+const ioToEdgeAllowList = [
+    '/object/readRequest',
+    '/subscribe/realityEditor',
+    '/subscribe/realityEditorPublicData',
+    '/subscribe/realityEditorBlock',
+    //'/subscribe/interfaceSettings',
+    '/subscribe/realityEditorUpdates',
+    '/subscribe/objectUpdates',
+    '/subscribe/cameraMatrix',
+    '/cameraMatrix',
+    '/disconnectEditor',
+];
+const ioToEdgeReadAccessAllowList = [
+    'object',
+    'object/publicData',
+    'node/setup',
+    'block/setup',
+    'block/publicData',
+    '/batchedUpdate',
+    '/update',
+    '/update/object/matrix',
+    '/update/object/position',
+    '/update/humanPoses',
+    '/object/readRequest',
+    '/object/screenObject',
+    '/subscribe/realityEditor',
+    '/subscribe/realityEditorPublicData',
+    '/subscribe/realityEditorBlock',
+    //'/subscribe/interfaceSettings',
+    '/subscribe/realityEditorUpdates',
+    '/subscribe/objectUpdates',
+    '/subscribe/cameraMatrix',
+    '/cameraMatrix',
+    '/disconnectEditor',
+];
+
+module.exports = {
+    ioToEdgeAllowList,
+    ioToEdgeReadAccessAllowList,
+};

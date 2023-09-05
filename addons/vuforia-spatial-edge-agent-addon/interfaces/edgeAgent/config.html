@@ -1,0 +1,2641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Configurator</title>
+    <style>
+        html {
+            background-color: rgb(34,34,34);
+            font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;;
+            font-size: 12pt;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            color: white;
+        }
+
+        #title {
+            color: rgb(45,255,255);
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-weight: medium;
+            font-size: 28pt;
+        }
+
+        #tagsTitle {
+            margin-top: 18px;
+            color: rgb(45,255,255);
+            font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 18pt;
+        }
+
+        #contents {
+            color: rgb(255,255,255);
+        }
+
+        .tag {
+            margin-bottom: 20px;
+        }
+
+        .button {
+            padding: 0px;
+            margin: 0px;
+            width: 104px;
+            height: 32px;
+            line-height: 35px;
+            text-align: center;
+            vertical-align: middle;
+            border: 2px solid white;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .space {
+            padding: 0;
+            margin: 0;
+            width: 8px;
+            height: 36px;
+            line-height: 32px;
+            text-align: center;
+            vertical-align: middle;
+            margin-top: 10px;
+            display: inline-block;
+            color: rgb(255,255,255);
+            background-color: rgba(255,255,255,0.15);
+            z-index: -1;
+        }
+
+        .smallSpace {
+            width: 1px;
+            background-color: transparent;
+        }
+
+        .clickAble:hover {
+            opacity: 0.75;
+            cursor: pointer;
+        }
+
+        .green {
+            color: rgb(41,253,47);
+            border: 2px solid rgb(41,253,47);
+            background-color: rgba(41,253,47,0.05);
+            fill: rgb(41,253,47);
+        }
+
+        .red {
+            color: rgb(242,22,121);
+            border: 2px solid rgb(242,22,121);
+            background-color: rgba(242,22,121,0.05);
+        }
+
+        .blue {
+            color: rgb(45,255,255);
+            border: 2px solid rgb(45,255,255);
+            background-color: rgba(45,255,255,0.05);
+        }
+
+        .purple {
+            color: rgb(210,113,255);
+            border: 2px solid rgb(210,113,255);
+            background-color: rgba(210,113,255,0.05);
+        }
+
+        .yellow {
+            color: rgb(255,255,45);
+            border: 2px solid rgb(255,255,45);
+            background-color: rgba(255,255,45,0.05);
+            fill: rgb(255,255,45);
+        }
+
+        .hidden {
+            visibility: hidden;
+            color: rgba(255,255,255,0.0);;
+            background-color: rgba(255,255,255,0.0);
+        }
+
+        .white {
+            color: rgb(255,255,255);
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .zero {
+            margin-left: -12px;
+            width: 0;
+        }
+
+        .half {
+            width: 46px;
+        }
+
+        .halfPlus {
+            width: 49px;
+        }
+
+        .one {
+            width: 104px;
+        }
+
+        .oneAndHalf {
+            width: 141px;
+        }
+
+        .two {
+            width: 220px;
+        }
+
+        .twoAndHalf{
+            width: 278px;
+        }
+
+        .three {
+            width: 336px;
+        }
+
+        .four {
+            width: 452px;
+        }
+
+        .fourAndHalf {
+            width: 514px;
+        }
+
+        .five {
+            width: 568px;
+        }
+
+        .fiveAndHalf {
+            width: 626px;
+        }
+
+        .hideOverflow {
+            padding-left: 5px;
+            overflow: scroll;
+            overflow-x: hidden;
+            scrollbar-width: none;
+        }
+        .hideOverflow::-webkit-scrollbar {
+            display: none;  /* Safari and Chrome */
+        }
+
+        .textfield {
+            cursor: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+            font-family: myriadPro, Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 12pt;
+            white-space: nowrap;
+        }
+
+        .setting {
+            margin-bottom: 20px;
+        }
+
+        #introduction {
+            margin-bottom: 42px;
+        }
+
+        a {
+            color: rgba(45,255,255, 0.5);
+        }
+
+        .displayNone {
+            display: none;
+        }
+
+        .inactive {
+            opacity: 0.25;
+        }
+
+        .label {
+            display: inline-block;
+            line-height: 35px;
+            height: 35px;
+            vertical-align: middle;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="connector">
+        <div class="tag">
+            Enter your Vuforia Spatial Cloud Proxy URL:
+            <div class='textfield serverUrl item button white three' contenteditable>Cloud URL</div>
+            <div class='space smallSpace'></div>
+            <div class='active connectButton item button yellow one clickAble'>
+                <svg class="disconnect" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" style="width: 32px; height: 32px; display: inline">
+                    <path class="dis01 yellow" d="M555.31,151a30.92,30.92,0,0,1,0,43.75l-29.74,29.75-51.82,51.82L452,298l-21.87-21.87-6.77-6.77L367.79,325l-26.16-26.16,55.6-55.61L352,197.93l-55.61,55.6-26.16-26.16,55.6-55.61-28.63-28.63,21.65-21.65.22-.23,51.67-51.66,29.74-29.74a30.92,30.92,0,0,1,43.75,0l42.47,42.47,59.68-59.68L572.52,48.8l-59.68,59.68Z"/>
+                    <path class="dis02 yellow" d="M304.82,445.19l-73.54,73.54-29.74,29.74a30.92,30.92,0,0,1-43.75,0L115.32,506,53.64,567.69,27.47,541.52l61.69-61.68L46.69,437.37a30.92,30.92,0,0,1,0-43.75L150,290.34l21.87,21.87Z"/>
+                </svg>
+                <svg class="connect" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" style="width: 32px; height: 32px; display: none"">
+                    <path class="con01 yellow" d="M478.29,228a30.92,30.92,0,0,1,0,43.75L375.71,374.31l-21.88,21.88-27.57,27.57-24.09,24.09L272.43,477.6a30.94,30.94,0,0,1-43.75,0l-42.47-42.47L53.64,567.69,27.48,541.53,160,409l-42.47-42.47a30.94,30.94,0,0,1,0-43.75L147.32,293,293.7,146.62l29.74-29.75a30.94,30.94,0,0,1,43.75,0l42.47,42.47L546.37,22.64,572.53,48.8,435.82,185.51Z"/>
+                </svg>
+            </div>
+            <br/><br>
+            Web Desktop-Client URL:<br>
+            <div class='textfield desktopURL hideOverflow name item button white four'>Write access disabled</div>
+
+            <br><br>Cloud Interface code:<br>
+            <div id="svgDiv" style="padding-top: 7px"></div>
+            <br/><br/><b>Danger Zone</b></b><br/><br>
+            Spatial Edge Network ID:
+            <br>
+            <div class='networkIdentifier item button white two'>network identifier</div>
+            <div class='space smallSpace'></div>
+            <div class='active networkIdentButton item button yellow two clickAble'>generate new Network ID</div>
+            <br/><br>
+            Allow Cloud Proxy write access:
+            <br>
+            <div class='netSecret name item button white four'>Write access disabled</div><div class='space smallSpace'></div><br>
+            <div class='active generateSecretButton item button yellow oneAndHalf clickAble'>generate Secret</div>
+            <div class='space smallSpace'></div>
+            <div class='active removeSecretButton item button yellow oneAndHalf clickAble'>remove Secret</div>
+            <div class='space smallSpace'></div>
+            <div class='active share item button yellow oneAndHalf clickAble'>share in URL</div>
+            <br/>
+        </div>
+</div>
+
+
+
+
+The Vuforia Edge Agent connects to the Vuforia Cloud Proxy and allows the Vuforia Spatial Toolbox as well the Vuforia Remote Operator interface to access your local Vuforia Spatial Toolbox Edge Network.
+Please keep the secret secure, as it allows write access to the local edge network.
+
+<script>
+    var realityServer = {
+        myTargetDropzone : {},
+        dropZoneId : "",
+        states: {/*replace States*/},
+        hardwareInterfaceName: {/*replace HardwareInterfaceName*/},
+        hardwareInterface: {/*replace HardwareInterface*/},
+        domObjects: document.getElementById("connector"),
+        templates: document.getElementsByTagName("template")
+    }; // the objects and states get injected from the server webFrontend.js
+
+    var expandedTags = {};
+
+
+
+    var defaultSettings = null;
+
+    function fetchSettings() {
+        fetch(`/hardwareInterface/${realityServer.hardwareInterfaceName}/settings`).then(res => {
+            return res.json();
+        }).then(settings => {
+            setTimeout(fetchSettings, 1000);
+            console.log("loop");
+            if (JSON.stringify(settings) === JSON.stringify(realityServer.hardwareInterface.settings)) {
+                return;
+            }
+            realityServer.hardwareInterface.settings = settings;
+            realityServer.render();
+        });
+    }
+
+    window.onload = function() {
+        init();
+        fetchSettings();
+    };
+
+    var tempServerURL = '';
+    function init() {
+        console.log(realityServer.hardwareInterface.settings);
+        defaultSettings = JSON.parse(JSON.stringify(realityServer.hardwareInterface.settings));
+
+        // document.getElementById('title').innerText = realityServer.hardwareInterfaceName + ' settings';
+        realityServer.render();
+
+        realityServer.domObjects.querySelector('.serverUrl').addEventListener('click', function() {
+            if(realityServer.domObjects.querySelector('.serverUrl').innerHTML === "Cloud URL")
+            realityServer.domObjects.querySelector('.serverUrl').innerHTML = "";
+        });
+
+
+        realityServer.domObjects.querySelector('.serverUrl').addEventListener('click', function() {
+            if(realityServer.domObjects.querySelector('.serverUrl').innerHTML === "Cloud URL")
+                realityServer.domObjects.querySelector('.serverUrl').innerHTML = "";
+        });
+
+        realityServer.domObjects.querySelector('.serverUrl').addEventListener('input', function() {
+            tempServerURL = realityServer.domObjects.querySelector('.serverUrl').innerHTML;
+            if(realityServer.hardwareInterface.settings.connect === true){
+                realityServer.hardwareInterface.settings.connect = false;
+                realityServer.connectButton();
+                realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['connect'] ,function(res) {
+                });
+            }
+        });
+
+        realityServer.domObjects.querySelector('.connectButton').addEventListener('click', function() {
+            if (realityServer.hardwareInterface.settings.hasOwnProperty('connect')) {
+                if (realityServer.hardwareInterface.settings.connect) {
+                    realityServer.hardwareInterface.settings.connect = false;
+                } else {
+                    realityServer.hardwareInterface.settings.connect = true;
+                }
+            }
+
+            realityServer.hardwareInterface.settings.serverUrl = tempServerURL;
+
+            realityServer.render();
+
+            if(realityServer.hardwareInterface.settings.serverUrl !== ''){
+                realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['connect',  'serverUrl'] ,function(res) {
+                });
+            } else {
+                realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['connect'] ,function(res) {
+                });
+            }
+
+        });
+
+        realityServer.domObjects.querySelector('.networkIdentButton').addEventListener('click', function() {
+            realityServer.hardwareInterface.settings.networkUUID = "";
+            realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['networkUUID'] ,function(res) {
+            });
+        });
+
+        realityServer.domObjects.querySelector('.generateSecretButton').addEventListener('click', function() {
+            realityServer.hardwareInterface.settings.networkSecretCommand = "generateNewSecret";
+            realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['networkSecretCommand'] ,function(res) {
+            });
+        });
+
+        realityServer.domObjects.querySelector('.removeSecretButton').addEventListener('click', function() {
+            realityServer.hardwareInterface.settings.networkSecretCommand = "removeSecret";
+            realityServer.writeHardwareInterfaceSettings(realityServer.hardwareInterface.settings, ['networkSecretCommand'] ,function(res) {
+            });
+        });
+
+    }
+
+
+    realityServer.connectButton = function() {
+        if (realityServer.hardwareInterface.settings) {
+            if (realityServer.hardwareInterface.settings.hasOwnProperty('connect')) {
+                if (realityServer.hardwareInterface.settings.connect) {
+                    realityServer.domObjects.querySelector('.disconnect').style.display = "none";
+                    realityServer.domObjects.querySelector('.connect').style.display = "inline";
+                } else {
+                    realityServer.domObjects.querySelector('.disconnect').style.display = "inline";
+                    realityServer.domObjects.querySelector('.connect').style.display = "none";
+                }
+            }
+
+
+
+            if (realityServer.hardwareInterface.settings.hasOwnProperty('isConnected')) {
+                if (realityServer.hardwareInterface.settings.isConnected) {
+                    // change button to green
+                    
+                    if(realityServer.hardwareInterface.settings.networkSecret.length >= 10)
+                        hrqr.drawHRQR("svgDiv","spatialtoolbox://"+realityServer.hardwareInterface.settings.serverUrl+"/n/"+realityServer.hardwareInterface.settings.networkUUID+"/s/"+realityServer.hardwareInterface.settings.networkSecret, 7, null, 30);
+                    else
+                        hrqr.drawHRQR("svgDiv","spatialtoolbox://"+realityServer.hardwareInterface.settings.serverUrl+"/n/"+realityServer.hardwareInterface.settings.networkUUID, 7, null, 30);
+                    
+                    let tempDesktopUrl = "https://"+realityServer.hardwareInterface.settings.serverUrl+"/stable/n/"+realityServer.hardwareInterface.settings.networkUUID;
+                    if(realityServer.hardwareInterface.settings.networkSecret) tempDesktopUrl += "/s/"+realityServer.hardwareInterface.settings.networkSecret;
+    
+                    realityServer.domObjects.querySelector('.desktopURL').innerHTML = tempDesktopUrl;
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis01').classList.remove('yellow');
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis02').classList.remove('yellow');
+                    realityServer.domObjects.querySelector('.connect').querySelector('.con01').classList.remove('yellow');
+                    realityServer.domObjects.querySelector('.connectButton').classList.remove('yellow');
+
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis01').classList.add('green');
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis02').classList.add('green');
+                    realityServer.domObjects.querySelector('.connect').querySelector('.con01').classList.add('green');
+                    realityServer.domObjects.querySelector('.connectButton').classList.add('green');
+                } else {
+                    // change button to yellow
+                    if (realityServer.hardwareInterface.settings.connect) {
+                        realityServer.domObjects.querySelector('.desktopURL').innerHTML = "connecting";
+                        hrqr.drawHRQR("svgDiv","spatialtoolbox://",7);
+                    } else {
+                        realityServer.domObjects.querySelector('.desktopURL').innerHTML = "not Connected";
+                        hrqr.drawHRQR("svgDiv","spatialtoolbox://", 7);
+                    }
+
+                     realityServer.domObjects.querySelector('.disconnect').querySelector('.dis01').classList.remove('green');
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis02').classList.remove('green');
+                    realityServer.domObjects.querySelector('.connect').querySelector('.con01').classList.remove('green');
+                    realityServer.domObjects.querySelector('.connectButton').classList.remove('green');
+
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis01').classList.add('yellow');
+                    realityServer.domObjects.querySelector('.disconnect').querySelector('.dis02').classList.add('yellow');
+                    realityServer.domObjects.querySelector('.connect').querySelector('.con01').classList.add('yellow');
+                    realityServer.domObjects.querySelector('.connectButton').classList.add('yellow');
+                }
+            }
+        }
+    }
+
+
+    realityServer.render = function() {
+        if(realityServer.hardwareInterface.settings.serverUrl !== "" && realityServer.domObjects.querySelector('.serverUrl').innerHTML == 'Cloud URL' )
+            realityServer.domObjects.querySelector('.serverUrl').innerHTML = realityServer.hardwareInterface.settings.serverUrl;
+
+        if(realityServer.hardwareInterface.settings.networkUUID !== "")
+            realityServer.domObjects.querySelector('.networkIdentifier').innerHTML = realityServer.hardwareInterface.settings.networkUUID;
+
+        if(realityServer.hardwareInterface.settings.networkSecret.length >= 10)
+            realityServer.domObjects.querySelector('.netSecret').innerHTML = realityServer.hardwareInterface.settings.networkSecret;
+        else
+            realityServer.domObjects.querySelector('.netSecret').innerHTML = 'Write access disabled';
+
+
+
+        realityServer.connectButton();
+
+
+        var settings = realityServer.hardwareInterface.settings;
+        if (typeof settings === "undefined") {
+            return;
+        }
+
+        console.log('render');
+        // realityServer.domObjects.innerHTML = ''; // reset
+
+    };
+
+    realityServer.writeHardwareInterfaceSettings = function(settings, limitToKeys, callback) {
+        var body = {
+            settings: settings,
+        };
+        if (limitToKeys) {
+            body.limitToKeys = limitToKeys;
+        }
+        realityServer.sendRequest('/hardwareInterface/' + realityServer.hardwareInterfaceName + '/settings/', 'POST', function (state) {
+            if (state === 'ok') {
+                console.log('successfully wrote settings')
+            }
+            callback(state);
+        }, JSON.stringify(body));
+    };
+
+    realityServer.sendRequest = function(url, httpStyle, callback, body) {
+        if (!body) { body = ""; }
+        var req = new XMLHttpRequest();
+        try {
+            req.open(httpStyle, url, true);
+            if(httpStyle === "POST"){
+                req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            }
+            // Just like regular ol' XHR
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    if (req.status === 200) {
+                        // JSON.parse(req.responseText) etc.
+                        if(req.responseText)
+                            callback(req.responseText);
+                    } else {
+                        // Handle error case
+                        callback("err");
+                        console.log("could not load content");
+                    }
+                }
+            };
+            if(httpStyle === "POST"){
+                req.send(body);
+            } else {
+                req.send();
+            }
+
+        }
+        catch (e) {
+            callback("err");
+            console.log("could not connect to" + url);
+        }
+    };
+</script>
+
+<script>
+    /* Created by Valentin Heun on 7/13/15.
+ Copyright (c) 2015 Valentin Heun
+ Licensed under the MIT license: https://opensource.org/licenses/MIT
+ */
+
+    let HRQR =function (){
+        this.states = {
+            database: this.letterDatabase,
+            lineCounter: 0,
+            rowCounter: 0,
+            searchDepth: 17,
+            line: 2,
+            width: 8,
+            height: 8,
+            pixelsPerLetter: 7,
+            left: 20,
+            top: 20,
+            htmlText: "",
+            text: "",
+            textTrim: "",
+            color: "#000000",
+            rows: 0,
+            colums: 0,
+            countingLine: 0,
+            kubik: false,
+            background: "#FFFFFF"
+        };
+
+        this.getSize = function (minus) {
+            return (((this.states.colums - 1) * 4) + 3) * this.states.width - minus;
+        }
+        this.randomLetter = function() {
+            return this.itob62(this.crc16(this.states.text)).substring(0, 1);
+        }
+        this.finalizeCanvas = function (idToChange) {
+            this.states.htmlText = this.states.htmlText + '</svg>';
+            document.getElementById(idToChange).innerHTML = this.states.htmlText;
+        }
+
+        // start canvas
+
+        this.drawHRQR = function (idToChange, messageContent, size, color, dotColor, outline, background) {
+
+            if (size === undefined) {
+                size = 6;
+            }
+            this.states.width = this.states.height = size;
+
+            if (color === undefined) {
+                color = "#000000";
+            }
+            this.states.color = color;
+
+            if (dotColor === undefined) {
+                dotColor = color;
+            }
+            this.states.dotColor = dotColor;
+
+            if (outline === undefined) {
+                outline = 35;
+            }
+            this.states.left = this.states.top = outline;
+
+            if (background === undefined) {
+                background = "#FFFFFF";
+            }
+            this.states.background = background;
+
+            this.states.text = messageContent;
+
+            var textCheck = this.makeThree(this.itob62(this.crc16(this.states.text)));
+
+            if (this.states.text === "") {
+                textCheck = "0";
+            }
+
+// generate text with crc32 checksum
+            this.states.text = this.states.text + " & " + textCheck;
+
+            // reading the length of the document
+
+            this.states.textTrimLength = 0;
+
+            for (var i = 0; i < this.states.text.length; i++) {
+                for (var r = this.states.searchDepth; r >= 0; r--) {
+                    var letterTemp = "";
+                    for (var k = r; k >= 0; k--) {
+                        letterTemp = this.states.text[k + i] + letterTemp;
+                    }
+                    if (letterTemp in this.letterDatabase) {
+                        i = i + r;
+                        this.states.textTrimLength++;
+                        if (this.letterDatabase[letterTemp]["big"]["width"] === 7) {
+                            this.states.textTrimLength++;
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            this.states.rowCounter = 0;
+            this.states.lineCounter = 0;
+            this.states.line = 0;
+
+            // here it needs to have the right size
+            this.states.colums = this.states.textTrimLength;
+
+            // var countTwo = 1;
+            this.states.colums = Math.ceil(Math.sqrt(this.states.colums * 2));
+
+            if (this.states.colums % 2) {
+                this.states.colums = this.states.colums + 1;
+                //countTwo = 1;
+            }
+
+            var amountOfLetters = this.states.colums * (this.states.colums / 2);
+
+            while (this.states.textTrimLength < amountOfLetters) {
+                this.states.text = this.states.text + this.randomLetter();
+
+                this.states.textTrimLength++;
+
+            }
+
+            var rowColSize = ((this.states.colums * this.states.width * 4)) + (2 * this.states.left) - this.states.width;
+
+
+            this.states.htmlText = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width = "' + rowColSize + 'px" height = "' + rowColSize + 'px"  style="background: ' + this.states.background + '">\n';
+
+            this.writeLetters();
+            this.finalizeCanvas(idToChange);
+        }
+
+
+// write each letter
+        this.writeLetters = function() {
+            var letter = "";
+            var textLength = this.states.text.length;
+            this.states.countingLine = 0;
+            for (var i = 0; i < this.states.text.length; i++) {
+
+                letter = this.states.text[i];
+
+                for (var r = this.states.searchDepth; r >= 0; r--) {
+                    var letterTemp = "";
+                    for (var k = r; k >= 0; k--) {
+                        letterTemp = this.states.text[k + i] + letterTemp;
+                    }
+
+                    if (letterTemp in this.letterDatabase) {
+                        letter = letterTemp;
+                        i = i + r;
+                        textLength = textLength - (r - 1);
+                        break;
+                    }
+                }
+
+                if (this.states.countingLine >= this.states.colums) {
+                    this.states.line++;
+                    this.states.rowCounter = 0;
+                    this.states.countingLine = 0;
+                }
+
+                if (letter === "\n" && this.states.kubik === false) {
+                    this.states.line++;
+                    this.states.rowCounter = 0;
+                    this.states.countingLine = 0;
+                }
+
+                var size = this.letterSize(i);
+                this.renderLetters(letter, size);
+
+                if (letter !== " " && this.states.text[i + 1] !== " " && i + 1 < this.states.text.length) {
+                    if (letter != undefined && this.states.text[i + 1] != undefined) {
+
+                        if (this.states.countingLine >= this.states.colums - 1) {
+                            // console.log("y");
+                            if (i + this.states.colums <= this.states.text.length) {
+                                if (this.letterSize(i + 1) === "small") {
+
+                                    // renderConnector(letter, this.states.text[i + this.states.colums], size, true, true);
+
+                                    this.renderConnector(letter, letter, size, true, true);
+
+                                } else {
+                                    // renderConnector(letter, this.states.text[i + this.states.colums], size, false, true);
+
+                                    this.renderConnector(letter, letter, size, false, true);
+                                }
+                            }
+                        } else {
+                            //console.log("x");
+                            if (this.letterSize(i + 1) === "small") {
+                                this.renderConnector(letter, this.states.text[i + 1], size, true, false);
+                            } else {
+                                this.renderConnector(letter, this.states.text[i + 1], size, false, false);
+                            }
+                        }
+                    }
+                }
+                // add fillings for the last letters
+                if (letter in this.letterDatabase) {
+                    if (letter !== " ") {
+
+                        var countsize = 0;
+                        var sideB, sideA;
+
+                        if ("small" in this.letterDatabase[letter]) {
+                            sideB = this.letterDatabase[letter][size].right;
+                            sideA = this.letterDatabase[letter][size].left;
+
+                            countsize = this.letterDatabase[letter][size].width / 3;
+                        }
+                        else {
+                            sideB = this.letterDatabase[letter]["big"].right;
+                            sideA = this.letterDatabase[letter]["big"].left;
+                            countsize = this.letterDatabase[letter]["big"].width / 3;
+                        }
+                        this.states.countingLine = this.states.countingLine + countsize;
+                    }
+                    for (var w = 0; w < sideA.length; w++) {
+                        if (sideA[w] === 0) {
+                            this.renderDot(4, w);
+                        }
+
+                        if (sideB[w] === 0) {
+                            this.renderDot(2, w);
+                        }
+                    }
+                }
+            }
+        }
+
+        this.letterSize = function(i) {
+            var size = "big";
+            // this is all nessesary to figure out if letter should be small
+            if (i - 1 >= 0 && i + 2 <= this.states.text.length
+                && (this.states.text[i] in this.letterDatabase)
+                && (this.states.text[i - 1] in this.letterDatabase)
+                && (this.states.text[i + 1] in this.letterDatabase)) {
+                if (this.states.text[i].length == 1
+                    && (this.letterDatabase[this.states.text[i - 1]].big.right[0] == 1
+                        || this.letterDatabase[this.states.text[i - 1]].big.right[0] == 0)
+                    && (this.letterDatabase[this.states.text[i + 1]].big.left[0] == 1
+                        || this.letterDatabase[this.states.text[i + 1]].big.left[0] == 0)
+                    && ("small" in this.letterDatabase[this.states.text[i]])
+                ) {
+                    size = "small";
+                }
+            }
+            return size;
+        }
+
+
+        this.renderConnector = function(letterA, letterB, size, nextSize, possition) {
+
+            if (letterA in this.letterDatabase && letterB in this.letterDatabase) {
+                var grade = [];
+                var gradeA = [];
+                var gradeB = [];
+
+                if (possition === true) {
+                    if (size in this.letterDatabase[letterA]) {
+                        gradeA = this.letterDatabase[letterA][size].bottom;
+                    } else {
+                        gradeA = this.letterDatabase[letterA]["big"].bottom;
+                    }
+
+                    if (size in this.letterDatabase[letterB]) {
+                        gradeB = this.letterDatabase[letterB][size].top;
+                    } else {
+                        gradeB = this.letterDatabase[letterB]["big"].top;
+                    }
+                }
+                else {
+
+                    if (size in this.letterDatabase[letterA]) {
+                        gradeA = this.letterDatabase[letterA][size].right;
+                    } else {
+                        gradeA = this.letterDatabase[letterA]["big"].right;
+                    }
+
+                    if (size in this.letterDatabase[letterB]) {
+                        gradeB = this.letterDatabase[letterB][size].left;
+                    } else {
+                        gradeB = this.letterDatabase[letterB]["big"].left;
+                    }
+                }
+
+                var finalPossition = 0;
+                //  var pokeIn = false;
+
+                for (var w = 0; w < gradeA.length; w++) {
+                    var lA = gradeA[w];
+                    var lB = gradeB[w];
+
+                    if (lA == 0) lA = 0;
+                    if (lB == 0) lB = 0;
+                    grade[w] = lA + lB;
+                }
+
+                var size2 = 200;
+                for (var i = 0; i < grade.length; i++) {
+                    if (grade[i] <= size2) {
+                        size2 = grade[i];
+                        finalPossition = i;
+                        if ((gradeA[i] === 0 && gradeB[i] != 9) || (gradeA[i] === 0 && gradeB[i] === 0)) break;
+                    }
+                }
+
+                if (nextSize === true) finalPossition = 0;
+
+
+                if (possition === true) {
+                    this.renderDot(1, finalPossition, true);
+                }
+                else {
+                    this.renderDot(1, finalPossition, false);
+                }
+            }
+        }
+
+
+        this.renderDot = function(vertical, horizontal, possition) {
+            var xx, yy;
+
+            if (possition) {
+                xx = this.states.top + (this.states.height * 7 + (this.states.line * ((this.states.pixelsPerLetter + 1) * this.states.height)));
+                yy = this.states.left + (this.states.width * (this.states.rowCounter - horizontal - 2)); // - vertical
+            }
+            else {
+                xx = this.states.top + (this.states.height * horizontal + (this.states.line * ((this.states.pixelsPerLetter + 1) * this.states.height)));
+                yy = this.states.left + (this.states.width * (this.states.rowCounter - vertical));
+            }
+
+            this.states.htmlText =
+                this.states.htmlText + '<rect x="' + yy + '" y="' + xx + '" width="' +
+                this.states.width + '" height="' +
+                this.states.height + '" style="fill:' +
+                this.states.dotColor + '" />\n';
+        }
+
+        this.renderLetters = function (thisLetter, size) {
+
+            if (thisLetter in this.letterDatabase) {
+                var lineHeight = 7;
+                var shapeLength = 0;
+                var shape = [];
+                var shapePossition = 0;
+                if (size === "big" || size === "small") {
+                    shapeLength = this.letterDatabase[thisLetter].big.shape.length;
+                    shape = this.letterDatabase[thisLetter].big.shape
+                }
+                if (size === "small" && ("small" in this.letterDatabase[thisLetter])) {
+                    shapeLength = this.letterDatabase[thisLetter].small.shape.length;
+                    shape = this.letterDatabase[thisLetter].small.shape
+                }
+
+                this.states.lineCounter = 0;
+
+                for (var i = 0; i < shapeLength; i++) {
+                    if (shape[i] === 1) {
+                        var xx = this.states.top + ((this.states.height * (this.states.lineCounter + shapePossition)) + (this.states.line * ((this.states.pixelsPerLetter + 1) * this.states.height)));
+                        var yy = this.states.left + (this.states.width * this.states.rowCounter);
+                        this.states.htmlText =
+                            this.states.htmlText + '<rect x="' + yy + '" y="' + xx + '" width="' +
+                            this.states.width + '" height="' +
+                            this.states.height + '" style="fill:' +
+                            this.states.color + '" />\n'
+                    }
+                    this.states.lineCounter++;
+                    if (this.states.lineCounter >= lineHeight) {
+                        this.states.lineCounter = 0;
+                        this.states.rowCounter++;
+                    }
+                }
+                this.states.htmlText = this.states.htmlText + '\n';
+                this.states.rowCounter++
+            }
+        }
+
+
+        this.crc16 = function(s) {
+            var crc = 0xFFFF;
+            var j, i;
+
+            for (i = 0; i < s.length; i++) {
+
+                var c = s.charCodeAt(i);
+
+                //   console.log(c);
+                if (c > 255) {
+                    //    throw new RangeError();
+                }
+                j = (c ^ (crc >> 8)) & 0xFF;
+                crc = this.crcTable[j] ^ (crc << 8);
+            }
+
+            return ((crc ^ 0) & 0xFFFF);
+
+        }
+
+        this.itob62 = function(i) {
+            var u = i;
+            var b32 = "";
+            do
+            {
+                var d = Math.floor(u % 62);
+                if (d < 10) {
+
+                    b32 = String.fromCharCode('0'.charCodeAt(0) + d) + b32;
+                }
+                else if (d < 36) {
+                    b32 = String.fromCharCode('a'.charCodeAt(0) + d - 10) + b32;
+                } else {
+                    b32 = String.fromCharCode('A'.charCodeAt(0) + d - 36) + b32;
+                }
+
+
+                u = Math.floor(u / 62);
+
+            } while (u > 0);
+
+            return b32;
+        }
+
+        this.makeThree = function(i) {
+            if (i.length > 3) {
+                return i.substring(0, 3);
+            }
+            else if (i.length === 2) {
+                return "." + i;
+            }
+            else if (i.length === 1) {
+                return ".." + i;
+            }
+            else {
+                return i;
+            }
+        }
+
+        this.crcTable = [0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5,
+            0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b,
+            0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
+            0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
+            0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c,
+            0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
+            0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b,
+            0x8528, 0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d,
+            0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6,
+            0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738,
+            0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5,
+            0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823,
+            0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969,
+            0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96,
+            0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc,
+            0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a,
+            0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03,
+            0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd,
+            0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6,
+            0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70,
+            0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a,
+            0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb,
+            0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1,
+            0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
+            0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c,
+            0xe37f, 0xf35e, 0x02b1, 0x1290, 0x22f3, 0x32d2,
+            0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb,
+            0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d,
+            0x34e2, 0x24c3, 0x14a0, 0x0481, 0x7466, 0x6447,
+            0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8,
+            0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2,
+            0x0691, 0x16b0, 0x6657, 0x7676, 0x4615, 0x5634,
+            0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
+            0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827,
+            0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d, 0xdb5c,
+            0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
+            0x4a75, 0x5a54, 0x6a37, 0x7a16, 0x0af1, 0x1ad0,
+            0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d,
+            0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07,
+            0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1,
+            0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba,
+            0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
+            0x2e93, 0x3eb2, 0x0ed1, 0x1ef0];
+
+        this.letterDatabase = {
+            "a": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 3, 2, 3, 1],
+                    "right": [2, 3, 3, 3, 2, 3, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "b": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 3, 2],
+                    "right": [2, 3, 3, 3, 2, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "c": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 2, 9, 2, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 2, 2, 9, 2, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "d": {
+                "big": {
+                    "top": [0, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [0, 0, 9, 2, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 0, 1, 1, 1, 1,
+                        0, 0, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "e": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 2, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "f": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 9, 0],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 0, 0, 0],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 0],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 0, 1, 0, 0],
+                    "width": 3
+                }
+            },
+            "g": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 2, 9, 2, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 0, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 2, 9, 9, 2, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "h": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 2, 3, 3, 2],
+                    "right": [2, 3, 3, 2, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 1, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "i": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "j": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 2, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 0, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "k": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 9],
+                    "left": [2, 3, 3, 3, 2, 3, 2],
+                    "right": [2, 3, 2, 9, 2, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "l": {
+                "big": {
+                    "top": [1, 9, 0],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [0, 0, 0, 0, 0, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 0, 0, 0, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "m": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [3, 3, 3, 3, 3, 3, 2],
+                    "right": [3, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 1, 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 1, 0, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "n": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 9, 2],
+                    "left": [9, 9, 9, 9, 9, 9, 2],
+                    "right": [9, 9, 9, 9, 9, 9, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "o": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "p": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 9, 9],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 2, 9],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 1, 0,
+                        1, 1, 1, 1, 1, 1, 0],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 1, 0,
+                        1, 0, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "q": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [9, 1, 9],
+                    "left": [2, 3, 3, 3, 3, 2, 9],
+                    "right": [2, 3, 3, 3, 3, 2, 9],
+                    "shape": [1, 1, 1, 1, 1, 1, 0,
+                        1, 0, 0, 0, 0, 1, 1,
+                        1, 1, 1, 1, 1, 1, 0],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 0,
+                        1, 0, 1, 0, 0, 1, 1,
+                        1, 0, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "r": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 9, 9],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 3, 2, 9, 2, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 1, 0, 1, 0,
+                        1, 1, 1, 1, 0, 1, 1],
+
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "s": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 2, 9, 2, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "t": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 0, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 0, 0, 0, 0, 0],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "u": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 9],
+                    "right": [2, 3, 3, 3, 3, 3, 9],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "v": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [9, 1, 9],
+                    "left": [2, 3, 3, 3, 3, 2, 9],
+                    "right": [2, 3, 3, 3, 3, 2, 9],
+                    "shape": [1, 1, 1, 1, 1, 1, 0,
+                        0, 0, 0, 0, 0, 1, 1,
+                        1, 1, 1, 1, 1, 1, 0],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 0,
+                        1, 0, 0, 0, 0, 1, 1,
+                        1, 0, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "w": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 3, 3, 2, 2],
+                    "right": [2, 3, 3, 3, 3, 2, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 1, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 1, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "x": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 2, 2, 9, 2, 2, 1],
+                    "right": [1, 2, 2, 9, 2, 2, 1],
+                    "shape": [1, 1, 1, 0, 1, 1, 1,
+                        0, 0, 1, 1, 1, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 1, 0, 1, 0,
+                        1, 0, 1, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "y": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 9, 1],
+                    "right": [2, 3, 3, 3, 3, 3, 3],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "z": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 1, 9, 2, 3, 2],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                },
+                "small": {
+                    "top": [9, 9, 9],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 9, 9, 9, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 9],
+                    "shape": [1, 0, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "A": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 3, 2, 2, 9, 1],
+                    "right": [2, 2, 3, 2, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "B": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 3, 2, 2, 9, 1],
+                    "right": [2, 2, 3, 2, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "C": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 3, 2, 2, 9, 1],
+                    "right": [2, 2, 9, 2, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 0, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "D": {
+                "big": {
+                    "top": [9, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 2, 3, 2, 2, 9, 1],
+                    "right": [2, 2, 3, 2, 2, 9, 1],
+                    "shape": [0, 1, 1, 1, 1, 0, 1,
+                        0, 1, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "E": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "F": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [1, 9, 1, 9, 0, 0, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "G": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [1, 9, 2, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "H": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 1, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "I": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 3, 3, 3, 2, 9, 1],
+                    "right": [9, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "J": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "K": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 1, 0, 1, 0, 0, 1,
+                        1, 1, 0, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "L": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [0, 0, 0, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "M": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 1, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "N": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "O": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "P": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 0, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "Q": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 2, 9, 9, 1],
+                    "right": [2, 3, 3, 2, 9, 9, 1],
+                    "shape": [1, 1, 1, 1, 0, 0, 1,
+                        1, 0, 0, 1, 1, 0, 1,
+                        1, 1, 1, 1, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            "R": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 2, 2, 2, 1],
+                    "right": [2, 3, 3, 9, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "S": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 9, 2, 9, 1],
+                    "right": [2, 9, 2, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "T": {
+                "big": {
+                    "top": [3, 3, 0],
+                    "bottom": [, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [3, 9, 0, 0, 0, 9, 9],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "U": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "V": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 0, 0, 1,
+                        0, 0, 0, 1, 1, 0, 1,
+                        1, 1, 1, 1, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            "W": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "X": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 2, 2, 9, 1],
+                    "right": [2, 2, 9, 2, 2, 9, 1],
+                    "shape": [1, 1, 0, 1, 1, 0, 1,
+                        0, 1, 1, 1, 0, 0, 1,
+                        1, 1, 0, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "Y": {
+                "big": {
+                    "top": [2, 9, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 9, 2, 9, 1],
+                    "right": [2, 3, 2, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 0, 1, 0, 1,
+                        0, 0, 1, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "Z": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 2, 9, 1],
+                    "right": [2, 3, 2, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "Ä": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 9, 2, 3, 3, 3, 9],
+                    "right": [9, 9, 2, 3, 3, 3, 9],
+                    "shape": [1, 0, 1, 1, 1, 1, 0,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "ä": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 9, 2, 3, 3, 3, 2],
+                    "right": [9, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "Ö": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 9, 2, 3, 2, 9, 2],
+                    "right": [9, 9, 2, 3, 2, 9, 2],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        0, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "ö": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 9, 2, 3, 3, 3, 2],
+                    "right": [9, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        0, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "Ü": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 3, 3, 3, 3, 3, 1],
+                    "right": [9, 3, 3, 3, 3, 3, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        0, 0, 0, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "ü": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [9, 9, 3, 3, 3, 3, 3],
+                    "right": [9, 9, 3, 3, 3, 3, 3],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "1": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [0, 9, 1],
+                    "left": [1, 9, 0, 0, 0, 0, 0],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "2": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 9, 2, 3, 2],
+                    "right": [2, 3, 3, 3, 2, 9, 2],
+                    "shape": [1, 1, 1, 0, 1, 1, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "3": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 1, 9, 2, 2],
+                    "right": [2, 3, 3, 3, 2, 3, 2],
+                    "shape": [1, 1, 0, 1, 0, 1, 1,
+                        1, 0, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "4": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [0, 9, 1],
+                    "left": [2, 3, 3, 3, 2, 9, 0],
+                    "right": [1, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 0, 0,
+                        0, 0, 0, 0, 1, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "5": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 9, 9, 2, 2],
+                    "right": [1, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "6": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 3, 3, 3, 2],
+                    "right": [1, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "7": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [0, 9, 1],
+                    "left": [2, 3, 2, 9, 0, 0, 0],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 0, 0, 0, 0,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "8": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 2, 3, 3, 2],
+                    "right": [2, 3, 3, 2, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "9": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "0": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "!": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 2, 9, 9, 9],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "?": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [9, 9, 0],
+                    "left": [1, 9, 2, 3, 2, 9, 1],
+                    "right": [2, 3, 2, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            ".": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [9, 9, 0],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            ";": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [9, 9, 0],
+                    "left": [1, 9, 1, 2, 3, 3, 2],
+                    "right": [1, 9, 1, 2, 3, 3, 2],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            ",": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [9, 9, 0],
+                    "left": [1, 9, 1, 9, 2, 3, 2],
+                    "right": [1, 9, 1, 9, 2, 3, 2],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            ":": {
+                "big": {
+                    "top": [1],
+                    "bottom": [1],
+                    "left": [2, 3, 3, 9, 3, 3, 2],
+                    "right": [2, 3, 3, 9, 3, 3, 2],
+                    "shape": [1, 1, 1, 0, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "{": {
+                "big": {
+                    "top": [9, 2, 2],
+                    "bottom": [9, 2, 2],
+                    "left": [9, 9, 2, 3, 2, 9, 9],
+                    "right": [1, 9, 9, 9, 9, 9, 1],
+                    "shape": [0, 0, 1, 1, 1, 0, 0,
+                        1, 1, 1, 0, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            "}": {
+                "big": {
+                    "top": [2, 2, 9],
+                    "bottom": [2, 2, 9],
+                    "left": [1, 9, 9, 9, 9, 9, 1],
+                    "right": [9, 9, 2, 3, 2, 9, 9],
+                    "shape": [1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 0, 1, 1, 1,
+                        0, 0, 1, 1, 1, 0, 0],
+                    "width": 3
+                }
+            },
+            "/": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 2, 9, 2],
+                    "right": [2, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "(": {
+                "big": {
+                    "top": [9, 2, 2],
+                    "bottom": [9, 2, 2],
+                    "left": [9, 2, 3, 3, 3, 2, 9],
+                    "right": [1, 9, 9, 0, 9, 9, 1],
+                    "shape": [0, 1, 1, 1, 1, 1, 0,
+                        1, 1, 0, 0, 0, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            ")": {
+                "big": {
+                    "top": [2, 2, 9],
+                    "bottom": [2, 2, 9],
+                    "left": [1, 9, 9, 0, 9, 9, 1],
+                    "right": [9, 2, 3, 3, 3, 2, 9],
+                    "shape": [1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 0, 0, 0, 1, 1,
+                        0, 1, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "$": {
+                "big": {
+                    "top": [9, 1, 9],
+                    "bottom": [9, 1, 9],
+                    "left": [9, 2, 3, 2, 9, 1, 9],
+                    "right": [9, 1, 9, 2, 3, 3, 9],
+                    "shape": [0, 1, 1, 1, 0, 1, 0,
+                        1, 1, 0, 1, 0, 1, 1,
+                        0, 1, 0, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "&": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 2, 9, 2, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 0, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "%": {
+                "big": {
+                    "top": [9, 9, 1],
+                    "bottom": [1, 9, 9],
+                    "left": [9, 9, 9, 2, 3, 3, 2],
+                    "right": [2, 3, 3, 2, 9, 9, 9],
+                    "shape": [1, 1, 0, 1, 1, 1, 1,
+                        0, 0, 0, 1, 0, 0, 0,
+                        1, 1, 1, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "§": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 3, 3, 3, 3, 9, 1],
+                    "right": [1, 9, 2, 3, 3, 3, 2],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            '"': {
+                "big": {
+                    "top": [9, 9, 9],
+                    "bottom": [9, 9, 9],
+                    "left": [9, 9, 9, 9, 1, 9, 1],
+                    "right": [9, 9, 9, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 0, 1, 0, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "=": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 9, 9, 9, 9, 1],
+                    "right": [1, 9, 9, 9, 9, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "-": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 1, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "+": {
+                "big": {
+                    "top": [9, 1, 9],
+                    "bottom": [1, 9, 1],
+                    "left": [9, 9, 1, 9, 9, 9, 1],
+                    "right": [9, 9, 1, 9, 9, 9, 1],
+                    "shape": [0, 0, 1, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 0,
+                        0, 0, 1, 0, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            "*": {
+                "big": {
+                    "top": [9, 1, 9],
+                    "bottom": [1, 9, 1],
+                    "left": [9, 1, 9, 1, 9, 9, 1],
+                    "right": [9, 1, 9, 1, 9, 9, 1],
+                    "shape": [0, 1, 0, 1, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 0,
+                        0, 1, 0, 1, 0, 0, 1],
+                    "width": 3
+                }
+            },
+            "#": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 3, 2, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 0, 1,
+                        0, 1, 0, 1, 0, 0, 0,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "<": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [2, 3, 3, 3, 3, 3, 2],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 1, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            ">": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 1, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "°": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 2, 9, 1, 9, 1],
+                    "right": [2, 3, 2, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "^": {
+                "big": {
+                    "top": [9, 1, 9],
+                    "bottom": [1, 9, 1],
+                    "left": [9, 2, 2, 9, 1, 9, 1],
+                    "right": [9, 2, 2, 9, 1, 9, 1],
+                    "shape": [0, 1, 1, 0, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        0, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "_": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "'": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 2, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "´": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 2, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 0, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "`": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 2, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 0,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "@": {
+                "big": {
+                    "top": [2, 0, 2],
+                    "bottom": [2, 2, 0],
+                    "left": [3, 3, 3, 3, 2, 3, 3],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "ß": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [9, 9, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 3, 2, 9],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 0, 1, 0,
+                        1, 1, 1, 1, 1, 1, 0],
+                    "width": 3
+                }
+            },
+            "€": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "[": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "]": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 1, 1],
+                    "width": 3
+                }
+            },
+            "®": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [1, 9, 2, 3, 2, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 0, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "©": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [1, 9, 2, 3, 2, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "≠": {
+                "big": {
+                    "top": [1, 2, 1],
+                    "bottom": [1, 2, 1],
+                    "left": [1, 9, 2, 9, 2, 3, 2],
+                    "right": [2, 3, 2, 9, 2, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 1, 1,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 1, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "¥": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [9, 1, 9],
+                    "left": [1, 2, 9, 2, 9, 2, 9],
+                    "right": [1, 2, 9, 2, 9, 2, 9],
+                    "shape": [1, 1, 0, 1, 0, 1, 0,
+                        0, 1, 1, 1, 1, 1, 1,
+                        1, 1, 0, 1, 0, 1, 0],
+                    "width": 3
+                }
+            },
+            "≤": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        0, 0, 1, 0, 0, 0, 1,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "≈": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "~": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 1, 9, 1, 9, 1],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 0, 0, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "•": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 2, 9, 1],
+                    "right": [1, 9, 2, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 0, 1,
+                        1, 0, 1, 0, 1, 0, 1,
+                        1, 0, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "|": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [2, 3, 3, 3, 3, 3, 2],
+                    "right": [1, 9, 1, 9, 1, 9, 1],
+                    "shape": [1, 1, 1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0, 0, 0,
+                        1, 0, 1, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "±": {
+                "big": {
+                    "top": [1, 9, 1],
+                    "bottom": [1, 9, 1],
+                    "left": [3, 3, 3, 3, 3, 3, 1],
+                    "right": [3, 3, 3, 3, 3, 3, 1],
+                    "shape": [0, 1, 0, 0, 1, 0, 1,
+                        1, 1, 1, 0, 1, 0, 0,
+                        0, 1, 0, 0, 1, 0, 1],
+                    "width": 3
+                }
+            },
+            "http://": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 1, 9, 2, 2],
+                    "right": [2, 2, 9, 1, 9, 2, 2],
+                    "shape": [1, 1, 0, 1, 0, 1, 1,
+                        1, 0, 0, 1, 0, 0, 1,
+                        1, 1, 0, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "https://": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 1, 9, 2, 2],
+                    "right": [2, 2, 9, 1, 9, 2, 2],
+                    "shape": [1, 1, 0, 1, 0, 1, 1,
+                        1, 0, 0, 0, 0, 0, 1,
+                        1, 1, 0, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "coin://": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [2, 2, 9, 1, 9, 2, 2],
+                    "right": [2, 2, 9, 1, 9, 2, 2],
+                    "shape": [1, 1, 0, 1, 1, 1, 1,
+                        1, 0, 0, 1, 0, 0, 1,
+                        1, 1, 0, 1, 0, 1, 1],
+                    "width": 3
+                }
+            },
+            "spatialtoolbox://": {
+                "big": {
+                    "top": [2, 3, 2],
+                    "bottom": [2, 3, 2],
+                    "left": [1, 9, 2, 3, 3, 3, 2],
+                    "right": [2, 3, 3, 3, 2, 9, 1],
+                    "shape": [1, 0, 1, 1, 1, 1, 1,
+                        0, 0, 1, 0, 1, 0, 0,
+                        1, 1, 1, 1, 1, 0, 1],
+                    "width": 3
+                }
+            }
+        };
+    }
+    
+    let hrqr = new HRQR();
+</script>
+</body>
+</html>

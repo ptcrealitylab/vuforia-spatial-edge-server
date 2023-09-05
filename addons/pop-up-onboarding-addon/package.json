@@ -1,0 +1,25 @@
+{
+  "name": "pop-up-onboarding-addon",
+  "version": "1.0.0",
+  "description": "When compiling the vuforia-spatial-toolbox-ios app with this addon, the UI of the app will change to a simplified onboarding flow that provides an easy way to scan an area target, share the space, and add four types of tools to the space.",
+  "main": "interfaces/digitalThread/index.js",
+  "scripts": {
+    "test": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ptcrealitylab/pop-up-onboarding-addon.git"
+  },
+  "author": "Ben Reynolds, PTC Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ptcrealitylab/pop-up-onboarding-addon/issues"
+  },
+  "homepage": "https://github.com/ptcrealitylab/pop-up-onboarding-addon#readme",
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.33.0"
+  }
+}

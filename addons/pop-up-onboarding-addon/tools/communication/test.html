@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Communication Tool</title>
+    <link rel="stylesheet" href="styles/index.css">
+    <script>
+      const modules = {
+        distanceHandler: {}
+      }
+    </script>
+    <script src="src/ConversationView.js"></script>
+    <script src="src/Compose.js"></script>
+    <script src="src/Message.js"></script>
+    <script src="src/MessageParser.js"></script>
+</head>
+<body style="width: 300px; height: 300px">
+<!--<img src="resources/yellow-dot.svg" width="300" height="300" id="blob">-->
+<!--<div id="blob" class="removeFullscreen"></div>-->
+<div id="label">Machine Repair</div>
+<div id="blob"></div>
+
+<script>
+    let conversationView = null;
+  function transitionToFullscreen(withAnimation) {
+    isFullscreen = true;
+
+    // spatialInterface.setFullScreenOn(1000);
+    // spatialInterface.setStickyFullScreenOn();
+    // blob.innerText = 'X';
+    // waitUntilDistant = true;
+    // lastTransitionTime = Date.now();
+
+    if (withAnimation) {
+      blob.classList.remove('removeFullscreen');
+      blob.classList.add('fullscreen');
+      // setTimeout(function() {
+        blob.classList.add('fullscreenTestPermanent');
+      // }, 500);
+    }
+
+    if (!conversationView) {
+      conversationView = new ConversationView(blob);
+      conversationView.onExit(function() {
+        // transitionToBlob(true);
+        console.log('exit fullscreen view');
+      });
+    }
+    if (conversationView) {
+      conversationView.getDom().style.display = '';
+    }
+  }
+  
+  setTimeout(function() {
+    transitionToFullscreen(true);
+    setTimeout(function() {
+      // document.getElementById('label').style.display = 'none';
+    }, 300);
+  }, 1000);
+    //
+    // let conversationView = new ConversationView(document.body);
+</script>
+</body>
+</html>

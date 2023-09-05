@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Communication Tool</title>
+
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/envelope.js"></script>
+
+    <link rel="stylesheet" href="styles/index.css">
+
+    <script src="src/index.js" type="module"></script>
+    <script src="src/ConversationView.js" type="module"></script>
+    <script src="src/Compose.js" type="module"></script>
+    <script src="src/Message.js" type="module"></script>
+    <script src="src/MessageParser.js" type="module"></script>
+    <script src="src/PersistentStorage.js" type="module"></script>
+    <script src="src/MediaAttachments.js" type="module"></script>
+    <script src="thirdParty/easings.js"></script>
+    <script src="thirdParty/skrollTop.js"></script>
+</head>
+<body style="width: 900px; height: 600px">
+<div id="layout">
+    <div id="label">
+        <div id="icons">
+            <img id="labelPinnedIcon" src="resources/pinned-button.svg" class="labelIcon">
+            <!--        <img id="labelResolvedIcon" src="resources/resolved-button.svg" class="labelIcon">-->
+        </div>
+        <div id="labelTitle">Message</div>
+    </div>
+    <div id="blob"></div>
+</div>
+<div id="viewContainer">
+</div>
+</body>
+</html>

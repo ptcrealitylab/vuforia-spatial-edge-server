@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="42px" height="42px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>settings-button</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="settings-button" transform="translate(0.000000, -0.000000)">
+            <circle id="Oval" stroke="#000000" stroke-width="5.5" cx="21" cy="21" r="12.25"></circle>
+            <g id="Group-2" transform="translate(21.000000, 21.000000) rotate(-240.000000) translate(-21.000000, -21.000000) translate(16.000000, 0.000000)" fill="#000000">
+                <g id="Group" transform="translate(-0.000000, 0.000000)">
+                    <polyline id="Path" points="9.93395277 7.77046628 0.0753855381 7.13890497 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(7.292698, 3.885233) scale(-1, 1) translate(-7.292698, -3.885233) " points="4.65144353 7.77046628 5.57895566 0 9.93395277 0"></polyline>
+                </g>
+                <g id="Group" transform="translate(5.000000, 38.000000) rotate(-180.000000) translate(-5.000000, -38.000000) translate(0.000000, 34.000000)">
+                    <polyline id="Path" points="-3.55271368e-15 7.77046628 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(4.927651, 3.885233) scale(-1, 1) translate(-4.927651, -3.885233) " points="9.85530277 7.77046628 -7.10542736e-15 7.11155616 0.848862135 1.52766688e-13 5.20385924 1.52766688e-13"></polyline>
+                </g>
+            </g>
+            <g id="Group-2" transform="translate(21.000000, 21.000000) rotate(-180.000000) translate(-21.000000, -21.000000) translate(16.000000, 0.000000)" fill="#000000">
+                <g id="Group" transform="translate(-0.000000, 0.000000)">
+                    <polyline id="Path" points="9.93395277 7.77046628 0.0753855381 7.13890497 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(7.292698, 3.885233) scale(-1, 1) translate(-7.292698, -3.885233) " points="4.65144353 7.77046628 5.57895566 0 9.93395277 0"></polyline>
+                </g>
+                <g id="Group" transform="translate(5.000000, 38.000000) rotate(-180.000000) translate(-5.000000, -38.000000) translate(0.000000, 34.000000)">
+                    <polyline id="Path" points="-3.55271368e-15 7.77046628 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(4.927651, 3.885233) scale(-1, 1) translate(-4.927651, -3.885233) " points="9.85530277 7.77046628 -7.10542736e-15 7.11155616 0.848862135 1.52766688e-13 5.20385924 1.52766688e-13"></polyline>
+                </g>
+            </g>
+            <g id="Group-2" transform="translate(21.000000, 21.000000) rotate(-120.000000) translate(-21.000000, -21.000000) translate(16.000000, 0.000000)" fill="#000000">
+                <g id="Group" transform="translate(-0.000000, 0.000000)">
+                    <polyline id="Path" points="9.93395277 7.77046628 0.0753855381 7.13890497 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(7.292698, 3.885233) scale(-1, 1) translate(-7.292698, -3.885233) " points="4.65144353 7.77046628 5.57895566 0 9.93395277 0"></polyline>
+                </g>
+                <g id="Group" transform="translate(5.000000, 38.000000) rotate(-180.000000) translate(-5.000000, -38.000000) translate(0.000000, 34.000000)">
+                    <polyline id="Path" points="-3.55271368e-15 7.77046628 0.92751213 0 5.28250924 0"></polyline>
+                    <polyline id="Path" transform="translate(4.927651, 3.885233) scale(-1, 1) translate(-4.927651, -3.885233) " points="9.85530277 7.77046628 -7.10542736e-15 7.11155616 0.848862135 1.52766688e-13 5.20385924 1.52766688e-13"></polyline>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,26 @@
+{
+  "name": "vuforia-spatial-edge-agent-addon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "interface/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^0.23.0",
+    "form-data": "^4.0.0",
+    "socket.io": "2.3",
+    "socket.io-client": "2.3",
+    "toolsocket": "github:ptcrealitylab/toolsocket"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon.git"
+  },
+  "author": "Valentin Heun (PTC)",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon/issues"
+  },
+  "homepage": "https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon#readme"
+}
