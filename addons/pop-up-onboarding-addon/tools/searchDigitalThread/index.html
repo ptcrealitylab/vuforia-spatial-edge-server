@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <title>Spatial Search</title>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/envelope.js"></script>
+    <link rel="stylesheet" href="styles/index.css">
+
+    <!-- for now, load some resources directly from the digitalThread interface server -->
+    <!-- <link rel="stylesheet" href="http://localhost:8083/style.css"> -->
+    <link rel="stylesheet" href="styles/style.css">
+
+    <script src="src/index.js"></script>
+    <script src="src/SearchView.js"></script>
+    <script src="src/EmbeddedContentView.js"></script>
+    <script src="src/PersistentStorage.js"></script>
+</head>
+<body style="width: 900px; height: 600px">
+<div id="label">
+    <img id="minimizedIcon" src="resources/windchill-icon-white.svg" class="minimizedIcon"/>
+    <div id="labelTitle">Search</div>
+</div>
+<div id="viewContainer">
+    <div id="embeddedContentView" style="display: none; pointer-events: none">
+        <div id="contentHeader">
+            <div id="contentHeaderText"></div>
+        </div>
+        <div id="contentWindow"></div>
+    </div>
+    <div id="searchView" style="display: none; pointer-events: none; position: absolute; top: 50px; left: 0; width: 100%; height: 100%">
+        <div class="fullscreen modal-bg">
+            <div class="search-container">
+                <label class="searchbar-label">
+                    <input id="searchbar-input" class="searchbar-input" type="text" placeholder="Search"
+                           oninput="showMachines()" autofocus autocomplete="off"
+                    />
+                </label>
+                <div class="modal-field">
+                    <ul id="machine-results" class="modal">
+                        <!-- Children -->
+                    </ul>
+                    <ul id="search-results" class="modal-next">
+                        <!-- Children -->
+                    </ul>
+                    <ul id="next-results" class="modal-next">
+                        <!-- Children -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- <script src="http://localhost:8083/interaction.js"></script> -->
+<script src="src/interaction.js"></script>
+
+<script>
+    // This is the URL of the digitalThread interface server, to load resources and proxy requests from it
+    // const BASE_URL = 'http://localhost:8083';
+    function getBaseURL() {
+        return `http://${spatialObject.serverIp}:8083`;
+    }
+</script>
+
+</body>
+</html>

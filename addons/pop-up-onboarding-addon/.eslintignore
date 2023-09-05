@@ -1,0 +1,11 @@
+# dependencies
+/node_modules
+
+# All 3rd-party code should be grouped in thirdParty/ directories in each tool
+thirdParty
+
+# mock data
+mockResponses.js
+
+# config files
+.eslintrc.js

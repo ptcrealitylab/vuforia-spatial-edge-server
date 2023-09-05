@@ -1,0 +1,392 @@
+body {
+    /*border: 2px solid rgba(0,0,0,0.3);*/
+    padding: 0;
+    margin: 0;
+    font-family: "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+}
+
+#distanceSlider {
+    width: 300px;
+    position: absolute;
+    top: 600px;
+    left: 500px;
+}
+
+#viewContainer {
+    position: absolute;
+    /*left: calc(100% - 150px);*/
+    left: 0;
+    /*width: 1200px;*/
+    /*height: 600px;*/
+    width: 100%;
+    height: 100%;
+    /*background-color: rgba(0, 0, 0, 0.1);*/
+    /*border-radius: 20px;*/
+    /*backdrop-filter: none;*/
+    /*border: 10px solid black;*/
+    font-size: 20px;
+}
+
+.fullscreenTool {
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    border-radius: 0;
+    background-color: transparent;
+    backdrop-filter: blur(10px);
+    border: 0 solid black;
+    left: 0 !important;
+
+    -webkit-animation: expandBlob 300ms ease-in-out;
+    animation: expandBlob 300ms ease-in-out;
+}
+
+.fullscreenNoAnimation {
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    border-radius: 0;
+    background-color: transparent;
+    backdrop-filter: blur(10px);
+    border: 0 solid black;
+    left: 0 !important;
+}
+
+.fullscreenTestPermanent {
+    left: 0 !important;
+    width: calc(100% - 40px) !important;
+    height: calc(100% - 40px) !important;
+    border-radius: 0 !important;
+    background-color: white !important;
+    border: 0 solid black !important;
+}
+
+@keyframes expandBlob {
+    0% {
+        width: 300px;
+        height: 300px;
+        border-radius: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: none;
+        /*left: calc(100% - 150px);*/
+    }
+    80% {
+        border-radius: 15px;
+        /*left: 0;*/
+    }
+    100% {
+        width: calc(100% - 40px);
+        height: calc(100vh - 40px);
+        border-radius: 0;
+        background-color: transparent;
+        backdrop-filter: blur(10px);
+        /*left: 0;*/
+    }
+}
+
+.removeFullscreen {
+    width: 300px;
+    height: 300px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    backdrop-filter: none;
+    
+    -webkit-animation: shrinkToBlob 300ms ease-in-out;
+    animation: shrinkToBlob 300ms ease-in-out;
+}
+
+@keyframes shrinkToBlob {
+    0% {
+        width: calc(100% - 40px);
+        height: calc(100vh - 40px);
+        border-radius: 0;
+        background-color: transparent;
+        backdrop-filter: blur(10px);
+        /*left: 0;*/
+    }
+    20% {
+        border-radius: 15px;
+        /*left: 0;*/
+    }
+    100% {
+        width: 300px;
+        height: 300px;
+        border-radius: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: none;
+        /*left: calc(100% - 150px);*/
+    }
+}
+
+#conversation {
+    transition: opacity 300ms ease-in-out;
+}
+
+#embeddedContentView {
+    max-width: 1200px;
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#contentHeader {
+    position: relative;
+    left: 0;
+    /*top: 20px;*/
+    width: 100%;
+    height: 70px;
+    line-height: 80px;
+    background-color: #40AA1D;
+}
+
+#contentHeaderText {
+    color: white;
+    position: relative;
+    top: 10px;
+    text-align: center;
+}
+
+#contentWindow {
+    height: 100vh;
+    width: 100%;
+    background-color: rgba(217, 217, 217, 0.5);
+    backdrop-filter: blur(6px);
+}
+
+#pdfIframe {
+    position: absolute;
+    left: 40px;
+    top: 0;
+    width: 600px;
+    height: 1200px;
+    pointer-events: auto;
+    border: none;
+}
+
+#pdfCanvas {
+    /*width: 600px;*/
+    width: 100%;
+    height: 100vh;
+    pointer-events: auto;
+    background-color: white;
+    border: none;
+    /*position: absolute;*/
+    /*left: calc((100vw - 600px) / 2);*/
+    /*top: 10px;*/
+    /*height: calc(100% - 120px);*/
+}
+
+#embeddedImage {
+    width: 100%;
+    /*height: 100vh;*/
+    object-fit: contain;
+}
+
+#partListDiv {
+    background-color: white;
+    max-width: 600px;
+    margin: 0 auto auto;
+    padding: 0 15px 0 15px;
+}
+
+#header {
+    position: relative;
+    left: 0;
+    top: 20px;
+    width: 100%;
+    height: 130px;
+    /*border: 2px solid red;*/
+}
+
+#searchField {
+    position: absolute;
+    left: 20px;
+    top: 60px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 20px;
+    vertical-align: bottom;
+    /*border: 2px solid red;*/
+    border-bottom: 3px solid black;
+    width: calc(100% - 160px);
+    padding-left: 5px;
+}
+
+#exitButton {
+    position: absolute;
+    left: 20px;
+    top: 40px;
+    width: 40px;
+    height: 40px;
+    pointer-events: auto;
+}
+
+.selectedTextfield {
+    /*background-color: rgba(180, 213, 254, 0.5);*/
+    background-color: rgba(213, 213, 213, 0.5);
+    /*border: 5px solid black !important;*/
+}
+
+#scrollView {
+    position: relative;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    /*height: calc(100vh - 100px);*/
+    height: calc(100vh - 270px);
+    overflow: hidden;
+    margin-bottom: 15px;
+    /*background-color: rgba(213, 213, 213, 0.5);*/
+}
+.scrollViewKeyboard {
+    /*height: calc(100vh - 570px) !important; !* short iphones *!*/
+    height: calc(100vh - 650px) !important; /* tall iphones */
+}
+
+#composeContainer {
+    position: relative;
+    /*left: 0;*/
+    /*bottom: 0;*/
+    /*top: 0;*/
+    /*width: 100vw;*/
+    /*height: 100vh;*/
+}
+.composeContainerKeyboard {
+    /*bottom: 300px !important; !* short iphones *!*/
+    bottom: 380px !important; /* tall iphones */
+}
+#composeTextfield {
+    margin-left: 20px;
+    /*margin-bottom: 20px;*/
+    margin-top: 15px;
+    border: 2px solid black;
+    border-radius: 10px;
+    width: calc(100% - 130px);
+    padding: 10px;
+    height: 60px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    /*bottom: 0;*/
+}
+
+.placeholderText {
+    color: #6a6a6a;
+}
+
+.disabledButton {
+    opacity: 0.5;
+}
+
+img:active {
+    opacity: 0.3;
+}
+
+.buttonActive {
+    opacity: 0.3;
+}
+
+#label {
+    color: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    font-size: 64px;
+    line-height: 100px;
+    vertical-align: middle;
+    padding-left: 20px;
+}
+
+.noTitle {
+    display: none;
+}
+
+.textMention {
+    color: #236192;
+}
+
+.textHashtag {
+    color: #6CC04A;
+}
+
+.shadowBottomOnly {
+    box-shadow: inset 0 -10px 20px -20px #999999;
+}
+
+.shadowTopOnly {
+    box-shadow: inset 0 10px 20px -20px #999999;
+}
+
+.shadowTopAndBottom {
+    box-shadow: inset 0 10px 20px -20px #999999,  inset 0 -10px 20px -20px #999999;
+}
+
+#hiddenFileUpload {
+    height: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+#icons {
+    /*display: inline-block;*/
+    position: absolute;
+}
+
+#labelTitle {
+    /*display: inline-block;*/
+    position: absolute;
+    left: 340px;
+    line-height: 100px;
+    top: 100px;
+}
+
+.labelIcon {
+    height: 50px;
+}
+
+.labelIconHidden {
+    display: none;
+}
+
+.minimizedIcon {
+    /*pointer-events: none;*/
+    width: 260px;
+    height: 260px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.loaderContainer {
+    height: 50vh !important;
+    /*width: 100vw;*/
+    width: 100%;
+    position: absolute;
+    top: 250px;
+    left: 0;
+}
+
+.loaderContainerPortrait {
+    height: 32vh !important;
+    top: calc(50vh - 16vh) !important;
+}
+
+.loader {
+    position: relative;
+    left: calc(50% - 20px);
+    top: 10vh;
+    border: 6px solid #f3f3f377;
+    border-top: 6px solid black;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

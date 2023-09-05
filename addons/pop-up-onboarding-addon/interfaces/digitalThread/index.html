@@ -1,0 +1,358 @@
+<!-- NOTE: this index.html page is used solely to test the 2D UI in isolation, at localhost:8083 -->
+<!-- To update the tool, make sure all changes are made to the tools/searchDigitalThread/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <title>Spatial Search</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- Background Placeholder - Delete -->
+<div class="fullscreen">
+    <img class="background" src="/background.png" alt="background" />
+</div>
+<!-- ----- -->
+<div class="fullscreen modal-bg">
+    <div class="search-container">
+        <label class="searchbar-label">
+            <input id="searchbar-input" class="searchbar-input" type="text" placeholder="Search"
+                   oninput="showMachines()" autofocus autocomplete="off"
+            />
+        </label>
+        <div class="modal-field">
+            <ul id="search-results" class="modal">
+                <!-- Children -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    const results_div = document.getElementById('search-results');
+    const loading = spinner();
+    let search_results = [];
+
+    //Search Route
+    function postResults(appName, serialNumber) {
+        let serialNumInt = parseInt(serialNumber);
+        if (appName === 'servicemax') {
+            appName = "serviceMax"
+        }
+        results_div.appendChild(loading);
+        let postURL = "/search"
+        let params = {
+            "serialNo":serialNumInt,
+            "appName":appName
+        }
+        let res = fetch(postURL, {
+            method: "POST",
+            body: JSON.stringify(params),
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+            .then(async (res) => {
+                try {
+                    let data = await res.json();
+                    console.log('postResults', data);
+                    results_div.removeChild(loading);
+                    return data;
+                } catch(err) {
+                    console.error(err);
+                }
+            })
+        return res;
+    }
+    
+    //Autocomplete Route
+    function post_autocomplete() {
+        results_div.classList.add("show");
+        results_div.appendChild(loading);
+        
+        let searchString = '';
+        if (document.getElementById('searchbar-input')) {
+            searchString = document.getElementById('searchbar-input').innerText;
+        }
+
+        let postURL = "/autocomplete"
+        let res = fetch(postURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: {
+                searchString: searchString
+            }
+        })
+            .then(async (res) => {
+                try {
+                    let data = await res.json();
+                    console.log('postAutocomplete', data);
+                    results_div.removeChild(loading);
+                    return data;
+                } catch(err) {
+                    console.error(err);
+                }
+            })
+        return res;
+    }
+
+    //Create a row element for search result name and icon
+    function createSearchRow(searchResult, attributeName) {
+        const item = document.createElement("li");
+        const title = document.createElement("h3");
+        const img = document.createElement("img");
+        const arrow = document.createElement("img");
+
+        item.className = "result-row";
+        title.className = "result-text";
+        img.className = "logo";
+        arrow.className = "arrow";
+
+        item.setAttribute("id", `${searchResult}`);
+        item.setAttribute("name", `${attributeName}`);
+        title.textContent =`${capitalizeName(searchResult)}`;
+        img.setAttribute("name", "icon");
+        arrow.src = `/arrow.png`;
+
+        item.appendChild(img);
+        item.appendChild(title);
+        item.appendChild(arrow);
+
+        return item;
+    }
+
+    //Display machines associated with search query - autocomplete
+    async function showMachines() {
+        const input = document.getElementById("searchbar-input");
+        let query = input.value.toLowerCase();
+        let noResultsText = noResults("No Results Found");
+
+        //Fetch results based on first character input
+        if (query.length === 1 && !search_results.length) {
+            let query_results = await post_autocomplete();
+            query_results.data.forEach((machine) => {
+                if(machine.fullName.toLowerCase().includes(query[0])) {
+                    search_results.push(machine);
+                    let item = addMachine(machine.fullName, machine.serialNo);
+                    return results_div.appendChild(item);
+                }
+            })
+        }
+
+        //Filter results as input changes
+        if (search_results.length) {
+            search_results.forEach((machine) => {
+                let substringExists = machine.fullName.toLowerCase().indexOf(query);
+                let listItem = document.getElementById(machine.fullName);
+                if (substringExists === -1 && listItem) {
+                    results_div.removeChild(listItem);
+                } else if (substringExists !== -1 && !listItem) {
+                    let newListItem = addMachine(machine.fullName, machine.serialNo);
+                    results_div.appendChild(newListItem);
+                }
+            })
+        }
+        
+        //Add or remove search items from search results list
+        if (!results_div.children.length) {
+            results_div.appendChild(noResultsText);
+        } else if (results_div.children.length > 1 && document.getElementById("no-results")) {
+            results_div.removeChild(document.getElementById("no-results"));
+        }
+
+        //Clear result fields and reset
+        if (!query && search_results.length) {
+            clearAll();
+            search_results = [];
+        }
+    }
+
+    //Create machine list item in search results list
+    function addMachine(searchResult, serialNo) {
+        let searchItem = createSearchRow(searchResult, "machine");
+        searchItem.setAttribute("serial", serialNo);
+
+        let logoImg = searchItem.querySelector('img[name="icon"]');
+        logoImg.src = "machine.png";
+
+        searchItem.addEventListener("click", showApps);
+
+        return searchItem;
+    }
+
+    //Display apps associated with search query
+    function showApps(evt) {
+        results_div.replaceChildren();
+        const machine = evt.currentTarget;
+
+        let id = machine.id;
+        let name = machine.attributes.name.value;
+        let serial = machine.attributes.serial.value;
+
+        let header = setHeader(id, name);
+        results_div.appendChild(header);
+
+        let appIdx = search_results.findIndex(m => m.fullName === id);
+        if (search_results[appIdx].applications.length) {
+            search_results[appIdx].applications.forEach((appName) => {
+                let item = addApplication(appName, serial);
+                return results_div.appendChild(item);
+            })
+        } else {
+            let msg = noResults("No Applications Found");
+            return results_div.appendChild(msg);
+        }
+    }
+
+    //Create application list item in search results list
+    function addApplication(appName, serialNo) {
+        let appRow = createSearchRow(appName, "app");
+        appRow.setAttribute("serial", serialNo);
+
+        let logoImg = appRow.querySelector('img[name="icon"]');
+        logoImg.src = `/logo-${appName}.png`;
+
+        appRow.addEventListener("click", showDocuments);
+
+        return appRow;
+    }
+
+    //Display documents/files associated with application
+    async function showDocuments(evt) {
+        results_div.replaceChildren();
+        const el = evt.currentTarget;
+
+        let id = el.id;
+        let name = el.attributes.name.value;
+        let serial = el.attributes.serial.value;
+        let header = setHeader(id, name);
+        results_div.appendChild(header);
+
+        let res = await postResults(el.id.toLowerCase(), serial);
+        let app_docs = JSON.parse(res.data).flowResponse;
+
+        function sendFileData(data) {
+            //delete console.log after data is being passed correctly
+            console.log(data);
+            return data;
+        }
+
+        switch(id) {
+        case "windchill":
+            let moduleFile = addDocument(app_docs.moduleName);
+            moduleFile.addEventListener("click", () => sendFileData(app_docs))
+            results_div.appendChild(moduleFile);
+            break;
+        case "vuforia":
+            app_docs[0].app_items.map((item) => {
+                let file = addDocument(item.name);
+                file.addEventListener("click", () => sendFileData(item));
+                results_div.appendChild(file);
+            });
+            break;
+        case "thingworx":
+            app_docs.map((item) => {
+                let file = addDocument(item.name);
+                file.addEventListener("click", () => sendFileData(item));
+                results_div.appendChild(file);
+            });
+            break;
+        case "creo":
+            app_docs[0].app_items.map((item) => {
+                let file = addDocument(item.name);
+                file.addEventListener("click", () => sendFileData(item));
+                results_div.appendChild(file);
+            });
+            break;
+        case "serviceMax":
+            let file = addDocument(app_docs.productInfo.Product_Name);
+            file.addEventListener("click", () => sendFileData(app_docs));
+            results_div.appendChild(file);
+            break;
+        default:
+            let msg = noResults("No Files Available");
+            results_div.appendChild(msg);
+        }
+    }
+
+    //Set Header for document list
+    function setHeader(header_id, header_name) {
+        const item = document.createElement("li");
+        const title = document.createElement("h3");
+        const img = document.createElement("img");
+
+        item.className = "result-row-header";
+        title.className = "result-text";
+        img.className = "logo";
+
+        title.textContent =`${capitalizeName(header_id)}`
+
+        if (header_name === "machine") {
+            img.src = `/machine.png`;
+        } else {
+            img.src = `/logo-${header_id}.png`;
+        }
+
+        item.appendChild(img);
+        item.appendChild(title);
+
+        return item;
+    }
+
+    //Create document/file list item in search results list
+    function addDocument(fileName) {
+        let file = createSearchRow(fileName, "file");
+
+        let logoImg = file.querySelector('img[name="icon"]');
+        logoImg.src = "/file.png";
+
+        let arrow = file.querySelector('img[class="arrow"]');
+        file.removeChild(arrow);
+
+        return file;
+    }
+
+    //Get loading spinner
+    function spinner() {
+        const loading_div = document.createElement("div");
+        const spinner = document.createElement("div");
+
+        loading_div.className = "spinner-div";
+        spinner.className = "spinner";
+
+        loading_div.appendChild(spinner);
+        return loading_div;
+    }
+
+    //No results text
+    function noResults(message) {
+        const noResultsDiv = document.createElement("li");
+        const title = document.createElement("h3");
+
+        noResultsDiv.className = "spinner-div";
+        noResultsDiv.setAttribute("id", "no-results");
+        title.className = "result-text";
+        title.innerText = message;
+
+        noResultsDiv.appendChild(title);
+        return noResultsDiv;
+    }
+
+    //Capitalize
+    const capitalizeName = (app_name) => {
+        return app_name.charAt(0).toUpperCase() + app_name.slice(1);
+    };
+
+    //Clear all apps and documents
+    function clearAll() {
+        results_div.classList.remove("show");
+        results_div.replaceChildren();
+    }
+
+</script>
+</body>
+</html>
