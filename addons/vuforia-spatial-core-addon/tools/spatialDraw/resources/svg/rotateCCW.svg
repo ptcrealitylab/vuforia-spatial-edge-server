@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>rotateL</title>
+    <g id="rotateL" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(21.000000, 34.000000)" fill="#FFFFFF">
+            <polygon id="Path-10-Copy" points="96.47 49 111.32 49 111.32 56.4594595 121.04 56.4594595 122.39 63.1891892 133.19 63.1891892 134.54 70.4864865 147.5 70.4864865 147.5 149 93.5 149 93.5 126.297297 85.94 107.378378 66.5 75.4864865 78.11 68.1891892 96.47 89"></polygon>
+            <path d="M0,0 C51.9147665,0 94,42.0852335 94,94 L93.996,94.5 L106.5,94.5 L84,124.5 L61.5,94.5 L73.998341,94.5007797 C73.9994464,94.3339836 74,94.1670564 74,94 C74,53.1309285 40.8690715,20 0,20 L0,0 Z" id="Combined-Shape" transform="translate(53.250000, 62.250000) scale(-1, 1) translate(-53.250000, -62.250000) "></path>
+        </g>
+    </g>
+</svg>

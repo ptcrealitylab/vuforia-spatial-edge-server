@@ -1,0 +1,13 @@
+pushMe.hyperesources
+dropzone.js
+/libraries/webInterface/js
+/hardwareInterfaces/MIR100/index_old.js
+/hardwareInterfaces/robot
+*.min.js
+/libraries/logicInterfaces.js
+/libraries/objectDefaultFiles/three
+/addons
+
+# Various paths added by test runner
+/vuforia-spatial-toolbox-userinterface
+/spatialToolbox

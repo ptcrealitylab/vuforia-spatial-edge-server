@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=0.2, maximum-scale=0.2, user-scalable=no"/>
+    <meta charset="UTF-8">
+    <title>IO</title>
+    <style>
+        body, html {
+            width: 110px;
+            height: 110px;
+            margin: 0;
+            padding: 0;
+        }
+
+        img {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div style="width:80px; height:80px; overflow: hidden; position: absolute;top:15px;left:15px;">
+    <canvas id="canvasX" width="200px" height="200px"
+            style="border:0px; z-index: -1; transform-origin: left top;transform: scale(0.4,0.4);"></canvas>
+</div>
+<div id="textNote" style="visibility: visible; position: absolute; overflow: hidden;top:95px;left:0px; width:110px; height:15px; text-align: center; font-size:0.6em; font-weight: bold; font-family: Helvetica, Arial, sans-serif;
+color: white"></div>
+
+<script>
+    var ctx = document.getElementById("canvasX").getContext("2d");
+    var objects = {};
+    var thisText =  document.getElementById("textNote");
+
+    drawCircle(ctx, [100, 100], 92, '#00ffff');
+
+    function drawCircle(ctx, point, bSize, color) {
+        ctx.clearRect(0, 0, 200, 200);
+        ctx.beginPath();
+        ctx.arc(point[0], point[1], bSize, 0, 2 * Math.PI, false);
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+        ctx.lineWidth = bSize / 6.5;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+    }
+
+    window.addEventListener("message", function (e) {
+
+        var msg = JSON.parse(e.data);
+
+        if (typeof msg.node !== "undefined" && typeof msg.object !== "undefined") {
+            parent.postMessage(JSON.stringify(
+                    {
+                        version: 170,
+                        node: msg.node,
+                        object: msg.object,
+                        height: document.body.scrollHeight,
+                        width: document.body.scrollWidth,
+                        sendMatrix: false,
+                        fullScreen: false
+                    }
+                    )
+                    // this needs to contain the final interface source
+                    , "*");
+
+            objects.node = msg.node;
+            objects.object = msg.object;
+
+            thisText.innerHTML =msg.nodes[msg.node].name;
+        }
+
+
+
+        if (typeof msg.uiActionFeedback !== "undefined") {
+
+            if (msg.uiActionFeedback === 0)
+                drawCircle(ctx, [100, 100], 92, '#ff019f');
+            if (msg.uiActionFeedback === 1)
+                drawCircle(ctx, [100, 100], 92, '#00ffff');
+            if (msg.uiActionFeedback === 2)
+                drawCircle(ctx, [100, 100], 92, '#3af431');
+            if (msg.uiActionFeedback === 3)
+                drawCircle(ctx, [100, 100], 92, '#f9f90a');
+
+        }
+    }, false);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48.61 56.34">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: aqua;
+      }
+    </style>
+  </defs>
+  <title>trash-icon-cyan-2</title>
+  <g>
+    <path id="trash" class="cls-1" d="M37.79,6.36V1.83h-15V6.36h-17V19.54h4V58.17H50.31V19.54h4V6.36ZM25.27,4.23H35.39V6.36H25.27ZM47.91,55.91H12.22V19.68H47.91Zm4-38.76H8.22V8.89H51.91Z" transform="translate(-5.69 -1.83)"/>
+    <rect class="cls-1" x="14.25" y="22.78" width="2.53" height="25.31"/>
+    <rect class="cls-1" x="23.04" y="22.78" width="2.53" height="25.31"/>
+    <rect class="cls-1" x="32.23" y="22.78" width="2.53" height="25.31"/>
+  </g>
+</svg>

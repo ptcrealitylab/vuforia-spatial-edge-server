@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UI Tutorial 2</title>
+    <style>
+        body {
+            font-family: "Roboto", "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            color: rgb(45,255,255);
+        }
+        .fullwidth {
+            width: 100%;
+        }
+        .centered {
+            text-align: center;
+        }
+        #title {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        #description {
+            font-size: 18px;
+            margin-left: 20px;
+            margin-right: 20px;
+            width: calc(100% - 40px);
+            height: 60%;
+            display: flex;
+            justify-content: space-evenly;
+            align-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 568px;
+            height: 420px;
+            border: 5px solid #00ffe6;
+            border-radius: 10px;
+            /*background-color: rgba(0,132,128,0.3);*/
+            background-color: rgba(0,66,64,0.7);
+        }
+        #containerDoubleBorder {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: calc(568px - 20px);
+            height: calc(420px - 20px);
+            border: 15px solid rgba(0,255,230,0.3);
+            border-radius: 13px;
+            /*margin: -5px;*/
+            pointer-events: none;
+        }
+        .button {
+            width: 100px;
+            height: 42px;
+            border: 5px solid #00ffe6;
+            border-radius: 10px;
+            /*background-color: rgba(0,132,128,0.3);*/
+            text-align: center;
+            line-height: 42px;
+            font-size: 24px;
+            cursor: pointer;
+            position: relative;
+        }
+        #buttonContainer {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 568px;
+            height: 100px;
+            display: flex;
+            justify-content: space-evenly;
+            align-content: center;
+            flex-direction: row;
+        }
+        .line {
+            min-height: 10px;
+        }
+        .imageLine {
+            background-position: center;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .touchArea {
+            /*border: 2px solid deeppink;*/
+            width: 150%;
+            height: 200%;
+            position: absolute;
+            top: -50%;
+            left: -25%;
+        }
+    </style>
+</head>
+<body style="width: 578px; height: 430px;">
+
+<div id="container">
+    <div id="title" class="fullwidth centered">Tutorial (Part 2)</div>
+    <div id="description" class="centered"></div>
+    <div id="buttonContainer">
+        <div id="prevButton" class="button">
+            <div>
+                Previous
+            </div>
+            <div class="touchArea"></div>
+        </div>
+        <div id="nextButton" class="button">
+            <div>
+                Next
+            </div>
+            <div class="touchArea"></div>
+        </div>
+    </div>
+</div>
+<div id="containerDoubleBorder"></div>
+
+<script>
+    var step0 = {
+        lines: [
+            'Tap and hold on a frame to drag it around.',
+            'While holding it, you can also walk around to move it with your device\'s position.'
+        ],
+        next: 'button'
+    };
+
+    var step1 = {
+        lines: [
+            'Drag a frame onto the trash icon to delete it.\n(on the right edge of the screen)',
+            '/*trash-icon*/',
+            'If you delete this Tutorial Part 2 frame by accident, you can drop in a new one from the pocket.',
+            'Go ahead and delete the Tutorial Part 1 frame, if you haven\'t already.'
+        ],
+        images: [
+            {
+                searchText: '/*trash-icon*/',
+                imageSrc: './resources/trash-icon-cyan-2.svg',
+                width: '40px',
+                height: '40px'
+            }
+        ],
+        next: 'button'
+    };
+
+    var step2 = {
+        lines: [
+            'Some frames can be linked together in the Programming Mode.',
+            'For example, you can connect a switch frame to a display frame to turn the display on or off.',
+            /*Or you can connect a joystick frame to a graph frame to see the value of the joystick over time.',*/
+            'To link nodes together, draw a line from one node to the other\n(note: the direction of the line matters)',
+            '/*linking-animation*/'
+        ],
+        images: [
+            {
+                searchText: '/*linking-animation*/',
+                imageSrc: './resources/01_drawLine-1-2.gif',
+                width: '100px',
+                height: '60px'
+            }
+        ],
+        next: 'button'
+    };
+
+    var step3 = {
+        lines: [
+            'This tutorial frame has a programming node called "step 4".',
+            'To complete Step 4, add a switch from the pocket\n(look for this icon):',
+            '/*switch-icon*/',
+            'Then switch to Programming Mode, and draw a line from the switch\'s "value" node to the tutorial frame\'s "step 4" node.',
+            'When the frames are linked together, switch back to View Mode and press the On button.'
+        ],
+        images: [
+            {
+                searchText: '/*switch-icon*/',
+                imageSrc: './resources/switch-icon.gif',
+                width: '60px',
+                height: '60px'
+            }
+        ],
+        next: 'node'
+    };
+
+    var step4 = {
+        lines: [
+            'Nice work! You can draw lines between any nodes to link them together. You can try adding a variety of frames from the pocket and linking them together to see how they can be combined.',
+            'To delete a link between nodes, just swipe through it to cut it.'
+        ],
+        next: 'button'
+    };
+    
+    var steps = [step0, step1, step2, step3, step4];
+
+    var currentStep = 0;
+
+    function renderStep(stepNumber) {
+        if (!stepNumber || stepNumber < 0) { stepNumber = 0; }
+        if (stepNumber >= steps.length) { stepNumber = steps.length - 1; }
+
+        var stepInfo = steps[stepNumber];
+
+        document.getElementById('description').innerHTML = '';
+
+        addLine(document.getElementById('description'), '');
+        stepInfo.lines.forEach(function(lineText) {
+            addLine(document.getElementById('description'), lineText);
+        });
+        addLine(document.getElementById('description'), '');
+
+        if (stepNumber === (steps.length-1) || stepInfo.next === 'node') {
+            document.getElementById('nextButton').style.display = 'none';
+        } else {
+            document.getElementById('nextButton').style.display = '';
+        }
+
+        if (stepNumber === 0) {
+            document.getElementById('prevButton').style.display = 'none';
+        } else {
+            document.getElementById('prevButton').style.display = '';
+        }
+
+        if (typeof stepInfo.images !== 'undefined') {
+            stepInfo.images.forEach(function(imageInfo) {
+                // search for the div in description with the imageInfo.searchText
+                Array.from(document.querySelectorAll('.line')).forEach(function(div) {
+                    if (div.innerText === imageInfo.searchText) {
+                        div.innerText = '';
+                        div.classList.add('imageLine');
+                        div.style.backgroundImage = 'url(' + imageInfo.imageSrc + ')';
+                        div.style.width = imageInfo.width;
+                        div.style.height = imageInfo.height;
+                    }
+                });
+            })
+        }
+
+        currentStep = stepNumber;
+    }
+
+    function addLine(descriptionDiv, lineText) {
+        var p = document.createElement('div');
+        p.classList.add('line');
+        p.innerText = lineText;
+        descriptionDiv.appendChild(p);
+    }
+
+    function nextStep() {
+        var nextStepNumber = currentStep + 1;
+        if (nextStepNumber >= steps.length) { nextStepNumber = 0; }
+        renderStep(nextStepNumber);
+    }
+
+    function prevStep() {
+        var prevStepNumber = currentStep - 1;
+        if (prevStepNumber < 0) { prevStepNumber = steps.length - 1; }
+        renderStep(prevStepNumber);
+    }
+
+    document.getElementById('nextButton').addEventListener('pointerup', function() {
+        nextStep();
+    });
+
+    document.getElementById('prevButton').addEventListener('pointerup', function() {
+        prevStep();
+    });
+
+    function init() {
+        renderStep(0);
+
+        try {
+            let realityInterface = new RealityInterface();
+            realityInterface.enableCustomInteractionMode();
+            // these divs will accept touch events - everything else will just let you drag the frame around
+            realityInterface.setInteractableDivs([document.getElementById('prevButton'), document.getElementById('nextButton')]);
+
+            realityInterface.initNode('step 4', 'node', 0, 0);
+
+            realityInterface.addReadListener('step 4', function(e) {
+                if (e.value >= 0.5 && currentStep === 3) {
+                    nextStep();
+                }
+            })
+
+        } catch (e) {
+            console.warn('error loading Reality Interface');
+        }
+    }
+
+    init();
+
+</script>
+</body>
+</html>

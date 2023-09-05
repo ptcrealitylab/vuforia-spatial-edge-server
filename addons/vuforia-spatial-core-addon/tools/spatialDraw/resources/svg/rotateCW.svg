@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>rotateCW</title>
+    <g id="rotateCW" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(87.500000, 34.000000)" fill="#FFFFFF">
+            <polygon id="Path-10-Copy" points="29.97 49 44.82 49 44.82 56.4594595 54.54 56.4594595 55.89 63.1891892 66.69 63.1891892 68.04 70.4864865 81 70.4864865 81 149 27 149 27 126.297297 19.44 107.378378 -1.36488043e-14 75.4864865 11.61 68.1891892 29.97 89"></polygon>
+            <path d="M40.5,0 C92.4147665,0 134.5,42.0852335 134.5,94 L134.496,94.5 L147,94.5 L124.5,124.5 L102,94.5 L114.498341,94.5007797 C114.499446,94.3339836 114.5,94.1670564 114.5,94 C114.5,53.1309285 81.3690715,20 40.5,20 L40.5,0 Z" id="Combined-Shape"></path>
+        </g>
+    </g>
+</svg>

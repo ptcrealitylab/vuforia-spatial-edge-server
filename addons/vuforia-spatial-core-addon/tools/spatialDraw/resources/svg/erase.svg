@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>erase</title>
+    <g id="erase" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(53.000000, 53.000000)" fill="#FFFFFF">
+            <path d="M100,0 L150,50 L80,120 L120,120 L120,126 L26,126 L0,100 L100,0 Z M50,60 L10,100 L30,120 L70,120 L90,100 L50,60 Z" id="Combined-Shape"></path>
+        </g>
+    </g>
+</svg>

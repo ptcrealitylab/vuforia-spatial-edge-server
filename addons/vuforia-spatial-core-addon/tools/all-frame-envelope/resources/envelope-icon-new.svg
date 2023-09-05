@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.46 283.46">
+  <defs>
+    <style>
+      .cls-1, .cls-4 {
+        fill: aqua;
+      }
+
+      .cls-1, .cls-6 {
+        opacity: 0.25;
+      }
+
+      .cls-2, .cls-5, .cls-6, .cls-7 {
+        fill: none;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-2 {
+        stroke: #75fbfd;
+        stroke-width: 9px;
+      }
+
+      .cls-3 {
+        fill: #75fbfd;
+      }
+
+      .cls-5, .cls-6, .cls-7 {
+        stroke: aqua;
+      }
+
+      .cls-5, .cls-6 {
+        stroke-width: 14px;
+      }
+
+      .cls-7 {
+        stroke-width: 46px;
+        opacity: 0.5;
+      }
+    </style>
+  </defs>
+  <title>UI_RealityEditor_Assets_v003</title>
+  <g id="UI">
+    <rect class="cls-1" x="27.64" y="26.07" width="228.19" height="228.19"/>
+    <g>
+      <line class="cls-2" x1="177.52" y1="212.17" x2="177.52" y2="177.14"/>
+      <polygon class="cls-3" points="191.88 181.34 177.52 156.47 163.16 181.34 191.88 181.34"/>
+    </g>
+    <g>
+      <line class="cls-2" x1="209.44" y1="212.17" x2="209.44" y2="177.14"/>
+      <polygon class="cls-3" points="223.8 181.34 209.44 156.47 195.08 181.34 223.8 181.34"/>
+    </g>
+    <rect class="cls-3" x="165.79" y="218.03" width="54.72" height="10.75"/>
+    <g>
+      <path class="cls-4" d="M81.33,191v36.75H79.1c0-.08,0-.15,0-.23V191.13a.86.86,0,0,1,0-.16Z"/>
+      <path class="cls-4" d="M111.9,191c0,.09,0,.19,0,.28v39.29h-2.22V191.2a2,2,0,0,1,0-.23Z"/>
+      <path class="cls-4" d="M104.53,191a3,3,0,0,0,0,.31q0,18.06,0,36.12v.32H97.76V191.3c0-.11,0-.22,0-.33Z"/>
+      <path class="cls-4" d="M108.51,191v36.75h-1.68V191.34c0-.12,0-.25,0-.37Z"/>
+      <path class="cls-4" d="M68.8,191v39.57H67.67V191.25a2.62,2.62,0,0,0,0-.28Z"/>
+      <path class="cls-4" d="M76.28,191c0,.1,0,.2,0,.31v36.44H75.14V191Z"/>
+      <path class="cls-4" d="M89.49,191a1.91,1.91,0,0,0-.06.33v36.43H87.11a2.24,2.24,0,0,1,0-.24V191.06a.28.28,0,0,1,0-.09Z"/>
+      <path class="cls-4" d="M95.93,191a2.66,2.66,0,0,1,0,.28q0,18.09,0,36.16v.31H92V191.2a1,1,0,0,1,.06-.23Z"/>
+      <path class="cls-4" d="M74,191a1.37,1.37,0,0,1,0,.28q0,18.08,0,36.16v.32h-3.8c0-.09,0-.17,0-.24V191.13a.9.9,0,0,1,0-.16Z"/>
+      <path class="cls-4" d="M63.77,191c0,.11,0,.22,0,.33v39.24H63a1.64,1.64,0,0,1,0-.22V191.11c0-.05,0-.09,0-.14Z"/>
+      <path class="cls-4" d="M114.39,191a2.11,2.11,0,0,1,0,.26v39.31H113V191.3c0-.11,0-.22,0-.33Z"/>
+      <path class="cls-4" d="M85.63,191v36.76H84.34V191.3c0-.11,0-.22,0-.33Z"/>
+      <path class="cls-4" d="M65.85,191c0,.09,0,.19,0,.28v39.29H64.6V191.25a2.7,2.7,0,0,1,0-.28Z"/>
+    </g>
+    <rect class="cls-5" x="27.64" y="26.07" width="228.19" height="228.19"/>
+    <rect class="cls-6" x="39.59" y="37.3" width="204.29" height="205.09"/>
+    <line class="cls-7" x1="141.73" y1="26.07" x2="141.73" y2="75.95"/>
+  </g>
+</svg>

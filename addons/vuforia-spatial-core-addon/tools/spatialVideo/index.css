@@ -1,0 +1,54 @@
+img {
+    width: 100%;
+    height: 100%;
+}
+#envelopeContainer {
+    width: 100vw;
+    height: 100vh;
+}
+.imageContainer {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 64px;
+    height: 64px;
+    background-color: #00000080;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: solid #ffffff 3px;
+}
+.imageContainer.recording {
+    background-color: #9D0000;
+    animation: record 2s forwards;
+}
+#envelopeContainer img {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 64px;
+    height: 64px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+@keyframes record {
+    0% { background-color: #00000080 }
+    100% { background-color: #9D0000 }
+}
+
+.tool-color-gradient {
+    /*animation: tool-color-gradient-anim 0.3s infinite alternate;*/
+    background: linear-gradient(90deg, #000000,#000000, #00ffff, #ee7752, #e73c7e, #23a6d5, #23d5ab,#000000, #000000);
+    background-size: 2000% 200%;
+    animation: gradient 10s infinite;
+    border-radius: 50px;
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
