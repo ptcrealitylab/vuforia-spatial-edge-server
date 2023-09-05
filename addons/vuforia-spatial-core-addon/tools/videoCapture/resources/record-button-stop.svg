@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: 0.25;
+      }
+
+      .cls-2 {
+        fill: #ff007d;
+      }
+    </style>
+  </defs>
+  <title>Asset 54</title>
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="UI">
+      <g>
+        <g class="cls-1">
+          <circle class="cls-2" cx="25" cy="25" r="22.5"/>
+        </g>
+        <g class="cls-1">
+          <path class="cls-2" d="M25,5A20,20,0,1,1,5,25,20,20,0,0,1,25,5m0-2.5A22.5,22.5,0,1,0,47.5,25,22.5,22.5,0,0,0,25,2.5Z"/>
+        </g>
+        <path class="cls-2" d="M25,2.5A22.5,22.5,0,1,1,2.5,25,22.5,22.5,0,0,1,25,2.5M25,0A25,25,0,1,0,50,25,25,25,0,0,0,25,0Z"/>
+        <rect class="cls-2" x="17.56" y="17.56" width="14.89" height="14.89" rx="1.82"/>
+      </g>
+    </g>
+  </g>
+</svg>

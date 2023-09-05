@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="284px" height="284px" viewBox="0 0 284 284" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon</title>
+    <g id="icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-5" transform="translate(51.000000, 30.000000)">
+            <g id="Group" transform="translate(0.000000, 183.000000)" stroke-width="4">
+                <circle id="Oval-Copy-3" stroke="#708090" fill="#08FFFC" cx="162" cy="21" r="19"></circle>
+                <circle id="Oval-Copy-2" stroke="#708090" fill="#39F432" cx="115" cy="21" r="19"></circle>
+                <circle id="Oval-Copy" stroke="#708090" fill="#F9F90C" cx="68" cy="21" r="19"></circle>
+                <circle id="Oval" stroke="#FFFFFF" fill="#FF009F" cx="21" cy="21" r="19"></circle>
+            </g>
+            <g id="Group-4" transform="translate(26.000000, 0.000000)">
+                <g id="Group-3" transform="translate(32.000000, 104.000000)" stroke="#FF009F" stroke-width="4">
+                    <path d="M110.5,0 C66,55 53.5,55 0,40.2587572" id="Path-4"></path>
+                    <polyline id="Path-5" points="5.16701208 64 1.04411372 39.8970645 26.9212154 28"></polyline>
+                </g>
+                <path d="M107.428571,25.0311289 L131.410784,67 L83.4463594,67 L107.428571,25.0311289 Z" id="Triangle" stroke="#F9F90C" stroke-width="4"></path>
+                <path d="M1.64773654,20.6842156 C2.96585862,82.7337683 -2.3066297,148.557773 6.39297603,98.9940431 C15.0925818,54.1476769 28.0101781,-7.37820217 28.537427,28.4862362 C29.0646758,64.0472697 20.1014457,103.666009 29.8555491,94.2534679 C36.3582846,87.9784404 37.7397683,49.2288228 46,6.43802332" id="Path-6" stroke="#08FFFC" stroke-width="4"></path>
+                <g id="Group-2" stroke="#FFFFFF" stroke-width="6">
+                    <polyline id="Path-7" points="59 0 59 94 154 94"></polyline>
+                    <line x1="59" y1="94" x2="0" y2="153" id="Path-8"></line>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

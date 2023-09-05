@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="e" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+    <style type="text/css">
+        .p1 { fill: #FFFFFF; animation: fadeFill 3s infinite reverse;}
+        @keyframes fadeFill {
+            0% { fill: #FFFFFF; }
+            50% { fill: #A8A8A8; }
+            100% { fill: #FFFFFF; }
+        }
+    </style>
+    <path 
+    class="p1" 
+    d="M121.5,53.5c-.41,0-.81,.04-1.22,.06-1.16-6.84-7.1-12.06-14.28-12.06-3.4,0-6.52,1.18-8.99,3.14-5.73-11.91-17.91-20.14-32.01-20.14-17.41,0-31.89,12.54-34.91,29.08-.53-.04-1.05-.08-1.59-.08-11.6,0-21,9.4-21,21s9.4,21,21,21h38.34v-20.12h-8.84l17.17-20.38,17.17,20.38h-9.13v20.12h38.3c11.6,0,21-9.4,21-21s-9.4-21-21-21Z"/>
+</svg>

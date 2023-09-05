@@ -1,0 +1,95 @@
+{
+  "name": "vuforia-spatial-edge-server",
+  "version": "0.3.1",
+  "description": "Vuforia Spatial Edge Server",
+  "main": "server.js",
+  "dependencies": {
+    "archiver": "^5.3.1",
+    "await-lock": "^2.2.2",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "decompress-zip": "github:hobinjk-ptc/decompress-zip",
+    "directory-tree": "^3.5.1",
+    "express": "^4.18.2",
+    "express-handlebars": "^5.3.5",
+    "formidable": "^2.1.1",
+    "ip": "^2.0.0",
+    "jimp": "^0.22.7",
+    "ml-matrix": "^6.10.4",
+    "module-alias": "^2.2.2",
+    "monaco-editor": "^0.38.0",
+    "msgpackr": "^1.9.5",
+    "network-interfaces": "^1.1.0",
+    "node-fetch": "^2.6.9",
+    "node-persist": "^2.1.0",
+    "request": "^2.*",
+    "simple-git": "^3.18.0",
+    "toolsocket": "github:ptcrealitylab/toolsocket",
+    "winston": "^3.8.2",
+    "ws": "^8.13.0",
+    "xml2js": "^0.4.23"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
+  },
+  "devDependencies": {
+    "eslint": "^8.40.0",
+    "jsdoc": "^4.0.2",
+    "minami": "^1.2.3",
+    "puppeteer": "^20.2.0"
+  },
+  "scripts": {
+    "test": "npm run lint && NODE_ENV=test node test.js",
+    "test-no-lint": "NODE_ENV=test node test.js",
+    "test-quiet-simple": "npm run lint-quiet && NODE_ENV=test node test-simple.js",
+    "test-node-six-mobile": "NODE_ENV=test FORCE_MOBILE=true node test.js",
+    "test-older": "NODE_ENV=test node test-simple.js",
+    "lint": "eslint .",
+    "lint-quiet": "eslint . --quiet",
+    "generate-docs": "jsdoc -c .jsdoc.conf -r .",
+    "start": "node index.js"
+  },
+  "_moduleAliases": {
+    "@libraries": "./libraries"
+  },
+  "author": {
+    "name": "Valentin Heun",
+    "email": "heun@media.mit.edu"
+  },
+  "contributors": [
+    {
+      "name": "Shunichi Kasahara",
+      "email": ""
+    },
+    {
+      "name": "James Hobin",
+      "email": ""
+    },
+    {
+      "name": "Kevin Wong",
+      "email": ""
+    },
+    {
+      "name": "Kenny Friedman",
+      "email": ""
+    },
+    {
+      "name": "Michelle Suh",
+      "email": ""
+    },
+    {
+      "name": "Benjamin F Reynolds ",
+      "email": ""
+    },
+    {
+      "name": "Eva Stern-Rodriguez",
+      "email": ""
+    },
+    {
+      "name": "Carsten Strunk",
+      "email": ""
+    }
+  ],
+  "license": "MPL-2.0"
+}

@@ -1,0 +1,388 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Spatial Sensor</title>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/envelope.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/gl-worker.js"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('resources/roboto.ttf');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Roboto';
+            src: url('resources/roboto-bold.ttf');
+            font-weight: bold;
+            font-style: normal;
+        }
+        #text {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+            width: 700px;
+            height: 283px;
+            line-height: 283px;
+            text-align: center;
+            vertical-align: middle;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+            cursor: pointer;
+            font-family: "Roboto", "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            font-size: 500%;
+            color: rgb(45,255,255);
+        }
+        #text:hover {
+            opacity: 0.75;
+            cursor: pointer;
+        }
+        #launchIcon {
+            background-color: rgba(0,0,0,0);
+            width: 400px;
+            height: 400px;
+            border-radius: 50px;
+        }
+        
+        #uiParent {
+            display: flex;
+            justify-content: start;
+            align-items: center;
+        }
+        
+        #ui {
+            background-color: rgba(0,0,0,0.9);
+            border-radius: 0 20px 20px 0;
+            width: fit-content;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+        
+        .circle {
+            border-radius: 100%;
+            margin-top: 10px;
+        }
+        
+        .circle:first-child {
+            margin-top: 0;
+        }
+
+        .circle svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .color {
+            width: 44px;
+            height: 44px;
+        }
+        
+        .color.active {
+            width: 36px;
+            height: 36px;
+            border: 4px solid white;
+        }
+        
+        .erase {
+            width: 36px;
+            height: 36px;
+            border: 4px solid slategray;
+        }
+        
+        .erase.active {
+            border: 4px solid white;
+        }
+        
+        .size {
+            width: 36px;
+            height: 36px;
+            border: 4px solid white;
+            display: none;
+        }
+        
+        .size.active {
+            display: initial;
+        }
+        
+        .undo {
+            width: 36px;
+            height: 36px;
+            border: 4px solid slategray;
+        }
+        
+        .undo.active {
+            border: 4px solid white;
+        }
+
+        .icon {
+            display: inline-block;
+            border-radius: 100%;
+            margin-left: 5px;
+            width: 36px;
+            height: 36px;
+            border: 4px solid slategray;
+        }
+
+        .icon.active {
+            border: 4px solid white;
+        }
+
+        .icon:first-child {
+            margin-left: 0;
+        }
+
+        .icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .iconMenu {
+            width: 36px;
+            height: 36px;
+            border: 4px solid slategray;
+            transform: translateY(0); /* needed to prevent fixed child from positioning relative to #ui*/
+        }
+
+        .iconMenu.active {
+            border: 4px solid white;
+        }
+        
+        .iconMenuPopout {
+            border-radius: 0 15px 15px 0;
+            padding: 8px;
+            position: fixed;
+            top: -12px;
+            left: calc(100% + 14px);
+            width: max-content;
+            background-color: rgba(0,0,0,0.9);
+            display: none;
+        }
+        
+        .iconMenuPopout.active {
+            display: initial;
+        }
+        
+        .cursorMenu {
+            margin-top: 10px;
+        }
+        
+        .cursor {
+            width: 52px;
+            height: 52px;
+            background-color: darkslategray;
+        }
+        
+        .cursor.active {
+            background-color: slategray;
+        }
+        
+        .projectionCursor {
+            border-radius: 10px 10px 0 0;
+        }
+
+        .offsetCursor {
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .cursor svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .tool-color-gradient {
+            /*animation: tool-color-gradient-anim 0.3s infinite alternate;*/
+            background: linear-gradient(90deg, #000000,#000000, #00ffff, #ee7752, #e73c7e, #23a6d5, #23d5ab,#000000, #000000);
+            background-size: 2000% 200%;
+            animation: gradient 10s infinite;
+            border-radius: 50px;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="launchButton" class="tool-color-gradient" style="width: 400px; height: 400px;">
+        <svg id="launchIcon" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 84 84" style="enable-background:new 0 0 84 84;" xml:space="preserve">
+            <style type="text/css">
+                .st0{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-miterlimit:10;}
+            </style>
+            <g>
+                <polyline class="st0" points="32.7,61 29.2,64.5 18.7,65.3 19.5,54.8 22.9,51.4 	"/>
+                <line class="st0" x1="51.1" y1="23.3" x2="60.7" y2="32.9"/>
+                <path class="st0" d="M19.9,54.4l35-35c1.1-1.1,2.8-1.1,3.9,0l5.8,5.8c1.1,1.1,1.1,2.8,0,3.9l-35,35"/>
+            </g>
+        </svg>
+    </div>
+
+    <div id="uiParent">
+        <div id="ui">
+            <div class="circle color active" data-color="#FF009F"></div>
+            <div class="circle color" data-color="#F9F90C"></div>
+            <div class="circle color" data-color="#39F432"></div>
+            <div class="circle color" data-color="#08FFFC"></div>
+            <div class="circle size" data-size="10">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" fill="#FF009F">
+                    <g stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <g transform="translate(88.000000, 88.000000)">
+                            <circle cx="40" cy="40" r="40"></circle>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="circle size active" data-size="20">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" fill="#FF009F">
+                    <g stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <g transform="translate(74.000000, 74.000000)">
+                            <circle cx="54" cy="54" r="54"></circle>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="circle size" data-size="40">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" fill="#FF009F">
+                    <g stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <g transform="translate(56.000000, 56.000000)">
+                            <circle cx="72" cy="72" r="72"></circle>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="circle erase">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g transform="translate(53.000000, 53.000000)" fill="#FFFFFF">
+                            <path d="M100,0 L150,50 L80,120 L120,120 L120,126 L26,126 L0,100 L100,0 Z M50,60 L10,100 L30,120 L70,120 L90,100 L50,60 Z"></path>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="circle iconMenu">
+                <div class="iconMenuPopout">
+                    <div class="icon" data-icon="press">
+                        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g transform="translate(52.000000, 76.000000)" fill="#FFFFFF">
+                                    <polygon transform="translate(65.000000, 48.000000) rotate(90.000000) translate(-65.000000, -48.000000)" points="54.47 -17 69.32 -17 69.32 22.4594595 79.04 22.4594595 80.39 32.1891892 91.19 32.1891892 92.54 39.4864865 105.5 39.4864865 105.5 113 51.5 113 51.5 90.2972973 43.94 71.3783784 24.5 39.4864865 36.11 32.1891892 54.47 53"></polygon>
+                                    <rect x="141.5" y="0" width="11" height="105"></rect>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="icon" data-icon="rotateCCW">
+                        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g transform="translate(21.000000, 34.000000)" fill="#FFFFFF">
+                                    <polygon points="96.47 49 111.32 49 111.32 56.4594595 121.04 56.4594595 122.39 63.1891892 133.19 63.1891892 134.54 70.4864865 147.5 70.4864865 147.5 149 93.5 149 93.5 126.297297 85.94 107.378378 66.5 75.4864865 78.11 68.1891892 96.47 89"></polygon>
+                                    <path d="M0,0 C51.9147665,0 94,42.0852335 94,94 L93.996,94.5 L106.5,94.5 L84,124.5 L61.5,94.5 L73.998341,94.5007797 C73.9994464,94.3339836 74,94.1670564 74,94 C74,53.1309285 40.8690715,20 0,20 L0,0 Z" transform="translate(53.250000, 62.250000) scale(-1, 1) translate(-53.250000, -62.250000) "></path>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="icon" data-icon="rotateCW">
+                        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g transform="translate(87.500000, 34.000000)" fill="#FFFFFF">
+                                    <polygon points="29.97 49 44.82 49 44.82 56.4594595 54.54 56.4594595 55.89 63.1891892 66.69 63.1891892 68.04 70.4864865 81 70.4864865 81 149 27 149 27 126.297297 19.44 107.378378 -1.36488043e-14 75.4864865 11.61 68.1891892 29.97 89"></polygon>
+                                    <path d="M40.5,0 C92.4147665,0 134.5,42.0852335 134.5,94 L134.496,94.5 L147,94.5 L124.5,124.5 L102,94.5 L114.498341,94.5007797 C114.499446,94.3339836 114.5,94.1670564 114.5,94 C114.5,53.1309285 81.3690715,20 40.5,20 L40.5,0 Z"></path>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="icon" data-icon="push">
+                        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" >
+                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g transform="translate(29.000000, 48.000000)" fill="#FFFFFF">
+                                    <polygon points="29.97 20 44.82 20 44.82 27.4594595 54.54 27.4594595 55.89 34.1891892 66.69 34.1891892 68.04 41.4864865 81 41.4864865 81 140 27 140 27 117.297297 19.44 98.3783784 5.62050406e-16 66.4864865 11.61 59.1891892 29.97 80"></polygon>
+                                    <path d="M89,0 L109,0 C122.333333,26.6666667 129,53.3333333 129,80 C129,106.666667 122.333333,133.333333 109,160 L89,160 C102.333333,133.333333 109,106.666667 109,80 C109,53.3333333 102.333333,26.6666667 89,0 Z"></path>
+                                    <path d="M137,75 L181,75 L181,85 L137,85 L137,75 Z M197.666667,79.5 L181,67 L181,92 L197.666667,79.5 Z" ></path>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="icon" data-icon="pull">
+                        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g transform="translate(30.000000, 48.000000)" fill="#FFFFFF">
+                                    <path d="M108,0 L128,0 C141.333333,26.6666667 148,53.3333333 148,80 C148,106.666667 141.333333,133.333333 128,160 L108,160 C121.333333,133.333333 128,106.666667 128,80 C128,53.3333333 121.333333,26.6666667 108,0 Z" transform="translate(128.000000, 80.000000) scale(-1, 1) translate(-128.000000, -80.000000) "></path>
+                                    <path d="M136,75 L180,75 L180,85 L136,85 L136,75 Z M196.666667,79.5 L180,67 L180,92 L196.666667,79.5 Z" transform="translate(166.333333, 79.500000) scale(-1, 1) translate(-166.333333, -79.500000) "></path>
+                                    <polygon transform="translate(50.000000, 80.000000) rotate(90.000000) translate(-50.000000, -80.000000) " points="39.47 30 54.32 30 54.32 37.4594595 64.04 37.4594595 65.39 44.1891892 76.19 44.1891892 77.54 51.4864865 90.5 51.4864865 90.5 130 36.5 130 36.5 107.297297 28.94 88.3783784 9.5 56.4864865 21.11 49.1891892 39.47 70"></polygon>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g transform="translate(57.000000, 60.000000)" fill="#FFFFFF">
+                            <g transform="translate(30.000000, 0.000000)">
+                                <polygon transform="translate(34.000000, 25.000000) rotate(90.000000) translate(-34.000000, -25.000000)" points="28.4864865 -9 36.2619543 -9 36.2619543 11.6403326 41.3513514 11.6403326 42.0582121 16.7297297 47.7130977 16.7297297 48.4199584 20.5467775 55.2058212 20.5467775 55.2058212 59 26.9313929 59 26.9313929 47.1247401 22.972973 37.2286902 12.7941788 20.5467775 18.8731809 16.7297297 28.4864865 27.6153846"></polygon>
+                                <rect x="73.7941788" y="0" width="6" height="55"></rect>
+                            </g>
+                            <g transform="translate(0.000000, 67.000000)">
+                                <polygon points="37.47 19 43.1533333 19 43.1533333 21.8345946 46.8733333 21.8345946 47.39 24.3918919 51.5233333 24.3918919 52.04 27.1648649 57 27.1648649 57 57 36.3333333 57 36.3333333 48.372973 33.44 41.1837838 26 29.0648649 30.4433333 26.2918919 37.47 34.2"></polygon>
+                                <path d="M0,0 C19.9859664,0 36.1877934,16.2256322 36.1877934,36.2409639 L36.186,36.433 L41,36.4337349 L32.3380282,48 L23.6760563,36.4337349 L28.4876239,36.4340905 C28.4880497,36.3697653 28.4882629,36.3053895 28.4882629,36.2409639 C28.4882629,20.4842134 15.7336332,7.71084337 0,7.71084337 L0,0 Z" transform="translate(20.500000, 24.000000) scale(-1, 1) translate(-20.500000, -24.000000) "></path>
+                            </g>
+                            <g transform="translate(80.000000, 74.000000)">
+                                <polygon points="10.73 7 16.0466667 7 16.0466667 9.67297297 19.5266667 9.67297297 20.01 12.0844595 23.8766667 12.0844595 24.36 14.6993243 29 14.6993243 29 50 9.66666667 50 9.66666667 41.8648649 6.96 35.0855856 2.01227923e-16 23.6576577 4.15666667 21.0427928 10.73 28.5"></polygon>
+                                <path d="M32,0 L39,0 C43.6666667,9.5 46,19 46,28.5 C46,38 43.6666667,47.5 39,57 L32,57 C36.6666667,47.5 39,38 39,28.5 C39,19 36.6666667,9.5 32,0 Z"></path>
+                                <path d="M64.956044,24 L71,28.5 L64.956044,33 L64.956044,30.48 L49,30.48 L49,26.88 L64.956044,26.88 L64.956044,24 Z"></path>
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="circle undo">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                        <g transform="translate(36.000000, 71.000000)" fill="#FFFFFF">
+                            <polygon points="92 100 164 100 164 20 40 20 60 0 0 30 60 60 40 40 144 40 144 80 92 80"></polygon>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="cursorMenu">
+                <div class="cursor projectionCursor active" data-cursor="PROJECTION">
+                    <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                            <g transform="translate(15.000000, 94.000000)" stroke-width="10">
+                                <polygon stroke="#FFFFFF" points="0 68 141.248089 68 226 0 84.7519107 0 48.7692256 28.8745067"></polygon>
+                                <path d="M49,50 C49,50 98.0177609,12.6170129 101.090975,18.9391927 C104.164189,25.2613725 99.9231535,35.891312 107.575456,39.2693395 C115.227758,42.6473669 154.634043,-2.43690295 151.860468,22.6116354 C149.086892,47.6601737 151.860468,43.4763782 151.860468,43.4763782" id="Path_18" stroke="#99FFFF" stroke-linecap="round"></path>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="cursor offsetCursor" data-cursor="OFFSET">
+                    <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                            <g transform="translate(30.000000, 61.000000)" stroke-width="10">
+                                <polygon stroke="#FFFFFF" points="0.00986408238 134.79004 123.134864 134.79004 197.009864 75.7900403 73.8848641 75.7900403 42.517487 100.845149"></polygon>
+                                <path d="M17.0098641,43.7900403 C17.0098641,43.7900403 42.6505711,1.16055457 62.7351548,6.28160429 C82.8197384,11.402654 84.4323134,25.5640023 109.92017,30.5549207 C113.927874,31.2450731 118.048843,30.4271921 121.490969,28.2584859 C128.980654,24.5918449 134.613202,13.9746611 143.723105,5.57736427 C150.708382,-0.967475066 161.568426,-4.6111517 180.009864,9.48130352" id="Path_16" stroke="#99FFFF" stroke-linecap="round"></path>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="resources/js/three.min.js"></script>
+    <script src="resources/js/THREE.MeshLine.js"></script>
+    <script src="resources/js/GLTFLoader.js"></script>
+    <script src="DrawingManager.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>

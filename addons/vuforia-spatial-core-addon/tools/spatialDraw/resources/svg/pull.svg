@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>pull</title>
+    <g id="pull" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(30.000000, 48.000000)" fill="#FFFFFF">
+            <path d="M108,0 L128,0 C141.333333,26.6666667 148,53.3333333 148,80 C148,106.666667 141.333333,133.333333 128,160 L108,160 C121.333333,133.333333 128,106.666667 128,80 C128,53.3333333 121.333333,26.6666667 108,0 Z" id="Rectangle" transform="translate(128.000000, 80.000000) scale(-1, 1) translate(-128.000000, -80.000000) "></path>
+            <path d="M136,75 L180,75 L180,85 L136,85 L136,75 Z M196.666667,79.5 L180,67 L180,92 L196.666667,79.5 Z" id="Combined-Shape" transform="translate(166.333333, 79.500000) scale(-1, 1) translate(-166.333333, -79.500000) "></path>
+            <polygon id="Path-10-Copy-2" transform="translate(50.000000, 80.000000) rotate(90.000000) translate(-50.000000, -80.000000) " points="39.47 30 54.32 30 54.32 37.4594595 64.04 37.4594595 65.39 44.1891892 76.19 44.1891892 77.54 51.4864865 90.5 51.4864865 90.5 130 36.5 130 36.5 107.297297 28.94 88.3783784 9.5 56.4864865 21.11 49.1891892 39.47 70"></polygon>
+        </g>
+    </g>
+</svg>

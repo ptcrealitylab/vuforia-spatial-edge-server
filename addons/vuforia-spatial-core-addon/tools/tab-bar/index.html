@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tab Bar</title>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
+    <style>
+        * {
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body {
+            width: 600px;
+            height: 60px;
+        }
+        .tabBarContainer {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 35px;
+            margin-top: 5px;
+            height: 90px;
+        }
+        .tab {
+            flex-grow: 1;
+            border: 3px solid cyan;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            height: 45px;
+            line-height: 45px;
+            font-size: 18px;
+            background-color: rgb(0,155,155);
+            margin-left: -5px;
+            margin-right: -5px;
+            text-align: center;
+            color: white;
+            font-family: "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+        }
+        .selected {
+            background-color: rgb(0,255,255);
+        }
+        .left {
+            margin-right: -5px;
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        .right {
+            margin-left: -5px;
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        @keyframes showButton {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+<script>
+
+    var tabBar;
+    var realityInterface = new RealityInterface();
+
+    realityInterface.initNode('selection', 'node', 0, 30, 0.75);
+
+    realityInterface.addReadListener('selection', function(e) {
+        if (!tabBar) { return; }
+        var unclipped = Math.floor(e.value * tabBar.labels.length);
+        var tabIndex = Math.max(0, Math.min(tabBar.labels.length-1, unclipped));
+        tabBar.selectTab(tabIndex);
+    });
+
+    window.onload = function() {
+        init();
+    };
+
+    function init() {
+        // tabBar = new TabBar(['1', '2', '3', 'All', 'None']);
+        var tabLabels = ['1', '2', '3'];
+
+        // uncomment this to test different numbers of tabs
+        // var r = Math.random();
+        // if (r > 0.2) {
+        //     tabLabels.push('4');
+        // }
+        // if (r > 0.4) {
+        //     tabLabels.push('5');
+        // }
+        // if (r > 0.6) {
+        //     tabLabels.push('6');
+        // }
+        // if (r > 0.8) {
+        //     tabLabels.push('7');
+        // }
+
+        tabBar = new TabBar(tabLabels);
+        document.body.appendChild(tabBar.container);
+    }
+
+    function TabBar(labels) {
+        this.labels = labels;
+        this.selectedIndex = null;
+
+        this.container = createDiv(null, ['tabBarContainer']);
+
+        labels.forEach(function(labelText, i) {
+            this.createTabSegment(labelText, i, labels.length);
+        }.bind(this));
+
+        this.updateTabWidths();
+
+        this.selectTab(0);
+    }
+
+    TabBar.prototype.updateTabWidths = function() {
+        var numSegments = this.labels.length;
+        Array.from(this.container.children).forEach(function(tabSegment) {
+            tabSegment.style.flexBasis = (100 / numSegments) + '%';
+        });
+    };
+
+    TabBar.prototype.createTabSegment = function(labelText, i, numSegments) {
+        var id = 'tabSegment' + i;
+        var classList = ['tab'];
+        if (i === 0) {
+            classList.push('left');
+        }
+        if (i === numSegments-1) {
+            classList.push('right');
+        }
+        var tabSegment = createDiv(id, classList, labelText, this.container);
+        tabSegment.addEventListener('pointerup', function() {
+            this.selectTab(i);
+        }.bind(this));
+
+        var frameWidth = 600;
+        var spacing = frameWidth / ((13/3) * numSegments);
+        var offset = -37.5 + ((2 - numSegments) * 7.5);
+
+        // create a node at the right position for each tab in a programmatic way
+        realityInterface.initNode('tab'+i, 'node', (offset + spacing * i), -20, 0.5);
+    };
+
+    TabBar.prototype.addTab = function(labelText) {
+        this.labels.push(labelText);
+        this.createTabSegment(labelText, this.labels.length-1, this.labels.length);
+        this.updateTabWidths();
+    };
+
+    TabBar.prototype.removeTab = function() {
+        var idToRemove = 'tabSegment' + (this.labels.length-1);
+        console.log(idToRemove);
+        this.labels.pop();
+        var tabSegmentToRemove = document.getElementById(idToRemove);
+        tabSegmentToRemove.parentElement.removeChild(tabSegmentToRemove);
+        this.updateTabWidths();
+    };
+
+    TabBar.prototype.selectTab = function(index) {
+        if (this.selectedIndex === index) { return; }
+
+        Array.from(this.container.children).forEach(function(tabSegment, i) {
+            if (i !== index) {
+                tabSegment.classList.remove('selected');
+                realityInterface.write('tab'+i, 0);
+            } else {
+                tabSegment.classList.add('selected');
+                realityInterface.write('tab'+i, 1);
+            }
+        });
+        this.selectedIndex = index;
+    };
+
+    /**
+     * Shortcut for creating a div with certain style and contents, and possibly adding to a parent element
+     * Any parameter can be omitted (pass in null) to ignore those effects
+     * @param {string|null} id
+     * @param {string|Array.<string>|null} classList
+     * @param {string|null} innerText
+     * @param {HTMLElement|null} parentToAddTo
+     * @return {HTMLDivElement}
+     */
+    function createDiv(id, classList, innerText, parentToAddTo) {
+        var preExistingDiv = document.getElementById(id);
+        var div = preExistingDiv ? preExistingDiv : document.createElement('div');
+        if (id) {
+            div.id = id;
+        }
+        if (classList) {
+            if (typeof classList === 'string') {
+                div.className = classList;
+            } else if (typeof classList === 'object') {
+                classList.forEach(function(className) {
+                    div.classList.add(className);
+                });
+            }
+        }
+        if (innerText) {
+            div.innerText = innerText;
+        }
+        if (parentToAddTo) {
+            parentToAddTo.appendChild(div);
+        }
+        return div;
+    }
+</script>
+</body>
+</html>

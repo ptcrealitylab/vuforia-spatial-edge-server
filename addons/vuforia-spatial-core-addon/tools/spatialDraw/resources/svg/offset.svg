@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>offset</title>
+    <g id="offset" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group_5-Copy" transform="translate(30.000000, 61.000000)" stroke-width="10">
+            <polygon id="Path_15" stroke="#FFFFFF" points="0.00986408238 134.79004 123.134864 134.79004 197.009864 75.7900403 73.8848641 75.7900403 42.517487 100.845149"></polygon>
+            <path d="M17.0098641,43.7900403 C17.0098641,43.7900403 42.6505711,1.16055457 62.7351548,6.28160429 C82.8197384,11.402654 84.4323134,25.5640023 109.92017,30.5549207 C113.927874,31.2450731 118.048843,30.4271921 121.490969,28.2584859 C128.980654,24.5918449 134.613202,13.9746611 143.723105,5.57736427 C150.708382,-0.967475066 161.568426,-4.6111517 180.009864,9.48130352" id="Path_16" stroke="#99FFFF" stroke-linecap="round"></path>
+        </g>
+    </g>
+</svg>

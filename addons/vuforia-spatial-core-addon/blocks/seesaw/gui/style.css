@@ -1,0 +1,11 @@
+body {
+    background-color: transparent;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    color: #00ffff;
+    text-align: center;
+    position: relative;
+    top: 10px;
+}
+

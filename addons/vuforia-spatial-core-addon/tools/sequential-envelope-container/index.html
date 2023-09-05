@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 1. Import the Envelope Container APIs -->
+    <script src="objectDefaultFiles/envelope.js"></script>
+    <meta charset="UTF-8">
+    <title>Sequential Envelope Container</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            width: 300px;
+            height: 300px;
+            font-size: 24px;
+            text-align: center;
+            overflow: visible;
+        }
+        /* semi-transparent blue fullscreen div */
+        #rootElementWhenOpen {
+            position: absolute;
+            left: 0;
+            top: 0;
+            /* gets overwritten by the envelope APIs to be fullscreen but this is a default */
+            width: 736px;
+            height: 414px;
+            background-color: rgba(0, 255, 255, 0.3);
+            color: white;
+        }
+        /* small cyan icon div */
+        #rootElementWhenClosed {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 300px;
+            height: 300px;
+            border-radius: 10px;
+            background-color: rgba(0, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+<div id="rootElementWhenOpen">Open</div>
+<div id="rootElementWhenClosed">Closed</div>
+</body>
+<script>
+    let spatialInterface = new SpatialInterface();
+
+    // spatialInterface.onlyAttachesToObjects();
+
+    // 4. Include 'sequential-envelope-contents' in the list of the names of tools that can go inside this envelope
+    let compatibleToolTypes = ['sequential-envelope-contents'];
+    let rootElementWhenOpen = document.getElementById('rootElementWhenOpen');
+    let rootElementWhenClosed = document.getElementById('rootElementWhenClosed');
+
+    // 5. Designate this tool as an envelope, automatically enabling all the associated features
+    //    The last parameter is true because we want to keep track of the order tools are added
+    let isStackable = false;
+    let areToolsOrdered = true;
+    let envelope = new Envelope(spatialInterface, compatibleToolTypes, rootElementWhenOpen,
+        rootElementWhenClosed, isStackable, areToolsOrdered);
+
+    // 6. Whenever a tool is added, removed, or when the envelope finishes loading, update the visuals
+    envelope.onFrameAdded(render);
+    envelope.onFrameDeleted(render);
+    envelope.onPublicDataLoaded(render);
+
+    function render() {
+        rootElementWhenOpen.innerText = 'Contains ' +
+            Object.keys(envelope.containedFrames).length + ' tools';
+    }
+
+    // 7. Add a touch event that opens up the envelope into fullscreen mode when the icon is tapped
+    rootElementWhenClosed.addEventListener('pointerup', function() {
+        envelope.open();
+    });
+
+    spatialInterface.initNode('path', 'path', 0, 0);
+    spatialInterface.sendMoveNode('open', 0, 200); // move auto-generated envelope node to new position
+
+    let currentWorldId = null;
+    spatialInterface.subscribeToWorldId(function(worldId) {
+        currentWorldId = worldId;
+    });
+
+    envelope.onFrameAdded(writePathList);
+    envelope.onFrameDeleted(writePathList);
+
+    function writePathList() {
+        // write list to path node
+        let frameIdOrder = JSON.parse(JSON.stringify(envelope.frameIdOrdering));
+
+        let pathList = {
+            list: [],
+            mode: 'PATH',
+            worldObject: currentWorldId
+        };
+
+        frameIdOrder.forEach(function(frameId) {
+            let frameData = envelope.containedFrames[frameId];
+            pathList.list.push({
+                object: frameData.objectId,
+                tool: frameId
+            });
+        });
+
+        console.log('pathList.list has ' + pathList.list.length + ' points');
+
+        spatialInterface.write('path', pathList, 'c', 'pathList');
+    }
+
+</script>
+</html>

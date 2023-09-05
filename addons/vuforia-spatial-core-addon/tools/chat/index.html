@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="objectDefaultFiles/object.js"></script>
+    <script src="objectDefaultFiles/pep.min.js"></script>
+    <script src="objectDefaultFiles/envelopeContents.js"></script>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('resources/roboto.ttf');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Roboto';
+            src: url('resources/roboto-bold.ttf');
+            font-weight: bold;
+            font-style: normal;
+        }
+        div {
+            font-family: "Roboto", "Avenir", "Futura", Helvetica Neue, Helvetica, Arial, sans-serif;
+            /*border: 2px solid black;*/
+            /*background-color: rgba(0,0,0,0.1);*/
+            /*margin: -4px;*/
+            background-color: rgba(0,0,0,0.5);
+        }
+        body {
+            width: 620px;
+            height: 1020px;
+        }
+        #container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            /*width: 600px;*/
+            /*height: 900px;*/
+            background-color: transparent;
+            font-size: 20px;
+        }
+        #signal {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 50%;
+            /*height: 300px;*/
+            /*background-color: rgba(0,100,0,0.2);*/
+            border: 10px solid #00ffe6;
+        }
+        #signalIcon {
+            height: 96%;
+            margin: auto;
+            display: block;
+        }
+        #mainContents {
+            position: relative;
+            background-color: transparent;
+            border: 10px solid #00ffe6;
+            /*margin: -4px;*/
+        }
+        .signalButton {
+            width: 25%;
+            height: 100%;
+            /*display: inline-block;*/
+            /*margin: -2px;*/
+            position: absolute;
+            background-repeat: no-repeat;
+            background-size: 90% 90%;
+            background-position: center center;
+
+            border: 2px solid #00ffe6;
+            margin: -4px;
+
+            cursor: pointer;
+        }
+        .signalButton:hover {
+            background-color: rgba(255,255,255, 0.1);
+        }
+        #signalButtons {
+            width: 100%;
+            /*height: 100px;*/
+            position: absolute;
+            /*top: 200px;*/
+        }
+        #goodButton {
+            /*background-color: rgba(0,100,0,0.1);*/
+            left: 0;
+        }
+        #badButton {
+            /*background-color: rgba(100,0,0,0.1);*/
+            left: 25%;
+        }
+        #progressButton {
+            /*background-color: rgba(100,100,0,0.1);*/
+            left: 50%;
+        }
+        #clearButton {
+            /*background-color: rgba(0,0,0,0.1);*/
+            left: 75%;
+        }
+        #scrollView {
+            width: 100%;
+            /*height: 500px;*/
+            position: absolute;
+            /*top: 300px;*/
+            left: 0;
+        }
+        #iam {
+            position: relative;
+        }
+        #iamLabel {
+            width: 25%;
+            height: 100%;
+            position: absolute;
+            text-align: center;
+            color: #00ffe6;
+            font-size: 20px;
+        }
+        #iamTextContainer {
+            left: 25%;
+            width: 75%;
+            height: 100%;
+            position: absolute;
+            background-color: rgba(255,255,255, 0.5);
+        }
+        #iamText {
+            background-color: transparent;
+            padding-left: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        #iamSubmitButton {
+            left: 75%;
+            width: 25%;
+            height: 100%;
+            position: absolute;
+            text-align: center;
+            color: #00ffe6;
+            font-size: 20px;
+        }
+        #iamSubmitButton:hover {
+            left: 75%;
+            width: 25%;
+            height: 100%;
+            position: absolute;
+            text-align: center;
+            color: #00ffe6;
+            font-size: 20px;
+            background-color: rgb(150,150,150);
+            cursor: pointer;
+        }
+        #messages {
+            position: absolute;
+            top: 2%;
+            left: 2%;
+            width: 86%;
+            height: 96%;
+            /*border: 2px solid black;*/
+            /*padding: 20px;*/
+            /*margin: -10px;*/
+            overflow-y: auto;
+        }
+        #scrollbar {
+            position: absolute;
+            left: 90%;
+            top: 0;
+            width: 10%;
+            height: 100%;
+        }
+        #scrollHandle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 90%;
+            height: 100px;
+            background-color: #00ffe6;
+            border-radius: 8px;
+        }
+        #composer {
+            position: absolute;
+            left: 0;
+            /*top: 800px;*/
+            width: 100%;
+            height: 100px;
+            /*display: inline-block;*/
+        }
+        #textEntryContainer {
+            position: relative;
+            top: 10%;
+            left: 2%;
+            width: 71%;
+            height: 80%;
+            background-color: rgba(255,255,255, 0.5);
+        }
+        #textEntry {
+            padding: 2%;
+            background-color: transparent;
+            width: 98%;
+            height: 80%;
+        }
+        #submitButton {
+            position: absolute;
+            left: 75%;
+            top: 0;
+            width: 25%;
+            height: 100%;
+        }
+        .messageContainer {
+            margin: 10px;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+        .messageBody {
+            border: none;
+            border-radius: 8px;
+            background-color: #00ffe6;
+            color: black;
+            padding: 12px;
+            overflow-wrap: break-word;
+        }
+        .timestamp {
+            color: rgba(255,255,255, 0.7);
+            margin: 5px;
+        }
+        #submitButton {
+            text-align: center;
+            vertical-align: middle;
+            font-size: 20px;
+            color: #00ffe6;
+            cursor: pointer;
+            background-color: rgba(255,255,255, 0.1);
+        }
+        #submitButton:hover {
+            background-color: rgba(255,255,255, 0.3);
+        }
+        .hidden {
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="signal">
+            <img id="signalIcon" src="resources/signal-good.svg">
+        </div>
+        <div id="mainContents">
+            <div id="signalButtons">
+                <div class="signalButton" id="goodButton" style="background-image: url('resources/signal-good.svg')"></div>
+                <div class="signalButton" id="badButton" style="background-image: url('resources/signal-error.svg')"></div>
+                <div class="signalButton" id="progressButton" style="background-image: url('resources/signal-in-progress.svg')"></div>
+                <div class="signalButton" id="clearButton"></div>
+            </div>
+            <div id="scrollView">
+                <div id="iam">
+                    <div id="iamLabel">I AM:</div>
+                    <div id="iamTextContainer">
+                        <div id="iamText">
+                            Type name here
+                        </div>
+                    </div>
+                    <div id="iamSubmitButton" class="hidden">Save</div>
+                </div>
+                <div id="messages"></div>
+                <div id="scrollbar">
+                    <div id="scrollHandle"></div>
+                </div>
+            </div>
+            <div id="composer">
+                <div id="textEntryContainer">
+                    <div id="textEntry">
+                        Type your message here
+                    </div>
+                </div>
+                <div id="submitButton">Submit</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="message">
+        <div class="messageContainer">
+            <div class="timestamp">1/23/20 - 8:35am</div>
+            <div class="messageBody">This is a test message</div>
+        </div>
+    </template>
+
+<script>
+    var messageLog = [];
+    var iamTextString = null;
+    var isScrolling = false;
+    var prevY = 0;
+    var realityInterface;
+    let selectedTextboxId = '';
+
+    function initialize() {
+        var width = 600;
+        var signalHeight = 300;
+        var signalButtonsHeight = 100;
+        var scrollViewHeight = 500;
+        var composerHeight = 100;
+        var iamHeight = 50;
+        buildUI(width, signalHeight, signalButtonsHeight, scrollViewHeight, composerHeight, iamHeight);
+
+        initRealityInterface();
+
+        Array.from(document.querySelectorAll('.signalButton')).forEach(function(button) {
+            button.addEventListener('pointerup', function(e) {
+                displaySignal(button.id);
+                try {
+                    realityInterface.writePublicData("storage", "currentSignalButtonId", button.id);
+                } catch (e) {
+                    window.localStorage.setItem('currentSignalButtonId', button.id);
+                }
+            });
+        });
+
+        document.getElementById('iamTextContainer').addEventListener('pointerup', function(e) {
+            if (document.getElementById('iamText').innerText === 'Type name here') {
+                document.getElementById('iamText').innerText = '';
+            }
+            selectedTextboxId = 'iamText';
+            realityInterface.openKeyboard();
+        });
+
+        setChangeListener(document.getElementById('iamText'), function(e) {
+            console.log('on change');
+            document.getElementById('iamSubmitButton').classList.remove('hidden');
+        });
+
+        document.getElementById('iamSubmitButton').addEventListener('pointerup', function(e) {
+            var currentValue = document.getElementById('iamText').innerText;
+            if (currentValue === '' || currentValue === 'Type name here') {
+                return; // ignore default values
+            }
+
+            iamTextString = currentValue;
+
+            try {
+                realityInterface.writePublicData("storage", "iamText", currentValue);
+            } catch (e) {
+                window.localStorage.setItem('iamText', currentValue);
+            }
+
+            document.getElementById('iamSubmitButton').classList.add('hidden');
+
+            realityInterface.closeKeyboard();
+        });
+
+        document.getElementById('textEntryContainer').addEventListener('pointerup', function(e) {
+            if (document.getElementById('textEntry').innerText === 'Type your message here') {
+                document.getElementById('textEntry').innerText = '';
+            }
+            selectedTextboxId = 'textEntry';
+            realityInterface.openKeyboard();
+        });
+
+        document.getElementById('submitButton').addEventListener('pointerup', function(e) {
+            var messageText = document.getElementById('textEntry').innerText;
+
+            if (messageText === 'Type your message here' || messageText === '') {
+                return; // ignore default message
+            }
+
+            realityInterface.closeKeyboard();
+
+            addMessage(messageText, Date.now());
+
+            document.getElementById('textEntry').innerText = '';
+        });
+
+        document.getElementById('messages').addEventListener('pointerdown', function(e) {
+            isScrolling = true;
+            prevY = e.pageY;
+        });
+
+        document.getElementById('messages').addEventListener('pointerup', function() {
+            isScrolling = false
+        });
+
+        document.getElementById('messages').addEventListener('pointercancel', function() {
+            isScrolling = false;
+        });
+
+        document.addEventListener('pointermove', function(e) {
+            if (isScrolling) {
+                console.log('is scrolling');
+                console.log(e);
+
+                var dY = e.pageY - prevY;
+                document.getElementById('messages').scrollTop -= dY;
+                prevY = e.pageY;
+            }
+        });
+
+        document.getElementById('messages').addEventListener('scroll', function() {
+            updateScrollBar();
+        });
+    }
+
+    function onKeyUp(e) {
+
+        console.log('selectedTextboxId: (' + selectedTextboxId + '( received key: (' + e.key + ')');
+
+        if (selectedTextboxId !== 'textEntry' && selectedTextboxId !== 'iamText') {
+            return;
+        }
+
+        var isCharacter = !!e.key.match(/^[a-zA-Z0-9]$/);
+
+        var activeElement = document.getElementById(selectedTextboxId);
+
+        if (isCharacter) {
+            activeElement.innerText = activeElement.innerText + e.key;
+        } else {
+            if (e.key === "Backspace") {
+                activeElement.innerText = activeElement.innerText.slice(0, -1); // remove last character
+            } else if (e.key === " ") {
+                activeElement.innerText = activeElement.innerText + "\u00a0"; // special space character doesn't get escaped
+            }
+        }
+    }
+
+    function getSignalUrlForId(buttonId) {
+        if (buttonId === 'goodButton') {
+            return 'resources/signal-good.svg';
+        } else if (buttonId === 'badButton') {
+            return 'resources/signal-error.svg'
+        } else if (buttonId === 'progressButton') {
+            return 'resources/signal-in-progress.svg';
+        } else {
+            return ''; // defaults to empty image
+        }
+    }
+
+    function displaySignal(id) {
+        var signalSrc = getSignalUrlForId(id);
+        if (signalSrc) {
+            document.getElementById('signalIcon').src = signalSrc;
+            document.getElementById('signalIcon').classList.remove('hidden');
+        } else {
+            document.getElementById('signalIcon').classList.add('hidden');
+        }
+    }
+
+    function loadMessages() {
+        if (window.localStorage.getItem('iamText')) {
+            document.getElementById('iamText').innerText = window.localStorage.getItem('iamText');
+        }
+
+        if (window.localStorage.getItem('currentSignalButtonId')) {
+            displaySignal(window.localStorage.getItem('currentSignalButtonId'));
+        }
+
+        if (window.localStorage.getItem('messageLog')) {
+            messageLog = JSON.parse(window.localStorage.getItem('messageLog'));
+        }
+
+        messageLog.forEach(function(message) {
+            renderMessage(message.text, message.timestamp);
+        });
+    }
+
+    function renderMessage(text, timestamp) {
+        var message = document.getElementById('message').content.cloneNode(true);
+        message.querySelector('.messageBody').innerText = text;
+        message.querySelector('.timestamp').innerText = Date(timestamp).toString();
+        document.getElementById('messages').appendChild(message);
+
+        scrollToBottom();
+
+        updateScrollBar();
+    }
+
+    function addMessage(text, timestamp) {
+        renderMessage(text, timestamp);
+
+        // add to storage
+        messageLog.push({
+            text: text,
+            timestamp: timestamp
+        });
+
+        try {
+            realityInterface.writePublicData("storage", "messageLog", JSON.stringify(messageLog));
+        } catch (e) {
+            window.localStorage.setItem('messageLog', JSON.stringify(messageLog));
+        }
+    }
+
+    function scrollToBottom() {
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    }
+
+    function updateScrollBar() {
+        var handle = document.getElementById('scrollHandle');
+
+        var scrollTop = document.getElementById('messages').scrollTop;
+        var scrollHeight = document.getElementById('messages').scrollHeight;
+        var clientHeight = document.getElementById('messages').clientHeight;
+
+        if (scrollHeight === clientHeight) {
+            handle.classList.add('hidden');
+        } else {
+            handle.classList.remove('hidden');
+        }
+
+        var percentInView = clientHeight / scrollHeight;
+        var handleHeight = clientHeight * percentInView;
+
+        handle.style.height = handleHeight + 'px';
+
+        var scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+
+        var minScrollCenter = handleHeight / 2;
+        var maxScrollCenter = clientHeight - (handleHeight / 2);
+
+        var computedHandleCenter = minScrollCenter + (maxScrollCenter - minScrollCenter) * scrollPercentage;
+
+        var handleTop = computedHandleCenter - handleHeight / 2;
+
+        handle.style.top = handleTop + 'px';
+    }
+
+    // taken from https://stackoverflow.com/a/33064789/1190267
+    function setChangeListener(div, listener) {
+        div.addEventListener("blur", listener);
+        div.addEventListener("keyup", listener);
+        div.addEventListener("paste", listener);
+        div.addEventListener("copy", listener);
+        div.addEventListener("cut", listener);
+        div.addEventListener("delete", listener);
+        div.addEventListener("mouseup", listener);
+    }
+
+    function buildUI(width, signalHeight, signalButtonsHeight, scrollViewHeight, composerHeight, iamHeight) {
+        document.getElementById('container').style.width = width + 'px';
+        document.getElementById('container').style.height = signalHeight + signalButtonsHeight + scrollViewHeight + composerHeight + 'px';
+
+        document.getElementById('signal').style.height = signalHeight + 'px';
+
+        document.getElementById('mainContents').style.width = width + 'px';
+        document.getElementById('mainContents').style.height = signalButtonsHeight + scrollViewHeight + composerHeight + 'px';
+        document.getElementById('mainContents').style.top = signalHeight + 'px';
+
+        // document.getElementById('signalButtons').style.top = signalHeight + 'px';
+        document.getElementById('signalButtons').style.height = signalButtonsHeight + 'px';
+
+        document.getElementById('scrollView').style.top = signalButtonsHeight + 'px';
+        document.getElementById('scrollView').style.height = scrollViewHeight + 'px';
+
+        document.getElementById('composer').style.top = signalButtonsHeight + scrollViewHeight + 'px';
+        document.getElementById('composer').style.height = composerHeight + 'px';
+        document.getElementById('submitButton').style.lineHeight = composerHeight + 'px';
+
+        document.getElementById('iam').style.height = iamHeight + 'px';
+        document.getElementById('iam').style.lineHeight = iamHeight + 'px';
+
+        document.getElementById('messages').style.top = iamHeight + 'px';
+        document.getElementById('messages').style.height = scrollViewHeight - iamHeight + 'px';
+        document.getElementById('scrollbar').style.top = iamHeight + 'px';
+        document.getElementById('scrollbar').style.height = scrollViewHeight - iamHeight + 'px';
+
+        updateScrollBar();
+    }
+
+    function initRealityInterface() {
+        try {
+            realityInterface = new RealityInterface();
+            realityInterface.initNode('storage', 'storeData');
+
+            realityInterface.addReadPublicDataListener('storage', 'messageLog', function (e) {
+                if (typeof e === 'string') {
+                    messageLog = JSON.parse(e);
+                }
+
+                messageLog.forEach(function(message) {
+                    renderMessage(message.text, message.timestamp);
+                });
+            });
+
+            realityInterface.addReadPublicDataListener('storage', 'iamText', function (e) {
+                if (typeof e === 'string') {
+                    iamTextString = e;
+                    document.getElementById('iamText').innerText = e;
+                }
+            });
+
+            realityInterface.addReadPublicDataListener('storage', 'currentSignalButtonId', function (e) {
+                if (typeof e === 'string') {
+                    displaySignal(e);
+                }
+            });
+
+            realityInterface.onKeyboardClosed(function() {
+                selectedTextboxId = ''; // stop listening once the keyboard closes
+                console.log('reset chat app text selection');
+            });
+
+            realityInterface.onKeyUp(onKeyUp);
+
+        } catch (e) {
+            console.warn('cannot initialize reality interface');
+
+            loadMessages(); // load from window.localStorage instead of publicData node
+        }
+    }
+
+    initialize();
+</script>
+</body>
+</html>

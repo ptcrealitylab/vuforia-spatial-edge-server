@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup Slider</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../../../objectDefaultFiles/logicNodeSettings.js"></script>
+</head>
+<body>
+This is a specific kind of switch, where the first two inputs control whether to stream data through the third input to the third output.<br>
+<br>
+
+Input 1: The "Off" Switch:<br>
+If the first input receives a high value, and the switch was flipped on, flip it back off (and emit a 1 from the first output and a 0 from the second).<br>
+<br>
+
+Input 2: The "On" Switch:<br>
+If the second input receives a high value, and the switch was flipped off, flip it back on (and emit a 0 from the first output and a 1 from the second).<br>
+<br>
+
+Input 3: The Data Stream:<br>
+If the third input receives any data, and the switch was flipped on, output the data from the third output. If the switch is off, do nothing.<br>
+</body>
+</html>

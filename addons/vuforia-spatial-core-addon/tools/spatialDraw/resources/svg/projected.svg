@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>projected</title>
+    <g id="projected" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group_6-Copy" transform="translate(15.000000, 94.000000)" stroke-width="10">
+            <polygon id="Path_17" stroke="#FFFFFF" points="0 68 141.248089 68 226 0 84.7519107 0 48.7692256 28.8745067"></polygon>
+            <path d="M49,50 C49,50 98.0177609,12.6170129 101.090975,18.9391927 C104.164189,25.2613725 99.9231535,35.891312 107.575456,39.2693395 C115.227758,42.6473669 154.634043,-2.43690295 151.860468,22.6116354 C149.086892,47.6601737 151.860468,43.4763782 151.860468,43.4763782" id="Path_18" stroke="#99FFFF" stroke-linecap="round"></path>
+        </g>
+    </g>
+</svg>

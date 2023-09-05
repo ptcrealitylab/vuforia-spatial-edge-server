@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>press</title>
+    <g id="press" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-2-Copy" transform="translate(52.000000, 76.000000)" fill="#FFFFFF">
+            <polygon id="Path-10" transform="translate(65.000000, 48.000000) rotate(90.000000) translate(-65.000000, -48.000000) " points="54.47 -17 69.32 -17 69.32 22.4594595 79.04 22.4594595 80.39 32.1891892 91.19 32.1891892 92.54 39.4864865 105.5 39.4864865 105.5 113 51.5 113 51.5 90.2972973 43.94 71.3783784 24.5 39.4864865 36.11 32.1891892 54.47 53"></polygon>
+            <rect id="Rectangle" x="141.5" y="0" width="11" height="105"></rect>
+        </g>
+    </g>
+</svg>

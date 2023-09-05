@@ -1,0 +1,15 @@
+dropzone.js
+/interfaces/MIR100/index_old.js
+/interfaces/robot
+*.min.js
+/tools/machine-gltf/resources
+/tools/motion/assets
+# Should be enabled when possible
+/tools/motion/js
+/tools/pushMe/resources
+/tools/spatialDraw/resources
+/tools/sphere/resources
+/tools/path/js/THREE.MeshLine.js
+/tools/path/thirdPartyCode
+/tools/pathPoint/resources
+/tools/path/resources

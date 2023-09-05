@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="loading_svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+    <style type="text/css">
+        #loading_svg { animation: rotate 2s infinite;}
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <path d="M75,15c33.14,0,60,26.86,60,60s-26.86,60-60,60S15,108.14,15,75" fill="none" stroke="#fff" 
+    stroke-miterlimit="10" stroke-width="14"/>
+</svg>

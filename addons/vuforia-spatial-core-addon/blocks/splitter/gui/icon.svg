@@ -1,0 +1,22 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 120">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #75fbfd;
+      }
+
+      .cls-2 {
+        fill: #008480;
+      }
+    </style>
+  </defs>
+  <title>icon</title>
+  <rect class="cls-1" y="86.49" width="69" height="2.73"/>
+  <polygon class="cls-1" points="138.37 89.22 103 89.22 103 86.49 135.63 86.49 135.63 33.21 0 33.21 0 30.48 138.37 30.48 138.37 89.22"/>
+  <rect class="cls-1" x="137" y="58.48" width="79" height="2.73"/>
+  <g>
+    <circle class="cls-2" cx="86.11" cy="69.86" r="24.59"/>
+    <path class="cls-1" d="M86.11,95.82a26,26,0,1,1,26-26A26,26,0,0,1,86.11,95.82Zm0-49.18a23.23,23.23,0,1,0,23.23,23.22A23.23,23.23,0,0,0,86.11,46.64Z"/>
+  </g>
+  <path class="cls-1" d="M83.38,86.26V80.79h5.47v5.47Zm.28-10.93V53.47h4.91V75.33Z"/>
+</svg>

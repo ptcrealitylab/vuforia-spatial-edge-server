@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>push</title>
+    <g id="push" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(29.000000, 48.000000)" fill="#FFFFFF">
+            <polygon id="Path-10-Copy" points="29.97 20 44.82 20 44.82 27.4594595 54.54 27.4594595 55.89 34.1891892 66.69 34.1891892 68.04 41.4864865 81 41.4864865 81 140 27 140 27 117.297297 19.44 98.3783784 5.62050406e-16 66.4864865 11.61 59.1891892 29.97 80"></polygon>
+            <path d="M89,0 L109,0 C122.333333,26.6666667 129,53.3333333 129,80 C129,106.666667 122.333333,133.333333 109,160 L89,160 C102.333333,133.333333 109,106.666667 109,80 C109,53.3333333 102.333333,26.6666667 89,0 Z" id="Rectangle"></path>
+            <path d="M137,75 L181,75 L181,85 L137,85 L137,75 Z M197.666667,79.5 L181,67 L181,92 L197.666667,79.5 Z" id="Combined-Shape"></path>
+        </g>
+    </g>
+</svg>

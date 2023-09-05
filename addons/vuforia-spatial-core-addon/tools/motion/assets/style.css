@@ -1,0 +1,196 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('./fonts/Roboto-Black.ttf');
+}
+
+body {
+  margin: auto;
+  color: white;
+  font-family: Roboto;
+  overflow: hidden;
+  background-color: transparent;
+}
+#surfaceFeedback {
+  position: absolute;
+  background-size: 100%;
+  top: 10px;
+  left: 10px;
+  width: 60px;
+  height: 60px;
+}
+#robotFeedback {
+  position: absolute;
+  background-size: 100%;
+  top: 10px;
+  left: 80px;
+  width: 60px;
+  height: 60px;
+}
+#closeAction {
+  position: absolute;
+  background: url('../assets/textures/close.png');
+  background-size: 100%;
+  top: 10px;
+  left: 150px;
+  width: 60px;
+  height: 60px;
+}
+
+#debug {
+  position: absolute;
+  background-size: 100%;
+  top: 10px;
+  left: 150px;
+  width: 60px;
+  height: 60px;
+}
+#playButton {
+  position: absolute;
+  background: url('../assets/textures/playPath.png');
+  background-size: 100%;
+  top: 10px;
+  left: 10px;
+  width: 60px;
+  height: 60px;
+}
+#followButton {
+  position: absolute;
+  background: url('../assets/textures/followUser.png');
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 60px;
+  height: 60px;
+}
+#resetButton {
+  position: absolute;
+  background: url('../assets/textures/removePath.png');
+  background-size: 100%;
+  bottom: 10px;
+  left: 10px;
+  width: 60px;
+  height: 60px;
+}
+
+#realtimePathButton {
+    position: absolute;
+    background: url('../assets/textures/removePath.png');
+    background-size: 100%;
+    bottom: 10px;
+    left: 10px;
+    width: 60px;
+    height: 60px;
+}
+#closePathButton {
+  position: absolute;
+  background: url('../assets/textures/closePath.png');
+  background-size: 100%;
+  bottom: 10px;
+  left: 150px;
+  width: 60px;
+  height: 60px;
+}
+#clearPathButton {
+  position: absolute;
+  background: url('../assets/textures/clearPath.png');
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 60px;
+  height: 60px;
+}
+
+#posRightButton {
+  position: absolute;
+  background: url('../assets/textures/arrowRight.png');
+  background-size: 100%;
+  bottom: 100px;
+  right: 90px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+#posLeftButton {
+  position: absolute;
+  background: url('../assets/textures/arrowLeft.png');
+  background-size: 100%;
+  bottom: 100px;
+  right: 210px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+#posForwardButton {
+  position: absolute;
+  background: url('../assets/textures/arrowForward.png');
+  background-size: 100%;
+  bottom: 160px;
+  right: 150px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+#posBackwardsButton {
+  position: absolute;
+  background: url('../assets/textures/arrowBackwards.png');
+  background-size: 100%;
+  bottom: 40px;
+  right: 150px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+#posArrowCenter {
+  position: absolute;
+  background: url('../assets/textures/menuArrowCenter.png') no-repeat;
+  background-size: 85%;
+  bottom: 125px;
+  right: 173px;
+  width: 30px;
+  height: 30px;
+  border: none;
+}
+
+#rotateButton {
+  position: absolute;
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+#speedButton {
+  position: absolute;
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+#heightButton {
+  position: absolute;
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+#posButton {
+  position: absolute;
+  background-size: 100%;
+  bottom: 10px;
+  left: 80px;
+  width: 80px;
+  height: 80px;
+  border: none;
+}
+
+
