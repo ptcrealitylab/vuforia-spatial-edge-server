@@ -692,6 +692,7 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -1583,6 +1584,14 @@
                 }
             });
             return videoPlayback;
+        };
+
+        this.followCameraOnPlayback = function followCameraOnPlayback() {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                },
+            });
         };
 
         this.disposeVideoPlayback = function(videoPlaybackID) {
