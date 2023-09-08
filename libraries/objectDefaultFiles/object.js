@@ -731,6 +731,11 @@
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
+                this.profilerStartTimeProcess = makeSendStub('stopTimeProcess');
+                this.profilerStopTimeProcess = makeSendStub('stopTimeProcess');
+                this.profilerLogMessage = makeSendStub('profilerLogMessage');
+                this.profilerCountMessage = makeSendStub('profilerCountMessage');
+
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
                 this.analyticsFocus = makeSendStub('analyticsFocus');
@@ -2151,6 +2156,54 @@
                 }
             })
         }
+
+        // ------------------------- Profiler APIs ------------------------- //
+        // Used to measure performance or help with debugging
+        // These have no effect if the Profiling UI is not activated in the parent app
+
+        // Starts timing a process - call profilerStopTimeProcess to measure the time elapsed
+        this.profilerStartTimeProcess = function(processTitle) {
+            postDataToParent({
+                profilerStartTimeProcess: {
+                    name: processTitle
+                }
+            });
+        };
+
+        // if options.showMessage = true, it will log each time individually
+        // if options.showAggregate = true, it will log the average time of processes of this category
+        this.profilerStopTimeProcess = function(processTitle, processCategory, options) {
+            postDataToParent({
+                profilerStopTimeProcess: {
+                    name: processTitle,
+                    category: processCategory,
+                    showMessage: options.showMessage,
+                    showAggregate: options.showAggregate,
+                    displayTimeout: options.displayTimeout,
+                    includeCount: options.includeCount
+                }
+            });
+        };
+
+        // Logs a message to the profiler UI
+        this.profilerLogMessage = function(message, options = { displayTimeout: 3000 }) {
+            postDataToParent({
+                profilerLogMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
+
+        // Increments the counter for messages of this type, and displays it in the profiler UI
+        this.profilerCountMessage = function(message, options = { displayTimeout: 3000 }) {
+            postDataToParent({
+                profilerCountMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
