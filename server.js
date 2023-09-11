@@ -142,6 +142,11 @@ const addonPaths = [
     path.join(os.homedir(), 'Documents', 'spatialToolbox-addons'),
 ];
 
+const options = {
+    key: fs.readFileSync("C:\\Users\\rdeleeuw\\Documents\\LocalHttps.key"),
+    cert: fs.readFileSync("C:\\Users\\rdeleeuw\\Documents\\LocalHttps.crt")
+}
+
 const Addons = require('./libraries/addons/Addons');
 const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
 
