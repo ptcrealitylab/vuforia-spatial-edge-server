@@ -21,7 +21,7 @@ function InterfaceConfig(interfaceName) { // eslint-disable-line no-unused-vars
     } else {
         this.ioObject = {
             on: function() {
-                console.log('ioObject.on stub called, please don\'t');
+                console.error('ioObject.on stub called, please don\'t');
             }
         };
         this.addSettingsUpdateListener = makeIoStub('addSettingsUpdateListener');
@@ -37,7 +37,6 @@ function InterfaceConfig(interfaceName) { // eslint-disable-line no-unused-vars
      */
     function makeIoStub(name) {
         return function() {
-            console.log('makeIoStub for ' + name);
             self.pendingIos.push({name: name, args: arguments});
         };
     }
@@ -49,8 +48,6 @@ InterfaceConfig.prototype.injectSocketIoAPI = function() {
     this.ioObject = io.connect();
 
     this.addSettingsUpdateListener = function (callback) {
-        console.log('added interfaceSettings socket listener');
-
         self.ioObject.emit('/subscribe/interfaceSettings', JSON.stringify({
             interfaceName: self.interfaceName
         }));
@@ -60,8 +57,6 @@ InterfaceConfig.prototype.injectSocketIoAPI = function() {
             callback(thisMsg);
         });
     };
-
-    console.log('socket.io is loaded and injected into the config.js API');
 
     for (var i = 0; i < this.pendingIos.length; i++) {
         var pendingIo = this.pendingIos[i];
