@@ -67,7 +67,6 @@ const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
         });
         utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-        console.log('added block: ' + blockID);
         updateStatus = 'added';
     }
     return updateStatus;
@@ -91,7 +90,6 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
     if (foundNode) {
 
         delete foundNode.blocks[blockID];
-        console.log('deleted block: ' + blockID);
 
         var thisLinks = foundNode.links;
         // Make sure that no links are connected to deleted blocks
@@ -123,9 +121,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
  */
 const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
     var updateStatus = 'nothing happened';
-
-    console.log('changing Position for :' + objectID + ' : ' + nodeID + ' : ' + blockID);
-
+    
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
 
     if (foundNode) {
@@ -171,13 +167,9 @@ const triggerBlockSearch = function (blockID, body, callback) {
 };
 
 const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
-    console.log('triggerBlock', objectID, frameID, nodeID, blockID, body);
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
     if (foundNode) {
         var block = foundNode.blocks[blockID];
-        console.log('block', block);
-        console.log('set block ' + block.type + ' (' + blockID + ') to ' + body.value);
-
         block.data[0].value = body.value;
         engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
     }

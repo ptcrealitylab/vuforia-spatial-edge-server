@@ -73,8 +73,6 @@ class SceneGraph {
             this.addRotateX(sceneNode);
         }
 
-        console.log('added object ' + objectId + ' to scene graph (to parent: ' + this.NAMES.ROOT + ')');
-
         this.triggerUpdateCallbacks();
     }
 
@@ -106,9 +104,7 @@ class SceneGraph {
         if (typeof initialLocalMatrix !== 'undefined') {
             sceneNode.setLocalMatrix(initialLocalMatrix);
         }
-
-        console.log('added frame ' + frameId + ' to scene graph (to parent: ' + objectId + ')');
-
+        
         this.triggerUpdateCallbacks();
     }
 
@@ -136,8 +132,6 @@ class SceneGraph {
         if (typeof initialLocalMatrix !== 'undefined') {
             sceneNode.setLocalMatrix(initialLocalMatrix);
         }
-
-        console.log('added node ' + nodeId + ' to scene graph (to parent: ' + frameId + ')');
 
         this.triggerUpdateCallbacks();
     }
@@ -230,7 +224,7 @@ class SceneGraph {
         if (sceneNode) {
             if (typeof x === 'undefined' && typeof y === 'undefined' && typeof scale === 'undefined' &&
                 localMatrix && (localMatrix.toString() === sceneNode.localMatrix.toString())) {
-                // console.log('skip update.. no changes');
+                // skip update, no changes
                 return;
             }
             sceneNode.updateVehicleXYScale(x, y, scale);
@@ -337,10 +331,6 @@ class SceneGraph {
     handleMessage(message) {
         const timestamp = message.timestamp;
         message.events.forEach(messageEvent => {
-            console.log(`SceneGraph.handleMessage: Received operation ${messageEvent.op}.`);
-            if (messageEvent.op != SceneGraphEventOpEnum.FULL_UPDATE) {
-                console.log(messageEvent.data);
-            }
             switch (messageEvent.op) {
             case SceneGraphEventOpEnum.ADD_OBJECT: {
                 var { objectId, initialLocalMatrix, needsRotateX } = messageEvent.data;

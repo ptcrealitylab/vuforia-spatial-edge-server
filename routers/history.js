@@ -14,7 +14,7 @@ router.get('/logs', function(req, res) {
     if (fs.existsSync(recorder.logsPath)) {
         fs.readdir(recorder.logsPath, function (err, files) {
             if (err) {
-                console.log('blargl err', err);
+                console.error('Failed to read recorder logs directory', err);
                 res.json([]);
                 return;
             }
@@ -67,7 +67,12 @@ function pipeReadStream(req, res, readStream) {
 }
 
 router.get('/logs/:logPath', function(req, res) {
-    // res.json(recorder.timeObject);
+    let logPath = path.join(recorder.logsPath, req.params.logPath);
+    if (logPath.endsWith('.gz')) {
+        res.sendFile(logPath);
+        return;
+    }
+
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
     if (!fs.existsSync(compressedLogPath)) {
         // Compare only the start `objects_${startTime}` bit of the current log
@@ -104,7 +109,6 @@ router.post('/patches', function(req, res) {
     }
     for (let patch of patches) {
         if (patch.key === req.body.key) {
-            console.warn('duplicate patch');
             res.send('patch uploaded');
             return;
         }

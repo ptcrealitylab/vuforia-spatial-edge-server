@@ -24,8 +24,6 @@ class WorldGraph {
         // this.graph[this.NAMES.ROOT] = this.rootNode;
 
         let localGraphCopy = this.localGraph.getSerializableCopy();
-        console.log('localGraph:');
-        // console.log(localGraphCopy);
 
         this.compiledGraph.addDataFromSerializableGraph(localGraphCopy);
 
@@ -33,21 +31,12 @@ class WorldGraph {
         for (let ip in this.knownGraphs) {
             let thatGraph = this.knownGraphs[ip];
             let knownGraphCopy = thatGraph.getSerializableCopy();
-
-            console.log('knownGraph (' + ip + '):');
-            // console.log(knownGraphCopy);
-
             this.compiledGraph.addDataFromSerializableGraph(knownGraphCopy);
         }
-
-        // console.log(this.compiledGraph);
-        console.log('finished compiling graphs');
-
         return this.compiledGraph;
     }
 
     addKnownGraph(graphId, knownGraphData) {
-        console.log('need to convert knownGraphData into a sceneGraph');
         // maybe add an optional constructor param to SceneGraph that allows it to init from serializedCopy
         let knownGraph = new SceneGraph(false);
         knownGraph.onUpdate(this.triggerUpdateCallbacks.bind(this));
@@ -72,7 +61,7 @@ class WorldGraph {
     handleMessage(message) {
         const graph = this.knownGraphs[message.ip];
         if (!graph) {
-            console.warn(`WorldGraph.handleMessage: Failed to find known graph for IP: ${message.ip}`);
+            console.warn(`World graph failed to find known graph for IP: ${message.ip}`);
             return;
         }
         graph.handleMessage(message);

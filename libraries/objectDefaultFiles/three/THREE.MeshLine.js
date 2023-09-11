@@ -45,7 +45,6 @@ constructor()
     // for declaritive architectures
     // to return the same value that sets the points
     // eg. this.points = points
-    // console.log(this.points) -> points
     points: {
       enumerable: true,
       get: function() {

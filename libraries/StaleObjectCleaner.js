@@ -33,7 +33,6 @@ class StaleObjectCleaner {
 
             // delete the object if it hasn't been updated recently
             if (lastUpdateTime && (currentTime - lastUpdateTime > expirationTimeMs)) {
-                console.log('StaleObjectCleaner deleted object (last updated ' + (currentTime - lastUpdateTime) + ' ms ago)', objectKey);
                 this.deleteObjectCallback(objectKey);
             }
         }

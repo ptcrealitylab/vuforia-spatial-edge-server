@@ -82,8 +82,6 @@ function Frame() {
  * @return {string} - returns the page's HTML as a string
  */
 exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort, configHtmlPath) {
-    console.log(hardwareInterfaceName, ipAddress, serverPort, hardwareInterfaceModules);
-
     let html = '';
     try {
         html = fs.readFileSync(configHtmlPath, 'utf8');
@@ -153,7 +151,6 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
 
         if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
-            console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
             newObject[thisObjectKey].targetName = thisObjectKey; // obtained earlier from the xml file
         } else {
@@ -248,9 +245,7 @@ exports.uploadInfoText = function (parm) {
 
         '/*var myVar = setInterval(loadInfoContent, 100);*/' +
         'loadInfoContent();' +
-        'function loadInfoContent () {console.log("newtick");' +
-
-   'var con = document.getElementById("changeContent")' +
+        'function loadInfoContent () {var con = document.getElementById("changeContent")' +
     '    ,   xhr = new XMLHttpRequest();' +
 
     'xhr.onreadystatechange = function (e) {' +
@@ -696,9 +691,6 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
-
-                // console.log("---" + content[0]);
-
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 let dateiTobeRemoved = parm + '/' + content[0];
@@ -709,8 +701,6 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
@@ -954,9 +944,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
-
-                // console.log("---" + content[0]);
-
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 let dateiTobeRemoved = parm + '/' + content[0];
@@ -965,10 +952,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
-
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
@@ -1143,7 +1127,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 };
 
 exports.editContent = function(req, res) {
-    console.log(req.params);
     var thisPath = req.params[0];
     // TODO sanitize thisPath for security
     var file = path.basename(thisPath);

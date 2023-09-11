@@ -40,7 +40,6 @@ const addNodeToFrame = function (objectKey, frameKey, nodeKey, body, callback) {
     for (let key in body) {
         if (node.hasOwnProperty(key)) {
             node[key] = body[key];
-            // console.log(`addNodeToFrame copied over value ${key}=${body[key]}`);
         }
     }
 
@@ -135,7 +134,6 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
  * @todo this function is a mess, fix it up
  */
 const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
-    console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
     if (nodeID === 'null') { nodeID = null; }
 
     utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
@@ -146,9 +144,6 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
 
         var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
-        // console.log('really changing size for ... ' + activeVehicle.uuid, body);
-
-        // console.log("post 2");
         var updateStatus = 'nothing happened';
 
         // the reality editor will overwrite all properties from the new frame except these.
@@ -185,7 +180,6 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
                 frame.ar.y = body.arY;
             }
 
-            // console.log(req.body);
             // ask the devices to reload the objects
             didUpdate = true;
         }

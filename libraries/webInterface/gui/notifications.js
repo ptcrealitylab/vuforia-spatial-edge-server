@@ -150,7 +150,6 @@
 
     NotificationList.prototype.showNotification = function(messageText, type, timeToLive) {
         let notification = new Notification(messageText, type, function() {
-            console.log('notificationList removed notification with text: ' + messageText);
             let index = this.notifications.indexOf(notification);
             if (index > -1) {
                 this.notifications.splice(index, 1);

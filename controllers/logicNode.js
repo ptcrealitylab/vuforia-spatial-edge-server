@@ -49,7 +49,6 @@ const addLogicNode = function (objectID, frameID, nodeID, body) {
             lastEditor: body.lastEditor
         });
 
-        console.log('added logic node: ' + nodeID);
         updateStatus = 'added';
     }
     return updateStatus;
@@ -74,7 +73,6 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
             console.warn('(Logic) Node exists without proper prototype: ' + nodeID);
         }
         delete foundFrame.nodes[nodeID];
-        console.log('deleted node: ' + nodeID);
 
         //todo check all links as well in object
         // Make sure that no links are connected to deleted objects
@@ -109,9 +107,7 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
  */
 function changeNodeSize(objectID, frameID, nodeID, body, callback) {
     var updateStatus = 'nothing happened';
-
-    console.log('changing Size for :' + objectID + ' : ' + nodeID);
-
+    
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
             callback(404, error);
@@ -145,8 +141,6 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 }
 
 function rename(objectID, frameID, nodeID, body, callback) {
-    console.log('received name for', objectID, frameID, nodeID);
-
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
             callback(404, error);
@@ -162,8 +156,6 @@ function rename(objectID, frameID, nodeID, body, callback) {
 }
 
 function uploadIconImage(objectID, frameID, nodeID, req, callback) {
-    console.log('received icon image for', objectID, frameID, nodeID);
-
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
             callback(404, error);
@@ -180,9 +172,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
             keepExtensions: true,
             accept: 'image/jpeg'
         });
-
-        console.log('created form');
-
+        
         form.on('error', function (err) {
             callback(500, err);
             return;
@@ -191,25 +181,17 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
         var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
 
         if (fs.existsSync(rawFilepath)) {
-            console.log('deleted old raw file');
             fs.unlinkSync(rawFilepath);
         }
 
         form.on('fileBegin', function (name, file) {
-            console.log('fileBegin loading', name, file);
             file.path = rawFilepath;
         });
-
-        console.log('about to parse');
-
+        
         form.parse(req, function (err, fields) {
-            console.log('successfully created icon image', err, fields);
-
             var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
-            console.log('attempting to write file to ' + resizedFilepath);
 
             if (fs.existsSync(resizedFilepath)) {
-                console.log('deleted old resized file');
                 fs.unlinkSync(resizedFilepath);
             }
 
@@ -220,8 +202,6 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
                 Jimp.read(rawFilepath).then(image => {
                     return image.resize(200, 200).write(resizedFilepath);
                 }).then(() => {
-                    console.log('done resizing');
-
                     if (node) {
                         node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
                         utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
@@ -237,7 +217,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
                     }
                     callback(200, {success: true});
                 }).catch(err => {
-                    console.log('error resizing', err);
+                    console.error('Error resizing image', err);
                     callback(500, err);
                 });
             }
