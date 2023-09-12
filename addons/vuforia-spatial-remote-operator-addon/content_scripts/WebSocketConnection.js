@@ -9,7 +9,7 @@ import { pack, unpack } from "https://deno.land/x/msgpackr@v1.9.3/index.js";
 // remember to change this hard-coded URL anytime you change wifi networks / your IP changes
 // we can use localhost if you are only going to run the demo on this PC, but needs to
 // be the public IP address if you want to load the demo on another laptop
-const PYTHON_WEBSOCKET_URL = 'ws://192.168.1.212:7007';
+const PYTHON_WEBSOCKET_URL = 'ws://10.88.121.157:7007';
 let oldCamMatrix = [0,0,0,0,
                     0,0,0,0,
                     0,0,0,0,
