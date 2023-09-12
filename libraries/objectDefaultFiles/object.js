@@ -1589,8 +1589,8 @@
         this.followCameraOnPlayback = function followCameraOnPlayback() {
             postDataToParent({
                 followCameraOnPlayback: {
-                    frame: spatialObject.frame,
-                },
+                    frame: spatialObject.frame
+                }
             });
         };
 
