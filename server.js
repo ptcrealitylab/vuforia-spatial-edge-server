@@ -300,6 +300,7 @@ var http = require('http').createServer(webServer).listen(serverPort, function (
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
+exports.http = http;
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
