@@ -693,6 +693,7 @@
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
                 this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -1589,6 +1590,14 @@
         this.followCameraOnPlayback = function followCameraOnPlayback() {
             postDataToParent({
                 followCameraOnPlayback: {
+                    frame: spatialObject.frame
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
                     frame: spatialObject.frame
                 }
             });
