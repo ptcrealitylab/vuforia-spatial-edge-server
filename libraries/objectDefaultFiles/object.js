@@ -1287,21 +1287,23 @@
         ];
 
         /**
-         * Update API for subscribing to three.js camera and other coordinate systems.
+         * Updated API for subscribing to three.js camera and other coordinate systems.
          * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
          * Callback only triggers with *changes* to the subscribed matrices, not constantly
          * Options include:
          * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
-         * spatialObject.PROJECTION_MATRIX - the camera's projection matrix
-         * spatialObject.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root coordinates. includes position, rotation, and scale
-         * spatialObject.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
-         * spatialObject.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
          * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
          *      removes x and z components of rotation to keep it "flat" on the ground plane
          *      allows placing content flat on the floor
          * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
          *      removes x and z components of rotation to keep it "flat" relative to ground plane
-         *      allows placing things flat on tables or other surfaces
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
          * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
          * @param {function} callback
          */
