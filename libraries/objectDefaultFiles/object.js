@@ -1587,10 +1587,11 @@
             return videoPlayback;
         };
 
-        this.followCameraOnPlayback = function followCameraOnPlayback() {
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
             postDataToParent({
                 followCameraOnPlayback: {
-                    frame: spatialObject.frame
+                    frame: spatialObject.frame,
+                    distance: followDistance,
                 }
             });
         };
