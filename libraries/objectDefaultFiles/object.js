@@ -509,6 +509,7 @@
 
                             postDataToParent({
                                 pointerDownResult: 'interaction'
+                                // refer to this bit of code
                             });
                         } else {
                             postDataToParent({
@@ -730,6 +731,11 @@
                 this.getUserDetails = makeSendStub('getUserDetails');
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
+                this.toggleMeasureMode = makeSendStub('toggleMeasureMode');
+                this.toggleCrossRotation = makeSendStub('toggleCrossRotation');
+                this.toggleCloseLoop = makeSendStub('toggleCloseLoop');
+                this.turnMeasureMapUI = makeSendStub('turnMeasureMapUI');
+                this.toggleMeasureMapUI = makeSendStub('toggleMeasureMapUI');
 
                 this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
                 this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
@@ -772,6 +778,7 @@
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
                 this.addInterfaceListener = makeSendStub('addInterfaceListener');
                 this.addIsMovingListener = makeSendStub('addIsMovingListener');
+                this.addHeightMapChangeListener = makeSendStub('addHeightMapChangeListener');
                 // deprecated or unimplemented methods
                 this.addAccelerationListener = makeSendStub('addAccelerationListener');
             }
@@ -2183,6 +2190,36 @@
                 }
             })
         }
+        
+        this.toggleMeasureMode = function(boolean) {
+            postDataToParent({
+                toggleMeasureMode: boolean
+            });
+        }
+
+        this.toggleCrossRotation = function(boolean) {
+            postDataToParent({
+                toggleCrossRotation: boolean
+            });
+        }
+        
+        this.toggleCloseLoop = function(boolean) {
+            postDataToParent({
+                toggleCloseLoop: boolean
+            });
+        }
+        
+        this.turnMeasureMapUI = function(boolean) {
+            postDataToParent({
+                turnMeasureMapUI: boolean
+            });
+        }
+
+        this.toggleMeasureMapUI = function() {
+            postDataToParent({
+                toggleMeasureMapUI: true
+            });
+        }
 
         // ------------------------- Profiler APIs ------------------------- //
         // Used to measure performance or help with debugging
@@ -2415,6 +2452,14 @@
                 }
             };
         };
+        
+        this.addHeightMapChangeListener = function(callback) {
+            spatialObject.messageCallBacks.heightMapCall = function (msgContent) {
+                if (typeof msgContent.isHeightMapOn !== 'undefined') {
+                    callback(msgContent.isHeightMapOn);
+                }
+            }
+        }
     };
 
     SpatialInterface.prototype.injectSetterGetterAPI = function() {
