@@ -731,6 +731,11 @@
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
+                this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
+                this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
+                this.profilerLogMessage = makeSendStub('profilerLogMessage');
+                this.profilerCountMessage = makeSendStub('profilerCountMessage');
+
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
                 this.analyticsFocus = makeSendStub('analyticsFocus');
@@ -2151,6 +2156,68 @@
                 }
             })
         }
+
+        // ------------------------- Profiler APIs ------------------------- //
+        // Used to measure performance or help with debugging
+        // These have no effect if the Profiling UI is not activated in the parent app
+
+        /**
+         * @param {string} processTitle - should be unique and exactly match the title used in profilerStopTimeProcess
+         * @param {*} options
+         */
+        this.profilerStartTimeProcess = function(processTitle, options = {}) {
+            postDataToParent({
+                profilerStartTimeProcess: {
+                    name: processTitle,
+                    numStopsRequired: options.numStopsRequired // if included, stop will need to be called this many times
+                }
+            });
+        };
+
+        /**
+         * Stops timing the process started by profilerStartTimeProcess
+         * @param {string} processTitle - each invocation of the same function should have a unique title, like a uuid
+         * @param {string} processCategory - to group repeated invocations, give them the same category
+         * @param {*} options
+         */
+        this.profilerStopTimeProcess = function(processTitle, processCategory, options = {}) {
+            postDataToParent({
+                profilerStopTimeProcess: {
+                    name: processTitle,
+                    category: processCategory,
+                    showMessage: options.showMessage, // print this timing on a single line in the profiler
+                    showAggregate: options.showAggregate, // print the average stats of all processes of this category
+                    displayTimeout: options.displayTimeout, // remove the log after this many ms
+                    includeCount: options.includeCount // include the # of times that processes of this category were logged
+                }
+            });
+        };
+
+        /**
+         * Logs a message to the profiler UI
+         * @param {string} message
+         * @param {*} options
+         */
+        this.profilerLogMessage = function(message, options = {}) {
+            postDataToParent({
+                profilerLogMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
+
+        /**
+         * Increments the counter for messages matching this one, and displays it in the profiler UI
+         * @param {string} message
+         */
+        this.profilerCountMessage = function(message) {
+            postDataToParent({
+                profilerCountMessage: {
+                    message: message
+                }
+            });
+        };
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
