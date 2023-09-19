@@ -103,9 +103,7 @@
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
-
-    console.log('fullscreen reset for new frame ' + spatialObject.sendFullScreen);
-
+    
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -233,8 +231,6 @@
      * Helper function that posts entire basic state of spatialObject to parent
      */
     function postAllDataToParent() {
-        console.log('check: ' + spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-
         if (typeof spatialObject.node !== 'undefined' || typeof spatialObject.frame !== 'undefined') {
             parent.postMessage(JSON.stringify(
                 {
@@ -462,7 +458,7 @@
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
                 var touchAccepted = spatialObject.touchDecider(eventData);
                 if (!touchAccepted) {
-                    // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
+                    // Didn't touch anything acceptable... propagate to next frame (if any)
                     postDataToParent({
                         unacceptedTouch: eventData
                     });
@@ -558,7 +554,6 @@
 
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
-            console.log('set workerId to ' + msgContent.workerId);
             // eslint-disable-next-line no-global-assign
             workerId = msgContent.workerId;
         }
@@ -603,7 +598,7 @@
         } else {
             this.ioObject = {
                 on: function() {
-                    console.log('ioObject.on stub called, please don\'t');
+                    console.error('ioObject.on stub called, please don\'t');
                 }
             };
             /**
@@ -733,6 +728,13 @@
                 this.promptForArea = makeSendStub('promptForArea');
                 this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
                 this.getUserDetails = makeSendStub('getUserDetails');
+                this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
+                this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
+
+                this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
+                this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
+                this.profilerLogMessage = makeSendStub('profilerLogMessage');
+                this.profilerCountMessage = makeSendStub('profilerCountMessage');
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -819,8 +821,6 @@
             this[pendingSend.name].apply(this, pendingSend.args);
         }
         this.pendingSends = [];
-
-        // console.log('All non-socket APIs are loaded and injected into the object.js API');
     };
 
     SpatialInterface.prototype.injectSocketIoAPI = function() {
@@ -836,7 +836,6 @@
 
         // reload a frame if its socket reconnects
         this.ioObject.on('reconnect', function() {
-            console.log('reconnect');
             window.location.reload();
 
             // notify the containing application that a frame socket reconnected, for additional optional behavior (e.g. make the screen reload)
@@ -851,9 +850,7 @@
             }
         });
 
-        this.ioObject.on('close', function() {
-            console.log('frame socket closed');
-        });
+        this.ioObject.on('close', function() {});
 
         /**
          * Subscribes this socket to data values being written to nodes on this frame
@@ -861,7 +858,6 @@
         this.sendRealityEditorSubscribe = function () {
             var timeoutFunction = function() {
                 if (spatialObject.object) {
-                    // console.log('emit sendRealityEditorSubscribe');
                     self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
                         object: spatialObject.object,
                         frame: spatialObject.frame,
@@ -964,7 +960,7 @@
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
                     if (thisMsg.sessionUuid === sessionUuid) {
-                        console.log('ignoring message sent by self (publicData)');
+                        // Ignoring message sent by self (publicData)
                         return;
                     }
                 }
@@ -1139,8 +1135,6 @@
             }
         };
 
-        console.log('socket.io is loaded and injected into the object.js API');
-
         for (var i = 0; i < this.pendingIos.length; i++) {
             var pendingIo = this.pendingIos[i];
             this[pendingIo.name].apply(this, pendingIo.args);
@@ -1156,8 +1150,6 @@
         };
 
         this.sendMessageToFrame = function (frameUuid, msgContent) {
-            // console.log(spatialObject.frame + ' is sending a message to ' + frameId);
-
             postDataToParent({
                 sendMessageToFrame: {
                     sourceFrame: spatialObject.frame,
@@ -1351,9 +1343,6 @@
 
         this.setFullScreenOn = function(zPosition) {
             spatialObject.sendFullScreen = true;
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-            // spatialObject.height = '100%';
-            // spatialObject.width = '100%';
             if (zPosition !== undefined) {
                 spatialObject.fullscreenZPosition = zPosition;
             }
@@ -1367,9 +1356,6 @@
 
         this.setFullScreenOff = function (params) {
             spatialObject.sendFullScreen = false;
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-            // spatialObject.height = document.body.scrollHeight;
-            // spatialObject.width = document.body.scrollWidth;
             // postAllDataToParent();
 
             var dataToPost = {
@@ -1397,10 +1383,7 @@
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
             spatialObject.sendSticky = true;
-            // spatialObject.height = "100%";
-            // spatialObject.width = "100%";
             // postAllDataToParent();
 
             var dataToPost = {
@@ -1881,7 +1864,6 @@
             spatialObject.messageCallBacks.frameCreatedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameCreatedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the creation of frame ' + msgContent.frameCreatedEvent.frameId + ' (type ' + msgContent.frameCreatedEvent.frameType + ')');
                     callback(msgContent.frameCreatedEvent);
                 }
             };
@@ -1897,7 +1879,6 @@
             spatialObject.messageCallBacks.frameDeletedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameDeletedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the deletion of frame ' + msgContent.frameDeletedEvent.frameId + ' (type ' + msgContent.frameDeletedEvent.frameType + ')');
                     callback(msgContent.frameDeletedEvent);
                 }
             };
@@ -2144,6 +2125,96 @@
                 };
             });
         }
+        
+        this.getAreaTargetMesh = function() {
+            postDataToParent({
+                getAreaTargetMesh: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
+                    if (typeof msgContent.areaTargetMesh !== 'undefined') {
+                        resolve(msgContent.areaTargetMesh);
+                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                    }
+                }
+            })
+        }
+        
+        this.getSpatialCursorEvent = function() {
+            postDataToParent({
+                getSpatialCursorEvent: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
+                    if (typeof msgContent.spatialCursorEvent !== 'undefined') {
+                        resolve(msgContent.spatialCursorEvent);
+                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                    }
+                }
+            })
+        }
+
+        // ------------------------- Profiler APIs ------------------------- //
+        // Used to measure performance or help with debugging
+        // These have no effect if the Profiling UI is not activated in the parent app
+
+        /**
+         * @param {string} processTitle - should be unique and exactly match the title used in profilerStopTimeProcess
+         * @param {*} options
+         */
+        this.profilerStartTimeProcess = function(processTitle, options = {}) {
+            postDataToParent({
+                profilerStartTimeProcess: {
+                    name: processTitle,
+                    numStopsRequired: options.numStopsRequired // if included, stop will need to be called this many times
+                }
+            });
+        };
+
+        /**
+         * Stops timing the process started by profilerStartTimeProcess
+         * @param {string} processTitle - each invocation of the same function should have a unique title, like a uuid
+         * @param {string} processCategory - to group repeated invocations, give them the same category
+         * @param {*} options
+         */
+        this.profilerStopTimeProcess = function(processTitle, processCategory, options = {}) {
+            postDataToParent({
+                profilerStopTimeProcess: {
+                    name: processTitle,
+                    category: processCategory,
+                    showMessage: options.showMessage, // print this timing on a single line in the profiler
+                    showAggregate: options.showAggregate, // print the average stats of all processes of this category
+                    displayTimeout: options.displayTimeout, // remove the log after this many ms
+                    includeCount: options.includeCount // include the # of times that processes of this category were logged
+                }
+            });
+        };
+
+        /**
+         * Logs a message to the profiler UI
+         * @param {string} message
+         * @param {*} options
+         */
+        this.profilerLogMessage = function(message, options = {}) {
+            postDataToParent({
+                profilerLogMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
+
+        /**
+         * Increments the counter for messages matching this one, and displays it in the profiler UI
+         * @param {string} message
+         */
+        this.profilerCountMessage = function(message) {
+            postDataToParent({
+                profilerCountMessage: {
+                    message: message
+                }
+            });
+        };
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
@@ -2460,7 +2531,6 @@
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
-                console.log('ios socket connected.', iOSHost);
                 this.iosObject = io.connect(iOSHost);
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();

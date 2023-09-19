@@ -54,16 +54,16 @@ try {
     require('module-alias/register');
 } catch (err) {
     console.clear();
-    console.log('\x1b[33mYou\'re not done with the installation! You need to execute the following commands:');
-    console.log('\x1b[0m1.\x1b[32m npm install');
-    console.log('\x1b[0m2.\x1b[32m git submodule update --init --recursive');
-    console.log('\x1b[0m3.\x1b[32m cd addons/vuforia-spatial-core-addon');
-    console.log('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
-    console.log('');
-    console.log('');
-    console.log('\x1b[33mWhenever you install a new addon make sure to:', '\x1b[0m');
-    console.log('\x1b[0m3.\x1b[32m cd addons/<new addon folder>');
-    console.log('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
+    console.warn('\x1b[33mYou\'re not done with the installation! You need to execute the following commands:');
+    console.warn('\x1b[0m1.\x1b[32m npm install');
+    console.warn('\x1b[0m2.\x1b[32m git submodule update --init --recursive');
+    console.warn('\x1b[0m3.\x1b[32m cd addons/vuforia-spatial-core-addon');
+    console.warn('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
+    console.warn('');
+    console.warn('');
+    console.warn('\x1b[33mWhenever you install a new addon make sure to:', '\x1b[0m');
+    console.warn('\x1b[0m3.\x1b[32m cd addons/<new addon folder>');
+    console.warn('\x1b[0m4.\x1b[32m npm install', '\x1b[0m');
 
     if (process.send) {
         process.send('exit');
@@ -131,8 +131,6 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 
-//console.log(parseInt(version.replace(/\./g, "")));
-
 const fs = require('fs');       // Filesystem library
 const path = require('path');
 const DecompressZip = require('decompress-zip');
@@ -158,7 +156,6 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
-console.log('loaded hardwareInterfacePaths', hardwareInterfacePaths);
 // The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
@@ -167,13 +164,11 @@ const objectInterfaceFolder = '/';
  **********************************************************************************************************************/
 const storage = require('./libraries/storage');
 let dir = path.join(require('os').homedir(), 'vst-edge-server');
-//fs.mkdirSync('/Users/Anna/my-test-dir');
-console.log('**** DIR: ', dir);
 
 try {
     storage.initSync({dir: dir});
 } catch (e) {
-    console.log('Something went wrong with initSync', e);
+    console.error('Something went wrong with initSync', e);
 }
 
 var dgram = require('dgram'); // UDP Broadcasting library
@@ -185,8 +180,7 @@ if (!isLightweightMobile) {
 
 services.ips = {activeInterface: null, tempActiveInterface: null, interfaces: {}};
 services.ip = null;
-services.updateAllObjcts = function (ip) {
-    console.log('updating all objects with new IP: ', ip);
+services.updateAllObjects = function (ip) {
     for (let key in objects) {
         objects[key].ip = ip;
     }
@@ -211,7 +205,7 @@ services.getIP = function () {
             interfaceNames = interfaceNamesFiltered;
         }
     } catch (e) {
-        console.error('getInterfaces failed', e);
+        console.error('Failed to get network interfaces', e);
         return this.ip;
     }
 
@@ -232,24 +226,24 @@ services.getIP = function () {
 
     // if it is still empty give it a default
     if (this.ips.activeInterface === null) {
-        console.warn('No active interface found, defaulting to "en0"');
+        // No active interface found, defaulting to "en0"
         this.ips.activeInterface = 'en0';
         // make sure all objects got the memo
-        this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
+        this.updateAllObjects(this.ips.interfaces[this.ips.activeInterface]);
     }
 
     // if activeInterface is not available, get the first available one and refresh all objects
     if (!(this.ips.activeInterface in this.ips.interfaces)) {
-        console.warn(`Current activeInterface "${this.ips.activeInterface}" not found`);
+        console.warn(`Current active network interface "${this.ips.activeInterface}" not found`);
         this.ips.tempActiveInterface = this.ips.activeInterface;
         for (var tempKey in this.ips.interfaces) {
             if (!this.ips.interfaces[tempKey]) {
                 continue;
             }
-            console.warn(`Selecting "${tempKey}" from`, this.ips.interfaces);
+            console.warn(`Activated fallback network interface "${tempKey}" from`, this.ips.interfaces);
             this.ips.activeInterface = tempKey;
             // make sure all objects got the memo
-            this.updateAllObjcts(this.ips.interfaces[this.ips.activeInterface]);
+            this.updateAllObjects(this.ips.interfaces[this.ips.activeInterface]);
             break;
         }
     }
@@ -257,7 +251,7 @@ services.getIP = function () {
     // check if active interface is back
     if (this.ips.tempActiveInterface) {
         if (this.ips.tempActiveInterface in this.ips.interfaces) {
-            console.warn(`Activating temp interface "${this.ips.tempActiveInterface}"`);
+            console.info(`Re-activated network interface "${this.ips.tempActiveInterface}"`);
             this.ips.activeInterface = this.ips.tempActiveInterface;
             this.ips.tempActiveInterface = null;
         }
@@ -304,7 +298,7 @@ if (!isLightweightMobile) {
 }
 
 var http = require('http').createServer(webServer).listen(serverPort, function () {
-    console.log('webserver + socket.io is listening on port', serverPort);
+    console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
 const ToolSocket = require('toolsocket');
@@ -324,7 +318,7 @@ if (!isLightweightMobile) {
     try {
         Jimp = require('jimp');
     } catch (e) {
-        console.warn('Image resizing unsupported', e);
+        console.warn('Unable to import jimp for image resizing on this platform', e);
     }
 }
 
@@ -607,12 +601,7 @@ const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, ser
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
 
-
-console.log('Starting the Server');
-console.log('Initialize System: ');
-console.log('Loading Hardware interfaces');
-
-
+// Load all the hardware interfaces
 var hardwareAPICallbacks = {
     publicData: function (objectKey, frameKey, nodeKey) {
         socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
@@ -646,19 +635,13 @@ utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
-console.log('Done');
-
-console.log('Loading Objects');
 // This function will load all the Objects
 loadObjects();
-console.log('Done loading objects');
 if (globalVariables.worldObject) {
     loadWorldObject();
 }
-console.log('Done loading world object');
 
 startSystem();
-console.log('started');
 
 // Get the directory names of all available sources for the 3D-UI
 if (!isLightweightMobile) {
@@ -673,12 +656,9 @@ if (!isLightweightMobile) {
     }
 }
 
-console.log('ready to start internal servers');
-
 hardwareAPI.reset();
 
-console.log('found ' + Object.keys(hardwareInterfaceModules).join(', ') + ' enabled hardware interfaces');
-console.log('starting internal Server.');
+console.info('Server has the following enabled hardware interfaces: ' + Object.keys(hardwareInterfaceModules).join(', '));
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
 // is initialized.
@@ -699,25 +679,14 @@ function getFileExtension(fileName) {
  * @desc Add objects from the objects folder to the system
  **/
 function loadObjects() {
-    console.log('Enter loadObjects');
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
     var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory();
+        return fs.statSync(objectsPath + '/' + file).isDirectory() && file[0] !== '.';
     });
-
-    // remove hidden directories
-    try {
-        while (objectFolderList[0][0] === '.') {
-            objectFolderList.splice(0, 1);
-        }
-    } catch (e) {
-        console.log('no hidden files', e);
-    }
 
     for (var i = 0; i < objectFolderList.length; i++) {
         var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
-        console.log('TempFolderName: ' + tempFolderName);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -776,19 +745,16 @@ function loadObjects() {
                     objects[tempFolderName].objectId);
                 newObj.setFromJson(objects[tempFolderName]);
                 objects[tempFolderName] = newObj;
-
-                console.log('I found objects that I want to add');
-
             } catch (e) {
                 objects[tempFolderName].ip = services.ip; //ip.address();
                 objects[tempFolderName].objectId = tempFolderName;
-                console.log('No saved data for: ' + tempFolderName, e);
+                console.warn('No saved data for: ' + tempFolderName, e);
             }
 
             // add this object to the sceneGraph
             sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
         } else {
-            console.log(' object ' + objectFolderList[i] + ' has no marker yet');
+            console.warn(' object ' + objectFolderList[i] + ' has no marker yet');
         }
         utilities.actionSender({reloadObject: {object: tempFolderName}, lastEditor: null});
     }
@@ -811,12 +777,10 @@ function loadObjects() {
     hardwareAPI.reset();
 
     sceneGraph.recomputeGraph();
-    // console.log(sceneGraph.graph);
 }
 
 
 var executeSetups = function () {
-
     for (let objectKey in objects) {
         for (let frameKey in objects[objectKey].frames) {
             var thisFrame = objects[objectKey].frames[frameKey];
@@ -851,13 +815,11 @@ function loadWorldObject() {
 
     // create objects folder at objectsPath if necessary
     if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        console.log('created worldObject directory at ' + folder);
         fs.mkdirSync(folder);
     }
 
     // create a /.identity folder within it to hold the object.json data
     if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        console.log('created worldObject identity at ' + identityPath);
         fs.mkdirSync(identityPath);
     }
 
@@ -873,9 +835,8 @@ function loadWorldObject() {
     if (globalVariables.saveToDisk) {
         try {
             worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-            console.log('Loaded world object for server: ' + services.ip);
         } catch (e) {
-            console.log('No saved data for world object on server: ' + services.ip, e);
+            console.error('No saved data for world object on server: ' + services.ip, e);
         }
     }
 
@@ -887,16 +848,13 @@ function loadWorldObject() {
     hardwareAPI.reset();
 
     if (globalVariables.saveToDisk) {
-
         fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4), function (err) {
             if (err) {
-                console.log('worldObject save error', err);
-            } else {
-                //console.log('JSON saved to ' + jsonFilePath);
+                console.error('Error saving world object', err);
             }
         });
     } else {
-        console.log('I am not allowed to save');
+        console.error('Server is not allowed to save to disk');
     }
 }
 
@@ -911,13 +869,11 @@ function loadAnchor(anchorName) {
 
     // create objects folder at objectsPath if necessary
     if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        console.log('created anchor directory at ' + folder);
         fs.mkdirSync(folder);
     }
 
     // create a /.identity folder within it to hold the object.json data
     if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        console.log('created anchor identity at ' + identityPath);
         fs.mkdirSync(identityPath);
     }
 
@@ -930,10 +886,9 @@ function loadAnchor(anchorName) {
             if (anchorUuid) {
                 objects[anchorUuid] = anchor;
             }
-            console.log('Loaded anchor object for server: ' + services.ip);
             return;
         } catch (e) {
-            console.log('No saved data for anchor object on server: ' + services.ip, e);
+            console.warn('No saved data for anchor object on server: ' + services.ip, e);
         }
     }
 
@@ -953,11 +908,10 @@ function loadAnchor(anchorName) {
 
     if (globalVariables.saveToDisk) {
         fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
-        // console.log('JSON saved to ' + jsonFilePath);
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     } else {
-        console.log('I am not allowed to save');
+        console.warn('Server is not allowed to save to disk');
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     }
@@ -1057,7 +1011,6 @@ function removeAvatarAndHumanPoseFiles() {
         let objectKey = utilities.readObject(objectLookup, objectFolderName);
 
         if (objects[objectKey]) {
-            console.log('deleting avatar/humanPose object: ' + objectFolderName);
             deleteObject(objectKey);
         } else {
             console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
@@ -1134,7 +1087,7 @@ process.on('exit', function() {
 });
 
 if (process.pid) {
-    console.log('Reality Server server.js process is running with PID ' + process.pid);
+    console.info('server.js process is running with PID ' + process.pid);
 }
 
 /**********************************************************************************************************************
@@ -1174,7 +1127,11 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
         return;
     }
 
-    console.log('server has the following heartbeat services: ' + providedServices);
+    if (providedServices.length > 0) {
+        console.info('Server has the following heartbeat services (use --services to enable services): ' + providedServices.join(', '));
+    } else {
+        console.info('Server has no heartbeat services registered (use --services to enable services)');
+    }
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
     setInterval(() => {
@@ -1199,13 +1156,12 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
     }
 
     if (!oneTimeOnly && activeHeartbeats[thisId]) {
-        console.log('already created beat for object: ' + thisId);
+        // already created beat for object
         return;
     }
 
     var HOST = '255.255.255.255';
 
-    //console.log('creating beat for object: ' + thisId);
     objects[thisId].version = version;
     objects[thisId].protocol = protocol;
     objects[thisId].port = serverPort;
@@ -1222,9 +1178,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
         objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
-        if (objects[thisId].tcs) {
-            console.log('regenerated checksum for ' + thisId + ': ' + objects[thisId].tcs);
-        }
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1233,7 +1186,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
     }
 
     // Objects
-    //  console.log('with version number: ' + thisVersionNumber);
 
     // json string to be sent
     const messageObj = {
@@ -1245,9 +1197,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         tcs: objects[thisId].tcs,
         zone: objects[thisId].zone || '',
     };
-
-    if (globalVariables.debug) console.log('UDP broadcasting on port', PORT);
-    if (globalVariables.debug) console.log('Sending beats... Content', JSON.stringify(messageObj));
 
     // creating the datagram
     var client = dgram.createSocket({
@@ -1265,7 +1214,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         function sendBeat() {
             // send the beat#
             if (thisId in objects && !objects[thisId].deactivated) {
-                // console.log("Sending beats... Content: " + JSON.stringify({ id: thisId, ip: thisIp, vn:thisVersionNumber, tcs: objects[thisId].tcs}));
                 let zone = '';
                 if (objects[thisId].zone) zone = objects[thisId].zone;
                 if (!objects[thisId].hasOwnProperty('port')) objects[thisId].port = serverPort;
@@ -1368,7 +1316,6 @@ function handleActionMessage(action) {
 
     // clients can use this to signal that the avatar objects are still being used
     if (action.type === 'keepObjectAlive') {
-        // console.log('received keepObjectAlive for ' + action.objectKey);
         resetObjectTimeout(action.objectKey);
     }
 }
@@ -1385,11 +1332,9 @@ function objectBeatServer() {
     });
 
     udpServer.on('error', function (err) {
-        console.error('udpServer error', err);
-
         // Permanently log so that it's clear udp support is down
         setInterval(() => {
-            console.warn('udpServer closed due to error', err);
+            console.error('udpServer closed due to error', err);
         }, 5000);
 
         udpServer.close();
@@ -1418,9 +1363,7 @@ function objectBeatServer() {
 
             if (msgContent.ip)
                 knownObjects[msgContent.id].ip = msgContent.ip;
-
-            console.log('I found new Objects: ' + JSON.stringify(knownObjects[msgContent.id]));
-
+            
             // each time we discover a new object from another, also get the scene graph from that server
             getKnownSceneGraph(msgContent.ip);
         }
@@ -1442,7 +1385,7 @@ function objectBeatServer() {
 
     udpServer.on('listening', function () {
         var address = udpServer.address();
-        console.log('UDP listening on port: ' + address.port);
+        console.info('UDP Server is listening on port ' + address.port);
         checkInit('udp');
     });
 
@@ -1464,14 +1407,12 @@ async function getKnownSceneGraph(ip, port) {
     try {
         response = await utilities.httpGet(url);
     } catch (e) {
-        console.warn('error awaiting /spatial/sceneGraph', e);
+        console.error('error awaiting /spatial/sceneGraph', e);
         return;
     }
 
     // 3. parse the results and add it as a known scene graph
     var thatSceneGraph = typeof response === 'string' ? JSON.parse(response) : response;
-    console.log('Discovered scene graph from server ' + ip + ' with keys:');
-    // console.log(Object.keys(thatSceneGraph));
 
     // 4. create a method to compile all known scene graphs with this server's graph to be visualized
     worldGraph.addKnownGraph(ip, thatSceneGraph);
@@ -1561,7 +1502,7 @@ function objectWebServer() {
     const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
     const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
     const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
-    console.log('SELECTED UI PATH: ' + selectedUiPath);
+    console.info('UI path for LocalUIApp: ' + selectedUiPath);
     const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
     localUserInterfaceApp.setup();
     localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
@@ -1570,10 +1511,9 @@ function objectWebServer() {
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
     webServer.use('/frames/:frameName', function (req, res, next) {
-
         if (!utilities.isValidId(req.params.frameName)) {
             res.status(400).send('Invalid frame name. Must be alphanumeric.');
-            console.log(req.params.frameName);
+            console.error('Recevied invalid frame name. Must be alphanumeric.', req.params.frameName);
             return;
         }
 
@@ -1622,6 +1562,8 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
+        html = html.replace('objectDefaultFiles/styles/', level + 'objectDefaultFiles/styles/');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1635,7 +1577,6 @@ function objectWebServer() {
 
     webServer.use('/logicNodeIcon', function (req, res) {
         var urlArray = req.originalUrl.split('/');
-        console.log('logicNodeIcon urlArray', urlArray);
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
         if (!fs.existsSync(fileName)) {
@@ -1765,7 +1706,7 @@ function objectWebServer() {
             }
 
             if (!fs.existsSync(fileName)) {
-                console.log('file is not here is it there?');
+                console.error('Failed to find file for /obj request at ' + filename);
                 res.send(404);
                 next();
                 return;
@@ -1869,7 +1810,6 @@ function objectWebServer() {
 
     // Responds with the set of Spatial Tools that this server is hosting
     webServer.get('/availableFrames/', function (req, res) {
-        console.log('get available frames');
         res.json(addonFrames.getFrameList());
     });
 
@@ -1877,7 +1817,6 @@ function objectWebServer() {
     // ths is the most relevant for
     // ****************************************************************************************************************
     webServer.get('/availableLogicBlocks/', function (req, res) {
-        console.log('get available logic blocks');
         res.json(blockController.getLogicBlockList());
     });
 
@@ -1885,8 +1824,6 @@ function objectWebServer() {
     if (globalVariables.developer === true) {
         // // TODO: ask Valentin what this route was used for?
         // webServer.post('/object/*/size/*', function (req, res) {
-        //     console.log("post 1");
-        //     console.log(req.params);
         //     res.send(changeSize(req.params[0], req.params[1], null, req.body));
         // });
     }
@@ -1972,7 +1909,6 @@ function objectWebServer() {
         // sends the info page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'info/:id', function (req, res) {
-            // console.log("get 12");
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object id. Must be alphanumeric.');
                 return;
@@ -1981,7 +1917,6 @@ function objectWebServer() {
         });
 
         webServer.get(objectInterfaceFolder + 'infoLoadData/:id', function (req, res) {
-            // console.log("get 12");
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object id. Must be alphanumeric.');
                 return;
@@ -2006,8 +1941,6 @@ function objectWebServer() {
 
 
         webServer.get(objectInterfaceFolder + 'content/:objectName/:frameName', function (req, res) {
-            // console.log("get 13");
-            console.log('get frame index', req.params);
             if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
                 res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                 return;
@@ -2024,7 +1957,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid path. Cannot go up directories.');
                 return;
             }
-            console.log('PUT', req.path, req.body.content);
             fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
                 if (err) {
                     throw err;
@@ -2036,7 +1968,6 @@ function objectWebServer() {
         // sends the target page for the object :id
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder + 'target/:objectName', function (req, res) {
-            //   console.log("get 14");
             if (!utilities.isValidId(req.params.objectName)) {
                 res.status(400).send('Invalid object name. Must be alphanumeric.');
                 return;
@@ -2056,7 +1987,6 @@ function objectWebServer() {
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, function (req, res) {
-            // console.log("get 16");
             let framePathList = frameLibPaths.join(' ');
             setAnchors();
             res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
@@ -2091,7 +2021,6 @@ function objectWebServer() {
         });
 
         webServer.get('/server/networkInterface/:activeInterface/', function (req, res) {
-            console.log('--------------------------------------------------------get networkInterface', req.params.activeInterface);
             services.ips.activeInterface = req.params.activeInterface;
             res.json(services.ips);
 
@@ -2106,10 +2035,6 @@ function objectWebServer() {
 
         // webFrontend realtime messaging
         webServer.post('/webUI/spatial/locator', function (req, res) {
-            console.log({
-                spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
-                lastEditor: null
-            });
             utilities.actionSender({
                 spatial: {locator: JSON.parse(req.body.locator), ip: services.ip},
                 lastEditor: null
@@ -2118,13 +2043,11 @@ function objectWebServer() {
         });
 
         webServer.post('/webUI/REC/START', function (req, res) {
-            console.log('Starting LOG Recording');
             recorder.start();
             res.status(200).send('ok');
         });
 
         webServer.post('/webUI/REC/STOP', function (req, res) {
-            console.log('Stop LOG Recording and save file');
             recorder.stop();
             res.status(200).send('ok');
         });
@@ -2179,15 +2102,12 @@ function objectWebServer() {
 
             try {
                 const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
-                console.log('rawSettings', rawSettings);
                 let existingSettings = {};
                 try {
                     existingSettings = JSON.parse(rawSettings);
                 } catch (e) {
-                    console.warn('Unable to parse settings', e, rawSettings);
+                    console.error('Unable to parse settings', e, rawSettings);
                 }
-
-                console.log('before:', hardwareInterfaceModules[interfaceName]);
 
                 for (let key in settings) {
                     if (!settings.hasOwnProperty(key)) {
@@ -2203,33 +2123,29 @@ function objectWebServer() {
                     } else {
                         existingSettings[key] = settings[key];
                     }
-                    console.log('set ' + key + ' to ' + existingSettings[key]);
 
                     // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
                     if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
                         hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
                     }
                 }
-
-                console.log('after:', hardwareInterfaceModules[interfaceName]);
-
+                
                 if (globalVariables.saveToDisk) {
                     fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
                         if (err) {
-                            console.log(err);
+                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
                             callback(false, 'error writing to file');
                         } else {
-                            console.log('successfully wrote settings hardwareInterface: ' + interfaceName);
                             callback(true);
                             hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
                         }
                     });
                 } else {
-                    console.log('I am not allowed to save');
+                    console.error('Save to disk is disabled for this server');
                     callback(false, 'saveToDisk globally disabled for this server');
                 }
             } catch (e) {
-                console.log('error writing settings.json for ' + interfaceName + '.', e);
+                console.error('Error saving hardware interface settings to disk for ' + interfaceName, e);
                 callback(false, 'error writing to file');
             }
         }
@@ -2290,7 +2206,6 @@ function objectWebServer() {
          */
         function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-            console.log('interfaceSettingsPath', interfaceSettingsPath);
 
             try {
                 const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
@@ -2300,28 +2215,26 @@ function objectWebServer() {
                 if (globalVariables.saveToDisk) {
                     fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4), function (err) {
                         if (err) {
-                            console.log(err);
+                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
                             callback(false, 'error writing to file');
                         } else {
-                            console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
                             callback(true);
                         }
                     });
                 } else {
-                    console.log('I am not allowed to save');
+                    console.error('Save to disk is disabled for this server');
                     callback(false, 'saveToDisk globally disabled for this server');
                 }
             } catch (e) {
-                console.log('error reading settings.json for ' + interfaceName + '. try reverting to default settings', e);
+                // Trying default settings
                 var defaultSettings = {
                     enabled: shouldBeEnabled
                 };
                 fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4), function (err) {
                     if (err) {
-                        console.log(err);
+                        console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
                         callback(false, 'error writing to file');
                     } else {
-                        console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + interfaceName);
                         callback(true);
                     }
                 });
@@ -2384,8 +2297,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid frame name. Must be alphanumeric.');
                 return;
             }
-
-            console.log('++++++++++++++++++++++++++++++++++++++++++++++++');
 
             const frameLibPath = frameFolderLoader.resolvePath(frameName);
             if (!frameLibPath) {
@@ -2509,15 +2420,13 @@ function objectWebServer() {
             }
 
             if (req.body.action === 'new') {
-                console.log('got NEW', req.body.name);
-                // console.log(req.body);
                 if (req.body.name !== '' && !req.body.frame) {
                     if (!utilities.isValidId(req.body.name)) {
                         res.status(400).send('Invalid object name. Must be alphanumeric.');
                         return;
                     }
 
-                    utilities.createFolder(req.body.name, globalVariables.debug);
+                    utilities.createFolder(req.body.name);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2563,7 +2472,7 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, 'local');
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
                                 utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
@@ -2575,11 +2484,9 @@ function objectWebServer() {
                                     x: 0,
                                     y: 0
                                 };
-                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {
-                                    console.log('added node to frame... ', statusCode, responseContents);
-                                });
+                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {});
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, globalVariables.debug, objects[objectId].frames[toolId].location);
+                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
                         }
 
@@ -2613,14 +2520,14 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, 'local');
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, globalVariables.debug, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2735,7 +2642,6 @@ function objectWebServer() {
 
                     }
 
-                    console.log('i deleted: ' + tempFolderName2);
                     setAnchors();
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2751,10 +2657,6 @@ function objectWebServer() {
         //*************************************************************************************
         webServer.post(objectInterfaceFolder + 'backup/',
             function (req, res) {
-                // console.log("post 23");
-
-                console.log('komm ich hier hin?');
-
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath,  // don't forget the __dirname here
                     keepExtensions: true
@@ -2779,28 +2681,19 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
-                    // console.log("------------" + form.uploadDir + " " + filename);
-
                     if (getFileExtension(filename) === 'zip') {
-
-                        console.log('I found a zip file');
-
                         try {
                             var unzipper = new DecompressZip(path.join(folderD, filename));
 
                             unzipper.on('error', function (err) {
-                                console.log('Caught an error', err);
+                                console.error('Unzipper Error', err);
                             });
 
                             unzipper.on('extract', function () {
-                                console.log('Finished extracting');
-                                console.log('have created a new object');
-                                //createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
                                 createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                 //todo add object to the beatsender.
 
-                                console.log('have created a new object');
                                 fs.unlinkSync(folderD + '/' + filename);
 
                                 res.status(200);
@@ -2809,7 +2702,7 @@ function objectWebServer() {
                             });
 
                             unzipper.on('progress', function (fileIndex, fileCount) {
-                                console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                             });
 
                             unzipper.extract({
@@ -2818,24 +2711,19 @@ function objectWebServer() {
                                     return file.type !== 'SymbolicLink';
                                 }
                             });
-
-                            console.log('extracting: ' + filename + '  ' + folderD);
-
                         } catch (err) {
-                            console.log('could not unzip file', err);
+                            console.error('Unzipper Error', err);
                         }
                     }
                 });
-            });
+            }
+        );
 
         // this for all the upload to content
         //***********************************************************************
 
         webServer.post(objectInterfaceFolder + 'content/:id',
             function (req, res) {
-
-                console.log('object is: ' + req.params.id);
-
                 if (!utilities.isValidId(req.params.id)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2876,8 +2764,6 @@ function objectWebServer() {
                         delete knownObjects[tempFolderName2];
                     }
 
-                    console.log('i deleted: ' + tempFolderName2);
-
                     res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
                 }
 
@@ -2901,8 +2787,6 @@ function objectWebServer() {
                     if (req.headers.type === 'targetUpload') {
                         file.path = form.uploadDir + '/' + file.name;
                     } else if (req.headers.type === 'fileUpload') {
-                        console.log('upload begins', form.uploadDir, req.headers.folder);
-
                         if (typeof req.headers.folder !== 'undefined') {
                             file.path = form.uploadDir + '/' + req.headers.frame + '/' + req.headers.folder + '/' + file.name;
                         } else {
@@ -2922,9 +2806,7 @@ function objectWebServer() {
                         }
                         fileInfo.completed = true; // File has downloaded
                         let filename = fileInfo.name;
-                        console.log('------------' + form.uploadDir + '/' + filename);
                         if (req.headers.type === 'targetUpload') {
-                            console.log('targetUpload', req.params.id);
                             var fileExtension = getFileExtension(filename);
 
                             if (fileExtension === 'jpeg') { // Needed for compatibility, .JPEG is equivalent to .JPG
@@ -2935,7 +2817,7 @@ function objectWebServer() {
                                 if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
                                     fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
                                         if (err) {
-                                            console.log(err);
+                                            console.error('Error creating target upload directory', err);
                                             res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
                                         }
                                     });
@@ -2956,12 +2838,9 @@ function objectWebServer() {
                                             var desiredMaxDimension = 1024;
 
                                             if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
-                                                console.log('jpg doesnt need resizing');
+                                                // JPEG doesn't need resizing
                                                 continueProcessingUpload();
-
                                             } else {
-                                                console.log('attempting to resize file to ' + rawFilepath);
-
                                                 var aspectRatio = image.bitmap.width / image.bitmap.height;
                                                 var newWidth = desiredMaxDimension;
                                                 if (image.bitmap.width < image.bitmap.height) {
@@ -2970,14 +2849,12 @@ function objectWebServer() {
 
                                                 // copy fullsize file as backup
                                                 if (fs.existsSync(originalFilepath)) {
-                                                    console.log('deleted old original file');
                                                     fs.unlinkSync(originalFilepath);
                                                 }
                                                 fs.copyFileSync(rawFilepath, originalFilepath);
 
                                                 // copied file into temp file to be used during the resize operation
                                                 if (fs.existsSync(tempFilepath)) {
-                                                    console.log('deleted old temp file');
                                                     fs.unlinkSync(tempFilepath);
                                                 }
                                                 fs.copyFileSync(rawFilepath, tempFilepath);
@@ -2985,19 +2862,18 @@ function objectWebServer() {
                                                 Jimp.read(tempFilepath).then(tempImage => {
                                                     return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
                                                 }).then(() => {
-                                                    console.log('done resizing');
                                                     if (fs.existsSync(tempFilepath)) {
                                                         fs.unlinkSync(tempFilepath);
                                                     }
                                                     continueProcessingUpload();
                                                 }).catch(err => {
-                                                    console.warn('error resizing', err);
+                                                    console.error('Error resizing image', err);
                                                     continueProcessingUpload();
                                                 });
                                             }
                                         });
                                     } catch (e) {
-                                        console.warn('error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
+                                        console.error('Error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
                                         continueProcessingUpload();
                                     }
 
@@ -3032,19 +2908,15 @@ function objectWebServer() {
                                     let thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (err) {
-                                        console.log(err);
+                                        console.error('XML verification error', err);
                                     } else {
                                         // create the object if needed / possible
                                         if (typeof objects[thisObjectId] === 'undefined') {
-                                            console.log('creating object from target file ' + tmpFolderFile);
-                                            // createObjectFromTarget(tmpFolderFile);
                                             createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                             //todo send init to internal modules
-                                            console.log('have created a new object');
 
                                             hardwareAPI.reset();
-                                            console.log('have initialized the modules');
                                         }
                                     }
 
@@ -3079,8 +2951,7 @@ function objectWebServer() {
 
                                         // Removes old heartbeat if it used to be an anchor
                                         var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
-                                        if (oldObjectId && oldObjectId != thisObjectId) {
-                                            console.log('removed old heartbeat for', oldObjectId);
+                                        if (oldObjectId && oldObjectId !== thisObjectId) {
                                             clearInterval(activeHeartbeats[oldObjectId]);
                                             delete activeHeartbeats[oldObjectId];
                                             try {
@@ -3097,7 +2968,7 @@ function objectWebServer() {
                                         try {
                                             res.status(200).json(sendObject);
                                         } catch (e) {
-                                            console.warn('unable to send res', e);
+                                            console.error('unable to send res', e);
                                         }
 
                                     } else {
@@ -3107,21 +2978,18 @@ function objectWebServer() {
                                         try {
                                             res.status(200).send('ok');
                                         } catch (e) {
-                                            console.warn('unable to send res', e);
+                                            console.error('unable to send res', e);
                                         }
                                     }
                                 }
 
                             } else if (fileExtension === 'zip') {
                                 const zipfileName = filename;
-
-                                console.log('I found a zip file');
-
                                 try {
                                     var unzipper = new DecompressZip(path.join(folderD, zipfileName));
 
                                     unzipper.on('error', function (err) {
-                                        console.log('Caught an error in unzipper', err);
+                                        console.error('Unzipper error', err);
                                     });
 
                                     unzipper.on('extract', function (_log) {
@@ -3142,14 +3010,12 @@ function objectWebServer() {
                                                 anyTargetsUploaded = true;
                                             }
                                             if (folderFile === 'target') {
-                                                console.log('zip contained a folder of the same name');
                                                 const innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile);
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return function() {
                                                         fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
                                                         let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        console.log('nff', newFolderFiles);
                                                         fs.renameSync(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                             path.join(folderD, identityFolderName, 'target', 'target.glb')
@@ -3160,8 +3026,6 @@ function objectWebServer() {
 
                                                 for (let j = 0; j < innerFolderFiles.length; j++) {
                                                     let innerFolderFile = innerFolderFiles[j];
-                                                    console.log(innerFolderFile);
-
                                                     const innerFolderFileType = innerFolderFile.substr(innerFolderFile.lastIndexOf('.') + 1);
                                                     if (targetTypes.includes(innerFolderFileType)) {
                                                         fs.renameSync(
@@ -3177,16 +3041,15 @@ function objectWebServer() {
                                                         let unzipper3dt = new DecompressZip(path.join(targetFolderPath, 'target.3dt'));
 
                                                         unzipper3dt.on('error', function (err) {
-                                                            console.log('Caught an error for 3dt', err);
+                                                            console.error('3dt Unzipper Error', err);
                                                         });
 
                                                         unzipper3dt.on('extract', function () {
-                                                            console.log('Finished extracting 3dt');
                                                             finish();
                                                         });
 
                                                         unzipper3dt.on('progress', function (fileIndex, fileCount) {
-                                                            console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                                            // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
                                                         });
 
                                                         unzipper3dt.extract({
@@ -3208,16 +3071,11 @@ function objectWebServer() {
                                         // evnetually create the object.
 
                                         if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
-
-                                            console.log('creating object from target file ' + tmpFolderFile);
-                                            // createObjectFromTarget(tmpFolderFile);
                                             createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
 
                                             //todo send init to internal modules
-                                            console.log('have created a new object');
 
                                             hardwareAPI.reset();
-                                            console.log('have initialized the modules');
 
                                             const targetFileExts = {
                                                 jpg: '',
@@ -3274,7 +3132,7 @@ function objectWebServer() {
                                     });
 
                                     unzipper.on('progress', function (fileIndex, fileCount) {
-                                        console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+                                        // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                                     });
 
                                     unzipper.extract({
@@ -3284,7 +3142,7 @@ function objectWebServer() {
                                         }
                                     });
                                 } catch (err) {
-                                    console.log('could not unzip file', err);
+                                    console.error('Unzipper Error', err);
                                 }
                             } else {
                                 let errorString = 'File type is not recognized target data. ' +
@@ -3310,7 +3168,6 @@ function objectWebServer() {
             }
 
             tmpFolderFile = req.params.id;
-            console.log('DELETING TARGET FROM OBJECT: ' + tmpFolderFile);
 
             let objectKey = utilities.readObject(objectLookup, tmpFolderFile);
 
@@ -3325,17 +3182,17 @@ function objectWebServer() {
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.xml'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.xml'), e);
+                console.error('Error while trying to delete ' + path.join(targetDir, 'target.xml'), e);
             }
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.jpg'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.jpg'), e);
+                console.error('Error while trying to delete ' + path.join(targetDir, 'target.jpg'), e);
             }
             try {
                 fs.unlinkSync(path.join(targetDir, 'target.dat'));
             } catch (e) {
-                console.log('error while trying to delete ' + path.join(targetDir, 'target.dat'), e);
+                console.error('Error while trying to delete ' + path.join(targetDir, 'target.dat'), e);
             }
 
             // recompute isAnchor (depends if there is an initialized world object)
@@ -3350,7 +3207,6 @@ function objectWebServer() {
 
     } else {
         webServer.get(objectInterfaceFolder, function (req, res) {
-            //   console.log("GET 21");
             res.send('Objects<br>Developer functions are off');
         });
     }
@@ -3368,16 +3224,11 @@ function objectWebServer() {
  * @param {unknown} _debug
  */
 function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
-    console.log('I can start');
-
     var folder = objectsPath + '/' + folderVar + '/';
-    console.log(folder);
 
     if (fs.existsSync(folder)) {
-        console.log('folder exists');
         var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
         var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
-        console.log('got ID: objectIDXML');
         if (objectIDXML && objectIDXML.length > 13) {
             objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
             objects[objectIDXML].port = serverPort;
@@ -3390,17 +3241,13 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
                 objects[objectIDXML].timestamp = Date.now();
             }
 
-            console.log('this should be the IP' + objectIDXML);
-
             try {
                 objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
                 objects[objectIDXML].objectId = objectIDXML;
                 objects[objectIDXML].ip = services.ip; //ip.address();
-                console.log('testing: ' + objects[objectIDXML].ip);
             } catch (e) {
                 objects[objectIDXML].ip = services.ip; //ip.address();
-                console.log('testing: ' + objects[objectIDXML].ip);
-                console.log('No saved data for: ' + objectIDXML, e);
+                console.warn('No saved data for: ' + objectIDXML, e);
             }
 
             if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
@@ -3424,7 +3271,6 @@ function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, har
 
             hardwareAPI.reset();
 
-            console.log('weiter im text ' + objectIDXML);
             utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
 
             sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
@@ -3502,7 +3348,7 @@ socketHandler.sendUpdateToAllSubscribers = function (batchedUpdates) {
     for (const socketId in realityEditorUpdateSocketArray) {
         realityEditorUpdateSocketArray[socketId].forEach((sub) => {
             if (senderId === sub.editorId) {
-                //  console.log('dont send updates to the editor that triggered it');
+                // Don't send updates to the editor that triggered it
                 return;
             }
 
@@ -3518,9 +3364,7 @@ exports.socketHandler = socketHandler;
 
 function socketServer() {
     io.on('connection', function (socket) {
-        console.log('------------ connection', socket.id);
         socketHandler.socket = socket;
-        //console.log('connected to socket ' + socket.id);
 
         /**
          * @type {{[objectKey: string]: bool}}
@@ -3539,9 +3383,6 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                console.log('reality editor subscription for object: ' + msgContent.object);
-                console.log('the latest socket has the ID: ' + socket.id);
-
                 if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
 
                 let isNew = true;
@@ -3604,9 +3445,6 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                console.log('reality editor subscription for object: ' + msgContent.object);
-                console.log('the latest socket has the ID: ' + socket.id);
-
                 if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
 
                 let isNew = true;
@@ -3623,7 +3461,6 @@ function socketServer() {
                         protocol: thisProtocol
                     });
                 }
-                // console.log(realityEditorSocketArray);
             }
 
             var frame = getFrame(msgContent.object, msgContent.frame);
@@ -3652,9 +3489,6 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (doesObjectExist(msgContent.object)) {
-                console.log('reality editor block: ' + msgContent.object);
-                console.log('the latest socket has the ID: ' + socket.id);
-
                 if (!realityEditorBlockSocketArray[socket.id])  realityEditorBlockSocketArray[socket.id] = [];
                 let isNew = true;
                 realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
@@ -3666,8 +3500,6 @@ function socketServer() {
                 if (isNew) {
                     realityEditorBlockSocketArray[socket.id].push({object: msgContent.object});
                 }
-
-                // console.log(realityEditorBlockSocketArray);
             }
 
             var publicData = {};
@@ -3695,10 +3527,8 @@ function socketServer() {
          * realtime settings updates from the hardware interface's index.js
          */
         socket.on('/subscribe/interfaceSettings', function (msg) {
-            console.log('recieved /subscribe/interfaceSettings');
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (msgContent.interfaceName) {
-                console.log('/subscribe/interfaceSettings for ' + msgContent.interfaceName);
                 hardwareAPI.addSettingsCallback(msgContent.interfaceName, function (interfaceName, currentSettings) {
                     if (io.sockets.connected[socket.id]) {
                         io.sockets.connected[socket.id].emit('interfaceSettings', JSON.stringify({
@@ -3765,14 +3595,13 @@ function socketServer() {
                         if (msg.publicData['whole_pose'].joints.length > 0) {
                             object.updateJoints(msg.publicData['whole_pose'].joints);
                             object.lastUpdateDataTS = msg.publicData['whole_pose'].timestamp;
-                            //console.log('updating joints: obj=' + object.objectId + ', data_ts=' + object.lastUpdateDataTS.toFixed(0) + ', receive_ts=' + Date.now() + ', socket=' + socket.id);
                             // keep the object alive
                             resetObjectTimeout(msg.object);
                         }
                     }
                 }
             } else {
-                console.warn('publicData update of unknown object', msg);
+                console.warn('publicData update of unknown object', msg.object);
                 const objectKey = msg.object;
                 if (!knownUnknownObjects[objectKey]) {
                     knownUnknownObjects[objectKey] = true;
@@ -3841,7 +3670,6 @@ function socketServer() {
             });
             if (isNew) {
                 realityEditorUpdateSocketArray[socket.id].push({editorId: msgContent.editorId});
-                console.log('editor ' + msgContent.editorId + ' subscribed to updates', realityEditorUpdateSocketArray);
             }
         });
 
@@ -3922,12 +3750,11 @@ function socketServer() {
                 }
                 subList.forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
-                    //  console.log('dont send updates to the editor that triggered it');
+                    // Don't send updates to the editor that triggered it
                         return;
                     }
                     var thisSocket = io.sockets.connected[socketId];
                     if (thisSocket) {
-                        console.log('update ' + msgContent.propertyPath + ' to ' + msgContent.newValue + ' (from ' + msgContent.editorId + ' -> ' + thisObj.editorId + ')');
                         thisSocket.emit('/update', JSON.stringify(msgContent));
                     }
                 });
@@ -3955,7 +3782,7 @@ function socketServer() {
 
                 subList.forEach((sub) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === sub.editorId) {
-                        //  console.log('dont send updates to the editor that triggered it');
+                        // Don't send updates to the editor that triggered it
                         return;
                     }
                     if (senderId && senderId === sub.editorId) {
@@ -3975,7 +3802,6 @@ function socketServer() {
         socket.on('/subscribe/cameraMatrix', function (msg) {
             var msgContent = JSON.parse(msg);
             realityEditorCameraMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
-            console.log('editor ' + msgContent.editorId + ' subscribed to camera matrices', realityEditorCameraMatrixSocketArray);
         });
 
         // remote operators can broadcast their camera position to all others using this method
@@ -4008,9 +3834,7 @@ function socketServer() {
 
             if (isNew) {
                 realityEditorObjectMatrixSocketArray[socket.id].push({editorId: msgContent.editorId});
-                console.log('editor ' + msgContent.editorId + ' subscribed to object matrix updates');
             }
-
         });
 
         socket.on('/update/object/matrix', function (msg) {
@@ -4028,7 +3852,6 @@ function socketServer() {
 
             if (typeof msgContent.worldId !== 'undefined' && msgContent.worldId !== object.worldId) {
                 object.worldId = msgContent.worldId;
-                console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
                 sceneGraph.updateObjectWorldId(msgContent.objectKey, object.worldId);
             }
 
@@ -4041,8 +3864,6 @@ function socketServer() {
 
                     var thisSocket = io.sockets.connected[socketId];
                     if (thisSocket) {
-                        // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
-
                         var updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
@@ -4088,14 +3909,12 @@ function socketServer() {
             for (var socketId in realityEditorObjectMatrixSocketArray) {
                 realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
                     if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
-                        // don't send updates to the editor that triggered it
+                        // Don't send updates to the editor that triggered it
                         return;
                     }
 
                     var thisSocket = io.sockets.connected[socketId];
                     if (thisSocket) {
-                        // console.log('update matrix for ' + msgContent.objectKey + ' (from ' + msgContent.editorId + ' -> ' + realityEditorUpdateSocketArray[socketId].editorId + ')');
-
                         var updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
@@ -4131,7 +3950,6 @@ function socketServer() {
 
             // this function can be called multiple times... only set up the new node if it doesnt already exist
             if (typeof frame.nodes[nodeKey] === 'undefined') {
-                console.log('creating node ' + nodeKey);
                 var newNode = new Node(nodeData.name, nodeData.type, objectKey, frameKey, nodeKey);
                 frame.nodes[nodeKey] = newNode;
                 newNode.objectId = objectKey;
@@ -4180,22 +3998,16 @@ function socketServer() {
 
         socket.on('/disconnectEditor', function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
-            console.log('received /disconnectEditor with editorId: ' + msg.editorId);
-
-            console.log('delete avatar objects associated with ' + msg.editorId);
             let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
             deleteObjects(avatarKeys);
 
-            console.log('delete human pose objects associated with ' + msg.editorId);
             let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(msg.editorId));
             deleteObjects(humanPoseKeys);
         });
 
         socket.on('disconnect', function () {
-
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
-                console.log('GUI for ' + socket.id + ' has disconnected');
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
@@ -4204,7 +4016,6 @@ function socketServer() {
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
                 });
                 delete realityEditorBlockSocketArray[socket.id];
-                console.log('Settings for ' + socket.id + ' has disconnected');
             }
 
             if (socket.id in realityEditorObjectMatrixSocketArray) {
@@ -4232,7 +4043,6 @@ function socketServer() {
         });
     });
     this.io = io;
-    console.log('socket.io started');
 }
 
 function deleteObjects(objectKeysToDelete) {
@@ -4261,9 +4071,6 @@ function deleteObject(objectKey) {
 }
 
 function sendMessagetoEditors(msgContent, sourceSocketID) {
-
-    // console.log(Object.keys(realityEditorSocketArray).length + ' editor sockets connected');
-
     for (var thisEditor in realityEditorSocketArray) {
         realityEditorSocketArray[thisEditor].forEach((thisObj) => {
             if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID && msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
@@ -4351,7 +4158,6 @@ function messagetoSend(msgContent, socketID) {
 
     var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
     if (node) {
-        // console.log(socketID);
         io.sockets.connected[socketID].emit('object', JSON.stringify({
             object: msgContent.object,
             frame: msgContent.frame,
@@ -4470,7 +4276,7 @@ var engine = {
     // this is a helper for internal nodes.
     computeProcessedData: function (thisNode, thisLink, internalObjectDestination) {
         if (!internalObjectDestination) {
-            console.log('temporarily ignored undefined destination in computeProcessedData', thisLink);
+            console.warn('temporarily ignored undefined destination in computeProcessedData', thisLink);
             return;
         }
 
@@ -4497,7 +4303,6 @@ var engine = {
     },
     // this is when a logic block is triggered.
     blockTrigger: function (object, frame, node, block, index, thisBlock) {
-        //  console.log(objects[object].frames[frame].nodes[node].blocks[block]);
         if (!thisBlock.processedData)
             thisBlock.processedData = [{}, {}, {}, {}];
 
@@ -4587,7 +4392,6 @@ var engine = {
             data: internalObjectDestination.data
         });
 
-        // console.log( thisNode.processedData[index].value)
         // trigger the next round of the engine on the next object
         this.trigger(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination);
     }
@@ -4622,7 +4426,7 @@ function socketSender(object, frame, link, data) {
                 presentObjectConnection.emit('object', msg);
             }
         } catch (e) {
-            console.log('can not emit from link ID:' + link + 'and object: ' + object, e);
+            console.error('can not emit from link ID:' + link + 'and object: ' + object, e);
         }
 
     }
@@ -4638,7 +4442,6 @@ function socketSender(object, frame, link, data) {
  **/
 // TODO: implement new object lookup functions here
 function socketUpdater() {
-    // console.log(knownObjects);
     // delete unconnected connections
     for (let sockKey in socketArray) {
         var socketIsUsed = false;
@@ -4668,7 +4471,6 @@ function socketUpdater() {
                 if (!checkObjectActivation(thisLink.objectB) && (thisLink.objectB in knownObjects)) {
                     var thisOtherIp = knownObjects[thisLink.objectB].ip;
                     if (!(thisOtherIp in socketArray)) {
-                        // console.log("should not show up -----------");
                         let socket = new ToolSocket.Io();
                         socketArray[thisOtherIp] = new ObjectSocket(socket, socketPort, thisOtherIp);
                     }
@@ -4679,20 +4481,6 @@ function socketUpdater() {
 
     socketIndicator();
 
-    if (sockets.socketsOld !== sockets.sockets || sockets.notConnectedOld !== sockets.notConnected || sockets.connectedOld !== sockets.connected) {
-        for (var socketKey in socketArray) {
-            if (!socketArray[socketKey].io.connected) {
-                for (var objectKey in knownObjects) {
-                    if (knownObjects[objectKey] === socketKey) {
-                        console.log('Looking for: ' + objectKey + ' with the ip: ' + socketKey);
-                    }
-                }
-            }
-        }
-
-        console.log(sockets.sockets + ' connections; ' + sockets.connected + ' connected and ' + sockets.notConnected + ' not connected');
-
-    }
     sockets.socketsOld = sockets.sockets;
     sockets.connectedOld = sockets.connected;
     sockets.notConnectedOld = sockets.notConnected;

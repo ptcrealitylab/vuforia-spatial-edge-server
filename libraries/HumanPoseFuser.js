@@ -24,6 +24,12 @@ const JOINTS = {
     RIGHT_KNEE: 'right_knee',
     LEFT_ANKLE: 'left_ankle',
     RIGHT_ANKLE: 'right_ankle',
+    LEFT_PINKY: 'left_pinky',
+    RIGHT_PINKY: 'right_pinky',
+    LEFT_INDEX: 'left_index',
+    RIGHT_INDEX: 'right_index',
+    LEFT_THUMB: 'left_thumb',
+    RIGHT_THUMB: 'right_thumb',
     HEAD: 'head', // synthetic
     NECK: 'neck', // synthetic
     CHEST: 'chest', // synthetic

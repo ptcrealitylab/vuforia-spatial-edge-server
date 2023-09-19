@@ -98,11 +98,9 @@ exports.readObject = function readObject(objectLookup, folder) {
     }
 };
 
-exports.createFolder = function createFolder(folderVar, debug) {
-
+exports.createFolder = function createFolder(folderVar) {
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (debug) console.log('Creating folder: ' + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, '0766', function (err) {
@@ -119,34 +117,14 @@ exports.createFolder = function createFolder(folderVar, debug) {
             }
         });
     }
-    /**
-     if (!fs.existsSync(firstFrame)) {
-        fs.mkdirSync(firstFrame, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-        try {
-            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/index.html'));
-            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/bird.png'));
-
-        } catch (e) {
-            if (debug) console.log('Could not copy source files', e);
-        }
-        //  writeObjectToFile(tempFolderName);
-    }
-     **/
 };
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, location) {
+exports.createFrameFolder = function (folderVar, frameVar, dirnameO, location) {
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
     var identity = folder + identityFolderName + '/';
     var firstFrame = folder + frameVar + '/';
-    if (debug) console.log('Creating frame folder: ' + folder);
 
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, '0766', function (err) {
@@ -171,18 +149,12 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, debug, loca
             }
         });
 
-
         try {
-            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/bird.png'));
-
         } catch (e) {
-            if (debug) console.error('Could not copy source files', e);
+            console.error('Could not copy source files', e);
         }
-
-        //  writeObjectToFile(tempFolderName);
     }
 };
 
@@ -211,18 +183,13 @@ exports.deleteFolderRecursive = deleteFolderRecursive;
  * @param frameKey
  */
 exports.deleteFrameFolder = function (objectName, frameName) {
-    console.log('objectName', objectName);
-    console.log('frameName', frameName);
-
     var folderPath = objectsPath + '/' + objectName + '/' + frameName;
-    console.log('delete frame folder', folderPath);
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
     var isDeletableFrame = false;
     acceptableFrameNames.forEach(function (nameOption) {
         if (frameName.indexOf(nameOption) > -1) {
             isDeletableFrame = true;
-            console.log('it is a ' + nameOption + ' frame');
         }
     });
 
@@ -288,7 +255,7 @@ function getObjectIdFromTargetOrObjectFile(folderName) {
                 return null;
             }
         } catch (e) {
-            console.log('error reading json file', e);
+            console.error('error reading json file', e);
         }
     } else {
         return null;
@@ -378,7 +345,6 @@ exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToF
 };
 
 function executeWrite(objects) {
-    // console.log('execute write');
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
@@ -406,7 +372,6 @@ function executeWrite(objects) {
     // prepare to write
     var outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
-    console.log('writing:', obj);
     // write file
     fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
         // once writeFile is done, unblock writing and loop again
@@ -414,7 +379,7 @@ function executeWrite(objects) {
         executeWrite(objects);
 
         if (err) {
-            console.error(err);
+            console.error('Error writing file', err);
         }
     });
 }
@@ -539,25 +504,13 @@ exports.generateChecksums = function generateChecksums(objects, fileArray) {
 
 
 exports.updateObject = function updateObject(objectName, objects) {
-    console.log('update ', objectName);
-
     var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
+        return fs.statSync(path.join(objectsPath, file)).isDirectory() && file[0] !== '.';
     });
-
-    try {
-        while (objectFolderList[0][0] === '.') {
-            objectFolderList.splice(0, 1);
-        }
-    } catch (e) {
-        console.log('no hidden files');
-    }
-
 
     for (var i = 0; i < objectFolderList.length; i++) {
         if (objectFolderList[i] === objectName) {
             const tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
-            console.log('TempFolderName: ' + tempFolderName);
 
             if (tempFolderName !== null) {
                 // fill objects with objects named by the folders in objects
@@ -606,17 +559,13 @@ exports.updateObject = function updateObject(objectName, objects) {
                     newObj.setFromJson(objects[tempFolderName]);
                     objects[tempFolderName] = newObj;
                     // TODO: does this need to be added to sceneGraph?
-
-                    console.log('I found objects that I want to add');
-
                 } catch (e) {
                     objects[tempFolderName].ip = ip.address();
                     objects[tempFolderName].objectId = tempFolderName;
-                    console.log('No saved data for: ' + tempFolderName);
+                    console.warn('No saved data for: ' + tempFolderName);
                 }
-
             } else {
-                console.log(' object ' + objectFolderList[i] + ' has no marker yet');
+                console.warn(' object ' + objectFolderList[i] + ' has no marker yet');
             }
             return tempFolderName;
         }
@@ -625,8 +574,6 @@ exports.updateObject = function updateObject(objectName, objects) {
 };
 
 exports.deleteObject = function deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
-    console.log('Deleting object: ' + objectName);
-
     let objectFolderPath = path.join(objectsPath, objectName);
     if (fs.existsSync(objectFolderPath)) {
         fs.rmdirSync(objectFolderPath, {recursive: true});
@@ -654,21 +601,18 @@ exports.deleteObject = function deleteObject(objectName, objects, objectLookup, 
         sceneGraph.removeElementAndChildren(objectKey);
     }
 
-    console.log('i deleted: ' + objectKey);
     setAnchors();
 
     this.actionSender({reloadObject: {object: objectKey} });
 };
 
 exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterfaceName) {
-
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
-
 
     if (!fs.existsSync(hardwareIdentity)) {
         fs.mkdirSync(hardwareIdentity, '0766', function (err) {
             if (err) {
-                console.log(err);
+                console.error('Error making directory', err);
             }
         });
     }
@@ -676,7 +620,7 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
     if (!fs.existsSync(hardwareFolder)) {
         fs.mkdirSync(hardwareFolder, '0766', function (err) {
             if (err) {
-                console.log(err);
+                console.error('Error making directory', err);
             }
         });
     }
@@ -684,20 +628,16 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
     if (!fs.existsSync(hardwareFolder + 'settings.json')) {
         fs.writeFile(hardwareFolder + 'settings.json', '', function (err) {
             if (err) {
-                console.log(err);
-            } else {
-                console.log('JSON created to ' + hardwareFolder + 'settings.json');
+                console.error('Error writing file', err);
             }
         });
     }
 
     try {
         var fileContents = fs.readFileSync(hardwareFolder + 'settings.json', 'utf8');
-        var fileContentsJson = JSON.parse(fileContents);
-        hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
-
+        hardwareInterfaces[hardwareInterfaceName] = JSON.parse(fileContents);
     } catch (e) {
-        console.log('Could not load settings.json for: ' + hardwareInterfaceName);
+        console.error('Could not load settings.json for: ' + hardwareInterfaceName);
         if (!hardwareInterfaces[hardwareInterfaceName]) {
             hardwareInterfaces[hardwareInterfaceName] = {};
         }
@@ -730,7 +670,7 @@ function restActionSender(action) {
             method: 'POST',
             body: body
         }).catch(err => {
-            console.warn(`restActionSender: Error sending action to ${objectIp} over REST API.`, err);
+            console.error(`restActionSender: Error sending action to ${objectIp} over REST API.`, err);
         });
     });
 }
@@ -789,7 +729,6 @@ function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAft
             // send the message to clients on the local Wi-Fi network
             for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
                 let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
-                // console.log(`sending ${messageName} over websocket ${thisEditor} instead of UDP message`);
                 ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
             }
 
@@ -1025,7 +964,6 @@ function getVideoDir(identityFolderNameArg, isMobile, objectName) {
         videoDir = path.join(objectsPath, objectName, identityFolderNameArg, 'videos');
 
         if (!fs.existsSync(videoDir)) {
-            console.log('make videoDir');
             fs.mkdirSync(videoDir);
         }
     }

@@ -38,7 +38,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
             object.frames = {};
         }
 
-        utilities.createFrameFolder(object.name, frame.name, dirname, globalVariables.debug, frame.location);
+        utilities.createFrameFolder(object.name, frame.name, dirname, frame.location);
 
         var newFrame = new Frame(frame.objectId, frameKey);
         newFrame.name = frame.name;
@@ -164,8 +164,6 @@ const addPublicData = function(objectID, frameID, body, callback) {
 };
 
 const copyFrame = function(objectID, frameID, body, callback) {
-    console.log('making a copy of frame', frameID);
-
     utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
         if (error) {
             callback(404, error);
@@ -274,8 +272,6 @@ const updateFrame = function(objectID, frameID, body, callback) {
 };
 
 const deleteFrame = function(objectId, frameId, body, callback) {
-    console.log('delete frame from server', objectId, frameId);
-
     var object = utilities.getObject(objects, objectId);
     if (!object) {
         callback(404, {failure: true, error: 'object ' + objectId + ' not found'});
@@ -303,7 +299,6 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     }).map(function (publicData) {
         return publicData.data;
     });
-    console.log('frame being deleted contains these video paths: ', videoPaths);
     videoPaths.forEach(function (videoPath) {
         // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
         var urlArray = videoPath.split('/');
@@ -412,8 +407,6 @@ const setPinned = function(objectID, frameID, body, callback) {
  * @todo this function is a mess, fix it up
  */
 const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
-    console.log('changing Size for :' + objectID + ' : ' + frameID + ' : ' + nodeID);
-
     utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
             callback(404, error);
@@ -422,9 +415,6 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
 
         var activeVehicle = node || frame; // use node if it found one, frame otherwise
 
-        // console.log('really changing size for ... ' + activeVehicle.uuid, body);
-
-        // console.log("post 2");
         var updateStatus = 'nothing happened';
 
         // the reality editor will overwrite all properties from the new frame except these.
@@ -463,7 +453,6 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
                 frame.ar.y = body.arY;
             }
 
-            // console.log(req.body);
             // ask the devices to reload the objects
             didUpdate = true;
         }
@@ -501,8 +490,6 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
  * @param callback
  */
 const changeVisualization = function(objectKey, frameKey, body, callback) {
-    console.log('change visualization');
-
     var newVisualization = body.visualization;
     var oldVisualizationPositionData = body.oldVisualizationPositionData;
 

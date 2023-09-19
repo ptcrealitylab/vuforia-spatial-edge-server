@@ -19,8 +19,6 @@ function getLinkData(fullEntry, wasAdded) {
     var linkAddedData = null;
 
     if (fullEntry) {
-        // console.log('getLinkData', fullEntry);
-
         var linkObjectA = fullEntry['objectA'];
         var linkObjectB = fullEntry['objectB'];
         var linkFrameA = fullEntry['frameA'];
@@ -50,9 +48,8 @@ function getLinkData(fullEntry, wasAdded) {
             nameNodeA: nodeAName,
             nameNodeB: nodeBName
         };
-
     } else {
-        console.log('thisObject does not exist');
+        console.error('thisObject does not exist');
     }
     return linkAddedData;
 }
@@ -70,8 +67,6 @@ const newLink = function (objectID, frameID, linkID, body) {
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
     if (foundFrame) {
-        console.log('found frame to add link to');
-
         // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
         // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
         body.loop = (body.objectA === body.objectB &&
@@ -80,7 +75,6 @@ const newLink = function (objectID, frameID, linkID, body) {
 
         utilities.forEachLinkInFrame(utilities.getFrame(objects, body.objectA, body.frameA), function (thisLink) {
             if (!body.loop) {
-                console.log('link already exists');
                 body.loop = (body.objectA === thisLink.objectA &&
                     body.objectB === thisLink.objectB &&
                     body.frameA === thisLink.frameA &&
@@ -94,7 +88,6 @@ const newLink = function (objectID, frameID, linkID, body) {
 
         if (!body.loop) {
             foundFrame.links[linkID] = body;
-            console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
             utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
@@ -179,7 +172,6 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
             delete socketArray[destinationIp];
         }
 
-        console.log('deleted link: ' + linkKey);
         updateStatus = 'deleted: ' + linkKey + ' in object: ' + objectKey + ' frame: ' + frameKey;
     }
     return updateStatus;

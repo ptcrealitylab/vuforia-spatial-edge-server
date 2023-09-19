@@ -4,7 +4,7 @@
   "description": "Vuforia Spatial Edge Server",
   "main": "server.js",
   "dependencies": {
-    "archiver": "^5.3.1",
+    "archiver": "^6.0.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
@@ -16,15 +16,15 @@
     "jimp": "^0.22.10",
     "ml-matrix": "^6.10.4",
     "module-alias": "^2.2.3",
-    "monaco-editor": "^0.40.0",
+    "monaco-editor": "^0.43.0",
     "network-interfaces": "^1.1.0",
-    "node-fetch": "^2.6.12",
+    "node-fetch": "^2.7.0",
     "node-persist": "^2.1.0",
     "request": "^2.*",
     "simple-git": "^3.19.1",
     "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.10.0",
-    "ws": "^8.13.0",
+    "ws": "^8.14.1",
     "xml2js": "^0.6.2",
     "yargs": "^17.7.2"
   },
@@ -33,10 +33,10 @@
     "url": "https://github.com/ptcrealitylab/vuforia-spatial-edge-server"
   },
   "devDependencies": {
-    "eslint": "^8.45.0",
+    "eslint": "^8.49.0",
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
-    "puppeteer": "^20.9.0"
+    "puppeteer": "^21.2.1"
   },
   "scripts": {
     "test": "npm run lint && NODE_ENV=test node test.js",
