@@ -7,6 +7,7 @@ const proxyRequestHandler = (req, res) => {
         const headers = req.headers;
         headers.Host = "toolboxedge.net";
         https.get(proxyURL, {headers}, proxyRes => {
+            res.status(proxyRes.statusCode);
             for (let header in proxyRes.headers) {
                 res.setHeader(header, proxyRes.headers[header]);
             }
@@ -19,6 +20,7 @@ const proxyRequestHandler = (req, res) => {
         const queryParams = new URLSearchParams(req.query);
         const url = `${proxyURL}?${queryParams.toString()}`;
         https.get(url, {headers}, proxyRes => {
+            res.status(proxyRes.statusCode);
             for (let header in proxyRes.headers) {
                 res.setHeader(header, proxyRes.headers[header]);
             }
