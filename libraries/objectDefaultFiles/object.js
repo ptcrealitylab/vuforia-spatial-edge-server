@@ -48,6 +48,25 @@
             anchoredModelView: false,
             allObjects: false
         },
+        sendCoordinateSystems: {
+            camera: false,
+            toolOrigin: false,
+            worldOrigin: false,
+            groundPlaneOrigin: false,
+            toolGroundPlaneShadow: false,
+            toolSurfaceShadow: false,
+            projectionMatrix: false
+        },
+        // enum of the possible coordinate systems that can be passed into subscribeToCoordinateSystems
+        COORDINATE_SYSTEMS: Object.freeze({
+            CAMERA: 'camera',
+            TOOL_ORIGIN: 'toolOrigin',
+            WORLD_ORIGIN: 'worldOrigin',
+            GROUND_PLANE_ORIGIN: 'groundPlaneOrigin',
+            TOOL_GROUND_PLANE_SHADOW: 'toolGroundPlaneShadow',
+            TOOL_SURFACE_SHADOW: 'toolSurfaceShadow',
+            PROJECTION_MATRIX: 'projectionMatrix'
+        }),
         sendScreenPosition: false,
         sendDeviceDistance: false,
         sendAcceleration: false,
@@ -673,6 +692,7 @@
                 this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.subscribeToCoordinateSystems = makeSendStub('subscribeToCoordinateSystems');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
@@ -759,6 +779,7 @@
                 this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
+                this.addCoordinateSystemListener = makeSendStub('addCoordinateSystemListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
@@ -1262,6 +1283,55 @@
                 sendMatrices: spatialObject.sendMatrices
             });
         };
+
+        let numCoordSystemCallbacks = 0;
+        let defaultCoordinateSubscriptions = [
+            spatialObject.COORDINATE_SYSTEMS.CAMERA,
+            spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX,
+            spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN
+        ];
+
+        /**
+         * Updated API for subscribing to three.js camera and other coordinate systems.
+         * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
+         * Callback only triggers with *changes* to the subscribed matrices, not constantly
+         * Options include:
+         * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
+         *      removes x and z components of rotation to keep it "flat" on the ground plane
+         *      allows placing content flat on the floor
+         * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
+         *      removes x and z components of rotation to keep it "flat" relative to ground plane
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
+         * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
+         * @param {function} callback
+         */
+        this.subscribeToCoordinateSystems = (subscriptions = defaultCoordinateSubscriptions, callback) => {
+            // keep track of the coordinate systems to subscribe to
+            Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
+                if (subscriptions.includes(coordinateSystemName)) {
+                    spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
+                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                }
+            });
+            // register the callback function
+            numCoordSystemCallbacks++;
+            spatialObject.messageCallBacks['coordinateSystemCall' + numCoordSystemCallbacks] = function (msgContent) {
+                if (typeof msgContent.coordinateSystems !== 'undefined') {
+                    callback(msgContent.coordinateSystems);
+                }
+            };
+            // send the subscriptions to the parent
+            postDataToParent({
+                sendCoordinateSystems: spatialObject.sendCoordinateSystems
+            });
+        }
 
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
