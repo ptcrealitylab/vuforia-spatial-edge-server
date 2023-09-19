@@ -32,12 +32,12 @@ const oauthRefreshRequestHandler = (req, res) => {
         body: querystring.stringify(data)
     }).then(response => {
         if (response.status !== 200) {
-            response.json().then(data => { // Data is an error object sent by the OAuth server
-                res.status(response.status).send(data);
+            response.json().then(responseData => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(responseData);
             }).catch(_error => {});
         } else {
-            response.json().then(data => {
-                res.send(data);
+            response.json().then(responseData => {
+                res.send(responseData);
             }).catch(_error => {});
         }
     }).catch(error => {
@@ -76,12 +76,12 @@ const oauthAcquireRequestHandler = (req, res) => {
         body: querystring.stringify(data)
     }).then(response => {
         if (response.status !== 200) {
-            response.json().then(data => { // Data is an error object sent by the OAuth server
-                res.status(response.status).send(data);
+            response.json().then(responseData => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(responseData);
             }).catch(_error => {});
         } else {
-            response.json().then(data => {
-                res.send(data);
+            response.json().then(responseData => {
+                res.send(responseData);
             }).catch(_error => {});
         }
     }).catch(error => {
