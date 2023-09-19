@@ -1808,6 +1808,19 @@ function objectWebServer() {
         res.json(blockController.getLogicBlockList());
     });
 
+    webServer.get('/availableDataStreams/', function(req, res) {
+        let allAvailableDataStreams = hardwareAPI.getAllAvailableDataStreams();
+        res.json({
+            dataStreams: allAvailableDataStreams
+        });
+    });
+
+    webServer.post('/bindNodeToDataStream/', function(req, res) {
+        console.log('bindNodeToDataStream', req.body);
+        hardwareAPI.bindNodeToDataStream(req.body);
+        res.status(200).json({ success: true, error: null });
+    });
+
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
         // // TODO: ask Valentin what this route was used for?
