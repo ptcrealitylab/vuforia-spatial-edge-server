@@ -1591,7 +1591,7 @@
             postDataToParent({
                 followCameraOnPlayback: {
                     frame: spatialObject.frame,
-                    distance: followDistance,
+                    distance: followDistance
                 }
             });
         };
