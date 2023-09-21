@@ -120,7 +120,8 @@ const socketPort = serverPort;     // server and socket port are always identica
 exports.beatPort = beatPort;
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
-const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
+const socketUpdateIntervalMs = 2000; // how often the system checks if the socket connections are still up and running.
+let socketUpdaterInterval;
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
@@ -171,6 +172,7 @@ try {
 }
 
 var dgram = require('dgram'); // UDP Broadcasting library
+let udpServer;
 
 var services = {};
 if (!isLightweightMobile) {
@@ -1040,7 +1042,7 @@ function startSystem() {
 
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
-    socketUpdaterInterval();
+    setSocketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
@@ -1062,10 +1064,44 @@ function startSystem() {
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
 
+function clearActiveHeartbeat(activeHeartbeat) {
+    clearInterval(activeHeartbeat.interval);
+    activeHeartbeat.socket.close();
+}
+
+function clearActiveHeartbeats() {
+    for (const key of Object.keys(activeHeartbeats)) {
+        clearActiveHeartbeat(activeHeartbeats[key]);
+        delete activeHeartbeats[key];
+    }
+}
+
+function closeHttp() {
+    return new Promise((res, rej) => {
+        http.close((err) => {
+            if (err) {
+                console.error('Error closing server', err);
+                rej(err);
+            } else {
+                res();
+            }
+        });
+    });
+}
+
 async function exit() {
     hardwareAPI.shutdown();
-    process.exit();
+    await closeHttp();
+    sceneGraph.clearIntervals();
+    await recorder.stop();
+    clearActiveHeartbeats();
+    udpServer.close();
+    clearInterval(socketUpdaterInterval);
+    staleObjectCleaner.clearCleanupIntervals();
+    humanPoseFuser.stop();
+    // process.exit(0);
 }
+exports.exit = exit;
 
 process.on('SIGINT', exit);
 
@@ -1122,9 +1158,13 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
     }
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
-    setInterval(() => {
+    const interval = setInterval(() => {
         utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: false});
     }, beatInterval + utilities.randomIntInc(-250, 250));
+    activeHeartbeats['server_' + services.ip] = {
+        interval,
+        socket: client,
+    };
 }
 
 /**
@@ -1187,7 +1227,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
     };
 
     // creating the datagram
-    var client = dgram.createSocket({
+    const client = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -1237,9 +1277,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
             sendBeat();
         }
         // perturb the inverval a bit so that not all objects send the beat in the same time.
-        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
-    }
-    else {
+        activeHeartbeats[thisId] = {
+            interval: setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250)),
+            socket: client,
+        };
+    } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
         let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
@@ -1314,7 +1356,7 @@ function objectBeatServer() {
     }
 
     // creating the udp server
-    var udpServer = dgram.createSocket({
+    udpServer = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -2612,7 +2654,7 @@ function objectWebServer() {
                         // remove object from tree
                         if (objects[tempFolderName2]) {
                             if (activeHeartbeats[tempFolderName2]) {
-                                clearInterval(activeHeartbeats[tempFolderName2]);
+                                clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                                 delete activeHeartbeats[tempFolderName2];
                             }
                             try {
@@ -2739,7 +2781,7 @@ function objectWebServer() {
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         if (activeHeartbeats[tempFolderName2]) {
-                            clearInterval(activeHeartbeats[tempFolderName2]);
+                            clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                             delete activeHeartbeats[tempFolderName2];
                         }
                         try {
@@ -2940,7 +2982,7 @@ function objectWebServer() {
                                         // Removes old heartbeat if it used to be an anchor
                                         var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId !== thisObjectId) {
-                                            clearInterval(activeHeartbeats[oldObjectId]);
+                                            clearActiveHeartbeat(activeHeartbeats[oldObjectId]);
                                             delete activeHeartbeats[oldObjectId];
                                             try {
                                                 // deconstructs frames and nodes of this object, too
@@ -4049,7 +4091,7 @@ function deleteObject(objectKey) {
         humanPoseFuser.removeHumanObject(objectKey);
     }
     if (activeHeartbeats[objectKey]) {
-        clearInterval(activeHeartbeats[objectKey]);
+        clearActiveHeartbeat(activeHeartbeats[objectKey]);
         delete activeHeartbeats[objectKey];
     }
     delete knownObjects[objectKey];
@@ -4495,10 +4537,10 @@ function socketIndicator() {
 /**
  * Runs socketUpdater every socketUpdateInterval milliseconds
  */
-function socketUpdaterInterval() {
-    setInterval(function () {
+function setSocketUpdaterInterval() {
+    socketUpdaterInterval = setInterval(function () {
         socketUpdater();
-    }, socketUpdateInterval);
+    }, socketUpdateIntervalMs);
 }
 
 /**
