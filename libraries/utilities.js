@@ -573,7 +573,7 @@ exports.updateObject = function updateObject(objectName, objects) {
     return null;
 };
 
-exports.deleteObject = function deleteObject(objectName, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+exports.deleteObject = function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
     if (fs.existsSync(objectFolderPath)) {
         fs.rmdirSync(objectFolderPath, {recursive: true});
@@ -583,11 +583,6 @@ exports.deleteObject = function deleteObject(objectName, objects, objectLookup, 
 
     if (objectKey && objects[objectKey]) {
         // remove object from tree
-
-        if (activeHeartbeats[objectKey]) {
-            clearInterval(activeHeartbeats[objectKey]);
-            delete activeHeartbeats[objectKey];
-        }
         try {
             // deconstructs frames and nodes of this object, too
             objects[objectKey].deconstruct();
