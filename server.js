@@ -1528,15 +1528,17 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
 
-    const LocalUIApp = require('./libraries/LocalUIApp.js');
-    const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
-    const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
-    const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
-    console.info('UI path for LocalUIApp: ' + selectedUiPath);
-    const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
-    localUserInterfaceApp.setup();
-    localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    if (isStandaloneMobile) {
+        const LocalUIApp = require('./libraries/LocalUIApp.js');
+        const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
+        const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
+        const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
+        console.info('UI path for LocalUIApp: ' + selectedUiPath);
+        const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
+        localUserInterfaceApp.setup();
+        localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+        localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    }
 
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
