@@ -385,6 +385,11 @@ class SceneGraph {
             }
         });
     }
+
+    clearIntervals() {
+        clearInterval(this.eventUpdateInterval);
+        clearInterval(this.fullUpdateInterval);
+    }
 }
 
 module.exports = SceneGraph;
