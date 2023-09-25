@@ -298,10 +298,11 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-var http = require('http').createServer(webServer).listen(serverPort, function () {
+const http = webServer.listen(serverPort, function () {
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
+
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
@@ -1076,22 +1077,37 @@ function clearActiveHeartbeats() {
     }
 }
 
-function closeHttp() {
-    return new Promise((res, rej) => {
-        http.close((err) => {
+function sleep(ms) {
+    return new Promise((res) => {
+        setTimeout(res, ms);
+    });
+}
+
+function closeServer(server) {
+    return Promise.race([new Promise((res, rej) => {
+        if (server.closeAllConnections) {
+            server.closeAllConnections();
+        }
+        if (server.unref) {
+            server.unref();
+        }
+
+        server.close((err) => {
             if (err) {
                 console.error('Error closing server', err);
                 rej(err);
             } else {
+                console.log('server did close');
                 res();
             }
         });
-    });
+    }), sleep(1000)]);
 }
 
 async function exit() {
     hardwareAPI.shutdown();
-    await closeHttp();
+    await closeServer(http);
+    await closeServer(io.server.server);
     sceneGraph.clearIntervals();
     await recorder.stop();
     clearActiveHeartbeats();
