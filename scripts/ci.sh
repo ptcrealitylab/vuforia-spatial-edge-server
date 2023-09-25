@@ -9,6 +9,7 @@ git clone https://github.com/hobinjk-ptc/test-spatialToolbox spatialToolbox
 
 cd addons
 
+git clone https://github.com/ptcrealitylab/pop-up-onboarding-addon
 git clone https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon
 git clone https://github.com/ptcrealitylab/vuforia-spatial-remote-operator-addon
 
