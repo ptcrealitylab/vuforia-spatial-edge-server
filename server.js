@@ -1101,7 +1101,9 @@ function closeServer(server) {
                 res();
             }
         });
-    }), sleep(1000)]);
+    }), sleep(2000).then(() => {
+        console.log('server close timeout');
+    })]);
 }
 
 async function exit() {
