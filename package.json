@@ -42,7 +42,7 @@
     "puppeteer": "^21.3.4"
   },
   "scripts": {
-    "test": "npm run lint && jest --forceExit --runInBand --testPathIgnorePatterns=remote-operator",
+    "test": "npm run lint && jest --forceExit --runInBand",
     "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
