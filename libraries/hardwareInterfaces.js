@@ -1133,25 +1133,18 @@ exports.getAllAvailableDataStreams = function() {
             results.push(dataStream);
         });
     });
-    console.log('all results:', results);
     return results;
 }
 
 exports.registerBindNodeEndpoint = function(interfaceName, callback) {
-    console.log('bindNodeToDataStreamCallbacks 1', bindNodeToDataStreamCallbacks);
     if (typeof bindNodeToDataStreamCallbacks[interfaceName] === 'undefined') {
         bindNodeToDataStreamCallbacks[interfaceName] = [];
     }
-    console.log('bindNodeToDataStreamCallbacks 2', bindNodeToDataStreamCallbacks);
     bindNodeToDataStreamCallbacks[interfaceName].push(callback);
-    console.log('bindNodeToDataStreamCallbacks 3', bindNodeToDataStreamCallbacks);
 }
 
 exports.bindNodeToDataStream = function({ objectId, frameId, nodeName, nodeType, frameType, hardwareInterface, streamId}) {
     console.log('hardwareAPI received data', objectId, frameId, nodeName, nodeType, frameType, hardwareInterface);
-
-    console.log('bindNodeToDataStreamCallbacks 4', bindNodeToDataStreamCallbacks);
-
     let callbacks = bindNodeToDataStreamCallbacks[hardwareInterface];
     callbacks.forEach(callback => {
         callback(objectId, frameId, nodeName, nodeType, frameType, streamId);
