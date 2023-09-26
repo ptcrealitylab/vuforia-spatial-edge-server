@@ -1102,7 +1102,7 @@ function closeServer(server) {
             }
         });
     }), sleep(2000).then(() => {
-        console.log('server close timeout');
+        console.log('server close timed out');
     })]);
 }
 
