@@ -9,11 +9,7 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 
-function sleep(ms) {
-    return new Promise((res) => {
-        setTimeout(res, ms);
-    });
-}
+const {sleep} = require('./helpers.js');
 
 let server;
 beforeAll(() => {
