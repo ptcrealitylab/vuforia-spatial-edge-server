@@ -707,6 +707,8 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -1636,6 +1638,23 @@
                 }
             });
             return videoPlayback;
+        };
+
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                    distance: followDistance
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
+                    frame: spatialObject.frame
+                }
+            });
         };
 
         this.disposeVideoPlayback = function(videoPlaybackID) {
