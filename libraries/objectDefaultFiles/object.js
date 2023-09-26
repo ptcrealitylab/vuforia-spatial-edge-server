@@ -48,6 +48,25 @@
             anchoredModelView: false,
             allObjects: false
         },
+        sendCoordinateSystems: {
+            camera: false,
+            toolOrigin: false,
+            worldOrigin: false,
+            groundPlaneOrigin: false,
+            toolGroundPlaneShadow: false,
+            toolSurfaceShadow: false,
+            projectionMatrix: false
+        },
+        // enum of the possible coordinate systems that can be passed into subscribeToCoordinateSystems
+        COORDINATE_SYSTEMS: Object.freeze({
+            CAMERA: 'camera',
+            TOOL_ORIGIN: 'toolOrigin',
+            WORLD_ORIGIN: 'worldOrigin',
+            GROUND_PLANE_ORIGIN: 'groundPlaneOrigin',
+            TOOL_GROUND_PLANE_SHADOW: 'toolGroundPlaneShadow',
+            TOOL_SURFACE_SHADOW: 'toolSurfaceShadow',
+            PROJECTION_MATRIX: 'projectionMatrix'
+        }),
         sendScreenPosition: false,
         sendDeviceDistance: false,
         sendAcceleration: false,
@@ -677,6 +696,7 @@
                 this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.subscribeToCoordinateSystems = makeSendStub('subscribeToCoordinateSystems');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
@@ -735,6 +755,11 @@
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
 
+                this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
+                this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
+                this.profilerLogMessage = makeSendStub('profilerLogMessage');
+                this.profilerCountMessage = makeSendStub('profilerCountMessage');
+
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
                 this.analyticsFocus = makeSendStub('analyticsFocus');
@@ -758,6 +783,7 @@
                 this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
+                this.addCoordinateSystemListener = makeSendStub('addCoordinateSystemListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
@@ -1261,6 +1287,55 @@
                 sendMatrices: spatialObject.sendMatrices
             });
         };
+
+        let numCoordSystemCallbacks = 0;
+        let defaultCoordinateSubscriptions = [
+            spatialObject.COORDINATE_SYSTEMS.CAMERA,
+            spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX,
+            spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN
+        ];
+
+        /**
+         * Updated API for subscribing to three.js camera and other coordinate systems.
+         * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
+         * Callback only triggers with *changes* to the subscribed matrices, not constantly
+         * Options include:
+         * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
+         *      removes x and z components of rotation to keep it "flat" on the ground plane
+         *      allows placing content flat on the floor
+         * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
+         *      removes x and z components of rotation to keep it "flat" relative to ground plane
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
+         * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
+         * @param {function} callback
+         */
+        this.subscribeToCoordinateSystems = (subscriptions = defaultCoordinateSubscriptions, callback) => {
+            // keep track of the coordinate systems to subscribe to
+            Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
+                if (subscriptions.includes(coordinateSystemName)) {
+                    spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
+                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                }
+            });
+            // register the callback function
+            numCoordSystemCallbacks++;
+            spatialObject.messageCallBacks['coordinateSystemCall' + numCoordSystemCallbacks] = function (msgContent) {
+                if (typeof msgContent.coordinateSystems !== 'undefined') {
+                    callback(msgContent.coordinateSystems);
+                }
+            };
+            // send the subscriptions to the parent
+            postDataToParent({
+                sendCoordinateSystems: spatialObject.sendCoordinateSystems
+            });
+        }
 
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
@@ -2155,6 +2230,68 @@
                 }
             })
         }
+
+        // ------------------------- Profiler APIs ------------------------- //
+        // Used to measure performance or help with debugging
+        // These have no effect if the Profiling UI is not activated in the parent app
+
+        /**
+         * @param {string} processTitle - should be unique and exactly match the title used in profilerStopTimeProcess
+         * @param {*} options
+         */
+        this.profilerStartTimeProcess = function(processTitle, options = {}) {
+            postDataToParent({
+                profilerStartTimeProcess: {
+                    name: processTitle,
+                    numStopsRequired: options.numStopsRequired // if included, stop will need to be called this many times
+                }
+            });
+        };
+
+        /**
+         * Stops timing the process started by profilerStartTimeProcess
+         * @param {string} processTitle - each invocation of the same function should have a unique title, like a uuid
+         * @param {string} processCategory - to group repeated invocations, give them the same category
+         * @param {*} options
+         */
+        this.profilerStopTimeProcess = function(processTitle, processCategory, options = {}) {
+            postDataToParent({
+                profilerStopTimeProcess: {
+                    name: processTitle,
+                    category: processCategory,
+                    showMessage: options.showMessage, // print this timing on a single line in the profiler
+                    showAggregate: options.showAggregate, // print the average stats of all processes of this category
+                    displayTimeout: options.displayTimeout, // remove the log after this many ms
+                    includeCount: options.includeCount // include the # of times that processes of this category were logged
+                }
+            });
+        };
+
+        /**
+         * Logs a message to the profiler UI
+         * @param {string} message
+         * @param {*} options
+         */
+        this.profilerLogMessage = function(message, options = {}) {
+            postDataToParent({
+                profilerLogMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
+
+        /**
+         * Increments the counter for messages matching this one, and displays it in the profiler UI
+         * @param {string} message
+         */
+        this.profilerCountMessage = function(message) {
+            postDataToParent({
+                profilerCountMessage: {
+                    message: message
+                }
+            });
+        };
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
