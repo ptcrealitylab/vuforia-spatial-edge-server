@@ -1820,6 +1820,12 @@ function objectWebServer() {
         hardwareAPI.bindNodeToDataStream(req.body);
         res.status(200).json({ success: true, error: null });
     });
+    
+    webServer.post('/addDataSourceToInterface/', function(req, res) {
+        console.log('addDataSourceToInterface', req.body);
+        hardwareAPI.addDataSourceToInterface(req.body.interfaceName, req.body.dataStream);
+        res.status(200).json({ success: true, error: null });
+    });
 
     // TODO: is the developer flag ever not true anymore? is it still useful to have?
     if (globalVariables.developer === true) {
