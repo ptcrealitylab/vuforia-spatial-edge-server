@@ -1823,7 +1823,7 @@ function objectWebServer() {
     
     webServer.post('/addDataSourceToInterface/', function(req, res) {
         console.log('addDataSourceToInterface', req.body);
-        hardwareAPI.addDataSourceToInterface(req.body.interfaceName, req.body.dataStream);
+        hardwareAPI.addDataSourceToInterface(req.body.interfaceName, req.body.dataSource);
         res.status(200).json({ success: true, error: null });
     });
 

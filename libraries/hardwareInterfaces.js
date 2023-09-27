@@ -1159,12 +1159,12 @@ exports.registerAddDataSourceEndpoint = function(interfaceName, callback) {
     addDataSourceCallbacks[interfaceName].push(callback);
 }
 
-exports.addDataSourceToInterface = function(interfaceName, dataStream = {}) {
+exports.addDataSourceToInterface = function(interfaceName, dataSource = {}) {
     if (!interfaceName) return;
     // console.log('hardwareAPI received data', objectId, frameId, nodeName, nodeType, frameType, hardwareInterface);
     let callbacks = addDataSourceCallbacks[interfaceName];
     callbacks.forEach(callback => {
-        callback(dataStream);
+        callback(dataSource);
     });
 }
 
