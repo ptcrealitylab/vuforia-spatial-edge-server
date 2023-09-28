@@ -17,8 +17,8 @@ const oauthRefreshRequestHandler = (req, res) => {
         body: querystring.stringify(data)
     }).then(response => {
         return response.json();
-    }).then(data => {
-        res.send(data);
+    }).then(refreshData => {
+        res.send(refreshData);
     }).catch(error => {
         res.send(error);
     });
@@ -41,8 +41,8 @@ const oauthAcquireRequestHandler = (req, res) => {
         body: querystring.stringify(data)
     }).then(response => {
         return response.json();
-    }).then(data => {
-        res.send(data);
+    }).then(acquireData => {
+        res.send(acquireData);
     }).catch(error => {
         res.send(error);
     });

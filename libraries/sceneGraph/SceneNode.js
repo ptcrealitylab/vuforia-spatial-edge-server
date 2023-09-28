@@ -417,7 +417,7 @@ SceneNode.prototype.addUpdateRule = function(newRule) {
 };
 
 SceneNode.prototype.removeUpdateRuleByType = function(ruleType) {
-    const rule = this.updateRules.find(rule => rule.type === ruleType);
+    const rule = this.updateRules.find(updateRule => updateRule.type === ruleType);
     if (rule) {
         const index = this.updateRules.indexOf(rule);
         this.updateRules.splice(index, 1);

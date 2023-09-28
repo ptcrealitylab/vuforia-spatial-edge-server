@@ -65,7 +65,7 @@ const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor)
     return updateStatus;
 };
 
-const setup = function (objects_, globalVariables_, objectsPath_) {
+const setup = function (objects_, globalVariables_) {
     objects = objects_;
     globalVariables = globalVariables_;
 };
