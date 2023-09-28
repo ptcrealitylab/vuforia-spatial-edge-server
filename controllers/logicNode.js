@@ -107,7 +107,7 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
  */
 function changeNodeSize(objectID, frameID, nodeID, body, callback) {
     var updateStatus = 'nothing happened';
-    
+
     utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
         if (error) {
             callback(404, error);
@@ -172,7 +172,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
             keepExtensions: true,
             accept: 'image/jpeg'
         });
-        
+
         form.on('error', function (err) {
             callback(500, err);
             return;
@@ -187,8 +187,12 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
         });
-        
-        form.parse(req, function (err, fields) {
+
+        form.parse(req, function (err, _fields) {
+            if (err) {
+                console.warn('logicNode form error', err);
+            }
+
             var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
 
             if (fs.existsSync(resizedFilepath)) {
@@ -216,9 +220,9 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
                         }); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
                     }
                     callback(200, {success: true});
-                }).catch(err => {
-                    console.error('Error resizing image', err);
-                    callback(500, err);
+                }).catch(imageErr => {
+                    console.error('Error resizing image', imageErr);
+                    callback(500, imageErr);
                 });
             }
         });

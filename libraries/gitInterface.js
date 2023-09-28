@@ -1,8 +1,3 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const root = require('../getAppRootFolder');
-
 var utilities = require('./utilities');
 var identityFile = '/.identity/object.json';
 
@@ -41,9 +36,9 @@ function resetToLastCommit(object, objects, callback) {
                 git.init();
                 return;
             }
-            git.checkout(objectFolderName + identityFile, function (err) {
-                if (err) {
-                    console.error('Error resetting to last commit', err);
+            git.checkout(objectFolderName + identityFile, function (checkoutErr) {
+                if (checkoutErr) {
+                    console.error('Error resetting to last commit', checkoutErr);
                 }
                 utilities.updateObject(objectFolderName, objects);
                 utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});

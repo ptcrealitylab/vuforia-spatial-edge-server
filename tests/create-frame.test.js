@@ -5,7 +5,7 @@
  */
 
 /* global test, beforeAll, afterAll, expect */
-const {sleep, snapshotDirectory, filterSnapshot, filterToObjects, getAllObjects} = require('./helpers.js');
+const {sleep, snapshotDirectory, filterSnapshot, filterToObjects} = require('./helpers.js');
 
 const fetch = require('node-fetch');
 

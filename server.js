@@ -585,7 +585,6 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const {oauthRefreshRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -593,7 +592,7 @@ const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, ser
  **********************************************************************************************************************/
 
 // Load all the hardware interfaces
-var hardwareAPICallbacks = {
+const hardwareAPICallbacks = {
     publicData: function (objectKey, frameKey, nodeKey) {
         socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
     },
@@ -619,9 +618,9 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
-var utilitiesCallbacks = {
+const utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
-}
+};
 utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
@@ -1233,17 +1232,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
     // Objects
 
-    // json string to be sent
-    const messageObj = {
-        id: thisId,
-        ip: services.ip,
-        port: serverPort,
-        vn: thisVersionNumber,
-        pr: protocol,
-        tcs: objects[thisId].tcs,
-        zone: objects[thisId].zone || '',
-    };
-
     // creating the datagram
     const client = dgram.createSocket({
         type: 'udp4',
@@ -1266,7 +1254,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
                 services.ip = services.getIP();
 
-                const messageObj ={
+                const messageObj = {
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1277,7 +1265,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                 };
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
-                    
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
                         onErr: (_err) => {
@@ -1411,7 +1398,7 @@ function objectBeatServer() {
 
             if (msgContent.ip)
                 knownObjects[msgContent.id].ip = msgContent.ip;
-            
+
             // each time we discover a new object from another, also get the scene graph from that server
             getKnownSceneGraph(msgContent.ip);
         }
@@ -2179,7 +2166,7 @@ function objectWebServer() {
                         hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
                     }
                 }
-                
+
                 if (globalVariables.saveToDisk) {
                     fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
                         if (err) {
@@ -2534,7 +2521,7 @@ function objectWebServer() {
                                     x: 0,
                                     y: 0
                                 };
-                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {});
+                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function() {});
                             } else {
                                 utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
@@ -2740,7 +2727,7 @@ function objectWebServer() {
                             });
 
                             unzipper.on('extract', function () {
-                                createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
 
                                 //todo add object to the beatsender.
 
@@ -2751,7 +2738,7 @@ function objectWebServer() {
 
                             });
 
-                            unzipper.on('progress', function (fileIndex, fileCount) {
+                            unzipper.on('progress', function (_fileIndex, _fileCount) {
                                 // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                             });
 
@@ -2962,7 +2949,7 @@ function objectWebServer() {
                                     } else {
                                         // create the object if needed / possible
                                         if (typeof objects[thisObjectId] === 'undefined') {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                            createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -3065,7 +3052,7 @@ function objectWebServer() {
                                                 function finishFn(folderName) {
                                                     return function() {
                                                         fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
                                                         fs.renameSync(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                             path.join(folderD, identityFolderName, 'target', 'target.glb')
@@ -3098,7 +3085,7 @@ function objectWebServer() {
                                                             finish();
                                                         });
 
-                                                        unzipper3dt.on('progress', function (fileIndex, fileCount) {
+                                                        unzipper3dt.on('progress', function (_fileIndex, _fileCount) {
                                                             // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
                                                         });
 
@@ -3121,7 +3108,7 @@ function objectWebServer() {
                                         // evnetually create the object.
 
                                         if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                            createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -3181,7 +3168,7 @@ function objectWebServer() {
                                         }
                                     });
 
-                                    unzipper.on('progress', function (fileIndex, fileCount) {
+                                    unzipper.on('progress', function (_fileIndex, _fileCount) {
                                         // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                                     });
 
@@ -3264,16 +3251,9 @@ function objectWebServer() {
 
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
- * @param {Record<string, Object>} objects
  * @param {string} folderVar
- * @param {string} __dirname
- * @param {Record<string, unknown>} objectLookup
- * @param {unknown} hardwareInterfaceModules
- * @param {unknown} objectBeatSender
- * @param {unknown} beatPort
- * @param {unknown} _debug
  */
-function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
+function createObjectFromTarget(folderVar) {
     var folder = objectsPath + '/' + folderVar + '/';
 
     if (fs.existsSync(folder)) {
@@ -3381,7 +3361,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
             }));
         });
     }
-}
+};
 
 /**
  * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
@@ -4156,7 +4136,7 @@ function forEachObject(callback) {
     }
 }
 
-function forEachHumanPoseObject(callback) {
+function _forEachHumanPoseObject(callback) {
     for (var objectID in objects) {
         if (objects[objectID].isHumanPose) {
             callback(objectID, objects[objectID]);
@@ -4580,7 +4560,7 @@ setupControllers();
 
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
-    blockLinkController.setup(objects, globalVariables, objectsPath);
+    blockLinkController.setup(objects, globalVariables);
     frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);

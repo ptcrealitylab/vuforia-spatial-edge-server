@@ -122,7 +122,7 @@
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
-    
+
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -1217,7 +1217,7 @@
                     nodeData: nodeData
                 }
             });
-        }
+        };
 
         /**
          * @deprecated - use initNodeWithOptions instead
@@ -1333,7 +1333,7 @@
             postDataToParent({
                 sendCoordinateSystems: spatialObject.sendCoordinateSystems
             });
-        }
+        };
 
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
@@ -1451,7 +1451,7 @@
             postDataToParent({
                 full2D: enabled
             });
-        }
+        };
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
@@ -2046,12 +2046,12 @@
                     width: msgContent.onWindowResized.width,
                     height: msgContent.onWindowResized.height
                 });
-            }
+            };
 
             postDataToParent({
                 sendWindowResize: true
             });
-        }
+        };
 
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
@@ -2199,7 +2199,7 @@
                     }
                 };
             });
-        }
+        };
 
         /**
          * Get the user's name and any other details about their session that the app knows
@@ -2216,35 +2216,35 @@
                     }
                 };
             });
-        }
-        
+        };
+
         this.getAreaTargetMesh = function() {
             postDataToParent({
                 getAreaTargetMesh: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
                         delete spatialObject.messageCallBacks['areaTargetMeshResult'];
                     }
-                }
-            })
-        }
-        
+                };
+            });
+        };
+
         this.getSpatialCursorEvent = function() {
             postDataToParent({
                 getSpatialCursorEvent: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
                         delete spatialObject.messageCallBacks['spatialCursorEventResult'];
                     }
-                }
-            })
-        }
+                };
+            });
+        };
 
         // ------------------------- Profiler APIs ------------------------- //
         // Used to measure performance or help with debugging
