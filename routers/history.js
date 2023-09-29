@@ -1,5 +1,5 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 const stream = require('stream');
 const zlib = require('zlib');
@@ -10,14 +10,10 @@ const router = express.Router();
 
 let patches = [];
 
-router.get('/logs', function(req, res) {
-    if (fs.existsSync(recorder.logsPath)) {
-        fs.readdir(recorder.logsPath, function (err, files) {
-            if (err) {
-                console.error('Failed to read recorder logs directory', err);
-                res.json([]);
-                return;
-            }
+router.get('/logs', async function(req, res) {
+    if (await fs.access(recorder.logsPath)) {
+        try {
+            let files = await fs.readdir(recorder.logsPath);
             const logNames = {};
             for (let file of files) {
                 if (file.endsWith('.json.gz')) {
@@ -27,7 +23,11 @@ router.get('/logs', function(req, res) {
             }
             logNames[recorder.getCurrentLogName()] = true;
             res.json(Object.keys(logNames));
-        });
+        } catch (err) {
+            console.error('Failed to read recorder logs directory', err);
+            res.json([]);
+            return;
+        }
     } else {
         res.json([recorder.getCurrentLogName()]);
     }
@@ -66,7 +66,7 @@ function pipeReadStream(req, res, readStream) {
 
 }
 
-router.get('/logs/:logPath', function(req, res) {
+router.get('/logs/:logPath', async function(req, res) {
     let logPath = path.join(recorder.logsPath, req.params.logPath);
     if (logPath.endsWith('.gz')) {
         res.sendFile(logPath);
@@ -74,7 +74,7 @@ router.get('/logs/:logPath', function(req, res) {
     }
 
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
-    if (!fs.existsSync(compressedLogPath)) {
+    if (!await fs.access(compressedLogPath)) {
         // Compare only the start `objects_${startTime}` bit of the current log
         // name since the end time is constantly changing
         const startTimeSection = req.params.logPath.split('-')[0];
