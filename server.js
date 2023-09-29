@@ -80,8 +80,7 @@ const {objectsPath, beatPort} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
-const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
-const isStandaloneMobile = os.platform() === 'ios';
+const {isLightweightMobile, isStandaloneMobile} = require('./isMobile.js');
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
@@ -4577,7 +4576,7 @@ function setupControllers() {
     blockLinkController.setup(objects, globalVariables);
     frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
-    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
+    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
     objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
