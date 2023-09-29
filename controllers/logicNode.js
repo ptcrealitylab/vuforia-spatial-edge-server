@@ -8,7 +8,16 @@ var objects = {};
 var globalVariables;
 var objectsPath;
 var identityFolderName;
-var Jimp;
+const {isLightweightMobile} = require('../isMobile.js');
+let Jimp;
+if (!isLightweightMobile) {
+    try {
+        Jimp = require('jimp');
+    } catch (e) {
+        console.warn('Unable to import jimp for image resizing on this platform', e);
+    }
+}
+
 
 /**
  * Adds the Logic Node contained in the body to the specified frame.
@@ -229,12 +238,11 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
     });
 }
 
-const setup = function(objects_, globalVariables_, objectsPath_, identityFolderName_, Jimp_) {
+const setup = function(objects_, globalVariables_, objectsPath_, identityFolderName_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
-    Jimp = Jimp_;
 };
 
 module.exports = {
