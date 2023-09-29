@@ -327,12 +327,12 @@ if (!isLightweightMobile) {
 // additional files containing project code
 
 // This file hosts all kinds of utilities programmed for the server
-var utilities = require('./libraries/utilities');
-var nodeUtilities = require('./libraries/nodeUtilities');
-var recorder = require('./libraries/recorder');
+const utilities = require('./libraries/utilities');
+const nodeUtilities = require('./libraries/nodeUtilities');
+const recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
-var webFrontend;
+let webFrontend;
 if (isLightweightMobile) {
     webFrontend = require('./libraries/mobile/webFrontend');
 } else {
@@ -341,8 +341,7 @@ if (isLightweightMobile) {
 
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
-var hardwareAPI = require('./libraries/hardwareInterfaces');
-
+let hardwareAPI;
 if (isLightweightMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
@@ -611,7 +610,7 @@ const hardwareAPICallbacks = {
     actions: function (thisAction) {
         utilities.actionSender(thisAction);
     },
-    data: function (objectKey, frameKey, nodeKey, data, _objects, _nodeTypeModules) {
+    data: function (objectKey, frameKey, nodeKey, data) {
         //these are the calls that come from the objects before they get processed by the object engine.
         // send the saved value before it is processed
         sendMessagetoEditors({
