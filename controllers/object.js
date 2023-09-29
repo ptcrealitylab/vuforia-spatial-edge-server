@@ -10,7 +10,15 @@ var globalVariables;
 var hardwareAPI;
 var objectsPath;
 var identityFolderName;
-var git;
+
+const {isLightweightMobile, isStandaloneMobile} = require('../isMobile.js');
+let git;
+if (isStandaloneMobile || isLightweightMobile || process.env.NODE_ENV === 'test') {
+    git = null;
+} else {
+    git = require('../libraries/gitInterface');
+}
+
 var sceneGraph;
 // needed for deleteObject
 let objectLookup;
@@ -404,14 +412,13 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_,
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, sceneGraph_,
     objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
     identityFolderName = identityFolderName_;
-    git = git_;
     sceneGraph = sceneGraph_;
     objectLookup = objectLookup_;
     activeHeartbeats = activeHeartbeats_;
