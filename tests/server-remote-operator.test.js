@@ -9,7 +9,7 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 
-const {sleep} = require('./helpers.js');
+const {sleep, waitForObjects} = require('./helpers.js');
 
 let server;
 beforeAll(() => {
@@ -28,6 +28,8 @@ test('server provides remote operator functionality', async () => {
     });
 
     const page = await browser.newPage();
+
+    await waitForObjects();
 
     await page.goto(
         'http://localhost:8080/',
