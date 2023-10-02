@@ -173,16 +173,16 @@ function makeStub(functionName) {
             }
 
             if (functionName === 'compileShader') {
-                const message = realGl.getShaderInfoLog(unclonedArgs[0]);
-                if (message.length > 0) {
-                    console.error('Shader error', realGl, message);
+                const silMessage = realGl.getShaderInfoLog(unclonedArgs[0]);
+                if (silMessage.length > 0) {
+                    console.error('Shader error', realGl, silMessage);
                 }
             }
 
             if (functionName === 'linkProgram') {
-                const message = realGl.getProgramInfoLog(unclonedArgs[0]);
-                if (message.length > 0) {
-                    console.error('Program error', realGl, message);
+                const pilMessage = realGl.getProgramInfoLog(unclonedArgs[0]);
+                if (pilMessage.length > 0) {
+                    console.error('Program error', realGl, pilMessage);
                 }
             }
 

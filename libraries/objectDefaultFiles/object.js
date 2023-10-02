@@ -48,6 +48,25 @@
             anchoredModelView: false,
             allObjects: false
         },
+        sendCoordinateSystems: {
+            camera: false,
+            toolOrigin: false,
+            worldOrigin: false,
+            groundPlaneOrigin: false,
+            toolGroundPlaneShadow: false,
+            toolSurfaceShadow: false,
+            projectionMatrix: false
+        },
+        // enum of the possible coordinate systems that can be passed into subscribeToCoordinateSystems
+        COORDINATE_SYSTEMS: Object.freeze({
+            CAMERA: 'camera',
+            TOOL_ORIGIN: 'toolOrigin',
+            WORLD_ORIGIN: 'worldOrigin',
+            GROUND_PLANE_ORIGIN: 'groundPlaneOrigin',
+            TOOL_GROUND_PLANE_SHADOW: 'toolGroundPlaneShadow',
+            TOOL_SURFACE_SHADOW: 'toolSurfaceShadow',
+            PROJECTION_MATRIX: 'projectionMatrix'
+        }),
         sendScreenPosition: false,
         sendDeviceDistance: false,
         sendAcceleration: false,
@@ -103,7 +122,7 @@
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
-    
+
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -673,6 +692,7 @@
                 this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.subscribeToCoordinateSystems = makeSendStub('subscribeToCoordinateSystems');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
@@ -687,6 +707,8 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -759,6 +781,7 @@
                 this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
+                this.addCoordinateSystemListener = makeSendStub('addCoordinateSystemListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
@@ -1194,7 +1217,7 @@
                     nodeData: nodeData
                 }
             });
-        }
+        };
 
         /**
          * @deprecated - use initNodeWithOptions instead
@@ -1260,6 +1283,55 @@
             spatialObject.sendMatrices.view = true;
             postDataToParent({
                 sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
+        let numCoordSystemCallbacks = 0;
+        let defaultCoordinateSubscriptions = [
+            spatialObject.COORDINATE_SYSTEMS.CAMERA,
+            spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX,
+            spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN
+        ];
+
+        /**
+         * Updated API for subscribing to three.js camera and other coordinate systems.
+         * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
+         * Callback only triggers with *changes* to the subscribed matrices, not constantly
+         * Options include:
+         * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
+         *      removes x and z components of rotation to keep it "flat" on the ground plane
+         *      allows placing content flat on the floor
+         * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
+         *      removes x and z components of rotation to keep it "flat" relative to ground plane
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
+         * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
+         * @param {function} callback
+         */
+        this.subscribeToCoordinateSystems = (subscriptions = defaultCoordinateSubscriptions, callback) => {
+            // keep track of the coordinate systems to subscribe to
+            Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
+                if (subscriptions.includes(coordinateSystemName)) {
+                    spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
+                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                }
+            });
+            // register the callback function
+            numCoordSystemCallbacks++;
+            spatialObject.messageCallBacks['coordinateSystemCall' + numCoordSystemCallbacks] = function (msgContent) {
+                if (typeof msgContent.coordinateSystems !== 'undefined') {
+                    callback(msgContent.coordinateSystems);
+                }
+            };
+            // send the subscriptions to the parent
+            postDataToParent({
+                sendCoordinateSystems: spatialObject.sendCoordinateSystems
             });
         };
 
@@ -1379,7 +1451,7 @@
             postDataToParent({
                 full2D: enabled
             });
-        }
+        };
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
@@ -1566,6 +1638,23 @@
                 }
             });
             return videoPlayback;
+        };
+
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                    distance: followDistance
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
+                    frame: spatialObject.frame
+                }
+            });
         };
 
         this.disposeVideoPlayback = function(videoPlaybackID) {
@@ -1954,12 +2043,12 @@
                     width: msgContent.onWindowResized.width,
                     height: msgContent.onWindowResized.height
                 });
-            }
+            };
 
             postDataToParent({
                 sendWindowResize: true
             });
-        }
+        };
 
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
@@ -2107,7 +2196,7 @@
                     }
                 };
             });
-        }
+        };
 
         /**
          * Get the user's name and any other details about their session that the app knows
@@ -2124,35 +2213,35 @@
                     }
                 };
             });
-        }
-        
+        };
+
         this.getAreaTargetMesh = function() {
             postDataToParent({
                 getAreaTargetMesh: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
                         delete spatialObject.messageCallBacks['areaTargetMeshResult'];
                     }
-                }
-            })
-        }
-        
+                };
+            });
+        };
+
         this.getSpatialCursorEvent = function() {
             postDataToParent({
                 getSpatialCursorEvent: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
                         delete spatialObject.messageCallBacks['spatialCursorEventResult'];
                     }
-                }
-            })
-        }
+                };
+            });
+        };
 
         // ------------------------- Profiler APIs ------------------------- //
         // Used to measure performance or help with debugging
