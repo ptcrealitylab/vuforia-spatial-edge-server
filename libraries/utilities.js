@@ -308,13 +308,19 @@ let isWriting = false;
  * @param {string}   object    - The key used to look up the object in the objects array
  * @param {boolean}   writeToFile  - Give permission to write to file.
  */
-exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToFile) {
+exports.writeObjectToFile = async function writeObjectToFile(objects, object, writeToFile) {
     if (writeToFile) {
         writeBufferList[object] = objectsPath;
     }
     // trigger write process
-    executeWrite(objects);
+    await executeWrite(objects);
 };
+
+function sleep(ms) {
+    return new Promise(res => {
+        setTimeout(res, ms);
+    });
+}
 
 async function executeWrite(objects) {
     // if write Buffer is empty, stop.
@@ -322,9 +328,8 @@ async function executeWrite(objects) {
 
     if (isWriting) {
         // come back later;
-        setTimeout(function () {
-            executeWrite(objects);
-        }, 20);
+        await sleep(20);
+        await executeWrite(objects);
         return;
     }
     // block function from re-execution

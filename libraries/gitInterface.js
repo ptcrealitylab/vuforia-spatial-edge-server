@@ -12,16 +12,16 @@ function saveCommit(object, objects, callback) {
         object.framesHistory = JSON.parse(JSON.stringify(object.frames));
 
         // todo; replace with a try-catch ?
-        utilities.writeObjectToFile(objects, object.objectId, true);
-
-        git.checkIsRepo(function (err) {
-            if (err) {
-                git.init();
-                return;
-            }
-            git.commit('server identity commit for ' + objectFolderName, [objectFolderName + identityFile], function() {
-                utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
-                callback();
+        utilities.writeObjectToFile(objects, object.objectId, true).then(() => {
+            git.checkIsRepo(function (err) {
+                if (err) {
+                    git.init();
+                    return;
+                }
+                git.commit('server identity commit for ' + objectFolderName, [objectFolderName + identityFile], function() {
+                    utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
+                    callback();
+                });
             });
         });
     }

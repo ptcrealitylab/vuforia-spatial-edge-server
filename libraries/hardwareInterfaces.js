@@ -692,7 +692,7 @@ exports.generateFrame = function (objectName, frameType, relativeMatrix) {
 
     object.frames[frameKey] = newFrame;
 
-    utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk); // async not awaited
 
     // sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
 
