@@ -768,7 +768,7 @@ async function loadObjects() {
 
     // delete each object that represented a client that was connected to the server in its last session
     // this needs to happen before hardwareAPI.reset, or the object will get corrupted when its nodes are parsed
-    removeAvatarAndHumanPoseFiles();
+    await removeAvatarAndHumanPoseFiles();
 
     hardwareAPI.reset();
 
@@ -896,11 +896,11 @@ async function loadAnchor(anchorName) {
         } catch (err) {
             console.log('error persisting anchor object', err);
         }
-        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        await objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     } else {
         console.warn('Server is not allowed to save to disk');
-        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        await objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     }
 
@@ -983,15 +983,15 @@ async function removeAvatarAndHumanPoseFiles() {
         }
     }
 
-    objectsToDelete.forEach(objectFolderName => {
+    for (const objectFolderName of objectsToDelete) {
         let objectKey = utilities.readObject(objectLookup, objectFolderName);
 
         if (objects[objectKey]) {
-            deleteObject(objectKey);
+            await deleteObject(objectKey);
         } else {
             console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
         }
-    });
+    }
 }
 
 /**********************************************************************************************************************
@@ -1002,14 +1002,14 @@ async function removeAvatarAndHumanPoseFiles() {
  * @desc starting the system
  **/
 
-function startSystem() {
+async function startSystem() {
     // make sure that the system knows about the state of anchors.
-    setAnchors();
+    await setAnchors();
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (let key in objects) {
         if (!objects[key].deactivated) {
-            objectBeatSender(beatPort, key, objects[key].ip);
+            await objectBeatSender(beatPort, key, objects[key].ip);
         }
     }
 
@@ -1319,10 +1319,10 @@ exports.objectBeatSender = objectBeatSender;
 
 services.ip = services.getIP(); //ip.address();
 
-function handleActionMessage(action) {
+async function handleActionMessage(action) {
     if (action === 'ping') {
         for (let key in objects) {
-            objectBeatSender(beatPort, key, objects[key].ip, true);
+            await objectBeatSender(beatPort, key, objects[key].ip, true);
         }
         serverBeatSender(beatPort);
         return;
@@ -1364,7 +1364,7 @@ function objectBeatServer() {
         udpServer.close();
     });
 
-    udpServer.on('message', function (msg) {
+    udpServer.on('message', async function (msg) {
 
         var msgContent;
         // check if object ping
@@ -1393,7 +1393,7 @@ function objectBeatServer() {
         }
         // check if action 'ping'
         if (msgContent.action) {
-            handleActionMessage(msgContent.action);
+            await handleActionMessage(msgContent.action);
         }
 
         if (typeof msgContent.matrixBroadcast !== 'undefined') {
@@ -1803,9 +1803,9 @@ function objectWebServer() {
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
-    webServer.post('/action', (req, res) => {
+    webServer.post('/action', async (req, res) => {
         const action = JSON.parse(req.body.action);
-        handleActionMessage(action);
+        await handleActionMessage(action);
         res.send();
     });
 
@@ -2014,7 +2014,7 @@ function objectWebServer() {
         // ****************************************************************************************************************
         webServer.get(objectInterfaceFolder, async function (req, res) {
             let framePathList = frameLibPaths.join(' ');
-            setAnchors();
+            await setAnchors();
             res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
@@ -2518,7 +2518,7 @@ function objectWebServer() {
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
                         // send the first beat immediately, so that there is a fast transmission of new object to all listeners
-                        objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
+                        await objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
 
                         var sendObject = {
                             id: objectId,
@@ -2533,7 +2533,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    setAnchors(); // Needed to initialize non-world (anchor) objects
+                    await setAnchors(); // Needed to initialize non-world (anchor) objects
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
                     if (!utilities.isValidId(req.body.name) || !utilities.isValidId(req.body.frame)) {
@@ -2652,7 +2652,7 @@ function objectWebServer() {
 
                     }
 
-                    setAnchors();
+                    await setAnchors();
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
                     res.send('ok');
@@ -2699,8 +2699,8 @@ function objectWebServer() {
                                 console.error('Unzipper Error', err);
                             });
 
-                            unzipper.on('extract', function () {
-                                createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
+                            unzipper.on('extract', async function () {
+                                await createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
 
                                 //todo add object to the beatsender.
 
@@ -2902,12 +2902,12 @@ function objectWebServer() {
                                     if (!await fileExists(xmlOutFile)) {
                                         try {
                                             await fsProm.writeFile(xmlOutFile, documentcreate);
-                                            onXmlVerified();
+                                            await onXmlVerified();
                                         } catch (err) {
-                                            onXmlVerified(err);
+                                            await onXmlVerified(err);
                                         }
                                     } else {
-                                        onXmlVerified();
+                                        await onXmlVerified();
                                     }
                                 }
 
@@ -2920,7 +2920,7 @@ function objectWebServer() {
                                     } else {
                                         // create the object if needed / possible
                                         if (typeof objects[thisObjectId] === 'undefined') {
-                                            createObjectFromTarget(tmpFolderFile);
+                                            await createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -2955,7 +2955,7 @@ function objectWebServer() {
 
                                         thisObject.tcs = await utilities.generateChecksums(objects, fileList);
                                         utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
-                                        setAnchors();
+                                        await setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
                                         var oldObjectId = await utilities.getAnchorIdFromObjectFile(req.params.id);
@@ -2971,7 +2971,7 @@ function objectWebServer() {
                                             delete objects[oldObjectId];
                                         }
 
-                                        objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                        await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                         // res.status(200).send('ok');
                                         try {
                                             res.status(200).json(sendObject);
@@ -3079,7 +3079,7 @@ function objectWebServer() {
                                         // evnetually create the object.
 
                                         if (await fileExists(path.join(targetFolderPath, 'target.dat')) && await fileExists(path.join(targetFolderPath, 'target.xml'))) {
-                                            createObjectFromTarget(tmpFolderFile);
+                                            await createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -3108,8 +3108,8 @@ function objectWebServer() {
                                                 thisObject.tcs = await utilities.generateChecksums(objects, fileList);
 
                                                 utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
-                                                setAnchors();
-                                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                                await setAnchors();
+                                                await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                                 let sendObject = {
                                                     id: thisObjectId,
@@ -3204,7 +3204,7 @@ function objectWebServer() {
             }
 
             // recompute isAnchor (depends if there is an initialized world object)
-            setAnchors();
+            await setAnchors();
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
@@ -3283,7 +3283,7 @@ async function createObjectFromTarget(folderVar) {
 
     sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
-    objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
+    await objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
 }
 
 
@@ -3988,7 +3988,7 @@ function socketServer() {
          * Handles messages from local remote operators who don't have access
          * to sending actions through the cloud proxy or native udp broadcast
          */
-        socket.on('udp/action', function(msgRaw) {
+        socket.on('udp/action', async function(msgRaw) {
             let msg;
             try {
                 msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
@@ -3999,19 +3999,19 @@ function socketServer() {
                 return;
             }
 
-            handleActionMessage(msg.action);
+            await handleActionMessage(msg.action);
         });
 
-        socket.on('/disconnectEditor', function(msgRaw) {
+        socket.on('/disconnectEditor', async function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
             let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
-            deleteObjects(avatarKeys);
+            await deleteObjects(avatarKeys);
 
             let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(msg.editorId));
-            deleteObjects(humanPoseKeys);
+            await deleteObjects(humanPoseKeys);
         });
 
-        socket.on('disconnect', function () {
+        socket.on('disconnect', async function () {
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
             }
@@ -4038,7 +4038,7 @@ function socketServer() {
                     keysToDelete.push(humanPoseKeys);
                 });
 
-                deleteObjects(keysToDelete.flat());
+                await deleteObjects(keysToDelete.flat());
 
                 delete realityEditorUpdateSocketArray[socket.id];
             }
