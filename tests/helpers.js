@@ -66,9 +66,13 @@ exports.getTestObjects = async function getTestObjects() {
 async function waitForObjects() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
-        let allObjects = await getAllObjects();
-        if (Object.keys(allObjects).length > 0) {
-            break;
+        try {
+            let allObjects = await getAllObjects();
+            if (Object.keys(allObjects).length > 0) {
+                break;
+            }
+        } catch (_) {
+            // way way too early as opposed to normal too early
         }
         await sleep(100);
     }
