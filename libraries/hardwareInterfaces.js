@@ -823,7 +823,10 @@ exports.getDebug = function () {
     return globalVariables.debug;
 };
 
-let setHardwareInterfaceSettingsImpl = null;
+let setHardwareInterfaceSettingsImpl = function() {
+    console.warn('setHardwareInterfaces before loaded', Array.from(arguments));
+};
+
 /**
  * Updates the settings.json for a particular hardware interface, based on
  * changes from the webFrontend.  Uses setHardwareInterfaceSettingsImpl to cut
@@ -846,8 +849,8 @@ exports.setHardwareInterfaceSettings = function (interfaceName, settings, limitT
  * Complement to setup() which is necessary due to the unique positioning of
  * the setHardwareInterfaceSettings function
  */
-exports.setHardwareInterfaceSettingsImpl = function (setHardwareInterfaceSettings) {
-    setHardwareInterfaceSettingsImpl = setHardwareInterfaceSettings;
+exports.setSetHardwareInterfaceSettingsImpl = function (newSetHardwareInterfaceSettingsImpl) {
+    setHardwareInterfaceSettingsImpl = newSetHardwareInterfaceSettingsImpl;
 };
 
 /**
