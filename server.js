@@ -1098,7 +1098,11 @@ async function exit() {
     sceneGraph.clearIntervals();
     await recorder.stop();
     clearActiveHeartbeats();
-    udpServer.close();
+    try {
+        udpServer.close();
+    } catch (e) {
+        console.warn('unable to close udpServer', e);
+    }
     clearInterval(socketUpdaterInterval);
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
