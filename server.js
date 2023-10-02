@@ -2187,7 +2187,7 @@ function objectWebServer() {
          */
 
         // TODO(hobinjk): break the back-and-forth web of dependencies with hardwareAPI
-        hardwareAPI.setHardwareInterfaceSettingsImpl(setHardwareInterfaceSettings);
+        hardwareAPI.setSetHardwareInterfaceSettingsImpl(setHardwareInterfaceSettings);
 
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
