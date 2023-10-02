@@ -3,11 +3,12 @@ const path = require('path');
 
 const fetch = require('node-fetch');
 
-exports.sleep = function sleep(ms) {
+function sleep(ms) {
     return new Promise((res) => {
         setTimeout(res, ms);
     });
-};
+}
+exports.sleep = sleep;
 
 exports.snapshotDirectory = function snapshotDirectory(dir) {
     let snapshot = {};
@@ -69,6 +70,7 @@ async function waitForObjects() {
         if (Object.keys(allObjects).length > 0) {
             break;
         }
+        await sleep(100);
     }
 }
 exports.waitForObjects = waitForObjects;
