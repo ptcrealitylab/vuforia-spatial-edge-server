@@ -265,10 +265,16 @@ class WebSocketConnection {
         }
 
         const SCALE = 1 / 1000;
-        const parserMatrixScale = 0.13523484986150555;
-        const offset_x = 0.7202233672142029;
-        const offset_y = -0.5659182071685791;
-        const offset_z = -1.2645909786224365;
+
+        // const parserMatrixScale = 0.13523484986150555;
+        // const offset_x = 0.7202233672142029;
+        // const offset_y = -0.5659182071685791;
+        // const offset_z = -1.2645909786224365;
+
+        const parserMatrixScale = 1.0;
+        const offset_x = 0;
+        const offset_y = 0;
+        const offset_z = 0;
 
         newCamMatrix[12] = (newCamMatrix[12]*SCALE + offset_x)*parserMatrixScale;
         newCamMatrix[13] = ((newCamMatrix[13] + floorOffset)*SCALE + offset_y)*parserMatrixScale;
