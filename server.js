@@ -3601,9 +3601,9 @@ function socketServer() {
                     }
                 }
             } else {
-                console.warn('publicData update of unknown object', msg.object);
                 const objectKey = msg.object;
                 if (!knownUnknownObjects[objectKey]) {
+                    console.warn('publicData update of unknown object', msg.object);
                     knownUnknownObjects[objectKey] = true;
                     utilities.actionSender({
                         reloadObject: {
