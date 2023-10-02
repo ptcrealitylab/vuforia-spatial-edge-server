@@ -1,5 +1,5 @@
-
 const fs = require('fs');
+const fsProm = require('fs/promises');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
@@ -342,7 +342,7 @@ const zipBackup = function(objectId, req, res) {
     zip.finalize();
 };
 
-const generateXml = function(objectID, body, callback) {
+const generateXml = async function(objectID, body, callback) {
     var msgObject = body;
     var objectName = msgObject.name;
 
@@ -360,21 +360,20 @@ const generateXml = function(objectID, body, callback) {
 
     var xmlOutFile = path.join(targetDir, 'target.xml');
 
-    fs.writeFile(xmlOutFile, documentcreate, function (err) {
-        if (err) {
-            callback(500, 'error writing new target size to .xml file for ' + objectID);
-        } else {
-            callback(200, 'ok');
+    try {
+        await fsProm.writeFile(xmlOutFile, documentcreate);
+    } catch (err) {
+        callback(500, 'error writing new target size to .xml file for ' + objectID);
+    }
 
-            // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
-            var object = utilities.getObject(objects, objectID);
-            if (object) {
-                object.targetSize.width = parseFloat(msgObject.width);
-                object.targetSize.height = parseFloat(msgObject.height);
-                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
-            }
-        }
-    });
+    // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
+    var object = utilities.getObject(objects, objectID);
+    if (object) {
+        object.targetSize.width = parseFloat(msgObject.width);
+        object.targetSize.height = parseFloat(msgObject.height);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    }
+    callback(200, 'ok');
 };
 
 /**
