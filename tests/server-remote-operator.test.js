@@ -47,6 +47,8 @@ test('server provides remote operator functionality', async () => {
         fullPage: true,
     });
 
+    await sleep(2000);
+
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
         'http://localhost:8081/',
