@@ -22,7 +22,7 @@ var sceneGraph;
  * @param {*} res
  */
 const addFrameToObject = function (objectKey, frameKey, frame, callback) {
-    utilities.getObjectAsync(objects, objectKey, function (error, object) {
+    utilities.getObjectAsync(objects, objectKey, async function (error, object) {
 
         if (error) {
             callback(404, error);
@@ -38,7 +38,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
             object.frames = {};
         }
 
-        utilities.createFrameFolder(object.name, frame.name, dirname, frame.location);
+        await utilities.createFrameFolder(object.name, frame.name, dirname, frame.location);
 
         var newFrame = new Frame(frame.objectId, frameKey);
         newFrame.name = frame.name;
@@ -271,7 +271,7 @@ const updateFrame = function(objectID, frameID, body, callback) {
     });
 };
 
-const deleteFrame = function(objectId, frameId, body, callback) {
+const deleteFrame = async function(objectId, frameId, body, callback) {
     var object = utilities.getObject(objects, objectId);
     if (!object) {
         callback(404, {failure: true, error: 'object ' + objectId + ' not found'});
@@ -323,7 +323,7 @@ const deleteFrame = function(objectId, frameId, body, callback) {
     delete object.frames[frameId];
 
     // remove the frame directory from the object
-    utilities.deleteFrameFolder(objectName, frameName);
+    await utilities.deleteFrameFolder(objectName, frameName);
 
     // Delete frame's nodes // TODO: I don't think this is updated for the current object/frame/node hierarchy
     var deletedNodes = {};

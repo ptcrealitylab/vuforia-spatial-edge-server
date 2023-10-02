@@ -26,7 +26,7 @@ let activeHeartbeats;
 let knownObjects;
 let setAnchors;
 
-const deleteObject = function(objectID) {
+const deleteObject = async function(objectID) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         return {
@@ -36,7 +36,7 @@ const deleteObject = function(objectID) {
     }
 
     try {
-        utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        await utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     } catch (e) {
         return {
             status: 500,

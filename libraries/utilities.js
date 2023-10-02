@@ -56,6 +56,7 @@
 
 const xml2js = require('xml2js');
 const fs = require('fs');
+const fsProm = require('fs/promises');
 const ip = require('ip');       // get the device IP address library
 const dgram = require('dgram'); // UDP Broadcasting library
 const path = require('path');
@@ -90,64 +91,39 @@ exports.writeObject = function writeObject(objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
 
-exports.readObject = function readObject(objectLookup, folder) {
+function readObject(objectLookup, folder) {
     if (objectLookup.hasOwnProperty(folder)) {
         return objectLookup[folder].id;
     } else {
         return null;
     }
-};
+}
+exports.readObject = readObject;
 
-exports.createFolder = function createFolder(folderVar) {
-    var folder = objectsPath + '/' + folderVar + '/';
+exports.createFolder = async function createFolder(folderVar) {
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-
-    if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(identity)) {
-        fs.mkdirSync(identity, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
+    if (!await fileExists(identity)) {
+        try {
+            await fsProm.mkdir(identity, {recursive: true, mode: '0766'});
+        } catch (err) {
+            console.error(err);
+        }
     }
 };
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, location) {
+exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, location) {
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
-    var identity = folder + identityFolderName + '/';
-    var firstFrame = folder + frameVar + '/';
+    // var identity = folder + identityFolderName + '/';
+    var firstFrame = folder + frameVar + '/'; // TODO(hobinjk) is being outside of .identity a bug?
 
-    if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(identity)) {
-        fs.mkdirSync(identity, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(firstFrame)) {
-        fs.mkdirSync(firstFrame, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
+    if (!await fileExists(firstFrame)) {
+        try {
+            await fsProm.mkdir(firstFrame, {recursive: true, mode: '0766'});
+        } catch (err) {
+            console.error(err);
+        }
 
         try {
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
@@ -162,18 +138,12 @@ exports.createFrameFolder = function (folderVar, frameVar, dirnameO, location) {
  * Recursively delete a folder and its contents
  * @param {string} folder - path to folder
  */
-function deleteFolderRecursive(folder) {
-    if (fs.existsSync(folder)) {
-        fs.readdirSync(folder).forEach(function (file) {
-            var curPath = folder + '/' + file;
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            } else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(folder);
+async function deleteFolderRecursive(folder) {
+    if (!await fileExists(folder)) {
+        console.warn(`folder ${folder} is already not present`);
+        return;
     }
+    await fsProm.rmdir(folder, {recursive: true});
 }
 exports.deleteFolderRecursive = deleteFolderRecursive;
 
@@ -182,7 +152,7 @@ exports.deleteFolderRecursive = deleteFolderRecursive;
  * @param objectKey
  * @param frameKey
  */
-exports.deleteFrameFolder = function (objectName, frameName) {
+exports.deleteFrameFolder = async function (objectName, frameName) {
     var folderPath = objectsPath + '/' + objectName + '/' + frameName;
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
@@ -194,7 +164,7 @@ exports.deleteFrameFolder = function (objectName, frameName) {
     });
 
     if (isDeletableFrame) {
-        deleteFolderRecursive(folderPath);
+        await deleteFolderRecursive(folderPath);
     }
 };
 
@@ -218,7 +188,7 @@ exports.uuidTime = function () {
     return '_' + stampUuidTime;
 };
 
-function getObjectIdFromTargetOrObjectFile(folderName) {
+async function getObjectIdFromTargetOrObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -227,9 +197,9 @@ function getObjectIdFromTargetOrObjectFile(folderName) {
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
     var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
-    if (fs.existsSync(xmlFile)) {
+    if (await fileExists(xmlFile)) {
         var resultXML = '';
-        xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'),
+        xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
             function (err, result) {
                 for (var first in result) {
                     for (var secondFirst in result[first].Tracking[0]) {
@@ -246,9 +216,9 @@ function getObjectIdFromTargetOrObjectFile(folderName) {
             });
 
         return resultXML;
-    } else if (fs.existsSync(jsonFile)) {
+    } else if (await fileExists(jsonFile)) {
         try {
-            let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+            let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
             if (thisObject.hasOwnProperty('objectId')) {
                 return thisObject.objectId;
             } else {
@@ -263,7 +233,7 @@ function getObjectIdFromTargetOrObjectFile(folderName) {
 }
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
-function getAnchorIdFromObjectFile(folderName) {
+async function getAnchorIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -271,8 +241,8 @@ function getAnchorIdFromObjectFile(folderName) {
 
     var jsonFile = objectsPath + '/' + folderName + '/object.json';
 
-    if (fs.existsSync(jsonFile)) {
-        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+    if (await fileExists(jsonFile)) {
+        let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
         if (thisObject.hasOwnProperty('objectId')) {
             return thisObject.objectId;
         } else {
@@ -289,7 +259,7 @@ exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
  * @param {string} folderName
  * @return {Array.<float>}
  */
-exports.getTargetSizeFromTarget = function getTargetSizeFromTarget(folderName) {
+exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -302,24 +272,26 @@ exports.getTargetSizeFromTarget = function getTargetSizeFromTarget(folderName) {
         height: 0.3
     };
 
-    if (fs.existsSync(xmlFile)) {
-        try {
-            xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'), function (err, result) {
-                let first = Object.keys(result)[0];
-                let secondFirst = Object.keys(result[first].Tracking[0])[0];
-                var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                var sizeFloatArray = sizeString.split(' ').map(function (elt) {
-                    // TODO: this assumption makes it backwards compatible but might cause problems in the future
-                    return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-                });
-                resultXML = {
-                    width: sizeFloatArray[0],
-                    height: sizeFloatArray[1]
-                };
+    if (!await fileExists(xmlFile)) {
+        return resultXML;
+    }
+
+    try {
+        xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'), function (err, result) {
+            let first = Object.keys(result)[0];
+            let secondFirst = Object.keys(result[first].Tracking[0])[0];
+            var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+            var sizeFloatArray = sizeString.split(' ').map(function (elt) {
+                // TODO: this assumption makes it backwards compatible but might cause problems in the future
+                return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
             });
-        } catch (e) {
-            console.warn('error parsing xml, returning default size');
-        }
+            resultXML = {
+                width: sizeFloatArray[0],
+                height: sizeFloatArray[1]
+            };
+        });
+    } catch (e) {
+        console.warn('error parsing xml, returning default size');
     }
 
     return resultXML;
@@ -344,7 +316,7 @@ exports.writeObjectToFile = function writeObjectToFile(objects, object, writeToF
     executeWrite(objects);
 };
 
-function executeWrite(objects) {
+async function executeWrite(objects) {
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
@@ -373,15 +345,14 @@ function executeWrite(objects) {
     var outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
     var objectData = objects[obj];
     // write file
-    fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
-        // once writeFile is done, unblock writing and loop again
-        isWriting = false;
-        executeWrite(objects);
-
-        if (err) {
-            console.error('Error writing file', err);
-        }
-    });
+    try {
+        await fsProm.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'));
+    } catch (err) {
+        console.error('Error writing file', err);
+    }
+    // once writeFile is done, unblock writing and loop again
+    isWriting = false;
+    executeWrite(objects);
 }
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
@@ -491,95 +462,113 @@ function itob62(i) {
  * @param fileArray The array that represents all files that should be checksumed
  * @return {string} checksum text
  */
-exports.generateChecksums = function generateChecksums(objects, fileArray) {
+exports.generateChecksums = async function generateChecksums(objects, fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {
-        if (fs.existsSync(fileArray[i])) {
-            checksumText = itob62(crc32(fs.readFileSync(fileArray[i])));
+        if (!await fileExists(fileArray[i])) {
+            continue;
         }
+        checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
     }
     return checksumText;
 };
 
+/**
+ * @return {Array<string>} all valid object folder names within objectsPath
+ */
+async function getObjectFolderList() {
+    const objectFolderListRaw = await fsProm.readdir(objectsPath);
+    const objectFolderList = [];
 
-exports.updateObject = function updateObject(objectName, objects) {
-    var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory() && file[0] !== '.';
-    });
+    for (const objectFolder of objectFolderListRaw) {
+        if (objectFolder[0] === '.') {
+            continue;
+        }
+        const folderStats = await fsProm.stat(path.join(objectsPath, objectFolder));
+        if (!folderStats.isDirectory()) {
+            continue;
+        }
+        objectFolderList.push(objectFolder);
+    }
 
-    for (var i = 0; i < objectFolderList.length; i++) {
-        if (objectFolderList[i] === objectName) {
-            const tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
+    return objectFolderList;
+}
+exports.getObjectFolderList = getObjectFolderList;
 
-            if (tempFolderName !== null) {
-                // fill objects with objects named by the folders in objects
+exports.updateObject = async function updateObject(objectName, objects) {
+    var objectFolderList = await getObjectFolderList();
 
-                objects[tempFolderName].name = objectFolderList[i];
+    for (const objectFolder of objectFolderList) {
+        const tempFolderName = await getObjectIdFromTargetOrObjectFile(objectFolder);
 
-                // try to read a saved previous state of the object
-                try {
-                    objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
-                    objects[tempFolderName].ip = ip.address();
-
-                    // this is for transforming old lists to new lists
-                    if (typeof objects[tempFolderName].objectValues !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
-                        delete objects[tempFolderName].objectValues;
-                    }
-                    if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
-                        delete objects[tempFolderName].objectLinks;
-                    }
-
-
-                    if (typeof objects[tempFolderName].nodes !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
-                        delete objects[tempFolderName].nodes;
-                    }
-                    if (typeof objects[tempFolderName].links !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
-                        delete objects[tempFolderName].links;
-                    }
-
-                    for (var frameKey in objects[tempFolderName].frames) {
-                        for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
-                            if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
-                                var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
-                                objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
-                            }
-                        }
-                    }
-
-                    // cast everything from JSON to Object, Frame, and Node classes
-                    let newObj = new ObjectModel(objects[tempFolderName].ip,
-                        objects[tempFolderName].version,
-                        objects[tempFolderName].protocol,
-                        objects[tempFolderName].objectId);
-                    newObj.setFromJson(objects[tempFolderName]);
-                    objects[tempFolderName] = newObj;
-                    // TODO: does this need to be added to sceneGraph?
-                } catch (e) {
-                    objects[tempFolderName].ip = ip.address();
-                    objects[tempFolderName].objectId = tempFolderName;
-                    console.warn('No saved data for: ' + tempFolderName);
-                }
-            } else {
-                console.warn(' object ' + objectFolderList[i] + ' has no marker yet');
-            }
+        if (!tempFolderName) {
+            console.warn(' object ' + objectFolder + ' has no marker yet');
             return tempFolderName;
         }
+
+        // fill objects with objects named by the folders in objects
+        objects[tempFolderName].name = objectFolder;
+
+        // try to read a saved previous state of the object
+        try {
+            objects[tempFolderName] = JSON.parse(await fsProm.readFile(objectsPath + '/' + objectFolder + '/' + identityFolderName + '/object.json', 'utf8'));
+            objects[tempFolderName].ip = ip.address();
+
+            // this is for transforming old lists to new lists
+            if (typeof objects[tempFolderName].objectValues !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
+                delete objects[tempFolderName].objectValues;
+            }
+            if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
+                delete objects[tempFolderName].objectLinks;
+            }
+
+
+            if (typeof objects[tempFolderName].nodes !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
+                delete objects[tempFolderName].nodes;
+            }
+            if (typeof objects[tempFolderName].links !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
+                delete objects[tempFolderName].links;
+            }
+
+            for (var frameKey in objects[tempFolderName].frames) {
+                for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                    if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
+                        var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
+                        objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                    }
+                }
+            }
+
+            // cast everything from JSON to Object, Frame, and Node classes
+            let newObj = new ObjectModel(objects[tempFolderName].ip,
+                objects[tempFolderName].version,
+                objects[tempFolderName].protocol,
+                objects[tempFolderName].objectId);
+            newObj.setFromJson(objects[tempFolderName]);
+            objects[tempFolderName] = newObj;
+            // TODO: does this need to be added to sceneGraph?
+        } catch (e) {
+            objects[tempFolderName].ip = ip.address();
+            objects[tempFolderName].objectId = tempFolderName;
+            console.warn('No saved data for: ' + tempFolderName);
+        }
+        return tempFolderName;
     }
     return null;
 };
 
-exports.deleteObject = function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
-    if (fs.existsSync(objectFolderPath)) {
-        fs.rmdirSync(objectFolderPath, {recursive: true});
+    if (await fileExists(objectFolderPath)) {
+        await fsProm.rmdir(objectFolderPath, {recursive: true});
     }
 
-    let objectKey = this.readObject(objectLookup, objectName);
+    let objectKey = readObject(objectLookup, objectName);
 
     if (objectKey && objects[objectKey]) {
         // remove object from tree
@@ -630,6 +619,48 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
 
     try {
         var fileContents = fs.readFileSync(hardwareFolder + 'settings.json', 'utf8');
+        hardwareInterfaces[hardwareInterfaceName] = JSON.parse(fileContents);
+    } catch (e) {
+        console.error('Could not load settings.json for: ' + hardwareInterfaceName);
+        if (!hardwareInterfaces[hardwareInterfaceName]) {
+            hardwareInterfaces[hardwareInterfaceName] = {};
+        }
+    }
+
+    this.read = function (settingsName, defaultvalue) {
+        if (typeof hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
+            if (typeof defaultvalue !== 'undefined')
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
+            else {
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
+            }
+        }
+        return hardwareInterfaces[hardwareInterfaceName][settingsName];
+    };
+    return this.read;
+};
+
+exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(hardwareInterfaceName) {
+    var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
+
+    if (!await fileExists(hardwareFolder)) {
+        try {
+            await fsProm.mkdirSync(hardwareFolder, {recursive: true, mode: '0766'});
+        } catch (err) {
+            console.error('Error making directory', err);
+        }
+    }
+
+    if (!await fileExists(hardwareFolder + 'settings.json')) {
+        try {
+            await fsProm.writeFile(hardwareFolder + 'settings.json', '{}');
+        } catch (err) {
+            console.error('Error writing file', err);
+        }
+    }
+
+    try {
+        const fileContents = await fsProm.readFile(hardwareFolder + 'settings.json', 'utf8');
         hardwareInterfaces[hardwareInterfaceName] = JSON.parse(fileContents);
     } catch (e) {
         console.error('Could not load settings.json for: ' + hardwareInterfaceName);
@@ -999,7 +1030,6 @@ function deepCopy(item) {
     }
     throw new Error('Unable to deep copy this object.');
 }
-
 exports.deepCopy = deepCopy;
 
 exports.httpGet = function (url) {
@@ -1017,3 +1047,18 @@ exports.httpGet = function (url) {
         });
     });
 };
+
+/**
+ * Wrapper for  access that resolves to false when file at filePath does not
+ * exist
+ * @param {string} filePath - path to file
+ * @return {Promise<boolean>}
+ */
+function fileExists(filePath) {
+    return fsProm.access(filePath).then(() => {
+        return true;
+    }).catch(() => {
+        return false;
+    });
+}
+exports.fileExists = fileExists;

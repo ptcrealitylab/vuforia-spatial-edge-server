@@ -43,7 +43,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var utilities = require('./utilities');
+const utilities = require('./utilities');
+const {fileExists} = utilities;
 var fs = require('fs');
 var debug = false;
 var path = require('path');
@@ -107,24 +108,17 @@ exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardw
     return html;
 };
 
-exports.printFolder = function (objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
+exports.printFolder = async function printFolder(objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
 
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
 
-    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    const objectFolderList = await utilities.getObjectFolderList();
 
     // populate the data for each object template on the frontend, using data from each directory found in the spatialToolbox directory
-    tempFiles.forEach(function(objectKey) {
-
+    for (const objectKey of objectFolderList) {
         var thisObjectKey = objectKey;
-        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+        var tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         }
@@ -146,9 +140,9 @@ exports.printFolder = function (objects, objectsPath, _debug, objectInterfaceNam
         }
 
         // check if the object is correctly initialized with tracking targets
-        var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
-        var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
-        var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
+        var datExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
+        var xmlExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
+        var jpgExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
 
         if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
             newObject[thisObjectKey].initialized = true;
@@ -195,7 +189,7 @@ exports.printFolder = function (objects, objectsPath, _debug, objectInterfaceNam
         }
 
         newObject[thisObjectKey].name = objectKey;
-    });
+    }
 
     // loads the index.html content
     var html = fs.readFileSync(path.join(__dirname, 'webInterface', 'gui', 'index.html'), 'utf8');
