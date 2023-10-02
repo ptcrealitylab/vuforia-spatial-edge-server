@@ -63,12 +63,15 @@ exports.getTestObjects = async function getTestObjects() {
     return allObjects.filter(obj => obj.id.startsWith('fdsa'));
 };
 
-async function waitForObjects() {
+/**
+ * Wait for /allObjects to be present and populated with `lengthMin` objects
+ */
+async function waitForObjects(lengthMin = 1) {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         try {
             let allObjects = await getAllObjects();
-            if (Object.keys(allObjects).length > 0) {
+            if (Object.keys(allObjects).length >= lengthMin) {
                 break;
             }
         } catch (_) {
