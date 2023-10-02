@@ -618,6 +618,7 @@ const hardwareAPICallbacks = {
         engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write: function (objectID) {
+        // note: throwing away async
         utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 };
@@ -2444,7 +2445,7 @@ function objectWebServer() {
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                 res.send('ok');
             }
 
@@ -2493,7 +2494,7 @@ function objectWebServer() {
                             objects[objectId].worldId = req.body.worldId;
                         }
 
-                        utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
                         // automatically create a tool and a node on the avatar object
@@ -2504,7 +2505,7 @@ function objectWebServer() {
                                 await utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
-                                utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                                await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
                                 // now add a publicData storage node to the tool
                                 let nodeInfo = {
@@ -2552,7 +2553,7 @@ function objectWebServer() {
                         await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
@@ -2619,7 +2620,7 @@ function objectWebServer() {
                         }
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                    await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
                     sceneGraph.removeElementAndChildren(frameNameKey);
@@ -2958,7 +2959,7 @@ function objectWebServer() {
                                         };
 
                                         thisObject.tcs = await utilities.generateChecksums(objects, fileList);
-                                        utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                        await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                         await setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
@@ -3111,7 +3112,7 @@ function objectWebServer() {
 
                                                 thisObject.tcs = await utilities.generateChecksums(objects, fileList);
 
-                                                utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                                await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                                 await setAnchors();
                                                 await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
@@ -3212,7 +3213,7 @@ function objectWebServer() {
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             }
             res.send('ok');
         });
@@ -3283,7 +3284,7 @@ async function createObjectFromTarget(folderVar) {
 
     hardwareAPI.reset();
 
-    utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+    await utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
 
     sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
@@ -3568,7 +3569,7 @@ function socketServer() {
             }
         });
 
-        socket.on('object/publicData', function (_msg) {
+        socket.on('object/publicData', async function (_msg) {
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             var node = getNode(msg.object, msg.frame, msg.node);
@@ -3587,7 +3588,7 @@ function socketServer() {
             if (object) {
                 // frequently updated objects like avatar and human pose are excluded from writing to file
                 if (object.type !== 'avatar' && object.type !== 'human') {
-                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                    await utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
                 }
 
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
@@ -4021,10 +4022,10 @@ function socketServer() {
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
-                realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
+                for (const thisObj of realityEditorBlockSocketArray[socket.id]) {
+                    await utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
-                });
+                }
                 delete realityEditorBlockSocketArray[socket.id];
             }
 
