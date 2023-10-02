@@ -8,8 +8,12 @@
 const fetch = require('node-fetch');
 
 const {
-    sleep, snapshotDirectory, filterSnapshot, filterToTestObject,
+    filterSnapshot,
+    filterToTestObject,
     getTestObjects,
+    sleep,
+    snapshotDirectory,
+    waitForObjects,
 } = require('./helpers.js');
 
 let server;
@@ -23,6 +27,7 @@ afterAll(async () => {
 });
 
 test('new object creation', async () => {
+    await waitForObjects(0);
     let objectsPath = require('../config.js').objectsPath;
 
     const allObjectsPre = await getTestObjects();
