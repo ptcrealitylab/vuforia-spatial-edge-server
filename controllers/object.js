@@ -266,13 +266,13 @@ const memoryUpload = function(objectID, req, callback) {
         }
     });
 
-    form.parse(req, function (err, fields) {
+    form.parse(req, async function (err, fields) {
         if (obj) {
             obj.memory = JSON.parse(fields.memoryInfo);
             obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
             obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
 
