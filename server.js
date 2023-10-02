@@ -539,7 +539,7 @@ const getFrameSecrets = (frameName) => {
         throw new Error(`Addon ${addonName} does not have any registered secrets`);
     }
     return addonSecrets[addonName];
-}
+};
 exports.getFrameSecrets = getFrameSecrets;
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
