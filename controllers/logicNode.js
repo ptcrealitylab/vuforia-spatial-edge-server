@@ -117,7 +117,7 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
 function changeNodeSize(objectID, frameID, nodeID, body, callback) {
     var updateStatus = 'nothing happened';
 
-    utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+    utilities.getNodeAsync(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -138,7 +138,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 
         // if anything updated, write to disk and broadcast updates to editors
         if (updateStatus === 'ok') {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadObject: {object: objectID, frame: frameID, node: nodeID},
                 lastEditor: body.lastEditor
@@ -150,7 +150,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 }
 
 function rename(objectID, frameID, nodeID, body, callback) {
-    utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+    utilities.getNodeAsync(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -158,7 +158,7 @@ function rename(objectID, frameID, nodeID, body, callback) {
 
         node.name = body.nodeName;
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
@@ -214,10 +214,10 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
             if (Jimp) {
                 Jimp.read(rawFilepath).then(image => {
                     return image.resize(200, 200).write(resizedFilepath);
-                }).then(() => {
+                }).then(async () => {
                     if (node) {
                         node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                         utilities.actionSender({
                             loadLogicIcon: {
                                 object: objectID,
