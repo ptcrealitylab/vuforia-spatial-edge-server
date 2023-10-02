@@ -132,6 +132,7 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 
 const fs = require('fs');       // Filesystem library
+const fsProm = require('fs/promises');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 
@@ -328,6 +329,7 @@ if (!isLightweightMobile) {
 
 // This file hosts all kinds of utilities programmed for the server
 const utilities = require('./libraries/utilities');
+const {fileExists} = utilities;
 const nodeUtilities = require('./libraries/nodeUtilities');
 const recorder = require('./libraries/recorder');
 
@@ -672,15 +674,14 @@ function getFileExtension(fileName) {
 /**
  * @desc Add objects from the objects folder to the system
  **/
-function loadObjects() {
+async function loadObjects() {
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
-    var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory() && file[0] !== '.';
-    });
+    const objectFolderList = await utilities.getObjectFolderList();
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
+        const objectFolder = objectFolderList[i];
+        const tempFolderName = await utilities.getObjectIdFromTargetOrObjectFile(objectFolder);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -694,11 +695,12 @@ function loadObjects() {
             //objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
-            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName, globalVariables.saveToDisk);
+            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName);
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
+                const objectJsonText = await fsProm.readFile(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8');
+                objects[tempFolderName] = JSON.parse(objectJsonText);
                 objects[tempFolderName].ip = services.ip; // ip.address();
 
                 // this is for transforming old lists to new lists
@@ -800,21 +802,13 @@ executeSetups();
  * Initialize worldObject to contents of spatialToolbox/_WORLD_local/.identity/object.json
  * Create the json file if doesn't already exist
  */
-function loadWorldObject() {
-
-    // create the file for it if necessary
-    var folder = path.join(objectsPath, worldObjectName);
-    var identityPath = path.join(folder, '.identity');
-    var jsonFilePath = path.join(folder, 'object.json');
-
-    // create objects folder at objectsPath if necessary
-    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        fs.mkdirSync(folder);
-    }
+async function loadWorldObject() {
+    const identityPath = path.join(objectsPath, worldObjectName, '.identity');
+    const jsonFilePath = path.join(identityPath, 'object.json');
 
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        fs.mkdirSync(identityPath);
+    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
+        await fs.mkdir(identityPath, {recursive: true});
     }
 
     // create a new world object
@@ -828,7 +822,8 @@ function loadWorldObject() {
     // try to read previously saved data to overwrite the default world object
     if (globalVariables.saveToDisk) {
         try {
-            worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            const contents = await fsProm.readFile(jsonFilePath, 'utf8');
+            worldObject = JSON.parse(contents);
         } catch (e) {
             console.error('No saved data for world object on server: ' + services.ip, e);
         }
@@ -842,40 +837,35 @@ function loadWorldObject() {
     hardwareAPI.reset();
 
     if (globalVariables.saveToDisk) {
-        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4), function (err) {
-            if (err) {
-                console.error('Error saving world object', err);
-            }
-        });
+        try {
+            await fsProm.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4));
+        } catch (err) {
+            console.error('Error saving world object', err);
+        }
     } else {
         console.error('Server is not allowed to save to disk');
     }
 }
 
 
-function loadAnchor(anchorName) {
+async function loadAnchor(anchorName) {
 
     // create the file for it if necessary
-    var folder = path.join(objectsPath, anchorName);
-    var identityPath = path.join(folder, '.identity');
+    var identityPath = path.join(objectsPath, anchorName, '.identity');
     var jsonFilePath = path.join(identityPath, 'object.json');
     let anchorUuid = anchorName + utilities.uuidTime();
 
-    // create objects folder at objectsPath if necessary
-    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        fs.mkdirSync(folder);
-    }
-
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        fs.mkdirSync(identityPath);
+    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
+        await fsProm.mkdir(identityPath, {recursive: true});
     }
 
 
     // try to read previously saved data to overwrite the default anchor object
     if (globalVariables.saveToDisk) {
         try {
-            let anchor = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            const contents = await fsProm.readFile(jsonFilePath, 'utf8');
+            let anchor = JSON.parse(contents);
             anchorUuid = anchor.objectId;
             if (anchorUuid) {
                 objects[anchorUuid] = anchor;
@@ -901,7 +891,11 @@ function loadAnchor(anchorName) {
     objects[anchorUuid].tcs = 0;
 
     if (globalVariables.saveToDisk) {
-        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
+        try {
+            await fsProm.writeFile(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
+        } catch (err) {
+            console.log('error persisting anchor object', err);
+        }
         objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     } else {
@@ -916,25 +910,18 @@ function loadAnchor(anchorName) {
     sceneGraph.addObjectAndChildren(anchorUuid, objects[anchorUuid]);
 }
 
-function setAnchors() {
+async function setAnchors() {
     let hasValidWorldObject = false;
 
     // load all object folders
-    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    let tempFiles = await utilities.getObjectFolderList();
 
     // populate all objects folders with object.json files.
-    tempFiles.forEach(function (objectKey) {
-
+    for (const objectKey of tempFiles) {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+            let tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -942,19 +929,19 @@ function setAnchors() {
             }
 
             if (!(thisObjectKey in objects)) {
-                loadAnchor(objectKey);
+                await loadAnchor(objectKey);
             }
         }
-    });
+    }
 
 
     // check if there is an initialized World Object
     for (let key in objects) {
         if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
-            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+            let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
                 hasValidWorldObject = true;
@@ -968,9 +955,9 @@ function setAnchors() {
         objects[key].isAnchor = false;
         if (!(objects[key].isWorldObject || objects[key].type === 'world' || objects[key].type === 'human' || objects[key].type === 'avatar')) {
             // check if the object is correctly initialized with tracking targets
-            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+            let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if (!(xmlExists && (datExists || jpgExists))) {
                 if (hasValidWorldObject) {
@@ -983,23 +970,18 @@ function setAnchors() {
     }
 }
 
-function removeAvatarAndHumanPoseFiles() {
+async function removeAvatarAndHumanPoseFiles() {
     let objectsToDelete = [];
 
     // load all object folders
-    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    let tempFiles = await utilities.getObjectFolderList();
 
-    tempFiles.forEach(objectFolderName => {
+    // remove hidden directories
+    for (const objectFolderName of tempFiles) {
         if (objectFolderName.indexOf('_AVATAR_') === 0 || objectFolderName.indexOf('_HUMAN_') === 0) {
             objectsToDelete.push(objectFolderName);
         }
-    });
+    }
 
     objectsToDelete.forEach(objectFolderName => {
         let objectKey = utilities.readObject(objectLookup, objectFolderName);
@@ -1121,7 +1103,9 @@ async function exit() {
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
     console.info('Server exited successfully');
-    // process.exit(0);
+    if (process.env.NODE_ENV !== 'test') {
+        process.exit(0);
+    }
 }
 exports.exit = exit;
 
@@ -1200,7 +1184,7 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
+async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
     }
@@ -1227,7 +1211,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
-        objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
+        objects[thisId].tcs = await utilities.generateChecksums(objects, fileList);
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -2028,10 +2012,10 @@ function objectWebServer() {
 
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder, function (req, res) {
+        webServer.get(objectInterfaceFolder, async function (req, res) {
             let framePathList = frameLibPaths.join(' ');
             setAnchors();
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
+            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
@@ -2139,11 +2123,11 @@ function objectWebServer() {
          * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
          * @param {successCallback} callback
          */
-        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) { // eslint-disable-line no-inner-declarations
+        async function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
 
             try {
-                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
+                const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
                 let existingSettings = {};
                 try {
                     existingSettings = JSON.parse(rawSettings);
@@ -2173,15 +2157,14 @@ function objectWebServer() {
                 }
 
                 if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
-                        if (err) {
-                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                            callback(false, 'error writing to file');
-                        } else {
-                            callback(true);
-                            hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
-                        }
-                    });
+                    try {
+                        await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4));
+                        callback(true);
+                        hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
+                    } catch (err) {
+                        console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
+                        callback(false, 'error writing to file');
+                    }
                 } else {
                     console.error('Save to disk is disabled for this server');
                     callback(false, 'saveToDisk globally disabled for this server');
@@ -2246,23 +2229,22 @@ function objectWebServer() {
          * @param {boolean} shouldBeEnabled
          * @param {successCallback} callback
          */
-        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
+        async function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
             var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
 
             try {
-                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
+                const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
                 var settings = JSON.parse(rawSettings);
                 settings.enabled = shouldBeEnabled;
 
                 if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4), function (err) {
-                        if (err) {
-                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                            callback(false, 'error writing to file');
-                        } else {
-                            callback(true);
-                        }
-                    });
+                    try {
+                        await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4));
+                        callback(true);
+                    } catch (err) {
+                        console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
+                        callback(false, 'error writing to file');
+                    }
                 } else {
                     console.error('Save to disk is disabled for this server');
                     callback(false, 'saveToDisk globally disabled for this server');
@@ -2272,14 +2254,13 @@ function objectWebServer() {
                 var defaultSettings = {
                     enabled: shouldBeEnabled
                 };
-                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4), function (err) {
-                    if (err) {
-                        console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
-                        callback(false, 'error writing to file');
-                    } else {
-                        callback(true);
-                    }
-                });
+                try {
+                    fsProm.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4));
+                    callback(true);
+                } catch (err) {
+                    console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
+                    callback(false, 'error writing to file');
+                }
             }
         }
 
@@ -2407,17 +2388,18 @@ function objectWebServer() {
         // ****************************************************************************************************************
         // post interfaces
         // ****************************************************************************************************************
-        webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', async function (req, res) {
             if (req.body.action === 'delete') {
                 if (utilities.goesUpDirectory(req.path)) {
                     res.status(400).send('Invalid path. Cannot contain \'..\'.');
                     return;
                 }
                 const folderDel = __dirname + req.path.substr(4);
-                if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
+                const folderStats = await fsProm.stat(folderDel);
+                if (folderStats.isDirectory()) {
+                    await utilities.deleteFolderRecursive(folderDel);
                 } else {
-                    fs.unlinkSync(folderDel);
+                    await fsProm.unlink(folderDel);
                 }
 
                 res.send('ok');
@@ -2425,7 +2407,7 @@ function objectWebServer() {
             }
         });
 
-        webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:id', async function (req, res) {
             if (req.body.action === 'delete') {
 
                 if (!utilities.isValidId(req.body.name)) {
@@ -2438,12 +2420,13 @@ function objectWebServer() {
                     return;
                 }
 
-                var folderDel = objectsPath + '/' + req.body.name;
+                const folderDel = objectsPath + '/' + req.body.name;
+                const folderStats = await fsProm.stat(folderDel);
 
-                if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
+                if (folderStats.isDirectory()) {
+                    await utilities.deleteFolderRecursive(folderDel);
                 } else {
-                    fs.unlinkSync(folderDel);
+                    await fsProm.unlink(folderDel);
                 }
 
                 res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
@@ -2452,7 +2435,7 @@ function objectWebServer() {
         });
 
         //*****************************************************************************************
-        webServer.post(objectInterfaceFolder, function (req, res) {
+        webServer.post(objectInterfaceFolder, async function (req, res) {
 
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
@@ -2468,7 +2451,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    utilities.createFolder(req.body.name);
+                    await utilities.createFolder(req.body.name);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2514,7 +2497,7 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
+                                await utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
                                 utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
@@ -2528,7 +2511,7 @@ function objectWebServer() {
                                 };
                                 nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function() {});
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
+                                await utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
                         }
 
@@ -2562,14 +2545,14 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
+                        await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2580,21 +2563,6 @@ function objectWebServer() {
             // deprecated route for deleting objects or frames
             // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
-
-                var deleteFolderRecursive = function (folderDel) {
-                    if (fs.existsSync(folderDel)) {
-                        fs.readdirSync(folderDel).forEach(function (file) {
-                            var curPath = folderDel + '/' + file;
-                            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                deleteFolderRecursive(curPath);
-                            } else { // delete file
-                                fs.unlinkSync(curPath);
-                            }
-                        });
-                        fs.rmdirSync(folderDel);
-                    }
-                };
-
                 if (!utilities.isValidId(req.body.name)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2620,7 +2588,7 @@ function objectWebServer() {
                         res.status(400).send('Invalid path. Cannot contain \'..\'.');
                         return;
                     }
-                    fs.unlinkSync(objectsPath + pathKey.substring(4));
+                    await fsProm.unlink(objectsPath + pathKey.substring(4));
                     res.send('ok');
                     return;
                 }
@@ -2633,7 +2601,7 @@ function objectWebServer() {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
-                    deleteFolderRecursive(folderDelFrame);
+                    await utilities.deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
@@ -2656,10 +2624,10 @@ function objectWebServer() {
 
                 } else {
 
-                    var folderDel = objectsPath + '/' + req.body.name;
-                    deleteFolderRecursive(folderDel);
+                    const folderDel = objectsPath + '/' + req.body.name;
+                    await utilities.deleteFolderRecursive(folderDel);
 
-                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);
 
                     if (tempFolderName2 !== null) {
 
@@ -2673,7 +2641,7 @@ function objectWebServer() {
                                 // deconstructs frames and nodes of this object, too
                                 objects[tempFolderName2].deconstruct();
                             } catch (e) {
-                                console.warn('Object exists without proper prototype: ' + tempFolderName2, e);
+                                console.warn('Object exists without proper prototype: ' + tempFolderName2, objects[tempFolderName2], e);
                             }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
@@ -2765,7 +2733,7 @@ function objectWebServer() {
         //***********************************************************************
 
         webServer.post(objectInterfaceFolder + 'content/:id',
-            function (req, res) {
+            async function (req, res) {
                 if (!utilities.isValidId(req.params.id)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2781,15 +2749,15 @@ function objectWebServer() {
 
                     var folderDel = objectsPath + '/' + req.body.name;
 
-                    if (fs.existsSync(folderDel)) {
-                        if (fs.lstatSync(folderDel).isDirectory()) {
-                            utilities.deleteFolderRecursive(folderDel);
+                    if (await fileExists(folderDel)) {
+                        if ((await fsProm.stat(folderDel)).isDirectory()) {
+                            await utilities.deleteFolderRecursive(folderDel);
                         } else {
-                            fs.unlinkSync(folderDel);
+                            await fs.unlink(folderDel);
                         }
                     }
 
-                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);//req.body.name + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         if (activeHeartbeats[tempFolderName2]) {
@@ -2842,8 +2810,8 @@ function objectWebServer() {
                 form.on('end', function () {
                     var folderD = form.uploadDir;
                     fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
-                    fileInfoList.forEach(fileInfo => {
-                        if (!fs.existsSync(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                    fileInfoList.forEach(async fileInfo => {
+                        if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
                             return;
                         }
                         fileInfo.completed = true; // File has downloaded
@@ -2856,16 +2824,16 @@ function objectWebServer() {
                             }
 
                             if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
-                                if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
-                                    fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
-                                        if (err) {
-                                            console.error('Error creating target upload directory', err);
-                                            res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
-                                        }
-                                    });
+                                if (!await fileExists(folderD + '/' + identityFolderName + '/target/')) {
+                                    try {
+                                        await fsProm.mkdir(folderD + '/' + identityFolderName + '/target/', '0766');
+                                    } catch (err) {
+                                        console.error('Error creating target upload directory', err);
+                                        res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
+                                    }
                                 }
 
-                                fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                await fsProm.rename(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
 
                                 // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                                 // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
@@ -2876,44 +2844,39 @@ function objectWebServer() {
                                     var originalFilepath = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
 
                                     try {
-                                        Jimp.read(rawFilepath).then(image => {
-                                            var desiredMaxDimension = 1024;
+                                        const image = await Jimp.read(rawFilepath);
+                                        var desiredMaxDimension = 1024;
 
-                                            if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
-                                                // JPEG doesn't need resizing
-                                                continueProcessingUpload();
-                                            } else {
-                                                var aspectRatio = image.bitmap.width / image.bitmap.height;
-                                                var newWidth = desiredMaxDimension;
-                                                if (image.bitmap.width < image.bitmap.height) {
-                                                    newWidth = desiredMaxDimension * aspectRatio;
-                                                }
-
-                                                // copy fullsize file as backup
-                                                if (fs.existsSync(originalFilepath)) {
-                                                    fs.unlinkSync(originalFilepath);
-                                                }
-                                                fs.copyFileSync(rawFilepath, originalFilepath);
-
-                                                // copied file into temp file to be used during the resize operation
-                                                if (fs.existsSync(tempFilepath)) {
-                                                    fs.unlinkSync(tempFilepath);
-                                                }
-                                                fs.copyFileSync(rawFilepath, tempFilepath);
-
-                                                Jimp.read(tempFilepath).then(tempImage => {
-                                                    return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
-                                                }).then(() => {
-                                                    if (fs.existsSync(tempFilepath)) {
-                                                        fs.unlinkSync(tempFilepath);
-                                                    }
-                                                    continueProcessingUpload();
-                                                }).catch(err => {
-                                                    console.error('Error resizing image', err);
-                                                    continueProcessingUpload();
-                                                });
+                                        if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
+                                            // JPEG doesn't need resizing
+                                            continueProcessingUpload();
+                                        } else {
+                                            var aspectRatio = image.bitmap.width / image.bitmap.height;
+                                            var newWidth = desiredMaxDimension;
+                                            if (image.bitmap.width < image.bitmap.height) {
+                                                newWidth = desiredMaxDimension * aspectRatio;
                                             }
-                                        });
+
+                                            // copy fullsize file as backup
+                                            if (await fileExists(originalFilepath)) {
+                                                await fsProm.unlink(originalFilepath);
+                                            }
+                                            await fsProm.copyFile(rawFilepath, originalFilepath);
+
+                                            // copied file into temp file to be used during the resize operation
+                                            if (await fileExists(tempFilepath)) {
+                                                await fsProm.unlink(tempFilepath);
+                                            }
+                                            await fsProm.copyFile(rawFilepath, tempFilepath);
+
+                                            const tempImage = await Jimp.read(tempFilepath);
+                                            await tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
+
+                                            if (await fileExists(tempFilepath)) {
+                                                await fsProm.unlink(tempFilepath);
+                                            }
+                                            continueProcessingUpload();
+                                        }
                                     } catch (e) {
                                         console.error('Error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
                                         continueProcessingUpload();
@@ -2924,7 +2887,7 @@ function objectWebServer() {
                                 }
 
                                 // Step 2) - Generate a default XML file if needed
-                                function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
+                                async function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
                                     var objectName = req.params.id + utilities.uuidTime();
 
                                     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
@@ -2936,17 +2899,20 @@ function objectWebServer() {
 
 
                                     var xmlOutFile = path.join(folderD, identityFolderName, '/target/target.xml');
-                                    if (!fs.existsSync(xmlOutFile)) {
-                                        fs.writeFile(xmlOutFile, documentcreate, function (err) {
+                                    if (!await fileExists(xmlOutFile)) {
+                                        try {
+                                            await fsProm.writeFile(xmlOutFile, documentcreate);
+                                            onXmlVerified();
+                                        } catch (err) {
                                             onXmlVerified(err);
-                                        });
+                                        }
                                     } else {
                                         onXmlVerified();
                                     }
                                 }
 
                                 // create the object data and respond to the webFrontend once the XML file is confirmed to exist
-                                function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
+                                async function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
                                     let thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (err) {
@@ -2972,10 +2938,10 @@ function objectWebServer() {
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
-                                        var jpg = fs.existsSync(jpgPath);
-                                        var dat = fs.existsSync(datPath);
-                                        var xml = fs.existsSync(xmlPath);
-                                        var glb = fs.existsSync(glbPath);
+                                        var jpg = await fileExists(jpgPath);
+                                        var dat = await fileExists(datPath);
+                                        var xml = await fileExists(xmlPath);
+                                        var glb = await fileExists(glbPath);
 
                                         var sendObject = {
                                             id: thisObjectId,
@@ -2987,12 +2953,12 @@ function objectWebServer() {
                                             glbExists: glb
                                         };
 
-                                        thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                                        thisObject.tcs = await utilities.generateChecksums(objects, fileList);
                                         utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                         setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
-                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
+                                        var oldObjectId = await utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId !== thisObjectId) {
                                             clearActiveHeartbeat(activeHeartbeats[oldObjectId]);
                                             delete activeHeartbeats[oldObjectId];
@@ -3034,9 +3000,9 @@ function objectWebServer() {
                                         console.error('Unzipper error', err);
                                     });
 
-                                    unzipper.on('extract', function (_log) {
+                                    unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
-                                        const folderFiles = fs.readdirSync(targetFolderPath);
+                                        const folderFiles = await fsProm.readdir(targetFolderPath);
                                         const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
 
                                         let anyTargetsUploaded = false;
@@ -3045,20 +3011,20 @@ function objectWebServer() {
                                             const folderFile = folderFiles[i];
                                             const folderFileType = folderFile.substr(folderFile.lastIndexOf('.') + 1);
                                             if (targetTypes.includes(folderFileType)) {
-                                                fs.renameSync(
+                                                await fsProm.rename(
                                                     path.join(targetFolderPath, folderFile),
                                                     path.join(targetFolderPath, 'target.' + folderFileType)
                                                 );
                                                 anyTargetsUploaded = true;
                                             }
                                             if (folderFile === 'target') {
-                                                const innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile);
+                                                const innerFolderFiles = await fsProm.readdir(folderD + '/' + identityFolderName + '/target/' + folderFile);
                                                 let deferred = false;
                                                 function finishFn(folderName) {
-                                                    return function() {
-                                                        fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
+                                                    return async function() {
+                                                        await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
                                                         // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        fs.renameSync(
+                                                        await fsProm.rename(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                             path.join(folderD, identityFolderName, 'target', 'target.glb')
                                                         );
@@ -3070,7 +3036,7 @@ function objectWebServer() {
                                                     let innerFolderFile = innerFolderFiles[j];
                                                     const innerFolderFileType = innerFolderFile.substr(innerFolderFile.lastIndexOf('.') + 1);
                                                     if (targetTypes.includes(innerFolderFileType)) {
-                                                        fs.renameSync(
+                                                        await fsProm.rename(
                                                             path.join(targetFolderPath, folderFile, innerFolderFile),
                                                             path.join(targetFolderPath, 'target.' + innerFolderFileType),
                                                         );
@@ -3108,11 +3074,11 @@ function objectWebServer() {
                                                 }
                                             }
                                         }
-                                        fs.unlinkSync(path.join(folderD, zipfileName));
+                                        await fsProm.unlink(path.join(folderD, zipfileName));
 
                                         // evnetually create the object.
 
-                                        if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
+                                        if (await fileExists(path.join(targetFolderPath, 'target.dat')) && await fileExists(path.join(targetFolderPath, 'target.xml'))) {
                                             createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
@@ -3136,10 +3102,10 @@ function objectWebServer() {
                                                 for (const ext of Object.keys(targetFileExts)) {
                                                     const filePath = path.join(targetFolderPath, 'target.' + ext);
                                                     fileList.push(filePath);
-                                                    targetFileExts[ext] = fs.existsSync(filePath);
+                                                    targetFileExts[ext] = await fileExists(filePath);
                                                 }
 
-                                                thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                                                thisObject.tcs = await utilities.generateChecksums(objects, fileList);
 
                                                 utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
                                                 setAnchors();
@@ -3203,7 +3169,7 @@ function objectWebServer() {
                 });
             });
 
-        webServer.delete(objectInterfaceFolder + 'content/:id', function (req, res) {
+        webServer.delete(objectInterfaceFolder + 'content/:id', async function (req, res) {
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object name. Must be alphanumeric.');
                 return;
@@ -3222,17 +3188,17 @@ function objectWebServer() {
 
             let targetDir = path.join(objectsPath, tmpFolderFile, identityFolderName, 'target');
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.xml'));
+                await fsProm.unlink(path.join(targetDir, 'target.xml'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.xml'), e);
             }
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.jpg'));
+                await fsProm.unlink(path.join(targetDir, 'target.jpg'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.jpg'), e);
             }
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.dat'));
+                await fsProm.unlink(path.join(targetDir, 'target.dat'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.dat'), e);
             }
@@ -3258,61 +3224,66 @@ function objectWebServer() {
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
  * @param {string} folderVar
  */
-function createObjectFromTarget(folderVar) {
+async function createObjectFromTarget(folderVar) {
     var folder = objectsPath + '/' + folderVar + '/';
 
-    if (fs.existsSync(folder)) {
-        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
-        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
-        if (objectIDXML && objectIDXML.length > 13) {
-            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
-            objects[objectIDXML].port = serverPort;
-            objects[objectIDXML].name = folderVar;
-            objects[objectIDXML].targetSize = objectSizeXML;
-
-            if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-                objects[objectIDXML].isWorldObject = true;
-                objects[objectIDXML].type = 'world';
-                objects[objectIDXML].timestamp = Date.now();
-            }
-
-            try {
-                objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
-                objects[objectIDXML].objectId = objectIDXML;
-                objects[objectIDXML].ip = services.ip; //ip.address();
-            } catch (e) {
-                objects[objectIDXML].ip = services.ip; //ip.address();
-                console.warn('No saved data for: ' + objectIDXML, e);
-            }
-
-            if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                let oldObjectId = utilities.readObject(objectLookup, folderVar);
-                try {
-                    objects[oldObjectId].deconstruct();
-                } catch (e) {
-                    console.warn('Object exists without proper prototype: ' + oldObjectId, e);
-                }
-                delete objects[oldObjectId];
-                delete knownObjects[oldObjectId];
-                delete objectLookup[oldObjectId];
-                sceneGraph.removeElementAndChildren(oldObjectId);
-            }
-            utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-            // entering the obejct in to the lookup table
-
-            // ask the object to reinitialize
-            //serialPort.write("ok\n");
-            // todo send init to internal
-
-            hardwareAPI.reset();
-
-            utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
-
-            sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
-
-            objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
-        }
+    if (!await fileExists(folder)) {
+        return;
     }
+
+    var objectIDXML = await utilities.getObjectIdFromTargetOrObjectFile(folderVar);
+    var objectSizeXML = await utilities.getTargetSizeFromTarget(folderVar);
+    if (!objectIDXML || objectIDXML.length <= 13) {
+        return;
+    }
+
+    objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
+    objects[objectIDXML].port = serverPort;
+    objects[objectIDXML].name = folderVar;
+    objects[objectIDXML].targetSize = objectSizeXML;
+
+    if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+        objects[objectIDXML].isWorldObject = true;
+        objects[objectIDXML].type = 'world';
+        objects[objectIDXML].timestamp = Date.now();
+    }
+
+    try {
+        const contents = await fsProm.readFile(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8');
+        objects[objectIDXML] = JSON.parse(contents);
+        objects[objectIDXML].objectId = objectIDXML;
+        objects[objectIDXML].ip = services.ip; //ip.address();
+    } catch (e) {
+        objects[objectIDXML].ip = services.ip; //ip.address();
+        console.warn('No saved data for: ' + objectIDXML, e);
+    }
+
+    if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+        let oldObjectId = utilities.readObject(objectLookup, folderVar);
+        try {
+            objects[oldObjectId].deconstruct();
+        } catch (e) {
+            console.warn('Object exists without proper prototype: ' + oldObjectId, e);
+        }
+        delete objects[oldObjectId];
+        delete knownObjects[oldObjectId];
+        delete objectLookup[oldObjectId];
+        sceneGraph.removeElementAndChildren(oldObjectId);
+    }
+    utilities.writeObject(objectLookup, folderVar, objectIDXML);
+    // entering the obejct in to the lookup table
+
+    // ask the object to reinitialize
+    //serialPort.write("ok\n");
+    // todo send init to internal
+
+    hardwareAPI.reset();
+
+    utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+
+    sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
+
+    objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
 }
 
 
@@ -4080,15 +4051,15 @@ function socketServer() {
     this.io = io;
 }
 
-function deleteObjects(objectKeysToDelete) {
-    objectKeysToDelete.forEach(objectKey => {
-        deleteObject(objectKey);
-    });
+async function deleteObjects(objectKeysToDelete) {
+    for (const objectKey of objectKeysToDelete) {
+        await deleteObject(objectKey);
+    }
 }
 
-function deleteObject(objectKey) {
+async function deleteObject(objectKey) {
     if (objects[objectKey]) {
-        utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        await utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     }
     // try to clean up any other state that might be remaining
 

@@ -36,11 +36,11 @@ function resetToLastCommit(object, objects, callback) {
                 git.init();
                 return;
             }
-            git.checkout(objectFolderName + identityFile, function (checkoutErr) {
+            git.checkout(objectFolderName + identityFile, async function (checkoutErr) {
                 if (checkoutErr) {
                     console.error('Error resetting to last commit', checkoutErr);
                 }
-                utilities.updateObject(objectFolderName, objects);
+                await utilities.updateObject(objectFolderName, objects);
                 utilities.actionSender({reloadObject: {object: object.objectId}, lastEditor: null});
                 callback();
             });

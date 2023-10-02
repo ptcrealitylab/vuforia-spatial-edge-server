@@ -11,7 +11,7 @@ const router = express.Router();
 let patches = [];
 
 router.get('/logs', async function(req, res) {
-    if (await fs.access(recorder.logsPath)) {
+    if (await fs.exists(recorder.logsPath)) {
         try {
             let files = await fs.readdir(recorder.logsPath);
             const logNames = {};
@@ -74,7 +74,7 @@ router.get('/logs/:logPath', async function(req, res) {
     }
 
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
-    if (!await fs.access(compressedLogPath)) {
+    if (!await fs.exists(compressedLogPath)) {
         // Compare only the start `objects_${startTime}` bit of the current log
         // name since the end time is constantly changing
         const startTimeSection = req.params.logPath.split('-')[0];

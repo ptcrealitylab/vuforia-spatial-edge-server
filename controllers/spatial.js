@@ -2,7 +2,6 @@
 // const fs = require('fs');
 // const path = require('path');
 // const formidable = require('formidable');
-// const utilities = require('../libraries/utilities');
 
 // Variables populated from server.js with setup()
 var hardwareAPI;
