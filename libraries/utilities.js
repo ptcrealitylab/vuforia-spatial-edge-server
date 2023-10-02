@@ -585,7 +585,7 @@ exports.deleteObject = async function deleteObject(objectName, objects, objectLo
         sceneGraph.removeElementAndChildren(objectKey);
     }
 
-    setAnchors();
+    await setAnchors();
 
     this.actionSender({reloadObject: {object: objectKey} });
 };
