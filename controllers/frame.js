@@ -66,7 +66,7 @@ const addFrameToObject = function (objectKey, frameKey, frame, callback) {
 
         object.frames[frameKey] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: frame.lastEditor});
 
         sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
@@ -114,7 +114,7 @@ const generateFrameOnObject = function (objectKey, frameType, relativeMatrix, ca
 
 const deletePublicData = function(objectID, frameID, callback) {
     // locate the containing frame in a safe way
-    utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
+    utilities.getFrameAsync(objects, objectID, frameID, async function (error, object, frame) {
         if (error) {
             callback(404, error);
             return;
@@ -126,7 +126,7 @@ const deletePublicData = function(objectID, frameID, callback) {
         });
 
         // save state to object.json
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
@@ -136,7 +136,7 @@ const addPublicData = function(objectID, frameID, body, callback) {
     var publicData = body.publicData;
 
     // locate the containing frame in a safe way
-    utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
+    utilities.getFrameAsync(objects, objectID, frameID, async function (error, object, frame) {
         if (error) {
             callback(404, error);
             return;
@@ -157,14 +157,14 @@ const addPublicData = function(objectID, frameID, body, callback) {
         }
 
         // save state to object.json
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
 };
 
 const copyFrame = function(objectID, frameID, body, callback) {
-    utilities.getFrameAsync(objects, objectID, frameID, function (error, object, frame) {
+    utilities.getFrameAsync(objects, objectID, frameID, async function (error, object, frame) {
         if (error) {
             callback(404, error);
             return;
@@ -222,7 +222,7 @@ const copyFrame = function(objectID, frameID, body, callback) {
         newFrame.height = frame.height;
         object.frames[newFrameKey] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         // TODO: by not sending action sender, we assume this is a screen frame -- is that an ok assumption?
         // utilities.actionSender({reloadObject: {object: objectID}, lastEditor: frame.lastEditor});
@@ -238,7 +238,7 @@ const copyFrame = function(objectID, frameID, body, callback) {
 };
 
 const updateFrame = function(objectID, frameID, body, callback) {
-    utilities.getObjectAsync(objects, objectID, function (error, object) {
+    utilities.getObjectAsync(objects, objectID, async function (error, object) {
         if (error) {
             callback(404, error);
             return;
@@ -263,7 +263,7 @@ const updateFrame = function(objectID, frameID, body, callback) {
         newFrame.setFromJson(frame);
         object.frames[frameID] = newFrame;
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         utilities.actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
 
@@ -336,7 +336,7 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
     }
 
     // Delete links involving frame's nodes
-    utilities.forEachObject(objects, function (linkObject, linkObjectId) {
+    utilities.forEachObject(objects, async function (linkObject, linkObjectId) {
         var linkObjectHasChanged = false;
 
         for (var linkId in linkObject.links) { // TODO: this isn't updated for frames either
@@ -350,13 +350,13 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
         }
 
         if (linkObjectHasChanged) {
-            utilities.writeObjectToFile(objects, linkObjectId, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, linkObjectId, globalVariables.saveToDisk);
             utilities.actionSender({reloadObject: {object: linkObjectId}, lastEditor: body.lastEditor});
         }
     });
 
     // write changes to object.json
-    utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+    await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectId}, lastEditor: body.lastEditor});
 
     sceneGraph.removeElementAndChildren(frameId);
@@ -406,8 +406,8 @@ const setPinned = function(objectID, frameID, body, callback) {
  * Updates the x, y, scale, and/or matrix for the specified frame or node
  * @todo this function is a mess, fix it up
  */
-const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
-    utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+const changeSize = function (objectID, frameID, nodeID, body, callback) {
+    utilities.getFrameOrNode(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -463,7 +463,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,
