@@ -121,7 +121,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
  */
 const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
     var updateStatus = 'nothing happened';
-    
+
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
 
     if (foundNode) {
@@ -202,7 +202,7 @@ const getLogicBlockList = function () {
     return blockList;
 };
 
-const setup = function (objects_, blockModules_, globalVariables_, engine_, objectsPath_) {
+const setup = function (objects_, blockModules_, globalVariables_, engine_) {
     objects = objects_;
     blockModules = blockModules_;
     globalVariables = globalVariables_;
