@@ -17,9 +17,9 @@
  * You should take a look at /hardwareInterfaces/emptyExample/index.js to get started.
  */
 
-var path = require('path');
-var fs = require('fs');
-var utilities = require('./utilities');
+const path = require('path');
+const fsProm = require('fs/promises');
+const utilities = require('./utilities');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
 const ObjectModel = require('../models/ObjectModel.js');
@@ -143,7 +143,7 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid);
+    const objectID = utilities.readObject(objectLookup, objectUuid);
     if (objectID && objects[objectID] && objects[objectID].frames &&
         objects[objectID].frames[objectID] &&
         objects[objectID].frames[objectID].nodes) {
@@ -162,7 +162,7 @@ exports.clearObject = function (objectUuid, toolUuid) {
 };
 
 exports.removeAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
@@ -229,7 +229,7 @@ var deleteLinksToAndFromNode = function (objectUuid, toolUuid, nodeUuid) {
 };
 
 exports.reloadNodeUI = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
 };
@@ -297,7 +297,7 @@ exports.getAllTools = getAllTools_;
 exports.getAllFrames = getAllTools_;
 
 exports.getAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -316,7 +316,7 @@ exports.getAllNodes = function (object, tool) {
 };
 
 exports.getAllLinksToNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -404,12 +404,12 @@ exports.triggerUDPCallbacks = function (msgContent) {
 };
 
 exports.actionSender = function (action, timeToLive, beatport) {
-    utilities.actionSender (action, timeToLive, beatport);
+    utilities.actionSender(action, timeToLive, beatport);
 };
 
 
 exports.clearTool = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
 
     var frameUuid = objectID + tool;
 
@@ -425,7 +425,7 @@ exports.clearTool = function (object, tool) {
 };
 
 exports.setTool = function (object, tool, newTool, dirName) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
 
     var frameUuid = objectID + tool;
 
@@ -474,14 +474,14 @@ exports.setTool = function (object, tool, newTool, dirName) {
  **/
 
 exports.addNode = function (object, tool, node, type, position) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    let objectID = utilities.readObject(objectLookup, object);
     if (!objectID) {
         var folder = path.join(objectsPath, object);
         var identityPath = path.join(folder, '.identity');
         var jsonFilePath = path.join(identityPath, 'object.json');
         objectID = object + utilities.uuidTime();
 
-        utilities.createFolder(object);
+        utilities.createFolder(object); // todo may need to `await` this
 
         // create a new anchor object
         objects[objectID] = new ObjectModel(services.ip, version, protocol, objectID);
@@ -500,10 +500,8 @@ exports.addNode = function (object, tool, node, type, position) {
         utilities.writeObject(objectLookup, object, objectID);
 
         if (globalVariables.saveToDisk) {
-            fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
-                if (err) {
-                    console.error('anchor object save error', err);
-                }
+            fsProm.writeFile(jsonFilePath, JSON.stringify(objects[objectID], null, 4)).catch(err => {
+                console.error('anchor object save error', err);
             });
         } else {
             console.warn('Server is not allowed to save to disk');
@@ -520,9 +518,9 @@ exports.addNode = function (object, tool, node, type, position) {
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
-                utilities.createFrameFolder(object, tool, dirnameO, 'local');
+                utilities.createFrameFolder(object, tool, dirnameO, 'local'); // todo maybe await
             } else {
-                utilities.createFrameFolder(object, tool, dirnameO, objects[objectID].frames[frameUuid].location);
+                utilities.createFrameFolder(object, tool, dirnameO, objects[objectID].frames[frameUuid].location); // todo maybe await
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty('nodes')) {
                 objects[objectID].frames[frameUuid].nodes = {};
@@ -568,7 +566,7 @@ exports.addNode = function (object, tool, node, type, position) {
 };
 
 exports.renameNode = function (object, tool, oldNode, newNode) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + tool;
@@ -588,7 +586,6 @@ exports.renameNode = function (object, tool, oldNode, newNode) {
         }
     }
     actionCallback({reloadObject: {object: objectID, frame: frameUUID}});
-    objectID = undefined;
 };
 
 exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
@@ -600,7 +597,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     if (loyalty !== undefined) thisLoyalty = 'object';
 
 
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -627,7 +624,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
 };
 
 exports.removeNode = function (object, tool, node) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
     if (objectID) {
@@ -649,7 +646,7 @@ exports.removeNode = function (object, tool, node) {
 };
 
 exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGroundPlane) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -665,12 +662,12 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
 };
 
 exports.pushUpdatesToDevices = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     actionCallback({reloadObject: {object: objectID}});
 };
 
 exports.generateFrame = function (objectName, frameType, relativeMatrix) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectName);
+    const objectID = utilities.readObject(objectLookup, objectName);
 
     if (!objectID || !objects.hasOwnProperty(objectID)) {
         console.warn('The object ' + objectName + ' doesn\'t exist.. cannot generateFrame');
@@ -708,7 +705,7 @@ exports.generateFrame = function (objectName, frameType, relativeMatrix) {
 };
 
 exports.activate = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
@@ -717,7 +714,7 @@ exports.activate = function (object) {
 };
 
 exports.deactivate = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
@@ -726,7 +723,7 @@ exports.deactivate = function (object) {
 };
 
 exports.hasTool = function(object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             let toolId = objectID + tool;
@@ -736,8 +733,8 @@ exports.hasTool = function(object, tool) {
     return false;
 };
 
-exports.getObjectIdFromObjectName = function (object) {
-    return utilities.getObjectIdFromTargetOrObjectFile(object);
+exports.getObjectIdFromObjectName = async function (object) {
+    return await utilities.getObjectIdFromTargetOrObjectFile(object);
 };
 
 exports.getObjectNameFromObjectId = function (objectId) {
@@ -773,7 +770,7 @@ exports.getWorldObjectForObject = function (objectId) {
 
 exports.getMarkerSize = function (object) {
     try {
-        var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+        const objectID = utilities.readObject(objectLookup, object);
         return objects[objectID].targetSize;
     } catch (e) {
         console.warn('Cannot get markerSize for ' + object + ', returning (0,0)');
@@ -787,7 +784,7 @@ exports.getMarkerSize = function (object) {
  * @param {number} height - target size height in mm
  */
 exports.setMarkerSize = function (object, width, height) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objects.hasOwnProperty(objectID)) {
         objectController.generateXml(objectID, {name: object, width: width, height: height}, function (statusCode, _responseContents) {
             if (statusCode !== 200) {
@@ -800,7 +797,7 @@ exports.setMarkerSize = function (object, width, height) {
 exports.setObjectVisualization = function (object, visualization) {
     if (visualization !== 'screen' && visualization !== 'ar') { return; } // only supported types
 
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object);
+    const objectID = utilities.readObject(objectLookup, object);
     objectController.setVisualization(objectID, visualization, function (statusCode, _responseContents) {
         if (statusCode !== 200) {
             console.error('error setting visualization from hardware interface');
