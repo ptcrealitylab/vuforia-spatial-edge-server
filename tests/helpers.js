@@ -61,3 +61,14 @@ exports.getTestObjects = async function getTestObjects() {
     const allObjects = await getAllObjects();
     return allObjects.filter(obj => obj.id.startsWith('fdsa'));
 };
+
+async function waitForObjects() {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        let allObjects = await getAllObjects();
+        if (Object.keys(allObjects).length > 0) {
+            break;
+        }
+    }
+}
+exports.waitForObjects = waitForObjects;
