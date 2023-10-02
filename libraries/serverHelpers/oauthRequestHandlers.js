@@ -75,7 +75,6 @@ const oauthAcquireRequestHandler = (req, res) => {
         },
         body: querystring.stringify(data)
     }).then(response => {
-<<<<<<< HEAD
         if (response.status !== 200) {
             response.json().then(responseData => { // Data is an error object sent by the OAuth server
                 res.status(response.status).send(responseData);
@@ -85,11 +84,6 @@ const oauthAcquireRequestHandler = (req, res) => {
                 res.send(responseData);
             }).catch(_error => {});
         }
-=======
-        return response.json();
-    }).then(acquireData => {
-        res.send(acquireData);
->>>>>>> master
     }).catch(error => {
         res.status(400).send(error);
     });
