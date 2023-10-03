@@ -143,6 +143,7 @@ const addonPaths = [
 
 const Addons = require('./libraries/addons/Addons');
 const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
+const AddonSecretsLoader = require('./libraries/addons/AddonSecretsLoader');
 
 const addons = new Addons(addonPaths);
 const addonFolders = addons.listAddonFolders();
@@ -528,6 +529,18 @@ availableModules.setNodes(nodeTypeModules);
 const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
 availableModules.setBlocks(blockModules);
+
+const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
+const getFrameSecrets = (frameName) => {
+    const frameFolderPath = frameFolderLoader.resolvePath(frameName);
+    const addonFolderPath = path.dirname(frameFolderPath);
+    const addonName = path.basename(addonFolderPath);
+    if (!addonSecrets[addonName]) {
+        throw new Error(`Addon ${addonName} does not have any registered secrets`);
+    }
+    return addonSecrets[addonName];
+};
+exports.getFrameSecrets = getFrameSecrets;
 
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
@@ -2045,8 +2058,8 @@ function objectWebServer() {
         webServer.get('/proxy/*', proxyRequestHandler);
 
         const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
-        webServer.post('/oauthRefresh/*', oauthRefreshRequestHandler);
-        webServer.post('/oauthAcquire/*', oauthAcquireRequestHandler);
+        webServer.post('/oauthRefresh', oauthRefreshRequestHandler);
+        webServer.post('/oauthAcquire', oauthAcquireRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
@@ -3631,9 +3644,9 @@ function socketServer() {
                     }
                 }
             } else {
-                console.warn('publicData update of unknown object', msg.object);
                 const objectKey = msg.object;
                 if (!knownUnknownObjects[objectKey]) {
+                    console.warn('publicData update of unknown object', msg.object);
                     knownUnknownObjects[objectKey] = true;
                     utilities.actionSender({
                         reloadObject: {
