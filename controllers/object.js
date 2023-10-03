@@ -1,8 +1,8 @@
-const fs = require('fs');
 const fsProm = require('fs/promises');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
+const {fileExists} = utilities;
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -51,7 +51,7 @@ const deleteObject = async function(objectID) {
     };
 };
 
-const uploadVideo = function(objectID, videoID, reqForForm, callback) {
+const uploadVideo = async function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'Object ' + objectID + ' not found');
@@ -72,8 +72,8 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
 
         var rawFilepath = form.uploadDir + '/' + videoID + '.mp4';
 
-        if (fs.existsSync(rawFilepath)) {
-            fs.unlinkSync(rawFilepath);
+        if (await fileExists(rawFilepath)) {
+            await fsProm.unlink(rawFilepath);
         }
 
         form.on('fileBegin', function (name, file) {
@@ -115,7 +115,7 @@ function simplifyFilename(filename) {
     return filename;
 }
 
-function uploadMediaFile(objectID, req, callback) {
+async function uploadMediaFile(objectID, req, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'object ' + objectID + ' not found');
@@ -123,8 +123,8 @@ function uploadMediaFile(objectID, req, callback) {
     }
 
     let mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
-    if (!fs.existsSync(mediaDir)) {
-        fs.mkdirSync(mediaDir);
+    if (!await fileExists(mediaDir)) {
+        await fsProm.mkdir(mediaDir);
     }
 
     let form = new formidable.IncomingForm({
@@ -141,13 +141,13 @@ function uploadMediaFile(objectID, req, callback) {
     let simplifiedFilename = null;
     let newFilepath = null;
 
-    form.on('fileBegin', function (name, file) {
+    form.on('fileBegin', async function (name, file) {
         // simplify the filename so that it only contains alphanumeric, hyphens, underscores, and periods
         simplifiedFilename = simplifyFilename(file.originalFilename);
         newFilepath = path.join(form.uploadDir, simplifiedFilename);
 
-        if (fs.existsSync(newFilepath)) {
-            fs.unlinkSync(newFilepath);
+        if (await fileExists(newFilepath)) {
+            await fsProm.unlink(newFilepath);
         }
 
         // old formidable library uses file.path, new version uses file.filepath
@@ -229,7 +229,7 @@ const setMatrix = function(objectID, body, callback) {
  * @param {express.Request} req
  * @param {express.Response} res
  */
-const memoryUpload = function(objectID, req, callback) {
+const memoryUpload = async function(objectID, req, callback) {
     if (!objects.hasOwnProperty(objectID)) {
         callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
         return;
@@ -243,8 +243,8 @@ const memoryUpload = function(objectID, req, callback) {
     }
 
     var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
-    if (!fs.existsSync(memoryDir)) {
-        fs.mkdirSync(memoryDir);
+    if (!await fileExists(memoryDir)) {
+        await fsProm.mkdir(memoryDir);
     }
 
     var form = new formidable.IncomingForm({
@@ -318,13 +318,13 @@ const setVisualization = function(objectID, vis, callback) {
 
 // request a zip-file with the object stored inside
 // ****************************************************************************************************************
-const zipBackup = function(objectId, req, res) {
+const zipBackup = async function(objectId, req, res) {
     if (globalVariables.isMobile) {
         res.status(500).send('zipBackup unavailable on mobile');
         return;
     }
 
-    if (!fs.existsSync(path.join(objectsPath, objectId))) {
+    if (!await fileExists(path.join(objectsPath, objectId))) {
         res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
         return;
     }
@@ -354,8 +354,8 @@ const generateXml = async function(objectID, body, callback) {
         '   </ARConfig>';
 
     let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir);
+    if (!await fileExists(targetDir)) {
+        await fsProm.mkdir(targetDir);
     }
 
     var xmlOutFile = path.join(targetDir, 'target.xml');
