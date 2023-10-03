@@ -30,8 +30,12 @@ test('server provides remote operator functionality', async () => {
     const page = await browser.newPage();
     // from https://stackoverflow.com/questions/58089425/how-do-print-the-console-output-of-the-page-in-puppeter-as-it-would-appear-in-th
     page.on('console', async e => {
-        const args = await Promise.all(e.args().map(a => a.jsonValue() || a));
-        console[e.type() === 'warning' ? 'warn' : e.type()](...args);
+        try {
+            const args = await Promise.all(e.args().map(a => a.jsonValue() || a));
+            console[e.type() === 'warning' ? 'warn' : e.type()](...args);
+        } catch (_) {
+            // don't care
+        }
     });
 
     await waitForObjects();
