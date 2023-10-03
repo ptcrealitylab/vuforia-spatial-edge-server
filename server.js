@@ -1091,7 +1091,8 @@ function clearActiveHeartbeats() {
 
 function sleep(ms) {
     return new Promise((res) => {
-        setTimeout(res, ms);
+        const t = setTimeout(res, ms);
+        t.unref(); // Ensures the process can exit without waiting for timeout to complete
     });
 }
 
@@ -1109,12 +1110,11 @@ function closeServer(server) {
                 console.error('Error closing server', err);
                 rej(err);
             } else {
-                console.log('server did close');
                 res();
             }
         });
     }), sleep(2000).then(() => {
-        console.log('server close timed out');
+        console.warn('Server close timed out');
     })]);
 }
 
@@ -1129,6 +1129,7 @@ async function exit() {
     clearInterval(socketUpdaterInterval);
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
+    console.info('Server exited successfully');
     // process.exit(0);
 }
 exports.exit = exit;
