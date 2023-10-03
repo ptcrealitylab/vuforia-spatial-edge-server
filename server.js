@@ -632,30 +632,32 @@ utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
-// This function will load all the Objects
-loadObjects();
-if (globalVariables.worldObject) {
-    loadWorldObject();
-}
-
-startSystem();
-
-// Get the directory names of all available sources for the 3D-UI
-if (!isLightweightMobile) {
-    hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
-    hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
-    availableModules.setHardwareInterfaces(hardwareInterfaceModules);
-
-    // statically serve the "public" directory in each hardware interface
-    for (let folderName in hardwareInterfaceLoader.folderMap) {
-        let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
-        webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+(async () => {
+    // This function will load all the Objects
+    await loadObjects();
+    if (globalVariables.worldObject) {
+        await loadWorldObject();
     }
-}
 
-hardwareAPI.reset();
+    await startSystem();
 
-console.info('Server has the following enabled hardware interfaces: ' + Object.keys(hardwareInterfaceModules).join(', '));
+    // Get the directory names of all available sources for the 3D-UI
+    if (!isLightweightMobile) {
+        hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
+        hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
+        availableModules.setHardwareInterfaces(hardwareInterfaceModules);
+
+        // statically serve the "public" directory in each hardware interface
+        for (let folderName in hardwareInterfaceLoader.folderMap) {
+            let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
+            webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+        }
+    }
+
+    hardwareAPI.reset();
+
+    console.info('Server has the following enabled hardware interfaces: ' + Object.keys(hardwareInterfaceModules).join(', '));
+})();
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
 // is initialized.
