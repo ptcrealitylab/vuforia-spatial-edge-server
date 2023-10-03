@@ -1,7 +1,8 @@
-const fs = require('fs');
+const fsProm = require('fs/promises');
 const path = require('path');
 
 const utilities = require('../libraries/utilities');
+const {fileExists} = utilities;
 const Frame = require('../models/Frame');
 const Node = require('../models/Node');
 
@@ -299,21 +300,21 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
     }).map(function (publicData) {
         return publicData.data;
     });
-    videoPaths.forEach(function (videoPath) {
+    for (const videoPath of videoPaths) {
         // convert videoPath into path on local filesystem // TODO: make this independent on OS path-extensions
-        var urlArray = videoPath.split('/');
+        const urlArray = videoPath.split('/');
 
-        var objectName = urlArray[4];
-        var videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, objectName);
-        var videoFilePath = path.join(videoDir, urlArray[6]);
+        const objectName = urlArray[4];
+        const videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, objectName);
+        const videoFilePath = path.join(videoDir, urlArray[6]);
 
-        if (fs.existsSync(videoFilePath)) {
-            fs.unlinkSync(videoFilePath);
+        if (await fileExists(videoFilePath)) {
+            await fsProm.unlink(videoFilePath);
         }
-    });
+    }
 
-    var objectName = object.name;
-    var frameName = object.frames[frameId].name;
+    const objectName = object.name;
+    const frameName = object.frames[frameId].name;
 
     try {
         object.frames[frameId].deconstruct();
