@@ -15,9 +15,9 @@ const oauthRefreshRequestHandler = (req, res) => {
         res.status(400).send({error: `Invalid frameName "${frameName}"`});
         return;
     }
-    const refreshUrl = secrets["refreshUrl"];
-    const clientId = secrets["clientId"];
-    const clientSecret = secrets["clientSecret"];
+    const refreshUrl = secrets.refreshUrl;
+    const clientId = secrets.clientId;
+    const clientSecret = secrets.clientSecret;
     const data = {
         'grant_type': 'refresh_token',
         'refresh_token': req.body.refresh_token,
@@ -58,9 +58,9 @@ const oauthAcquireRequestHandler = (req, res) => {
         res.status(400).send({error: `Invalid frameName "${frameName}"`});
         return;
     }
-    const acquireUrl = secrets["acquireUrl"];
-    const clientId = secrets["clientId"];
-    const clientSecret = secrets["clientSecret"];
+    const acquireUrl = secrets.acquireUrl;
+    const clientId = secrets.clientId;
+    const clientSecret = secrets.clientSecret;
     const data = {
         'grant_type': 'authorization_code',
         'code': req.body.code,
