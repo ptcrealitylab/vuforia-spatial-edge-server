@@ -234,6 +234,7 @@ class WebSocketConnection {
             gpNode = realityEditor.sceneGraph.getSceneNodeById(realityEditor.sceneGraph.NAMES.GROUNDPLANE);
         }
         let newCamMatrix = cameraNode.getMatrixRelativeTo(gpNode);
+        //console.log(newCamMatrix)
 
         let isMovingCam = false;
         for(let i = 0; i<16; i++)
@@ -264,21 +265,58 @@ class WebSocketConnection {
             }
         }
 
+        
+
+        // array([  [ 9.57559476e-01, -2.88234053e-01, 9.89877789e-04, -2.56754693e+00],
+        //          [ 2.79956634e-01,  9.29232406e-01, -2.41146053e-01,-7.41498688e+00],
+        //          [ 6.85866777e-02,  2.31188811e-01,  9.70488331e-01, 1.39277160e+00],
+        //          [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00, 1.00000000e+00]])
+        // avgScale = 0.07125885689133157
+
+        //new matrix transformation way !!!
+        // First, apply the floorOffset and global SCALE
         const SCALE = 1 / 1000;
+        const scaleF = 0.13523484986150555;
+        const offset_x = 0.7202233672142029;
+        const offset_y = -0.5659182071685791;
+        const offset_z = -1.2645909786224365;
+        //old code
+        // newCamMatrix[12] = (newCamMatrix[12]*SCALE + offset_x)*scaleF;
+        // newCamMatrix[13] = ((newCamMatrix[13] + floorOffset)*SCALE + offset_y)*scaleF;
+        // newCamMatrix[14] = (newCamMatrix[14]*SCALE + offset_z)*scaleF;
 
-        // const parserMatrixScale = 0.13523484986150555;
-        // const offset_x = 0.7202233672142029;
-        // const offset_y = -0.5659182071685791;
-        // const offset_z = -1.2645909786224365;
+        // new code
 
-        const parserMatrixScale = 1.0;
-        const offset_x = 0;
-        const offset_y = 0;
-        const offset_z = 0;
+        newCamMatrix[12] *= SCALE;
+        newCamMatrix[13] = (newCamMatrix[13] + floorOffset) * SCALE;
+        newCamMatrix[14] *= SCALE;
 
-        newCamMatrix[12] = (newCamMatrix[12]*SCALE + offset_x)*parserMatrixScale;
-        newCamMatrix[13] = ((newCamMatrix[13] + floorOffset)*SCALE + offset_y)*parserMatrixScale;
-        newCamMatrix[14] = (newCamMatrix[14]*SCALE + offset_z)*parserMatrixScale;
+        // this fking thing needs to ALSO be in the >>column convention<< !!!!!!!!
+        // if you have a normal matrix, transpose it !!!!
+        const transfMatrix = [
+            1.0,        0,      0,          0,
+            0,          1.0,    0,          0,
+            0,          0,      1.0,        0,
+            offset_x, offset_y, offset_z,   1.0
+        ];
+
+        let resultMatrix = new Array(16).fill(0);
+
+        for(let row = 0; row < 4; row++) {
+            for(let col = 0; col < 4; col++) {
+                let sum = 0; // Initialize sum for each element
+                for(let k = 0; k < 4; k++) {
+                    sum += newCamMatrix[row * 4 + k] * transfMatrix[k * 4 + col];
+                }
+                resultMatrix[row * 4 + col] = sum; // Assign the calculated value
+            }
+        }
+
+        resultMatrix[12] = resultMatrix[12] * scaleF;
+        resultMatrix[13] = resultMatrix[13] * scaleF;
+        resultMatrix[14] = resultMatrix[14] * scaleF;
+
+
         //format the outgoing camera pos message !!!
         const message = 
         {
@@ -286,7 +324,7 @@ class WebSocketConnection {
             aspect: window.innerWidth/window.innerHeight,
             render_aspect: window.innerWidth/window.innerHeight,
             fov: 41.22673,
-            matrix: newCamMatrix,
+            matrix: resultMatrix,
             camera_type: "perspective",
             is_moving: isMovingCam,
             timestamp: +new Date(),
