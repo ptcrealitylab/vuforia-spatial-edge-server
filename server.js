@@ -135,6 +135,7 @@ const fs = require('fs');       // Filesystem library
 const fsProm = require('fs/promises');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
+const dirTree = require('directory-tree');
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
@@ -1964,7 +1965,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                 return;
             }
-            const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
                 item.path = item.path.replace(objectsPath, '/obj');
