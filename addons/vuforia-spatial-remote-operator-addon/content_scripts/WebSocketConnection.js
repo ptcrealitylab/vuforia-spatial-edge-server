@@ -294,11 +294,28 @@ class WebSocketConnection {
         // this fking thing needs to ALSO be in the >>column convention<< !!!!!!!!
         // if you have a normal matrix, transpose it !!!!
         const transfMatrix = [
-            1.0,        0,      0,          0,
-            0,          1.0,    0,          0,
-            0,          0,      1.0,        0,
-            offset_x, offset_y, offset_z,   1.0
+            1.0,        0,      0,          offset_x,
+            0,          1.0,    0,          offset_y,
+            0,          0,      1.0,        offset_z,
+            0,          0,      0,          1.0
         ];
+        
+        
+        function transpose(matrix) {
+            if (matrix.length !== 16) {
+                console.error("Matrix is not a 4x4 matrix");
+                return;
+            }
+        
+            return [
+                matrix[0], matrix[4], matrix[8], matrix[12],
+                matrix[1], matrix[5], matrix[9], matrix[13],
+                matrix[2], matrix[6], matrix[10], matrix[14],
+                matrix[3], matrix[7], matrix[11], matrix[15]
+            ];
+        }
+
+        const transposedMatrix = transpose(transfMatrix);
 
         let resultMatrix = new Array(16).fill(0);
 
@@ -306,7 +323,7 @@ class WebSocketConnection {
             for(let col = 0; col < 4; col++) {
                 let sum = 0; // Initialize sum for each element
                 for(let k = 0; k < 4; k++) {
-                    sum += newCamMatrix[row * 4 + k] * transfMatrix[k * 4 + col];
+                    sum += newCamMatrix[row * 4 + k] * transposedMatrix[k * 4 + col];
                 }
                 resultMatrix[row * 4 + col] = sum; // Assign the calculated value
             }
