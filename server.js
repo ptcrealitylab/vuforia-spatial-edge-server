@@ -812,7 +812,7 @@ async function loadWorldObject() {
 
     // create a /.identity folder within it to hold the object.json data
     if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
-        await fs.mkdir(identityPath, {recursive: true});
+        await fsProm.mkdir(identityPath, {recursive: true});
     }
 
     // create a new world object
@@ -1544,7 +1544,7 @@ function objectWebServer() {
 
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
-    webServer.use('/frames/:frameName', function (req, res, next) {
+    webServer.use('/frames/:frameName', async function (req, res, next) {
         if (!utilities.isValidId(req.params.frameName)) {
             res.status(400).send('Invalid frame name. Must be alphanumeric.');
             console.error('Recevied invalid frame name. Must be alphanumeric.', req.params.frameName);
@@ -1560,7 +1560,7 @@ function objectWebServer() {
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
         // we need to check without any ?options=xyz at the end or it might not find the file
         let fileNameWithoutQueryParams = fileName.split('?')[0];
-        if (!fs.existsSync(fileNameWithoutQueryParams)) {
+        if (!await fileExists(fileNameWithoutQueryParams)) {
             next();
             return;
         }
@@ -1572,7 +1572,7 @@ function objectWebServer() {
         }
 
         // HTML files get object.js injected
-        var html = fs.readFileSync(fileNameWithoutQueryParams, 'utf8');
+        var html = await fsProm.readFile(fileNameWithoutQueryParams, 'utf8');
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
@@ -1606,21 +1606,20 @@ function objectWebServer() {
         scriptNode += '<script> realityObject.serverIp = "' + services.ip + '"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
-
     });
 
-    webServer.use('/logicNodeIcon', function (req, res) {
+    webServer.use('/logicNodeIcon', async function (req, res) {
         var urlArray = req.originalUrl.split('/');
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
-        if (!fs.existsSync(fileName)) {
+        if (!await fileExists(fileName)) {
             res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not custom saved yet
             return;
         }
         res.sendFile(fileName);
     });
 
-    webServer.use('/mediaFile', function (req, res) {
+    webServer.use('/mediaFile', async function (req, res) {
         var urlArray = req.originalUrl.split('/');
 
         var objectId = urlArray[2];
@@ -1631,7 +1630,7 @@ function objectWebServer() {
 
         var objectName = getObject(objectId).name;
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/mediaFiles/' + urlArray[3];
-        if (!fs.existsSync(fileName)) {
+        if (!await fileExists(fileName)) {
             res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not found
             return;
         }
@@ -1985,18 +1984,19 @@ function objectWebServer() {
             webFrontend.editContent(req, res);
         });
 
-        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
+        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', async function (req, res) {
             if (utilities.goesUpDirectory(req.path)) {
                 res.status(400).send('Invalid path. Cannot go up directories.');
                 return;
             }
-            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
-                if (err) {
-                    throw err;
-                }
-                // Success!
-                res.end('');
-            });
+            try {
+                await fsProm.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content);
+            } catch (err) {
+                // TODO: update path with objectsPath
+                console.error('unable to PUT edit', err);
+            }
+            // Success!
+            res.end('');
         });
         // sends the target page for the object :id
         // ****************************************************************************************************************
@@ -2315,7 +2315,7 @@ function objectWebServer() {
 
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
-        webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
+        webServer.get('/frame/:frameName/zipBackup/', async function (req, res) {
             if (isLightweightMobile) {
                 res.status(500).send('zipBackup unavailable on mobile');
                 return;
@@ -2335,7 +2335,7 @@ function objectWebServer() {
             }
             var framePath = path.join(frameLibPath, frameName);
 
-            if (!fs.existsSync(framePath)) {
+            if (!await fileExists(framePath)) {
                 res.status(404).send('frame directory for ' + frameName + 'does not exist at ' + framePath);
                 return;
             }
@@ -2711,7 +2711,7 @@ function objectWebServer() {
 
                                 //todo add object to the beatsender.
 
-                                fs.unlinkSync(folderD + '/' + filename);
+                                await fsProm.unlink(folderD + '/' + filename);
 
                                 res.status(200);
                                 res.send('done');
@@ -2760,7 +2760,7 @@ function objectWebServer() {
                         if ((await fsProm.stat(folderDel)).isDirectory()) {
                             await utilities.deleteFolderRecursive(folderDel);
                         } else {
-                            await fs.unlink(folderDel);
+                            await fsProm.unlink(folderDel);
                         }
                     }
 
