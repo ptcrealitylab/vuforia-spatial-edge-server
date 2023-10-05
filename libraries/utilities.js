@@ -116,7 +116,8 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
     // var identity = folder + identityFolderName + '/';
-    var firstFrame = folder + frameVar + '/'; // TODO(hobinjk) is being outside of .identity a bug?
+    // being outside of .identity matches frameFolder route for example
+    var firstFrame = folder + frameVar + '/';
 
     if (!await fileExists(firstFrame)) {
         try {
