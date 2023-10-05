@@ -269,7 +269,7 @@ services.ip = services.getIP(); //ip.address();
 
 var express = require('express'); // Web Sever library
 
-var identityFolderName = '.identity';
+const {identityFolderName} = require('./constants.js');
 
 // This file hosts the functions related to loading the set of available frames
 // from the each add-ons tools directory
@@ -2113,7 +2113,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2123,74 +2123,6 @@ function objectWebServer() {
             });
         });
 
-        /**
-         * Updates the settings.json for a particular hardware interface, based on changes from the webFrontend.
-         * @param {string} interfaceName - the folder name of the hardwareInterface
-         * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
-         * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
-         * @param {successCallback} callback
-         */
-        async function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) { // eslint-disable-line no-inner-declarations
-            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-
-            try {
-                const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
-                let existingSettings = {};
-                try {
-                    existingSettings = JSON.parse(rawSettings);
-                } catch (e) {
-                    console.error('Unable to parse settings', e, rawSettings);
-                }
-
-                for (let key in settings) {
-                    if (!settings.hasOwnProperty(key)) {
-                        continue;
-                    }
-                    if (limitToKeys && !limitToKeys.includes(key)) {
-                        continue;
-                    }
-
-                    // update value that will get written to disk
-                    if (typeof settings[key].value !== 'undefined') {
-                        existingSettings[key] = settings[key].value;
-                    } else {
-                        existingSettings[key] = settings[key];
-                    }
-
-                    // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
-                    if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
-                        hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
-                    }
-                }
-
-                if (globalVariables.saveToDisk) {
-                    try {
-                        await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4));
-                        callback(true);
-                        hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
-                    } catch (err) {
-                        console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                        callback(false, 'error writing to file');
-                    }
-                } else {
-                    console.error('Save to disk is disabled for this server');
-                    callback(false, 'saveToDisk globally disabled for this server');
-                }
-            } catch (e) {
-                console.error('Error saving hardware interface settings to disk for ' + interfaceName, e);
-                callback(false, 'error writing to file');
-            }
-        }
-
-        /**
-         * @callback successCallback
-         * @param {boolean} success
-         * @param {string?} error message
-         */
-
-        // TODO(hobinjk): break the back-and-forth web of dependencies with hardwareAPI
-        hardwareAPI.setSetHardwareInterfaceSettingsImpl(setHardwareInterfaceSettings);
-
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
@@ -2199,7 +2131,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2217,7 +2149,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2228,48 +2160,6 @@ function objectWebServer() {
                 }
             });
         });
-
-        /**
-         * Overwrites the 'enabled' property in the spatialToolbox/.identity/hardwareInterfaceName/settings.json
-         * If the file is new (empty), write a default json blob into it with the new enabled value
-         * @param {string} interfaceName
-         * @param {boolean} shouldBeEnabled
-         * @param {successCallback} callback
-         */
-        async function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
-            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-
-            try {
-                const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
-                var settings = JSON.parse(rawSettings);
-                settings.enabled = shouldBeEnabled;
-
-                if (globalVariables.saveToDisk) {
-                    try {
-                        await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4));
-                        callback(true);
-                    } catch (err) {
-                        console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                        callback(false, 'error writing to file');
-                    }
-                } else {
-                    console.error('Save to disk is disabled for this server');
-                    callback(false, 'saveToDisk globally disabled for this server');
-                }
-            } catch (e) {
-                // Trying default settings
-                var defaultSettings = {
-                    enabled: shouldBeEnabled
-                };
-                try {
-                    fsProm.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4));
-                    callback(true);
-                } catch (err) {
-                    console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
-                    callback(false, 'error writing to file');
-                }
-            }
-        }
 
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
