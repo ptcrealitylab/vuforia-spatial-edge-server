@@ -716,6 +716,7 @@
                 this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -1824,6 +1825,12 @@
                 getScreenshotBase64: true
             });
         };
+        
+        this.captureSpatialSnapshot = function() {
+            postDataToParent({
+                captureSpatialSnapshot: true
+            });
+        }
 
         /**
          * Programmatically opens device keyboard.
