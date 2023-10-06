@@ -1834,12 +1834,15 @@
             postDataToParent({
                 captureSpatialSnapshot: true
             });
-            return new Promise((resolve, _reject) => {
+            return new Promise((resolve, reject) => {
                 spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
                     if (typeof msgContent.spatialSnapshotData !== 'undefined') {
-                        // TODO: listen for another message to handle errors and reject the promise
                         resolve(msgContent.spatialSnapshotData);
                         delete spatialObject.messageCallBacks['captureSpatialSnapshotResult']; // only trigger it once
+                    }
+                    if (typeof msgContent.spatialSnapshotError !== 'undefined') {
+                        reject(msgContent.spatialSnapshotError);
+                        delete spatialObject.messageCallBacks['captureSpatialSnapshotResult'];
                     }
                 };
             });
