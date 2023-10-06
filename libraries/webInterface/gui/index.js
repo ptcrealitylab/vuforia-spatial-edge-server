@@ -383,7 +383,7 @@ realityServer.updateManageObjects = function (thisItem2) {
         }
 
         let thisObject = this.objects[objectKey];
-        
+
         if (!thisItem2 || thisItem2 === objectKey) {
 
             if (thisObject.isWorldObject) {
@@ -1005,7 +1005,7 @@ realityServer.updateManageHardwareInterfaces = function () {
                 ' restart your server and refresh this page. When you do so, you can then configure it here.');
         }
 
-        function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
+        function addHardwareInterfaceEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
             button.addEventListener('click', function () {
                 if (hardwareInterfaceInfo.enabled) {
                     realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/disable/', 'GET', function (state) {
@@ -1029,14 +1029,14 @@ realityServer.updateManageHardwareInterfaces = function () {
             });
         }
 
-        addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
+        addHardwareInterfaceEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
 
         firstColumn.appendChild(interfaceInfo.dom, true);
     }
 
     let configFrame = document.createElement('iframe');
     configFrame.classList.add('configFrame');
-    configFrame.addEventListener('pointerenter', function(e) {
+    configFrame.addEventListener('pointerenter', function() {
         tooltipDiv.style.display = 'none'; // hide the tooltip when it enters the iframe because we lose capture of it
         lastMovedTimestamp = Date.now();
     });
@@ -1067,7 +1067,7 @@ realityServer.updateCommonContents = function (thisItem2) {
 
             thisNode.getElementById('subNetInterface').appendChild(thisSubObject);
         }
-        
+
         this.getCommonContents().appendChild(thisNode);
 
         this.getCommonContents().appendChild(this.templates['tabs'].content.cloneNode(true));
@@ -1414,42 +1414,42 @@ realityServer.gotClick = function (event) {
             newNode.querySelector('.name').innerText = thisObject.targetName;
             referenceNode.after(newNode);
 
-            let visualFeedback = document.getElementById('targetDropZone' + objectKey).querySelector('.dropZoneFeedback');
-            if (visualFeedback && thisObject && thisObject.targetsExist) {
+            let dropZoneFeedback = document.getElementById('targetDropZone' + objectKey).querySelector('.dropZoneFeedback');
+            if (dropZoneFeedback && thisObject && thisObject.targetsExist) {
                 if (thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
-                    visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasDat'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasDat').innerText = 'Has .dat';
                 } else if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
-                    visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasDat'), 'red', 'white');
+                    dropZoneFeedback.querySelector('.hasDat').innerText = '.dat optional';
 
-                    setTooltipTextForElement(visualFeedback.querySelector('.hasDat'),
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.hasDat'),
                         'You don\'t need to upload a .dat file for this object since you gave it a .jpg, but adding' +
                         ' one (generated from Vuforia developer tools) may improve tracking stability');
                 }
                 if (thisObject.targetsExist.xmlExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
-                    visualFeedback.querySelector('.hasXml').innerText = 'Has .xml';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasXml'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasXml').innerText = 'Has .xml';
                 }
                 if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'green');
-                    visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasJpg'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
                 } else if (thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
-                    setTooltipTextForElement(visualFeedback.querySelector('.hasJpg'),
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasJpg'), 'red', 'yellow');
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.hasJpg'),
                         'You already uploaded a .dat file to be the target data, but you should still upload a .jpg' +
                         ' to act as this object\'s icon');
                 }
 
                 if (!thisObject.targetsExist.jpgExists && !thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.generateXml'), 'green', 'hidden');
                 } else {
-                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.generateXml'), 'hidden', 'green');
 
-                    setTooltipTextForElement(visualFeedback.querySelector('.generateXml'),
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.generateXml'),
                         'You must accurately enter the width and height (in meters) for AR content to scale' +
                         ' correctly when attached to this object. Defaults to 0.3 meters (12 inches).');
-                    showGenerateXml(visualFeedback, objectKey);
+                    showGenerateXml(dropZoneFeedback, objectKey);
                 }
             }
 
@@ -1507,9 +1507,9 @@ realityServer.gotClick = function (event) {
 
                         if (realityServer.objects[responseText.name]) {
                             realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
-                            let thisObject = document.getElementById('object' + responseText.name);
-                            thisObject.id = 'object' + responseText.id;
-                            let objectList = thisObject.querySelectorAll('button');
+                            let objectElt = document.getElementById('object' + responseText.name);
+                            objectElt.id = 'object' + responseText.id;
+                            let objectList = objectElt.querySelectorAll('button');
 
                             for (let i = 0; i < objectList.length; i++) {
                                 // TODO: don't assign same id to every button (not sure about side effects of removing, so assigned to github issue #19)
@@ -1791,8 +1791,8 @@ realityServer.gotClick = function (event) {
                 if (state) {
                     let tree = JSON.parse(state);
                     let newNode = {};
-                    let thisLevel = realityServer.printFiles(tree);
-                    getLevels(thisLevel, 0);
+                    let thisLevelStart = realityServer.printFiles(tree);
+                    getLevels(thisLevelStart, 0);
 
                     newNode = document.getElementById('contentDropZoneId').content.cloneNode(true);
                     referenceNode.before(newNode);
@@ -1967,8 +1967,8 @@ realityServer.gotClick = function (event) {
                     let msgContent = JSON.parse(state);
                     // generate a placeholder xml file for this object
                     let defaultSize = 0.3;
-                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (state) {
-                        if (state === 'ok') {
+                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
+                        if (stateGen === 'ok') {
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
                             realityServer.objects[msgContent.id].isWorldObject = true;
@@ -1976,8 +1976,8 @@ realityServer.gotClick = function (event) {
 
                             // make them automatically activate after a slight delay
                             setTimeout(function () {
-                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
-                                    if (state === 'ok') {
+                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
+                                    if (stateActivate === 'ok') {
                                         //   realityServer.objects[msgContent.id].active = true;
                                     }
                                     realityServer.update();
@@ -2550,7 +2550,7 @@ function setGeneratedTarget(clickedElem, callback) {
 //   clickedElem.download = 'autogen-target.jpg';
 // }
 
-function removeTarget(clickedElem, callback) {
+function _removeTarget(clickedElem, callback) {
     const objectName = clickedElem.dataset.objectName;
     realityServer.sendRequest('/content/' + objectName, 'DELETE', function (_state) {
         callback();

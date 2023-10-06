@@ -122,7 +122,7 @@
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
-    
+
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -711,6 +711,8 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -1219,7 +1221,7 @@
                     nodeData: nodeData
                 }
             });
-        }
+        };
 
         /**
          * @deprecated - use initNodeWithOptions instead
@@ -1335,7 +1337,7 @@
             postDataToParent({
                 sendCoordinateSystems: spatialObject.sendCoordinateSystems
             });
-        }
+        };
 
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
@@ -1453,7 +1455,7 @@
             postDataToParent({
                 full2D: enabled
             });
-        }
+        };
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
@@ -1642,6 +1644,23 @@
             return videoPlayback;
         };
 
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                    distance: followDistance
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
+                    frame: spatialObject.frame
+                }
+            });
+        };
+
         this.disposeVideoPlayback = function(videoPlaybackID) {
             postDataToParent({
                 disposeVideoPlayback: {
@@ -1750,21 +1769,18 @@
         };
 
         /**
-         * Makes an OAuth request at `authorizationUrl`, requires the OAuth flow to redirect to navigate://<toolbox>
-         * Will not call `callback` on initial OAuth flow, as the whole app gets reloaded
-         * TODO: Write correct redirect URIs above
-         * @param {object} urls - OAuth Authorization and Access Token URL
+         * Makes an OAuth request at `authorizationUrl`,
+         * Will not call `callback` on initial OAuth authentication, as the whole app gets reloaded
+         * @param {object} authorizationUrl - OAuth Authorization URL
          * @param {string} clientId - OAuth client ID
-         * @param {string} clientSecret - OAuth client secret
          * @param {function} callback - Callback function executed once OAuth flow completes
          */
-        this.getOAuthToken = function(urls, clientId, clientSecret, callback) {
+        this.getOAuthToken = function(authorizationUrl, clientId, callback) {
             postDataToParent({
                 getOAuthToken: {
                     frame: spatialObject.frame,
-                    clientId: clientId,
-                    clientSecret: clientSecret,
-                    urls
+                    authorizationUrl,
+                    clientId
                 }
             });
             spatialObject.messageCallBacks.onOAuthToken = function (msgContent) {
@@ -2031,12 +2047,12 @@
                     width: msgContent.onWindowResized.width,
                     height: msgContent.onWindowResized.height
                 });
-            }
+            };
 
             postDataToParent({
                 sendWindowResize: true
             });
-        }
+        };
 
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
@@ -2184,7 +2200,7 @@
                     }
                 };
             });
-        }
+        };
 
         /**
          * Get the user's name and any other details about their session that the app knows
@@ -2201,35 +2217,35 @@
                     }
                 };
             });
-        }
-        
+        };
+
         this.getAreaTargetMesh = function() {
             postDataToParent({
                 getAreaTargetMesh: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
                         delete spatialObject.messageCallBacks['areaTargetMeshResult'];
                     }
-                }
-            })
-        }
-        
+                };
+            });
+        };
+
         this.getSpatialCursorEvent = function() {
             postDataToParent({
                 getSpatialCursorEvent: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
                         delete spatialObject.messageCallBacks['spatialCursorEventResult'];
                     }
-                }
-            })
-        }
+                };
+            });
+        };
 
         // ------------------------- Profiler APIs ------------------------- //
         // Used to measure performance or help with debugging

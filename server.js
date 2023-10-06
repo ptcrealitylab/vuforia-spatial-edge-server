@@ -120,7 +120,8 @@ const socketPort = serverPort;     // server and socket port are always identica
 exports.beatPort = beatPort;
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
-const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
+const socketUpdateIntervalMs = 2000; // how often the system checks if the socket connections are still up and running.
+let socketUpdaterInterval;
 
 // todo why would you alter the version of the server for mobile. There should only be one version of the server.
 // The version of this server
@@ -142,6 +143,7 @@ const addonPaths = [
 
 const Addons = require('./libraries/addons/Addons');
 const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
+const AddonSecretsLoader = require('./libraries/addons/AddonSecretsLoader');
 
 const addons = new Addons(addonPaths);
 const addonFolders = addons.listAddonFolders();
@@ -171,6 +173,7 @@ try {
 }
 
 var dgram = require('dgram'); // UDP Broadcasting library
+let udpServer;
 
 var services = {};
 if (!isLightweightMobile) {
@@ -296,7 +299,7 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-var http = require('http').createServer(webServer).listen(serverPort, function () {
+const http = webServer.listen(serverPort, function () {
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
@@ -527,6 +530,18 @@ const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
 availableModules.setBlocks(blockModules);
 
+const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
+const getFrameSecrets = (frameName) => {
+    const frameFolderPath = frameFolderLoader.resolvePath(frameName);
+    const addonFolderPath = path.dirname(frameFolderPath);
+    const addonName = path.basename(addonFolderPath);
+    if (!addonSecrets[addonName]) {
+        throw new Error(`Addon ${addonName} does not have any registered secrets`);
+    }
+    return addonSecrets[addonName];
+};
+exports.getFrameSecrets = getFrameSecrets;
+
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
@@ -583,7 +598,6 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const {oauthRefreshRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -591,7 +605,7 @@ const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, ser
  **********************************************************************************************************************/
 
 // Load all the hardware interfaces
-var hardwareAPICallbacks = {
+const hardwareAPICallbacks = {
     publicData: function (objectKey, frameKey, nodeKey) {
         socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
     },
@@ -617,9 +631,9 @@ var hardwareAPICallbacks = {
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
 hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
-var utilitiesCallbacks = {
+const utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
-}
+};
 utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
@@ -1041,7 +1055,7 @@ function startSystem() {
 
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
-    socketUpdaterInterval();
+    setSocketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
@@ -1063,10 +1077,62 @@ function startSystem() {
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
 
+function clearActiveHeartbeat(activeHeartbeat) {
+    clearInterval(activeHeartbeat.interval);
+    activeHeartbeat.socket.close();
+}
+
+function clearActiveHeartbeats() {
+    for (const key of Object.keys(activeHeartbeats)) {
+        clearActiveHeartbeat(activeHeartbeats[key]);
+        delete activeHeartbeats[key];
+    }
+}
+
+function sleep(ms) {
+    return new Promise((res) => {
+        const t = setTimeout(res, ms);
+        t.unref(); // Ensures the process can exit without waiting for timeout to complete
+    });
+}
+
+function closeServer(server) {
+    return Promise.race([new Promise((res, rej) => {
+        if (server.closeAllConnections) {
+            server.closeAllConnections();
+        }
+        if (server.unref) {
+            server.unref();
+        }
+
+        server.close((err) => {
+            if (err) {
+                console.error('Error closing server', err);
+                rej(err);
+            } else {
+                res();
+            }
+        });
+    }), sleep(2000).then(() => {
+        console.warn('Server close timed out');
+    })]);
+}
+
 async function exit() {
     hardwareAPI.shutdown();
-    process.exit();
+    await closeServer(http);
+    await closeServer(io.server.server);
+    sceneGraph.clearIntervals();
+    await recorder.stop();
+    clearActiveHeartbeats();
+    udpServer.close();
+    clearInterval(socketUpdaterInterval);
+    staleObjectCleaner.clearCleanupIntervals();
+    humanPoseFuser.stop();
+    console.info('Server exited successfully');
+    // process.exit(0);
 }
+exports.exit = exit;
 
 process.on('SIGINT', exit);
 
@@ -1123,9 +1189,13 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
     }
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
-    setInterval(() => {
+    const interval = setInterval(() => {
         utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: false});
     }, beatInterval + utilities.randomIntInc(-250, 250));
+    activeHeartbeats['server_' + services.ip] = {
+        interval,
+        socket: client,
+    };
 }
 
 /**
@@ -1176,19 +1246,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
     // Objects
 
-    // json string to be sent
-    const messageObj = {
-        id: thisId,
-        ip: services.ip,
-        port: serverPort,
-        vn: thisVersionNumber,
-        pr: protocol,
-        tcs: objects[thisId].tcs,
-        zone: objects[thisId].zone || '',
-    };
-
     // creating the datagram
-    var client = dgram.createSocket({
+    const client = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -1209,7 +1268,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
                 services.ip = services.getIP();
 
-                const messageObj ={
+                const messageObj = {
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1220,7 +1279,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                 };
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
-                    
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
                         onErr: (_err) => {
@@ -1238,9 +1296,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
             sendBeat();
         }
         // perturb the inverval a bit so that not all objects send the beat in the same time.
-        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
-    }
-    else {
+        activeHeartbeats[thisId] = {
+            interval: setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250)),
+            socket: client,
+        };
+    } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
         let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
@@ -1315,7 +1375,7 @@ function objectBeatServer() {
     }
 
     // creating the udp server
-    var udpServer = dgram.createSocket({
+    udpServer = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -1352,7 +1412,7 @@ function objectBeatServer() {
 
             if (msgContent.ip)
                 knownObjects[msgContent.id].ip = msgContent.ip;
-            
+
             // each time we discover a new object from another, also get the scene graph from that server
             getKnownSceneGraph(msgContent.ip);
         }
@@ -1487,15 +1547,17 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
 
-    const LocalUIApp = require('./libraries/LocalUIApp.js');
-    const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
-    const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
-    const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
-    console.info('UI path for LocalUIApp: ' + selectedUiPath);
-    const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
-    localUserInterfaceApp.setup();
-    localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    if (isStandaloneMobile) {
+        const LocalUIApp = require('./libraries/LocalUIApp.js');
+        const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
+        const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
+        const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
+        console.info('UI path for LocalUIApp: ' + selectedUiPath);
+        const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
+        localUserInterfaceApp.setup();
+        localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+        localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    }
 
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
@@ -2001,8 +2063,8 @@ function objectWebServer() {
         webServer.get('/proxy/*', proxyRequestHandler);
 
         const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
-        webServer.post('/oauthRefresh/*', oauthRefreshRequestHandler);
-        webServer.post('/oauthAcquire/*', oauthAcquireRequestHandler);
+        webServer.post('/oauthRefresh', oauthRefreshRequestHandler);
+        webServer.post('/oauthAcquire', oauthAcquireRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
@@ -2122,7 +2184,7 @@ function objectWebServer() {
                         hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
                     }
                 }
-                
+
                 if (globalVariables.saveToDisk) {
                     fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
                         if (err) {
@@ -2477,7 +2539,7 @@ function objectWebServer() {
                                     x: 0,
                                     y: 0
                                 };
-                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {});
+                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function() {});
                             } else {
                                 utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
@@ -2617,7 +2679,7 @@ function objectWebServer() {
                         // remove object from tree
                         if (objects[tempFolderName2]) {
                             if (activeHeartbeats[tempFolderName2]) {
-                                clearInterval(activeHeartbeats[tempFolderName2]);
+                                clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                                 delete activeHeartbeats[tempFolderName2];
                             }
                             try {
@@ -2683,7 +2745,7 @@ function objectWebServer() {
                             });
 
                             unzipper.on('extract', function () {
-                                createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
 
                                 //todo add object to the beatsender.
 
@@ -2694,7 +2756,7 @@ function objectWebServer() {
 
                             });
 
-                            unzipper.on('progress', function (fileIndex, fileCount) {
+                            unzipper.on('progress', function (_fileIndex, _fileCount) {
                                 // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                             });
 
@@ -2744,7 +2806,7 @@ function objectWebServer() {
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         if (activeHeartbeats[tempFolderName2]) {
-                            clearInterval(activeHeartbeats[tempFolderName2]);
+                            clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                             delete activeHeartbeats[tempFolderName2];
                         }
                         try {
@@ -2905,7 +2967,7 @@ function objectWebServer() {
                                     } else {
                                         // create the object if needed / possible
                                         if (typeof objects[thisObjectId] === 'undefined') {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                            createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -2945,7 +3007,7 @@ function objectWebServer() {
                                         // Removes old heartbeat if it used to be an anchor
                                         var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId !== thisObjectId) {
-                                            clearInterval(activeHeartbeats[oldObjectId]);
+                                            clearActiveHeartbeat(activeHeartbeats[oldObjectId]);
                                             delete activeHeartbeats[oldObjectId];
                                             try {
                                                 // deconstructs frames and nodes of this object, too
@@ -3008,7 +3070,7 @@ function objectWebServer() {
                                                 function finishFn(folderName) {
                                                     return function() {
                                                         fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
                                                         fs.renameSync(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                             path.join(folderD, identityFolderName, 'target', 'target.glb')
@@ -3041,7 +3103,7 @@ function objectWebServer() {
                                                             finish();
                                                         });
 
-                                                        unzipper3dt.on('progress', function (fileIndex, fileCount) {
+                                                        unzipper3dt.on('progress', function (_fileIndex, _fileCount) {
                                                             // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
                                                         });
 
@@ -3064,7 +3126,7 @@ function objectWebServer() {
                                         // evnetually create the object.
 
                                         if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                            createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -3124,7 +3186,7 @@ function objectWebServer() {
                                         }
                                     });
 
-                                    unzipper.on('progress', function (fileIndex, fileCount) {
+                                    unzipper.on('progress', function (_fileIndex, _fileCount) {
                                         // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                                     });
 
@@ -3207,16 +3269,9 @@ function objectWebServer() {
 
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
- * @param {Record<string, Object>} objects
  * @param {string} folderVar
- * @param {string} __dirname
- * @param {Record<string, unknown>} objectLookup
- * @param {unknown} hardwareInterfaceModules
- * @param {unknown} objectBeatSender
- * @param {unknown} beatPort
- * @param {unknown} _debug
  */
-function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
+function createObjectFromTarget(folderVar) {
     var folder = objectsPath + '/' + folderVar + '/';
 
     if (fs.existsSync(folder)) {
@@ -3324,7 +3379,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
             }));
         });
     }
-}
+};
 
 /**
  * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
@@ -3594,9 +3649,9 @@ function socketServer() {
                     }
                 }
             } else {
-                console.warn('publicData update of unknown object', msg.object);
                 const objectKey = msg.object;
                 if (!knownUnknownObjects[objectKey]) {
+                    console.warn('publicData update of unknown object', msg.object);
                     knownUnknownObjects[objectKey] = true;
                     utilities.actionSender({
                         reloadObject: {
@@ -4054,7 +4109,7 @@ function deleteObject(objectKey) {
         humanPoseFuser.removeHumanObject(objectKey);
     }
     if (activeHeartbeats[objectKey]) {
-        clearInterval(activeHeartbeats[objectKey]);
+        clearActiveHeartbeat(activeHeartbeats[objectKey]);
         delete activeHeartbeats[objectKey];
     }
     delete knownObjects[objectKey];
@@ -4099,7 +4154,7 @@ function forEachObject(callback) {
     }
 }
 
-function forEachHumanPoseObject(callback) {
+function _forEachHumanPoseObject(callback) {
     for (var objectID in objects) {
         if (objects[objectID].isHumanPose) {
             callback(objectID, objects[objectID]);
@@ -4500,10 +4555,10 @@ function socketIndicator() {
 /**
  * Runs socketUpdater every socketUpdateInterval milliseconds
  */
-function socketUpdaterInterval() {
-    setInterval(function () {
+function setSocketUpdaterInterval() {
+    socketUpdaterInterval = setInterval(function () {
         socketUpdater();
-    }, socketUpdateInterval);
+    }, socketUpdateIntervalMs);
 }
 
 /**
@@ -4523,7 +4578,7 @@ setupControllers();
 
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
-    blockLinkController.setup(objects, globalVariables, objectsPath);
+    blockLinkController.setup(objects, globalVariables);
     frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
