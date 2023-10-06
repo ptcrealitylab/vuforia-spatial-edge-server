@@ -57,7 +57,7 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
             keepExtensions: true,
             accept: 'video/mp4'
         });
-        
+
         form.on('error', function (err) {
             callback(500, err);
         });
@@ -72,13 +72,13 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
             file.path = rawFilepath;
         });
 
-        form.parse(reqForForm, function (err, fields) {
+        form.parse(reqForForm, function (err, _fields) {
             if (err) {
                 console.error('error parsing object video upload', err);
                 callback(500, err);
                 return;
             }
-            
+
             callback(200, {success: true});
         });
     } catch (e) {
@@ -124,7 +124,7 @@ function uploadMediaFile(objectID, req, callback) {
         keepExtensions: true
         // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
-    
+
     form.on('error', function (err) {
         callback(500, err);
     });
@@ -150,7 +150,11 @@ function uploadMediaFile(objectID, req, callback) {
         }
     });
 
-    form.parse(req, function (err, fields) {
+    form.parse(req, function (err, _fields) {
+        if (err) {
+            console.warn('object form parse error', err);
+        }
+
         callback(200, {
             success: true,
             mediaUuid: mediaUuid, // deprecated field
@@ -263,7 +267,7 @@ const memoryUpload = function(objectID, req, callback) {
             utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
-        
+
         callback(200, {success: true});
     });
 };

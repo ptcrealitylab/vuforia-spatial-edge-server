@@ -17,9 +17,10 @@ const proxyRequestHandler = (req, res) => {
         const proxyURL = req.params[0];
         const headers = req.headers;
         headers.Host = new URL(proxyURL).host;
-        const queryParams = new URLSearchParams(req.query);
-        const url = `${proxyURL}?${queryParams.toString()}`;
-        https.get(url, {headers}, proxyRes => {
+        if (headers.host) {
+            delete headers.host;
+        }
+        https.get(proxyURL, {headers}, proxyRes => {
             res.status(proxyRes.statusCode);
             for (let header in proxyRes.headers) {
                 res.setHeader(header, proxyRes.headers[header]);

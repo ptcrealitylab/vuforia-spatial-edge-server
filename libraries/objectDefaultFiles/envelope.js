@@ -305,7 +305,7 @@
 
             // focusing on a tool also "refreshes it" as the most recent tool
             this.realityInterface.writePublicData('storage', 'envelopeLastOpen', Date.now());
-        }
+        };
 
         Envelope.prototype.blur = function() {
             this.hasFocus = false;
@@ -314,7 +314,7 @@
             this.realityInterface.sendEnvelopeMessage({
                 blur: true
             });
-        }
+        };
 
         /**
          * API to subscribe to a compatible frame being added to the envelope.
@@ -385,7 +385,7 @@
          */
         Envelope.prototype.onFocus = function(callback) {
             this.addCallback('onFocus', callback);
-        }
+        };
 
         /**
          * API to respond to this envelope regaining focus. Tools should redisplay their 2D UI in response.
@@ -393,7 +393,7 @@
          */
         Envelope.prototype.onBlur = function(callback) {
             this.addCallback('onBlur', callback);
-        }
+        };
 
         /**
          * API to be notified when the envelope has fully loaded its publicData.
@@ -723,8 +723,8 @@
         Envelope.prototype.getFrameIndex = function(frameId, category) {
             // filter down an ordered list of all frames with that category
             // return this frameId's index in that list
-            let framesOfThisCategory = this.frameIdOrdering.filter(function(frameId) {
-                return this.containedFrames[frameId].categories.indexOf(category) > -1;
+            let framesOfThisCategory = this.frameIdOrdering.filter(function(otherFrameId) {
+                return this.containedFrames[otherFrameId].categories.indexOf(category) > -1;
             }.bind(this));
             return {
                 index: framesOfThisCategory.indexOf(frameId),

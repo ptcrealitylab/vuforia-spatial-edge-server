@@ -37,7 +37,7 @@ exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
         });
 
     } else if (!tool) {
-        utilities.forEachFrameInObject(thisObject, function (tool, toolKey) {
+        utilities.forEachFrameInObject(thisObject, function (_tool, toolKey) {
             let thisNode = utilities.getFrame(objects, thisObjectKey, toolKey, node);
             if (!thisNode) {
                 if (thisNode.type === nodeType) callback(thisObjectKey, toolKey, node);

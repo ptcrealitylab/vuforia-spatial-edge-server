@@ -977,7 +977,7 @@ exports.addReadListener = function (object, tool, node, callBack) {
     var objectID = utilities.readObject(objectLookup, object);
     var nodeID = objectID + tool + node;
     var frameID = objectID + tool;
-    
+
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
@@ -1050,7 +1050,7 @@ exports.addConnectionListener = function (object, tool, node, callBack) {
     var objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
-    
+
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             if (!callBacks.hasOwnProperty(objectID)) {

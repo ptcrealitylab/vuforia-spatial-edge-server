@@ -105,8 +105,8 @@ const newLink = function (objectID, frameID, linkID, body) {
             socketUpdater();
 
             // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-            var newLink = foundFrame.links[linkID];
-            var linkAddedData = getLinkData(newLink, true);
+            var foundNewLink = foundFrame.links[linkID];
+            var linkAddedData = getLinkData(foundNewLink, true);
             if (linkAddedData) {
                 hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
                 hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);

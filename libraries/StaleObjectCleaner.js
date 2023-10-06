@@ -5,15 +5,17 @@ class StaleObjectCleaner {
         this.objectsRef = objects;
         this.deleteObjectCallback = deleteObjectCallback;
         this.lastUpdates = {};
+        this.cleanupIntervals = [];
     }
 
     // starts the periodic checking of objects
     // note: the same StaleObjectCleaner can manage multiple intervals, for example if you want to check avatar objects
     // at one frequency, and human pose objects at another frequency
     createCleanupInterval(intervalLengthMs, expirationTimeMs, objectTypesToCheck) {
-        setInterval(() => {
+        const interval = setInterval(() => {
             this.cleanupStaleObjects(expirationTimeMs, objectTypesToCheck);
         }, intervalLengthMs);
+        this.cleanupIntervals.push(interval);
     }
 
     // call this externally anytime the object is updated so that we give it more time to live
@@ -44,6 +46,13 @@ class StaleObjectCleaner {
             this.resetObjectTimeout(objectKey);
         }
         return this.lastUpdates[objectKey];
+    }
+
+    clearCleanupIntervals() {
+        for (let interval of this.cleanupIntervals) {
+            clearInterval(interval);
+        }
+        this.cleanupIntervals = [];
     }
 }
 

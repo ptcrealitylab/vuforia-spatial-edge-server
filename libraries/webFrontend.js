@@ -107,7 +107,7 @@ exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardw
     return html;
 };
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
+exports.printFolder = function (objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
 
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};

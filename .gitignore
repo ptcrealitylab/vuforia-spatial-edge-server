@@ -52,3 +52,8 @@ libraries/objectLogs/*
 /.vscode
 /*.code-workspace
 /*.njsproj
+/out/*
+
+/screenshots
+/spatialToolbox
+/vuforia-spatial-toolbox-userinterface

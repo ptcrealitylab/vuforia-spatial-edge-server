@@ -4,15 +4,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+/* global test, beforeAll, afterAll */
+
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 
-// Start the server doing its own thing
-require('./server.js');
+const {sleep} = require('./helpers.js');
 
-(async () => {
+let server;
+beforeAll(() => {
+    server = require('../server.js');
+});
+
+afterAll(async () => {
+    await server.exit();
+    await sleep(1000);
+});
+
+test('server provides remote operator functionality', async () => {
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: 'new',
     });
 
     const page = await browser.newPage();
@@ -81,11 +93,9 @@ require('./server.js');
         console.warn('Failed proxy test', e);
     }
 
-
     await page.close();
 
     await browser.close();
 
     console.log('basic remote operator through proxy server page load worked');
-    process.exit(0);
-})();
+}, 5 * 60 * 1000);
