@@ -1825,10 +1825,23 @@
                 getScreenshotBase64: true
             });
         };
-        
+
+        /**
+         * Take a 3D snapshot, adding a new spatialPatch tool to the scene.
+         * @returns {Promise<unknown>} - returns a promise with the imageData of the RGB and Depth images.
+         */
         this.captureSpatialSnapshot = function() {
             postDataToParent({
                 captureSpatialSnapshot: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
+                    if (typeof msgContent.spatialSnapshotData !== 'undefined') {
+                        // TODO: listen for another message to handle errors and reject the promise
+                        resolve(msgContent.spatialSnapshotData);
+                        delete spatialObject.messageCallBacks['captureSpatialSnapshotResult']; // only trigger it once
+                    }
+                };
             });
         }
 
