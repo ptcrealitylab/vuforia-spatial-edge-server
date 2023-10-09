@@ -50,7 +50,7 @@ var debug = false;
 var path = require('path');
 var hardwareAPI = require('./hardwareInterfaces');
 
-var identityFolderName = '.identity'; // TODO: get this from server.js
+const {identityFolderName} = require('../constants.js');
 var worldObjectPrefix = '_WORLD_'; // TODO: get this from server.js
 
 // Constructor with subset of object information necessary for the web frontend

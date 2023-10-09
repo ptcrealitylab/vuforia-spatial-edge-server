@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {identityFolderName} = require('../../constants.js');
 
 /**
  * A source of frames from one add-on's tools directory
@@ -7,11 +8,9 @@ const path = require('path');
 class AddonFramesSource {
     /**
      * @param {string} framePath - absolute path to realityframes directory
-     * @param {string} identityName - name of identity folder, e.g. '.identity'
      */
-    constructor(framePath, identityName) {
+    constructor(framePath) {
         this.frameLibPath = framePath;
-        this.identityFolderName = identityName;
 
         // Will hold all available frame interfaces
         this.frameTypeModules = {};
@@ -24,7 +23,7 @@ class AddonFramesSource {
      * Creates the .identity directory if needed
      */
     setupDirectories() {
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         if (!fs.existsSync(frameIdentityPath)) {
             fs.mkdirSync(frameIdentityPath);
         }
@@ -54,7 +53,7 @@ class AddonFramesSource {
         }
 
         // see if there is an identity folder for each frame (generate if not), and add the json contents to the frameTypeModule
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         for (let i = 0; i < frameFolderList.length; i++) {
             let frameName = frameFolderList[i];
             let thisIdentityPath = path.join(frameIdentityPath, frameName);
@@ -111,7 +110,7 @@ class AddonFramesSource {
      */
     setFrameEnabled(frameName, shouldBeEnabled, callback) {
         let frameSettingsPath = path.join(
-            this.frameLibPath, this.identityFolderName, frameName,
+            this.frameLibPath, identityFolderName, frameName,
             'settings.json');
 
         try {
