@@ -2292,11 +2292,15 @@ function objectWebServer() {
                     return;
                 }
                 const folderDel = __dirname + req.path.substr(4);
-                const folderStats = await fsProm.stat(folderDel);
-                if (folderStats.isDirectory()) {
-                    await utilities.deleteFolderRecursive(folderDel);
-                } else {
-                    await fsProm.unlink(folderDel);
+                try {
+                    const folderStats = await fsProm.stat(folderDel);
+                    if (folderStats.isDirectory()) {
+                        await utilities.deleteFolderRecursive(folderDel);
+                    } else {
+                        await fsProm.unlink(folderDel);
+                    }
+                } catch (_e) {
+                    console.warn('contentDelete frame path already deleted', folderDel);
                 }
 
                 res.send('ok');
@@ -2318,12 +2322,16 @@ function objectWebServer() {
                 }
 
                 const folderDel = objectsPath + '/' + req.body.name;
-                const folderStats = await fsProm.stat(folderDel);
+                try {
+                    const folderStats = await fsProm.stat(folderDel);
 
-                if (folderStats.isDirectory()) {
-                    await utilities.deleteFolderRecursive(folderDel);
-                } else {
-                    await fsProm.unlink(folderDel);
+                    if (folderStats.isDirectory()) {
+                        await utilities.deleteFolderRecursive(folderDel);
+                    } else {
+                        await fsProm.unlink(folderDel);
+                    }
+                } catch (_e) {
+                    console.warn('contentDelete path already deleted');
                 }
 
                 res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
@@ -2647,10 +2655,14 @@ function objectWebServer() {
                     var folderDel = objectsPath + '/' + req.body.name;
 
                     if (await fileExists(folderDel)) {
-                        if ((await fsProm.stat(folderDel)).isDirectory()) {
-                            await utilities.deleteFolderRecursive(folderDel);
-                        } else {
-                            await fsProm.unlink(folderDel);
+                        try {
+                            if ((await fsProm.stat(folderDel)).isDirectory()) {
+                                await utilities.deleteFolderRecursive(folderDel);
+                            } else {
+                                await fsProm.unlink(folderDel);
+                            }
+                        } catch (e) {
+                            console.warn(`Unable to unlink '${folderDel}'`, e);
                         }
                     }
 
