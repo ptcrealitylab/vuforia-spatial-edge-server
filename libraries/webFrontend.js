@@ -620,27 +620,34 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 };
 
-
-
+/**
+ * List all files in a directory in Node.js recursively in a
+ * synchronous fashion
+ * @param {string} dir - path to start at
+ * @return {Array<string>} file paths within dir
+ */
+function walk(dir) {
+    var results = [];
+    var list = fs.readdirSync(dir);
+    list.forEach(function (file) {
+        file = path.join(dir, file);
+        var stat;
+        try {
+            stat = fs.statSync(file);
+        } catch (_e) {
+            console.warn('walk stat failed', file);
+        }
+        if (stat && stat.isDirectory()) results = results.concat(walk(file));
+        else results.push(file);
+    });
+    return results;
+}
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
     if (debug) console.log('interface content');
     var text = '';
 
     var objectPath2 = path.join(objectPath2, parm);
-
-    // List all files in a directory in Node.js recursively in a synchronous fashion
-    var walk = function (dir) {
-        var results = [];
-        var list = fs.readdirSync(dir);
-        list.forEach(function (file) {
-            file = path.join(dir, file);
-            var stat = fs.statSync(file);
-            if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file);
-        });
-        return results;
-    };
 
     var listeliste = walk(objectPath2);
 
@@ -877,23 +884,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
     var framePath = path.join(objectsPath, parm);
 
     var framePath2 = path.join(framePath, frame);
-
-    // Import the module
-
-
-
-    // List all files in a directory in Node.js recursively in a synchronous fashion
-    var walk = function (dir) {
-        var results = [];
-        var list = fs.readdirSync(dir);
-        list.forEach(function (file) {
-            file = path.join(dir, file);
-            var stat = fs.statSync(file);
-            if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file);
-        });
-        return results;
-    };
 
     var listeliste = walk(framePath2);
 
