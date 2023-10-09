@@ -304,7 +304,7 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
         const urlArray = videoPath.split('/');
 
         const objectName = urlArray[4];
-        const videoDir = utilities.getVideoDir(globalVariables.isMobile, objectName);
+        const videoDir = utilities.getVideoDir(objectName);
         const videoFilePath = path.join(videoDir, urlArray[6]);
 
         if (await fileExists(videoFilePath)) {

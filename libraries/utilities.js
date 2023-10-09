@@ -65,6 +65,7 @@ const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
 const {objectsPath, beatPort} = require('../config.js');
+const {isLightweightMobile} = require('../isMobile.js');
 
 const hardwareInterfaces = {};
 
@@ -995,15 +996,14 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
 /**
  * Helper function to return the absolute path to the directory that should contain all
  * video files for the provided object name. (makes dir if necessary)
- * @param {boolean} isMobile
  * @param {string} objectName
  * @return {string}
  */
-function getVideoDir(isMobile, objectName) {
+function getVideoDir(objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
-    if (!isMobile) {
+    if (!isLightweightMobile) {
         videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
 
         if (!fs.existsSync(videoDir)) {
