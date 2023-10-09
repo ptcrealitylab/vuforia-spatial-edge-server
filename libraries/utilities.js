@@ -53,6 +53,7 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
+const DEBUG = false;
 
 const xml2js = require('xml2js');
 const fs = require('fs');
@@ -491,8 +492,15 @@ async function getObjectFolderList() {
         if (objectFolder[0] === '.') {
             continue;
         }
-        const folderStats = await fsProm.stat(path.join(objectsPath, objectFolder));
-        if (!folderStats.isDirectory()) {
+        try {
+            const folderStats = await fsProm.stat(path.join(objectsPath, objectFolder));
+            if (!folderStats.isDirectory()) {
+                continue;
+            }
+        } catch (_e) {
+            if (DEBUG) {
+                console.warn('object folder already deleted', objectFolder);
+            }
             continue;
         }
         objectFolderList.push(objectFolder);
