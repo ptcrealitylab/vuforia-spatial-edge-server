@@ -122,11 +122,6 @@ const beatInterval = 5000;         // how often is the heartbeat sent
 const socketUpdateIntervalMs = 2000; // how often the system checks if the socket connections are still up and running.
 let socketUpdaterInterval;
 
-// todo why would you alter the version of the server for mobile. There should only be one version of the server.
-// The version of this server
-const version = '3.2.2';
-// The protocol of this server
-const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
@@ -269,7 +264,11 @@ services.ip = services.getIP(); //ip.address();
 
 var express = require('express'); // Web Sever library
 
-const {identityFolderName} = require('./constants.js');
+const {
+    identityFolderName,
+    protocol,
+    version,
+} = require('./constants.js');
 
 // This file hosts the functions related to loading the set of available frames
 // from the each add-ons tools directory
@@ -280,7 +279,7 @@ frameFolderLoader.calculatePathResolution();
 
 for (const frameLibPath of frameLibPaths) {
     if (fs.existsSync(frameLibPath)) {
-        addonFrames.addFramesSource(frameLibPath, identityFolderName);
+        addonFrames.addFramesSource(frameLibPath);
     }
 }
 
@@ -592,7 +591,7 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
+const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, beatPort, tempUuid);
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
@@ -624,7 +623,7 @@ const hardwareAPICallbacks = {
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
 const utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
