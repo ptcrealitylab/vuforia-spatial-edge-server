@@ -698,19 +698,21 @@ exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(h
 
 function restActionSender(action) {
     const { knownObjects } = require('../server');
-    const ipSet = new Set();
-    for (const [_key, value] of Object.entries(knownObjects)) {
-        ipSet.add(value.ip);
+    const hostSet = new Set();
+    for (const knownObject of Object.values(knownObjects)) {
+        hostSet.add(knownObject.ip + ':' + knownObject.port);
     }
     const body = new URLSearchParams({
         'action': JSON.stringify(action)
     });
-    [...ipSet].map(objectIp => {
-        fetch(`http://${objectIp}:8080/action`, {
+    [...hostSet].map(host => {
+        fetch(`http://${host}/action`, {
             method: 'POST',
             body: body
         }).catch(err => {
-            console.error(`restActionSender: Error sending action to ${objectIp} over REST API.`, err);
+            if (DEBUG) {
+                console.error(`restActionSender: Error sending action to ${host} over REST API.`, err);
+            }
         });
     });
 }
