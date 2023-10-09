@@ -1698,7 +1698,7 @@ function objectWebServer() {
                     res.sendFile(filename, {
                         // TODO: the code originally here was broken and
                         // provided `undefined` instead of the object name
-                        root: utilities.getVideoDir(isLightweightMobile, urlArray[0]),
+                        root: utilities.getVideoDir(urlArray[0]),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
