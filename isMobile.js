@@ -1,4 +1,7 @@
 const os = require('os');
 
-module.exports.isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
-module.exports.isStandaloneMobile = os.platform() === 'ios';
+const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
+const isStandaloneMobile = os.platform() === 'ios';
+exports.isLightweightMobile = isLightweightMobile;
+exports.isStandaloneMobile = isStandaloneMobile;
+exports.isMobile = isLightweightMobile || isStandaloneMobile;

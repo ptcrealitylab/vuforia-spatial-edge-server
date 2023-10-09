@@ -11,9 +11,9 @@ var hardwareAPI;
 var objectsPath;
 const {identityFolderName} = require('../constants.js');
 
-const {isLightweightMobile, isStandaloneMobile} = require('../isMobile.js');
+const {isMobile} = require('../isMobile.js');
 let git;
-if (isStandaloneMobile || isLightweightMobile || process.env.NODE_ENV === 'test') {
+if (isMobile || process.env.NODE_ENV === 'test') {
     git = null;
 } else {
     git = require('../libraries/gitInterface');
@@ -58,7 +58,7 @@ const uploadVideo = async function(objectID, videoID, reqForForm, callback) {
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(globalVariables.isMobile, object.name);
+        var videoDir = utilities.getVideoDir(object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -173,7 +173,7 @@ async function uploadMediaFile(objectID, req, callback) {
 }
 
 const saveCommit = function(objectID, callback) {
-    if (globalVariables.isMobile) {
+    if (isMobile) {
         callback(500, 'saveCommit unavailable on mobile');
         return;
     }
@@ -186,7 +186,7 @@ const saveCommit = function(objectID, callback) {
 };
 
 const resetToLastCommit = function(objectID, callback) {
-    if (globalVariables.isMobile) {
+    if (isMobile) {
         callback(500, 'resetToLastCommit unavailable on mobile');
         return;
     }
@@ -319,11 +319,6 @@ const setVisualization = function(objectID, vis, callback) {
 // request a zip-file with the object stored inside
 // ****************************************************************************************************************
 const zipBackup = async function(objectId, req, res) {
-    if (globalVariables.isMobile) {
-        res.status(500).send('zipBackup unavailable on mobile');
-        return;
-    }
-
     if (!await fileExists(path.join(objectsPath, objectId))) {
         res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
         return;
