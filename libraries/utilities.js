@@ -108,7 +108,7 @@ exports.createFolder = async function createFolder(folderVar) {
         try {
             await fsProm.mkdir(identity, {recursive: true, mode: '0766'});
         } catch (err) {
-            console.error(err);
+            console.error('createFolder failed', err);
         }
     }
 };
@@ -125,7 +125,7 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
         try {
             await fsProm.mkdir(firstFrame, {recursive: true, mode: '0766'});
         } catch (err) {
-            console.error(err);
+            console.error('createFrameFolder failed', err);
         }
 
         try {

@@ -2338,7 +2338,7 @@ function objectWebServer() {
                         await fsProm.unlink(folderDel);
                     }
                 } catch (_e) {
-                    console.warn('contentDelete path already deleted');
+                    console.warn('contentDelete path already deleted', folderDel);
                 }
 
                 res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
