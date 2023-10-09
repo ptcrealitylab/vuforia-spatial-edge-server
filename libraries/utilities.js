@@ -68,7 +68,7 @@ const {objectsPath, beatPort} = require('../config.js');
 
 const hardwareInterfaces = {};
 
-const identityFolderName = '.identity'; // TODO: get this from server.js
+const {identityFolderName} = require('../constants.js');
 
 var hardwareIdentity = path.join(objectsPath, identityFolderName);
 
@@ -995,15 +995,16 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
 /**
  * Helper function to return the absolute path to the directory that should contain all
  * video files for the provided object name. (makes dir if necessary)
- * @param objectName
+ * @param {boolean} isMobile
+ * @param {string} objectName
  * @return {string}
  */
-function getVideoDir(identityFolderNameArg, isMobile, objectName) {
+function getVideoDir(isMobile, objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
     if (!isMobile) {
-        videoDir = path.join(objectsPath, objectName, identityFolderNameArg, 'videos');
+        videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
 
         if (!fs.existsSync(videoDir)) {
             fs.mkdirSync(videoDir);

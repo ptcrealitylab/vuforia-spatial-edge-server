@@ -8,7 +8,7 @@ const EdgeBlock = require('../models/EdgeBlock');
 var objects = {};
 var globalVariables;
 var objectsPath;
-var identityFolderName;
+const {identityFolderName} = require('../constants.js');
 const {isLightweightMobile} = require('../isMobile.js');
 let Jimp;
 if (!isLightweightMobile) {
@@ -239,11 +239,10 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
     });
 }
 
-const setup = function(objects_, globalVariables_, objectsPath_, identityFolderName_) {
+const setup = function(objects_, globalVariables_, objectsPath_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
-    identityFolderName = identityFolderName_;
 };
 
 module.exports = {

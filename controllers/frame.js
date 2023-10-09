@@ -11,7 +11,6 @@ var objects = {};
 var globalVariables;
 var hardwareAPI;
 var dirname;
-var identityFolderName;
 var nodeTypeModules;
 var sceneGraph;
 
@@ -305,7 +304,7 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
         const urlArray = videoPath.split('/');
 
         const objectName = urlArray[4];
-        const videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, objectName);
+        const videoDir = utilities.getVideoDir(globalVariables.isMobile, objectName);
         const videoFilePath = path.join(videoDir, urlArray[6]);
 
         if (await fileExists(videoFilePath)) {
@@ -535,12 +534,11 @@ const getFrame = function(objectID, frameID) {
     return utilities.getFrame(objects, objectID, frameID);
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, identityFolderName_, nodeTypeModules_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, dirname_, objectsPath_, nodeTypeModules_, sceneGraph_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     dirname = dirname_;
-    identityFolderName = identityFolderName_;
     nodeTypeModules = nodeTypeModules_;
     sceneGraph = sceneGraph_;
 };

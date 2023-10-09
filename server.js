@@ -1697,7 +1697,9 @@ function objectWebServer() {
             } else {
                 try {
                     res.sendFile(filename, {
-                        root: utilities.getVideoDir(identityFolderName, isLightweightMobile),
+                        // TODO: the code originally here was broken and
+                        // provided `undefined` instead of the object name
+                        root: utilities.getVideoDir(isLightweightMobile, urlArray[0]),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
@@ -4450,11 +4452,11 @@ setupControllers();
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
     blockLinkController.setup(objects, globalVariables);
-    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
-    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName);
+    logicNodeController.setup(objects, globalVariables, objectsPath);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 

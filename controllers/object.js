@@ -9,7 +9,7 @@ var objects = {};
 var globalVariables;
 var hardwareAPI;
 var objectsPath;
-var identityFolderName;
+const {identityFolderName} = require('../constants.js');
 
 const {isLightweightMobile, isStandaloneMobile} = require('../isMobile.js');
 let git;
@@ -58,7 +58,7 @@ const uploadVideo = async function(objectID, videoID, reqForForm, callback) {
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(identityFolderName, globalVariables.isMobile, object.name);
+        var videoDir = utilities.getVideoDir(globalVariables.isMobile, object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -411,13 +411,12 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, sceneGraph_,
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, sceneGraph_,
     objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
-    identityFolderName = identityFolderName_;
     sceneGraph = sceneGraph_;
     objectLookup = objectLookup_;
     activeHeartbeats = activeHeartbeats_;
