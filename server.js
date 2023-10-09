@@ -113,7 +113,7 @@ const globalVariables = {
 
  */
 
-var serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
+const serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 exports.beatPort = beatPort;
@@ -1384,20 +1384,26 @@ function objectBeatServer() {
                 knownObjects[msgContent.id] = {};
             }
 
-            if (msgContent.vn)
+            if (msgContent.vn) {
                 knownObjects[msgContent.id].version = msgContent.vn;
+            }
 
-            if (msgContent.pr)
+            if (msgContent.pr) {
                 knownObjects[msgContent.id].protocol = msgContent.pr;
-            else {
+            } else {
                 knownObjects[msgContent.id].protocol = 'R0';
             }
 
-            if (msgContent.ip)
+            if (msgContent.ip) {
                 knownObjects[msgContent.id].ip = msgContent.ip;
+            }
+
+            if (msgContent.port) {
+                knownObjects[msgContent.id].port = msgContent.port;
+            }
 
             // each time we discover a new object from another, also get the scene graph from that server
-            getKnownSceneGraph(msgContent.ip);
+            getKnownSceneGraph(msgContent.ip, msgContent.port);
         }
         // check if action 'ping'
         if (msgContent.action) {
@@ -3279,8 +3285,6 @@ exports.socketHandler = socketHandler;
 
 function socketServer() {
     io.on('connection', function (socket) {
-        socketHandler.socket = socket;
-
         /**
          * @type {{[objectKey: string]: bool}}
          * tracks if we have already sent a reloadObject message in response to
