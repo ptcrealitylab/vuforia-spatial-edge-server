@@ -25,7 +25,7 @@ const Frame = require('../models/Frame.js');
 const ObjectModel = require('../models/ObjectModel.js');
 const objectController = require('../controllers/object.js');
 const availableModules = require('./availableModules.js');
-const {identityFolderName} = require('../constants.js');
+const {identityFolderName, protocol, version} = require('../constants.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -39,8 +39,6 @@ var nodeTypeModules;
 // eslint-disable-next-line no-unused-vars
 var blockModules;
 var services;
-var version;
-var protocol;
 var serverPort;
 let dataCallback;
 var actionCallback;
@@ -947,7 +945,7 @@ exports.setHardwareInterfaceEnabled = setHardwareInterfaceEnabled;
 exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray_, globalVariables_, dirnameO_,
     objectsPath_, nodeTypeModules_, blockModules_,
-    services_, version_, protocol_, serverPort_,
+    services_, serverPort_,
     hardwareAPICallbacks, sceneGraphReference_, worldGraphReference_) {
     objects = objects_;
     objectLookup = objectLookup_;
@@ -958,8 +956,6 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     nodeTypeModules = nodeTypeModules_;
     blockModules = blockModules_;
     services = services_;
-    version = version_;
-    protocol = protocol_;
     serverPort = serverPort_;
     publicDataCallBack = hardwareAPICallbacks.publicData;
     actionCallback = hardwareAPICallbacks.actions;
