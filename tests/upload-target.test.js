@@ -32,7 +32,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await server.exit();
     try {
-        await fsProm.rmdir(path.join(objectsPath, worldName), {recursive: true});
+        await fsProm.rmdir(path.join(objectsPath, worldName), {recursive: true, force: true});
     } catch (e) {
         console.warn('successful target unzip not found for deletion', e);
     }
