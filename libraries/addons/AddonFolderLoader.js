@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {getFolderList} = require('./utilities.js');
 
 /**
  * Loader for add-ons. Handles hidden folder logic and wraps the necessary
@@ -38,11 +39,7 @@ class AddonFolderLoader {
             if (!fs.existsSync(addonFolder)) {
                 continue;
             }
-            var folderList = fs.readdirSync(addonFolder).filter(function (filename) {
-                const isHidden = filename[0] === '.';
-                return fs.statSync(path.join(addonFolder, filename)).isDirectory() &&
-                    !isHidden;
-            });
+            const folderList = getFolderList(addonFolder);
 
             // Update our modules map with all the folders' code
             for (const folder of folderList) {
@@ -80,11 +77,7 @@ class AddonFolderLoader {
             if (!fs.existsSync(addonFolder)) {
                 continue;
             }
-            var folderList = fs.readdirSync(addonFolder).filter(function (filename) {
-                const isHidden = filename[0] === '.';
-                return fs.statSync(path.join(addonFolder, filename)).isDirectory() &&
-                    !isHidden;
-            });
+            const folderList = getFolderList(addonFolder);
 
             // Update out modules map with all the folders' code
             for (const folder of folderList) {
