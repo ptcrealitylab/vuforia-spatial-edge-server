@@ -31,11 +31,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await server.exit();
-    try {
-        await fsProm.rmdir(path.join(objectsPath, worldName), {recursive: true, force: true});
-    } catch (e) {
-        console.warn('successful target unzip not found for deletion', e);
-    }
     await sleep(1000);
 });
 
@@ -113,4 +108,16 @@ test('target upload to /content/:objectName', async () => {
     const xml = getValueWithKeySuffixed(snapshot, 'target.xml');
     expect(xml).toBeTruthy();
     expect(xml.length).toBe(157);
+
+    const resDelete = await fetch('http://localhost:8080/', {
+        headers: {
+            'Content-type': 'application/x-www-form-urlencoded',
+        },
+        'body': `action=delete&name=${worldName}&frame=`,
+        'method': 'POST'
+    });
+    await resDelete.text();
+
+    const deletedSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
+    expect(deletedSnapshot).toEqual({});
 }, 15000);
