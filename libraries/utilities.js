@@ -279,8 +279,9 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
         return resultXML;
     }
 
+    let contents;
     try {
-        const contents = await fsProm.readFile(xmlFile, 'utf8');
+        contents = await fsProm.readFile(xmlFile, 'utf8');
         xml2js.Parser().parseString(contents, function (err, result) {
             if (err) {
                 console.error('error parsing xml', err);
@@ -299,7 +300,7 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
             };
         });
     } catch (e) {
-        console.warn('error parsing xml, returning default size', e);
+        console.warn('error parsing xml, returning default size', {contents}, e);
     }
 
     return resultXML;
