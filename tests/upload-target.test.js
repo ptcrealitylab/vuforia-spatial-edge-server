@@ -113,6 +113,9 @@ test('target upload to /content/:objectName', async () => {
     expect(xml).toBeTruthy();
     expect(xml.length).toBe(157);
 
+    // Let the upload cleanup process finish before we delete
+    await sleep(1000);
+
     const resDelete = await fetch('http://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
