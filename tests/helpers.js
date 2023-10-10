@@ -43,6 +43,14 @@ exports.filterSnapshot = function filterSnapshot(snapshot, filterFn) {
     return snapshot;
 };
 
+exports.getValueWithKeySuffixed = function getValueWithKeySuffixed(obj, suffix) {
+    for (let [key, value] of Object.entries(obj)) {
+        if (key.endsWith(suffix)) {
+            return value;
+        }
+    }
+};
+
 exports.filterToObjects = function filterToObjects(key) {
     return key.match(/spatialToolbox\/[^.]/);
 };
