@@ -30,7 +30,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await server.exit();
+    try {
+        await server.exit();
+    } catch (e) {
+        console.error('server exit failed', e);
+    }
     await sleep(1000);
 });
 
@@ -120,4 +124,4 @@ test('target upload to /content/:objectName', async () => {
 
     const deletedSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
     expect(deletedSnapshot).toEqual({});
-}, 15000);
+});
