@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {getFolderList} = require('./utilities.js');
 
 class Addons {
     constructor(addonPaths) {
@@ -11,11 +12,7 @@ class Addons {
             if (!fs.existsSync(addonPath)) {
                 continue;
             }
-            let folderList = fs.readdirSync(addonPath).filter((filename) => {
-                let isHidden = filename[0] === '.';
-                return fs.statSync(path.join(addonPath, filename)).isDirectory() &&
-                    !isHidden;
-            });
+            let folderList = getFolderList(addonPath);
             folders = folders.concat(folderList.map(filename => path.join(addonPath, filename)));
         }
         return folders;
