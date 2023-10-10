@@ -279,7 +279,12 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
     }
 
     try {
-        xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'), function (err, result) {
+        const contents = await fsProm.readFile(xmlFile, 'utf8');
+        xml2js.Parser().parseString(contents, function (err, result) {
+            if (err) {
+                console.error('error parsing xml', err);
+                return;
+            }
             let first = Object.keys(result)[0];
             let secondFirst = Object.keys(result[first].Tracking[0])[0];
             var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
@@ -293,7 +298,7 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
             };
         });
     } catch (e) {
-        console.warn('error parsing xml, returning default size');
+        console.warn('error parsing xml, returning default size', e);
     }
 
     return resultXML;
