@@ -2942,7 +2942,11 @@ function objectWebServer() {
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return async function() {
-                                                        await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
+                                                        try {
+                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
+                                                        } catch (e) {
+                                                            console.warn('target zip already cleaned up', folderName);
+                                                        }
                                                         // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
                                                         await fsProm.rename(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
