@@ -921,7 +921,7 @@ realityServer.updateManageFrames = function () {
 };
 
 realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
-    let ipAddress = 'localhost'; // realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
+    let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
     let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
