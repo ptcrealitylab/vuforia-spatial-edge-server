@@ -291,6 +291,9 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
                 let first = Object.keys(result)[0];
                 let secondFirst = Object.keys(result[first].Tracking[0])[0];
                 var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                if (!sizeString) {
+                    return;
+                }
                 var sizeFloatArray = sizeString.split(' ').map(function (elt) {
                     // TODO: this assumption makes it backwards compatible but might cause problems in the future
                     return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
