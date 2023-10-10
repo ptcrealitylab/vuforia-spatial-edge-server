@@ -2749,7 +2749,11 @@ function objectWebServer() {
                                     }
                                 }
 
-                                await fsProm.rename(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                try {
+                                    await fsProm.rename(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                } catch (e) {
+                                    console.error(`error renaming ${filename} to target.${fileExtension}`, e);
+                                }
 
                                 // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                                 // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
