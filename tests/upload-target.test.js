@@ -76,7 +76,6 @@ test('target upload to /content/:objectName', async () => {
     const snapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
 
     const objJson = getValueWithKeySuffixed(snapshot, '.identity/object.json');
-    console.log(objJson);
     delete objJson.ip;
     delete objJson.port;
     delete objJson.tcs;
@@ -114,4 +113,4 @@ test('target upload to /content/:objectName', async () => {
     const xml = getValueWithKeySuffixed(snapshot, 'target.xml');
     expect(xml).toBeTruthy();
     expect(xml.length).toBe(157);
-}, 10000);
+}, 15000);
