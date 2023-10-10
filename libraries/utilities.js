@@ -282,22 +282,26 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
     let contents;
     try {
         contents = await fsProm.readFile(xmlFile, 'utf8');
-        xml2js.Parser().parseString(contents, function (err, result) {
-            if (err) {
+        xml2js.Parser().parseString(contents, function (parseErr, result) {
+            try {
+                if (parseErr) {
+                    throw parseErr;
+                }
+
+                let first = Object.keys(result)[0];
+                let secondFirst = Object.keys(result[first].Tracking[0])[0];
+                var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+                var sizeFloatArray = sizeString.split(' ').map(function (elt) {
+                    // TODO: this assumption makes it backwards compatible but might cause problems in the future
+                    return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
+                });
+                resultXML = {
+                    width: sizeFloatArray[0],
+                    height: sizeFloatArray[1]
+                };
+            } catch (err) {
                 console.error('error parsing xml', err);
-                return;
             }
-            let first = Object.keys(result)[0];
-            let secondFirst = Object.keys(result[first].Tracking[0])[0];
-            var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-            var sizeFloatArray = sizeString.split(' ').map(function (elt) {
-                // TODO: this assumption makes it backwards compatible but might cause problems in the future
-                return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-            });
-            resultXML = {
-                width: sizeFloatArray[0],
-                height: sizeFloatArray[1]
-            };
         });
     } catch (e) {
         console.warn('error parsing xml, returning default size', {contents}, e);
