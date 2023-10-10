@@ -11,6 +11,7 @@ const {
     filterSnapshot,
     filterToTestObject,
     getTestObjects,
+    getValueWithKeySuffixed,
     sleep,
     snapshotDirectory,
     waitForObjects,
@@ -53,13 +54,7 @@ test('new object creation', async () => {
     expect(fdsaApi.tcs).toBe(0);
 
     const snapshot = filterSnapshot(snapshotDirectory(objectsPath), filterToTestObject);
-    let fdsaFs = null;
-    for (let key of Object.keys(snapshot)) {
-        if (key.endsWith('fdsa/.identity/object.json')) {
-            fdsaFs = snapshot[key];
-            break;
-        }
-    }
+    let fdsaFs = getValueWithKeySuffixed(snapshot, 'fdsa/.identity/object.json');
     expect(fdsaFs.objectId).toMatch(/^fdsa/);
     expect(fdsaFs.name).toBe('fdsa');
     expect(fdsaFs.matrix).toEqual([
