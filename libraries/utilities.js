@@ -146,8 +146,7 @@ async function deleteFolderRecursive(folder) {
         console.warn(`folder ${folder} is already not present`);
         return;
     }
-
-    await fsProm.rmdir(folder, {recursive: true, force: true});
+    await fsProm.rmdir(folder, {recursive: true});
 }
 exports.deleteFolderRecursive = deleteFolderRecursive;
 
@@ -589,7 +588,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
 exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
     if (await fileExists(objectFolderPath)) {
-        await fsProm.rmdir(objectFolderPath, {recursive: true, force: true});
+        await fsProm.rmdir(objectFolderPath, {recursive: true});
     }
 
     let objectKey = readObject(objectLookup, objectName);
