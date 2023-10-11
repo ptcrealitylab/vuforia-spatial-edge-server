@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const {identityFolderName} = require('../../constants.js');
+const {getFolderList} = require('./utilities.js');
 
 /**
  * A source of frames from one add-on's tools directory
@@ -7,11 +9,9 @@ const path = require('path');
 class AddonFramesSource {
     /**
      * @param {string} framePath - absolute path to realityframes directory
-     * @param {string} identityName - name of identity folder, e.g. '.identity'
      */
-    constructor(framePath, identityName) {
+    constructor(framePath) {
         this.frameLibPath = framePath;
-        this.identityFolderName = identityName;
 
         // Will hold all available frame interfaces
         this.frameTypeModules = {};
@@ -24,7 +24,7 @@ class AddonFramesSource {
      * Creates the .identity directory if needed
      */
     setupDirectories() {
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         if (!fs.existsSync(frameIdentityPath)) {
             fs.mkdirSync(frameIdentityPath);
         }
@@ -37,11 +37,7 @@ class AddonFramesSource {
      */
     loadFramesJsonData() {
         // get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
-        let frameFolderList = fs.readdirSync(this.frameLibPath).filter((filename) => {
-            let isHidden = filename[0] === '.';
-            return fs.statSync(path.join(this.frameLibPath, filename)).isDirectory() &&
-                !isHidden;
-        });
+        let frameFolderList = getFolderList(this.frameLibPath);
 
         // Load the config.js properties of each frame into an object that we can provide to clients upon request.
         for (let i = 0; i < frameFolderList.length; i++) {
@@ -54,7 +50,7 @@ class AddonFramesSource {
         }
 
         // see if there is an identity folder for each frame (generate if not), and add the json contents to the frameTypeModule
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         for (let i = 0; i < frameFolderList.length; i++) {
             let frameName = frameFolderList[i];
             let thisIdentityPath = path.join(frameIdentityPath, frameName);
@@ -111,7 +107,7 @@ class AddonFramesSource {
      */
     setFrameEnabled(frameName, shouldBeEnabled, callback) {
         let frameSettingsPath = path.join(
-            this.frameLibPath, this.identityFolderName, frameName,
+            this.frameLibPath, identityFolderName, frameName,
             'settings.json');
 
         try {
