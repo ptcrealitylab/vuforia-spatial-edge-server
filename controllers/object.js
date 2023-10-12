@@ -141,20 +141,22 @@ async function uploadMediaFile(objectID, req, callback) {
     let simplifiedFilename = null;
     let newFilepath = null;
 
-    form.on('fileBegin', async function (name, file) {
-        // simplify the filename so that it only contains alphanumeric, hyphens, underscores, and periods
+    form.on('file', async function(name, file) {
+        console.log('form.file triggered');
+        // Construct new filepath
         simplifiedFilename = simplifyFilename(file.originalFilename);
         newFilepath = path.join(form.uploadDir, simplifiedFilename);
 
-        if (await fileExists(newFilepath)) {
-            await fsProm.unlink(newFilepath);
-        }
-
-        // old formidable library uses file.path, new version uses file.filepath
-        if (file.path) {
-            file.path = newFilepath;
-        } else if (file.filepath) {
-            file.filepath = newFilepath;
+        // Rename the file after it's been saved
+        try {
+            if (await fileExists(newFilepath)) {
+                await fsProm.unlink(newFilepath);
+            }
+            let currentPath = file.path ? file.path : file.filepath;
+            await fsProm.rename(currentPath, newFilepath);
+            console.log(`File renamed from ${currentPath} to ${newFilepath}`);
+        } catch (error) {
+            console.error(`Error renaming file to ${newFilepath}:`, error);
         }
     });
 

@@ -1835,11 +1835,11 @@
                 spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
                     if (typeof msgContent.spatialSnapshotData !== 'undefined') {
                         resolve(msgContent.spatialSnapshotData);
-                        delete spatialObject.messageCallBacks['captureSpatialSnapshotResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult; // only trigger it once
                     }
                     if (typeof msgContent.spatialSnapshotError !== 'undefined') {
                         reject(msgContent.spatialSnapshotError);
-                        delete spatialObject.messageCallBacks['captureSpatialSnapshotResult'];
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult;
                     }
                 };
             });
