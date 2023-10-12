@@ -2083,7 +2083,7 @@
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenDimensions !== 'undefined') {
                     callback(msgContent.screenDimensions.width, msgContent.screenDimensions.height);
-                    delete spatialObject.messageCallBacks['screenDimensionsCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks.screenDimensionsCall; // only trigger it once
                 }
             };
 
@@ -2191,10 +2191,10 @@
                     if (typeof msgContent.area != 'undefined') {
                         if (!msgContent.canceled) {
                             resolve(msgContent.area);
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         } else {
                             reject();
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         }
                     }
                 };
@@ -2215,7 +2215,7 @@
                 spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
-                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.environmentVariableResult; // only trigger it once
                     }
                 };
             });
@@ -2232,7 +2232,7 @@
                 spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
                     if (typeof msgContent.userDetails !== 'undefined') {
                         resolve(msgContent.userDetails);
-                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.userDetailsResult; // only trigger it once
                     }
                 };
             });
@@ -2246,7 +2246,7 @@
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
-                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                        delete spatialObject.messageCallBacks.areaTargetMeshResult;
                     }
                 };
             });
@@ -2260,7 +2260,7 @@
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
-                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                        delete spatialObject.messageCallBacks.spatialCursorEventResult;
                     }
                 };
             });
