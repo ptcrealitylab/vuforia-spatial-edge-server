@@ -1753,7 +1753,7 @@
         };
 
         /**
-         * @param {Array<{startTime: number, endTime: number}>} regionCards
+         * @param {object} analyticsData
          */
         this.analyticsHydrate = function analyticsHydrate(analyticsData) {
             postDataToParent({
