@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const fsProm = require('fs/promises');
 const path = require('path');
 const stream = require('stream');
@@ -94,7 +95,7 @@ router.get('/logs/:logPath', async function(req, res) {
         return;
     }
 
-    const readStream = fsProm.createReadStream(compressedLogPath);
+    const readStream = fs.createReadStream(compressedLogPath);
     pipeReadStream(req, res, readStream);
 });
 
