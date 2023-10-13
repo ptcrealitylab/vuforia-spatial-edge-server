@@ -40,7 +40,7 @@ class AddonFramesSource {
         let frameFolderList = getFolderList(this.frameLibPath);
 
         // frameLibPath looks like x/y/z/addons/addonName/tools
-        let addonName = path.basename(path.dirname(this.frameLibPath))
+        let addonName = path.basename(path.dirname(this.frameLibPath));
 
         // Load the config.js properties of each frame into an object that we can provide to clients upon request.
         for (let i = 0; i < frameFolderList.length; i++) {
