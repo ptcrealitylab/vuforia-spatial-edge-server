@@ -1,5 +1,5 @@
 const express = require('express');
-const fs = require('fs/promises');
+const fsProm = require('fs/promises');
 const path = require('path');
 const stream = require('stream');
 const zlib = require('zlib');
@@ -11,9 +11,9 @@ const router = express.Router();
 let patches = [];
 
 router.get('/logs', async function(req, res) {
-    if (await fs.exists(recorder.logsPath)) {
+    if (await fsProm.stat(recorder.logsPath).catch(() => false)) { // catch needed because stat throws an error if the file does not exist
         try {
-            let files = await fs.readdir(recorder.logsPath);
+            let files = await fsProm.readdir(recorder.logsPath);
             const logNames = {};
             for (let file of files) {
                 if (file.endsWith('.json.gz')) {
@@ -74,7 +74,7 @@ router.get('/logs/:logPath', async function(req, res) {
     }
 
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
-    if (!await fs.exists(compressedLogPath)) {
+    if (!await fsProm.stat(compressedLogPath).catch(() => false)) { // catch needed because stat throws an error if the file does not exist
         // Compare only the start `objects_${startTime}` bit of the current log
         // name since the end time is constantly changing
         const startTimeSection = req.params.logPath.split('-')[0];
@@ -94,7 +94,7 @@ router.get('/logs/:logPath', async function(req, res) {
         return;
     }
 
-    const readStream = fs.createReadStream(compressedLogPath);
+    const readStream = fsProm.createReadStream(compressedLogPath);
     pipeReadStream(req, res, readStream);
 });
 
