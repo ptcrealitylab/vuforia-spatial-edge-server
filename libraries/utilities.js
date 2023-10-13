@@ -668,7 +668,7 @@ exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(h
 
     if (!await fileExists(hardwareFolder)) {
         try {
-            await fsProm.mkdirSync(hardwareFolder, {recursive: true, mode: '0766'});
+            await fsProm.mkdir(hardwareFolder, {recursive: true, mode: '0766'});
         } catch (err) {
             console.error('Error making directory', err);
         }
