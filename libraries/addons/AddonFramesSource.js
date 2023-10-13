@@ -39,6 +39,14 @@ class AddonFramesSource {
         // get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
         let frameFolderList = getFolderList(this.frameLibPath);
 
+        // filter out folders that don't have an index.html file (empty folders, etc)
+        frameFolderList = frameFolderList.filter(folderName => {
+            let fullPath = path.join(this.frameLibPath, folderName);
+            let contents = fs.readdirSync(fullPath);
+            // console.log(contents);
+            return contents.includes('index.html');
+        });
+
         // frameLibPath looks like x/y/z/addons/addonName/tools
         let addonName = path.basename(path.dirname(this.frameLibPath));
 
