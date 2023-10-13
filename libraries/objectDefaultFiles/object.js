@@ -716,6 +716,7 @@
                 this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -1823,6 +1824,28 @@
         };
 
         /**
+         * Take a 3D snapshot, adding a new spatialPatch tool to the scene.
+         * @returns {Promise<unknown>} - returns a promise with the imageData of the RGB and Depth images.
+         */
+        this.captureSpatialSnapshot = function() {
+            postDataToParent({
+                captureSpatialSnapshot: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
+                    if (typeof msgContent.spatialSnapshotData !== 'undefined') {
+                        resolve(msgContent.spatialSnapshotData);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult; // only trigger it once
+                    }
+                    if (typeof msgContent.spatialSnapshotError !== 'undefined') {
+                        reject(msgContent.spatialSnapshotError);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult;
+                    }
+                };
+            });
+        }
+
+        /**
          * Programmatically opens device keyboard.
          * This is preferred compared to directly opening keyboard by focusing on a frame element, because there is
          * a bug in the webkit browser where the keyboard will keep opening again on random user interactions
@@ -2060,7 +2083,7 @@
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenDimensions !== 'undefined') {
                     callback(msgContent.screenDimensions.width, msgContent.screenDimensions.height);
-                    delete spatialObject.messageCallBacks['screenDimensionsCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks.screenDimensionsCall; // only trigger it once
                 }
             };
 
@@ -2168,10 +2191,10 @@
                     if (typeof msgContent.area != 'undefined') {
                         if (!msgContent.canceled) {
                             resolve(msgContent.area);
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         } else {
                             reject();
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         }
                     }
                 };
@@ -2192,7 +2215,7 @@
                 spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
-                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.environmentVariableResult; // only trigger it once
                     }
                 };
             });
@@ -2209,7 +2232,7 @@
                 spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
                     if (typeof msgContent.userDetails !== 'undefined') {
                         resolve(msgContent.userDetails);
-                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.userDetailsResult; // only trigger it once
                     }
                 };
             });
@@ -2223,7 +2246,7 @@
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
-                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                        delete spatialObject.messageCallBacks.areaTargetMeshResult;
                     }
                 };
             });
@@ -2237,7 +2260,7 @@
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
-                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                        delete spatialObject.messageCallBacks.spatialCursorEventResult;
                     }
                 };
             });
