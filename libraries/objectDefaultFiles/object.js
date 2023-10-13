@@ -763,7 +763,7 @@
                 this.analyticsFocus = makeSendStub('analyticsFocus');
                 this.analyticsBlur = makeSendStub('analyticsBlur');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
-                this.analyticsHydrateRegionCards = makeSendStub('analyticsHydrateRegionCards');
+                this.analyticsHydrate = makeSendStub('analyticsHydrate');
 
                 this.getOAuthToken = makeSendStub('getOAuthToken');
 
@@ -1755,11 +1755,11 @@
         /**
          * @param {Array<{startTime: number, endTime: number}>} regionCards
          */
-        this.analyticsHydrateRegionCards = function analyticsHydrateRegionCards(regionCards) {
+        this.analyticsHydrate = function analyticsHydrate(analyticsData) {
             postDataToParent({
-                analyticsHydrateRegionCards: {
+                analyticsHydrate: {
                     frame: spatialObject.frame,
-                    regionCards,
+                    analyticsData,
                 },
             });
         };
