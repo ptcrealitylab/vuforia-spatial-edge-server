@@ -41,10 +41,8 @@ class AddonFramesSource {
 
         // filter out folders that don't have an index.html file (empty folders, etc)
         frameFolderList = frameFolderList.filter(folderName => {
-            let fullPath = path.join(this.frameLibPath, folderName);
-            let contents = fs.readdirSync(fullPath);
-            // console.log(contents);
-            return contents.includes('index.html');
+            let fileList = fs.readdirSync(path.join(this.frameLibPath, folderName));
+            return fileList.includes('index.html');
         });
 
         // frameLibPath looks like x/y/z/addons/addonName/tools
