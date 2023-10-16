@@ -57,7 +57,7 @@ const DEBUG = false;
 
 const xml2js = require('xml2js');
 const fs = require('fs');
-const fsProm = require('fs/promises');
+const fsProm = require('../persistence/fsProm.js');
 const ip = require('ip');       // get the device IP address library
 const dgram = require('dgram'); // UDP Broadcasting library
 const path = require('path');
