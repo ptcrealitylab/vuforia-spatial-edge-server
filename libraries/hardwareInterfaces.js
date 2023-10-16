@@ -18,7 +18,7 @@
  */
 
 const path = require('path');
-const fsProm = require('fs/promises');
+const fsProm = require('../persistence/fsProm.js');
 const utilities = require('./utilities');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
