@@ -1843,7 +1843,7 @@
                     }
                 };
             });
-        }
+        };
 
         /**
          * Programmatically opens device keyboard.
