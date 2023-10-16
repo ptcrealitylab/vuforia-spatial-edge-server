@@ -53,8 +53,7 @@ class AddonFramesSource {
             let frameName = frameFolderList[i];
             this.frameTypeModules[frameName] = {
                 properties: {
-                    name: frameName,
-                    addon: addonName
+                    name: frameName
                 }
             };
         }
@@ -89,6 +88,9 @@ class AddonFramesSource {
                 // No saved frame settings for this frame
                 this.frameTypeModules[frameName].metadata = {};
             }
+
+            // add the addonName to the metadata
+            this.frameTypeModules[frameName].metadata.addon = addonName;
         }
     }
 
