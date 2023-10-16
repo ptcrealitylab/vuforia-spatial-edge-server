@@ -80,8 +80,7 @@ const {objectsPath, beatPort} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
-const isLightweightMobile = os.platform() === 'android' || process.env.FORCE_MOBILE;
-const isStandaloneMobile = os.platform() === 'ios';
+const {isLightweightMobile, isStandaloneMobile} = require('./isMobile.js');
 
 // These variables are used for global status, such as if the server sends debugging messages and if the developer
 // user interfaces should be accesable
@@ -114,26 +113,24 @@ const globalVariables = {
 
  */
 
-var serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
+const serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
 exports.beatPort = beatPort;
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
-const socketUpdateInterval = 2000; // how often the system checks if the socket connections are still up and running.
+const socketUpdateIntervalMs = 2000; // how often the system checks if the socket connections are still up and running.
+let socketUpdaterInterval;
 
-// todo why would you alter the version of the server for mobile. There should only be one version of the server.
-// The version of this server
-const version = '3.2.2';
-// The protocol of this server
-const protocol = 'R2';
 const netmask = '255.255.0.0'; // define the network scope from which this server is accessable.
 // for a local network 255.255.0.0 allows a 16 bit block of local network addresses to reach the object.
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 
 const fs = require('fs');       // Filesystem library
+const fsProm = require('fs/promises');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
+const dirTree = require('directory-tree');
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
@@ -142,6 +139,7 @@ const addonPaths = [
 
 const Addons = require('./libraries/addons/Addons');
 const AddonFolderLoader = require('./libraries/addons/AddonFolderLoader');
+const AddonSecretsLoader = require('./libraries/addons/AddonSecretsLoader');
 
 const addons = new Addons(addonPaths);
 const addonFolders = addons.listAddonFolders();
@@ -171,6 +169,7 @@ try {
 }
 
 var dgram = require('dgram'); // UDP Broadcasting library
+let udpServer;
 
 var services = {};
 if (!isLightweightMobile) {
@@ -187,7 +186,7 @@ services.updateAllObjects = function (ip) {
 services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
-    if (isLightweightMobile || isStandaloneMobile) {
+    if (isLightweightMobile) {
         this.ips.interfaces['mobile'] = 'localhost';
         this.ips.activeInterface = 'mobile';
         return 'localhost';
@@ -265,7 +264,11 @@ services.ip = services.getIP(); //ip.address();
 
 var express = require('express'); // Web Sever library
 
-var identityFolderName = '.identity';
+const {
+    identityFolderName,
+    protocol,
+    version,
+} = require('./constants.js');
 
 // This file hosts the functions related to loading the set of available frames
 // from the each add-ons tools directory
@@ -276,7 +279,7 @@ frameFolderLoader.calculatePathResolution();
 
 for (const frameLibPath of frameLibPaths) {
     if (fs.existsSync(frameLibPath)) {
-        addonFrames.addFramesSource(frameLibPath, identityFolderName);
+        addonFrames.addFramesSource(frameLibPath);
     }
 }
 
@@ -296,10 +299,11 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-var http = require('http').createServer(webServer).listen(serverPort, function () {
+const http = webServer.listen(serverPort, function () {
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
+
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
@@ -324,12 +328,13 @@ if (!isLightweightMobile) {
 // additional files containing project code
 
 // This file hosts all kinds of utilities programmed for the server
-var utilities = require('./libraries/utilities');
-var nodeUtilities = require('./libraries/nodeUtilities');
-var recorder = require('./libraries/recorder');
+const utilities = require('./libraries/utilities');
+const {fileExists} = utilities;
+const nodeUtilities = require('./libraries/nodeUtilities');
+const recorder = require('./libraries/recorder');
 
 // The web frontend a developer is able to see when creating new user interfaces.
-var webFrontend;
+let webFrontend;
 if (isLightweightMobile) {
     webFrontend = require('./libraries/mobile/webFrontend');
 } else {
@@ -338,8 +343,7 @@ if (isLightweightMobile) {
 
 // Definition for a simple API for hardware interfaces talking to the server.
 // This is used for the interfaces defined in the hardwareAPI folder.
-var hardwareAPI = require('./libraries/hardwareInterfaces');
-
+let hardwareAPI;
 if (isLightweightMobile) {
     hardwareAPI = require('./libraries/mobile/hardwareInterfaces');
 } else {
@@ -348,13 +352,6 @@ if (isLightweightMobile) {
 
 // This file hosts the constructor and class methods for human pose objects (generated by human body tracking)
 const HumanPoseObject = require('./libraries/HumanPoseObject');
-
-var git;
-if (isStandaloneMobile || isLightweightMobile || process.env.NODE_ENV === 'test') {
-    git = null;
-} else {
-    git = require('./libraries/gitInterface');
-}
 
 // Set web frontend debug to inherit from global debug
 webFrontend.debug = globalVariables.debug;
@@ -526,6 +523,18 @@ const blockFolderLoader = new AddonFolderLoader(blockPaths);
 const blockModules = blockFolderLoader.loadModules();   // Will hold all available data point interfaces
 availableModules.setBlocks(blockModules);
 
+const addonSecrets = AddonSecretsLoader.load(addonFolders); // Holds secrets by addon name
+const getFrameSecrets = (frameName) => {
+    const frameFolderPath = frameFolderLoader.resolvePath(frameName);
+    const addonFolderPath = path.dirname(frameFolderPath);
+    const addonName = path.basename(addonFolderPath);
+    if (!addonSecrets[addonName]) {
+        throw new Error(`Addon ${addonName} does not have any registered secrets`);
+    }
+    return addonSecrets[addonName];
+};
+exports.getFrameSecrets = getFrameSecrets;
+
 var hardwareInterfaceModules = {}; // Will hold all available hardware interfaces.
 var hardwareInterfaceLoader = null;
 // A list of all objects known and their IPs in the network. The objects are found via the udp heart beat.
@@ -582,22 +591,21 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const {oauthRefreshRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
-const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, version, protocol, beatPort, tempUuid);
+const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, beatPort, tempUuid);
 
 /**********************************************************************************************************************
  ******************************************** Initialisations *********************************************************
  **********************************************************************************************************************/
 
 // Load all the hardware interfaces
-var hardwareAPICallbacks = {
+const hardwareAPICallbacks = {
     publicData: function (objectKey, frameKey, nodeKey) {
         socketHandler.sendPublicDataToAllSubscribers(objectKey, frameKey, nodeKey);
     },
     actions: function (thisAction) {
         utilities.actionSender(thisAction);
     },
-    data: function (objectKey, frameKey, nodeKey, data, _objects, _nodeTypeModules) {
+    data: function (objectKey, frameKey, nodeKey, data) {
         //these are the calls that come from the objects before they get processed by the object engine.
         // send the saved value before it is processed
         sendMessagetoEditors({
@@ -610,43 +618,46 @@ var hardwareAPICallbacks = {
         engine.trigger(objectKey, frameKey, nodeKey, getNode(objectKey, frameKey, nodeKey));
     },
     write: function (objectID) {
+        // note: throwing away async
         utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     }
 };
 // set all the initial states for the Hardware Interfaces in order to run with the Server.
-hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, version, protocol, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
+hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariables, __dirname, objectsPath, nodeTypeModules, blockModules, services, serverPort, hardwareAPICallbacks, sceneGraph, worldGraph);
 
-var utilitiesCallbacks = {
+const utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
-}
+};
 utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
-// This function will load all the Objects
-loadObjects();
-if (globalVariables.worldObject) {
-    loadWorldObject();
-}
-
-startSystem();
-
-// Get the directory names of all available sources for the 3D-UI
-if (!isLightweightMobile) {
-    hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
-    hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
-    availableModules.setHardwareInterfaces(hardwareInterfaceModules);
-
-    // statically serve the "public" directory in each hardware interface
-    for (let folderName in hardwareInterfaceLoader.folderMap) {
-        let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
-        webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+(async () => {
+    // This function will load all the Objects
+    await loadObjects();
+    if (globalVariables.worldObject) {
+        await loadWorldObject();
     }
-}
 
-hardwareAPI.reset();
+    await startSystem();
 
-console.info('Server has the following enabled hardware interfaces: ' + Object.keys(hardwareInterfaceModules).join(', '));
+    // Get the directory names of all available sources for the 3D-UI
+    if (!isLightweightMobile) {
+        hardwareInterfaceLoader = new AddonFolderLoader(hardwareInterfacePaths);
+        hardwareInterfaceModules = hardwareInterfaceLoader.loadModules();
+        availableModules.setHardwareInterfaces(hardwareInterfaceModules);
+
+        // statically serve the "public" directory in each hardware interface
+        for (let folderName in hardwareInterfaceLoader.folderMap) {
+            let publicPath = path.join(hardwareInterfaceLoader.folderMap[folderName], folderName, 'public');
+            webServer.use('/hardwareInterface/' + folderName + '/public', express.static(publicPath));
+        }
+    }
+
+    hardwareAPI.reset();
+
+    console.info('Server has the following enabled hardware interfaces: ' + Object.keys(hardwareInterfaceModules).join(', '));
+})();
 
 // This function calls an initialization callback that will help hardware interfaces to start after the entire system
 // is initialized.
@@ -666,15 +677,14 @@ function getFileExtension(fileName) {
 /**
  * @desc Add objects from the objects folder to the system
  **/
-function loadObjects() {
+async function loadObjects() {
     // check for objects in the objects folder by reading the objects directory content.
     // get all directory names within the objects directory
-    var objectFolderList = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(objectsPath + '/' + file).isDirectory() && file[0] !== '.';
-    });
+    const objectFolderList = await utilities.getObjectFolderList();
 
     for (var i = 0; i < objectFolderList.length; i++) {
-        var tempFolderName = utilities.getObjectIdFromTargetOrObjectFile(objectFolderList[i]);
+        const objectFolder = objectFolderList[i];
+        const tempFolderName = await utilities.getObjectIdFromTargetOrObjectFile(objectFolder);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -688,11 +698,12 @@ function loadObjects() {
             //objects[tempFolderName].frames[tempFolderName].name = objectFolderList[i];
 
             // add object to object lookup table
-            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName, globalVariables.saveToDisk);
+            utilities.writeObject(objectLookup, objectFolderList[i], tempFolderName);
 
             // try to read a saved previous state of the object
             try {
-                objects[tempFolderName] = JSON.parse(fs.readFileSync(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
+                const objectJsonText = await fsProm.readFile(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8');
+                objects[tempFolderName] = JSON.parse(objectJsonText);
                 objects[tempFolderName].ip = services.ip; // ip.address();
 
                 // this is for transforming old lists to new lists
@@ -760,7 +771,7 @@ function loadObjects() {
 
     // delete each object that represented a client that was connected to the server in its last session
     // this needs to happen before hardwareAPI.reset, or the object will get corrupted when its nodes are parsed
-    removeAvatarAndHumanPoseFiles();
+    await removeAvatarAndHumanPoseFiles();
 
     hardwareAPI.reset();
 
@@ -794,21 +805,13 @@ executeSetups();
  * Initialize worldObject to contents of spatialToolbox/_WORLD_local/.identity/object.json
  * Create the json file if doesn't already exist
  */
-function loadWorldObject() {
-
-    // create the file for it if necessary
-    var folder = path.join(objectsPath, worldObjectName);
-    var identityPath = path.join(folder, '.identity');
-    var jsonFilePath = path.join(folder, 'object.json');
-
-    // create objects folder at objectsPath if necessary
-    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        fs.mkdirSync(folder);
-    }
+async function loadWorldObject() {
+    const identityPath = path.join(objectsPath, worldObjectName, '.identity');
+    const jsonFilePath = path.join(identityPath, 'object.json');
 
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        fs.mkdirSync(identityPath);
+    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
+        await fsProm.mkdir(identityPath, {recursive: true});
     }
 
     // create a new world object
@@ -822,7 +825,8 @@ function loadWorldObject() {
     // try to read previously saved data to overwrite the default world object
     if (globalVariables.saveToDisk) {
         try {
-            worldObject = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            const contents = await fsProm.readFile(jsonFilePath, 'utf8');
+            worldObject = JSON.parse(contents);
         } catch (e) {
             console.error('No saved data for world object on server: ' + services.ip, e);
         }
@@ -836,40 +840,35 @@ function loadWorldObject() {
     hardwareAPI.reset();
 
     if (globalVariables.saveToDisk) {
-        fs.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4), function (err) {
-            if (err) {
-                console.error('Error saving world object', err);
-            }
-        });
+        try {
+            await fsProm.writeFile(jsonFilePath, JSON.stringify(worldObject, null, 4));
+        } catch (err) {
+            console.error('Error saving world object', err);
+        }
     } else {
         console.error('Server is not allowed to save to disk');
     }
 }
 
 
-function loadAnchor(anchorName) {
+async function loadAnchor(anchorName) {
 
     // create the file for it if necessary
-    var folder = path.join(objectsPath, anchorName);
-    var identityPath = path.join(folder, '.identity');
+    var identityPath = path.join(objectsPath, anchorName, '.identity');
     var jsonFilePath = path.join(identityPath, 'object.json');
     let anchorUuid = anchorName + utilities.uuidTime();
 
-    // create objects folder at objectsPath if necessary
-    if (globalVariables.saveToDisk && !fs.existsSync(folder)) {
-        fs.mkdirSync(folder);
-    }
-
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !fs.existsSync(identityPath)) {
-        fs.mkdirSync(identityPath);
+    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
+        await fsProm.mkdir(identityPath, {recursive: true});
     }
 
 
     // try to read previously saved data to overwrite the default anchor object
     if (globalVariables.saveToDisk) {
         try {
-            let anchor = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
+            const contents = await fsProm.readFile(jsonFilePath, 'utf8');
+            let anchor = JSON.parse(contents);
             anchorUuid = anchor.objectId;
             if (anchorUuid) {
                 objects[anchorUuid] = anchor;
@@ -895,12 +894,16 @@ function loadAnchor(anchorName) {
     objects[anchorUuid].tcs = 0;
 
     if (globalVariables.saveToDisk) {
-        fs.writeFileSync(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
-        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        try {
+            await fsProm.writeFile(jsonFilePath, JSON.stringify(objects[anchorUuid], null, 4));
+        } catch (err) {
+            console.log('error persisting anchor object', err);
+        }
+        await objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     } else {
         console.warn('Server is not allowed to save to disk');
-        objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
+        await objectBeatSender(beatPort, anchorUuid, objects[anchorUuid].ip);
         hardwareAPI.reset();
     }
 
@@ -910,25 +913,18 @@ function loadAnchor(anchorName) {
     sceneGraph.addObjectAndChildren(anchorUuid, objects[anchorUuid]);
 }
 
-function setAnchors() {
+async function setAnchors() {
     let hasValidWorldObject = false;
 
     // load all object folders
-    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    let tempFiles = await utilities.getObjectFolderList();
 
     // populate all objects folders with object.json files.
-    tempFiles.forEach(function (objectKey) {
-
+    for (const objectKey of tempFiles) {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+            let tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -936,19 +932,19 @@ function setAnchors() {
             }
 
             if (!(thisObjectKey in objects)) {
-                loadAnchor(objectKey);
+                await loadAnchor(objectKey);
             }
         }
-    });
+    }
 
 
     // check if there is an initialized World Object
     for (let key in objects) {
         if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
-            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+            let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
                 hasValidWorldObject = true;
@@ -962,9 +958,9 @@ function setAnchors() {
         objects[key].isAnchor = false;
         if (!(objects[key].isWorldObject || objects[key].type === 'world' || objects[key].type === 'human' || objects[key].type === 'avatar')) {
             // check if the object is correctly initialized with tracking targets
-            let datExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = fs.existsSync(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+            let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+            let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+            let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
 
             if (!(xmlExists && (datExists || jpgExists))) {
                 if (hasValidWorldObject) {
@@ -977,33 +973,28 @@ function setAnchors() {
     }
 }
 
-function removeAvatarAndHumanPoseFiles() {
+async function removeAvatarAndHumanPoseFiles() {
     let objectsToDelete = [];
 
     // load all object folders
-    let tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    let tempFiles = await utilities.getObjectFolderList();
 
-    tempFiles.forEach(objectFolderName => {
+    // remove hidden directories
+    for (const objectFolderName of tempFiles) {
         if (objectFolderName.indexOf('_AVATAR_') === 0 || objectFolderName.indexOf('_HUMAN_') === 0) {
             objectsToDelete.push(objectFolderName);
         }
-    });
+    }
 
-    objectsToDelete.forEach(objectFolderName => {
+    for (const objectFolderName of objectsToDelete) {
         let objectKey = utilities.readObject(objectLookup, objectFolderName);
 
         if (objects[objectKey]) {
-            deleteObject(objectKey);
+            await deleteObject(objectKey);
         } else {
             console.warn('problem deleting avatar/humanPose object (' + objectFolderName + ') because can\'t get objectID from name');
         }
-    });
+    }
 }
 
 /**********************************************************************************************************************
@@ -1014,14 +1005,14 @@ function removeAvatarAndHumanPoseFiles() {
  * @desc starting the system
  **/
 
-function startSystem() {
+async function startSystem() {
     // make sure that the system knows about the state of anchors.
-    setAnchors();
+    await setAnchors();
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (let key in objects) {
         if (!objects[key].deactivated) {
-            objectBeatSender(beatPort, key, objects[key].ip);
+            await objectBeatSender(beatPort, key, objects[key].ip);
         }
     }
 
@@ -1040,7 +1031,7 @@ function startSystem() {
 
     // keeps sockets to other objects alive based on the links found in the local objects
     // removes socket connections to objects that are no longer linked.
-    socketUpdaterInterval();
+    setSocketUpdaterInterval();
 
     // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
     const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
@@ -1062,10 +1053,68 @@ function startSystem() {
  ******************************************** Stopping the System *****************************************************
  **********************************************************************************************************************/
 
+function clearActiveHeartbeat(activeHeartbeat) {
+    clearInterval(activeHeartbeat.interval);
+    activeHeartbeat.socket.close();
+}
+
+function clearActiveHeartbeats() {
+    for (const key of Object.keys(activeHeartbeats)) {
+        clearActiveHeartbeat(activeHeartbeats[key]);
+        delete activeHeartbeats[key];
+    }
+}
+
+function sleep(ms) {
+    return new Promise((res) => {
+        const t = setTimeout(res, ms);
+        t.unref(); // Ensures the process can exit without waiting for timeout to complete
+    });
+}
+
+function closeServer(server) {
+    return Promise.race([new Promise((res, rej) => {
+        if (server.closeAllConnections) {
+            server.closeAllConnections();
+        }
+        if (server.unref) {
+            server.unref();
+        }
+
+        server.close((err) => {
+            if (err) {
+                console.error('Error closing server', err);
+                rej(err);
+            } else {
+                res();
+            }
+        });
+    }), sleep(2000).then(() => {
+        console.warn('Server close timed out');
+    })]);
+}
+
 async function exit() {
     hardwareAPI.shutdown();
-    process.exit();
+    await closeServer(http);
+    await closeServer(io.server.server);
+    sceneGraph.clearIntervals();
+    await recorder.stop();
+    clearActiveHeartbeats();
+    try {
+        udpServer.close();
+    } catch (e) {
+        console.warn('unable to close udpServer', e);
+    }
+    clearInterval(socketUpdaterInterval);
+    staleObjectCleaner.clearCleanupIntervals();
+    humanPoseFuser.stop();
+    console.info('Server exited successfully');
+    if (process.env.NODE_ENV !== 'test') {
+        process.exit(0);
+    }
 }
+exports.exit = exit;
 
 process.on('SIGINT', exit);
 
@@ -1122,9 +1171,13 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
     }
 
     // if oneTimeOnly specifically set to false, create a new update interval that broadcasts every N seconds
-    setInterval(() => {
+    const interval = setInterval(() => {
         utilities.sendWithFallback(client, udpPort, udpHost, messageObj, {closeAfterSending: false});
     }, beatInterval + utilities.randomIntInc(-250, 250));
+    activeHeartbeats['server_' + services.ip] = {
+        interval,
+        socket: client,
+    };
 }
 
 /**
@@ -1138,7 +1191,7 @@ function serverBeatSender(udpPort, oneTimeOnly = true) {
  * @param {boolean} immediate if true the firdt beat will be sent immediately, not after beatInterval (works for one-time and periodic beats)
  **/
 
-function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
+async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate = false) {
     if (isLightweightMobile) {
         return;
     }
@@ -1165,7 +1218,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
-        objects[thisId].tcs = utilities.generateChecksums(objects, fileList);
+        objects[thisId].tcs = await utilities.generateChecksums(objects, fileList);
     }
 
     // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
@@ -1175,19 +1228,8 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
     // Objects
 
-    // json string to be sent
-    const messageObj = {
-        id: thisId,
-        ip: services.ip,
-        port: serverPort,
-        vn: thisVersionNumber,
-        pr: protocol,
-        tcs: objects[thisId].tcs,
-        zone: objects[thisId].zone || '',
-    };
-
     // creating the datagram
-    var client = dgram.createSocket({
+    const client = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -1208,7 +1250,7 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
 
                 services.ip = services.getIP();
 
-                const messageObj ={
+                const messageObj = {
                     id: thisId,
                     ip: services.ip,
                     port: serverPort,
@@ -1219,7 +1261,6 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
                 };
                 let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
-                    
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
                         onErr: (_err) => {
@@ -1237,9 +1278,11 @@ function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immediate =
             sendBeat();
         }
         // perturb the inverval a bit so that not all objects send the beat in the same time.
-        activeHeartbeats[thisId] = setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250));
-    }
-    else {
+        activeHeartbeats[thisId] = {
+            interval: setInterval(sendBeat, beatInterval + utilities.randomIntInc(-250, 250)),
+            socket: client,
+        };
+    } else {
         // Single-shot, one-time heartbeat
         // delay the signal with timeout so that not all objects send the beat in the same time.
         let delay = immediate ? 0 : utilities.randomIntInc(1, 250);
@@ -1283,10 +1326,10 @@ exports.objectBeatSender = objectBeatSender;
 
 services.ip = services.getIP(); //ip.address();
 
-function handleActionMessage(action) {
+async function handleActionMessage(action) {
     if (action === 'ping') {
         for (let key in objects) {
-            objectBeatSender(beatPort, key, objects[key].ip, true);
+            await objectBeatSender(beatPort, key, objects[key].ip, true);
         }
         serverBeatSender(beatPort);
         return;
@@ -1314,7 +1357,7 @@ function objectBeatServer() {
     }
 
     // creating the udp server
-    var udpServer = dgram.createSocket({
+    udpServer = dgram.createSocket({
         type: 'udp4',
         reuseAddr: true,
     });
@@ -1328,7 +1371,7 @@ function objectBeatServer() {
         udpServer.close();
     });
 
-    udpServer.on('message', function (msg) {
+    udpServer.on('message', async function (msg) {
 
         var msgContent;
         // check if object ping
@@ -1340,24 +1383,30 @@ function objectBeatServer() {
                 knownObjects[msgContent.id] = {};
             }
 
-            if (msgContent.vn)
+            if (msgContent.vn) {
                 knownObjects[msgContent.id].version = msgContent.vn;
+            }
 
-            if (msgContent.pr)
+            if (msgContent.pr) {
                 knownObjects[msgContent.id].protocol = msgContent.pr;
-            else {
+            } else {
                 knownObjects[msgContent.id].protocol = 'R0';
             }
 
-            if (msgContent.ip)
+            if (msgContent.ip) {
                 knownObjects[msgContent.id].ip = msgContent.ip;
-            
+            }
+
+            if (msgContent.port) {
+                knownObjects[msgContent.id].port = msgContent.port;
+            }
+
             // each time we discover a new object from another, also get the scene graph from that server
-            getKnownSceneGraph(msgContent.ip);
+            getKnownSceneGraph(msgContent.ip, msgContent.port);
         }
         // check if action 'ping'
         if (msgContent.action) {
-            handleActionMessage(msgContent.action);
+            await handleActionMessage(msgContent.action);
         }
 
         if (typeof msgContent.matrixBroadcast !== 'undefined') {
@@ -1486,19 +1535,21 @@ function objectWebServer() {
 
     webServer.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
 
-    const LocalUIApp = require('./libraries/LocalUIApp.js');
-    const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
-    const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
-    const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
-    console.info('UI path for LocalUIApp: ' + selectedUiPath);
-    const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
-    localUserInterfaceApp.setup();
-    localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
-    localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    if (isStandaloneMobile) {
+        const LocalUIApp = require('./libraries/LocalUIApp.js');
+        const uiPath = path.join(__dirname, '../vuforia-spatial-toolbox-userinterface');
+        const alternativeUiPath = path.join(__dirname, '../userinterface'); // for backwards compatibility
+        const selectedUiPath = fs.existsSync(uiPath) ? uiPath : alternativeUiPath;
+        console.info('UI path for LocalUIApp: ' + selectedUiPath);
+        const localUserInterfaceApp = new LocalUIApp(selectedUiPath, addonFolders);
+        localUserInterfaceApp.setup();
+        localUserInterfaceApp.app.use('/objectDefaultFiles', express.static(__dirname + '/libraries/objectDefaultFiles/'));
+        localUserInterfaceApp.listen(serverUserInterfaceAppPort);
+    }
 
     // webServer.use('/frames', express.static(__dirname + '/libraries/frames/'));
 
-    webServer.use('/frames/:frameName', function (req, res, next) {
+    webServer.use('/frames/:frameName', async function (req, res, next) {
         if (!utilities.isValidId(req.params.frameName)) {
             res.status(400).send('Invalid frame name. Must be alphanumeric.');
             console.error('Recevied invalid frame name. Must be alphanumeric.', req.params.frameName);
@@ -1514,7 +1565,7 @@ function objectWebServer() {
         var fileName = path.join(frameLibPath, req.originalUrl.split('/frames/')[1]); //__dirname + '/libraries' + req.originalUrl;
         // we need to check without any ?options=xyz at the end or it might not find the file
         let fileNameWithoutQueryParams = fileName.split('?')[0];
-        if (!fs.existsSync(fileNameWithoutQueryParams)) {
+        if (!await fileExists(fileNameWithoutQueryParams)) {
             next();
             return;
         }
@@ -1526,7 +1577,7 @@ function objectWebServer() {
         }
 
         // HTML files get object.js injected
-        var html = fs.readFileSync(fileNameWithoutQueryParams, 'utf8');
+        var html = await fsProm.readFile(fileNameWithoutQueryParams, 'utf8');
 
         // remove any hard-coded references to object.js (or object-frames.js) and pep.min.js
         html = html.replace('<script src="object.js"></script>', '');
@@ -1550,6 +1601,8 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
+        html = html.replace('objectDefaultFiles/styles/', level + 'objectDefaultFiles/styles/');
+
         var loadedHtml = cheerio.load(html);
         var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
         scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1558,21 +1611,20 @@ function objectWebServer() {
         scriptNode += '<script> realityObject.serverIp = "' + services.ip + '"</script>';//ip.address()
         loadedHtml('head').prepend(scriptNode);
         res.send(loadedHtml.html());
-
     });
 
-    webServer.use('/logicNodeIcon', function (req, res) {
+    webServer.use('/logicNodeIcon', async function (req, res) {
         var urlArray = req.originalUrl.split('/');
         var objectName = urlArray[2];
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/logicNodeIcons/' + urlArray[3];
-        if (!fs.existsSync(fileName)) {
+        if (!await fileExists(fileName)) {
             res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not custom saved yet
             return;
         }
         res.sendFile(fileName);
     });
 
-    webServer.use('/mediaFile', function (req, res) {
+    webServer.use('/mediaFile', async function (req, res) {
         var urlArray = req.originalUrl.split('/');
 
         var objectId = urlArray[2];
@@ -1583,7 +1635,7 @@ function objectWebServer() {
 
         var objectName = getObject(objectId).name;
         var fileName = objectsPath + '/' + objectName + '/' + identityFolderName + '/mediaFiles/' + urlArray[3];
-        if (!fs.existsSync(fileName)) {
+        if (!await fileExists(fileName)) {
             res.sendFile(__dirname + '/libraries/emptyLogicIcon.png'); // default to blank image if not found
             return;
         }
@@ -1644,7 +1696,9 @@ function objectWebServer() {
             } else {
                 try {
                     res.sendFile(filename, {
-                        root: utilities.getVideoDir(identityFolderName, isLightweightMobile),
+                        // TODO: the code originally here was broken and
+                        // provided `undefined` instead of the object name
+                        root: utilities.getVideoDir(urlArray[0]),
                     });
                 } catch (e) {
                     console.warn('error sending video file', e);
@@ -1763,9 +1817,9 @@ function objectWebServer() {
         webServer.use('/libraries/monaco-editor/', express.static(__dirname + '/node_modules/monaco-editor/'));
     }
 
-    webServer.post('/action', (req, res) => {
+    webServer.post('/action', async (req, res) => {
         const action = JSON.parse(req.body.action);
-        handleActionMessage(action);
+        await handleActionMessage(action);
         res.send();
     });
 
@@ -1917,7 +1971,6 @@ function objectWebServer() {
                 res.status(400).send('Invalid object or frame name. Must be alphanumeric.');
                 return;
             }
-            const dirTree = require('directory-tree');
             var objectPath = objectsPath + '/' + req.params.objectName + '/' + req.params.frameName;
             var tree = dirTree(objectPath, {exclude: /\.DS_Store/}, function (item) {
                 item.path = item.path.replace(objectsPath, '/obj');
@@ -1938,18 +1991,19 @@ function objectWebServer() {
             webFrontend.editContent(req, res);
         });
 
-        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', function (req, res) {
+        webServer.put(objectInterfaceFolder + 'edit/:objectName/:frameName', async function (req, res) {
             if (utilities.goesUpDirectory(req.path)) {
                 res.status(400).send('Invalid path. Cannot go up directories.');
                 return;
             }
-            fs.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content, function (err) { //TODO: update path with objectsPath
-                if (err) {
-                    throw err;
-                }
-                // Success!
-                res.end('');
-            });
+            try {
+                await fsProm.writeFile(__dirname + '/' + req.path.replace('edit', 'objects'), req.body.content);
+            } catch (err) {
+                // TODO: update path with objectsPath
+                console.error('unable to PUT edit', err);
+            }
+            // Success!
+            res.end('');
         });
         // sends the target page for the object :id
         // ****************************************************************************************************************
@@ -1972,10 +2026,10 @@ function objectWebServer() {
 
         // Send the main starting page for the web user interface
         // ****************************************************************************************************************
-        webServer.get(objectInterfaceFolder, function (req, res) {
+        webServer.get(objectInterfaceFolder, async function (req, res) {
             let framePathList = frameLibPaths.join(' ');
-            setAnchors();
-            res.send(webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
+            await setAnchors();
+            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
@@ -1994,8 +2048,8 @@ function objectWebServer() {
         webServer.get('/proxy/*', proxyRequestHandler);
 
         const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
-        webServer.post('/oauthRefresh/*', oauthRefreshRequestHandler);
-        webServer.post('/oauthAcquire/*', oauthAcquireRequestHandler);
+        webServer.post('/oauthRefresh', oauthRefreshRequestHandler);
+        webServer.post('/oauthAcquire', oauthAcquireRequestHandler);
 
         // restart the server from the web frontend to load
         webServer.get('/restartServer/', function () {
@@ -2066,7 +2120,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceSettings(interfaceName, req.body.settings, req.body.limitToKeys, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2076,75 +2130,6 @@ function objectWebServer() {
             });
         });
 
-        /**
-         * Updates the settings.json for a particular hardware interface, based on changes from the webFrontend.
-         * @param {string} interfaceName - the folder name of the hardwareInterface
-         * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
-         * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
-         * @param {successCallback} callback
-         */
-        function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) { // eslint-disable-line no-inner-declarations
-            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-
-            try {
-                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
-                let existingSettings = {};
-                try {
-                    existingSettings = JSON.parse(rawSettings);
-                } catch (e) {
-                    console.error('Unable to parse settings', e, rawSettings);
-                }
-
-                for (let key in settings) {
-                    if (!settings.hasOwnProperty(key)) {
-                        continue;
-                    }
-                    if (limitToKeys && !limitToKeys.includes(key)) {
-                        continue;
-                    }
-
-                    // update value that will get written to disk
-                    if (typeof settings[key].value !== 'undefined') {
-                        existingSettings[key] = settings[key].value;
-                    } else {
-                        existingSettings[key] = settings[key];
-                    }
-
-                    // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
-                    if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
-                        hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
-                    }
-                }
-                
-                if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4), function (err) {
-                        if (err) {
-                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                            callback(false, 'error writing to file');
-                        } else {
-                            callback(true);
-                            hardwareAPI.pushSettingsToGui(interfaceName, existingSettings);
-                        }
-                    });
-                } else {
-                    console.error('Save to disk is disabled for this server');
-                    callback(false, 'saveToDisk globally disabled for this server');
-                }
-            } catch (e) {
-                console.error('Error saving hardware interface settings to disk for ' + interfaceName, e);
-                callback(false, 'error writing to file');
-            }
-        }
-
-        /**
-         * @callback successCallback
-         * @param {boolean} success
-         * @param {string?} error message
-         */
-
-        // TODO(hobinjk): break the back-and-forth web of dependencies with hardwareAPI
-        hardwareAPI.setHardwareInterfaceSettingsImpl(setHardwareInterfaceSettings);
-
         webServer.get('/hardwareInterface/:interfaceName/disable/', function (req, res) {
             var interfaceName = req.params.interfaceName;
 
@@ -2153,7 +2138,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceEnabled(interfaceName, false, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2171,7 +2156,7 @@ function objectWebServer() {
                 return;
             }
 
-            setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
+            hardwareAPI.setHardwareInterfaceEnabled(interfaceName, true, function (success, errorMessage) {
                 if (success) {
                     res.status(200).send('ok');
                     hardwareAPI.reset();
@@ -2182,50 +2167,6 @@ function objectWebServer() {
                 }
             });
         });
-
-        /**
-         * Overwrites the 'enabled' property in the spatialToolbox/.identity/hardwareInterfaceName/settings.json
-         * If the file is new (empty), write a default json blob into it with the new enabled value
-         * @param {string} interfaceName
-         * @param {boolean} shouldBeEnabled
-         * @param {successCallback} callback
-         */
-        function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) { // eslint-disable-line no-inner-declarations
-            var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
-
-            try {
-                const rawSettings = fs.readFileSync(interfaceSettingsPath, 'utf8') || '{}';
-                var settings = JSON.parse(rawSettings);
-                settings.enabled = shouldBeEnabled;
-
-                if (globalVariables.saveToDisk) {
-                    fs.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4), function (err) {
-                        if (err) {
-                            console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
-                            callback(false, 'error writing to file');
-                        } else {
-                            callback(true);
-                        }
-                    });
-                } else {
-                    console.error('Save to disk is disabled for this server');
-                    callback(false, 'saveToDisk globally disabled for this server');
-                }
-            } catch (e) {
-                // Trying default settings
-                var defaultSettings = {
-                    enabled: shouldBeEnabled
-                };
-                fs.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4), function (err) {
-                    if (err) {
-                        console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
-                        callback(false, 'error writing to file');
-                    } else {
-                        callback(true);
-                    }
-                });
-            }
-        }
 
         webServer.get('/globalFrame/:frameName/disable/', function (req, res) {
             var frameName = req.params.frameName;
@@ -2271,7 +2212,7 @@ function objectWebServer() {
 
         // request a zip-file with the frame stored inside. *1 is the frameName
         // ****************************************************************************************************************
-        webServer.get('/frame/:frameName/zipBackup/', function (req, res) {
+        webServer.get('/frame/:frameName/zipBackup/', async function (req, res) {
             if (isLightweightMobile) {
                 res.status(500).send('zipBackup unavailable on mobile');
                 return;
@@ -2291,7 +2232,7 @@ function objectWebServer() {
             }
             var framePath = path.join(frameLibPath, frameName);
 
-            if (!fs.existsSync(framePath)) {
+            if (!await fileExists(framePath)) {
                 res.status(404).send('frame directory for ' + frameName + 'does not exist at ' + framePath);
                 return;
             }
@@ -2351,17 +2292,22 @@ function objectWebServer() {
         // ****************************************************************************************************************
         // post interfaces
         // ****************************************************************************************************************
-        webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', function (req, res) {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:object/:frame', async function (req, res) {
             if (req.body.action === 'delete') {
                 if (utilities.goesUpDirectory(req.path)) {
                     res.status(400).send('Invalid path. Cannot contain \'..\'.');
                     return;
                 }
                 const folderDel = __dirname + req.path.substr(4);
-                if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
-                } else {
-                    fs.unlinkSync(folderDel);
+                try {
+                    const folderStats = await fsProm.stat(folderDel);
+                    if (folderStats.isDirectory()) {
+                        await utilities.deleteFolderRecursive(folderDel);
+                    } else {
+                        await fsProm.unlink(folderDel);
+                    }
+                } catch (_e) {
+                    console.warn('contentDelete frame path already deleted', folderDel);
                 }
 
                 res.send('ok');
@@ -2369,7 +2315,7 @@ function objectWebServer() {
             }
         });
 
-        webServer.post(objectInterfaceFolder + 'contentDelete/:id', function (req, res) {
+        webServer.post(objectInterfaceFolder + 'contentDelete/:id', async function (req, res) {
             if (req.body.action === 'delete') {
 
                 if (!utilities.isValidId(req.body.name)) {
@@ -2382,12 +2328,17 @@ function objectWebServer() {
                     return;
                 }
 
-                var folderDel = objectsPath + '/' + req.body.name;
+                const folderDel = objectsPath + '/' + req.body.name;
+                try {
+                    const folderStats = await fsProm.stat(folderDel);
 
-                if (fs.lstatSync(folderDel).isDirectory()) {
-                    utilities.deleteFolderRecursive(folderDel);
-                } else {
-                    fs.unlinkSync(folderDel);
+                    if (folderStats.isDirectory()) {
+                        await utilities.deleteFolderRecursive(folderDel);
+                    } else {
+                        await fsProm.unlink(folderDel);
+                    }
+                } catch (_e) {
+                    console.warn('contentDelete path already deleted', folderDel);
                 }
 
                 res.send(webFrontend.uploadTargetContent(req.params.id, objectsPath, objectInterfaceFolder));
@@ -2396,12 +2347,12 @@ function objectWebServer() {
         });
 
         //*****************************************************************************************
-        webServer.post(objectInterfaceFolder, function (req, res) {
+        webServer.post(objectInterfaceFolder, async function (req, res) {
 
             if (req.body.action === 'zone') {
                 let objectKey = utilities.readObject(objectLookup, req.body.name);
                 objects[objectKey].zone = req.body.zone;
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                 res.send('ok');
             }
 
@@ -2412,7 +2363,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    utilities.createFolder(req.body.name);
+                    await utilities.createFolder(req.body.name);
 
                     // immediately create world or human object rather than wait for target data to instantiate
                     let isWorldObject = JSON.parse(req.body.isWorld || 'false');
@@ -2450,7 +2401,7 @@ function objectWebServer() {
                             objects[objectId].worldId = req.body.worldId;
                         }
 
-                        utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
                         // automatically create a tool and a node on the avatar object
@@ -2458,10 +2409,10 @@ function objectWebServer() {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
+                                await utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
-                                utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+                                await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
                                 // now add a publicData storage node to the tool
                                 let nodeInfo = {
@@ -2470,16 +2421,16 @@ function objectWebServer() {
                                     x: 0,
                                     y: 0
                                 };
-                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function(statusCode, responseContents) {});
+                                nodeController.addNodeToFrame(objectId, toolId, toolId + 'storage', nodeInfo, function() {});
                             } else {
-                                utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
+                                await utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
                         }
 
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
                         // send the first beat immediately, so that there is a fast transmission of new object to all listeners
-                        objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
+                        await objectBeatSender(beatPort, objectId, objects[objectId].ip, false, true);
 
                         var sendObject = {
                             id: objectId,
@@ -2494,7 +2445,7 @@ function objectWebServer() {
                         return;
                     }
 
-                    setAnchors(); // Needed to initialize non-world (anchor) objects
+                    await setAnchors(); // Needed to initialize non-world (anchor) objects
 
                 } else if (req.body.name !== '' && req.body.frame !== '') {
                     if (!utilities.isValidId(req.body.name) || !utilities.isValidId(req.body.frame)) {
@@ -2506,14 +2457,14 @@ function objectWebServer() {
 
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
+                        await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
-                        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                         // sceneGraph.addObjectAndChildren(tempFolderName, objects[tempFolderName]);
                         sceneGraph.addFrame(objectKey, objectKey + req.body.frame, objects[objectKey].frames[objectKey + req.body.frame]);
                     } else {
-                        utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objects[objectKey].frames[objectKey + req.body.frame].location);
+                        await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, objects[objectKey].frames[objectKey + req.body.frame].location);
                     }
                 }
                 // res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
@@ -2524,21 +2475,6 @@ function objectWebServer() {
             // deprecated route for deleting objects or frames
             // check routers/object.js for DELETE /object/objectKey and DELETE /object/objectKey/frames/frameKey
             if (req.body.action === 'delete') {
-
-                var deleteFolderRecursive = function (folderDel) {
-                    if (fs.existsSync(folderDel)) {
-                        fs.readdirSync(folderDel).forEach(function (file) {
-                            var curPath = folderDel + '/' + file;
-                            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                                deleteFolderRecursive(curPath);
-                            } else { // delete file
-                                fs.unlinkSync(curPath);
-                            }
-                        });
-                        fs.rmdirSync(folderDel);
-                    }
-                };
-
                 if (!utilities.isValidId(req.body.name)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2564,7 +2500,7 @@ function objectWebServer() {
                         res.status(400).send('Invalid path. Cannot contain \'..\'.');
                         return;
                     }
-                    fs.unlinkSync(objectsPath + pathKey.substring(4));
+                    await fsProm.unlink(objectsPath + pathKey.substring(4));
                     res.send('ok');
                     return;
                 }
@@ -2577,7 +2513,7 @@ function objectWebServer() {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
-                    deleteFolderRecursive(folderDelFrame);
+                    await utilities.deleteFolderRecursive(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
@@ -2591,7 +2527,7 @@ function objectWebServer() {
                         }
                     }
 
-                    utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                    await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: objectKey}, lastEditor: null});
 
                     sceneGraph.removeElementAndChildren(frameNameKey);
@@ -2600,24 +2536,24 @@ function objectWebServer() {
 
                 } else {
 
-                    var folderDel = objectsPath + '/' + req.body.name;
-                    deleteFolderRecursive(folderDel);
+                    const folderDel = objectsPath + '/' + req.body.name;
+                    await utilities.deleteFolderRecursive(folderDel);
 
-                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);// req.body.name + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);
 
                     if (tempFolderName2 !== null) {
 
                         // remove object from tree
                         if (objects[tempFolderName2]) {
                             if (activeHeartbeats[tempFolderName2]) {
-                                clearInterval(activeHeartbeats[tempFolderName2]);
+                                clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                                 delete activeHeartbeats[tempFolderName2];
                             }
                             try {
                                 // deconstructs frames and nodes of this object, too
                                 objects[tempFolderName2].deconstruct();
                             } catch (e) {
-                                console.warn('Object exists without proper prototype: ' + tempFolderName2, e);
+                                console.warn('Object exists without proper prototype: ' + tempFolderName2, objects[tempFolderName2], e);
                             }
                             delete objects[tempFolderName2];
                             delete knownObjects[tempFolderName2];
@@ -2628,7 +2564,7 @@ function objectWebServer() {
 
                     }
 
-                    setAnchors();
+                    await setAnchors();
 
                     //   res.send(webFrontend.printFolder(objects, __dirname, globalVariables.debug, objectInterfaceFolder, objectLookup, version));
                     res.send('ok');
@@ -2675,19 +2611,19 @@ function objectWebServer() {
                                 console.error('Unzipper Error', err);
                             });
 
-                            unzipper.on('extract', function () {
-                                createObjectFromTarget(objects, filename.substr(0, filename.lastIndexOf('.')), __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                            unzipper.on('extract', async function () {
+                                await createObjectFromTarget(filename.substr(0, filename.lastIndexOf('.')));
 
                                 //todo add object to the beatsender.
 
-                                fs.unlinkSync(folderD + '/' + filename);
+                                await fsProm.unlink(folderD + '/' + filename);
 
                                 res.status(200);
                                 res.send('done');
 
                             });
 
-                            unzipper.on('progress', function (fileIndex, fileCount) {
+                            unzipper.on('progress', function (_fileIndex, _fileCount) {
                                 // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                             });
 
@@ -2709,7 +2645,7 @@ function objectWebServer() {
         //***********************************************************************
 
         webServer.post(objectInterfaceFolder + 'content/:id',
-            function (req, res) {
+            async function (req, res) {
                 if (!utilities.isValidId(req.params.id)) {
                     res.status(400).send('Invalid object name. Must be alphanumeric.');
                     return;
@@ -2725,19 +2661,23 @@ function objectWebServer() {
 
                     var folderDel = objectsPath + '/' + req.body.name;
 
-                    if (fs.existsSync(folderDel)) {
-                        if (fs.lstatSync(folderDel).isDirectory()) {
-                            utilities.deleteFolderRecursive(folderDel);
-                        } else {
-                            fs.unlinkSync(folderDel);
+                    if (await fileExists(folderDel)) {
+                        try {
+                            if ((await fsProm.stat(folderDel)).isDirectory()) {
+                                await utilities.deleteFolderRecursive(folderDel);
+                            } else {
+                                await fsProm.unlink(folderDel);
+                            }
+                        } catch (e) {
+                            console.warn(`Unable to unlink '${folderDel}'`, e);
                         }
                     }
 
-                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);//req.body.name + thisMacAddress;
+                    var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);
                     // remove object from tree
                     if (tempFolderName2 !== null) {
                         if (activeHeartbeats[tempFolderName2]) {
-                            clearInterval(activeHeartbeats[tempFolderName2]);
+                            clearActiveHeartbeat(activeHeartbeats[tempFolderName2]);
                             delete activeHeartbeats[tempFolderName2];
                         }
                         try {
@@ -2786,8 +2726,8 @@ function objectWebServer() {
                 form.on('end', function () {
                     var folderD = form.uploadDir;
                     fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
-                    fileInfoList.forEach(fileInfo => {
-                        if (!fs.existsSync(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                    fileInfoList.forEach(async fileInfo => {
+                        if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
                             return;
                         }
                         fileInfo.completed = true; // File has downloaded
@@ -2800,16 +2740,20 @@ function objectWebServer() {
                             }
 
                             if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
-                                if (!fs.existsSync(folderD + '/' + identityFolderName + '/target/')) {
-                                    fs.mkdirSync(folderD + '/' + identityFolderName + '/target/', '0766', function (err) {
-                                        if (err) {
-                                            console.error('Error creating target upload directory', err);
-                                            res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
-                                        }
-                                    });
+                                if (!await fileExists(folderD + '/' + identityFolderName + '/target/')) {
+                                    try {
+                                        await fsProm.mkdir(folderD + '/' + identityFolderName + '/target/', '0766');
+                                    } catch (err) {
+                                        console.error('Error creating target upload directory', err);
+                                        res.send('ERROR! Can\'t make the directory! \n');    // echo the result back
+                                    }
                                 }
 
-                                fs.renameSync(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                try {
+                                    await fsProm.rename(folderD + '/' + filename, folderD + '/' + identityFolderName + '/target/target.' + fileExtension);
+                                } catch (e) {
+                                    console.error(`error renaming ${filename} to target.${fileExtension}`, e);
+                                }
 
                                 // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
                                 // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
@@ -2820,44 +2764,39 @@ function objectWebServer() {
                                     var originalFilepath = folderD + '/' + identityFolderName + '/target/target-original-size.' + fileExtension;
 
                                     try {
-                                        Jimp.read(rawFilepath).then(image => {
-                                            var desiredMaxDimension = 1024;
+                                        const image = await Jimp.read(rawFilepath);
+                                        var desiredMaxDimension = 1024;
 
-                                            if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
-                                                // JPEG doesn't need resizing
-                                                continueProcessingUpload();
-                                            } else {
-                                                var aspectRatio = image.bitmap.width / image.bitmap.height;
-                                                var newWidth = desiredMaxDimension;
-                                                if (image.bitmap.width < image.bitmap.height) {
-                                                    newWidth = desiredMaxDimension * aspectRatio;
-                                                }
-
-                                                // copy fullsize file as backup
-                                                if (fs.existsSync(originalFilepath)) {
-                                                    fs.unlinkSync(originalFilepath);
-                                                }
-                                                fs.copyFileSync(rawFilepath, originalFilepath);
-
-                                                // copied file into temp file to be used during the resize operation
-                                                if (fs.existsSync(tempFilepath)) {
-                                                    fs.unlinkSync(tempFilepath);
-                                                }
-                                                fs.copyFileSync(rawFilepath, tempFilepath);
-
-                                                Jimp.read(tempFilepath).then(tempImage => {
-                                                    return tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
-                                                }).then(() => {
-                                                    if (fs.existsSync(tempFilepath)) {
-                                                        fs.unlinkSync(tempFilepath);
-                                                    }
-                                                    continueProcessingUpload();
-                                                }).catch(err => {
-                                                    console.error('Error resizing image', err);
-                                                    continueProcessingUpload();
-                                                });
+                                        if (Math.max(image.bitmap.width, image.bitmap.height) <= desiredMaxDimension) {
+                                            // JPEG doesn't need resizing
+                                            continueProcessingUpload();
+                                        } else {
+                                            var aspectRatio = image.bitmap.width / image.bitmap.height;
+                                            var newWidth = desiredMaxDimension;
+                                            if (image.bitmap.width < image.bitmap.height) {
+                                                newWidth = desiredMaxDimension * aspectRatio;
                                             }
-                                        });
+
+                                            // copy fullsize file as backup
+                                            if (await fileExists(originalFilepath)) {
+                                                await fsProm.unlink(originalFilepath);
+                                            }
+                                            await fsProm.copyFile(rawFilepath, originalFilepath);
+
+                                            // copied file into temp file to be used during the resize operation
+                                            if (await fileExists(tempFilepath)) {
+                                                await fsProm.unlink(tempFilepath);
+                                            }
+                                            await fsProm.copyFile(rawFilepath, tempFilepath);
+
+                                            const tempImage = await Jimp.read(tempFilepath);
+                                            await tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
+
+                                            if (await fileExists(tempFilepath)) {
+                                                await fsProm.unlink(tempFilepath);
+                                            }
+                                            continueProcessingUpload();
+                                        }
                                     } catch (e) {
                                         console.error('Error using sharp to load and resize image from: ' + rawFilepath + ', but trying to continue upload process anyways', e);
                                         continueProcessingUpload();
@@ -2868,7 +2807,7 @@ function objectWebServer() {
                                 }
 
                                 // Step 2) - Generate a default XML file if needed
-                                function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
+                                async function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
                                     var objectName = req.params.id + utilities.uuidTime();
 
                                     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
@@ -2880,17 +2819,20 @@ function objectWebServer() {
 
 
                                     var xmlOutFile = path.join(folderD, identityFolderName, '/target/target.xml');
-                                    if (!fs.existsSync(xmlOutFile)) {
-                                        fs.writeFile(xmlOutFile, documentcreate, function (err) {
-                                            onXmlVerified(err);
-                                        });
+                                    if (!await fileExists(xmlOutFile)) {
+                                        try {
+                                            await fsProm.writeFile(xmlOutFile, documentcreate);
+                                            await onXmlVerified();
+                                        } catch (err) {
+                                            await onXmlVerified(err);
+                                        }
                                     } else {
-                                        onXmlVerified();
+                                        await onXmlVerified();
                                     }
                                 }
 
                                 // create the object data and respond to the webFrontend once the XML file is confirmed to exist
-                                function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
+                                async function onXmlVerified(err) { // eslint-disable-line no-inner-declarations
                                     let thisObjectId = utilities.readObject(objectLookup, req.params.id);
 
                                     if (err) {
@@ -2898,7 +2840,7 @@ function objectWebServer() {
                                     } else {
                                         // create the object if needed / possible
                                         if (typeof objects[thisObjectId] === 'undefined') {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                            await createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -2916,10 +2858,10 @@ function objectWebServer() {
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
-                                        var jpg = fs.existsSync(jpgPath);
-                                        var dat = fs.existsSync(datPath);
-                                        var xml = fs.existsSync(xmlPath);
-                                        var glb = fs.existsSync(glbPath);
+                                        var jpg = await fileExists(jpgPath);
+                                        var dat = await fileExists(datPath);
+                                        var xml = await fileExists(xmlPath);
+                                        var glb = await fileExists(glbPath);
 
                                         var sendObject = {
                                             id: thisObjectId,
@@ -2931,14 +2873,14 @@ function objectWebServer() {
                                             glbExists: glb
                                         };
 
-                                        thisObject.tcs = utilities.generateChecksums(objects, fileList);
-                                        utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
-                                        setAnchors();
+                                        thisObject.tcs = await utilities.generateChecksums(objects, fileList);
+                                        await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                        await setAnchors();
 
                                         // Removes old heartbeat if it used to be an anchor
-                                        var oldObjectId = utilities.getAnchorIdFromObjectFile(req.params.id);
+                                        var oldObjectId = await utilities.getAnchorIdFromObjectFile(req.params.id);
                                         if (oldObjectId && oldObjectId !== thisObjectId) {
-                                            clearInterval(activeHeartbeats[oldObjectId]);
+                                            clearActiveHeartbeat(activeHeartbeats[oldObjectId]);
                                             delete activeHeartbeats[oldObjectId];
                                             try {
                                                 // deconstructs frames and nodes of this object, too
@@ -2949,7 +2891,7 @@ function objectWebServer() {
                                             delete objects[oldObjectId];
                                         }
 
-                                        objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                        await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
                                         // res.status(200).send('ok');
                                         try {
                                             res.status(200).json(sendObject);
@@ -2978,9 +2920,9 @@ function objectWebServer() {
                                         console.error('Unzipper error', err);
                                     });
 
-                                    unzipper.on('extract', function (_log) {
+                                    unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
-                                        const folderFiles = fs.readdirSync(targetFolderPath);
+                                        const folderFiles = await fsProm.readdir(targetFolderPath);
                                         const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
 
                                         let anyTargetsUploaded = false;
@@ -2989,20 +2931,24 @@ function objectWebServer() {
                                             const folderFile = folderFiles[i];
                                             const folderFileType = folderFile.substr(folderFile.lastIndexOf('.') + 1);
                                             if (targetTypes.includes(folderFileType)) {
-                                                fs.renameSync(
+                                                await fsProm.rename(
                                                     path.join(targetFolderPath, folderFile),
                                                     path.join(targetFolderPath, 'target.' + folderFileType)
                                                 );
                                                 anyTargetsUploaded = true;
                                             }
                                             if (folderFile === 'target') {
-                                                const innerFolderFiles = fs.readdirSync(folderD + '/' + identityFolderName + '/target/' + folderFile);
+                                                const innerFolderFiles = await fsProm.readdir(folderD + '/' + identityFolderName + '/target/' + folderFile);
                                                 let deferred = false;
                                                 function finishFn(folderName) {
-                                                    return function() {
-                                                        fs.rmdirSync(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        fs.renameSync(
+                                                    return async function() {
+                                                        try {
+                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
+                                                        } catch (e) {
+                                                            console.warn('target zip already cleaned up', folderName);
+                                                        }
+                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                        await fsProm.rename(
                                                             path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                             path.join(folderD, identityFolderName, 'target', 'target.glb')
                                                         );
@@ -3014,7 +2960,7 @@ function objectWebServer() {
                                                     let innerFolderFile = innerFolderFiles[j];
                                                     const innerFolderFileType = innerFolderFile.substr(innerFolderFile.lastIndexOf('.') + 1);
                                                     if (targetTypes.includes(innerFolderFileType)) {
-                                                        fs.renameSync(
+                                                        await fsProm.rename(
                                                             path.join(targetFolderPath, folderFile, innerFolderFile),
                                                             path.join(targetFolderPath, 'target.' + innerFolderFileType),
                                                         );
@@ -3034,7 +2980,7 @@ function objectWebServer() {
                                                             finish();
                                                         });
 
-                                                        unzipper3dt.on('progress', function (fileIndex, fileCount) {
+                                                        unzipper3dt.on('progress', function (_fileIndex, _fileCount) {
                                                             // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
                                                         });
 
@@ -3052,12 +2998,12 @@ function objectWebServer() {
                                                 }
                                             }
                                         }
-                                        fs.unlinkSync(path.join(folderD, zipfileName));
+                                        await fsProm.unlink(path.join(folderD, zipfileName));
 
                                         // evnetually create the object.
 
-                                        if (fs.existsSync(path.join(targetFolderPath, 'target.dat')) && fs.existsSync(path.join(targetFolderPath, 'target.xml'))) {
-                                            createObjectFromTarget(objects, tmpFolderFile, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, globalVariables.debug);
+                                        if (await fileExists(path.join(targetFolderPath, 'target.dat')) && await fileExists(path.join(targetFolderPath, 'target.xml'))) {
+                                            await createObjectFromTarget(tmpFolderFile);
 
                                             //todo send init to internal modules
 
@@ -3080,14 +3026,14 @@ function objectWebServer() {
                                                 for (const ext of Object.keys(targetFileExts)) {
                                                     const filePath = path.join(targetFolderPath, 'target.' + ext);
                                                     fileList.push(filePath);
-                                                    targetFileExts[ext] = fs.existsSync(filePath);
+                                                    targetFileExts[ext] = await fileExists(filePath);
                                                 }
 
-                                                thisObject.tcs = utilities.generateChecksums(objects, fileList);
+                                                thisObject.tcs = await utilities.generateChecksums(objects, fileList);
 
-                                                utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
-                                                setAnchors();
-                                                objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+                                                await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+                                                await setAnchors();
+                                                await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
                                                 let sendObject = {
                                                     id: thisObjectId,
@@ -3117,7 +3063,7 @@ function objectWebServer() {
                                         }
                                     });
 
-                                    unzipper.on('progress', function (fileIndex, fileCount) {
+                                    unzipper.on('progress', function (_fileIndex, _fileCount) {
                                         // console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
                                     });
 
@@ -3147,7 +3093,7 @@ function objectWebServer() {
                 });
             });
 
-        webServer.delete(objectInterfaceFolder + 'content/:id', function (req, res) {
+        webServer.delete(objectInterfaceFolder + 'content/:id', async function (req, res) {
             if (!utilities.isValidId(req.params.id)) {
                 res.status(400).send('Invalid object name. Must be alphanumeric.');
                 return;
@@ -3166,27 +3112,27 @@ function objectWebServer() {
 
             let targetDir = path.join(objectsPath, tmpFolderFile, identityFolderName, 'target');
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.xml'));
+                await fsProm.unlink(path.join(targetDir, 'target.xml'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.xml'), e);
             }
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.jpg'));
+                await fsProm.unlink(path.join(targetDir, 'target.jpg'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.jpg'), e);
             }
             try {
-                fs.unlinkSync(path.join(targetDir, 'target.dat'));
+                await fsProm.unlink(path.join(targetDir, 'target.dat'));
             } catch (e) {
                 console.error('Error while trying to delete ' + path.join(targetDir, 'target.dat'), e);
             }
 
             // recompute isAnchor (depends if there is an initialized world object)
-            setAnchors();
+            await setAnchors();
 
             // save to disk and respond
             if (objects[objectKey]) { // allows targets from corrupted objects to be deleted
-                utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
+                await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
             }
             res.send('ok');
         });
@@ -3200,70 +3146,68 @@ function objectWebServer() {
 
 /**
  * Gets triggered when uploading a ZIP with XML and Dat. Generates a new object and saves it to object.json.
- * @param {Record<string, Object>} objects
  * @param {string} folderVar
- * @param {string} __dirname
- * @param {Record<string, unknown>} objectLookup
- * @param {unknown} hardwareInterfaceModules
- * @param {unknown} objectBeatSender
- * @param {unknown} beatPort
- * @param {unknown} _debug
  */
-function createObjectFromTarget(objects, folderVar, __dirname, objectLookup, hardwareInterfaceModules, objectBeatSender, beatPort, _debug) {
+async function createObjectFromTarget(folderVar) {
     var folder = objectsPath + '/' + folderVar + '/';
 
-    if (fs.existsSync(folder)) {
-        var objectIDXML = utilities.getObjectIdFromTargetOrObjectFile(folderVar);
-        var objectSizeXML = utilities.getTargetSizeFromTarget(folderVar);
-        if (objectIDXML && objectIDXML.length > 13) {
-            objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
-            objects[objectIDXML].port = serverPort;
-            objects[objectIDXML].name = folderVar;
-            objects[objectIDXML].targetSize = objectSizeXML;
-
-            if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-                objects[objectIDXML].isWorldObject = true;
-                objects[objectIDXML].type = 'world';
-                objects[objectIDXML].timestamp = Date.now();
-            }
-
-            try {
-                objects[objectIDXML] = JSON.parse(fs.readFileSync(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8'));
-                objects[objectIDXML].objectId = objectIDXML;
-                objects[objectIDXML].ip = services.ip; //ip.address();
-            } catch (e) {
-                objects[objectIDXML].ip = services.ip; //ip.address();
-                console.warn('No saved data for: ' + objectIDXML, e);
-            }
-
-            if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-                let oldObjectId = utilities.readObject(objectLookup, folderVar);
-                try {
-                    objects[oldObjectId].deconstruct();
-                } catch (e) {
-                    console.warn('Object exists without proper prototype: ' + oldObjectId, e);
-                }
-                delete objects[oldObjectId];
-                delete knownObjects[oldObjectId];
-                delete objectLookup[oldObjectId];
-                sceneGraph.removeElementAndChildren(oldObjectId);
-            }
-            utilities.writeObject(objectLookup, folderVar, objectIDXML, globalVariables.saveToDisk);
-            // entering the obejct in to the lookup table
-
-            // ask the object to reinitialize
-            //serialPort.write("ok\n");
-            // todo send init to internal
-
-            hardwareAPI.reset();
-
-            utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
-
-            sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
-
-            objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
-        }
+    if (!await fileExists(folder)) {
+        return;
     }
+
+    var objectIDXML = await utilities.getObjectIdFromTargetOrObjectFile(folderVar);
+    var objectSizeXML = await utilities.getTargetSizeFromTarget(folderVar);
+    if (!objectIDXML || objectIDXML.length <= 13) {
+        return;
+    }
+
+    objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
+    objects[objectIDXML].port = serverPort;
+    objects[objectIDXML].name = folderVar;
+    objects[objectIDXML].targetSize = objectSizeXML;
+
+    if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+        objects[objectIDXML].isWorldObject = true;
+        objects[objectIDXML].type = 'world';
+        objects[objectIDXML].timestamp = Date.now();
+    }
+
+    try {
+        const contents = await fsProm.readFile(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8');
+        objects[objectIDXML] = JSON.parse(contents);
+        objects[objectIDXML].objectId = objectIDXML;
+        objects[objectIDXML].ip = services.ip; //ip.address();
+    } catch (e) {
+        objects[objectIDXML].ip = services.ip; //ip.address();
+        console.warn('No saved data for: ' + objectIDXML, e);
+    }
+
+    if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
+        let oldObjectId = utilities.readObject(objectLookup, folderVar);
+        try {
+            objects[oldObjectId].deconstruct();
+        } catch (e) {
+            console.warn('Object exists without proper prototype: ' + oldObjectId, e);
+        }
+        delete objects[oldObjectId];
+        delete knownObjects[oldObjectId];
+        delete objectLookup[oldObjectId];
+        sceneGraph.removeElementAndChildren(oldObjectId);
+    }
+    utilities.writeObject(objectLookup, folderVar, objectIDXML);
+    // entering the obejct in to the lookup table
+
+    // ask the object to reinitialize
+    //serialPort.write("ok\n");
+    // todo send init to internal
+
+    hardwareAPI.reset();
+
+    await utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+
+    sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
+
+    await objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
 }
 
 
@@ -3317,7 +3261,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
             }));
         });
     }
-}
+};
 
 /**
  * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
@@ -3350,8 +3294,6 @@ exports.socketHandler = socketHandler;
 
 function socketServer() {
     io.on('connection', function (socket) {
-        socketHandler.socket = socket;
-
         /**
          * @type {{[objectKey: string]: bool}}
          * tracks if we have already sent a reloadObject message in response to
@@ -3544,7 +3486,7 @@ function socketServer() {
             }
         });
 
-        socket.on('object/publicData', function (_msg) {
+        socket.on('object/publicData', async function (_msg) {
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             var node = getNode(msg.object, msg.frame, msg.node);
@@ -3563,7 +3505,7 @@ function socketServer() {
             if (object) {
                 // frequently updated objects like avatar and human pose are excluded from writing to file
                 if (object.type !== 'avatar' && object.type !== 'human') {
-                    utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
+                    await utilities.writeObjectToFile(objects, msg.object, globalVariables.saveToDisk);
                 }
 
                 // NOTE: string 'whole_pose' is defined in JOINT_PUBLIC_DATA_KEYS in UI codebase
@@ -3587,9 +3529,9 @@ function socketServer() {
                     }
                 }
             } else {
-                console.warn('publicData update of unknown object', msg.object);
                 const objectKey = msg.object;
                 if (!knownUnknownObjects[objectKey]) {
+                    console.warn('publicData update of unknown object', msg.object);
                     knownUnknownObjects[objectKey] = true;
                     utilities.actionSender({
                         reloadObject: {
@@ -3968,7 +3910,7 @@ function socketServer() {
          * Handles messages from local remote operators who don't have access
          * to sending actions through the cloud proxy or native udp broadcast
          */
-        socket.on('udp/action', function(msgRaw) {
+        socket.on('udp/action', async function(msgRaw) {
             let msg;
             try {
                 msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
@@ -3979,28 +3921,28 @@ function socketServer() {
                 return;
             }
 
-            handleActionMessage(msg.action);
+            await handleActionMessage(msg.action);
         });
 
-        socket.on('/disconnectEditor', function(msgRaw) {
+        socket.on('/disconnectEditor', async function(msgRaw) {
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
             let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
-            deleteObjects(avatarKeys);
+            await deleteObjects(avatarKeys);
 
             let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(msg.editorId));
-            deleteObjects(humanPoseKeys);
+            await deleteObjects(humanPoseKeys);
         });
 
-        socket.on('disconnect', function () {
+        socket.on('disconnect', async function () {
             if (socket.id in realityEditorSocketArray) {
                 delete realityEditorSocketArray[socket.id];
             }
 
             if (socket.id in realityEditorBlockSocketArray) {
-                realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
+                for (const thisObj of realityEditorBlockSocketArray[socket.id]) {
+                    await utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: thisObj.object}});
-                });
+                }
                 delete realityEditorBlockSocketArray[socket.id];
             }
 
@@ -4018,7 +3960,7 @@ function socketServer() {
                     keysToDelete.push(humanPoseKeys);
                 });
 
-                deleteObjects(keysToDelete.flat());
+                await deleteObjects(keysToDelete.flat());
 
                 delete realityEditorUpdateSocketArray[socket.id];
             }
@@ -4031,15 +3973,15 @@ function socketServer() {
     this.io = io;
 }
 
-function deleteObjects(objectKeysToDelete) {
-    objectKeysToDelete.forEach(objectKey => {
-        deleteObject(objectKey);
-    });
+async function deleteObjects(objectKeysToDelete) {
+    for (const objectKey of objectKeysToDelete) {
+        await deleteObject(objectKey);
+    }
 }
 
-function deleteObject(objectKey) {
+async function deleteObject(objectKey) {
     if (objects[objectKey]) {
-        utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+        await utilities.deleteObject(objects[objectKey].name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
     }
     // try to clean up any other state that might be remaining
 
@@ -4047,7 +3989,7 @@ function deleteObject(objectKey) {
         humanPoseFuser.removeHumanObject(objectKey);
     }
     if (activeHeartbeats[objectKey]) {
-        clearInterval(activeHeartbeats[objectKey]);
+        clearActiveHeartbeat(activeHeartbeats[objectKey]);
         delete activeHeartbeats[objectKey];
     }
     delete knownObjects[objectKey];
@@ -4092,7 +4034,7 @@ function forEachObject(callback) {
     }
 }
 
-function forEachHumanPoseObject(callback) {
+function _forEachHumanPoseObject(callback) {
     for (var objectID in objects) {
         if (objects[objectID].isHumanPose) {
             callback(objectID, objects[objectID]);
@@ -4493,10 +4435,10 @@ function socketIndicator() {
 /**
  * Runs socketUpdater every socketUpdateInterval milliseconds
  */
-function socketUpdaterInterval() {
-    setInterval(function () {
+function setSocketUpdaterInterval() {
+    socketUpdaterInterval = setInterval(function () {
         socketUpdater();
-    }, socketUpdateInterval);
+    }, socketUpdateIntervalMs);
 }
 
 /**
@@ -4516,12 +4458,12 @@ setupControllers();
 
 function setupControllers() {
     blockController.setup(objects, blockModules, globalVariables, engine, objectsPath);
-    blockLinkController.setup(objects, globalVariables, objectsPath);
-    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, identityFolderName, nodeTypeModules, sceneGraph);
+    blockLinkController.setup(objects, globalVariables);
+    frameController.setup(objects, globalVariables, hardwareAPI, __dirname, objectsPath, nodeTypeModules, sceneGraph);
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
-    logicNodeController.setup(objects, globalVariables, objectsPath, identityFolderName, Jimp);
+    logicNodeController.setup(objects, globalVariables, objectsPath);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, identityFolderName, git, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 

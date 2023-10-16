@@ -1,23 +1,21 @@
 const express = require('express');
 const fs = require('fs');
+const fsProm = require('fs/promises');
 const path = require('path');
 const stream = require('stream');
 const zlib = require('zlib');
 
 const recorder = require('../libraries/recorder.js');
+const {fileExists} = require('../libraries/utilities.js');
 
 const router = express.Router();
 
 let patches = [];
 
-router.get('/logs', function(req, res) {
-    if (fs.existsSync(recorder.logsPath)) {
-        fs.readdir(recorder.logsPath, function (err, files) {
-            if (err) {
-                console.error('Failed to read recorder logs directory', err);
-                res.json([]);
-                return;
-            }
+router.get('/logs', async function(req, res) {
+    if (await fileExists(recorder.logsPath)) { // catch needed because stat throws an error if the file does not exist
+        try {
+            let files = await fsProm.readdir(recorder.logsPath);
             const logNames = {};
             for (let file of files) {
                 if (file.endsWith('.json.gz')) {
@@ -27,7 +25,11 @@ router.get('/logs', function(req, res) {
             }
             logNames[recorder.getCurrentLogName()] = true;
             res.json(Object.keys(logNames));
-        });
+        } catch (err) {
+            console.error('Failed to read recorder logs directory', err);
+            res.json([]);
+            return;
+        }
     } else {
         res.json([recorder.getCurrentLogName()]);
     }
@@ -66,10 +68,15 @@ function pipeReadStream(req, res, readStream) {
 
 }
 
-router.get('/logs/:logPath', function(req, res) {
-    // res.json(recorder.timeObject);
+router.get('/logs/:logPath', async function(req, res) {
+    let logPath = path.join(recorder.logsPath, req.params.logPath);
+    if (logPath.endsWith('.gz')) {
+        res.sendFile(logPath);
+        return;
+    }
+
     let compressedLogPath = path.join(recorder.logsPath, req.params.logPath + '.gz');
-    if (!fs.existsSync(compressedLogPath)) {
+    if (!await fileExists(compressedLogPath)) { // catch needed because stat throws an error if the file does not exist
         // Compare only the start `objects_${startTime}` bit of the current log
         // name since the end time is constantly changing
         const startTimeSection = req.params.logPath.split('-')[0];
