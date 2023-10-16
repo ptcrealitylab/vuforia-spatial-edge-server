@@ -33,6 +33,7 @@ test('GET /availableFrames', async () => {
         },
         metadata: {
             enabled: true,
+            addon: 'vuforia-spatial-core-addon'
         },
     });
 });
