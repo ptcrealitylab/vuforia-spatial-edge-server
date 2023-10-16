@@ -13,10 +13,10 @@ exports.setup = function (_objects, _sceneGraph, _knownObjects, _socketArray, _g
 
 exports.deepCopy = utilities.deepCopy;
 
-exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
-    let thisObjectKey = _object;
-    if (!(_object in objects)) {
-        thisObjectKey = utilities.getObjectIdFromTargetOrObjectFile(_object);
+exports.searchNodeByType = async function (nodeType, objectKey, tool, node, callback) {
+    let thisObjectKey = objectKey;
+    if (!(objectKey in objects)) {
+        thisObjectKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
     if (!tool && !node) {
@@ -37,7 +37,7 @@ exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
         });
 
     } else if (!tool) {
-        utilities.forEachFrameInObject(thisObject, function (tool, toolKey) {
+        utilities.forEachFrameInObject(thisObject, function (_tool, toolKey) {
             let thisNode = utilities.getFrame(objects, thisObjectKey, toolKey, node);
             if (!thisNode) {
                 if (thisNode.type === nodeType) callback(thisObjectKey, toolKey, node);
