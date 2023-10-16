@@ -51,3 +51,5 @@ libraries/objectLogs/*
 /screenshots
 /spatialToolbox
 /vuforia-spatial-toolbox-userinterface
+
+/config-private.js
