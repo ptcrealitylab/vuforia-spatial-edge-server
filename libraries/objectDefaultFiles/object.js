@@ -453,6 +453,9 @@
             if (typeof eventData.worldIntersectPoint !== 'undefined') {
                 event.worldIntersectPoint = eventData.worldIntersectPoint;
             }
+            if (typeof eventData.threejsIntersectPoint !== 'undefined') {
+                event.threejsIntersectPoint = eventData.threejsIntersectPoint;
+            }
 
             // send unacceptedTouch message if this interface wants touches to pass through it
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
@@ -509,7 +512,6 @@
 
                             postDataToParent({
                                 pointerDownResult: 'interaction'
-                                // refer to this bit of code
                             });
                         } else {
                             postDataToParent({
@@ -731,11 +733,13 @@
                 this.getUserDetails = makeSendStub('getUserDetails');
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
-                this.toggleMeasureMode = makeSendStub('toggleMeasureMode');
-                this.toggleCrossRotation = makeSendStub('toggleCrossRotation');
-                this.toggleCloseLoop = makeSendStub('toggleCloseLoop');
-                this.turnMeasureMapUI = makeSendStub('turnMeasureMapUI');
-                this.toggleMeasureMapUI = makeSendStub('toggleMeasureMapUI');
+                this.spatialCursorToggleMeasureMode = makeSendStub('spatialCursorToggleMeasureMode'); // when open/close a measure app, change spatial cursor center visual to "+" or ".", to indicate user to add a measure point
+                this.spatialCursorToggleCrossRotation = makeSendStub('spatialCursorToggleCrossRotation'); // after not adding a measure point for a while, rotate the center "+" on spatial cursor twice, to prompt user action
+                this.spatialCursorToggleCloseLoop = makeSendStub('spatialCursorToggleCloseLoop'); // when it's able to close a loop for an area / volume, change spatial cursor center visual to "o", to indicate close loop
+                this.measureAppTurnMapUI = makeSendStub('measureAppTurnMapUI'); // measure app turn on / off the map settings UI
+                this.measureAppToggleMapUI = makeSendStub('measureAppToggleMapUI'); // measure app toggle on / off the map settings UI
+                this.measureAppSetPathPoint = makeSendStub('measureAppSetPathPoint'); // in line measure mode, set a path start / end point, send the info to user interface
+                this.measureAppSetClothPos = makeSendStub('measureAppSetClothPos'); // in area measure mode, set a cloth bounding box, send the info to user interface
 
                 this.analyticsOpen = makeSendStub('analyticsOpen');
                 this.analyticsClose = makeSendStub('analyticsClose');
@@ -771,7 +775,9 @@
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
                 this.addInterfaceListener = makeSendStub('addInterfaceListener');
                 this.addIsMovingListener = makeSendStub('addIsMovingListener');
-                this.addHeightMapChangeListener = makeSendStub('addHeightMapChangeListener');
+                this.addMeasureAppHeightMapChangeListener = makeSendStub('addMeasureAppHeightMapChangeListener'); // triggered when user interface change to height map
+                this.addMeasureAppFindPathListener = makeSendStub('addMeasureAppFindPathListener'); // triggered when user interface pathfinding.js finds a path
+                this.addMeasureAppClothInfoListener = makeSendStub('addMeasureAppClothInfoListener'); // triggered when user interface clothSimulation.js finishes computing the cloth volume
                 // deprecated or unimplemented methods
                 this.addAccelerationListener = makeSendStub('addAccelerationListener');
             }
@@ -2159,34 +2165,53 @@
             })
         }
         
-        this.toggleMeasureMode = function(boolean) {
+        this.spatialCursorToggleMeasureMode = function(boolean) {
             postDataToParent({
-                toggleMeasureMode: boolean
+                spatialCursorToggleMeasureMode: boolean
             });
         }
 
-        this.toggleCrossRotation = function(boolean) {
+        this.spatialCursorToggleCrossRotation = function(boolean) {
             postDataToParent({
-                toggleCrossRotation: boolean
+                spatialCursorToggleCrossRotation: boolean
             });
         }
         
-        this.toggleCloseLoop = function(boolean) {
+        this.spatialCursorToggleCloseLoop = function(boolean) {
             postDataToParent({
-                toggleCloseLoop: boolean
+                spatialCursorToggleCloseLoop: boolean
             });
         }
         
-        this.turnMeasureMapUI = function(boolean) {
+        this.measureAppTurnMapUI = function(boolean) {
             postDataToParent({
-                turnMeasureMapUI: boolean
+                measureAppTurnMapUI: boolean
             });
         }
 
-        this.toggleMeasureMapUI = function() {
+        this.measureAppToggleMapUI = function() {
             postDataToParent({
-                toggleMeasureMapUI: true
+                measureAppToggleMapUI: true
             });
+        }
+        
+        this.measureAppSetPathPoint = function(type, startPosArr) {
+            postDataToParent({
+                measureAppSetPathPoint: {
+                    type: type,
+                    point: startPosArr
+                }
+            });
+        }
+        
+        this.measureAppSetClothPos = function(uuid, boundingBoxMin, boundingBoxMax) {
+            postDataToParent({
+                measureAppSetClothPos: {
+                    uuid: uuid,
+                    boundingBoxMin: boundingBoxMin,
+                    boundingBoxMax: boundingBoxMax
+                }
+            })
         }
 
         /**
@@ -2359,10 +2384,26 @@
             };
         };
         
-        this.addHeightMapChangeListener = function(callback) {
+        this.addMeasureAppHeightMapChangeListener = function(callback) {
             spatialObject.messageCallBacks.heightMapCall = function (msgContent) {
-                if (typeof msgContent.isHeightMapOn !== 'undefined') {
-                    callback(msgContent.isHeightMapOn);
+                if (typeof msgContent.isHeightMapOn !== 'undefined' && typeof msgContent.isSteepnessMapOn !== 'undefined') {
+                    callback(msgContent.isHeightMapOn, msgContent.isSteepnessMapOn);
+                }
+            }
+        }
+        
+        this.addMeasureAppFindPathListener = function(callback) {
+            spatialObject.messageCallBacks.findPathCall = function (msgContent) {
+                if (typeof msgContent.pathArr !== 'undefined' && typeof msgContent.pathLength !== 'undefined') {
+                    callback(msgContent.cellSize, msgContent.pathArr, msgContent.pathLength, msgContent.offset);
+                }
+            }
+        }
+        
+        this.addMeasureAppClothInfoListener = function(callback) {
+            spatialObject.messageCallBacks.clothInfoCall = function (msgContent) {
+                if (typeof msgContent.uuid !== 'undefined' && typeof msgContent.clothMesh !== 'undefined' && typeof msgContent.volume !== 'undefined' && typeof msgContent.labelPos !== 'undefined' ) {
+                    callback(msgContent.uuid, msgContent.clothMesh, msgContent.volume, msgContent.labelPos);
                 }
             }
         }
