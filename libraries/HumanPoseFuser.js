@@ -431,8 +431,10 @@ class HumanPoseFuser {
         }
 
         // limit to joints which are not synthetically computed,
-        // and keep just one 'head' joint - nose to limit an influence of head
-        const selectedJointNames = ['nose', 'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist', 'left_hip', 'right_hip', 'left_knee', 'right_knee', 'left_ankle', 'right_ankle'];
+        // keep just one 'head' joint (nose) to limit an influence of head
+        // keep just one hand joint to limit an influence of individual hands (but their influence could be stronger in future)
+        const selectedJointNames = ['nose', 'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist',
+            'left_hip', 'right_hip', 'left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'left_thumb_cmc', 'right_thumb_cmc'];
 
         const joints = Object.values(JOINTS);
         let sum = 0.0;
