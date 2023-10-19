@@ -1042,20 +1042,19 @@
          * @param {boolean} realtimeOnly - doesn't send a post message to reload object, allows rapid stream
          */
         this.writePublicData = function (node, valueName, value, realtimeOnly) {
-
             if (typeof spatialObject.publicData[node] === 'undefined') {
                 spatialObject.publicData[node] = {};
             }
 
             spatialObject.publicData[node][valueName] = value;
 
-            this.ioObject.emit(getIoTitle('object/publicData'), JSON.stringify({
+            this.ioEmitRateLimited(getIoTitle('object/publicData'), {
                 object: spatialObject.object,
                 frame: spatialObject.frame,
                 node: spatialObject.frame + node,
                 publicData: spatialObject.publicData[node],
                 sessionUuid: sessionUuid
-            }));
+            });
 
             if (!realtimeOnly) {
                 parent.postMessage(JSON.stringify(
@@ -1068,7 +1067,49 @@
                     }
                 ), '*');
             }
+        };
 
+        let lastSends = {};
+        let pendingWrites = {};
+
+        let writesPerSecond = 0;
+
+        setInterval(() => {
+            console.log('current msg rate/s', writesPerSecond / 5);
+            writesPerSecond = 0;
+        }, 5000);
+        this.ioEmitDelayMs = 0;
+
+        this.ioEmitRateLimited = function ioEmitRateLimited(title, messageObj) {
+            writesPerSecond += 1;
+            let rateLimitKey = [
+                title,
+                (messageObj.object || ''),
+                (messageObj.frame || ''),
+                (messageObj.node || ''),
+            ].join(',');
+            let now = Date.now();
+            // if (lastSends.hasOwnProperty(rateLimitKey) && now - lastSends[rateLimitKey] < this.ioEmitDelayMs) {
+            //     let nextWrite = lastSends[rateLimitKey] + this.ioEmitDelayMs;
+            //     let nextWriteDelay = nextWrite - now;
+            //     let timeout = setTimeout(() => {
+            //         this.ioEmitRateLimited(title, messageObj);
+            //     }, nextWriteDelay);
+            //     if (pendingWrites.hasOwnProperty(rateLimitKey)) {
+            //         // Note: this overwrites the pending write, meaning that
+            //         // the value written is lost in favor of the new one
+            //         clearTimeout(pendingWrites[rateLimitKey]);
+            //     }
+            //     pendingWrites[rateLimitKey] = timeout;
+            //     return;
+            // }
+
+            this.ioObject.emit(title, JSON.stringify(messageObj));
+
+            if (pendingWrites.hasOwnProperty(rateLimitKey)) {
+                delete pendingWrites[rateLimitKey];
+            }
+            lastSends[rateLimitKey] = now;
         };
 
         /**
