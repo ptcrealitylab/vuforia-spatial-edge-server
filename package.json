@@ -11,7 +11,7 @@
     "directory-tree": "^3.5.1",
     "express": "^4.18.2",
     "express-handlebars": "^5.3.5",
-    "formidable": "^2.1.1",
+    "formidable": "^3.5.1",
     "ip": "^2.0.0",
     "jimp": "^0.22.10",
     "ml-matrix": "^6.10.7",
