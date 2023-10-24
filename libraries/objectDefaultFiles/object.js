@@ -804,6 +804,7 @@
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
                 this.addInterfaceListener = makeSendStub('addInterfaceListener');
                 this.addIsMovingListener = makeSendStub('addIsMovingListener');
+                this.addMeasureAppCloseAppListener = makeSendStub('addMeasureAppCloseAppListener'); // triggered a specific measure app is closed
                 this.addMeasureAppHeightMapChangeListener = makeSendStub('addMeasureAppHeightMapChangeListener'); // triggered when user interface change to height map
                 this.addMeasureAppFindPathListener = makeSendStub('addMeasureAppFindPathListener'); // triggered when user interface pathfinding.js finds a path
                 this.addMeasureAppClothInfoListener = makeSendStub('addMeasureAppClothInfoListener'); // triggered when user interface clothSimulation.js finishes computing the cloth volume
@@ -2293,8 +2294,8 @@
                     name: processTitle,
                     numStopsRequired: options.numStopsRequired // if included, stop will need to be called this many times
                 }
-            })
-        }
+            });
+        };
 
         /**
          * Stops timing the process started by profilerStartTimeProcess
@@ -2345,32 +2346,32 @@
             postDataToParent({
                 spatialCursorToggleMeasureMode: boolean
             });
-        }
+        };
 
         this.spatialCursorToggleCrossRotation = function(boolean) {
             postDataToParent({
                 spatialCursorToggleCrossRotation: boolean
             });
-        }
-        
+        };
+
         this.spatialCursorToggleCloseLoop = function(boolean) {
             postDataToParent({
                 spatialCursorToggleCloseLoop: boolean
             });
-        }
-        
+        };
+
         this.measureAppTurnMapUI = function(boolean) {
             postDataToParent({
                 measureAppTurnMapUI: boolean
             });
-        }
+        };
 
         this.measureAppToggleMapUI = function() {
             postDataToParent({
                 measureAppToggleMapUI: true
             });
-        }
-        
+        };
+
         this.measureAppSetPathPoint = function(type, startPosArr) {
             postDataToParent({
                 measureAppSetPathPoint: {
@@ -2378,8 +2379,8 @@
                     point: startPosArr
                 }
             });
-        }
-        
+        };
+
         this.measureAppSetClothPos = function(uuid, boundingBoxMin, boundingBoxMax) {
             postDataToParent({
                 measureAppSetClothPos: {
@@ -2387,8 +2388,8 @@
                     boundingBoxMin: boundingBoxMin,
                     boundingBoxMax: boundingBoxMax
                 }
-            })
-        }
+            });
+        };
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
@@ -2560,29 +2561,37 @@
             };
         };
         
+        this.addMeasureAppCloseAppListener = function(callback) {
+            spatialObject.messageCallBacks.closeAppCall = function (msgContent) {
+                if (typeof msgContent.isAppClosed !== 'undefined') {
+                    callback();
+                }
+            };
+        };
+
         this.addMeasureAppHeightMapChangeListener = function(callback) {
             spatialObject.messageCallBacks.heightMapCall = function (msgContent) {
                 if (typeof msgContent.isHeightMapOn !== 'undefined' && typeof msgContent.isSteepnessMapOn !== 'undefined') {
                     callback(msgContent.isHeightMapOn, msgContent.isSteepnessMapOn);
                 }
-            }
-        }
-        
+            };
+        };
+
         this.addMeasureAppFindPathListener = function(callback) {
             spatialObject.messageCallBacks.findPathCall = function (msgContent) {
                 if (typeof msgContent.pathArr !== 'undefined' && typeof msgContent.pathLength !== 'undefined') {
                     callback(msgContent.cellSize, msgContent.pathArr, msgContent.pathLength, msgContent.offset);
                 }
-            }
-        }
-        
+            };
+        };
+
         this.addMeasureAppClothInfoListener = function(callback) {
             spatialObject.messageCallBacks.clothInfoCall = function (msgContent) {
                 if (typeof msgContent.uuid !== 'undefined' && typeof msgContent.clothMesh !== 'undefined' && typeof msgContent.volume !== 'undefined' && typeof msgContent.labelPos !== 'undefined' ) {
                     callback(msgContent.uuid, msgContent.clothMesh, msgContent.volume, msgContent.labelPos);
                 }
-            }
-        }
+            };
+        };
     };
 
     SpatialInterface.prototype.injectSetterGetterAPI = function() {
