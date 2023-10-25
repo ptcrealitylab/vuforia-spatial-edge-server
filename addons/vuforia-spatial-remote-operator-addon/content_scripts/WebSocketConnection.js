@@ -1,6 +1,7 @@
 
 createNameSpace('realityEditor.websocket');
 import { pack, unpack } from "https://deno.land/x/msgpackr@v1.9.3/index.js";
+import * as THREE from '../../thirdPartyCode/three/three.module.js';
 
 (function (exports) {
 
@@ -16,6 +17,198 @@ let oldCamMatrix = [0,0,0,0,
                     0,0,0,0];
 let counter = 0;
 let newCamPosNeeded = true;
+let isMovingCam = false;
+
+//NOTE: you get this matrix from the console AFTER you manually aligned them together
+//Matrix Convention: Row (second element is Row0_second)
+const sourceMatrix =   [-1.5793222597155756,  -1.322747003145263,    0.2478585171016987,   0,
+                        -0.23813557010772735,  0.6508053668564121,    1.9557852907676458,    0,
+                        -1.3245319660465362,   1.4601866384143747,   -0.6471648405003105,    0,
+                        -0.1828593604917078,  -0.315497808242407,    0.289963505455744,     1];
+
+
+let transformationMatrix = new THREE.Matrix4();
+transformationMatrix.fromArray(sourceMatrix);
+let isKeyPressed = false;
+
+function ResetCamParameter()
+{
+    counter = 0;
+    isMovingCam = true;
+    newCamPosNeeded = true;
+    oldCamMatrix = [0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0];
+}
+let finalOpacity = 1.0;
+const rotationLevels = [0.1, 1, 10];
+const translationLevels = [0.01, 0.1, 1];
+const scaleLevels = [1.01, 1.05, 1.1]
+let transformIndex = 0; 
+
+
+let rotateValue = rotationLevels[transformIndex];
+let translateValue = translationLevels[transformIndex];
+let scaleValue = scaleLevels[transformIndex];
+
+document.addEventListener('keydown', function(event) {
+    if (isKeyPressed) return;  // If the key is already pressed, return early
+    switch(event.code) {
+        case "NumpadAdd": // Move up the levels for rotation and translation
+            transformIndex = (transformIndex + 1) % 3;
+            rotateValue = rotationLevels[transformIndex];
+            translateValue = translationLevels[transformIndex];
+            scaleValue = scaleLevels[transformIndex];
+            console.log("New rotateValue:", rotateValue, "New translateValue:", translateValue);
+            console.log("New scale:", scaleValue);
+            isKeyPressed = true;
+            break;
+
+        case "Numpad6": // Rotate about Y+
+            let rotationMatrixY_ = new THREE.Matrix4();
+            rotationMatrixY_.makeRotationY(THREE.MathUtils.degToRad(rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixY_);  // Apply incremental rotation
+            console.log("Rotating about Y by", rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad4": // Rotate about Y-
+            let rotationMatrixY = new THREE.Matrix4();
+            rotationMatrixY.makeRotationY(THREE.MathUtils.degToRad(-rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixY);  // Apply incremental rotation
+            console.log("Rotating about Y by", -rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad8": // Rotate about X+
+            let rotationMatrixX_ = new THREE.Matrix4();
+            rotationMatrixX_.makeRotationX(THREE.MathUtils.degToRad(rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixX_);  // Apply incremental rotation
+            console.log("Rotating about X by", rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad5": // Rotate about X-
+            let rotationMatrixX = new THREE.Matrix4();
+            rotationMatrixX.makeRotationX(THREE.MathUtils.degToRad(-rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixX);  // Apply incremental rotation
+            console.log("Rotating about X by", -rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad7": // Rotate about Z+
+            let rotationMatrixZ_ = new THREE.Matrix4();
+            rotationMatrixZ_.makeRotationZ(THREE.MathUtils.degToRad(rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixZ_);  // Apply incremental rotation
+            console.log("Rotating about Z by", rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad9": // Rotate about Z-
+            let rotationMatrixZ = new THREE.Matrix4();
+            rotationMatrixZ.makeRotationZ(THREE.MathUtils.degToRad(-rotateValue)); // Rotate 10 degrees
+            transformationMatrix.multiply(rotationMatrixZ);  // Apply incremental rotation
+            console.log("Rotating about Z by", -rotateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        
+        case "KeyA": // Translate along X+
+            let translationMatrixX_ = new THREE.Matrix4();
+            translationMatrixX_.makeTranslation(translateValue, 0, 0);
+            transformationMatrix.multiply(translationMatrixX_);
+            console.log("Translating along X by", translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "KeyD": // Translate along X-
+            let translationMatrixX = new THREE.Matrix4();
+            translationMatrixX.makeTranslation(-translateValue, 0, 0);
+            transformationMatrix.multiply(translationMatrixX);
+            console.log("Translating along X by", -translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+
+        case "KeyE": // Translate along Y+
+            let translationMatrixY_ = new THREE.Matrix4();
+            translationMatrixY_.makeTranslation(0, translateValue, 0);
+            transformationMatrix.multiply(translationMatrixY_);
+            console.log("Translating along Y by", translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "KeyQ": // Translate along Y-
+            let translationMatrixY = new THREE.Matrix4();
+            translationMatrixY.makeTranslation(0, -translateValue, 0);
+            transformationMatrix.multiply(translationMatrixY);
+            console.log("Translating along Y by", -translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+
+        case "KeyW": // Translate along Z
+            let translationMatrixZ_ = new THREE.Matrix4();
+            translationMatrixZ_.makeTranslation(0, 0, translateValue);
+            transformationMatrix.multiply(translationMatrixZ_);
+            console.log("Translating along Z by", translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "KeyS": // Translate along Z-
+            let translationMatrixZ = new THREE.Matrix4();
+            translationMatrixZ.makeTranslation(0, 0, -translateValue);
+            transformationMatrix.multiply(translationMatrixZ);
+            console.log("Translating along Z by", -translateValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad1": // Scale up
+            let scaleMatrixUp = new THREE.Matrix4();
+            scaleMatrixUp.makeScale(scaleValue, scaleValue, scaleValue);
+            transformationMatrix.multiply(scaleMatrixUp);
+            console.log("Scale up by", scaleValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        case "Numpad2": // Scale down
+            let scaleMatrixDown = new THREE.Matrix4();
+            scaleMatrixDown.makeScale(1/scaleValue, 1/scaleValue, 1/scaleValue);
+            transformationMatrix.multiply(scaleMatrixDown);
+            console.log("Scale up down", scaleValue);
+            console.log("New Transformed matrix:", transformationMatrix);
+            isKeyPressed = true;
+            ResetCamParameter();
+            break;
+        //... Add cases for other keys and their transformations here
+    }
+});
+
+document.addEventListener('keyup', function(event) {
+    if (event.code === "Numpad7"  || event.code === "Numpad8" || event.code === "Numpad9" || 
+        event.code === "Numpad4"  || event.code === "Numpad5" || event.code === "Numpad6" ||
+        event.code === "KeyW"     || event.code === "KeyS"    || event.code === "KeyA"    ||
+        event.code === "KeyD"     || event.code === "KeyQ"    || event.code === "KeyE"    ||
+        event.code === "NumpadAdd"|| event.code === "Numpad1" || event.code === "Numpad2")  
+    {
+        isKeyPressed = false;
+    }
+    //... Reset flags for other keys if needed
+});
 
 class WebSocketConnection {
     constructor() {
@@ -73,6 +266,26 @@ class WebSocketConnection {
                 }
         }
 
+        // var gs_canvas = document.getElementById('gaussian-splatting_canvas');
+        // if(!gs_canvas) 
+        // {
+        //     // Create the canvas if it doesn't exist
+        //     var gaussianSplatCanvas = document.createElement("canvas");
+        //     gaussianSplatCanvas.id = "gaussian-splatting_canvas"; // The ID expected by main.js
+        //     gaussianSplatCanvas.style.zIndex = "9999"; // Ensure it's on top
+        //     gaussianSplatCanvas.style.position = 'absolute';
+        //     gaussianSplatCanvas.style.left = '0';
+        //     gaussianSplatCanvas.style.top = '0';
+        //     gaussianSplatCanvas.width = window.innerWidth;
+        //     gaussianSplatCanvas.height = window.innerHeight;
+        //     document.body.appendChild(gaussianSplatCanvas);
+
+        //     let element = document.getElementById("gaussian-splatting_canvas");
+        //         if (element) {
+        //             element.style.display = "block";
+        //         }
+        // }
+
         this.isEnabled = true;
         if (callback) {
             this.callbacks.onTurnOn = callback;
@@ -90,6 +303,12 @@ class WebSocketConnection {
         {
             imgElement.style.display = "none";
         }
+
+        // var gs_canvas = document.getElementById('gaussian-splatting_canvas');
+        // if(gs_canvas) 
+        // {
+        //     gs_canvas.style.display = "none";
+        // }
     }
 
     // runs the first time you turnOn 
@@ -118,9 +337,9 @@ class WebSocketConnection {
                     // Use setInterval to gradually increase opacity
                     let fadeInInterval = setInterval(function() {
                         opacity += step;
-
-                        if (opacity > 1) {
-                            opacity = 1;
+                        
+                        if (opacity > finalOpacity) {
+                            opacity = finalOpacity;
                             clearInterval(fadeInInterval); // Stop the interval once opacity is 1
                         }
 
@@ -223,7 +442,7 @@ class WebSocketConnection {
     sendCamPos()
     {
         //detect if the virtualCam is moving first
-
+        //console.log("in the sendCam function !!!");
         //console.log("counter is:" + counter);
 
         const floorOffset = realityEditor.gui.ar.areaCreator.calculateFloorOffset() // in my example, it returns -1344.81
@@ -236,7 +455,7 @@ class WebSocketConnection {
         let newCamMatrix = cameraNode.getMatrixRelativeTo(gpNode);
         //console.log(newCamMatrix)
 
-        let isMovingCam = false;
+        isMovingCam = false;
         for(let i = 0; i<16; i++)
         {
             if(newCamMatrix[i] !== oldCamMatrix[i])
@@ -276,30 +495,55 @@ class WebSocketConnection {
         //new matrix transformation way !!!
         // First, apply the floorOffset and global SCALE
         const SCALE = 1 / 1000;
-        const scaleF = 0.13523484986150555;
-        const offset_x = 0.7202233672142029;
-        const offset_y = -0.5659182071685791;
-        const offset_z = -1.2645909786224365;
+        const scaleF = 1.0  //you get this from CloudCompare, I know, its very sad....
+        const offset_x = 0;
+        const offset_y = 0;
+        const offset_z = 0;
         //old code
-        // newCamMatrix[12] = (newCamMatrix[12]*SCALE + offset_x)*scaleF;
-        // newCamMatrix[13] = ((newCamMatrix[13] + floorOffset)*SCALE + offset_y)*scaleF;
-        // newCamMatrix[14] = (newCamMatrix[14]*SCALE + offset_z)*scaleF;
+        newCamMatrix[12] = (newCamMatrix[12]*SCALE + offset_x)*scaleF;
+        newCamMatrix[13] = ((newCamMatrix[13] + floorOffset)*SCALE + offset_y)*scaleF;
+        newCamMatrix[14] = (newCamMatrix[14]*SCALE + offset_z)*scaleF;
 
         // new code
 
-        newCamMatrix[12] *= SCALE;
-        newCamMatrix[13] = (newCamMatrix[13] + floorOffset) * SCALE;
-        newCamMatrix[14] *= SCALE;
+        // newCamMatrix[12] *= SCALE;
+        // newCamMatrix[13] = (newCamMatrix[13] + floorOffset) * SCALE;
+        // newCamMatrix[14] *= SCALE;
 
         // this fking thing needs to ALSO be in the >>column convention<< !!!!!!!!
         // if you have a normal matrix, transpose it !!!!
-        const transfMatrix = [
-            1.0,        0,      0,          offset_x,
-            0,          1.0,    0,          offset_y,
-            0,          0,      1.0,        offset_z,
-            0,          0,      0,          1.0
-        ];
+        // this is the one we use in NerfStudio with only translation and scaleF
+        // const transfMatrix = [
+        //     1.0,        0,      0,          offset_x,
+        //     0,          1.0,    0,          offset_y,
+        //     0,          0,      1.0,        offset_z,
+        //     0,          0,      0,          1.0
+        // ];
         
+        // this is the first full transform matrix we need to try
+        // const transfMatrix = [
+            // 0.234858408570 , -0.103778563440, -0.434047728777, -0.166607648134,
+            // -0.078834064305, -0.492416858673,  0.075078077614, -0.081815689802,
+            // -0.439263701439,  0.032886747271, -0.245543763041, -0.056163605303,
+            // 0,                0,               0,               1.0
+        // ];
+        // //scaleF = 0.504307
+        // // but we shouldb't be needing this since it's already in the matrix, therefore scaleF = 1.0
+        // const scaleF = 0.504307;
+        
+
+        // this is the second full transform matrix we need to try
+        // const transfMatrix = [
+        //     0.973352611065 , -0.287162810564, -1.698833227158,  0.063655108213,
+        //     -0.370926827192, -1.940358996391,  0.115465357900, -0.232672274113,
+        //     -1.682530760765,  0.261641860008, -1.008238792419, -0.366404503584,
+        //     0,                0,               0,               1.0
+        // ];
+        //scaleF = 1.97887 
+        // but we shouldb't be needing this since it's already in the matrix, therefore
+        // const scaleF = 1.0;
+        //TODO: add additional transformation on top of this transMatrix and apply 1 rotation at a time to see effect
+
         
         function transpose(matrix) {
             if (matrix.length !== 16) {
@@ -315,23 +559,33 @@ class WebSocketConnection {
             ];
         }
 
-        const transposedMatrix = transpose(transfMatrix);
+        // const transposedMatrix = transpose(transfMatrix);
 
-        let resultMatrix = new Array(16).fill(0);
+        function ApplyTransMatrix(sourceMatrix, transMatrix, scaleF)
+        {
+            let resultMatrix = new Array(16).fill(0);
 
-        for(let row = 0; row < 4; row++) {
-            for(let col = 0; col < 4; col++) {
-                let sum = 0; // Initialize sum for each element
-                for(let k = 0; k < 4; k++) {
-                    sum += newCamMatrix[row * 4 + k] * transposedMatrix[k * 4 + col];
+            for(let row = 0; row < 4; row++) {
+                for(let col = 0; col < 4; col++) {
+                    let sum = 0; // Initialize sum for each element
+                    for(let k = 0; k < 4; k++) {
+                        sum += sourceMatrix[row * 4 + k] * transMatrix[k * 4 + col];
+                    }
+                    resultMatrix[row * 4 + col] = sum; // Assign the calculated value
                 }
-                resultMatrix[row * 4 + col] = sum; // Assign the calculated value
             }
+    
+            resultMatrix[12] = resultMatrix[12] * scaleF;
+            resultMatrix[13] = resultMatrix[13] * scaleF;
+            resultMatrix[14] = resultMatrix[14] * scaleF;
+
+            return resultMatrix
         }
 
-        resultMatrix[12] = resultMatrix[12] * scaleF;
-        resultMatrix[13] = resultMatrix[13] * scaleF;
-        resultMatrix[14] = resultMatrix[14] * scaleF;
+
+        let array1D = transformationMatrix.elements;
+        //let transposedMatrix = transpose(array1D);
+        let resultMatrix_1 = ApplyTransMatrix(newCamMatrix, array1D, scaleF)
 
 
         //format the outgoing camera pos message !!!
@@ -341,7 +595,7 @@ class WebSocketConnection {
             aspect: window.innerWidth/window.innerHeight,
             render_aspect: window.innerWidth/window.innerHeight,
             fov: 41.22673,
-            matrix: resultMatrix,
+            matrix: resultMatrix_1,
             camera_type: "perspective",
             is_moving: isMovingCam,
             timestamp: +new Date(),
