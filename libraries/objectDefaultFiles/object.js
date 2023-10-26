@@ -48,6 +48,25 @@
             anchoredModelView: false,
             allObjects: false
         },
+        sendCoordinateSystems: {
+            camera: false,
+            toolOrigin: false,
+            worldOrigin: false,
+            groundPlaneOrigin: false,
+            toolGroundPlaneShadow: false,
+            toolSurfaceShadow: false,
+            projectionMatrix: false
+        },
+        // enum of the possible coordinate systems that can be passed into subscribeToCoordinateSystems
+        COORDINATE_SYSTEMS: Object.freeze({
+            CAMERA: 'camera',
+            TOOL_ORIGIN: 'toolOrigin',
+            WORLD_ORIGIN: 'worldOrigin',
+            GROUND_PLANE_ORIGIN: 'groundPlaneOrigin',
+            TOOL_GROUND_PLANE_SHADOW: 'toolGroundPlaneShadow',
+            TOOL_SURFACE_SHADOW: 'toolSurfaceShadow',
+            PROJECTION_MATRIX: 'projectionMatrix'
+        }),
         sendScreenPosition: false,
         sendDeviceDistance: false,
         sendAcceleration: false,
@@ -103,7 +122,7 @@
     }
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
-    
+
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -673,6 +692,7 @@
                 this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.subscribeToCoordinateSystems = makeSendStub('subscribeToCoordinateSystems');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
@@ -687,6 +707,8 @@
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
                 this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
                 this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
                 this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
                 this.playVideoPlayback = makeSendStub('playVideoPlayback');
@@ -694,6 +716,7 @@
                 this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -761,6 +784,7 @@
                 this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
+                this.addCoordinateSystemListener = makeSendStub('addCoordinateSystemListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
@@ -1196,7 +1220,7 @@
                     nodeData: nodeData
                 }
             });
-        }
+        };
 
         /**
          * @deprecated - use initNodeWithOptions instead
@@ -1262,6 +1286,55 @@
             spatialObject.sendMatrices.view = true;
             postDataToParent({
                 sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
+        let numCoordSystemCallbacks = 0;
+        let defaultCoordinateSubscriptions = [
+            spatialObject.COORDINATE_SYSTEMS.CAMERA,
+            spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX,
+            spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN
+        ];
+
+        /**
+         * Updated API for subscribing to three.js camera and other coordinate systems.
+         * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
+         * Callback only triggers with *changes* to the subscribed matrices, not constantly
+         * Options include:
+         * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
+         *      removes x and z components of rotation to keep it "flat" on the ground plane
+         *      allows placing content flat on the floor
+         * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
+         *      removes x and z components of rotation to keep it "flat" relative to ground plane
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
+         * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
+         * @param {function} callback
+         */
+        this.subscribeToCoordinateSystems = (subscriptions = defaultCoordinateSubscriptions, callback) => {
+            // keep track of the coordinate systems to subscribe to
+            Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
+                if (subscriptions.includes(coordinateSystemName)) {
+                    spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
+                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                }
+            });
+            // register the callback function
+            numCoordSystemCallbacks++;
+            spatialObject.messageCallBacks['coordinateSystemCall' + numCoordSystemCallbacks] = function (msgContent) {
+                if (typeof msgContent.coordinateSystems !== 'undefined') {
+                    callback(msgContent.coordinateSystems);
+                }
+            };
+            // send the subscriptions to the parent
+            postDataToParent({
+                sendCoordinateSystems: spatialObject.sendCoordinateSystems
             });
         };
 
@@ -1381,7 +1454,7 @@
             postDataToParent({
                 full2D: enabled
             });
-        }
+        };
 
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
@@ -1570,6 +1643,23 @@
             return videoPlayback;
         };
 
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                    distance: followDistance
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
+                    frame: spatialObject.frame
+                }
+            });
+        };
+
         this.disposeVideoPlayback = function(videoPlaybackID) {
             postDataToParent({
                 disposeVideoPlayback: {
@@ -1678,21 +1768,18 @@
         };
 
         /**
-         * Makes an OAuth request at `authorizationUrl`, requires the OAuth flow to redirect to navigate://<toolbox>
-         * Will not call `callback` on initial OAuth flow, as the whole app gets reloaded
-         * TODO: Write correct redirect URIs above
-         * @param {object} urls - OAuth Authorization and Access Token URL
+         * Makes an OAuth request at `authorizationUrl`,
+         * Will not call `callback` on initial OAuth authentication, as the whole app gets reloaded
+         * @param {object} authorizationUrl - OAuth Authorization URL
          * @param {string} clientId - OAuth client ID
-         * @param {string} clientSecret - OAuth client secret
          * @param {function} callback - Callback function executed once OAuth flow completes
          */
-        this.getOAuthToken = function(urls, clientId, clientSecret, callback) {
+        this.getOAuthToken = function(authorizationUrl, clientId, callback) {
             postDataToParent({
                 getOAuthToken: {
                     frame: spatialObject.frame,
-                    clientId: clientId,
-                    clientSecret: clientSecret,
-                    urls
+                    authorizationUrl,
+                    clientId
                 }
             });
             spatialObject.messageCallBacks.onOAuthToken = function (msgContent) {
@@ -1760,6 +1847,28 @@
 
             postDataToParent({
                 getScreenshotBase64: true
+            });
+        };
+
+        /**
+         * Take a 3D snapshot, adding a new spatialPatch tool to the scene.
+         * @returns {Promise<unknown>} - returns a promise with the imageData of the RGB and Depth images.
+         */
+        this.captureSpatialSnapshot = function() {
+            postDataToParent({
+                captureSpatialSnapshot: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
+                    if (typeof msgContent.spatialSnapshotData !== 'undefined') {
+                        resolve(msgContent.spatialSnapshotData);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult; // only trigger it once
+                    }
+                    if (typeof msgContent.spatialSnapshotError !== 'undefined') {
+                        reject(msgContent.spatialSnapshotError);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult;
+                    }
+                };
             });
         };
 
@@ -1984,12 +2093,12 @@
                     width: msgContent.onWindowResized.width,
                     height: msgContent.onWindowResized.height
                 });
-            }
+            };
 
             postDataToParent({
                 sendWindowResize: true
             });
-        }
+        };
 
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
@@ -2001,7 +2110,7 @@
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenDimensions !== 'undefined') {
                     callback(msgContent.screenDimensions.width, msgContent.screenDimensions.height);
-                    delete spatialObject.messageCallBacks['screenDimensionsCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks.screenDimensionsCall; // only trigger it once
                 }
             };
 
@@ -2109,10 +2218,10 @@
                     if (typeof msgContent.area != 'undefined') {
                         if (!msgContent.canceled) {
                             resolve(msgContent.area);
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         } else {
                             reject();
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         }
                     }
                 };
@@ -2133,11 +2242,11 @@
                 spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
-                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.environmentVariableResult; // only trigger it once
                     }
                 };
             });
-        }
+        };
 
         /**
          * Get the user's name and any other details about their session that the app knows
@@ -2150,39 +2259,39 @@
                 spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
                     if (typeof msgContent.userDetails !== 'undefined') {
                         resolve(msgContent.userDetails);
-                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.userDetailsResult; // only trigger it once
                     }
                 };
             });
-        }
-        
+        };
+
         this.getAreaTargetMesh = function() {
             postDataToParent({
                 getAreaTargetMesh: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
-                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                        delete spatialObject.messageCallBacks.areaTargetMeshResult;
                     }
-                }
-            })
-        }
-        
+                };
+            });
+        };
+
         this.getSpatialCursorEvent = function() {
             postDataToParent({
                 getSpatialCursorEvent: true
             });
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
-                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                        delete spatialObject.messageCallBacks.spatialCursorEventResult;
                     }
-                }
-            })
-        }
+                };
+            });
+        };
 
         // ------------------------- Profiler APIs ------------------------- //
         // Used to measure performance or help with debugging

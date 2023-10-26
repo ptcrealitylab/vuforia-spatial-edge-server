@@ -1,14 +1,24 @@
-const fs = require('fs');
+const fsProm = require('fs/promises');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
+const {fileExists} = utilities;
 const EdgeBlock = require('../models/EdgeBlock');
 
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
 var objectsPath;
-var identityFolderName;
-var Jimp;
+const {identityFolderName} = require('../constants.js');
+const {isLightweightMobile} = require('../isMobile.js');
+let Jimp;
+if (!isLightweightMobile) {
+    try {
+        Jimp = require('jimp');
+    } catch (e) {
+        console.warn('Unable to import jimp for image resizing on this platform', e);
+    }
+}
+
 
 /**
  * Adds the Logic Node contained in the body to the specified frame.
@@ -107,8 +117,8 @@ const deleteLogicNode = function (objectID, frameID, nodeID, lastEditor) {
  */
 function changeNodeSize(objectID, frameID, nodeID, body, callback) {
     var updateStatus = 'nothing happened';
-    
-    utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+
+    utilities.getNodeAsync(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -129,7 +139,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 
         // if anything updated, write to disk and broadcast updates to editors
         if (updateStatus === 'ok') {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadObject: {object: objectID, frame: frameID, node: nodeID},
                 lastEditor: body.lastEditor
@@ -141,7 +151,7 @@ function changeNodeSize(objectID, frameID, nodeID, body, callback) {
 }
 
 function rename(objectID, frameID, nodeID, body, callback) {
-    utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+    utilities.getNodeAsync(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -149,22 +159,22 @@ function rename(objectID, frameID, nodeID, body, callback) {
 
         node.name = body.nodeName;
 
-        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
         callback(200, {success: true});
     });
 }
 
 function uploadIconImage(objectID, frameID, nodeID, req, callback) {
-    utilities.getNodeAsync(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+    utilities.getNodeAsync(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
         }
 
         var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
-        if (!fs.existsSync(iconDir)) {
-            fs.mkdirSync(iconDir);
+        if (!await fileExists(iconDir)) {
+            await fsProm.mkdir(iconDir);
         }
 
         var form = new formidable.IncomingForm({
@@ -172,7 +182,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
             keepExtensions: true,
             accept: 'image/jpeg'
         });
-        
+
         form.on('error', function (err) {
             callback(500, err);
             return;
@@ -180,31 +190,35 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
 
         var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
 
-        if (fs.existsSync(rawFilepath)) {
-            fs.unlinkSync(rawFilepath);
+        if (await fileExists(rawFilepath)) {
+            await fsProm.unlink(rawFilepath);
         }
 
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
         });
-        
-        form.parse(req, function (err, fields) {
+
+        form.parse(req, async function (err, _fields) {
+            if (err) {
+                console.warn('logicNode form error', err);
+            }
+
             var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
 
-            if (fs.existsSync(resizedFilepath)) {
-                fs.unlinkSync(resizedFilepath);
+            if (await fileExists(resizedFilepath)) {
+                await fsProm.unlink(resizedFilepath);
             }
 
             // copied fullsize file into resized image file as backup, in case resize operation fails
-            fs.copyFileSync(rawFilepath, resizedFilepath);
+            await fsProm.copyFile(rawFilepath, resizedFilepath);
 
             if (Jimp) {
                 Jimp.read(rawFilepath).then(image => {
                     return image.resize(200, 200).write(resizedFilepath);
-                }).then(() => {
+                }).then(async () => {
                     if (node) {
                         node.iconImage = 'custom'; //'http://' + object.ip + ':' + serverPort + '/logicNodeIcon/' + object.name + '/' + nodeID + '.jpg';
-                        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+                        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                         utilities.actionSender({
                             loadLogicIcon: {
                                 object: objectID,
@@ -216,21 +230,19 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
                         }); // TODO: decide whether to send filepath directly or just tell it to reload the logic node from the server... sending directly is faster, fewer side effects
                     }
                     callback(200, {success: true});
-                }).catch(err => {
-                    console.error('Error resizing image', err);
-                    callback(500, err);
+                }).catch(imageErr => {
+                    console.error('Error resizing image', imageErr);
+                    callback(500, imageErr);
                 });
             }
         });
     });
 }
 
-const setup = function(objects_, globalVariables_, objectsPath_, identityFolderName_, Jimp_) {
+const setup = function(objects_, globalVariables_, objectsPath_) {
     objects = objects_;
     globalVariables = globalVariables_;
     objectsPath = objectsPath_;
-    identityFolderName = identityFolderName_;
-    Jimp = Jimp_;
 };
 
 module.exports = {

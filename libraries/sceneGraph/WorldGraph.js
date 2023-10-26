@@ -1,6 +1,4 @@
-let SceneNode = require('./SceneNode');
-let SceneGraph = require('./SceneGraph');
-let utils = require('./utils');
+const SceneGraph = require('./SceneGraph');
 
 /**
  * The world graph has a localGraph, which is the sceneGraph of this server, and zero or more knownGraphs
