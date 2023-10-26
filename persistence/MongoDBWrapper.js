@@ -31,12 +31,12 @@ class MongoDBWrapper {
         const contents = await this.readFile(source);
         return await this.writeFile(dest, contents);
     }
+
     /**
      * Create directory at `path`
      * @param {string} path
      * @param {object} options
      */
-
     async mkdir(path, options) {
         let paths = [path];
         if (options && options.recursive) {
@@ -67,13 +67,19 @@ class MongoDBWrapper {
         if (!doc) {
             throw new Error(`No file at ${path}`);
         }
+        let buf;
+        if (typeof doc.contents === 'string') {
+            buf = Buffer.from(doc.contents);
+        } else {
+            buf = doc.contents.buffer;
+        }
         if (typeof options === 'string') {
-            return doc.contents.toString(options);
+            return buf.toString(options);
         }
         if (options && options.encoding) {
-            return doc.contents.toString(options.encoding);
+            return buf.toString(options.encoding);
         }
-        return doc.contents;
+        return buf;
     }
 
     async readdir(path, options) {
@@ -132,7 +138,7 @@ class MongoDBWrapper {
 
     async rmdir(path, _options) {
         // remove all keys prefixed with path
-        // throw if options recursive false and you would remove any (lol)
+        // TODO: throw if options.recursive=false and you would remove any
         return await this.collection.deleteMany({
             path: {$regex: '^' + path.replace(/[/\\.]/g, '\\$&')},
         });
@@ -164,7 +170,7 @@ class MongoDBWrapper {
     }
 
     async access(path) {
-        return !!await this.stat(path);
+        await this.stat(path);
     }
 
     /**
@@ -184,7 +190,7 @@ class MongoDBWrapper {
      */
     async writeFile(path, contents) {
         // write document (ez)
-        return await this.collection.updateOne({
+        await this.collection.updateOne({
             path,
         }, {
             $set: {

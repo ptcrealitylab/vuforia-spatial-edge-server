@@ -4,6 +4,12 @@ const fork = require('child_process').fork;
 const path = require('path');
 const argv = require('process').argv;
 
+const mdb = require('./persistence/MongoDBWrapper.js');
+const fsProm = require('./persistence/FileSystemWrapper.js');
+
+const {synchronize} = require('./persistence/walkers.js');
+const {objectsPath} = require('./config.js');
+
 const program = path.resolve('server.js');
 const options = {
     stdio: ['inherit', 'inherit', 'inherit', 'ipc']
@@ -11,7 +17,8 @@ const options = {
 
 let child = null;
 
-function startNewChild() {
+async function startNewChild() {
+    await synchronize(mdb, fsProm, objectsPath);
     child = fork(program, argv, options);
     child.on('message', onChildMessage);
     child.on('exit', onChildCrash);
