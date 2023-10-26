@@ -47,3 +47,7 @@ libraries/objectLogs/*
 
 /addons/*
 /out/*
+
+/screenshots
+/spatialToolbox
+/vuforia-spatial-toolbox-userinterface

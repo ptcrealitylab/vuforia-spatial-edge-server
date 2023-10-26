@@ -1,13 +1,28 @@
 const fetch = require('node-fetch');
 const querystring = require('querystring');
+const { getFrameSecrets } = require('../../server');
 
 const oauthRefreshRequestHandler = (req, res) => {
-    const refreshUrl = req.params[0]; // TODO: get this from the tool somehow to prevent leaking secret to any supplied url
+    const frameName = req.body.frameName;
+    if (!frameName) {
+        res.status(400).send({error: 'Missing frameName parameter'});
+        return;
+    }
+    let secrets;
+    try {
+        secrets = getFrameSecrets(frameName);
+    } catch (e) {
+        res.status(400).send({error: `Invalid frameName "${frameName}"`});
+        return;
+    }
+    const refreshUrl = secrets.refreshUrl;
+    const clientId = secrets.clientId;
+    const clientSecret = secrets.clientSecret;
     const data = {
         'grant_type': 'refresh_token',
         'refresh_token': req.body.refresh_token,
-        'client_id': req.body.client_id,
-        'client_secret': req.body.client_secret,
+        'client_id': clientId,
+        'client_secret': clientSecret,
     };
     fetch(refreshUrl, {
         method: 'POST',
@@ -16,22 +31,42 @@ const oauthRefreshRequestHandler = (req, res) => {
         },
         body: querystring.stringify(data)
     }).then(response => {
-        return response.json();
-    }).then(data => {
-        res.send(data);
+        if (response.status !== 200) {
+            response.json().then(responseData => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(responseData);
+            }).catch(_error => {});
+        } else {
+            response.json().then(responseData => {
+                res.send(responseData);
+            }).catch(_error => {});
+        }
     }).catch(error => {
-        res.send(error);
+        res.status(400).send(error);
     });
 };
 
 const oauthAcquireRequestHandler = (req, res) => {
-    const acquireUrl = req.params[0]; // TODO: get this from the addon somehow to prevent leaking secret to any client-supplied url (e.g. via postman)
+    const frameName = req.body.frameName;
+    if (!frameName) {
+        res.status(400).send({error: 'Missing frameName parameter'});
+        return;
+    }
+    let secrets;
+    try {
+        secrets = getFrameSecrets(frameName);
+    } catch (e) {
+        res.status(400).send({error: `Invalid frameName "${frameName}"`});
+        return;
+    }
+    const acquireUrl = secrets.acquireUrl;
+    const clientId = secrets.clientId;
+    const clientSecret = secrets.clientSecret;
     const data = {
         'grant_type': 'authorization_code',
         'code': req.body.code,
         'redirect_uri': req.body.redirect_uri,
-        'client_id': req.body.client_id,
-        'client_secret': req.body.client_secret,
+        'client_id': clientId,
+        'client_secret': clientSecret,
     };
     fetch(acquireUrl, {
         method: 'POST',
@@ -40,11 +75,17 @@ const oauthAcquireRequestHandler = (req, res) => {
         },
         body: querystring.stringify(data)
     }).then(response => {
-        return response.json();
-    }).then(data => {
-        res.send(data);
+        if (response.status !== 200) {
+            response.json().then(responseData => { // Data is an error object sent by the OAuth server
+                res.status(response.status).send(responseData);
+            }).catch(_error => {});
+        } else {
+            response.json().then(responseData => {
+                res.send(responseData);
+            }).catch(_error => {});
+        }
     }).catch(error => {
-        res.send(error);
+        res.status(400).send(error);
     });
 };
 
