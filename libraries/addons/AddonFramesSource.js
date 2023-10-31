@@ -39,12 +39,21 @@ class AddonFramesSource {
         // get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
         let frameFolderList = getFolderList(this.frameLibPath);
 
+        // filter out folders that don't have an index.html file (empty folders, etc)
+        frameFolderList = frameFolderList.filter(folderName => {
+            let fileList = fs.readdirSync(path.join(this.frameLibPath, folderName));
+            return fileList.includes('index.html');
+        });
+
+        // frameLibPath looks like x/y/z/addons/addonName/tools
+        let addonName = path.basename(path.dirname(this.frameLibPath));
+
         // Load the config.js properties of each frame into an object that we can provide to clients upon request.
         for (let i = 0; i < frameFolderList.length; i++) {
             let frameName = frameFolderList[i];
             this.frameTypeModules[frameName] = {
                 properties: {
-                    name: frameName,
+                    name: frameName
                 }
             };
         }
@@ -79,6 +88,9 @@ class AddonFramesSource {
                 // No saved frame settings for this frame
                 this.frameTypeModules[frameName].metadata = {};
             }
+
+            // add the addonName to the metadata
+            this.frameTypeModules[frameName].metadata.addon = addonName;
         }
     }
 

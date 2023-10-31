@@ -472,6 +472,9 @@
             if (typeof eventData.worldIntersectPoint !== 'undefined') {
                 event.worldIntersectPoint = eventData.worldIntersectPoint;
             }
+            if (typeof eventData.threejsIntersectPoint !== 'undefined') {
+                event.threejsIntersectPoint = eventData.threejsIntersectPoint;
+            }
 
             // send unacceptedTouch message if this interface wants touches to pass through it
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
@@ -716,6 +719,7 @@
                 this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -752,6 +756,13 @@
                 this.getUserDetails = makeSendStub('getUserDetails');
                 this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
                 this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
+                this.spatialCursorToggleMeasureMode = makeSendStub('spatialCursorToggleMeasureMode'); // when open/close a measure app, change spatial cursor center visual to "+" or ".", to indicate user to add a measure point
+                this.spatialCursorToggleCrossRotation = makeSendStub('spatialCursorToggleCrossRotation'); // after not adding a measure point for a while, rotate the center "+" on spatial cursor twice, to prompt user action
+                this.spatialCursorToggleCloseLoop = makeSendStub('spatialCursorToggleCloseLoop'); // when it's able to close a loop for an area / volume, change spatial cursor center visual to "o", to indicate close loop
+                this.measureAppTurnMapUI = makeSendStub('measureAppTurnMapUI'); // measure app turn on / off the map settings UI
+                this.measureAppToggleMapUI = makeSendStub('measureAppToggleMapUI'); // measure app toggle on / off the map settings UI
+                this.measureAppSetPathPoint = makeSendStub('measureAppSetPathPoint'); // in line measure mode, set a path start / end point, send the info to user interface
+                this.measureAppSetClothPos = makeSendStub('measureAppSetClothPos'); // in area measure mode, set a cloth bounding box, send the info to user interface
 
                 this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
                 this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
@@ -793,6 +804,10 @@
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
                 this.addInterfaceListener = makeSendStub('addInterfaceListener');
                 this.addIsMovingListener = makeSendStub('addIsMovingListener');
+                this.addMeasureAppCloseAppListener = makeSendStub('addMeasureAppCloseAppListener'); // triggered a specific measure app is closed
+                this.addMeasureAppHeightMapChangeListener = makeSendStub('addMeasureAppHeightMapChangeListener'); // triggered when user interface change to height map
+                this.addMeasureAppFindPathListener = makeSendStub('addMeasureAppFindPathListener'); // triggered when user interface pathfinding.js finds a path
+                this.addMeasureAppClothInfoListener = makeSendStub('addMeasureAppClothInfoListener'); // triggered when user interface clothSimulation.js finishes computing the cloth volume
                 // deprecated or unimplemented methods
                 this.addAccelerationListener = makeSendStub('addAccelerationListener');
             }
@@ -1823,6 +1838,28 @@
         };
 
         /**
+         * Take a 3D snapshot, adding a new spatialPatch tool to the scene.
+         * @returns {Promise<unknown>} - returns a promise with the imageData of the RGB and Depth images.
+         */
+        this.captureSpatialSnapshot = function() {
+            postDataToParent({
+                captureSpatialSnapshot: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
+                    if (typeof msgContent.spatialSnapshotData !== 'undefined') {
+                        resolve(msgContent.spatialSnapshotData);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult; // only trigger it once
+                    }
+                    if (typeof msgContent.spatialSnapshotError !== 'undefined') {
+                        reject(msgContent.spatialSnapshotError);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult;
+                    }
+                };
+            });
+        };
+
+        /**
          * Programmatically opens device keyboard.
          * This is preferred compared to directly opening keyboard by focusing on a frame element, because there is
          * a bug in the webkit browser where the keyboard will keep opening again on random user interactions
@@ -2060,7 +2097,7 @@
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenDimensions !== 'undefined') {
                     callback(msgContent.screenDimensions.width, msgContent.screenDimensions.height);
-                    delete spatialObject.messageCallBacks['screenDimensionsCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks.screenDimensionsCall; // only trigger it once
                 }
             };
 
@@ -2168,10 +2205,10 @@
                     if (typeof msgContent.area != 'undefined') {
                         if (!msgContent.canceled) {
                             resolve(msgContent.area);
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         } else {
                             reject();
-                            delete spatialObject.messageCallBacks['areaPromptResult']; // only trigger it once
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
                         }
                     }
                 };
@@ -2192,7 +2229,7 @@
                 spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
                     if (typeof msgContent.environmentVariables !== 'undefined') {
                         resolve(msgContent.environmentVariables);
-                        delete spatialObject.messageCallBacks['environmentVariableResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.environmentVariableResult; // only trigger it once
                     }
                 };
             });
@@ -2209,7 +2246,7 @@
                 spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
                     if (typeof msgContent.userDetails !== 'undefined') {
                         resolve(msgContent.userDetails);
-                        delete spatialObject.messageCallBacks['userDetailsResult']; // only trigger it once
+                        delete spatialObject.messageCallBacks.userDetailsResult; // only trigger it once
                     }
                 };
             });
@@ -2223,7 +2260,7 @@
                 spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
                     if (typeof msgContent.areaTargetMesh !== 'undefined') {
                         resolve(msgContent.areaTargetMesh);
-                        delete spatialObject.messageCallBacks['areaTargetMeshResult'];
+                        delete spatialObject.messageCallBacks.areaTargetMeshResult;
                     }
                 };
             });
@@ -2237,7 +2274,7 @@
                 spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
                     if (typeof msgContent.spatialCursorEvent !== 'undefined') {
                         resolve(msgContent.spatialCursorEvent);
-                        delete spatialObject.messageCallBacks['spatialCursorEventResult'];
+                        delete spatialObject.messageCallBacks.spatialCursorEventResult;
                     }
                 };
             });
@@ -2301,6 +2338,55 @@
             postDataToParent({
                 profilerCountMessage: {
                     message: message
+                }
+            });
+        };
+
+        this.spatialCursorToggleMeasureMode = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleMeasureMode: boolean
+            });
+        };
+
+        this.spatialCursorToggleCrossRotation = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleCrossRotation: boolean
+            });
+        };
+
+        this.spatialCursorToggleCloseLoop = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleCloseLoop: boolean
+            });
+        };
+
+        this.measureAppTurnMapUI = function(boolean) {
+            postDataToParent({
+                measureAppTurnMapUI: boolean
+            });
+        };
+
+        this.measureAppToggleMapUI = function() {
+            postDataToParent({
+                measureAppToggleMapUI: true
+            });
+        };
+
+        this.measureAppSetPathPoint = function(type, startPosArr) {
+            postDataToParent({
+                measureAppSetPathPoint: {
+                    type: type,
+                    point: startPosArr
+                }
+            });
+        };
+
+        this.measureAppSetClothPos = function(uuid, boundingBoxMin, boundingBoxMax) {
+            postDataToParent({
+                measureAppSetClothPos: {
+                    uuid: uuid,
+                    boundingBoxMin: boundingBoxMin,
+                    boundingBoxMax: boundingBoxMax
                 }
             });
         };
@@ -2471,6 +2557,38 @@
             spatialObject.messageCallBacks['frameIsMovingCall' + numMovingCallbacks] = function (msgContent) {
                 if (typeof msgContent.frameIsMoving !== 'undefined') {
                     callback(msgContent.frameIsMoving);
+                }
+            };
+        };
+        
+        this.addMeasureAppCloseAppListener = function(callback) {
+            spatialObject.messageCallBacks.closeAppCall = function (msgContent) {
+                if (typeof msgContent.isAppClosed !== 'undefined') {
+                    callback();
+                }
+            };
+        };
+
+        this.addMeasureAppHeightMapChangeListener = function(callback) {
+            spatialObject.messageCallBacks.heightMapCall = function (msgContent) {
+                if (typeof msgContent.isHeightMapOn !== 'undefined' && typeof msgContent.isSteepnessMapOn !== 'undefined') {
+                    callback(msgContent.isHeightMapOn, msgContent.isSteepnessMapOn);
+                }
+            };
+        };
+
+        this.addMeasureAppFindPathListener = function(callback) {
+            spatialObject.messageCallBacks.findPathCall = function (msgContent) {
+                if (typeof msgContent.pathArr !== 'undefined' && typeof msgContent.pathLength !== 'undefined') {
+                    callback(msgContent.cellSize, msgContent.pathArr, msgContent.pathLength, msgContent.offset);
+                }
+            };
+        };
+
+        this.addMeasureAppClothInfoListener = function(callback) {
+            spatialObject.messageCallBacks.clothInfoCall = function (msgContent) {
+                if (typeof msgContent.uuid !== 'undefined' && typeof msgContent.clothMesh !== 'undefined' && typeof msgContent.volume !== 'undefined' && typeof msgContent.labelPos !== 'undefined' ) {
+                    callback(msgContent.uuid, msgContent.clothMesh, msgContent.volume, msgContent.labelPos);
                 }
             };
         };
