@@ -186,7 +186,7 @@ services.updateAllObjects = function (ip) {
 services.getIP = function () {
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
-    if (isLightweightMobile) {
+    if (isLightweightMobile || isStandaloneMobile) {
         this.ips.interfaces['mobile'] = 'localhost';
         this.ips.activeInterface = 'mobile';
         return 'localhost';
