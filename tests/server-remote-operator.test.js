@@ -9,7 +9,7 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 
-const {sleep} = require('./helpers.js');
+const {sleep, waitForObjects} = require('./helpers.js');
 
 let server;
 beforeAll(() => {
@@ -28,6 +28,17 @@ test('server provides remote operator functionality', async () => {
     });
 
     const page = await browser.newPage();
+    // from https://stackoverflow.com/questions/58089425/how-do-print-the-console-output-of-the-page-in-puppeter-as-it-would-appear-in-th
+    page.on('console', async e => {
+        try {
+            const args = await Promise.all(e.args().map(a => a.jsonValue() || a));
+            console[e.type() === 'warning' ? 'warn' : e.type()](...args);
+        } catch (_) {
+            // don't care
+        }
+    });
+
+    await waitForObjects();
 
     await page.goto(
         'http://localhost:8080/',
@@ -44,6 +55,8 @@ test('server provides remote operator functionality', async () => {
         path: 'screenshots/server-settings-hardware-interfaces.png',
         fullPage: true,
     });
+
+    await sleep(2000);
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
