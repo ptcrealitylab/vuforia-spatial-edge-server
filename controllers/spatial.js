@@ -1,9 +1,3 @@
-// These may be needed when we add more APIs
-// const fs = require('fs');
-// const path = require('path');
-// const formidable = require('formidable');
-// const utilities = require('../libraries/utilities');
-
 // Variables populated from server.js with setup()
 var hardwareAPI;
 // These may be needed when we add more APIs

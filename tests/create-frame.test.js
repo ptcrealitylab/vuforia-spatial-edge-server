@@ -5,12 +5,18 @@
  */
 
 /* global test, beforeAll, afterAll, expect */
-const {sleep, snapshotDirectory, filterSnapshot, filterToObjects} = require('./helpers.js');
+const {
+    sleep,
+    snapshotDirectory,
+    filterSnapshot,
+    filterToObjects,
+    waitForObjects,
+} = require('./helpers.js');
 
 const fetch = require('node-fetch');
 
 let server;
-beforeAll(() => {
+beforeAll(async () => {
     server = require('../server.js');
 });
 
@@ -20,6 +26,7 @@ afterAll(async () => {
 });
 
 async function addFrame() {
+    await waitForObjects();
     const res = await fetch('http://localhost:8080/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c/addFrame/', {
         headers: {
             'content-type': 'application/json'

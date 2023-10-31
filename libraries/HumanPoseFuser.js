@@ -4,6 +4,7 @@ const sgUtils = require('./sceneGraph/utils.js');
 const utilities = require('./utilities.js');
 const server = require('../server');
 const { Matrix, SingularValueDecomposition } = require('ml-matrix');
+const { version, protocol } = require('../constants.js');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
 const JOINTS = {
@@ -82,12 +83,10 @@ class HumanPoseFuser {
      * @param {SceneGraph} sceneGraph - global variable 'sceneGraph'
      * @param {Object.<string, Object>} objectLookup - global variable 'objectLookup'
      * @param {string} ip
-     * @param {string} version
-     * @param {string} protocol
      * @param {number} beatPort
      * @param {string} serverUuid
      */
-    constructor(objects, sceneGraph, objectLookup, ip, version, protocol, beatPort, serverUuid) {
+    constructor(objects, sceneGraph, objectLookup, ip, beatPort, serverUuid) {
         // references to global data structures for objects
         this.objectsRef = objects;
         this.sceneGraphRef = sceneGraph;
@@ -95,8 +94,6 @@ class HumanPoseFuser {
 
         // properties for HumanPoseObject creation
         this.ip = ip;
-        this.version = version;
-        this.protocol = protocol;
         this.beatPort = beatPort;
         this.serverUuid = serverUuid;
 
@@ -1325,7 +1322,7 @@ class HumanPoseFuser {
             } else {
                 // whole group is unassigned, thus create new fused human object for it
                 fusedObjectId = '_HUMAN_' + 'server' + this.serverUuid + '_pose1_' + utilities.uuidTime();
-                this.objectsRef[fusedObjectId] = new HumanPoseObject(this.ip, this.version, this.protocol, fusedObjectId, JOINTS);
+                this.objectsRef[fusedObjectId] = new HumanPoseObject(this.ip, version, protocol, fusedObjectId, JOINTS);
                 if (this.humanObjectsOfFusedObject[fusedObjectId] === undefined) {
                     this.humanObjectsOfFusedObject[fusedObjectId] = ids;
 

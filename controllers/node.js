@@ -136,7 +136,7 @@ const deleteNodeLock = function (objectKey, frameKey, nodeKey, password) {
 const changeSize = function (objectID, frameID, nodeID, body, callback) { // eslint-disable-line no-inner-declarations
     if (nodeID === 'null') { nodeID = null; }
 
-    utilities.getFrameOrNode(objects, objectID, frameID, nodeID, function (error, object, frame, node) {
+    utilities.getFrameOrNode(objects, objectID, frameID, nodeID, async function (error, object, frame, node) {
         if (error) {
             callback(404, error);
             return;
@@ -190,7 +190,7 @@ const changeSize = function (objectID, frameID, nodeID, body, callback) { // esl
         }
 
         if (didUpdate) {
-            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({
                 reloadFrame: {
                     object: objectID,

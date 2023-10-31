@@ -3,11 +3,12 @@ const path = require('path');
 
 const fetch = require('node-fetch');
 
-exports.sleep = function sleep(ms) {
+function sleep(ms) {
     return new Promise((res) => {
         setTimeout(res, ms);
     });
-};
+}
+exports.sleep = sleep;
 
 exports.snapshotDirectory = function snapshotDirectory(dir) {
     let snapshot = {};
@@ -42,6 +43,14 @@ exports.filterSnapshot = function filterSnapshot(snapshot, filterFn) {
     return snapshot;
 };
 
+exports.getValueWithKeySuffixed = function getValueWithKeySuffixed(obj, suffix) {
+    for (let [key, value] of Object.entries(obj)) {
+        if (key.endsWith(suffix)) {
+            return value;
+        }
+    }
+};
+
 exports.filterToObjects = function filterToObjects(key) {
     return key.match(/spatialToolbox\/[^.]/);
 };
@@ -61,3 +70,22 @@ exports.getTestObjects = async function getTestObjects() {
     const allObjects = await getAllObjects();
     return allObjects.filter(obj => obj.id.startsWith('fdsa'));
 };
+
+/**
+ * Wait for /allObjects to be present and populated with `lengthMin` objects
+ */
+async function waitForObjects(lengthMin = 1) {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        try {
+            let allObjects = await getAllObjects();
+            if (Object.keys(allObjects).length >= lengthMin) {
+                break;
+            }
+        } catch (_) {
+            // way way too early as opposed to normal too early
+        }
+        await sleep(100);
+    }
+}
+exports.waitForObjects = waitForObjects;
