@@ -344,11 +344,16 @@ import { UNIFORMS, MAX_VIEW_FRUSTUMS } from '../../src/gui/ViewFrustum.js';
                     // re-routing this to the new JS script for developing the new python webSocket connection
                     // *** !!! ***
                     nerfStudioConnection = new realityEditor.websocket.WebSocketConnection();
+                    if (gltf) {
+                        staticModelMode = false;
+                        gltf.visible = false;
+                        realityEditor.gui.ar.groundPlaneRenderer.stopVisualization();
+                    }
                 }
                 const onTurnOn = () => {
                     if (gltf) { 
                         staticModelMode = false;
-                        //gltf.visible = false;
+                        gltf.visible = false;
                         realityEditor.gui.ar.groundPlaneRenderer.stopVisualization();
                         // nerfEffect = 0;
                     }
@@ -357,27 +362,27 @@ import { UNIFORMS, MAX_VIEW_FRUSTUMS } from '../../src/gui/ViewFrustum.js';
                 nerfStudioConnection.turnOn(onTurnOn);
                 //nerfStudioConnection.start
                 
-                // show nerf canvas
-                if (!nerfCanvas) {
-                    nerfCanvas = document.createElement('video');
-                    nerfCanvas.setAttribute('autoplay', 'true');
-                    nerfCanvas.id = 'nerfCanvas';
-                    nerfCanvas.style.position = 'absolute';
-                    nerfCanvas.style.left = '0';
-                    nerfCanvas.style.top = '0';
-                    nerfCanvas.width = window.innerWidth;
-                    nerfCanvas.height = window.innerHeight;
-                    nerfCanvas.style.width = window.innerWidth + 'px';
-                    nerfCanvas.style.height = window.innerHeight + 'px';
-                    nerfCanvas.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-                    // nerfCanvas.style.transform = 'translateZ(4px)';
-                    nerfCanvas.style.zIndex = '-1'; // go behind the glproxy canvas
-                    nerfCanvas.style.opacity = '1';
-                    nerfCanvas.style.pointerEvents = 'none';
-                    nerfCanvas.style.clipPath = 'circle(100% at 50% 50%)';
-                    document.body.appendChild(nerfCanvas);
-                }
-                nerfCanvas.style.display = 'inline';
+                // // show nerf canvas
+                // if (!nerfCanvas) {
+                //     nerfCanvas = document.createElement('video');
+                //     nerfCanvas.setAttribute('autoplay', 'true');
+                //     nerfCanvas.id = 'nerfCanvas';
+                //     nerfCanvas.style.position = 'absolute';
+                //     nerfCanvas.style.left = '0';
+                //     nerfCanvas.style.top = '0';
+                //     nerfCanvas.width = window.innerWidth;
+                //     nerfCanvas.height = window.innerHeight;
+                //     nerfCanvas.style.width = window.innerWidth + 'px';
+                //     nerfCanvas.style.height = window.innerHeight + 'px';
+                //     nerfCanvas.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                //     // nerfCanvas.style.transform = 'translateZ(4px)';
+                //     nerfCanvas.style.zIndex = '-1'; // go behind the glproxy canvas
+                //     nerfCanvas.style.opacity = '1';
+                //     nerfCanvas.style.pointerEvents = 'none';
+                //     nerfCanvas.style.clipPath = 'circle(100% at 50% 50%)';
+                //     document.body.appendChild(nerfCanvas);
+                // }
+                // nerfCanvas.style.display = 'inline';
             } else {
 
                 if (nerfStudioConnection) {
@@ -389,7 +394,7 @@ import { UNIFORMS, MAX_VIEW_FRUSTUMS } from '../../src/gui/ViewFrustum.js';
 
                 if (gltf) { 
                     staticModelMode = true;
-                    //gltf.visible = true;
+                    gltf.visible = true;
                     realityEditor.gui.ar.groundPlaneRenderer.startVisualization();
                     console.log('showing gltf again');
                 }

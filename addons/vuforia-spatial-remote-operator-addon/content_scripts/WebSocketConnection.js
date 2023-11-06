@@ -26,6 +26,11 @@ const sourceMatrix =   [-1.5793222597155756,  -1.322747003145263,    0.247858517
                         -1.3245319660465362,   1.4601866384143747,   -0.6471648405003105,    0,
                         -0.1828593604917078,  -0.315497808242407,    0.289963505455744,     1];
 
+// const sourceMatrix =   [1,0,0,0,
+//                         0,1,0,0,
+//                         0,0,1,0,
+//                         0,0,0,1];
+
 
 let transformationMatrix = new THREE.Matrix4();
 transformationMatrix.fromArray(sourceMatrix);
@@ -234,10 +239,13 @@ class WebSocketConnection {
             console.log("yuanzhi creating the nerf canvas !");
             var newDiv = document.createElement("img");
             newDiv.id = "background_NeRF_rendering";
-            newDiv.style.zIndex = "9999";
+            // newDiv.style.zIndex = "9999";
             newDiv.style.position = 'absolute';
             newDiv.style.left = '0';
             newDiv.style.top = '0';
+            newDiv.style.zIndex = '-1'; // go behind the glproxy canvas
+            newDiv.style.opacity = '1';
+            newDiv.style.pointerEvents = 'none';
             newDiv.style.width = '100vw';
             newDiv.style.height = '100vh';
             document.body.appendChild(newDiv);
