@@ -346,14 +346,16 @@ import { UNIFORMS, MAX_VIEW_FRUSTUMS } from '../../src/gui/ViewFrustum.js';
                     nerfStudioConnection = new realityEditor.websocket.WebSocketConnection();
                     if (gltf) {
                         staticModelMode = false;
-                        gltf.visible = false;
+                        // gltf.visible = true; // use this when doing manual alignment
+                        gltf.visible = false; // use this for normal use
                         realityEditor.gui.ar.groundPlaneRenderer.stopVisualization();
                     }
                 }
                 const onTurnOn = () => {
                     if (gltf) { 
                         staticModelMode = false;
-                        gltf.visible = false;
+                        // gltf.visible = true; // use this when doing manual alignment
+                        gltf.visible = false; // use this for normal use
                         realityEditor.gui.ar.groundPlaneRenderer.stopVisualization();
                         // nerfEffect = 0;
                     }
