@@ -21,10 +21,31 @@ let isMovingCam = false;
 
 //NOTE: you get this matrix from the console AFTER you manually aligned them together
 //Matrix Convention: Row (second element is Row0_second)
-const sourceMatrix =   [-1.5793222597155756,  -1.322747003145263,    0.2478585171016987,   0,
-                        -0.23813557010772735,  0.6508053668564121,    1.9557852907676458,    0,
-                        -1.3245319660465362,   1.4601866384143747,   -0.6471648405003105,    0,
-                        -0.1828593604917078,  -0.315497808242407,    0.289963505455744,     1];
+//this is the Lab scene, with auto-reorient = True
+// const sourceMatrix =   [-1.5793222597155756,  -1.322747003145263,    0.2478585171016987,   0,
+//                         -0.23813557010772735,  0.6508053668564121,    1.9557852907676458,    0,
+//                         -1.3245319660465362,   1.4601866384143747,   -0.6471648405003105,    0,
+//                         -0.1828593604917078,  -0.315497808242407,    0.289963505455744,     1];
+
+// steelCase demo : scene 1
+// const sourceMatrix =   [-0.6928394061581158,  0.767695522371194,    1.2765876182593237,   0,
+//                         -1.4481557533619698,  -0.01716001196630915,  -0.7756347419251368,    0,
+//                         -0.34910926107226636, -1.4523800893043997,   0.6839397670212204,    0,
+//                         0.13324225566158834,  0.808330474862311,    0.7987041714836312,     1];
+
+// steelCase demo : scene 2
+const sourceMatrix =   [
+    -0.061740851923088896,  -1.605035129459561,    0.11744258386357077,   0,
+    -1.3163664239481947,  -0.01724431166120183,  -0.9276985133744583,    0,
+    0.9258023359257972, -0.13155731456696773,   -1.3112304022856882,    0,
+    0.7588661310195932,  -0.3383481348010016,    0.697548483268128,     1];
+
+// steelCase demo : scene 3
+// const sourceMatrix =   [
+//     0.6579978172154518,  -1.3554265944847077,    -0.3537446322499565,   0,
+//     -1.264737299806347,  -0.4067823558574379,  -0.793879917105837,    0,
+//     0.6022923545593152, 0.6265975640465159,   -1.2805846546451876,    0,
+//     0.11648943417154013, -0.8894035131934193,  1.7676090179747466,     1];
 
 // const sourceMatrix =   [1,0,0,0,
 //                         0,1,0,0,
@@ -239,11 +260,11 @@ class WebSocketConnection {
             console.log("yuanzhi creating the nerf canvas !");
             var newDiv = document.createElement("img");
             newDiv.id = "background_NeRF_rendering";
-            // newDiv.style.zIndex = "9999";
             newDiv.style.position = 'absolute';
             newDiv.style.left = '0';
             newDiv.style.top = '0';
-            newDiv.style.zIndex = '-1'; // go behind the glproxy canvas
+            newDiv.style.zIndex = '-1'; // use this when in normal action
+            // newDiv.style.zIndex = "9999"; // use this when doing manual alignment 
             newDiv.style.opacity = '1';
             newDiv.style.pointerEvents = 'none';
             newDiv.style.width = '100vw';
