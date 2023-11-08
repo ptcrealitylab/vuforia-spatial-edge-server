@@ -1873,6 +1873,13 @@ function objectWebServer() {
     webServer.get('/availableLogicBlocks/', function (req, res) {
         res.json(blockController.getLogicBlockList());
     });
+    
+    webServer.get('/availableDataSources/', function (req, res) {
+        let allAvailableDataSources = hardwareAPI.getAllAvailableDataSources();
+        res.json({
+            dataSources: allAvailableDataSources
+        });
+    });
 
     webServer.get('/availableDataStreams/', function(req, res) {
         let allAvailableDataStreams = hardwareAPI.getAllAvailableDataStreams();
@@ -1890,6 +1897,12 @@ function objectWebServer() {
     webServer.post('/addDataSourceToInterface/', function(req, res) {
         console.log('addDataSourceToInterface', req.body);
         hardwareAPI.addDataSourceToInterface(req.body.interfaceName, req.body.dataSource);
+        res.status(200).json({ success: true, error: null });
+    });
+    
+    webServer.delete('/deleteDataSourceFromInterface/', function(req, res) {
+        console.log('deleteDataSourceFromInterface', req.body);
+        hardwareAPI.deleteDataSourceFromInterface(req.body.interfaceName, req.body.dataSource);
         res.status(200).json({ success: true, error: null });
     });
 
