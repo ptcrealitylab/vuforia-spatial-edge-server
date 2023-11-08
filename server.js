@@ -207,6 +207,20 @@ services.getIP = function () {
         return this.ip;
     }
 
+    if (isStandaloneMobile) {
+        let knownGoodMobileInterfaces = {
+            en0: true,
+        };
+        interfaceNames = interfaceNames.filter(interfaceName => {
+            return knownGoodMobileInterfaces[interfaceName];
+        });
+        if (interfaceNames.length === 0) {
+            this.ips.interfaces['mobile'] = 'localhost';
+            this.ips.activeInterface = 'mobile';
+            return 'localhost';
+        }
+    }
+
     for (let key in interfaceNames) {
         let tempIps = this.networkInterface.toIps(interfaceNames[key], {ipVersion: 4});
         tempIps = tempIps.filter(ip => !['127.0.0.1', 'localhost'].includes(ip));
