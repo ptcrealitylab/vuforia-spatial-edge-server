@@ -1278,7 +1278,7 @@ exports.registerDeleteDataSourceEndpoint = function(interfaceName, callback) {
 }
 
 exports.deleteDataSourceFromInterface = function(interfaceName, dataSource) {
-    if (!interfaceName || !dataSource || !dataSource.id || !dataSource.url) return; // TODO: the API response should change status if error adding
+    if (!interfaceName || !dataSource) return; // TODO: the API response should change status if error adding
     let callbacks = deleteDataSourceCallbacks[interfaceName];
     callbacks.forEach(callback => {
         callback(dataSource);

@@ -1463,10 +1463,12 @@
         /**
          * Removes or adds the touch overlay div from the tool, without affecting fullscreen status
          * @param {boolean} enabled
+         * @param {*} options
          */
-        this.setFull2D = function (enabled) {
+        this.setFull2D = function (enabled, options = {showWindowTitleBar: false }) {
             postDataToParent({
-                full2D: enabled
+                full2D: enabled,
+                showWindowTitleBar: options.showWindowTitleBar
             });
         };
 
