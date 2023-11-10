@@ -6,38 +6,6 @@ const server = require('../server');
 const { Matrix, SingularValueDecomposition } = require('ml-matrix');
 
 /** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
-/*
-const JOINTS = {
-    NOSE: 'nose',
-    LEFT_EYE: 'left_eye',
-    RIGHT_EYE: 'right_eye',
-    LEFT_EAR: 'left_ear',
-    RIGHT_EAR: 'right_ear',
-    LEFT_SHOULDER: 'left_shoulder',
-    RIGHT_SHOULDER: 'right_shoulder',
-    LEFT_ELBOW: 'left_elbow',
-    RIGHT_ELBOW: 'right_elbow',
-    LEFT_WRIST: 'left_wrist',
-    RIGHT_WRIST: 'right_wrist',
-    LEFT_HIP: 'left_hip',
-    RIGHT_HIP: 'right_hip',
-    LEFT_KNEE: 'left_knee',
-    RIGHT_KNEE: 'right_knee',
-    LEFT_ANKLE: 'left_ankle',
-    RIGHT_ANKLE: 'right_ankle',
-    LEFT_PINKY: 'left_pinky',
-    RIGHT_PINKY: 'right_pinky',
-    LEFT_INDEX: 'left_index',
-    RIGHT_INDEX: 'right_index',
-    LEFT_THUMB: 'left_thumb',
-    RIGHT_THUMB: 'right_thumb',
-    HEAD: 'head', // synthetic
-    NECK: 'neck', // synthetic
-    CHEST: 'chest', // synthetic
-    NAVEL: 'navel', // synthetic
-    PELVIS: 'pelvis', // synthetic
-};
-*/
 const JOINTS = {
     /* body joints */
     NOSE: 'nose',
