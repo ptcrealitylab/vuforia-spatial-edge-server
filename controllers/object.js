@@ -210,7 +210,7 @@ const setMatrix = function(objectID, body, callback) {
 
     object.matrix = body.matrix;
 
-    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
+    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId && !object.isWorldObject) {
         object.worldId = body.worldId;
         sceneGraph.updateObjectWorldId(objectID, object.worldId);
     }
