@@ -294,6 +294,18 @@
     }
 
     /**
+     * Helper function that tools can use to convert a path on the server to the correct server's URL,
+     * @example input: '/object/test/uploadMediaFile'
+     *          output: 'https://toolboxedge.net/n/id/s/id/object/test/uploadMediaFile' on cloud server
+     *          output: 'http://192.168.0.25:8080/object/test/uploadMediaFile' on local server
+     * @param {string} path
+     * @returns {string}
+     */
+    spatialObject.getURL = function (path) {
+        return `${spatialObject.socketIoUrl}${path}`;
+    }
+
+    /**
      * receives POST messages from parent to change spatialObject state
      * @param {object} msgContent - JSON contents received by the iframe's contentWindow.postMessage listener
      */
@@ -2085,6 +2097,7 @@
          * @param {number} newHeight
          */
         this.changeFrameSize = function(newWidth, newHeight) {
+            console.log(`changeFrameSize of ${spatialObject.frame} to ${newWidth} x ${newHeight}`);
             if (spatialObject.width === newWidth && spatialObject.height === newHeight) {
                 return;
             }
