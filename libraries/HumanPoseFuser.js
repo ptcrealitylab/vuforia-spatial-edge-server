@@ -5,7 +5,10 @@ const utilities = require('./utilities.js');
 const server = require('../server');
 const { Matrix, SingularValueDecomposition } = require('ml-matrix');
 
-/** Joint schema of human pose used for creation of fused HumanPoseObjects. This schema is also expected from the human objects coming from UI code of  ToolboxApp. */
+/** Joint schema of human pose used for creation of fused HumanPoseObjects.
+ * This schema is also expected from the human objects coming from UI code of ToolboxApp.
+ * More details on joint naming can be found in UI repo (humanPose/constants.js).
+ */
 const JOINTS = {
     /* body joints */
     NOSE: 'nose',
