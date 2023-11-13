@@ -2097,7 +2097,6 @@
          * @param {number} newHeight
          */
         this.changeFrameSize = function(newWidth, newHeight) {
-            console.log(`changeFrameSize of ${spatialObject.frame} to ${newWidth} x ${newHeight}`);
             if (spatialObject.width === newWidth && spatialObject.height === newHeight) {
                 return;
             }
