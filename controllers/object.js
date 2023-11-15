@@ -385,6 +385,14 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 };
 
+const checkFileExists = async (objectId, filePath) => {
+    console.log('check file exists', objectId, filePath);
+    let obj = utilities.getObject(objects, objectId);
+    let objectIdentityDir = path.join(objectsPath, obj.name, identityFolderName);
+    let absoluteFilePath = path.join(objectIdentityDir, filePath);
+    return await fileExists(absoluteFilePath);
+}
+
 const getObject = function (objectID, excludeUnpinned) {
     let fullObject = utilities.getObject(objects, objectID);
     if (!fullObject) { return null; }
@@ -435,6 +443,7 @@ module.exports = {
     zipBackup: zipBackup,
     generateXml: generateXml,
     setFrameSharingEnabled: setFrameSharingEnabled,
+    checkFileExists: checkFileExists,
     getObject: getObject,
     setup: setup
 };
