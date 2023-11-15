@@ -1273,7 +1273,7 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
                     tcs: objects[thisId].tcs,
                     zone: zone
                 };
-                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
+                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar' || objects[thisId].type === 'world';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
@@ -2937,7 +2937,10 @@ function objectWebServer() {
                                     unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
                                         const folderFiles = await fsProm.readdir(targetFolderPath);
-                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
+                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt', 'jpg'];
+                                        
+                                        let updatedObjectId = null;
+                                        let updatedTargetFolderPath = null;
 
                                         let anyTargetsUploaded = false;
 
@@ -2956,16 +2959,33 @@ function objectWebServer() {
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return async function() {
-                                                        try {
-                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        } catch (e) {
-                                                            console.warn('target zip already cleaned up', folderName);
+                                                        if (updatedObjectId) {
+                                                            try {
+                                                                await fsProm.rmdir(path.join(updatedTargetFolderPath, folderName));
+                                                            } catch (e) {
+                                                                console.warn('target zip already cleaned up', folderName);
+                                                            }
+                                                            // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                            if (await fileExists(path.join(updatedTargetFolderPath, 'authoringMesh.glb'))) {
+                                                                await fsProm.rename(
+                                                                    path.join(updatedTargetFolderPath, 'authoringMesh.glb'),
+                                                                    path.join(updatedTargetFolderPath, 'target.glb')
+                                                                );
+                                                            }
+                                                        } else {
+                                                            try {
+                                                                await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
+                                                            } catch (e) {
+                                                                console.warn('target zip already cleaned up', folderName);
+                                                            }
+                                                            // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+                                                            if (await fileExists(path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'))) {
+                                                                await fsProm.rename(
+                                                                    path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
+                                                                    path.join(folderD, identityFolderName, 'target', 'target.glb')
+                                                                );
+                                                            }
                                                         }
-                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        await fsProm.rename(
-                                                            path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
-                                                            path.join(folderD, identityFolderName, 'target', 'target.glb')
-                                                        );
                                                     };
                                                 }
                                                 const finish = finishFn(folderFile);
@@ -3017,7 +3037,11 @@ function objectWebServer() {
                                         // evnetually create the object.
 
                                         if (await fileExists(path.join(targetFolderPath, 'target.dat')) && await fileExists(path.join(targetFolderPath, 'target.xml'))) {
-                                            await createObjectFromTarget(tmpFolderFile);
+                                            let thisObjectId = await createObjectFromTarget(tmpFolderFile);
+                                            if (!thisObjectId) {
+                                                thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                            }
+                                            updatedObjectId = thisObjectId;
 
                                             //todo send init to internal modules
 
@@ -3031,14 +3055,14 @@ function objectWebServer() {
                                                 '3dt': '',
                                             };
 
-                                            const thisObjectId = utilities.readObject(objectLookup, req.params.id);
-
                                             if (typeof objects[thisObjectId] !== 'undefined') {
                                                 const thisObject = objects[thisObjectId];
+                                                const objectName = objects[thisObjectId].name;
+                                                updatedTargetFolderPath = path.join(objectsPath, objectName, identityFolderName, 'target');
 
                                                 const fileList = [];
                                                 for (const ext of Object.keys(targetFileExts)) {
-                                                    const filePath = path.join(targetFolderPath, 'target.' + ext);
+                                                    const filePath = path.join(updatedTargetFolderPath, 'target.' + ext);
                                                     fileList.push(filePath);
                                                     targetFileExts[ext] = await fileExists(filePath);
                                                 }
@@ -3163,7 +3187,8 @@ function objectWebServer() {
  * @param {string} folderVar
  */
 async function createObjectFromTarget(folderVar) {
-    var folder = objectsPath + '/' + folderVar + '/';
+    let folder = objectsPath + '/' + folderVar + '/';
+    let originalFolderVar = folderVar;
 
     if (!await fileExists(folder)) {
         return;
@@ -3172,32 +3197,52 @@ async function createObjectFromTarget(folderVar) {
     var objectIDXML = await utilities.getObjectIdFromTargetOrObjectFile(folderVar);
     var objectSizeXML = await utilities.getTargetSizeFromTarget(folderVar);
     if (!objectIDXML || objectIDXML.length <= 13) {
-        return;
+        return; // TODO: console.warn if you are skipping because target ID is too short - someone will def run into that problem
     }
 
     objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
-    objects[objectIDXML].port = serverPort;
-    objects[objectIDXML].name = folderVar;
-    objects[objectIDXML].targetSize = objectSizeXML;
-
-    if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-        objects[objectIDXML].isWorldObject = true;
-        objects[objectIDXML].type = 'world';
-        objects[objectIDXML].timestamp = Date.now();
-    }
 
     try {
-        const contents = await fsProm.readFile(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8');
-        objects[objectIDXML] = JSON.parse(contents);
+        const originalJsonFilepath = objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json';
+        const contents = await fsProm.readFile(originalJsonFilepath, 'utf8');
+        objects[objectIDXML].setFromJson(JSON.parse(contents));
+        // objects[objectIDXML] = JSON.parse();
         objects[objectIDXML].objectId = objectIDXML;
         objects[objectIDXML].ip = services.ip; //ip.address();
     } catch (e) {
         objects[objectIDXML].ip = services.ip; //ip.address();
         console.warn('No saved data for: ' + objectIDXML, e);
     }
+    
+    objects[objectIDXML].port = serverPort;
 
-    if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-        let oldObjectId = utilities.readObject(objectLookup, folderVar);
+    if (objectIDXML.indexOf(folderVar) === 0) {
+        objects[objectIDXML].name = folderVar;
+    } else {
+        // rename the object's name to match the new ID, if needed
+        if (objectIDXML.length > 12) {
+            objects[objectIDXML].name = objectIDXML.slice(0, -12); // remove the last 12 characters, because the ID is generated that way
+        } else {
+            objects[objectIDXML].name = objectIDXML;
+        }
+        
+        // rename the folder from folderVar to objects[objectIDXML].name
+        folderVar = objects[objectIDXML].name;
+        const newFolderPath = path.join(objectsPath, folderVar);
+        await fsProm.rename(folder, newFolderPath);
+        // utilities.writeObject(objectLookup, folderVar)
+    }
+    objects[objectIDXML].targetSize = objectSizeXML;
+
+    if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+        objects[objectIDXML].isWorldObject = true;
+        objects[objectIDXML].type = 'world';
+        objects[objectIDXML].worldId = objectIDXML;
+        objects[objectIDXML].timestamp = Date.now();
+    }
+
+    if (utilities.readObject(objectLookup, originalFolderVar) !== objectIDXML) {
+        let oldObjectId = utilities.readObject(objectLookup, originalFolderVar);
         try {
             objects[oldObjectId].deconstruct();
         } catch (e) {
@@ -3222,6 +3267,8 @@ async function createObjectFromTarget(folderVar) {
     sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
     await objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
+    
+    return objectIDXML;
 }
 
 
