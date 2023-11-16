@@ -195,24 +195,27 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
     var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
     if (await fileExists(xmlFile)) {
-        var resultXML = '';
-        xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
-            function (err, result) {
-                for (var first in result) {
-                    for (var secondFirst in result[first].Tracking[0]) {
-                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                        if (typeof resultXML === 'string' && resultXML.length === 0) {
-                            console.warn('Target file for ' + folderName + ' has empty name, ' +
-                                'and may not function correctly. Delete and re-upload target for best results.');
-                            resultXML = null;
+        try {
+            let resultXML = '';
+            xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
+                function (err, result) {
+                    for (var first in result) {
+                        for (var secondFirst in result[first].Tracking[0]) {
+                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                            if (typeof resultXML === 'string' && resultXML.length === 0) {
+                                console.warn('Target file for ' + folderName + ' has empty name, ' +
+                                    'and may not function correctly. Delete and re-upload target for best results.');
+                                resultXML = null;
+                            }
+                            break;
                         }
                         break;
                     }
-                    break;
-                }
-            });
-
-        return resultXML;
+                });
+            return resultXML;
+        } catch (e) {
+            console.error('error reading xml file', e);
+        }
     } else if (await fileExists(jsonFile)) {
         try {
             let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
@@ -238,15 +241,16 @@ async function getAnchorIdFromObjectFile(folderName) {
     var jsonFile = objectsPath + '/' + folderName + '/object.json';
 
     if (await fileExists(jsonFile)) {
-        let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
-        if (thisObject.hasOwnProperty('objectId')) {
-            return thisObject.objectId;
-        } else {
-            return null;
+        try {
+            let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
+            if (thisObject.hasOwnProperty('objectId')) {
+                return thisObject.objectId;
+            }
+        } catch (err) {
+            console.error('Unable to read anchor id', err);
         }
-    } else {
-        return null;
     }
+    return null;
 }
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
@@ -272,7 +276,14 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
         return resultXML;
     }
 
-    const contents = await fsProm.readFile(xmlFile, 'utf8');
+    let contents;
+    try {
+        contents = await fsProm.readFile(xmlFile, 'utf8');
+    } catch (err) {
+        console.error('Unable to read xml file for target size', err);
+        return resultXML;
+    }
+
     xml2js.Parser().parseString(contents, function (parseErr, result) {
         try {
             if (parseErr) {
@@ -478,7 +489,11 @@ exports.generateChecksums = async function generateChecksums(objects, fileArray)
         if (!await fileExists(fileArray[i])) {
             continue;
         }
-        checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
+        try {
+            checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
+        } catch (err) {
+            console.warn('generateChecksums: Unable to read file', err);
+        }
     }
     return checksumText;
 };
@@ -522,9 +537,12 @@ exports.updateObject = async function updateObject(objectName, objects) {
             console.warn(' object ' + objectFolder + ' has no marker yet');
             return tempFolderName;
         }
-
-        // fill objects with objects named by the folders in objects
-        objects[tempFolderName].name = objectFolder;
+        if (!objects[tempFolderName]) {
+            console.warn('object deleted during updateObject');
+        } else {
+            // fill objects with objects named by the folders in objects
+            objects[tempFolderName].name = objectFolder;
+        }
 
         // try to read a saved previous state of the object
         try {
