@@ -2,7 +2,7 @@ const fsProm = require('fs/promises');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
-const {fileExists} = utilities;
+const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -72,9 +72,7 @@ const uploadVideo = async function(objectID, videoID, reqForForm, callback) {
 
         var rawFilepath = form.uploadDir + '/' + videoID + '.mp4';
 
-        if (await fileExists(rawFilepath)) {
-            await fsProm.unlink(rawFilepath);
-        }
+        await unlinkIfExists(rawFilepath);
 
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
@@ -123,9 +121,7 @@ async function uploadMediaFile(objectID, req, callback) {
     }
 
     let mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
-    if (!await fileExists(mediaDir)) {
-        await fsProm.mkdir(mediaDir);
-    }
+    await mkdirIfNotExists(mediaDir);
 
     let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
@@ -149,9 +145,7 @@ async function uploadMediaFile(objectID, req, callback) {
 
         // Rename the file after it's been saved
         try {
-            if (await fileExists(newFilepath)) {
-                await fsProm.unlink(newFilepath);
-            }
+            await unlinkIfExists(newFilepath);
             let currentPath = file.path ? file.path : file.filepath;
             await fsProm.rename(currentPath, newFilepath);
             console.log(`File renamed from ${currentPath} to ${newFilepath}`);
@@ -245,9 +239,7 @@ const memoryUpload = async function(objectID, req, callback) {
     }
 
     var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
-    if (!await fileExists(memoryDir)) {
-        await fsProm.mkdir(memoryDir);
-    }
+    await mkdirIfNotExists(memoryDir);
 
     var form = new formidable.IncomingForm({
         uploadDir: memoryDir,
@@ -351,9 +343,7 @@ const generateXml = async function(objectID, body, callback) {
         '   </ARConfig>';
 
     let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
-    if (!await fileExists(targetDir)) {
-        await fsProm.mkdir(targetDir);
-    }
+    await mkdirIfNotExists(targetDir);
 
     var xmlOutFile = path.join(targetDir, 'target.xml');
 
