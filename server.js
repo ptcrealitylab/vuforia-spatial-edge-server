@@ -343,7 +343,7 @@ if (!isLightweightMobile) {
 
 // This file hosts all kinds of utilities programmed for the server
 const utilities = require('./libraries/utilities');
-const {fileExists} = utilities;
+const {fileExists, mkdirIfNotExists, unlinkIfExists} = utilities;
 const nodeUtilities = require('./libraries/nodeUtilities');
 const recorder = require('./libraries/recorder');
 
@@ -720,6 +720,8 @@ async function loadObjects() {
                 objects[tempFolderName] = JSON.parse(objectJsonText);
                 objects[tempFolderName].ip = services.ip; // ip.address();
 
+                migrateObjectValuesToFrames(tempFolderName);
+
                 // this is for transforming old lists to new lists
                 if (typeof objects[tempFolderName].objectValues !== 'undefined') {
                     objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
@@ -824,8 +826,8 @@ async function loadWorldObject() {
     const jsonFilePath = path.join(identityPath, 'object.json');
 
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
-        await fsProm.mkdir(identityPath, {recursive: true});
+    if (globalVariables.saveToDisk) {
+        await mkdirIfNotExists(identityPath, {recursive: true});
     }
 
     // create a new world object
@@ -873,8 +875,8 @@ async function loadAnchor(anchorName) {
     let anchorUuid = anchorName + utilities.uuidTime();
 
     // create a /.identity folder within it to hold the object.json data
-    if (globalVariables.saveToDisk && !await fileExists(identityPath)) {
-        await fsProm.mkdir(identityPath, {recursive: true});
+    if (globalVariables.saveToDisk) {
+        await mkdirIfNotExists(identityPath, {recursive: true});
     }
 
 
@@ -2792,23 +2794,17 @@ function objectWebServer() {
                                             }
 
                                             // copy fullsize file as backup
-                                            if (await fileExists(originalFilepath)) {
-                                                await fsProm.unlink(originalFilepath);
-                                            }
+                                            await unlinkIfExists(originalFilepath);
                                             await fsProm.copyFile(rawFilepath, originalFilepath);
 
                                             // copied file into temp file to be used during the resize operation
-                                            if (await fileExists(tempFilepath)) {
-                                                await fsProm.unlink(tempFilepath);
-                                            }
+                                            await unlinkIfExists(tempFilepath);
                                             await fsProm.copyFile(rawFilepath, tempFilepath);
 
                                             const tempImage = await Jimp.read(tempFilepath);
                                             await tempImage.resize(newWidth, Jimp.AUTO).write(rawFilepath);
 
-                                            if (await fileExists(tempFilepath)) {
-                                                await fsProm.unlink(tempFilepath);
-                                            }
+                                            await unlinkIfExists(tempFilepath);
                                             continueProcessingUpload();
                                         }
                                     } catch (e) {

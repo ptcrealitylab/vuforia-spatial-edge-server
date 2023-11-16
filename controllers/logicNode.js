@@ -1,7 +1,7 @@
 const fsProm = require('fs/promises');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
-const {fileExists} = utilities;
+const {mkdirIfNotExists, unlinkIfExists} = utilities;
 const EdgeBlock = require('../models/EdgeBlock');
 
 // Variables populated from server.js with setup()
@@ -173,9 +173,8 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
         }
 
         var iconDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/logicNodeIcons';
-        if (!await fileExists(iconDir)) {
-            await fsProm.mkdir(iconDir);
-        }
+
+        await mkdirIfNotExists(iconDir);
 
         var form = new formidable.IncomingForm({
             uploadDir: iconDir,
@@ -190,9 +189,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
 
         var rawFilepath = form.uploadDir + '/' + nodeID + '_fullSize.jpg';
 
-        if (await fileExists(rawFilepath)) {
-            await fsProm.unlink(rawFilepath);
-        }
+        await unlinkIfExists(rawFilepath);
 
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
@@ -205,9 +202,7 @@ function uploadIconImage(objectID, frameID, nodeID, req, callback) {
 
             var resizedFilepath = form.uploadDir + '/' + nodeID + '.jpg';
 
-            if (await fileExists(resizedFilepath)) {
-                await fsProm.unlink(resizedFilepath);
-            }
+            await unlinkIfExists(resizedFilepath);
 
             // copied fullsize file into resized image file as backup, in case resize operation fails
             await fsProm.copyFile(rawFilepath, resizedFilepath);
