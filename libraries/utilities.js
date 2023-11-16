@@ -104,13 +104,7 @@ exports.readObject = readObject;
 
 exports.createFolder = async function createFolder(folderVar) {
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (!await fileExists(identity)) {
-        try {
-            await fsProm.mkdir(identity, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('createFolder failed', err);
-        }
-    }
+    await mkdirIfNotExists(identity, {recursive: true, mode: '0766'});
 };
 
 
@@ -122,11 +116,7 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
     var firstFrame = folder + frameVar + '/';
 
     if (!await fileExists(firstFrame)) {
-        try {
-            await fsProm.mkdir(firstFrame, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('createFrameFolder failed', err);
-        }
+        await mkdirIfNotExists(firstFrame, {recursive: true, mode: '0766'});
 
         try {
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
@@ -146,7 +136,11 @@ async function deleteFolderRecursive(folder) {
         console.warn(`folder ${folder} is already not present`);
         return;
     }
-    await fsProm.rmdir(folder, {recursive: true});
+    try {
+        await fsProm.rmdir(folder, {recursive: true});
+    } catch (err) {
+        console.error('deleteFolderRecursive fs race', err);
+    }
 }
 exports.deleteFolderRecursive = deleteFolderRecursive;
 
@@ -230,9 +224,8 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
         } catch (e) {
             console.error('error reading json file', e);
         }
-    } else {
-        return null;
     }
+    return null;
 }
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
@@ -587,9 +580,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
 
 exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
-    if (await fileExists(objectFolderPath)) {
-        await fsProm.rmdir(objectFolderPath, {recursive: true});
-    }
+    await deleteFolderRecursive(objectFolderPath);
 
     let objectKey = readObject(objectLookup, objectName);
 
@@ -666,13 +657,7 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
 exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(hardwareInterfaceName) {
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
 
-    if (!await fileExists(hardwareFolder)) {
-        try {
-            await fsProm.mkdir(hardwareFolder, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('Error making directory', err);
-        }
-    }
+    mkdirIfNotExists(hardwareFolder, {recursive: true, mode: '0766'});
 
     if (!await fileExists(hardwareFolder + 'settings.json')) {
         try {
@@ -1087,3 +1072,36 @@ function fileExists(filePath) {
     });
 }
 exports.fileExists = fileExists;
+
+/**
+ * All-in-one mkdir solution. Wraps error because TOCTOU
+ * @param {string} dirPath - path to folder
+ * @param {object?} options - options for mkdir
+ * @return {Promise<boolean>}
+ */
+async function mkdirIfNotExists(dirPath, options) {
+    if (!await fileExists(dirPath)) {
+        try {
+            await fsProm.mkdir(dirPath, options);
+        } catch (e) {
+            console.warn('mkdirIfNotExists fs race', e);
+        }
+    }
+}
+exports.mkdirIfNotExists = mkdirIfNotExists;
+
+/**
+ * All-in-one unlink solution. Wraps error because TOCTOU
+ * @param {string} filePath - path to folder
+ * @return {Promise<boolean>}
+ */
+async function unlinkIfExists(filePath) {
+    if (await fileExists(filePath)) {
+        try {
+            await fsProm.unlink(filePath);
+        } catch (e) {
+            console.warn('unlinkIfExists fs race', e);
+        }
+    }
+}
+exports.unlinkIfExists = unlinkIfExists;
