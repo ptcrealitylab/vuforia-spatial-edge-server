@@ -117,8 +117,15 @@ exports.printFolder = async function printFolder(objects, objectsPath, _debug, o
 
     // populate the data for each object template on the frontend, using data from each directory found in the spatialToolbox directory
     for (const objectKey of objectFolderList) {
-        var thisObjectKey = objectKey;
-        var tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+        let thisObjectKey = objectKey;
+        let tempKey;
+        try {
+            // gets the object id from the xml target file
+            tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
+        } catch (e) {
+            console.warn('printFolder getObjectId failed', e);
+        }
+
         if (tempKey) {
             thisObjectKey = tempKey;
         }

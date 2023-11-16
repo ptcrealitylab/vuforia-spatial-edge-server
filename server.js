@@ -689,6 +689,31 @@ function getFileExtension(fileName) {
 }
 
 /**
+ * @param {ObjectModel} obj
+ * @param {string} objectKey
+ */
+function migrateObjectValuesToFrames(obj, objectKey) {
+    // this is for transforming old lists to new lists
+    if (typeof obj.objectValues !== 'undefined') {
+        obj.frames[objectKey].nodes = obj.objectValues;
+        delete obj.objectValues;
+    }
+    if (typeof obj.objectLinks !== 'undefined') {
+        obj.frames[objectKey].links = obj.objectLinks;
+        delete obj.objectLinks;
+    }
+
+    if (typeof obj.nodes !== 'undefined') {
+        obj.frames[objectKey].nodes = obj.nodes;
+        delete obj.nodes;
+    }
+    if (typeof obj.links !== 'undefined') {
+        obj.frames[objectKey].links = obj.links;
+        delete obj.links;
+    }
+}
+
+/**
  * @desc Add objects from the objects folder to the system
  **/
 async function loadObjects() {
@@ -718,47 +743,27 @@ async function loadObjects() {
             try {
                 const objectJsonText = await fsProm.readFile(objectsPath + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8');
                 objects[tempFolderName] = JSON.parse(objectJsonText);
-                objects[tempFolderName].ip = services.ip; // ip.address();
+                const obj = objects[tempFolderName];
+                obj.ip = services.ip; // ip.address();
 
-                migrateObjectValuesToFrames(tempFolderName);
+                migrateObjectValuesToFrames(obj, tempFolderName);
 
-                // this is for transforming old lists to new lists
-                if (typeof objects[tempFolderName].objectValues !== 'undefined') {
-                    objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
-                    delete objects[tempFolderName].objectValues;
-                }
-                if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
-                    objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
-                    delete objects[tempFolderName].objectLinks;
-                }
+                if (obj.frames[tempFolderName]) {
+                    for (var nodeKey in obj.frames[tempFolderName].nodes) {
 
-
-                if (typeof objects[tempFolderName].nodes !== 'undefined') {
-                    objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
-                    delete objects[tempFolderName].nodes;
-                }
-                if (typeof objects[tempFolderName].links !== 'undefined') {
-                    objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
-                    delete objects[tempFolderName].links;
-                }
-
-
-                if (objects[tempFolderName].frames[tempFolderName]) {
-                    for (var nodeKey in objects[tempFolderName].frames[tempFolderName].nodes) {
-
-                        if (typeof objects[tempFolderName].nodes[nodeKey].item !== 'undefined') {
-                            var tempItem = objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].item;
-                            objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = utilities.deepCopy(tempItem[0]);
+                        if (typeof obj.nodes[nodeKey].item !== 'undefined') {
+                            var tempItem = obj.frames[tempFolderName].nodes[nodeKey].item;
+                            obj.frames[tempFolderName].nodes[nodeKey].data = utilities.deepCopy(tempItem[0]);
                         }
                     }
                 }
 
                 // cast everything from JSON to Object, Frame, and Node classes
-                let newObj = new ObjectModel(objects[tempFolderName].ip,
-                    objects[tempFolderName].version,
-                    objects[tempFolderName].protocol,
-                    objects[tempFolderName].objectId);
-                newObj.setFromJson(objects[tempFolderName]);
+                let newObj = new ObjectModel(obj.ip,
+                    obj.version,
+                    obj.protocol,
+                    obj.objectId);
+                newObj.setFromJson(obj);
                 objects[tempFolderName] = newObj;
             } catch (e) {
                 objects[tempFolderName].ip = services.ip; //ip.address();
@@ -956,6 +961,9 @@ async function setAnchors() {
 
     // check if there is an initialized World Object
     for (let key in objects) {
+        if (!objects[key]) {
+            continue;
+        }
         if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
             let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
@@ -971,20 +979,29 @@ async function setAnchors() {
 
     // check if there are uninitialized objects and turn them into anchors if an initialized world object exists.
     for (let key in objects) {
+        if (!objects[key]) {
+            continue;
+        }
         objects[key].isAnchor = false;
-        if (!(objects[key].isWorldObject || objects[key].type === 'world' || objects[key].type === 'human' || objects[key].type === 'avatar')) {
-            // check if the object is correctly initialized with tracking targets
-            let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
-            let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
-            let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+        if (objects[key].isWorldObject ||
+            objects[key].type === 'world' ||
+            objects[key].type === 'human' ||
+            objects[key].type === 'avatar') {
+            continue;
+        }
 
-            if (!(xmlExists && (datExists || jpgExists))) {
-                if (hasValidWorldObject) {
-                    objects[key].isAnchor = true;
-                    objects[key].tcs = 0;
-                    continue;
-                }
-            }
+        // check if the object is correctly initialized with tracking targets
+        let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
+        let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
+        let jpgExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.jpg'));
+
+        if (xmlExists && (datExists || jpgExists)) {
+            continue;
+        }
+
+        if (hasValidWorldObject) {
+            objects[key].isAnchor = true;
+            objects[key].tcs = 0;
         }
     }
 }
@@ -1027,6 +1044,9 @@ async function startSystem() {
 
     // generating a udp heartbeat signal for every object that is hosted in this device
     for (let key in objects) {
+        if (!objects[key]) {
+            continue;
+        }
         if (!objects[key].deactivated) {
             await objectBeatSender(beatPort, key, objects[key].ip);
         }
@@ -1217,6 +1237,10 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
         return;
     }
 
+    if (!objects[thisId]) {
+        return;
+    }
+
     var HOST = '255.255.255.255';
 
     objects[thisId].version = version;
@@ -1225,7 +1249,8 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
 
     var thisVersionNumber = parseInt(objects[thisId].version.replace(/\./g, ''));
 
-    // try re-generating checksum if it doesn't exist - in some cases it gets corrupted and beats won't send
+    // try re-generating checksum if it doesn't exist - in some cases it gets
+    // corrupted and beats won't send
     if (!objects[thisId].tcs) {
         let targetDir = path.join(objectsPath, objects[thisId].name, identityFolderName, 'target');
         let jpgPath = path.join(targetDir, 'target.jpg');
@@ -1234,15 +1259,17 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
-        objects[thisId].tcs = await utilities.generateChecksums(objects, fileList);
+        const tcs = await utilities.generateChecksums(objects, fileList);
+        if (objects[thisId]) {
+            // if no target files exist, checksum will be undefined, so mark
+            // with checksum 0 (anchors have this)
+            if (typeof tcs === 'undefined') {
+                objects[thisId].tcs = 0;
+            } else {
+                objects[thisId].tcs = tcs;
+            }
+        }
     }
-
-    // if no target files exist, checksum will be undefined, so mark with checksum 0 (anchors have this)
-    if (typeof objects[thisId].tcs === 'undefined') {
-        objects[thisId].tcs = 0;
-    }
-
-    // Objects
 
     // creating the datagram
     const client = dgram.createSocket({
@@ -1345,7 +1372,9 @@ services.ip = services.getIP(); //ip.address();
 async function handleActionMessage(action) {
     if (action === 'ping') {
         for (let key in objects) {
-            await objectBeatSender(beatPort, key, objects[key].ip, true);
+            if (objects[key]) {
+                await objectBeatSender(beatPort, key, objects[key].ip, true);
+            }
         }
         serverBeatSender(beatPort);
         return;
@@ -2420,12 +2449,23 @@ function objectWebServer() {
                         await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
                         utilities.writeObject(objectLookup, req.body.name, objectId);
 
+                        if (!objects[objectId]) {
+                            console.error('Object deleted during creation', objectId);
+                            return;
+                        }
+
                         // automatically create a tool and a node on the avatar object
                         if (isAvatarObject) {
                             let toolName = 'Avatar';
                             let toolId = objectId + toolName;
                             if (!objects[objectId].frames[toolId]) {
                                 await utilities.createFrameFolder(req.body.name, toolName, __dirname, 'local');
+
+                                if (!objects[objectId]) {
+                                    console.error('Object deleted during creation', objectId);
+                                    return;
+                                }
+
                                 objects[objectId].frames[toolId] = new Frame(objectId, toolId);
                                 objects[objectId].frames[toolId].name = toolName;
                                 await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
@@ -2441,6 +2481,11 @@ function objectWebServer() {
                             } else {
                                 await utilities.createFrameFolder(req.body.name, toolName, __dirname, objects[objectId].frames[toolId].location);
                             }
+                        }
+
+                        if (!objects[objectId]) {
+                            console.error('Object deleted during creation', objectId);
+                            return;
                         }
 
                         sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
@@ -2471,9 +2516,20 @@ function objectWebServer() {
 
                     let objectKey = utilities.readObject(objectLookup, req.body.name);
 
+                    if (!objects[objectKey]) {
+                        console.error('Object deleted during creation', objectKey);
+                        return;
+                    }
+
                     if (!objects[objectKey].frames[objectKey + req.body.frame]) {
 
                         await utilities.createFrameFolder(req.body.name, req.body.frame, __dirname, 'local');
+
+                        if (!objects[objectKey]) {
+                            console.error('Object deleted during creation', objectKey);
+                            return;
+                        }
+
                         objects[objectKey].frames[objectKey + req.body.frame] = new Frame(objectKey, objectKey + req.body.frame);
                         objects[objectKey].frames[objectKey + req.body.frame].name = req.body.frame;
                         await utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
@@ -3214,6 +3270,11 @@ async function createObjectFromTarget(folderVar) {
     hardwareAPI.reset();
 
     await utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+
+    if (!objects[objectIDXML]) {
+        console.error('Object deleted during createObjectFromTarget', objectIDXML);
+        return;
+    }
 
     sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
 
