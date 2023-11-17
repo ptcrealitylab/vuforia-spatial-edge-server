@@ -343,7 +343,7 @@ if (!isLightweightMobile) {
 
 // This file hosts all kinds of utilities programmed for the server
 const utilities = require('./libraries/utilities');
-const {fileExists, mkdirIfNotExists, unlinkIfExists} = utilities;
+const {fileExists, mkdirIfNotExists, rmdirIfExists, unlinkIfExists} = utilities;
 const nodeUtilities = require('./libraries/nodeUtilities');
 const recorder = require('./libraries/recorder');
 
@@ -2347,9 +2347,9 @@ function objectWebServer() {
                 try {
                     const folderStats = await fsProm.stat(folderDel);
                     if (folderStats.isDirectory()) {
-                        await utilities.deleteFolderRecursive(folderDel);
+                        await rmdirIfExists(folderDel);
                     } else {
-                        await fsProm.unlink(folderDel);
+                        await unlinkIfExists(folderDel);
                     }
                 } catch (_e) {
                     console.warn('contentDelete frame path already deleted', folderDel);
@@ -2378,9 +2378,9 @@ function objectWebServer() {
                     const folderStats = await fsProm.stat(folderDel);
 
                     if (folderStats.isDirectory()) {
-                        await utilities.deleteFolderRecursive(folderDel);
+                        await rmdirIfExists(folderDel);
                     } else {
-                        await fsProm.unlink(folderDel);
+                        await unlinkIfExists(folderDel);
                     }
                 } catch (_e) {
                     console.warn('contentDelete path already deleted', folderDel);
@@ -2585,7 +2585,7 @@ function objectWebServer() {
 
                     var folderDelFrame = objectsPath + '/' + req.body.name + '/' + frameName;
 
-                    await utilities.deleteFolderRecursive(folderDelFrame);
+                    await rmdirIfExists(folderDelFrame);
 
                     if (objectKey !== null && frameNameKey !== null) {
                         if (thisObject) {
@@ -2609,7 +2609,7 @@ function objectWebServer() {
                 } else {
 
                     const folderDel = objectsPath + '/' + req.body.name;
-                    await utilities.deleteFolderRecursive(folderDel);
+                    await rmdirIfExists(folderDel);
 
                     var tempFolderName2 = utilities.readObject(objectLookup, req.body.name);
 
@@ -2736,9 +2736,9 @@ function objectWebServer() {
                     if (await fileExists(folderDel)) {
                         try {
                             if ((await fsProm.stat(folderDel)).isDirectory()) {
-                                await utilities.deleteFolderRecursive(folderDel);
+                                await rmdirIfExists(folderDel);
                             } else {
-                                await fsProm.unlink(folderDel);
+                                await unlinkIfExists(folderDel);
                             }
                         } catch (e) {
                             console.warn(`Unable to unlink '${folderDel}'`, e);
