@@ -131,7 +131,7 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
  * Recursively delete a folder and its contents
  * @param {string} folder - path to folder
  */
-async function deleteFolderRecursive(folder) {
+async function rmdirIfExists(folder) {
     if (!await fileExists(folder)) {
         console.warn(`folder ${folder} is already not present`);
         return;
@@ -139,10 +139,10 @@ async function deleteFolderRecursive(folder) {
     try {
         await fsProm.rmdir(folder, {recursive: true});
     } catch (err) {
-        console.error('deleteFolderRecursive fs race', err);
+        console.error('rmdirIfExists fs race', err);
     }
 }
-exports.deleteFolderRecursive = deleteFolderRecursive;
+exports.rmdirIfExists = rmdirIfExists;
 
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
@@ -161,7 +161,7 @@ exports.deleteFrameFolder = async function (objectName, frameName) {
     });
 
     if (isDeletableFrame) {
-        await deleteFolderRecursive(folderPath);
+        await rmdirIfExists(folderPath);
     }
 };
 
@@ -598,7 +598,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
 
 exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
-    await deleteFolderRecursive(objectFolderPath);
+    await rmdirIfExists(objectFolderPath);
 
     let objectKey = readObject(objectLookup, objectName);
 
