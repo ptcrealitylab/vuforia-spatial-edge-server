@@ -3229,8 +3229,15 @@ async function createObjectFromTarget(folderVar) {
         // rename the folder from folderVar to objects[objectIDXML].name
         folderVar = objects[objectIDXML].name;
         const newFolderPath = path.join(objectsPath, folderVar);
-        await fsProm.rename(folder, newFolderPath);
-        // utilities.writeObject(objectLookup, folderVar)
+        try {
+            if (await fileExists(newFolderPath)) {
+                await fsProm.rmdir(newFolderPath);
+            }
+            await fsProm.rename(folder, newFolderPath);
+            // utilities.writeObject(objectLookup, folderVar)
+        } catch (e) {
+            console.warn(`error renaming ${folder} to ${newFolderPath}`, e);
+        }
     }
     objects[objectIDXML].targetSize = objectSizeXML;
 
