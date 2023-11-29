@@ -779,6 +779,14 @@ exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(h
     return this.read;
 };
 
+/**
+ * @param {string} hardwareInterfaceName
+ * @return {any} raw loaded settings of hardware interface
+ */
+exports.getLoadedHardwareInterface = function getLoadedHardwareInterface(hardwareInterfaceName) {
+    return hardwareInterfaces[hardwareInterfaceName];
+};
+
 function restActionSender(action) {
     const { knownObjects } = require('../server');
     const hostSet = new Set();
