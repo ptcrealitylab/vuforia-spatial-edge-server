@@ -1,5 +1,6 @@
-const mdb = require('./MongoDBWrapper.js');
+// const cloud = require('./MongoDBWrapper.js');
 const fs = require('./FileSystemWrapper.js');
+const mdb = require('./CloudProxyWrapper.js');
 
 const {synchronize} = require('./walkers.js');
 const {objectsPath} = require('../config.js');
@@ -60,11 +61,11 @@ const proxy = new Proxy({}, {
             // }
 
             let isBadStat = true;
-            if (prop === 'stat') {
-                if (mdbRes.isFile() === fsRes.isFile()) {
-                    isBadStat = false;
-                }
-            }
+            // if (prop === 'stat') {
+            //     if (mdbRes.isFile() === fsRes.isFile()) {
+            //         isBadStat = false;
+            //     }
+            // }
             if (isBadStat && mdbRes !== fsRes) {
                 if (debug) {
                     console.error(prop, Array.from(arguments), 'could not verify persistence', {mdbRes, fsRes});
