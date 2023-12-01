@@ -380,6 +380,8 @@ const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
 const spatialController = require('./controllers/spatial');
 
+const signallingController = require('./controllers/signallingController.js');
+
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
  **********************************************************************************************************************/
@@ -3818,6 +3820,11 @@ function socketServer() {
                     thisSocket.emit('/cameraMatrix', JSON.stringify(msgContent));
                 }
             }
+        });
+
+        socket.on('/signalling', function (msgRaw) {
+            const msg = JSON.parse(msgRaw);
+            signallingController.onMessage(socket, msg);
         });
 
         socket.on('/subscribe/objectUpdates', function (msg) {
