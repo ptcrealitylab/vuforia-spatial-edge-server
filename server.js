@@ -381,7 +381,7 @@ const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
 const spatialController = require('./controllers/spatial');
 
-const signallingController = require('./controllers/signallingController.js');
+const signallingController = require('./controllers/signalling.js');
 
 /**********************************************************************************************************************
  ******************************************** Constructors ************************************************************
