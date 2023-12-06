@@ -452,12 +452,16 @@ function Protocols() {
                     }
                 }
 
+                if (!this.objectData || !this.objectData.data) {
+                    console.warn('protocol: Unable to find objectData', message);
+                }
+
                 return {
                     object: msgContent.object,
                     frame: msgContent.frame,
                     node: msgContent.node,
                     logic: msgContent.logic,
-                    data: this.objectData.data
+                    data: this.objectData.data || msgContent.data,
                 };
 
             }
@@ -4161,17 +4165,22 @@ function getNode(objectKey, frameKey, nodeKey) {
     return null;
 }
 
+/**
+ * @param {any} msgContent
+ * @param {string} socketID
+ */
 function messagetoSend(msgContent, socketID) {
-
-    var node = getNode(msgContent.object, msgContent.frame, msgContent.node);
-    if (node) {
-        io.sockets.connected[socketID].emit('object', JSON.stringify({
-            object: msgContent.object,
-            frame: msgContent.frame,
-            node: msgContent.node,
-            data: node.data
-        }));
+    const node = getNode(msgContent.object, msgContent.frame, msgContent.node);
+    if (!node) {
+        console.warn('messageToSend unable to find node', msgContent);
     }
+
+    io.sockets.connected[socketID].emit('object', JSON.stringify({
+        object: msgContent.object,
+        frame: msgContent.frame,
+        node: msgContent.node,
+        data: (node && node.data) || msgContent.data,
+    }));
 }
 
 
