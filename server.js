@@ -320,6 +320,7 @@ const http = webServer.listen(serverPort, function () {
 
 const ToolSocket = require('toolsocket');
 var io = new ToolSocket.Io.Server({server: http}); // Websocket library
+exports.io = io;
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
