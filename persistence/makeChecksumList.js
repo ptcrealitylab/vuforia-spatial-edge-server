@@ -2,9 +2,6 @@ const crypto = require('crypto');
 const {createReadStream} = require('fs');
 const path = require('path');
 const fs = require('./FileSystemWrapper.js');
-const cloud = require('./CloudProxyWrapper.js');
-
-const {objectsPath} = require('../config.js');
 
 function checksum(filePath) {
     const hash = crypto.createHash('sha1');
@@ -35,19 +32,4 @@ async function makeChecksumList(base, dirPath) {
     }
 }
 
-async function syncCloudProxy() {
-    let fsChecksums = await makeChecksumList(objectsPath, '');
-    let cloudChecksums = await cloud.getChecksumList();
-
-
-    for (const key in fsChecksums) {
-        if (cloudChecksums[key] && fsChecksums[key] === cloudChecksums[key]) {
-            continue;
-        }
-        const localFilePath = key;
-        const contents = await fs.readFile(localFilePath);
-        await cloud.writeFile(key, contents);
-    }
-}
-
-module.exports = syncCloudProxy;
+module.exports = makeChecksumList;
