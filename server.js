@@ -3828,8 +3828,12 @@ function socketServer() {
         });
 
         socket.on('/signalling', function (msgRaw) {
-            const msg = JSON.parse(msgRaw);
-            signallingController.onMessage(socket, msg);
+            try {
+                const msg = typeof msgRaw === 'string' ? JSON.parse(msgRaw) : msgRaw;
+                signallingController.onMessage(socket, msg);
+            } catch (e) {
+                console.error('Malformed signalling message', msgRaw);
+            }
         });
 
         socket.on('/subscribe/objectUpdates', function (msg) {
