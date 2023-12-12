@@ -2560,7 +2560,7 @@
                 }
             };
         };
-        
+
         this.addMeasureAppCloseAppListener = function(callback) {
             spatialObject.messageCallBacks.closeAppCall = function (msgContent) {
                 if (typeof msgContent.isAppClosed !== 'undefined') {
