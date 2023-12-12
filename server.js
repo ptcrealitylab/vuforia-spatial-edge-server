@@ -461,7 +461,7 @@ function Protocols() {
                     frame: msgContent.frame,
                     node: msgContent.node,
                     logic: msgContent.logic,
-                    data: this.objectData.data || msgContent.data,
+                    data: (this.objectData && this.objectData.data) || msgContent.data,
                 };
 
             }
