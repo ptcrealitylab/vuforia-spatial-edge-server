@@ -1888,6 +1888,10 @@ function objectWebServer() {
     webServer.use('/spatial', spatialRouter.router);
     webServer.use('/history', historyRouter.router);
 
+    webServer.get('/status', function(req, res) {
+        res.sendStatus(200); // OK
+    });
+
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
     webServer.post('/triggerBlock/:blockName', function (req, res) {
