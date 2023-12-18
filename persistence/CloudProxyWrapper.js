@@ -203,6 +203,7 @@ class CloudProxyWrapper {
      * Create or update document at `path`
      * @param {string} path
      * @param {any} contents
+     * @return {Buffer} remote's contents at `path` (result of local-remote merge)
      */
     async writeFile(path, contentsAny) {
         const form = new FormData();
@@ -220,7 +221,20 @@ class CloudProxyWrapper {
         if (!res.ok) {
             throw new Error('fs api error');
         }
-        await res.json();
+        const arrayBuffer = await res.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+    }
+
+    /**
+     * Read from the /checksums API which gives a table of all known files and
+     * their checksum value
+     */
+    async getChecksumList() {
+        const res = await fetch(this.apiBase() + 'checksums', this.fetchOptionsRead());
+        if (!res.ok) {
+            throw new Error('fs api error: ' + res.status);
+        }
+        return await res.json();
     }
 }
 
