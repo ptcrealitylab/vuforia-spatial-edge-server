@@ -23,13 +23,15 @@ async function makeChecksumList(base, dirPath) {
     const csList = {};
     let dirEnts = await fs.readdir(path.join(base, dirPath), {withFileTypes: true});
     for (let dirEnt of dirEnts) {
-        const entPath = path.join(base, dirPath, dirEnt.name);
+        const entRelPath = path.join(dirPath, dirEnt.name);
+        const entAbsPath = path.join(base, entRelPath);
         if (dirEnt.isDirectory()) {
-            Object.assign(csList, makeChecksumList(base, entPath));
+            Object.assign(csList, await makeChecksumList(base, entRelPath));
         } else {
-            csList[path.join(dirPath, dirEnt.name)] = await checksum(entPath);
+            csList[entRelPath] = await checksum(entAbsPath);
         }
     }
+    return csList;
 }
 
 module.exports = makeChecksumList;
