@@ -1,5 +1,6 @@
 const remote = require('./CloudProxyWrapper.js');
-const local = require('./fsProm.js');
+const local = require('fs/promises');
+const path = require('path');
 
 const {objectsPath} = require('../config.js');
 const makeChecksumList = require('./makeChecksumList.js');
@@ -29,22 +30,34 @@ async function synchronize() {
         }
     }
 
-    for (const path of diffs) {
-        const contents = await local.readFile(path);
-        const newContents = await remote.writeFile(path, contents);
+    console.log('sync diffs', diffs);
+    for (const relPath of diffs) {
+        const localAbsPath = path.join(objectsPath, relPath);
+        const contents = await local.readFile(localAbsPath);
+        const newContents = await remote.writeFile(relPath, contents);
         if (newContents) {
-            await local.writeFile(path, newContents);
+            await local.writeFile(localAbsPath, newContents);
         }
     }
 
-    for (const path of newRemote) {
-        const contents = await remote.readFile(path);
-        await local.writeFile(path, contents);
+    console.log('sync newRemote', newRemote);
+    for (const relPath of newRemote) {
+        const localAbsPath = path.join(objectsPath, relPath);
+        const contents = await remote.readFile(relPath);
+        const localAbsDir = path.dirname(localAbsPath);
+        try {
+            await local.mkdir(localAbsDir, {recursive: true});
+        } catch (_e) {
+            // dir already exists
+        }
+        await local.writeFile(localAbsPath, contents);
     }
 
-    for (const path of newLocal) {
-        const contents = await local.readFile(path);
-        await remote.writeFile(path, contents);
+    console.log('sync newLocal', newLocal);
+    for (const relPath of newLocal) {
+        const localAbsPath = path.join(objectsPath, relPath);
+        const contents = await local.readFile(localAbsPath);
+        await remote.writeFile(relPath, contents);
     }
 
     // then restart the server

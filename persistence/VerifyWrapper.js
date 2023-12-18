@@ -2,8 +2,7 @@
 const fs = require('./FileSystemWrapper.js');
 const mdb = require('./CloudProxyWrapper.js');
 
-const {synchronize} = require('./walkers.js');
-const {objectsPath} = require('../config.js');
+const {synchronize} = require('./synchronize.js');
 
 let syncInProgress = false;
 
@@ -13,7 +12,7 @@ async function sync() {
     }
     syncInProgress = true;
     try {
-        await synchronize(fs, mdb, objectsPath);
+        await synchronize();
     } catch (e) {
         console.error('synchronize failed', e);
     } finally {
