@@ -104,13 +104,7 @@ exports.readObject = readObject;
 
 exports.createFolder = async function createFolder(folderVar) {
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (!await fileExists(identity)) {
-        try {
-            await fsProm.mkdir(identity, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('createFolder failed', err);
-        }
-    }
+    await mkdirIfNotExists(identity, {recursive: true, mode: '0766'});
 };
 
 
@@ -122,11 +116,7 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
     var firstFrame = folder + frameVar + '/';
 
     if (!await fileExists(firstFrame)) {
-        try {
-            await fsProm.mkdir(firstFrame, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('createFrameFolder failed', err);
-        }
+        await mkdirIfNotExists(firstFrame, {recursive: true, mode: '0766'});
 
         try {
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
@@ -141,14 +131,18 @@ exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, locat
  * Recursively delete a folder and its contents
  * @param {string} folder - path to folder
  */
-async function deleteFolderRecursive(folder) {
+async function rmdirIfExists(folder) {
     if (!await fileExists(folder)) {
         console.warn(`folder ${folder} is already not present`);
         return;
     }
-    await fsProm.rmdir(folder, {recursive: true});
+    try {
+        await fsProm.rmdir(folder, {recursive: true});
+    } catch (err) {
+        console.error('rmdirIfExists fs race', err);
+    }
 }
-exports.deleteFolderRecursive = deleteFolderRecursive;
+exports.rmdirIfExists = rmdirIfExists;
 
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
@@ -167,7 +161,7 @@ exports.deleteFrameFolder = async function (objectName, frameName) {
     });
 
     if (isDeletableFrame) {
-        await deleteFolderRecursive(folderPath);
+        await rmdirIfExists(folderPath);
     }
 };
 
@@ -201,24 +195,27 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
     var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
     if (await fileExists(xmlFile)) {
-        var resultXML = '';
-        xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
-            function (err, result) {
-                for (var first in result) {
-                    for (var secondFirst in result[first].Tracking[0]) {
-                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                        if (typeof resultXML === 'string' && resultXML.length === 0) {
-                            console.warn('Target file for ' + folderName + ' has empty name, ' +
-                                'and may not function correctly. Delete and re-upload target for best results.');
-                            resultXML = null;
+        try {
+            let resultXML = '';
+            xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
+                function (err, result) {
+                    for (var first in result) {
+                        for (var secondFirst in result[first].Tracking[0]) {
+                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                            if (typeof resultXML === 'string' && resultXML.length === 0) {
+                                console.warn('Target file for ' + folderName + ' has empty name, ' +
+                                    'and may not function correctly. Delete and re-upload target for best results.');
+                                resultXML = null;
+                            }
+                            break;
                         }
                         break;
                     }
-                    break;
-                }
-            });
-
-        return resultXML;
+                });
+            return resultXML;
+        } catch (e) {
+            console.error('error reading xml file', e);
+        }
     } else if (await fileExists(jsonFile)) {
         try {
             let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
@@ -230,9 +227,8 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
         } catch (e) {
             console.error('error reading json file', e);
         }
-    } else {
-        return null;
     }
+    return null;
 }
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
@@ -245,15 +241,16 @@ async function getAnchorIdFromObjectFile(folderName) {
     var jsonFile = objectsPath + '/' + folderName + '/object.json';
 
     if (await fileExists(jsonFile)) {
-        let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
-        if (thisObject.hasOwnProperty('objectId')) {
-            return thisObject.objectId;
-        } else {
-            return null;
+        try {
+            let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
+            if (thisObject.hasOwnProperty('objectId')) {
+                return thisObject.objectId;
+            }
+        } catch (err) {
+            console.error('Unable to read anchor id', err);
         }
-    } else {
-        return null;
     }
+    return null;
 }
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
@@ -279,7 +276,14 @@ exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderN
         return resultXML;
     }
 
-    const contents = await fsProm.readFile(xmlFile, 'utf8');
+    let contents;
+    try {
+        contents = await fsProm.readFile(xmlFile, 'utf8');
+    } catch (err) {
+        console.error('Unable to read xml file for target size', err);
+        return resultXML;
+    }
+
     xml2js.Parser().parseString(contents, function (parseErr, result) {
         try {
             if (parseErr) {
@@ -485,7 +489,11 @@ exports.generateChecksums = async function generateChecksums(objects, fileArray)
         if (!await fileExists(fileArray[i])) {
             continue;
         }
-        checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
+        try {
+            checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
+        } catch (err) {
+            console.warn('generateChecksums: Unable to read file', err);
+        }
     }
     return checksumText;
 };
@@ -529,9 +537,12 @@ exports.updateObject = async function updateObject(objectName, objects) {
             console.warn(' object ' + objectFolder + ' has no marker yet');
             return tempFolderName;
         }
-
-        // fill objects with objects named by the folders in objects
-        objects[tempFolderName].name = objectFolder;
+        if (!objects[tempFolderName]) {
+            console.warn('object deleted during updateObject');
+        } else {
+            // fill objects with objects named by the folders in objects
+            objects[tempFolderName].name = objectFolder;
+        }
 
         // try to read a saved previous state of the object
         try {
@@ -587,9 +598,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
 
 exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
     let objectFolderPath = path.join(objectsPath, objectName);
-    if (await fileExists(objectFolderPath)) {
-        await fsProm.rmdir(objectFolderPath, {recursive: true});
-    }
+    await rmdirIfExists(objectFolderPath);
 
     let objectKey = readObject(objectLookup, objectName);
 
@@ -666,13 +675,7 @@ exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterface
 exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(hardwareInterfaceName) {
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
 
-    if (!await fileExists(hardwareFolder)) {
-        try {
-            await fsProm.mkdir(hardwareFolder, {recursive: true, mode: '0766'});
-        } catch (err) {
-            console.error('Error making directory', err);
-        }
-    }
+    mkdirIfNotExists(hardwareFolder, {recursive: true, mode: '0766'});
 
     if (!await fileExists(hardwareFolder + 'settings.json')) {
         try {
@@ -1087,3 +1090,36 @@ function fileExists(filePath) {
     });
 }
 exports.fileExists = fileExists;
+
+/**
+ * All-in-one mkdir solution. Wraps error because TOCTOU
+ * @param {string} dirPath - path to folder
+ * @param {object?} options - options for mkdir
+ * @return {Promise<boolean>}
+ */
+async function mkdirIfNotExists(dirPath, options) {
+    if (!await fileExists(dirPath)) {
+        try {
+            await fsProm.mkdir(dirPath, options);
+        } catch (e) {
+            console.warn('mkdirIfNotExists fs race', e);
+        }
+    }
+}
+exports.mkdirIfNotExists = mkdirIfNotExists;
+
+/**
+ * All-in-one unlink solution. Wraps error because TOCTOU
+ * @param {string} filePath - path to folder
+ * @return {Promise<boolean>}
+ */
+async function unlinkIfExists(filePath) {
+    if (await fileExists(filePath)) {
+        try {
+            await fsProm.unlink(filePath);
+        } catch (e) {
+            console.warn('unlinkIfExists fs race', e);
+        }
+    }
+}
+exports.unlinkIfExists = unlinkIfExists;

@@ -1,3 +1,27 @@
+/**** 2D UI STYLING ****/
+
+/* notification */
+.notificationDiv {
+    display: flex;
+    position: relative;
+    top: 16%;
+    height: max-content;
+    width: max-content;
+    margin: auto;
+}
+.notificationText {
+    position: relative;
+    padding: 10px 20px;
+    background-color: rgba(0,0,0, .8);
+    color: #FFFFFF;
+    font-family: OpenSans, sans-serif;
+    font-size: 22px;
+    border-radius: 10px;
+}
+
+/**** AR STYLING ****/
+
+/* minimized ar tool icon */
 .tool-color-gradient {
     /*animation: tool-color-gradient-anim 0.3s infinite alternate;*/
     background: linear-gradient(90deg, #000000,#000000, #00ffff, #ee7752, #e73c7e, #23a6d5, #23d5ab,#000000, #000000);

@@ -1,8 +1,7 @@
-const fsProm = require('fs/promises');
 const path = require('path');
 
 const utilities = require('../libraries/utilities');
-const {fileExists} = utilities;
+const {unlinkIfExists} = utilities;
 const Frame = require('../models/Frame');
 const Node = require('../models/Node');
 
@@ -307,9 +306,7 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
         const videoDir = utilities.getVideoDir(objectName);
         const videoFilePath = path.join(videoDir, urlArray[6]);
 
-        if (await fileExists(videoFilePath)) {
-            await fsProm.unlink(videoFilePath);
-        }
+        await unlinkIfExists(videoFilePath);
     }
 
     const objectName = object.name;

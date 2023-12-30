@@ -16,6 +16,7 @@ function SceneNode(id) {
     this.children = [];
     this.id = id; // mostly attached for debugging
     this.parent = null;
+    this.visited = false;
 
     // if true, any nodes added to this will instead be added to a child of this rotating 90deg
     this.needsRotateX = false;
@@ -38,6 +39,16 @@ function SceneNode(id) {
 }
 
 /**
+ * Visits all children of this node, setting `visited` to true
+ */
+SceneNode.prototype.visitAllChildren = function() {
+    this.visited = true;
+    for (let child of this.children) {
+        child.visitAllChildren();
+    }
+};
+
+/**
  * Sets the parent node of this node, so that it is positioned relative to that
  * @param {SceneNode} parent
  */
@@ -46,7 +57,10 @@ SceneNode.prototype.setParent = function(parent) {
         return; // ignore duplicate function calls
     }
 
-    if (parent === this) { // TODO: more robustly prevent all cycles in the tree
+    parent.visited = false;
+    this.visitAllChildren();
+    if (parent.visited) {
+        console.error('Attempt to introduce cycle into scene graph', this.id, parent.id, new Error().stack);
         return;
     }
 

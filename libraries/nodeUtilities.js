@@ -19,6 +19,10 @@ exports.searchNodeByType = async function (nodeType, objectKey, tool, node, call
         thisObjectKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
+    if (!thisObject) {
+        console.error('searchNodeByType object not found');
+        return;
+    }
     if (!tool && !node) {
         utilities.forEachFrameInObject(thisObject, function (thisTool, toolKey) {
             utilities.forEachNodeInFrame(thisTool, function (thisNode, nodeKey) {
