@@ -184,6 +184,7 @@ services.updateAllObjects = function (ip) {
     }
 };
 services.getIP = function () {
+    return "localhost";
     this.ips.interfaces = {};
     // if this is mobile, only allow local interfaces
     if (isLightweightMobile) {
@@ -313,7 +314,12 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-const http = webServer.listen(serverPort, function () {
+const options = {
+    key: fs.readFileSync('./key.pem'),
+    cert: fs.readFileSync('./cert.pem')
+};
+const httpServer = require('https').createServer(options, webServer);
+const http = httpServer.listen(serverPort, function () {
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
