@@ -70,8 +70,6 @@ realityServer.initialize = function () {
     realityServer.downloadImageP = new Image();
     realityServer.downloadImageP.src = '../libraries/gui/resources/icondownloadP.svg';
 
-    console.log(realityServer.states);
-
     collapsedObjects = JSON.parse(window.localStorage.getItem('collapsedObjects')) || {};
     for (let objectKey in collapsedObjects) {
         if (realityServer.objects.hasOwnProperty(objectKey)) {
@@ -87,7 +85,6 @@ realityServer.initialize = function () {
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', function(e) {
         setTimeout(function() {
-            console.log('pointerup');
             onPointerMove(e);
         }, 10);
 
@@ -120,10 +117,8 @@ function continueAfterCheckingRemoteOperator(callback) {
         if (request.readyState === 4) {
             if (request.status === 200) {
                 isRemoteOperatorSupported = true;
-                console.log('remoteOperator: YES');
             } else {
                 isRemoteOperatorSupported = false;
-                console.log('remoteOperator: NO');
             }
             callback();
         }
@@ -149,12 +144,10 @@ function onPointerMove(e) {
 
     let x = e.clientX, y = e.clientY;
     let elementMouseIsOver = document.elementFromPoint(x, y);
-    // console.log(elementMouseIsOver);
 
     let text = elementMouseIsOver.dataset.tooltipText;
     let levelsOfSearch = 3;
     while (levelsOfSearch > 0 && !text) {
-        // console.log('no text on this element, searching parent');
         levelsOfSearch -= 1;
         if (elementMouseIsOver.parentElement) {
             elementMouseIsOver = elementMouseIsOver.parentElement;
@@ -198,7 +191,6 @@ function onPointerHover(timestamp, x, y, text) {
 
     let constrainedLeft =  Math.min(window.innerWidth - computedWidth - margin, (x + window.scrollX));
     tooltipDiv.style.left = constrainedLeft + 'px';
-    // console.log('hover');
 }
 
 realityServer.initializeHelp = function () {
@@ -391,8 +383,6 @@ realityServer.updateManageObjects = function (thisItem2) {
         }
 
         let thisObject = this.objects[objectKey];
-
-        console.log('--------' + thisItem2);
 
         if (!thisItem2 || thisItem2 === objectKey) {
 
@@ -721,9 +711,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 if (thisItem2 === objectKey) {
                     let thisItem = 'object' + objectKey;
-                    console.log(thisItem);
                     let thisDom = document.getElementById(thisItem);
-                    console.log(thisDom);
                     thisDom.before(thisObject.dom);
                     thisDom.remove();
                 }
@@ -850,15 +838,10 @@ realityServer.updateManageObjects = function (thisItem2) {
     if (objectKeyToHighlight) {
         highlightObject(objectKeyToHighlight, true);
     }
-
-    console.log(realityServer.objects);
-
     setTooltipTextForManageObjects();
 };
 
 realityServer.updateManageFrames = function () {
-    console.log('updateManageFrames');
-
     this.getDomContents().appendChild(this.templates['startFrames'].content.cloneNode(true));
 
     /////// Tutorial ///////
@@ -881,11 +864,8 @@ realityServer.updateManageFrames = function () {
     /////// ^ Tutorial ^ ///////
 
     for (let frameKey in this.globalFrames) {
-
         let frameInfo = this.globalFrames[frameKey];
         frameInfo.dom = this.templates['frameManager'].content.cloneNode(true);
-        console.log('frameInfo: ', frameInfo);
-
         function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
             buttonDiv.addEventListener('click', function () {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
@@ -953,8 +933,6 @@ realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
 };
 
 realityServer.updateManageHardwareInterfaces = function () {
-    console.log('updateManageHardwareInterfaces');
-
     /////// Tutorial ///////
     this.getDomContents().appendChild(this.templates['startHardwareInterfaces'].content.cloneNode(true));
     document.getElementById('hardwareInterfacesDescription').appendChild(this.templates['hardwareInterfacesTutorial'].content.cloneNode(true));
@@ -987,8 +965,6 @@ realityServer.updateManageHardwareInterfaces = function () {
         }
 
         interfaceInfo.dom = this.templates['hardwareInterface'].content.cloneNode(true);
-        // console.log('interfaceInfo: ', interfaceInfo);
-
         interfaceInfo.dom.querySelector('.name').querySelector('.nameText').innerText = interfaceName;
         interfaceInfo.dom.querySelector('.name').id = 'hardwareInterface' + interfaceName;
         if (!interfaceInfo.enabled) {
@@ -1029,7 +1005,7 @@ realityServer.updateManageHardwareInterfaces = function () {
                 ' restart your server and refresh this page. When you do so, you can then configure it here.');
         }
 
-        function addEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
+        function addHardwareInterfaceEnabledToggle(button, hardwareInterfaceName, hardwareInterfaceInfo) { // eslint-disable-line no-inner-declarations
             button.addEventListener('click', function () {
                 if (hardwareInterfaceInfo.enabled) {
                     realityServer.sendRequest('/hardwareInterface/' + hardwareInterfaceName + '/disable/', 'GET', function (state) {
@@ -1053,14 +1029,14 @@ realityServer.updateManageHardwareInterfaces = function () {
             });
         }
 
-        addEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
+        addHardwareInterfaceEnabledToggle(activeToggleButton, interfaceName, interfaceInfo); // create inside closure so interfaceInfo doesn't change after definition
 
         firstColumn.appendChild(interfaceInfo.dom, true);
     }
 
     let configFrame = document.createElement('iframe');
     configFrame.classList.add('configFrame');
-    configFrame.addEventListener('pointerenter', function(e) {
+    configFrame.addEventListener('pointerenter', function() {
         tooltipDiv.style.display = 'none'; // hide the tooltip when it enters the iframe because we lose capture of it
         lastMovedTimestamp = Date.now();
     });
@@ -1075,7 +1051,6 @@ realityServer.updateCommonContents = function (thisItem2) {
         let thisNode = this.templates['networkInterfaces'].content.cloneNode(true);
 
         for (let key in realityServer.states.ipAdress.interfaces) {
-            console.log(key);
             let thisSubObject = this.templates['networkInterfacelets'].content.cloneNode(true);
             const netInterfaceElt = thisSubObject.querySelector('.netInterface');
             netInterfaceElt.innerText = key;
@@ -1092,8 +1067,6 @@ realityServer.updateCommonContents = function (thisItem2) {
 
             thisNode.getElementById('subNetInterface').appendChild(thisSubObject);
         }
-
-        console.log('thisNode', JSON.stringify(thisNode));
 
         this.getCommonContents().appendChild(thisNode);
 
@@ -1191,7 +1164,6 @@ realityServer.printFiles = function (item) {
 function showGenerateXml(parentElement, objectKey) {
     let visualFeedback = parentElement;
     let generateXmlButton = visualFeedback.querySelector('.generateXml');
-    console.log('generateXmlButton', generateXmlButton);
     generateXmlButton.addEventListener('click', function () {
         if (!visualFeedback.querySelector('.textEntry')) {
             let textEntryElements = document.getElementById('textEntryTargetSize').content.cloneNode(true);
@@ -1207,7 +1179,6 @@ function showGenerateXml(parentElement, objectKey) {
                     // let targetName = realityServer.objects[objectKey];
                     realityServer.sendRequest('/object/' + objectKey + '/generateXml/', 'POST', function (state) {
                         if (state === 'ok') {
-                            console.log('successfully generated xml from width ' + newWidth + ' and height ' + newHeight);
                             let notificationText = 'Successfully set ' + objectKey + ' target size to ' + newWidth + 'm wide by ' + newHeight + 'm tall';
                             showSuccessNotification(notificationText, 8000);
                         }
@@ -1310,7 +1281,6 @@ realityServer.gotClick = function (event) {
                 thisEventObject.classList.remove('selectedButton');
             } else {
                 thisEventObject.classList.add('selectedButton');
-                console.log(objectKey, frameKey, '');
             }
         }
 
@@ -1321,7 +1291,6 @@ realityServer.gotClick = function (event) {
             let objectID = item.getAttribute('objectid');
             if (!objectID) objectID = '';
 
-            console.log(item);
             let toolID = item.getAttribute('frameid');
             if (!toolID) toolID = '';
 
@@ -1332,8 +1301,6 @@ realityServer.gotClick = function (event) {
             if (toolID) thisKey = toolID;
 
             if (item.classList.contains('selectedButton')) {
-                console.log(objectKey, frameKey, '');
-
                 if (realityServer.spatialButtonState.whereIs)
                     spatialLocator.whereIs[thisKey] = new SpatialLocator(objectID, toolID, '');
 
@@ -1447,42 +1414,42 @@ realityServer.gotClick = function (event) {
             newNode.querySelector('.name').innerText = thisObject.targetName;
             referenceNode.after(newNode);
 
-            let visualFeedback = document.getElementById('targetDropZone' + objectKey).querySelector('.dropZoneFeedback');
-            if (visualFeedback && thisObject && thisObject.targetsExist) {
+            let dropZoneFeedback = document.getElementById('targetDropZone' + objectKey).querySelector('.dropZoneFeedback');
+            if (dropZoneFeedback && thisObject && thisObject.targetsExist) {
                 if (thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'green');
-                    visualFeedback.querySelector('.hasDat').innerText = 'Has .dat';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasDat'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasDat').innerText = 'Has .dat';
                 } else if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasDat'), 'red', 'white');
-                    visualFeedback.querySelector('.hasDat').innerText = '.dat optional';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasDat'), 'red', 'white');
+                    dropZoneFeedback.querySelector('.hasDat').innerText = '.dat optional';
 
-                    setTooltipTextForElement(visualFeedback.querySelector('.hasDat'),
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.hasDat'),
                         'You don\'t need to upload a .dat file for this object since you gave it a .jpg, but adding' +
                         ' one (generated from Vuforia developer tools) may improve tracking stability');
                 }
                 if (thisObject.targetsExist.xmlExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasXml'), 'red', 'green');
-                    visualFeedback.querySelector('.hasXml').innerText = 'Has .xml';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasXml'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasXml').innerText = 'Has .xml';
                 }
                 if (thisObject.targetsExist.jpgExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'green');
-                    visualFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasJpg'), 'red', 'green');
+                    dropZoneFeedback.querySelector('.hasJpg').innerText = 'Has .jpg';
                 } else if (thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.hasJpg'), 'red', 'yellow');
-                    setTooltipTextForElement(visualFeedback.querySelector('.hasJpg'),
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.hasJpg'), 'red', 'yellow');
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.hasJpg'),
                         'You already uploaded a .dat file to be the target data, but you should still upload a .jpg' +
                         ' to act as this object\'s icon');
                 }
 
                 if (!thisObject.targetsExist.jpgExists && !thisObject.targetsExist.datExists) {
-                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'green', 'hidden');
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.generateXml'), 'green', 'hidden');
                 } else {
-                    realityServer.switchClass(visualFeedback.querySelector('.generateXml'), 'hidden', 'green');
+                    realityServer.switchClass(dropZoneFeedback.querySelector('.generateXml'), 'hidden', 'green');
 
-                    setTooltipTextForElement(visualFeedback.querySelector('.generateXml'),
+                    setTooltipTextForElement(dropZoneFeedback.querySelector('.generateXml'),
                         'You must accurately enter the width and height (in meters) for AR content to scale' +
                         ' correctly when attached to this object. Defaults to 0.3 meters (12 inches).');
-                    showGenerateXml(visualFeedback, objectKey);
+                    showGenerateXml(dropZoneFeedback, objectKey);
                 }
             }
 
@@ -1526,8 +1493,6 @@ realityServer.gotClick = function (event) {
             });
 
             realityServer.myTargetDropzone.on('success', function (file, responseText) {
-                console.log(responseText);
-
                 let notificationText = 'Successfully uploaded ' + file.name + ' to the object' +
                     ' named ' + responseText.name;
                 showSuccessNotification(notificationText, 5000);
@@ -1542,9 +1507,9 @@ realityServer.gotClick = function (event) {
 
                         if (realityServer.objects[responseText.name]) {
                             realityServer.objects[responseText.id] = realityServer.objects[responseText.name];
-                            let thisObject = document.getElementById('object' + responseText.name);
-                            thisObject.id = 'object' + responseText.id;
-                            let objectList = thisObject.querySelectorAll('button');
+                            let objectElt = document.getElementById('object' + responseText.name);
+                            objectElt.id = 'object' + responseText.id;
+                            let objectList = objectElt.querySelectorAll('button');
 
                             for (let i = 0; i < objectList.length; i++) {
                                 // TODO: don't assign same id to every button (not sure about side effects of removing, so assigned to github issue #19)
@@ -1679,7 +1644,6 @@ realityServer.gotClick = function (event) {
         } else {
             realityServer.dropZoneId = '';
             let removeNode = document.getElementById('targetDropZone' + objectKey);
-            console.log(removeNode);
             //  removeNode.remove();
             realityServer.removeAnimated(removeNode, 'expandcollapseTarget', 'expandTarget', 'collapseTarget');
         }
@@ -1765,7 +1729,6 @@ realityServer.gotClick = function (event) {
     }
 
     if (buttonClassList.contains('fullscreen')) {
-        console.log('fullscreen');
         realityServer.toggleFullScreen(thisEventObject);
     }
 
@@ -1782,7 +1745,6 @@ realityServer.gotClick = function (event) {
             realityServer.removeAnimated(thisYes);
             // thisYes.remove();
         }
-        console.log(oldID);
         if (oldID !== 'frame' + objectKey + frameKey) {
             let referenceNode = document.getElementById('frame' + objectKey + frameKey);
             let newNode = document.getElementById('resetOKId').content.cloneNode(true);
@@ -1801,8 +1763,6 @@ realityServer.gotClick = function (event) {
     }
 
     if (buttonClassList.contains('resetYes')) {
-        console.log('okreset');
-
         realityServer.sendRequest('/object/' + objectKey + '/' + frameKey + '/reset/', 'GET', function (state) {
             if (state === 'ok') {
                 realityServer.update();
@@ -1828,17 +1788,11 @@ realityServer.gotClick = function (event) {
             //   window.location.href= "/content/" + realityServer.objects[objectKey].name + "/"+realityServer.objects[objectKey].frames[frameKey].name;
 
             realityServer.sendRequest('/object/' + thisObject.name + '/' + thisObject.frames[frameKey].name + '/frameFolder', 'GET', function (state) {
-
-                console.log('got here');
-                console.log('-----------------------------xx---------------------');
-                console.log(state);
-
                 if (state) {
                     let tree = JSON.parse(state);
-                    // console.log(tree.children);
                     let newNode = {};
-                    let thisLevel = realityServer.printFiles(tree);
-                    getLevels(thisLevel, 0);
+                    let thisLevelStart = realityServer.printFiles(tree);
+                    getLevels(thisLevelStart, 0);
 
                     newNode = document.getElementById('contentDropZoneId').content.cloneNode(true);
                     referenceNode.before(newNode);
@@ -1918,7 +1872,6 @@ realityServer.gotClick = function (event) {
             realityServer.removeAnimated(thisYes);
             //thisYes.remove();
         }
-        console.log(oldID);
         if (oldID !== whatKindOfObject + objectKey + frameKey) {
             let referenceNode = document.getElementById(whatKindOfObject + objectKey + frameKey);
             let newNode = document.getElementById('deleteOKId').content.cloneNode(true);
@@ -1964,8 +1917,6 @@ realityServer.gotClick = function (event) {
      *  ADD OBJECT
      */
     if (buttonClassList.contains('addObject') || buttonClassList.contains('addWorldObject')) {
-        console.log(document.getElementById('textEntryObject'));
-
         if (!document.getElementById('textEntryObject')) {
             let textEntryElements = document.getElementById('textEntryId').content.cloneNode(true);
             textEntryElements.querySelector('.addButton').addEventListener('click', realityServer.gotClick, false);
@@ -1993,7 +1944,6 @@ realityServer.gotClick = function (event) {
             return;
         }
 
-        console.log(textContent);
         let removeNode = document.getElementById('textEntryObject');
         realityServer.removeAnimated(removeNode);
 
@@ -2017,10 +1967,8 @@ realityServer.gotClick = function (event) {
                     let msgContent = JSON.parse(state);
                     // generate a placeholder xml file for this object
                     let defaultSize = 0.3;
-                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (state) {
-                        if (state === 'ok') {
-                            console.log('successfully generated xml for world object');
-
+                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
+                        if (stateGen === 'ok') {
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
                             realityServer.objects[msgContent.id].isWorldObject = true;
@@ -2028,8 +1976,8 @@ realityServer.gotClick = function (event) {
 
                             // make them automatically activate after a slight delay
                             setTimeout(function () {
-                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (state) {
-                                    if (state === 'ok') {
+                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
+                                    if (stateActivate === 'ok') {
                                         //   realityServer.objects[msgContent.id].active = true;
                                     }
                                     realityServer.update();
@@ -2039,7 +1987,7 @@ realityServer.gotClick = function (event) {
                     }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
 
                 } catch (e) {
-                    console.warn('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
+                    console.error('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
                 }
             }
 
@@ -2057,7 +2005,6 @@ realityServer.gotClick = function (event) {
             return;
         }
 
-        console.log(textContent);
         let removeNode = document.querySelector('.textEntryFrame');
         realityServer.removeAnimated(removeNode);
 
@@ -2083,8 +2030,6 @@ realityServer.gotClick = function (event) {
                 thisObject.zone = thisEventObject.innerText;
             }
         }, 'action=zone&name=' + thisObject.name + '&zone=' + thisEventObject.innerText);
-
-        console.log(thisEventObject.innerText);
     }
     if (buttonClassList.contains('addFrame')) {
 
@@ -2097,8 +2042,6 @@ realityServer.gotClick = function (event) {
             realityServer.removeAnimated(thisYes);
             // thisYes.remove();
         }
-        console.log('object ' + objectKey);
-        console.log('frame ' + frameKey);
         if (oldID !== 'object' + objectKey) {
             let referenceNode = document.getElementById('object' + objectKey);
             let newNode = document.getElementById('textEntryFrameId').content.cloneNode(true);
@@ -2181,7 +2124,7 @@ realityServer.sendRequest = function (url, httpStyle, callback, body) {
                 } else {
                     // Handle error case
                     callback('err');
-                    console.log('could not load content');
+                    console.error('could not load content');
                 }
             }
         };
@@ -2193,7 +2136,7 @@ realityServer.sendRequest = function (url, httpStyle, callback, body) {
 
     } catch (e) {
         callback('err');
-        console.log('could not connect to' + url);
+        console.error('could not connect to' + url);
     }
 };
 
@@ -2459,7 +2402,6 @@ function addSharingToggle(button, objectKey, thisObject) {
             realityServer.sendRequest('/object/' + objectKey + '/disableFrameSharing/', 'GET', function (state) {
                 if (state === 'ok') {
                     thisObject.sharingEnabled = false;
-                    console.log(objectKey, thisObject.sharingEnabled);
                 }
                 realityServer.update();
             });
@@ -2467,7 +2409,6 @@ function addSharingToggle(button, objectKey, thisObject) {
             realityServer.sendRequest('/object/' + objectKey + '/enableFrameSharing/', 'GET', function (state) {
                 if (state === 'ok') {
                     thisObject.sharingEnabled = true;
-                    console.log(objectKey, thisObject.sharingEnabled);
                 }
                 realityServer.update();
             });
@@ -2477,24 +2418,20 @@ function addSharingToggle(button, objectKey, thisObject) {
 
 function addExpandedToggle(button, objectKey, thisObject) {
     button.addEventListener('click', function () {
-        console.log('toggle expanded');
         thisObject.isExpanded = !thisObject.isExpanded;
 
         collapsedObjects[objectKey] = !(thisObject.isExpanded); // stores which ones are collapsed (opposite of expanded)
         window.localStorage.setItem('collapsedObjects', JSON.stringify(collapsedObjects));
 
-        console.log(thisObject.isExpanded);
         realityServer.update();
     });
 
     button.addEventListener('pointerenter', function () {
-        // console.log('enter ' + objectKey);
         objectKeyToHighlight = objectKey;
         highlightObject(objectKey, true);
     });
 
     button.addEventListener('pointerleave', function () {
-        // console.log('leave ' + objectKey);
         highlightObject(objectKey, false);
         objectKeyToHighlight = null;
     });
@@ -2613,7 +2550,7 @@ function setGeneratedTarget(clickedElem, callback) {
 //   clickedElem.download = 'autogen-target.jpg';
 // }
 
-function removeTarget(clickedElem, callback) {
+function _removeTarget(clickedElem, callback) {
     const objectName = clickedElem.dataset.objectName;
     realityServer.sendRequest('/content/' + objectName, 'DELETE', function (_state) {
         callback();

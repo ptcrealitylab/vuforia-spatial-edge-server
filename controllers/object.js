@@ -1,26 +1,64 @@
-
-const fs = require('fs');
+const fsProm = require('fs/promises');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
+const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
 var hardwareAPI;
 var objectsPath;
-var identityFolderName;
-var git;
-var sceneGraph;
+const {identityFolderName} = require('../constants.js');
 
-const uploadVideo = function(objectID, videoID, reqForForm, callback) {
+const {isMobile} = require('../isMobile.js');
+let git;
+if (isMobile || process.env.NODE_ENV === 'test') {
+    git = null;
+} else {
+    git = require('../libraries/gitInterface');
+}
+
+var sceneGraph;
+// needed for deleteObject
+let objectLookup;
+let activeHeartbeats;
+let knownObjects;
+let setAnchors;
+
+const deleteObject = async function(objectID) {
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        return {
+            status: 404,
+            error: `Object ${objectID} not found`
+        };
+    }
+
+    try {
+        await utilities.deleteObject(object.name, objects, objectLookup, activeHeartbeats, knownObjects, sceneGraph, setAnchors);
+    } catch (e) {
+        return {
+            status: 500,
+            error: `Error deleting object ${objectID}`
+        };
+    }
+
+    return {
+        status: 200,
+        success: true,
+        message: `Deleted object ${objectID}`
+    };
+};
+
+const uploadVideo = async function(objectID, videoID, reqForForm, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'Object ' + objectID + ' not found');
         return;
     }
     try {
-        var videoDir = utilities.getVideoDir(objectsPath, identityFolderName, globalVariables.isMobile, object.name);
+        var videoDir = utilities.getVideoDir(object.name);
 
         var form = new formidable.IncomingForm({
             uploadDir: videoDir,
@@ -28,95 +66,110 @@ const uploadVideo = function(objectID, videoID, reqForForm, callback) {
             accept: 'video/mp4'
         });
 
-        console.log('created form for video');
-
         form.on('error', function (err) {
             callback(500, err);
         });
 
         var rawFilepath = form.uploadDir + '/' + videoID + '.mp4';
 
-        if (fs.existsSync(rawFilepath)) {
-            console.log('deleted old raw file');
-            fs.unlinkSync(rawFilepath);
-        }
+        await unlinkIfExists(rawFilepath);
 
         form.on('fileBegin', function (name, file) {
             file.path = rawFilepath;
-            console.log('fileBegin loading', name, file);
         });
 
-        form.parse(reqForForm, function (err, fields) {
-
+        form.parse(reqForForm, function (err, _fields) {
             if (err) {
-                console.log('error parsing', err);
+                console.error('error parsing object video upload', err);
                 callback(500, err);
                 return;
             }
 
-            console.log('successfully created video file', err, fields);
-
             callback(200, {success: true});
         });
     } catch (e) {
-        console.warn('error parsing video upload', e);
+        console.error('error parsing video upload', e);
     }
 };
 
-function uploadMediaFile(objectID, req, callback) {
-    console.log('received media file for', objectID);
+// takes a filename (plus extension) and removes special characters and
+// anything non-alphanumeric other than hyphens, underscores, periods
+function simplifyFilename(filename) {
+    // Remove any special characters and replace them with hyphens
+    filename = filename.replace(/[^\w\s.-]/g, '-');
 
+    // Remove any leading or trailing spaces
+    filename = filename.trim();
+
+    // Replace consecutive spaces with a single hyphen
+    filename = filename.replace(/\s+/g, '-');
+
+    // Remove any consecutive hyphens or underscores
+    filename = filename.replace(/[-_]{2,}/g, '-');
+
+    // Remove any non-alphanumeric characters except hyphens, underscores, and periods
+    filename = filename.replace(/[^\w-.]/g, '');
+
+    return filename;
+}
+
+async function uploadMediaFile(objectID, req, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, 'object ' + objectID + ' not found');
         return;
     }
 
-    var mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
-    if (!fs.existsSync(mediaDir)) {
-        fs.mkdirSync(mediaDir);
-    }
+    let mediaDir = objectsPath + '/' + object.name + '/' + identityFolderName + '/mediaFiles';
+    await mkdirIfNotExists(mediaDir);
 
-    var form = new formidable.IncomingForm({
+    let form = new formidable.IncomingForm({
         uploadDir: mediaDir,
         keepExtensions: true
-        // accept: 'image/jpeg' // TODO: specify which types of images/videos it accepts?
+        // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
-
-    console.log('created form');
 
     form.on('error', function (err) {
         callback(500, err);
     });
 
-    let mediaUuid = utilities.uuidTime();
+    let mediaUuid = utilities.uuidTime(); // deprecated
+    let simplifiedFilename = null;
     let newFilepath = null;
 
-    form.on('fileBegin', function (name, file) {
-        console.log('fileBegin loading', name, file);
+    form.on('file', async function(name, file) {
+        console.log('form.file triggered');
+        // Construct new filepath
+        simplifiedFilename = simplifyFilename(file.originalFilename);
+        newFilepath = path.join(form.uploadDir, simplifiedFilename);
 
-        // rename uploaded file using mediaUuid that is passed back to client
-        let extension = path.extname(file.path);
-        newFilepath = form.uploadDir + '/' + mediaUuid + extension;
-
-        if (fs.existsSync(newFilepath)) {
-            console.log('deleted old raw file');
-            fs.unlinkSync(newFilepath);
+        // Rename the file after it's been saved
+        try {
+            await unlinkIfExists(newFilepath);
+            let currentPath = file.path ? file.path : file.filepath;
+            await fsProm.rename(currentPath, newFilepath);
+            console.log(`File renamed from ${currentPath} to ${newFilepath}`);
+        } catch (error) {
+            console.error(`Error renaming file to ${newFilepath}:`, error);
         }
-
-        console.log('upload ' + file.path + ' to ' + newFilepath);
-        file.path = newFilepath;
     });
 
-    form.parse(req, function (err, fields) {
-        console.log('successfully uploaded image', err, fields);
+    form.parse(req, function (err, _fields) {
+        if (err) {
+            console.warn('object form parse error', err);
+        }
 
-        callback(200, {success: true, mediaUuid: mediaUuid, rawFilepath: newFilepath});
+        callback(200, {
+            success: true,
+            mediaUuid: mediaUuid, // deprecated field
+            fileName: simplifiedFilename, // the "title" of the file
+            rawFilepath: newFilepath // this is the actual path to the resource
+        });
     });
 }
 
 const saveCommit = function(objectID, callback) {
-    if (globalVariables.isMobile) {
+    if (isMobile) {
         callback(500, 'saveCommit unavailable on mobile');
         return;
     }
@@ -129,7 +182,7 @@ const saveCommit = function(objectID, callback) {
 };
 
 const resetToLastCommit = function(objectID, callback) {
-    if (globalVariables.isMobile) {
+    if (isMobile) {
         callback(500, 'resetToLastCommit unavailable on mobile');
         return;
     }
@@ -150,15 +203,15 @@ const setMatrix = function(objectID, body, callback) {
     }
 
     object.matrix = body.matrix;
-    console.log('set matrix for ' + objectID + ' to ' + object.matrix.toString());
 
-    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId) {
+    if (typeof body.worldId !== 'undefined' && body.worldId !== object.worldId && !object.isWorldObject) {
         object.worldId = body.worldId;
-        console.log('object ' + object.name + ' is relative to world: ' + object.worldId);
         sceneGraph.updateObjectWorldId(objectID, object.worldId);
     }
 
-    utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+    if (object.type !== 'avatar') {
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    }
 
     sceneGraph.updateWithPositionData(objectID, null, null, object.matrix);
 
@@ -172,7 +225,7 @@ const setMatrix = function(objectID, body, callback) {
  * @param {express.Request} req
  * @param {express.Response} res
  */
-const memoryUpload = function(objectID, req, callback) {
+const memoryUpload = async function(objectID, req, callback) {
     if (!objects.hasOwnProperty(objectID)) {
         callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
         return;
@@ -186,9 +239,7 @@ const memoryUpload = function(objectID, req, callback) {
     }
 
     var memoryDir = objectsPath + '/' + obj.name + '/' + identityFolderName + '/memory/';
-    if (!fs.existsSync(memoryDir)) {
-        fs.mkdirSync(memoryDir);
-    }
+    await mkdirIfNotExists(memoryDir);
 
     var form = new formidable.IncomingForm({
         uploadDir: memoryDir,
@@ -209,17 +260,15 @@ const memoryUpload = function(objectID, req, callback) {
         }
     });
 
-    form.parse(req, function (err, fields) {
+    form.parse(req, async function (err, fields) {
         if (obj) {
             obj.memory = JSON.parse(fields.memoryInfo);
             obj.memoryCameraMatrix = JSON.parse(fields.memoryCameraInfo);
             obj.memoryProjectionMatrix = JSON.parse(fields.memoryProjectionInfo);
 
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
             utilities.actionSender({loadMemory: {object: objectID, ip: obj.ip}});
         }
-
-        console.log('successfully created memory');
 
         callback(200, {success: true});
     });
@@ -228,7 +277,7 @@ const memoryUpload = function(objectID, req, callback) {
 const deactivate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = true;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.deactivateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -239,7 +288,7 @@ const deactivate = function(objectID, callback) {
 const activate = function(objectID, callback) {
     try {
         utilities.getObject(objects, objectID).deactivated = false;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         sceneGraph.activateElement(objectID);
         callback(200, 'ok');
     } catch (e) {
@@ -254,7 +303,7 @@ const setVisualization = function(objectID, vis, callback) {
     }
     try {
         object.visualization = vis;
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         callback(200, 'ok');
     } catch (e) {
         callback(500, {success: false, error: e.message});
@@ -263,14 +312,8 @@ const setVisualization = function(objectID, vis, callback) {
 
 // request a zip-file with the object stored inside
 // ****************************************************************************************************************
-const zipBackup = function(objectId, req, res) {
-    if (globalVariables.isMobile) {
-        res.status(500).send('zipBackup unavailable on mobile');
-        return;
-    }
-    console.log('sending zipBackup', objectId);
-
-    if (!fs.existsSync(path.join(objectsPath, objectId))) {
+const zipBackup = async function(objectId, req, res) {
+    if (!await fileExists(path.join(objectsPath, objectId))) {
         res.status(404).send('object directory for ' + objectId + 'does not exist at ' + objectsPath + '/' + objectId);
         return;
     }
@@ -288,17 +331,9 @@ const zipBackup = function(objectId, req, res) {
     zip.finalize();
 };
 
-const generateXml = function(objectID, body, callback) {
+const generateXml = async function(objectID, body, callback) {
     var msgObject = body;
     var objectName = msgObject.name;
-
-    console.log(objectID, msgObject);
-
-    console.log('support inferred aspect ratio of image targets');
-    console.log('support object targets');
-
-    // var isImageTarget = true;
-    // var targetTypeText = isImageTarget ? 'ImageTarget' : 'ObjectTarget'; // not sure if this is actually what object target XML looks like
 
     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
         '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
@@ -308,29 +343,24 @@ const generateXml = function(objectID, body, callback) {
         '   </ARConfig>';
 
     let targetDir = path.join(objectsPath, objectName, identityFolderName, 'target');
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir);
-        console.log('created directory: ' + targetDir);
-    }
+    await mkdirIfNotExists(targetDir);
 
-    console.log('am I here!');
     var xmlOutFile = path.join(targetDir, 'target.xml');
 
-    fs.writeFile(xmlOutFile, documentcreate, function (err) {
-        if (err) {
-            callback(500, 'error writing new target size to .xml file for ' + objectID);
-        } else {
-            callback(200, 'ok');
+    try {
+        await fsProm.writeFile(xmlOutFile, documentcreate);
+    } catch (err) {
+        callback(500, 'error writing new target size to .xml file for ' + objectID);
+    }
 
-            // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
-            var object = utilities.getObject(objects, objectID);
-            if (object) {
-                object.targetSize.width = parseFloat(msgObject.width);
-                object.targetSize.height = parseFloat(msgObject.height);
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
-            }
-        }
-    });
+    // TODO: update object.targetSize.width and object.targetSize.height and write to disk (if object exists yet)
+    var object = utilities.getObject(objects, objectID);
+    if (object) {
+        object.targetSize.width = parseFloat(msgObject.width);
+        object.targetSize.height = parseFloat(msgObject.height);
+        await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    }
+    callback(200, 'ok');
 };
 
 /**
@@ -368,17 +398,21 @@ const getObject = function (objectID, excludeUnpinned) {
     return filteredObject;
 };
 
-const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, identityFolderName_, git_, sceneGraph_) {
+const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, sceneGraph_,
+    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
     objectsPath = objectsPath_;
-    identityFolderName = identityFolderName_;
-    git = git_;
     sceneGraph = sceneGraph_;
+    objectLookup = objectLookup_;
+    activeHeartbeats = activeHeartbeats_;
+    knownObjects = knownObjects_;
+    setAnchors = setAnchors_;
 };
 
 module.exports = {
+    deleteObject: deleteObject,
     uploadVideo: uploadVideo,
     uploadMediaFile: uploadMediaFile,
     saveCommit: saveCommit,

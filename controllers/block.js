@@ -6,7 +6,6 @@ var objects = {};
 var blockModules;
 var globalVariables;
 var engine;
-var objectsPath;
 
 /**
  * Adds a new block with the provided blockID to the specified node.
@@ -66,9 +65,8 @@ const addNewBlock = function (objectID, frameID, nodeID, blockID, body) {
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: body.lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-        console.log('added block: ' + blockID);
         updateStatus = 'added';
     }
     return updateStatus;
@@ -92,7 +90,6 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
     if (foundNode) {
 
         delete foundNode.blocks[blockID];
-        console.log('deleted block: ' + blockID);
 
         var thisLinks = foundNode.links;
         // Make sure that no links are connected to deleted blocks
@@ -107,7 +104,7 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
             reloadNode: {object: objectID, frame: nodeID, node: nodeID},
             lastEditor: lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
         updateStatus = 'deleted: ' + blockID + ' in blocks for object: ' + objectID;
     }
     return updateStatus;
@@ -125,8 +122,6 @@ const deleteBlock = function (objectID, frameID, nodeID, blockID, lastEditor) {
 const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
     var updateStatus = 'nothing happened';
 
-    console.log('changing Position for :' + objectID + ' : ' + nodeID + ' : ' + blockID);
-
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
 
     if (foundNode) {
@@ -138,7 +133,7 @@ const postBlockPosition = function (objectID, frameID, nodeID, blockID, body) {
                 foundBlock.x = body.x;
                 foundBlock.y = body.y;
 
-                utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+                utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
                 utilities.actionSender({
                     reloadNode: {object: objectID, frame: frameID, node: nodeID},
                     lastEditor: body.lastEditor
@@ -172,13 +167,9 @@ const triggerBlockSearch = function (blockID, body, callback) {
 };
 
 const triggerBlock = function (objectID, frameID, nodeID, blockID, body) {
-    console.log('triggerBlock', objectID, frameID, nodeID, blockID, body);
     var foundNode = utilities.getNode(objects, objectID, frameID, nodeID);
     if (foundNode) {
         var block = foundNode.blocks[blockID];
-        console.log('block', block);
-        console.log('set block ' + block.type + ' (' + blockID + ') to ' + body.value);
-
         block.data[0].value = body.value;
         engine.blockTrigger(objectID, frameID, nodeID, blockID, 0, block);
     }
@@ -211,12 +202,11 @@ const getLogicBlockList = function () {
     return blockList;
 };
 
-const setup = function (objects_, blockModules_, globalVariables_, engine_, objectsPath_) {
+const setup = function (objects_, blockModules_, globalVariables_, engine_) {
     objects = objects_;
     blockModules = blockModules_;
     globalVariables = globalVariables_;
     engine = engine_;
-    objectsPath = objectsPath_;
 };
 
 module.exports = {

@@ -1,9 +1,3 @@
-// These may be needed when we add more APIs
-// const fs = require('fs');
-// const path = require('path');
-// const formidable = require('formidable');
-// const utilities = require('../libraries/utilities');
-
 // Variables populated from server.js with setup()
 var hardwareAPI;
 // These may be needed when we add more APIs
@@ -12,14 +6,12 @@ var _globalVariables;
 var sceneGraph;
 
 const getSceneGraph = function() {
-    console.log('GET /spatial/sceneGraph');
     return hardwareAPI.getSceneGraph();
 };
 
 // @todo: implement similarly to searchFrames, to return a list of all objects matching certain
 //        spatial criteria or other metadata criteria
 const searchObjects = function(queryParams, callback) {
-    console.log(queryParams);
     callback(null, {
         code: 500,
         message: 'unimplemented'
@@ -44,8 +36,6 @@ const searchObjects = function(queryParams, callback) {
  * @param callback
  */
 const searchFrames = function(queryParams, callback) {
-    console.log(queryParams);
-
     // there are a specific set of possible search query params, enumerated here:
     let maxDistance = parseFloat(queryParams.maxDistance); // in mm (e.g. 2000 = 2 meters)
 
@@ -75,7 +65,6 @@ const searchFrames = function(queryParams, callback) {
             specifiedValue: queryParams[key]
         });
     });
-    // console.log(publicDataRequirements);
 
     let validAddresses = [];
     for (let objectKey in objects) {
@@ -94,7 +83,6 @@ const searchFrames = function(queryParams, callback) {
             if (maxDistance && isClientPositionSpecified) {
                 if (worldId && worldId === thisObject.worldId) {
                     let distance = sceneGraph.getDistanceNodeToPoint(frameKey, clientX, clientY, clientZ);
-                    console.log(frameKey, distance);
                     if (distance > maxDistance) {
                         anyConditionUnsatisfied = true;
                         continue;
@@ -138,8 +126,6 @@ const searchFrames = function(queryParams, callback) {
                         }
                     }
                 }
-
-                console.log(requirement, publicData, !anyConditionUnsatisfied);
             });
 
             if (!anyConditionUnsatisfied) {

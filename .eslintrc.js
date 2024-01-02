@@ -21,16 +21,13 @@ module.exports = {
             'error',
             'unix'
         ],
-        'quotes': [
-            'warn',
-            'single'
-        ],
+        'quotes': 'off',
         'semi': [
             'warn',
             'always'
         ],
         'comma-spacing': [
-          'warn', {before: false, after: true}
+            'warn', {before: false, after: true}
         ],
         'key-spacing': 'warn',
         'keyword-spacing': 'warn',
@@ -41,8 +38,9 @@ module.exports = {
         'no-prototype-builtins': 'off',
         'no-unused-vars': ['warn', {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}],
         'no-redeclare': 'warn',
-        'no-inner-declarations': 'warn',
+        'no-inner-declarations': 'off',
         'no-extra-semi': 'warn',
         'require-atomic-updates': 'off',
+        'no-shadow': 'warn',
     }
 };

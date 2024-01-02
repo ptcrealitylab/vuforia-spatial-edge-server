@@ -6,7 +6,6 @@ var knownObjects = {};
 var socketArray = {};
 var globalVariables;
 var hardwareAPI;
-var objectsPath;
 var socketUpdater;
 var engine;
 
@@ -20,8 +19,6 @@ function getLinkData(fullEntry, wasAdded) {
     var linkAddedData = null;
 
     if (fullEntry) {
-        // console.log('getLinkData', fullEntry);
-
         var linkObjectA = fullEntry['objectA'];
         var linkObjectB = fullEntry['objectB'];
         var linkFrameA = fullEntry['frameA'];
@@ -51,9 +48,8 @@ function getLinkData(fullEntry, wasAdded) {
             nameNodeA: nodeAName,
             nameNodeB: nodeBName
         };
-
     } else {
-        console.log('thisObject does not exist');
+        console.error('thisObject does not exist');
     }
     return linkAddedData;
 }
@@ -71,8 +67,6 @@ const newLink = function (objectID, frameID, linkID, body) {
 
     var foundFrame = utilities.getFrame(objects, objectID, frameID);
     if (foundFrame) {
-        console.log('found frame to add link to');
-
         // todo the first link in a chain should carry a UUID that propagates through the entire chain each time a change is done to the chain.
         // todo endless loops should be checked by the time of creation of a new loop and not in the Engine
         body.loop = (body.objectA === body.objectB &&
@@ -81,7 +75,6 @@ const newLink = function (objectID, frameID, linkID, body) {
 
         utilities.forEachLinkInFrame(utilities.getFrame(objects, body.objectA, body.frameA), function (thisLink) {
             if (!body.loop) {
-                console.log('link already exists');
                 body.loop = (body.objectA === thisLink.objectA &&
                     body.objectB === thisLink.objectB &&
                     body.frameA === thisLink.frameA &&
@@ -95,9 +88,8 @@ const newLink = function (objectID, frameID, linkID, body) {
 
         if (!body.loop) {
             foundFrame.links[linkID] = body;
-            console.log('added link: ' + linkID);
             // write the object state to the permanent storage.
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
             // check if link is complex data type. If yes trigger engine only for this single link
             if (foundFrame.nodes.hasOwnProperty(body.nodeA)) {
@@ -113,8 +105,8 @@ const newLink = function (objectID, frameID, linkID, body) {
             socketUpdater();
 
             // notify subscribed interfaces that a new link was DELETED // TODO: make sure this is the right place for this
-            var newLink = foundFrame.links[linkID];
-            var linkAddedData = getLinkData(newLink, true);
+            var foundNewLink = foundFrame.links[linkID];
+            var linkAddedData = getLinkData(foundNewLink, true);
             if (linkAddedData) {
                 hardwareAPI.connectCall(linkAddedData.idObjectA, linkAddedData.idFrameA, linkAddedData.idNodeA, linkAddedData);
                 hardwareAPI.connectCall(linkAddedData.idObjectB, linkAddedData.idFrameB, linkAddedData.idNodeB, linkAddedData);
@@ -160,7 +152,7 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
 
         delete foundFrame.links[linkKey];
 
-        utilities.writeObjectToFile(objects, objectKey, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectKey, globalVariables.saveToDisk);
         utilities.actionSender({reloadLink: {object: objectKey, frame: frameKey}, lastEditor: editorID});
 
         // iterate over all frames in all objects to see if the destinationIp is still used by another link after this was deleted
@@ -180,7 +172,6 @@ const deleteLink = function (objectKey, frameKey, linkKey, editorID) {
             delete socketArray[destinationIp];
         }
 
-        console.log('deleted link: ' + linkKey);
         updateStatus = 'deleted: ' + linkKey + ' in object: ' + objectKey + ' frame: ' + frameKey;
     }
     return updateStatus;
@@ -213,7 +204,7 @@ const addLinkLock = function (objectKey, frameKey, linkKey, body) {
             foundLink.lockType = newLockType;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: object}});
 
             updateStatus = 'added';
@@ -247,7 +238,7 @@ const deleteLinkLock = function (objectKey, frameKey, linkKey, password) {
             foundLink.lockType = null;
 
             var object = utilities.getObject(objects, objectKey);
-            utilities.writeObjectToFile(objects, object, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, object, globalVariables.saveToDisk);
             utilities.actionSender({reloadLink: {object: objectKey}});
 
             updateStatus = 'deleted';
@@ -264,7 +255,6 @@ const setup = function (objects_, knownObjects_, socketArray_, globalVariables_,
     socketArray = socketArray_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
-    objectsPath = objectsPath_;
     socketUpdater = socketUpdater_;
     engine = engine_;
 };

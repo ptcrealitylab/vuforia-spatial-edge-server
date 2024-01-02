@@ -2,7 +2,6 @@ const winston = require('winston');
 const os = require('os');
 const { createLogger, format, transports } = require('winston');
 const { inspect } = require('util');
-const hasAnsi = require('has-ansi');
 
 const isMobile = os.platform() === 'android' || os.platform() === 'ios';
 
@@ -12,7 +11,7 @@ function isPrimitive(val) {
 }
 function formatWithInspect(val, colorize) {
     const prefix = isPrimitive(val) ? '' : '\n';
-    const shouldFormat = typeof val !== 'string' || !hasAnsi(val);
+    const shouldFormat = typeof val !== 'string';
 
     return prefix + (shouldFormat ? inspect(val, { depth: null, colors: colorize }) : val);
 }

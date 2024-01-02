@@ -53,178 +53,115 @@
  * @param {function} callback the function that is called for when the process is rendered.
  * @note the callback has the same structure then the initial prototype, however inputData has changed to outputData
  **/
+const DEBUG = false;
 
-var xml2js = require('xml2js');
-var fs = require('fs');
-var ip = require('ip');       // get the device IP address library
-var dgram = require('dgram'); // UDP Broadcasting library
-var os = require('os');
-var path = require('path');
-var request = require('request');
+const xml2js = require('xml2js');
+const fs = require('fs');
+const fsProm = require('fs/promises');
+const ip = require('ip');       // get the device IP address library
+const dgram = require('dgram'); // UDP Broadcasting library
+const path = require('path');
+const request = require('request');
 const fetch = require('node-fetch');
 const ObjectModel = require('../models/ObjectModel.js');
+const {objectsPath, beatPort} = require('../config.js');
+const {isLightweightMobile} = require('../isMobile.js');
 
-var hardwareInterfaces = {};
+const hardwareInterfaces = {};
 
-var identityFolderName = '.identity'; // TODO: get this from server.js
-var homedir = path.join(os.homedir(), 'Documents', 'spatialToolbox');
-const oldHomeDirectory = path.join(os.homedir(), 'Documents', 'realityobjects');
+const {identityFolderName} = require('../constants.js');
 
-// Default back to old realityObjects dir if it exists
-if (!fs.existsSync(homedir) &&
-    fs.existsSync(oldHomeDirectory)) {
-    homedir = oldHomeDirectory;
-}
+var hardwareIdentity = path.join(objectsPath, identityFolderName);
 
-const root = require('../getAppRootFolder');
+let socketReferences = {
+    realityEditorUpdateSocketArray: null
+};
 
-if (process.env.NODE_ENV === 'test' || os.platform() === 'android' || !fs.existsSync(path.join(os.homedir(), 'Documents'))) {
-    homedir = path.join(root, 'spatialToolbox');
-}
+let ioReference = null;
 
-var hardwareIdentity = homedir + '/.identity';
+let callbacks = {
+    triggerUDPCallbacks: null
+};
 
-exports.writeObject = function (objectLookup, folder, id) {
+exports.setup = function(_socketReferences, _ioReference, _callbacks) {
+    socketReferences = _socketReferences;
+    ioReference = _ioReference;
+    callbacks = _callbacks;
+};
+
+exports.writeObject = function writeObject(objectLookup, folder, id) {
     objectLookup[folder] = {id: id};
 };
 
-exports.readObject = function (objectLookup, folder) {
+function readObject(objectLookup, folder) {
     if (objectLookup.hasOwnProperty(folder)) {
         return objectLookup[folder].id;
     } else {
         return null;
     }
-};
+}
+exports.readObject = readObject;
 
-exports.createFolder = function (folderVar, objectsPath, debug) {
-
-    var folder = objectsPath + '/' + folderVar + '/';
+exports.createFolder = async function createFolder(folderVar) {
     var identity = objectsPath + '/' + folderVar + '/' + identityFolderName + '/';
-    if (debug) console.log('Creating folder: ' + folder);
-
-    if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(identity)) {
-        fs.mkdirSync(identity, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-    /**
-     if (!fs.existsSync(firstFrame)) {
-        fs.mkdirSync(firstFrame, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-        try {
-            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
-            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/index.html'));
-            fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(dirnameO + '/objects/' + folderVar + '/frames/' + frameVar + '/bird.png'));
-
-        } catch (e) {
-            if (debug) console.log('Could not copy source files', e);
-        }
-        //  writeObjectToFile(tempFolderName);
-    }
-     **/
+    await mkdirIfNotExists(identity, {recursive: true, mode: '0766'});
 };
 
 
-exports.createFrameFolder = function (folderVar, frameVar, dirnameO, objectsPath, debug, location) {
+exports.createFrameFolder = async function (folderVar, frameVar, dirnameO, location) {
     if (location === 'global') return;
     var folder = objectsPath + '/' + folderVar + '/';
-    var identity = folder + identityFolderName + '/';
+    // var identity = folder + identityFolderName + '/';
+    // being outside of .identity matches frameFolder route for example
     var firstFrame = folder + frameVar + '/';
-    if (debug) console.log('Creating frame folder: ' + folder);
 
-    if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(identity)) {
-        fs.mkdirSync(identity, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    if (!fs.existsSync(firstFrame)) {
-        fs.mkdirSync(firstFrame, '0766', function (err) {
-            if (err) {
-                console.error(err);
-            }
-        });
-
+    if (!await fileExists(firstFrame)) {
+        await mkdirIfNotExists(firstFrame, {recursive: true, mode: '0766'});
 
         try {
-            //   fs.createReadStream(__dirname + "/objects/object.css").pipe(fs.createWriteStream(__dirname + "/objects/" + folderVar + "/object.css"));
-            //  fs.createReadStream(dirnameO + "/libraries/objectDefaultFiles/object.js").pipe(fs.createWriteStream(dirnameO + "/objects/" + folderVar + "/object.js"));
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/index.html').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/index.html'));
             fs.createReadStream(dirnameO + '/libraries/objectDefaultFiles/bird.png').pipe(fs.createWriteStream(objectsPath + '/' + folderVar + '/' + frameVar + '/bird.png'));
-
         } catch (e) {
-            if (debug) console.error('Could not copy source files', e);
+            console.error('Could not copy source files', e);
         }
-
-        //  writeObjectToFile(tempFolderName);
     }
 };
 
+/**
+ * Recursively delete a folder and its contents
+ * @param {string} folder - path to folder
+ */
+async function rmdirIfExists(folder) {
+    if (!await fileExists(folder)) {
+        console.warn(`folder ${folder} is already not present`);
+        return;
+    }
+    try {
+        await fsProm.rmdir(folder, {recursive: true});
+    } catch (err) {
+        console.error('rmdirIfExists fs race', err);
+    }
+}
+exports.rmdirIfExists = rmdirIfExists;
 
 /**
  * Deletes a directory from the hierarchy. Intentionally limited to frames so that you don't delete something more important.
  * @param objectKey
  * @param frameKey
- * @param dirname0
  */
-exports.deleteFrameFolder = function (objectName, frameName, objectsPath) {
-
-    function deleteFolderRecursive(path) {
-        console.log('deleteFolderRecursive');
-        if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach(function (file) {
-                var curPath = path + '/' + file;
-                if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                    deleteFolderRecursive(curPath);
-                } else { // delete file
-                    fs.unlinkSync(curPath);
-                }
-            });
-            fs.rmdirSync(path);
-        }
-    }
-
-    console.log('objectName', objectName);
-    console.log('frameName', frameName);
-
+exports.deleteFrameFolder = async function (objectName, frameName) {
     var folderPath = objectsPath + '/' + objectName + '/' + frameName;
-    console.log('delete frame folder', folderPath);
 
     var acceptableFrameNames = ['gauge', 'decimal', 'graph', 'light']; // TODO: remove this restriction
     var isDeletableFrame = false;
     acceptableFrameNames.forEach(function (nameOption) {
         if (frameName.indexOf(nameOption) > -1) {
             isDeletableFrame = true;
-            console.log('it is a ' + nameOption + ' frame');
         }
     });
 
     if (isDeletableFrame) {
-        deleteFolderRecursive(folderPath);
+        await rmdirIfExists(folderPath);
     }
 };
 
@@ -248,7 +185,7 @@ exports.uuidTime = function () {
     return '_' + stampUuidTime;
 };
 
-var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
+async function getObjectIdFromTargetOrObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -257,43 +194,45 @@ var getObjectIdFromTargetOrObjectFile = function (folderName, objectsPath) {
     var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
     var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
-    if (fs.existsSync(xmlFile)) {
-        var resultXML = '';
-        xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'),
-            function (err, result) {
-                for (var first in result) {
-                    for (var secondFirst in result[first].Tracking[0]) {
-                        resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                        if (typeof resultXML === 'string' && resultXML.length === 0) {
-                            console.warn('Target file for ' + folderName + ' has empty name, ' +
-                                'and may not function correctly. Delete and re-upload target for best results.');
-                            resultXML = null;
+    if (await fileExists(xmlFile)) {
+        try {
+            let resultXML = '';
+            xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
+                function (err, result) {
+                    for (var first in result) {
+                        for (var secondFirst in result[first].Tracking[0]) {
+                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
+                            if (typeof resultXML === 'string' && resultXML.length === 0) {
+                                console.warn('Target file for ' + folderName + ' has empty name, ' +
+                                    'and may not function correctly. Delete and re-upload target for best results.');
+                                resultXML = null;
+                            }
+                            break;
                         }
                         break;
                     }
-                    break;
-                }
-            });
-
-        return resultXML;
-    } else if (fs.existsSync(jsonFile)) {
+                });
+            return resultXML;
+        } catch (e) {
+            console.error('error reading xml file', e);
+        }
+    } else if (await fileExists(jsonFile)) {
         try {
-            let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+            let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
             if (thisObject.hasOwnProperty('objectId')) {
                 return thisObject.objectId;
             } else {
                 return null;
             }
         } catch (e) {
-            console.log('error reading json file', e);
+            console.error('error reading json file', e);
         }
-    } else {
-        return null;
     }
-};
+    return null;
+}
 exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
 
-var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
+async function getAnchorIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -301,26 +240,26 @@ var getAnchorIdFromObjectFile = function (folderName, objectsPath) {
 
     var jsonFile = objectsPath + '/' + folderName + '/object.json';
 
-    if (fs.existsSync(jsonFile)) {
-        let thisObject = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        if (thisObject.hasOwnProperty('objectId')) {
-            return thisObject.objectId;
-        } else {
-            return null;
+    if (await fileExists(jsonFile)) {
+        try {
+            let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
+            if (thisObject.hasOwnProperty('objectId')) {
+                return thisObject.objectId;
+            }
+        } catch (err) {
+            console.error('Unable to read anchor id', err);
         }
-    } else {
-        return null;
     }
-};
+    return null;
+}
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
 /**
  *
- * @param folderName
- * @param objectsPath
+ * @param {string} folderName
  * @return {Array.<float>}
  */
-exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
+exports.getTargetSizeFromTarget = async function getTargetSizeFromTarget(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
@@ -333,59 +272,79 @@ exports.getTargetSizeFromTarget = function (folderName, objectsPath) {
         height: 0.3
     };
 
-    if (fs.existsSync(xmlFile)) {
-        try {
-            xml2js.Parser().parseString(fs.readFileSync(xmlFile, 'utf8'), function (err, result) {
-                let first = Object.keys(result)[0];
-                let secondFirst = Object.keys(result[first].Tracking[0])[0];
-                var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-                var sizeFloatArray = sizeString.split(' ').map(function (elt) {
-                    // TODO: this assumption makes it backwards compatible but might cause problems in the future
-                    return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-                });
-                resultXML = {
-                    width: sizeFloatArray[0],
-                    height: sizeFloatArray[1]
-                };
-            });
-        } catch (e) {
-            console.warn('error parsing xml, returning default size');
-        }
+    if (!await fileExists(xmlFile)) {
+        return resultXML;
     }
+
+    let contents;
+    try {
+        contents = await fsProm.readFile(xmlFile, 'utf8');
+    } catch (err) {
+        console.error('Unable to read xml file for target size', err);
+        return resultXML;
+    }
+
+    xml2js.Parser().parseString(contents, function (parseErr, result) {
+        try {
+            if (parseErr) {
+                throw parseErr;
+            }
+
+            let first = Object.keys(result)[0];
+            let secondFirst = Object.keys(result[first].Tracking[0])[0];
+            var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
+            if (!sizeString) {
+                return;
+            }
+            var sizeFloatArray = sizeString.split(' ').map(function (elt) {
+                // TODO: this assumption makes it backwards compatible but might cause problems in the future
+                return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
+            });
+            resultXML = {
+                width: sizeFloatArray[0],
+                height: sizeFloatArray[1]
+            };
+        } catch (err) {
+            console.error('error parsing xml', err);
+        }
+    });
 
     return resultXML;
 };
+
+
+let writeBufferList = {};
+let isWriting = false;
 
 /**
  * Saves the RealityObject as "object.json"
  * (Writes the object state to permanent storage)
  * @param {object}   objects - The array of objects
  * @param {string}   object    - The key used to look up the object in the objects array
- * @param {string}   objectsPath  - The base directory name in which an "objects" directory resides.
  * @param {boolean}   writeToFile  - Give permission to write to file.
- **/
-
-let writeBufferList = {};
-let isWriting = false;
-
-exports.writeObjectToFile = function (objects, object, objectsPath, writeToFile) {
+ */
+exports.writeObjectToFile = async function writeObjectToFile(objects, object, writeToFile) {
     if (writeToFile) {
         writeBufferList[object] = objectsPath;
     }
     // trigger write process
-    executeWrite(objects);
+    await executeWrite(objects);
 };
 
-function executeWrite(objects) {
-    console.log('execute write');
+function sleep(ms) {
+    return new Promise(res => {
+        setTimeout(res, ms);
+    });
+}
+
+async function executeWrite(objects) {
     // if write Buffer is empty, stop.
     if (Object.keys(writeBufferList).length === 0) return;
 
     if (isWriting) {
         // come back later;
-        setTimeout(function () {
-            executeWrite(objects);
-        }, 20);
+        await sleep(20);
+        await executeWrite(objects);
         return;
     }
     // block function from re-execution
@@ -393,24 +352,27 @@ function executeWrite(objects) {
 
     // copy the first item and delete it from the buffer list
     let firstKey = Object.keys(writeBufferList)[0];
-    let objectsPath = writeBufferList[firstKey];
+    let objectsPathBuffered = writeBufferList[firstKey];
     let obj = firstKey;
     delete writeBufferList[firstKey];
 
-    // prepare to write
-    var outputFilename = objectsPath + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
-    var objectData = objects[obj];
-    console.log('writing:', obj);
-    // write file
-    fs.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'), function (err) {
-        // once writeFile is done, unblock writing and loop again
+    if (!objects[obj]) { // if object was deleted while write is pending
         isWriting = false;
-        executeWrite(objects);
+        return;
+    }
 
-        if (err) {
-            console.error(err);
-        }
-    });
+    // prepare to write
+    var outputFilename = objectsPathBuffered + '/' + objects[obj].name + '/' + identityFolderName + '/object.json';
+    var objectData = objects[obj];
+    // write file
+    try {
+        await fsProm.writeFile(outputFilename, JSON.stringify(objectData, null, '\t'));
+    } catch (err) {
+        console.error('Error writing file', err);
+    }
+    // once writeFile is done, unblock writing and loop again
+    isWriting = false;
+    executeWrite(objects);
 }
 
 var crcTable = [0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
@@ -520,114 +482,153 @@ function itob62(i) {
  * @param fileArray The array that represents all files that should be checksumed
  * @return {string} checksum text
  */
-exports.generateChecksums = function (objects, fileArray) {
+exports.generateChecksums = async function generateChecksums(objects, fileArray) {
     crc16reset();
     var checksumText;
     for (var i = 0; i < fileArray.length; i++) {
-        if (fs.existsSync(fileArray[i])) {
-            checksumText = itob62(crc32(fs.readFileSync(fileArray[i])));
+        if (!await fileExists(fileArray[i])) {
+            continue;
+        }
+        try {
+            checksumText = itob62(crc32(await fsProm.readFile(fileArray[i])));
+        } catch (err) {
+            console.warn('generateChecksums: Unable to read file', err);
         }
     }
-    console.log('created Checksum', checksumText);
     return checksumText;
 };
 
+/**
+ * @return {Array<string>} all valid object folder names within objectsPath
+ */
+async function getObjectFolderList() {
+    const objectFolderListRaw = await fsProm.readdir(objectsPath);
+    const objectFolderList = [];
 
-exports.updateObject = function (objectName, objects) {
-    console.log('update ', objectName);
-
-    var objectFolderList = fs.readdirSync(homedir).filter(function (file) {
-        return fs.statSync(homedir + '/' + file).isDirectory();
-    });
-
-    try {
-        while (objectFolderList[0][0] === '.') {
-            objectFolderList.splice(0, 1);
+    for (const objectFolder of objectFolderListRaw) {
+        if (objectFolder[0] === '.') {
+            continue;
         }
-    } catch (e) {
-        console.log('no hidden files');
+        try {
+            const folderStats = await fsProm.stat(path.join(objectsPath, objectFolder));
+            if (!folderStats.isDirectory()) {
+                continue;
+            }
+        } catch (_e) {
+            if (DEBUG) {
+                console.warn('object folder already deleted', objectFolder);
+            }
+            continue;
+        }
+        objectFolderList.push(objectFolder);
     }
 
+    return objectFolderList;
+}
+exports.getObjectFolderList = getObjectFolderList;
 
-    for (var i = 0; i < objectFolderList.length; i++) {
-        if (objectFolderList[i] === objectName) {
-            var tempFolderName = getObjectIdFromTargetOrObjectFile(objectFolderList[i], homedir);
-            console.log('TempFolderName: ' + tempFolderName);
+exports.updateObject = async function updateObject(objectName, objects) {
+    var objectFolderList = await getObjectFolderList();
 
-            if (tempFolderName !== null) {
-                // fill objects with objects named by the folders in objects
+    for (const objectFolder of objectFolderList) {
+        const tempFolderName = await getObjectIdFromTargetOrObjectFile(objectFolder);
 
-                objects[tempFolderName].name = objectFolderList[i];
-
-                // try to read a saved previous state of the object
-                try {
-                    objects[tempFolderName] = JSON.parse(fs.readFileSync(homedir + '/' + objectFolderList[i] + '/' + identityFolderName + '/object.json', 'utf8'));
-                    objects[tempFolderName].ip = ip.address();
-
-                    // this is for transforming old lists to new lists
-                    if (typeof objects[tempFolderName].objectValues !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
-                        delete objects[tempFolderName].objectValues;
-                    }
-                    if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
-                        delete objects[tempFolderName].objectLinks;
-                    }
-
-
-                    if (typeof objects[tempFolderName].nodes !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
-                        delete objects[tempFolderName].nodes;
-                    }
-                    if (typeof objects[tempFolderName].links !== 'undefined') {
-                        objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
-                        delete objects[tempFolderName].links;
-                    }
-
-                    for (var frameKey in objects[tempFolderName].frames) {
-                        for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
-                            if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
-                                var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
-                                objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
-                            }
-                        }
-                    }
-
-                    // cast everything from JSON to Object, Frame, and Node classes
-                    let newObj = new ObjectModel(objects[tempFolderName].ip,
-                        objects[tempFolderName].version,
-                        objects[tempFolderName].protocol,
-                        objects[tempFolderName].objectId);
-                    newObj.setFromJson(objects[tempFolderName]);
-                    objects[tempFolderName] = newObj;
-                    // TODO: does this need to be added to sceneGraph?
-
-                    console.log('I found objects that I want to add');
-
-                } catch (e) {
-                    objects[tempFolderName].ip = ip.address();
-                    objects[tempFolderName].objectId = tempFolderName;
-                    console.log('No saved data for: ' + tempFolderName);
-                }
-
-            } else {
-                console.log(' object ' + objectFolderList[i] + ' has no marker yet');
-            }
+        if (!tempFolderName) {
+            console.warn(' object ' + objectFolder + ' has no marker yet');
             return tempFolderName;
         }
+        if (!objects[tempFolderName]) {
+            console.warn('object deleted during updateObject');
+        } else {
+            // fill objects with objects named by the folders in objects
+            objects[tempFolderName].name = objectFolder;
+        }
+
+        // try to read a saved previous state of the object
+        try {
+            objects[tempFolderName] = JSON.parse(await fsProm.readFile(objectsPath + '/' + objectFolder + '/' + identityFolderName + '/object.json', 'utf8'));
+            objects[tempFolderName].ip = ip.address();
+
+            // this is for transforming old lists to new lists
+            if (typeof objects[tempFolderName].objectValues !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].objectValues;
+                delete objects[tempFolderName].objectValues;
+            }
+            if (typeof objects[tempFolderName].objectLinks !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].objectLinks;
+                delete objects[tempFolderName].objectLinks;
+            }
+
+
+            if (typeof objects[tempFolderName].nodes !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].nodes = objects[tempFolderName].nodes;
+                delete objects[tempFolderName].nodes;
+            }
+            if (typeof objects[tempFolderName].links !== 'undefined') {
+                objects[tempFolderName].frames[tempFolderName].links = objects[tempFolderName].links;
+                delete objects[tempFolderName].links;
+            }
+
+            for (var frameKey in objects[tempFolderName].frames) {
+                for (var nodeKey in objects[tempFolderName].frames[frameKey].nodes) {
+                    if (typeof objects[tempFolderName].frames[frameKey].nodes[nodeKey].item !== 'undefined') {
+                        var tempItem = objects[tempFolderName].frames[frameKey].nodes[nodeKey].item;
+                        objects[tempFolderName].frames[tempFolderName].nodes[nodeKey].data = tempItem[0];
+                    }
+                }
+            }
+
+            // cast everything from JSON to Object, Frame, and Node classes
+            let newObj = new ObjectModel(objects[tempFolderName].ip,
+                objects[tempFolderName].version,
+                objects[tempFolderName].protocol,
+                objects[tempFolderName].objectId);
+            newObj.setFromJson(objects[tempFolderName]);
+            objects[tempFolderName] = newObj;
+            // TODO: does this need to be added to sceneGraph?
+        } catch (e) {
+            objects[tempFolderName].ip = ip.address();
+            objects[tempFolderName].objectId = tempFolderName;
+            console.warn('No saved data for: ' + tempFolderName);
+        }
+        return tempFolderName;
     }
     return null;
 };
 
-exports.loadHardwareInterface = function (hardwareInterfaceName) {
+exports.deleteObject = async function deleteObject(objectName, objects, objectLookup, _activeHeartbeats, knownObjects, sceneGraph, setAnchors) {
+    let objectFolderPath = path.join(objectsPath, objectName);
+    await rmdirIfExists(objectFolderPath);
 
+    let objectKey = readObject(objectLookup, objectName);
+
+    if (objectKey && objects[objectKey]) {
+        // remove object from tree
+        try {
+            // deconstructs frames and nodes of this object, too
+            objects[objectKey].deconstruct();
+        } catch (e) {
+            console.warn('Object exists without proper prototype: ' + objectKey, e);
+        }
+        delete objects[objectKey];
+        delete knownObjects[objectKey];
+        delete objectLookup[objectName];
+
+        sceneGraph.removeElementAndChildren(objectKey);
+    }
+
+    await setAnchors();
+
+    this.actionSender({reloadObject: {object: objectKey} });
+};
+
+exports.loadHardwareInterface = function loadHardwareInterface(hardwareInterfaceName) {
     var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
-
 
     if (!fs.existsSync(hardwareIdentity)) {
         fs.mkdirSync(hardwareIdentity, '0766', function (err) {
             if (err) {
-                console.log(err);
+                console.error('Error making directory', err);
             }
         });
     }
@@ -635,7 +636,7 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
     if (!fs.existsSync(hardwareFolder)) {
         fs.mkdirSync(hardwareFolder, '0766', function (err) {
             if (err) {
-                console.log(err);
+                console.error('Error making directory', err);
             }
         });
     }
@@ -643,21 +644,19 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
     if (!fs.existsSync(hardwareFolder + 'settings.json')) {
         fs.writeFile(hardwareFolder + 'settings.json', '', function (err) {
             if (err) {
-                console.log(err);
-            } else {
-                console.log('JSON created to ' + hardwareFolder + 'settings.json');
+                console.error('Error writing file', err);
             }
         });
     }
 
     try {
         var fileContents = fs.readFileSync(hardwareFolder + 'settings.json', 'utf8');
-        var fileContentsJson = JSON.parse(fileContents);
-        hardwareInterfaces[hardwareInterfaceName] = fileContentsJson;
-
+        hardwareInterfaces[hardwareInterfaceName] = JSON.parse(fileContents);
     } catch (e) {
-        console.log('Could not load settings.json for: ' + hardwareInterfaceName);
-        hardwareInterfaces[hardwareInterfaceName] = {};
+        console.error('Could not load settings.json for: ' + hardwareInterfaceName);
+        if (!hardwareInterfaces[hardwareInterfaceName]) {
+            hardwareInterfaces[hardwareInterfaceName] = {};
+        }
     }
 
     this.read = function (settingsName, defaultvalue) {
@@ -673,66 +672,142 @@ exports.loadHardwareInterface = function (hardwareInterfaceName) {
     return this.read;
 };
 
-const restActionSender = function (action) {
-    const { knownObjects, getIP } = require('../server');
-    const ipSet = new Set();
-    for (const [key, value] of Object.entries(knownObjects)) {
-        ipSet.add(value.ip);
+exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(hardwareInterfaceName) {
+    var hardwareFolder = hardwareIdentity + '/' + hardwareInterfaceName + '/';
+
+    mkdirIfNotExists(hardwareFolder, {recursive: true, mode: '0766'});
+
+    if (!await fileExists(hardwareFolder + 'settings.json')) {
+        try {
+            await fsProm.writeFile(hardwareFolder + 'settings.json', '{}');
+        } catch (err) {
+            console.error('Error writing file', err);
+        }
+    }
+
+    try {
+        const fileContents = await fsProm.readFile(hardwareFolder + 'settings.json', 'utf8');
+        hardwareInterfaces[hardwareInterfaceName] = JSON.parse(fileContents);
+    } catch (e) {
+        console.error('Could not load settings.json for: ' + hardwareInterfaceName);
+        if (!hardwareInterfaces[hardwareInterfaceName]) {
+            hardwareInterfaces[hardwareInterfaceName] = {};
+        }
+    }
+
+    this.read = function (settingsName, defaultvalue) {
+        if (typeof hardwareInterfaces[hardwareInterfaceName][settingsName] === 'undefined') {
+            if (typeof defaultvalue !== 'undefined')
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = defaultvalue;
+            else {
+                hardwareInterfaces[hardwareInterfaceName][settingsName] = 0;
+            }
+        }
+        return hardwareInterfaces[hardwareInterfaceName][settingsName];
+    };
+    return this.read;
+};
+
+function restActionSender(action) {
+    const { knownObjects } = require('../server');
+    const hostSet = new Set();
+    for (const knownObject of Object.values(knownObjects)) {
+        hostSet.add(knownObject.ip + ':' + knownObject.port);
     }
     const body = new URLSearchParams({
         'action': JSON.stringify(action)
     });
-    [...ipSet].map(ip => {
-        fetch(`http://${ip}:8080/action`, {
-            method: "POST",
+    [...hostSet].map(host => {
+        fetch(`http://${host}/action`, {
+            method: 'POST',
             body: body
         }).catch(err => {
-            console.warn(`restActionSender: Error sending action to ${ip} over REST API.`);
-        });;
+            if (DEBUG) {
+                console.error(`restActionSender: Error sending action to ${host} over REST API.`, err);
+            }
+        });
     });
 }
 
 /**
  * Broadcasts a JSON message over UDP
  * @param {*} action - JSON object with no specified structure, contains the message to broadcast
- * @param {number|undefined} timeToLive
- * @param {number|undefined} beatport
+ * @param {number} timeToLive
  */
-exports.actionSender = function (action, timeToLive, beatport) {
-    if (!timeToLive) timeToLive = 2;
-    if (!beatport) beatport = 52316;
-    //  console.log(action);
-
+exports.actionSender = function actionSender(action, timeToLive = 2) {
     var HOST = '255.255.255.255';
     var message;
 
     message = Buffer.from(JSON.stringify({action: action}));
-    
+
     if (message.length > 1472) {
         restActionSender(action);
         return;
     }
 
     // creating the datagram
-    var client = dgram.createSocket('udp4');
+    var client = dgram.createSocket({
+        type: 'udp4',
+        reuseAddr: true,
+    });
     client.bind(function () {
         client.setBroadcast(true);
         client.setTTL(timeToLive);
         client.setMulticastTTL(timeToLive);
     });
-    // send the datagram
-    client.send(message, 0, message.length, beatport, HOST, function (err) {
+
+    sendWithFallback(client, beatPort, HOST, {action: action}, {closeAfterSending: true});
+};
+
+/**
+ * Use this to send a UDP message over the provided client socket, with a fallback to send the message
+ * over websockets to all known clients if the network doesn't support UDP broadcasts.
+ * To use:
+ *   After setting up a `client = dgram.createSocket({type: 'udp4'})`, instead of writing client.send(...),
+ *   use utilities.sendWithFallback(client, ...)
+ * @param {dgram.Socket} client
+ * @param {number} PORT
+ * @param {string} HOST
+ * @param {Object} messageObject - e.g. {action: {reloadObject: {object, lastEditor}}} or (heartbeat) {id, ip, vn, ...}
+ * @param {{closeAfterSending: boolean, onErr: function?}} options
+ */
+function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAfterSending: true, onErr: null}) {
+    let message = Buffer.from(JSON.stringify(messageObject));
+
+    // send the datagram, or a websocket message if the datagram fails
+    client.send(message, 0, message.length, PORT, HOST, function (err) {
+        let isActionMessage = messageObject.action;
+        let isBeatMessage = messageObject.id && messageObject.ip && messageObject.vn;
+        if (isActionMessage || isBeatMessage) {
+
+            // send the message to clients on the local Wi-Fi network
+            for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
+                let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
+                ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
+            }
+
+            // send to cloud-proxied clients and other subscribing modules
+            if (callbacks.triggerUDPCallbacks) {
+                callbacks.triggerUDPCallbacks(messageObject);
+            }
+        }
+
         if (err) {
             if (err.code === 'EMSGSIZE') {
                 console.error('actionSender: UDP Message Too Large.');
-            } else {
-                console.log('You\'re not on a network. Can\'t send anything', err);
+            }
+
+            if (options.onErr) {
+                options.onErr(err);
             }
         }
-        client.close();
-    });
 
-};
+        if (options.closeAfterSending) {
+            client.close();
+        }
+    });
+}
+exports.sendWithFallback = sendWithFallback;
 
 function doesObjectExist(objects, objectKey) {
     return objects.hasOwnProperty(objectKey);
@@ -859,10 +934,11 @@ exports.getNodeAsync = getNodeAsync;
 
 /**
  * Returns node if a nodeKey is provided, otherwise the frame
- * @param objectKey
- * @param frameKey
- * @param nodeKey
- * @param callback
+ * @param {Object} objects
+ * @param {string} objectKey
+ * @param {string} frameKey
+ * @param {string} nodeKey
+ * @param {function} callback
  */
 function getFrameOrNode(objects, objectKey, frameKey, nodeKey, callback) {
     getFrameAsync(objects, objectKey, frameKey, function (error, object, frame) {
@@ -931,18 +1007,17 @@ exports.forEachLinkInFrame = forEachLinkInFrame;
 /**
  * Helper function to return the absolute path to the directory that should contain all
  * video files for the provided object name. (makes dir if necessary)
- * @param objectName
+ * @param {string} objectName
  * @return {string}
  */
-function getVideoDir(objectsPath, identityFolderName, isMobile, objectName) {
+function getVideoDir(objectName) {
     let videoDir = objectsPath; // on mobile, put videos directly in object home dir
 
     // directory differs on mobile due to inability to call mkdir
-    if (!isMobile) {
+    if (!isLightweightMobile) {
         videoDir = path.join(objectsPath, objectName, identityFolderName, 'videos');
 
         if (!fs.existsSync(videoDir)) {
-            console.log('make videoDir');
             fs.mkdirSync(videoDir);
         }
     }
@@ -959,8 +1034,8 @@ function isValidId(id) {
 
 exports.isValidId = isValidId;
 
-function goesUpDirectory(path) {
-    return path.match(/\.\./);
+function goesUpDirectory(pathStr) {
+    return pathStr.match(/\.\./);
 }
 
 exports.goesUpDirectory = goesUpDirectory;
@@ -983,7 +1058,6 @@ function deepCopy(item) {
     }
     throw new Error('Unable to deep copy this object.');
 }
-
 exports.deepCopy = deepCopy;
 
 exports.httpGet = function (url) {
@@ -1001,3 +1075,51 @@ exports.httpGet = function (url) {
         });
     });
 };
+
+/**
+ * Wrapper for  access that resolves to false when file at filePath does not
+ * exist
+ * @param {string} filePath - path to file
+ * @return {Promise<boolean>}
+ */
+function fileExists(filePath) {
+    return fsProm.access(filePath).then(() => {
+        return true;
+    }).catch(() => {
+        return false;
+    });
+}
+exports.fileExists = fileExists;
+
+/**
+ * All-in-one mkdir solution. Wraps error because TOCTOU
+ * @param {string} dirPath - path to folder
+ * @param {object?} options - options for mkdir
+ * @return {Promise<boolean>}
+ */
+async function mkdirIfNotExists(dirPath, options) {
+    if (!await fileExists(dirPath)) {
+        try {
+            await fsProm.mkdir(dirPath, options);
+        } catch (e) {
+            console.warn('mkdirIfNotExists fs race', e);
+        }
+    }
+}
+exports.mkdirIfNotExists = mkdirIfNotExists;
+
+/**
+ * All-in-one unlink solution. Wraps error because TOCTOU
+ * @param {string} filePath - path to folder
+ * @return {Promise<boolean>}
+ */
+async function unlinkIfExists(filePath) {
+    if (await fileExists(filePath)) {
+        try {
+            await fsProm.unlink(filePath);
+        } catch (e) {
+            console.warn('unlinkIfExists fs race', e);
+        }
+    }
+}
+exports.unlinkIfExists = unlinkIfExists;

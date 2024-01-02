@@ -1,5 +1,16 @@
-(function(exports) {
+// eslint-disable-next-line no-unused-vars
+/* global workerId */
 
+/**
+ * @fileOverview
+ *
+ * object.js provides the SpatialInterface API, forming a bridge between the
+ * tool and the containing user interface. Calling a method on the
+ * SpatialInterface usually calls postMessage to send a message from the tool
+ * iframe to the user interface which will then take an action on behalf of the
+ * tool.
+ */
+(function(exports) {
     /* eslint no-inner-declarations: "off" */
     // makes sure this only gets loaded once per iframe
     if (typeof exports.spatialObject !== 'undefined') {
@@ -17,12 +28,13 @@
         object: '',
         publicData: {},
         modelViewMatrix: [],
-        serverIp: '127.0.0.1',
+        serverIp: 'localhost',
         serverPort: '8080',
         matrices: {
             modelView: [],
             projection: [],
             groundPlane: [],
+            anchoredModelView: [],
             devicePose: [],
             allObjects: {}
         },
@@ -33,19 +45,41 @@
             modelView: false,
             devicePose: false,
             groundPlane: false,
+            anchoredModelView: false,
             allObjects: false
         },
+        sendCoordinateSystems: {
+            camera: false,
+            toolOrigin: false,
+            worldOrigin: false,
+            groundPlaneOrigin: false,
+            toolGroundPlaneShadow: false,
+            toolSurfaceShadow: false,
+            projectionMatrix: false
+        },
+        // enum of the possible coordinate systems that can be passed into subscribeToCoordinateSystems
+        COORDINATE_SYSTEMS: Object.freeze({
+            CAMERA: 'camera',
+            TOOL_ORIGIN: 'toolOrigin',
+            WORLD_ORIGIN: 'worldOrigin',
+            GROUND_PLANE_ORIGIN: 'groundPlaneOrigin',
+            TOOL_GROUND_PLANE_SHADOW: 'toolGroundPlaneShadow',
+            TOOL_SURFACE_SHADOW: 'toolSurfaceShadow',
+            PROJECTION_MATRIX: 'projectionMatrix'
+        }),
         sendScreenPosition: false,
         sendDeviceDistance: false,
         sendAcceleration: false,
         sendFullScreen: false,
         sendScreenObject: false,
+        sendObjectPositions: {},
         fullscreenZPosition: 0,
         sendSticky: false,
         isFullScreenExclusive: false,
         attachesTo: null,
         wasToolJustCreated: null,
         isPinned: true,
+        alwaysFaceCamera: false,
         height: '100%',
         width: '100%',
         socketIoScript: {},
@@ -69,6 +103,7 @@
             type: null},
         touchDecider: null,
         touchDeciderRegistered: false,
+        unacceptedTouchInProgress: false,
         ignoreAllTouches: false,
         // onFullScreenEjected: null,
         onload: null
@@ -88,8 +123,6 @@
 
     var sessionUuid = uuidTime(); // prevents this application from sending itself data
 
-    console.log('fullscreen reset for new frame ' + spatialObject.sendFullScreen);
-
     // adding css styles nessasary for acurate 3D transformations.
     spatialObject.style.type = 'text/css';
     spatialObject.style.innerHTML = '* {-webkit-user-select: none; -webkit-touch-callout: none;} body, html{ height: 100%; margin:0; padding:0; overflow: hidden;}';
@@ -97,6 +130,49 @@
 
     // this will be initialized once the frame creates a new SpatialInterface()
     var realityInterface = null;
+
+    /**
+     * Network configuration loaded in loadObjectSocketIO from window.location
+     * based on the /n/:networkId/s/:secret/i/:destinationId format
+     */
+    let urlObj = {
+        n: null, // Network identifier
+        i: null, // Destination identifier
+        s: null, // Network secret used for write access
+    };
+
+    /**
+     * Given a normal socket io title (message topic), adds all available
+     * network specifiers to the title.
+     *
+     * These include network id (n), secret (s), and destination id (i).
+     *
+     * For example, "/object/readPublicData" becomes
+     * "/n/asdf/s/secret/i/destId/object/readPublicData"
+     *
+     * @param {string} title
+     * @return {string} title with additional information from urlObj prepended
+     */
+    function getIoTitle (title) {
+        if (urlObj.n) {
+            if (title.charAt(0) !== '/') title = '/' + title;
+            let network = null;
+            let destinationIdentifier = null;
+            let secret = null;
+            if (urlObj.n) network = urlObj.n;
+            if (urlObj.s) secret = urlObj.s;
+            if (urlObj.i) destinationIdentifier = urlObj.i;
+
+            let returnUrl = '';
+            if (network) returnUrl += '/n/' + network;
+            if (destinationIdentifier) returnUrl += '/i/' + destinationIdentifier;
+            if (secret) returnUrl += '/s/' + secret;
+            if (title) returnUrl += title;
+            return returnUrl;
+        } else {
+            return title;
+        }
+    }
 
     /**
      * automatically injects the socket.io script into the page once the editor has posted frame info into the page
@@ -109,11 +185,31 @@
         let defaultPort = '8080';
         if (object.hasOwnProperty('port')) defaultPort = object.port;
 
+        var url = null;
+        let urlSplit = null;
+        if (parseInt(Number(defaultPort))) {
+            url = location.protocol + '//' + object.ip + ':' + defaultPort;
+        } else {
+            urlSplit = location.pathname.split('/');
+            for (let i = 0; i < urlSplit.length; i++) {
+                if (['n', 'i', 's'].includes(urlSplit[i])) {
+                    if (urlSplit[i + 1])
+                        urlObj[urlSplit[i]] = urlSplit[i + 1];
+                    i++;
+                }
+            }
+
+            url = location.protocol + '//' + object.ip + ':';
+            if (location.protocol === 'https:' || location.protocol === 'wss:') url +=  '' + 443; else url += '' + 80;
+            if (urlObj.n) url += '/n/' + urlObj.n;
+            if (urlObj.i) url += '/i/' + urlObj.i;
+            if (urlObj.s) url += '/s/' + urlObj.s;
+        }
+
         spatialObject.serverPort = defaultPort;
 
-        var url = 'http://' + object.ip + ':' + defaultPort;
         spatialObject.socketIoUrl = url;
-        script.src = url + '/socket.io/socket.io.js';
+        script.src = url + '/objectDefaultFiles/toolsocket.js';
 
         script.addEventListener('load', function() {
             if (realityInterface) {
@@ -154,8 +250,6 @@
      * Helper function that posts entire basic state of spatialObject to parent
      */
     function postAllDataToParent() {
-        console.log('check: ' + spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-
         if (typeof spatialObject.node !== 'undefined' || typeof spatialObject.frame !== 'undefined') {
             parent.postMessage(JSON.stringify(
                 {
@@ -311,6 +405,10 @@
             spatialObject.matrices.groundPlane = msgContent.groundPlaneMatrix;
         }
 
+        if (typeof msgContent.anchoredModelView !== 'undefined') {
+            spatialObject.matrices.anchoredModelView = msgContent.anchoredModelView;
+        }
+
         // receives visibility state (changes when guiState changes or frame gets unloaded due to outside of view)
         if (typeof msgContent.visibility !== 'undefined') {
             spatialObject.visibility = msgContent.visibility;
@@ -364,28 +462,50 @@
                 pageX: eventData.x,
                 pageY: eventData.y,
                 screenX: eventData.x,
-                screenY: eventData.y
+                screenY: eventData.y,
+                button: eventData.button,
             });
+
+            if (typeof eventData.projectedZ !== 'undefined') {
+                event.projectedZ = eventData.projectedZ;
+            }
+            if (typeof eventData.worldIntersectPoint !== 'undefined') {
+                event.worldIntersectPoint = eventData.worldIntersectPoint;
+            }
+            if (typeof eventData.threejsIntersectPoint !== 'undefined') {
+                event.threejsIntersectPoint = eventData.threejsIntersectPoint;
+            }
 
             // send unacceptedTouch message if this interface wants touches to pass through it
             if (spatialObject.touchDeciderRegistered && eventData.type === 'pointerdown') {
                 var touchAccepted = spatialObject.touchDecider(eventData);
                 if (!touchAccepted) {
-                    // console.log('didn\'t touch anything acceptable... propagate to next frame (if any)');
+                    // Didn't touch anything acceptable... propagate to next frame (if any)
                     postDataToParent({
                         unacceptedTouch: eventData
                     });
+                    spatialObject.unacceptedTouchInProgress = true;
                     return;
                 }
+            }
+
+            if (spatialObject.touchDeciderRegistered && spatialObject.unacceptedTouchInProgress) {
+                postDataToParent({
+                    unacceptedTouch: eventData
+                });
+                if (eventData.type === 'pointerup') {
+                    spatialObject.unacceptedTouchInProgress = false;
+                }
+                return;
             }
 
             // if it wasn't unaccepted, dispatch a touch event into the page contents
             var elt = document.elementFromPoint(eventData.x, eventData.y) || document.body;
 
-            function forElementAndParentsRecursively(elt, callback) {
-                callback(elt);
-                if (elt.parentNode && elt.parentNode.tagName !== 'HTML' && elt.parentNode !== document) {
-                    forElementAndParentsRecursively(elt.parentNode, callback);
+            function forElementAndParentsRecursively(element, callback) {
+                callback(element);
+                if (element.parentNode && element.parentNode.tagName !== 'HTML' && element.parentNode !== document) {
+                    forElementAndParentsRecursively(element.parentNode, callback);
                 }
             }
 
@@ -456,7 +576,7 @@
 
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.workerId !== 'undefined') {
-            console.log('set workerId to ' + msgContent.workerId);
+            // eslint-disable-next-line no-global-assign
             workerId = msgContent.workerId;
         }
     };
@@ -477,6 +597,8 @@
 
         var self = this;
 
+        this.spatialInterfaceLoadedCallbacks = [];
+
         /**
          * Adds an onload callback that will wait until this SpatialInterfaces receives its object/frame data
          * @param {function} callback
@@ -485,11 +607,12 @@
             if (spatialObject.object && spatialObject.frame) {
                 callback();
             } else {
-                spatialObject.onload = callback;
+                this.spatialInterfaceLoadedCallbacks.push(callback);
             }
         };
 
         this.onSpatialInterfaceLoaded = this.onRealityInterfaceLoaded;
+        spatialObject.onload = () => this.spatialInterfaceLoadedCallbacks.forEach(cb => cb());
 
         // Adds the API functions that allow a frame to send and receive socket messages (e.g. write and addReadListener)
         if (typeof io !== 'undefined') {
@@ -497,7 +620,7 @@
         } else {
             this.ioObject = {
                 on: function() {
-                    console.log('ioObject.on stub called, please don\'t');
+                    console.error('ioObject.on stub called, please don\'t');
                 }
             };
             /**
@@ -524,7 +647,6 @@
             this.read = makeIoStub('read');
             this.readRequest = makeIoStub('readRequest');
             this.writePrivateData = makeIoStub('writePrivateData');
-            this.initNode = makeIoStub('initNode');
 
             /**
              * Internet of Screens APIs
@@ -559,6 +681,8 @@
                 this.sendMessageToFrame = makeSendStub('sendMessageToFrame');
                 this.sendMessageToTool = makeSendStub('sendMessageToTool');
                 this.sendEnvelopeMessage = makeSendStub('sendEnvelopeMessage');
+                this.initNodeWithOptions = makeSendStub('initNodeWithOptions');
+                this.initNode = makeSendStub('initNode');
                 this.sendCreateNode = makeSendStub('sendCreateNode');
                 this.sendMoveNode = makeSendStub('sendMoveNode');
                 this.sendResetNodes = makeSendStub('sendResetNodes');
@@ -568,20 +692,34 @@
                 this.subscribeToDevicePoseMatrix = makeSendStub('subscribeToDevicePoseMatrix');
                 this.subscribeToAllMatrices = makeSendStub('subscribeToAllMatrices');
                 this.subscribeToGroundPlaneMatrix = makeSendStub('subscribeToGroundPlaneMatrix');
+                this.subscribeToAnchoredModelView = makeSendStub('subscribeToAnchoredModelView');
                 this.subscribeToDeviceDistance = makeSendStub('subscribeToDeviceDistance');
                 this.subscribeToAcceleration = makeSendStub('subscribeToAcceleration');
+                this.subscribeToCoordinateSystems = makeSendStub('subscribeToCoordinateSystems');
                 this.setFullScreenOn = makeSendStub('setFullScreenOn');
                 this.setFullScreenOff = makeSendStub('setFullScreenOff');
                 this.setStickyFullScreenOn = makeSendStub('setStickyFullScreenOn');
                 this.setStickinessOff = makeSendStub('setStickinessOff');
+                this.setFull2D = makeSendStub('setFull2D');
                 this.setExclusiveFullScreenOn = makeSendStub('setExclusiveFullScreenOn');
                 this.setExclusiveFullScreenOff = makeSendStub('setExclusiveFullScreenOff');
                 this.isExclusiveFullScreenOccupied = makeSendStub('isExclusiveFullScreenOccupied');
                 this.stickNodeToScreen = makeSendStub('stickNodeToScreen');
                 this.unstickNodeFromScreen = makeSendStub('unstickNodeFromScreen');
+                this.setAlwaysFaceCamera = makeSendStub('setAlwaysFaceCamera');
                 this.startVideoRecording = makeSendStub('startVideoRecording');
                 this.stopVideoRecording = makeSendStub('stopVideoRecording');
+                this.createVideoPlayback = makeSendStub('createVideoPlayback');
+                this.followCameraOnPlayback = makeSendStub('followCameraOnPlayback');
+                this.stopFollowingCamera = makeSendStub('stopFollowingCamera');
+                this.disposeVideoPlayback = makeSendStub('disposeVideoPlayback');
+                this.setVideoPlaybackCurrentTime = makeSendStub('setVideoPlaybackCurrentTime');
+                this.playVideoPlayback = makeSendStub('playVideoPlayback');
+                this.pauseVideoPlayback = makeSendStub('pauseVideoPlayback');
+                this.startVirtualizerRecording = makeSendStub('startVirtualizerRecording');
+                this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
+                this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -592,6 +730,7 @@
                 this.enableCustomInteractionMode = makeSendStub('enableCustomInteractionMode');
                 this.enableCustomInteractionModeInverted = makeSendStub('enableCustomInteractionModeInverted');
                 this.setInteractableDivs = makeSendStub('setInteractableDivs');
+                this.disableCustomInteractionMode = makeSendStub('disableCustomInteractionMode');
                 this.subscribeToFrameCreatedEvents = makeSendStub('subscribeToFrameCreatedEvents');
                 this.subscribeToFrameDeletedEvents = makeSendStub('subscribeToFrameDeletedEvents');
                 this.subscribeToToolCreatedEvents = makeSendStub('subscribeToToolCreatedEvents');
@@ -601,15 +740,47 @@
                 this.ignoreAllTouches = makeSendStub('ignoreAllTouches');
                 this.changeFrameSize = makeSendStub('changeFrameSize');
                 this.changeToolSize = makeSendStub('changeToolSize');
+                this.onWindowResized = makeSendStub('onWindowResized');
                 this.prefersAttachingToWorld = makeSendStub('prefersAttachingToWorld');
                 this.prefersAttachingToObjects = makeSendStub('prefersAttachingToObjects');
                 this.subscribeToWorldId = makeSendStub('subscribeToWorldId');
                 this.subscribeToPositionInWorld = makeSendStub('subscribeToPositionInWorld');
                 this.getPositionInWorld = makeSendStub('getPositionInWorld');
+                this.subscribeToObjectsOfType = makeSendStub('subscribeToObjectsOfType');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
+                this.promptForArea = makeSendStub('promptForArea');
+                this.getEnvironmentVariables = makeSendStub('getEnvironmentVariables');
+                this.getUserDetails = makeSendStub('getUserDetails');
+                this.getAreaTargetMesh = makeSendStub('getAreaTargetMesh');
+                this.getSpatialCursorEvent = makeSendStub('getSpatialCursorEvent');
+                this.spatialCursorToggleMeasureMode = makeSendStub('spatialCursorToggleMeasureMode'); // when open/close a measure app, change spatial cursor center visual to "+" or ".", to indicate user to add a measure point
+                this.spatialCursorToggleCrossRotation = makeSendStub('spatialCursorToggleCrossRotation'); // after not adding a measure point for a while, rotate the center "+" on spatial cursor twice, to prompt user action
+                this.spatialCursorToggleCloseLoop = makeSendStub('spatialCursorToggleCloseLoop'); // when it's able to close a loop for an area / volume, change spatial cursor center visual to "o", to indicate close loop
+                this.measureAppTurnMapUI = makeSendStub('measureAppTurnMapUI'); // measure app turn on / off the map settings UI
+                this.measureAppToggleMapUI = makeSendStub('measureAppToggleMapUI'); // measure app toggle on / off the map settings UI
+                this.measureAppSetPathPoint = makeSendStub('measureAppSetPathPoint'); // in line measure mode, set a path start / end point, send the info to user interface
+                this.measureAppSetClothPos = makeSendStub('measureAppSetClothPos'); // in area measure mode, set a cloth bounding box, send the info to user interface
+
+                this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
+                this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
+                this.profilerLogMessage = makeSendStub('profilerLogMessage');
+                this.profilerCountMessage = makeSendStub('profilerCountMessage');
+
+                this.analyticsOpen = makeSendStub('analyticsOpen');
+                this.analyticsClose = makeSendStub('analyticsClose');
+                this.analyticsFocus = makeSendStub('analyticsFocus');
+                this.analyticsBlur = makeSendStub('analyticsBlur');
+                this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
+                this.analyticsHydrate = makeSendStub('analyticsHydrate');
+
+                this.getOAuthToken = makeSendStub('getOAuthToken');
+
+                this.patchHydrate = makeSendStub('patchHydrate');
+                this.patchSetShaderMode = makeSendStub('patchSetShaderMode');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -621,15 +792,22 @@
                 this.addGlobalMessageListener = makeSendStub('addGlobalMessageListener');
                 this.addFrameMessageListener = makeSendStub('addFrameMessageListener');
                 this.addToolMessageListener = makeSendStub('addToolMessageListener');
+                this.addCoordinateSystemListener = makeSendStub('addCoordinateSystemListener');
                 this.addMatrixListener = makeSendStub('addMatrixListener');
                 this.addModelAndViewListener = makeSendStub('addModelAndViewListener');
                 this.addAllObjectMatricesListener = makeSendStub('addAllObjectMatricesListener');
-                this.addDevicePoseMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addDevicePoseMatrixListener = makeSendStub('addDevicePoseMatrixListener');
+                this.addGroundPlaneMatrixListener = makeSendStub('addGroundPlaneMatrixListener');
+                this.addAnchoredModelViewListener = makeSendStub('addAnchoredModelViewListener');
                 this.addScreenPositionListener = makeSendStub('addScreenPositionListener');
                 this.cancelScreenPositionListener = makeSendStub('cancelScreenPositionListener');
                 this.addVisibilityListener = makeSendStub('addVisibilityListener');
                 this.addInterfaceListener = makeSendStub('addInterfaceListener');
                 this.addIsMovingListener = makeSendStub('addIsMovingListener');
+                this.addMeasureAppCloseAppListener = makeSendStub('addMeasureAppCloseAppListener'); // triggered a specific measure app is closed
+                this.addMeasureAppHeightMapChangeListener = makeSendStub('addMeasureAppHeightMapChangeListener'); // triggered when user interface change to height map
+                this.addMeasureAppFindPathListener = makeSendStub('addMeasureAppFindPathListener'); // triggered when user interface pathfinding.js finds a path
+                this.addMeasureAppClothInfoListener = makeSendStub('addMeasureAppClothInfoListener'); // triggered when user interface clothSimulation.js finishes computing the cloth volume
                 // deprecated or unimplemented methods
                 this.addAccelerationListener = makeSendStub('addAccelerationListener');
             }
@@ -647,6 +825,7 @@
                 this.getProjectionMatrix = makeSendStub('getProjectionMatrix');
                 this.getModelViewMatrix = makeSendStub('getModelViewMatrix');
                 this.getGroundPlaneMatrix = makeSendStub('getGroundPlaneMatrix');
+                this.getAnchoredModelView = makeSendStub('getAnchoredModelView');
                 this.getDevicePoseMatrix = makeSendStub('getDevicePoseMatrix');
                 this.getAllObjectMatrices = makeSendStub('getAllObjectMatrices');
                 this.getUnitValue = makeSendStub('getUnitValue');
@@ -680,8 +859,6 @@
             this[pendingSend.name].apply(this, pendingSend.args);
         }
         this.pendingSends = [];
-
-        // console.log('All non-socket APIs are loaded and injected into the object.js API');
     };
 
     SpatialInterface.prototype.injectSocketIoAPI = function() {
@@ -697,7 +874,6 @@
 
         // reload a frame if its socket reconnects
         this.ioObject.on('reconnect', function() {
-            console.log('reconnect');
             window.location.reload();
 
             // notify the containing application that a frame socket reconnected, for additional optional behavior (e.g. make the screen reload)
@@ -712,14 +888,15 @@
             }
         });
 
+        this.ioObject.on('close', function() {});
+
         /**
          * Subscribes this socket to data values being written to nodes on this frame
          */
         this.sendRealityEditorSubscribe = function () {
             var timeoutFunction = function() {
                 if (spatialObject.object) {
-                    // console.log('emit sendRealityEditorSubscribe');
-                    self.ioObject.emit('/subscribe/realityEditor', JSON.stringify({
+                    self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
                         object: spatialObject.object,
                         frame: spatialObject.frame,
                         protocol: spatialObject.protocol
@@ -755,7 +932,7 @@
             }
 
             if (self.oldNumberList[node] !== value || forceWrite) {
-                self.ioObject.emit('object', JSON.stringify({
+                self.ioObject.emit(getIoTitle('object'), JSON.stringify({
                     object: spatialObject.object,
                     frame: spatialObject.frame,
                     node: spatialObject.frame + node,
@@ -771,6 +948,7 @@
          * @param {function} callback
          */
         this.addReadListener = function (node, callback) {
+            // TODO: add getIoTitle?
             self.ioObject.on('object', function (msg) {
                 var thisMsg = JSON.parse(msg);
                 if (typeof thisMsg.node !== 'undefined') {
@@ -791,7 +969,6 @@
          * @return {*}
          */
         this.readPublicData = function (node, valueName, value) {
-            console.log(spatialObject.publicData);
             if (!value)  value = 0;
 
             if (typeof spatialObject.publicData[node] === 'undefined') {
@@ -815,12 +992,13 @@
          * @param {function} callback
          */
         this.addReadPublicDataListener = function (node, valueName, callback) {
+            // TODO: add getIoTitle?
             self.ioObject.on('object/publicData', function (msg) {
                 var thisMsg = JSON.parse(msg);
 
                 if (typeof thisMsg.sessionUuid !== 'undefined') {
                     if (thisMsg.sessionUuid === sessionUuid) {
-                        console.log('ignoring message sent by self (publicData)');
+                        // Ignoring message sent by self (publicData)
                         return;
                     }
                 }
@@ -885,7 +1063,7 @@
 
             spatialObject.publicData[node][valueName] = value;
 
-            this.ioObject.emit('object/publicData', JSON.stringify({
+            this.ioObject.emit(getIoTitle('object/publicData'), JSON.stringify({
                 object: spatialObject.object,
                 frame: spatialObject.frame,
                 node: spatialObject.frame + node,
@@ -912,7 +1090,7 @@
          */
         this.reloadPublicData = function() {
             // reload public data when it becomes visible
-            this.ioObject.emit('/subscribe/realityEditorPublicData', JSON.stringify({object: spatialObject.object, frame: spatialObject.frame}));
+            this.ioObject.emit(getIoTitle('/subscribe/realityEditorPublicData'), JSON.stringify({object: spatialObject.object, frame: spatialObject.frame}));
         };
 
         // Routing the messages via Server for Screen
@@ -920,12 +1098,13 @@
             spatialObject.messageCallBacks.screenObjectCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenObject !== 'undefined') {
-                    self.ioObject.emit('/object/screenObject', JSON.stringify(msgContent.screenObject));
+                    self.ioObject.emit(getIoTitle('/object/screenObject'), JSON.stringify(msgContent.screenObject));
                 }
             };
         };
 
         this.addScreenObjectReadListener = function () {
+            // TODO: add getIoTitle?
             self.ioObject.on('/object/screenObject', function (msg) {
                 if (spatialObject.visibility !== 'visible') return;
                 var thisMsg = JSON.parse(msg);
@@ -960,49 +1139,12 @@
             var thisItem = {};
             thisItem[valueName] = value;
 
-            this.ioObject.emit('object/privateData', JSON.stringify({
+            this.ioObject.emit(getIoTitle('object/privateData'), JSON.stringify({
                 object: spatialObject.object,
                 frame: spatialObject.frame,
                 node: spatialObject.frame + node,
                 privateData: thisItem
             }));
-        };
-
-        /**
-         * Declares a new node that should be created for this frame.
-         * @param {string} name - required
-         * @param type - required. (default type should be "node")
-         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
-         * @param {number|undefined} scaleFactor - optional. defaults to 1
-         * @param {number|undefined} defaultValue - optional. defaults to 0
-         */
-        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
-            if (typeof name === 'undefined' || typeof type === 'undefined') {
-                console.error('initNode must specify a name and a type');
-            }
-            var nodeData = {
-                name: name,
-                type: type
-            };
-            if (typeof x !== 'undefined') {
-                nodeData.x = x;
-            }
-            if (typeof y !== 'undefined') {
-                nodeData.y = y;
-            }
-            if (typeof scaleFactor !== 'undefined') {
-                nodeData.scaleFactor = scaleFactor;
-            }
-            if (typeof defaultValue !== 'undefined') {
-                nodeData.defaultValue = defaultValue;
-            }
-
-            postDataToParent({
-                initNode: {
-                    nodeData: nodeData
-                }
-            });
         };
 
         /**
@@ -1012,7 +1154,7 @@
          * @param {string} node - node name
          */
         this.readRequest = function (node) {
-            this.ioObject.emit('/object/readRequest', JSON.stringify({object: spatialObject.object, frame: spatialObject.frame, node: spatialObject.frame + node}));
+            this.ioObject.emit(getIoTitle('/object/readRequest'), JSON.stringify({object: spatialObject.object, frame: spatialObject.frame, node: spatialObject.frame + node}));
         };
 
         /**
@@ -1031,8 +1173,6 @@
             }
         };
 
-        console.log('socket.io is loaded and injected into the object.js API');
-
         for (var i = 0; i < this.pendingIos.length; i++) {
             var pendingIo = this.pendingIos[i];
             this[pendingIo.name].apply(this, pendingIo.args);
@@ -1048,8 +1188,6 @@
         };
 
         this.sendMessageToFrame = function (frameUuid, msgContent) {
-            // console.log(spatialObject.frame + ' is sending a message to ' + frameId);
-
             postDataToParent({
                 sendMessageToFrame: {
                     sourceFrame: spatialObject.frame,
@@ -1067,24 +1205,60 @@
             });
         };
 
-        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, noDuplicate) {
-            var data = {
-                name: name,
-                x: x,
-                y: y
-            };
-            if (typeof attachToGroundPlane !== 'undefined') {
-                data.attachToGroundPlane = attachToGroundPlane;
+        /**
+         * Updated API to init a node. initNode and sendCreateNode invoke this.
+         * @param {string} name
+         * @param {Object} options
+         */
+        this.initNodeWithOptions = function(name, options = {}) {
+            if (typeof name === 'undefined') {
+                console.error('initNode must specify a name');
+                return;
             }
-            if (typeof nodeType !== 'undefined') {
-                data.nodeType = nodeType;
-            }
-            if (typeof noDuplicate !== 'undefined') {
-                data.noDuplicate = noDuplicate;
-            }
+
+            const {
+                type = 'node',
+                x,
+                y,
+                scaleFactor,
+                defaultValue,
+                attachToGroundPlane
+            } = options;
+
+            let nodeData = { name, type, x, y, scaleFactor, defaultValue, attachToGroundPlane };
+
             postDataToParent({
-                createNode: data
+                initNode: {
+                    nodeData: nodeData
+                }
             });
+        };
+
+        /**
+         * @deprecated - use initNodeWithOptions instead
+         * Declares a new node that should be created for this frame.
+         * @param {string} name - required
+         * @param type - required. (default type should be "node")
+         * @param {number|undefined} x - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} y - optional. defaults to random between (-100, 100)
+         * @param {number|undefined} scaleFactor - optional. defaults to 1
+         * @param {number|undefined} defaultValue - optional. defaults to 0
+         */
+        this.initNode = function(name, type, x, y, scaleFactor, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type, x, y, scaleFactor, defaultValue });
+        };
+
+        /**
+         * @deprecated – use initNodeWithOptions instead
+         */
+        this.sendCreateNode = function (name, x, y, attachToGroundPlane, nodeType, _noDuplicate, defaultValue) {
+            if (typeof name === 'undefined' || typeof type === 'undefined') {
+                console.error('initNode must specify a name and a type');
+            }
+            this.initNodeWithOptions(name, { type: nodeType, x, y, attachToGroundPlane, defaultValue });
         };
 
         this.sendMoveNode = function (name, x, y) {
@@ -1127,6 +1301,55 @@
             });
         };
 
+        let numCoordSystemCallbacks = 0;
+        let defaultCoordinateSubscriptions = [
+            spatialObject.COORDINATE_SYSTEMS.CAMERA,
+            spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX,
+            spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN
+        ];
+
+        /**
+         * Updated API for subscribing to three.js camera and other coordinate systems.
+         * Use this instead of subscribeToMatrix and addMatrixListener/addGroundPlaneMatrixListener, which will become deprecated
+         * Callback only triggers with *changes* to the subscribed matrices, not constantly
+         * Options include:
+         * spatialObject.COORDINATE_SYSTEMS.CAMERA - the camera model matrix in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.PROJECTION_MATRIX - the camera's projection matrix
+         * spatialObject.COORDINATE_SYSTEMS.TOOL_ORIGIN - the matrix of the tool's (or tool icon's) origin in root
+         *      coordinates. includes position, rotation, and scale
+         * spatialObject.COORDINATE_SYSTEMS.WORLD_ORIGIN - the matrix of the world's origin in root coordinates
+         * spatialObject.COORDINATE_SYSTEMS.GROUND_PLANE_ORIGIN - the origin of the ground plane in root coordinates
+         * spatialObject.TOOL_GROUND_PLANE_SHADOW - the matrix of the tool projected onto the ground plane.
+         *      removes x and z components of rotation to keep it "flat" on the ground plane
+         *      allows placing content flat on the floor
+         * spatialObject.TOOL_SURFACE_SHADOW - the matrix of the tool projected onto a surface of the world mesh below it, if any.
+         *      removes x and z components of rotation to keep it "flat" relative to ground plane
+         *      allows placing things flat on tables or other surfaces, in addition to the floor
+         *      if moving something outside of the scanned area, this may not behave as intended
+         * @param {string[]} subscriptions - list of spatialObject.COORDINATE_SYSTEMS
+         * @param {function} callback
+         */
+        this.subscribeToCoordinateSystems = (subscriptions = defaultCoordinateSubscriptions, callback) => {
+            // keep track of the coordinate systems to subscribe to
+            Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
+                if (subscriptions.includes(coordinateSystemName)) {
+                    spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
+                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                }
+            });
+            // register the callback function
+            numCoordSystemCallbacks++;
+            spatialObject.messageCallBacks['coordinateSystemCall' + numCoordSystemCallbacks] = function (msgContent) {
+                if (typeof msgContent.coordinateSystems !== 'undefined') {
+                    callback(msgContent.coordinateSystems);
+                }
+            };
+            // send the subscriptions to the parent
+            postDataToParent({
+                sendCoordinateSystems: spatialObject.sendCoordinateSystems
+            });
+        };
+
         this.subscribeToScreenPosition = function() {
             spatialObject.sendScreenPosition = true;
             // postAllDataToParent();
@@ -1159,6 +1382,13 @@
             });
         };
 
+        this.subscribeToAnchoredModelView = function () {
+            spatialObject.sendMatrices.anchoredModelView = true;
+            postDataToParent({
+                sendMatrices: spatialObject.sendMatrices
+            });
+        };
+
         this.subscribeToDeviceDistance = function (callback) {
             spatialObject.messageCallBacks.deviceDistanceCall = function (msgContent) {
                 if (typeof msgContent.deviceDistance !== 'undefined') {
@@ -1169,6 +1399,23 @@
             spatialObject.sendDeviceDistance = true;
             postDataToParent({
                 sendDeviceDistance: spatialObject.sendDeviceDistance
+            });
+        };
+
+        let objectPositionSubscriptions = {};
+        this.subscribeToObjectsOfType = function (type, callback) {
+            if (typeof objectPositionSubscriptions[type] === 'undefined') {
+                objectPositionSubscriptions[type] = [];
+            }
+            objectPositionSubscriptions[type].push(callback);
+            spatialObject.messageCallBacks['objectSubscriptionCall_' + type] = function (msgContent) {
+                if (typeof msgContent.objectPositions !== 'undefined') {
+                    objectPositionSubscriptions[type].forEach(cb => cb(msgContent.objectPositions[type]));
+                }
+            };
+            spatialObject.sendObjectPositions[type] = true;
+            postDataToParent({
+                sendObjectPositions: spatialObject.sendObjectPositions
             });
         };
 
@@ -1183,9 +1430,6 @@
 
         this.setFullScreenOn = function(zPosition) {
             spatialObject.sendFullScreen = true;
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-            // spatialObject.height = '100%';
-            // spatialObject.width = '100%';
             if (zPosition !== undefined) {
                 spatialObject.fullscreenZPosition = zPosition;
             }
@@ -1199,9 +1443,6 @@
 
         this.setFullScreenOff = function (params) {
             spatialObject.sendFullScreen = false;
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
-            // spatialObject.height = document.body.scrollHeight;
-            // spatialObject.width = document.body.scrollWidth;
             // postAllDataToParent();
 
             var dataToPost = {
@@ -1217,12 +1458,19 @@
             postDataToParent(dataToPost);
         };
 
+        /**
+         * Removes or adds the touch overlay div from the tool, without affecting fullscreen status
+         * @param {boolean} enabled
+         */
+        this.setFull2D = function (enabled) {
+            postDataToParent({
+                full2D: enabled
+            });
+        };
+
         this.setStickyFullScreenOn = function (params) {
             spatialObject.sendFullScreen = 'sticky';
-            // console.log(spatialObject.frame + ' fullscreen = ' + spatialObject.sendFullScreen);
             spatialObject.sendSticky = true;
-            // spatialObject.height = "100%";
-            // spatialObject.width = "100%";
             // postAllDataToParent();
 
             var dataToPost = {
@@ -1233,6 +1481,9 @@
 
             if (params && typeof params.animated !== 'undefined') {
                 dataToPost.fullScreenAnimated = params.animated;
+            }
+            if (params && typeof params.full2D !== 'undefined') {
+                dataToPost.fullScreenFull2D = params.full2D;
             }
 
             postDataToParent(dataToPost);
@@ -1303,6 +1554,13 @@
             });
         };
 
+        this.setAlwaysFaceCamera = function(value) {
+            spatialObject.alwaysFaceCamera = value;
+            postDataToParent({
+                alwaysFaceCamera: value
+            });
+        };
+
         this.startVideoRecording = function() {
             postDataToParent({
                 videoRecording: true
@@ -1321,6 +1579,252 @@
             });
         };
 
+        const VideoPlaybackStates = {
+            LOADING: 'LOADING',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED'
+        };
+        const videoPlaybacks = [];
+        class VideoPlayback {
+            constructor(spatialInterface) {
+                this.spatialInterface = spatialInterface;
+                this.onStateChangeCallbacks = [];
+                this.id = Math.random().toString();
+                this.state = VideoPlaybackStates.LOADING;
+                this.playbackStartTime = 0; // Date.now()
+                this.playbackStartCurrentTime = 0; // Progress through video
+                this.videoLength = 0;
+                videoPlaybacks.push(this);
+            }
+            dispose() {
+                this.spatialInterface.disposeVideoPlayback(this.id);
+                videoPlaybacks.splice(videoPlaybacks.indexOf(this), 1);
+            }
+            get currentTime() {
+                if (this.state === VideoPlaybackStates.PAUSED) {
+                    return this.playbackStartCurrentTime;
+                } else {
+                    return (Date.now() - this.playbackStartTime + this.playbackStartCurrentTime) % this.videoLength;
+                }
+            }
+            set currentTime(currentTime) {
+                this.spatialInterface.setVideoPlaybackCurrentTime(this.id, currentTime);
+            }
+            play() {
+                this.spatialInterface.playVideoPlayback(this.id);
+            }
+            pause() {
+                this.spatialInterface.pauseVideoPlayback(this.id);
+            }
+            onStateChange(callback) {
+                this.onStateChangeCallbacks.push(callback);
+            }
+            setState(state) {
+                this.state = state;
+                this.onStateChangeCallbacks.forEach(cb => cb(state));
+            }
+            onVideoMetadata(metadata) {
+                this.videoLength = metadata.videoLength;
+            }
+        }
+
+        spatialObject.messageCallBacks.onVideoStateChange = function (msgContent) {
+            if (typeof msgContent.onVideoStateChange !== 'undefined') {
+                const videoPlayback = videoPlaybacks.find(vp => vp.id === msgContent.id);
+                videoPlayback.setState(msgContent.onVideoStateChange);
+                videoPlayback.playbackStartTime = Date.now();
+                videoPlayback.playbackStartCurrentTime = msgContent.currentTime;
+            }
+        };
+
+        spatialObject.messageCallBacks.onVideoMetadata = function (msgContent) {
+            if (typeof msgContent.onVideoMetadata !== 'undefined') {
+                videoPlaybacks.find(vp => vp.id === msgContent.id).onVideoMetadata(msgContent.onVideoMetadata);
+            }
+        };
+
+        this.createVideoPlayback = function(urls) {
+            const videoPlayback = new VideoPlayback(this);
+            postDataToParent({
+                createVideoPlayback: {
+                    id: videoPlayback.id,
+                    urls: urls,
+                    frameKey: spatialObject.frame
+                }
+            });
+            return videoPlayback;
+        };
+
+        this.followCameraOnPlayback = function followCameraOnPlayback(followDistance) {
+            postDataToParent({
+                followCameraOnPlayback: {
+                    frame: spatialObject.frame,
+                    distance: followDistance
+                }
+            });
+        };
+
+        this.stopFollowingCamera = function stopFollowingCamera() {
+            postDataToParent({
+                stopFollowingCamera: {
+                    frame: spatialObject.frame
+                }
+            });
+        };
+
+        this.disposeVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                disposeVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.setVideoPlaybackCurrentTime = function(videoPlaybackID, currentTime) {
+            postDataToParent({
+                setVideoPlaybackCurrentTime: {
+                    id: videoPlaybackID,
+                    currentTime: currentTime
+                }
+            });
+        };
+
+        this.playVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                playVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.pauseVideoPlayback = function(videoPlaybackID) {
+            postDataToParent({
+                pauseVideoPlayback: {
+                    id: videoPlaybackID
+                }
+            });
+        };
+
+        this.startVirtualizerRecording = function() {
+            postDataToParent({
+                virtualizerRecording: true
+            });
+        };
+
+        this.stopVirtualizerRecording = function(callback) {
+            spatialObject.messageCallBacks.stopVirtualizerRecording = function (msgContent) {
+                if (typeof msgContent.virtualizerRecordingData !== 'undefined') {
+                    callback(msgContent.virtualizerRecordingData.baseUrl, msgContent.virtualizerRecordingData.recordingId, msgContent.virtualizerRecordingData.deviceId);
+                }
+            };
+
+            postDataToParent({
+                virtualizerRecording: false
+            });
+        };
+
+        this.analyticsOpen = function analyticsOpen() {
+            postDataToParent({
+                analyticsOpen: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsClose = function analyticsClose() {
+            postDataToParent({
+                analyticsClose: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsFocus = function analyticsFocus() {
+            postDataToParent({
+                analyticsFocus: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        this.analyticsBlur = function analyticsBlur() {
+            postDataToParent({
+                analyticsBlur: {
+                    frame: spatialObject.frame,
+                },
+            });
+        };
+
+        /**
+         * @param {TimeRegion} displayRegion
+         */
+        this.analyticsSetDisplayRegion = function analyticsSetDisplayRegion(displayRegion) {
+            postDataToParent({
+                analyticsSetDisplayRegion: {
+                    frame: spatialObject.frame,
+                    displayRegion,
+                },
+            });
+        };
+
+        /**
+         * @param {object} analyticsData
+         */
+        this.analyticsHydrate = function analyticsHydrate(analyticsData) {
+            postDataToParent({
+                analyticsHydrate: {
+                    frame: spatialObject.frame,
+                    analyticsData,
+                },
+            });
+        };
+
+        /**
+         * Makes an OAuth request at `authorizationUrl`,
+         * Will not call `callback` on initial OAuth authentication, as the whole app gets reloaded
+         * @param {object} authorizationUrl - OAuth Authorization URL
+         * @param {string} clientId - OAuth client ID
+         * @param {function} callback - Callback function executed once OAuth flow completes
+         */
+        this.getOAuthToken = function(authorizationUrl, clientId, callback) {
+            postDataToParent({
+                getOAuthToken: {
+                    frame: spatialObject.frame,
+                    authorizationUrl,
+                    clientId
+                }
+            });
+            spatialObject.messageCallBacks.onOAuthToken = function (msgContent) {
+                if (typeof msgContent.onOAuthToken !== 'undefined') {
+                    callback(msgContent.onOAuthToken.token, msgContent.onOAuthToken.error);
+                }
+            };
+        };
+
+        /**
+         * @param {Object} serialization
+         */
+        this.patchHydrate = function patchHydrate(serialization) {
+            postDataToParent({
+                patchHydrate: {
+                    frame: spatialObject.frame,
+                    serialization,
+                },
+            });
+        };
+
+        /**
+         * @param {string} shaderMode - Part of ShaderMode enum (see remote operator addon)
+         */
+        this.patchSetShaderMode = function patchSetShaderMode(shaderMode) {
+            postDataToParent({
+                patchSetShaderMode: {
+                    frame: spatialObject.frame,
+                    shaderMode,
+                },
+            });
+        };
+
         this.getScreenshotBase64 = function(callback) {
             spatialObject.messageCallBacks.screenshotBase64 = function (msgContent) {
                 if (typeof msgContent.screenshotBase64 !== 'undefined') {
@@ -1330,6 +1834,28 @@
 
             postDataToParent({
                 getScreenshotBase64: true
+            });
+        };
+
+        /**
+         * Take a 3D snapshot, adding a new spatialPatch tool to the scene.
+         * @returns {Promise<unknown>} - returns a promise with the imageData of the RGB and Depth images.
+         */
+        this.captureSpatialSnapshot = function() {
+            postDataToParent({
+                captureSpatialSnapshot: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.captureSpatialSnapshotResult = function (msgContent) {
+                    if (typeof msgContent.spatialSnapshotData !== 'undefined') {
+                        resolve(msgContent.spatialSnapshotData);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult; // only trigger it once
+                    }
+                    if (typeof msgContent.spatialSnapshotError !== 'undefined') {
+                        reject(msgContent.spatialSnapshotError);
+                        delete spatialObject.messageCallBacks.captureSpatialSnapshotResult;
+                    }
+                };
             });
         };
 
@@ -1447,6 +1973,14 @@
         };
 
         /**
+         * Resets state from enableCustomInteractionMode and enableCustomInteractionModeInverted
+         */
+        this.disableCustomInteractionMode = function() {
+            spatialObject.customInteractionMode = false;
+            spatialObject.invertedInteractionMode = false;
+        };
+
+        /**
          * Add a callback that will be triggered anytime another new frame is created while this frame is loaded in the DOM
          * The callback will be passed the frameId (uuid of the frame) and the frame type (e.g. graph, slider, loto, etc)
          * This is useful to create relationships between frames and store the frameId for future message passing
@@ -1456,7 +1990,6 @@
             spatialObject.messageCallBacks.frameCreatedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameCreatedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the creation of frame ' + msgContent.frameCreatedEvent.frameId + ' (type ' + msgContent.frameCreatedEvent.frameType + ')');
                     callback(msgContent.frameCreatedEvent);
                 }
             };
@@ -1472,7 +2005,6 @@
             spatialObject.messageCallBacks.frameDeletedCall = function (msgContent) {
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.frameDeletedEvent !== 'undefined') {
-                    console.log(spatialObject.frame + ' learned about the deletion of frame ' + msgContent.frameDeletedEvent.frameId + ' (type ' + msgContent.frameDeletedEvent.frameType + ')');
                     callback(msgContent.frameDeletedEvent);
                 }
             };
@@ -1539,6 +2071,22 @@
 
         this.changeToolSize = this.changeFrameSize;
 
+        let windowResizedCallbackCount = 0;
+        this.onWindowResized = function(callback) {
+            windowResizedCallbackCount++;
+            spatialObject.messageCallBacks[`onWindowResizedCall${windowResizedCallbackCount}`] = (msgContent) => {
+                if (typeof msgContent.onWindowResized === 'undefined') return;
+                callback({
+                    width: msgContent.onWindowResized.width,
+                    height: msgContent.onWindowResized.height
+                });
+            };
+
+            postDataToParent({
+                sendWindowResize: true
+            });
+        };
+
         /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
          * @param {function} callback
@@ -1549,7 +2097,7 @@
                 if (spatialObject.visibility !== 'visible') return;
                 if (typeof msgContent.screenDimensions !== 'undefined') {
                     callback(msgContent.screenDimensions.width, msgContent.screenDimensions.height);
-                    delete spatialObject.messageCallBacks['screenDimensionsCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks.screenDimensionsCall; // only trigger it once
                 }
             };
 
@@ -1623,17 +2171,19 @@
             });
         };
 
+        let toolCreationCallbackCount = 0;
         this.wasToolJustCreated = function(callback) {
             if (typeof spatialObject.wasToolJustCreated === 'boolean') {
                 callback(spatialObject.wasToolJustCreated);
                 return;
             }
 
-            spatialObject.messageCallBacks.toolCreationCall = function (msgContent) {
+            let callbackName = 'toolCreationCall' + toolCreationCallbackCount;
+            spatialObject.messageCallBacks[callbackName] = function (msgContent) {
                 if (typeof msgContent.firstInitialization !== 'undefined') {
                     spatialObject.wasToolJustCreated = msgContent.firstInitialization;
                     callback(msgContent.firstInitialization);
-                    delete spatialObject.messageCallBacks['toolCreationCall']; // only trigger it once
+                    delete spatialObject.messageCallBacks[callbackName]; // only trigger it once
                 }
             };
         };
@@ -1645,9 +2195,199 @@
             });
         };
 
+        this.promptForArea = function(options) {
+            if (!options) {
+                options = {};
+            }
+            postDataToParent({promptForArea: {options: options, frameKey: spatialObject.frame}});
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.areaPromptResult = function (msgContent) {
+                    if (typeof msgContent.area != 'undefined') {
+                        if (!msgContent.canceled) {
+                            resolve(msgContent.area);
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
+                        } else {
+                            reject();
+                            delete spatialObject.messageCallBacks.areaPromptResult; // only trigger it once
+                        }
+                    }
+                };
+            });
+        };
+
         this.errorNotification = function(errorMessageText) {
             postDataToParent({
                 errorNotification: errorMessageText
+            });
+        };
+
+        this.getEnvironmentVariables = function() {
+            postDataToParent({
+                getEnvironmentVariables: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.environmentVariableResult = function (msgContent) {
+                    if (typeof msgContent.environmentVariables !== 'undefined') {
+                        resolve(msgContent.environmentVariables);
+                        delete spatialObject.messageCallBacks.environmentVariableResult; // only trigger it once
+                    }
+                };
+            });
+        };
+
+        /**
+         * Get the user's name and any other details about their session that the app knows
+         */
+        this.getUserDetails = function() {
+            postDataToParent({
+                getUserDetails: true
+            });
+            return new Promise((resolve, _reject) => {
+                spatialObject.messageCallBacks.userDetailsResult = function (msgContent) {
+                    if (typeof msgContent.userDetails !== 'undefined') {
+                        resolve(msgContent.userDetails);
+                        delete spatialObject.messageCallBacks.userDetailsResult; // only trigger it once
+                    }
+                };
+            });
+        };
+
+        this.getAreaTargetMesh = function() {
+            postDataToParent({
+                getAreaTargetMesh: true
+            });
+            return new Promise((resolve) => {
+                spatialObject.messageCallBacks.areaTargetMeshResult = function (msgContent) {
+                    if (typeof msgContent.areaTargetMesh !== 'undefined') {
+                        resolve(msgContent.areaTargetMesh);
+                        delete spatialObject.messageCallBacks.areaTargetMeshResult;
+                    }
+                };
+            });
+        };
+
+        this.getSpatialCursorEvent = function() {
+            postDataToParent({
+                getSpatialCursorEvent: true
+            });
+            return new Promise((resolve) => {
+                spatialObject.messageCallBacks.spatialCursorEventResult = function (msgContent) {
+                    if (typeof msgContent.spatialCursorEvent !== 'undefined') {
+                        resolve(msgContent.spatialCursorEvent);
+                        delete spatialObject.messageCallBacks.spatialCursorEventResult;
+                    }
+                };
+            });
+        };
+
+        // ------------------------- Profiler APIs ------------------------- //
+        // Used to measure performance or help with debugging
+        // These have no effect if the Profiling UI is not activated in the parent app
+
+        /**
+         * @param {string} processTitle - should be unique and exactly match the title used in profilerStopTimeProcess
+         * @param {*} options
+         */
+        this.profilerStartTimeProcess = function(processTitle, options = {}) {
+            postDataToParent({
+                profilerStartTimeProcess: {
+                    name: processTitle,
+                    numStopsRequired: options.numStopsRequired // if included, stop will need to be called this many times
+                }
+            });
+        };
+
+        /**
+         * Stops timing the process started by profilerStartTimeProcess
+         * @param {string} processTitle - each invocation of the same function should have a unique title, like a uuid
+         * @param {string} processCategory - to group repeated invocations, give them the same category
+         * @param {*} options
+         */
+        this.profilerStopTimeProcess = function(processTitle, processCategory, options = {}) {
+            postDataToParent({
+                profilerStopTimeProcess: {
+                    name: processTitle,
+                    category: processCategory,
+                    showMessage: options.showMessage, // print this timing on a single line in the profiler
+                    showAggregate: options.showAggregate, // print the average stats of all processes of this category
+                    displayTimeout: options.displayTimeout, // remove the log after this many ms
+                    includeCount: options.includeCount // include the # of times that processes of this category were logged
+                }
+            });
+        };
+
+        /**
+         * Logs a message to the profiler UI
+         * @param {string} message
+         * @param {*} options
+         */
+        this.profilerLogMessage = function(message, options = {}) {
+            postDataToParent({
+                profilerLogMessage: {
+                    message: message,
+                    displayTimeout: options.displayTimeout // removes the message after this many ms
+                }
+            });
+        };
+
+        /**
+         * Increments the counter for messages matching this one, and displays it in the profiler UI
+         * @param {string} message
+         */
+        this.profilerCountMessage = function(message) {
+            postDataToParent({
+                profilerCountMessage: {
+                    message: message
+                }
+            });
+        };
+
+        this.spatialCursorToggleMeasureMode = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleMeasureMode: boolean
+            });
+        };
+
+        this.spatialCursorToggleCrossRotation = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleCrossRotation: boolean
+            });
+        };
+
+        this.spatialCursorToggleCloseLoop = function(boolean) {
+            postDataToParent({
+                spatialCursorToggleCloseLoop: boolean
+            });
+        };
+
+        this.measureAppTurnMapUI = function(boolean) {
+            postDataToParent({
+                measureAppTurnMapUI: boolean
+            });
+        };
+
+        this.measureAppToggleMapUI = function() {
+            postDataToParent({
+                measureAppToggleMapUI: true
+            });
+        };
+
+        this.measureAppSetPathPoint = function(type, startPosArr) {
+            postDataToParent({
+                measureAppSetPathPoint: {
+                    type: type,
+                    point: startPosArr
+                }
+            });
+        };
+
+        this.measureAppSetClothPos = function(uuid, boundingBoxMin, boundingBoxMax) {
+            postDataToParent({
+                measureAppSetClothPos: {
+                    uuid: uuid,
+                    boundingBoxMin: boundingBoxMin,
+                    boundingBoxMax: boundingBoxMax
+                }
             });
         };
 
@@ -1667,7 +2407,8 @@
             numModelAndViewCallbacks: 0,
             numAllMatricesCallbacks: 0,
             numWorldMatrixCallbacks: 0,
-            numGroundPlaneMatrixCallbacks: 0
+            numGroundPlaneMatrixCallbacks: 0,
+            numAnchoredModelViewCallbacks: 0
         };
 
         this.addGlobalMessageListener = function(callback) {
@@ -1743,7 +2484,19 @@
             callBackCounter.numGroundPlaneMatrixCallbacks++;
             spatialObject.messageCallBacks['groundPlaneMatrixCall' + callBackCounter.numGroundPlaneMatrixCallbacks] = function (msgContent) {
                 if (typeof msgContent.groundPlaneMatrix !== 'undefined') {
-                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection);
+                    callback(msgContent.groundPlaneMatrix, spatialObject.matrices.projection, msgContent.floorOffset);
+                }
+            };
+        };
+
+        this.addAnchoredModelViewListener = function (callback) {
+            if (!spatialObject.sendMatrices.anchoredModelView) {
+                this.subscribeToAnchoredModelView();
+            }
+            callBackCounter.numAnchoredModelViewCallbacks++;
+            spatialObject.messageCallBacks['anchoredModelViewCall' + callBackCounter.numAnchoredModelViewCallbacks] = function (msgContent) {
+                if (typeof msgContent.anchoredModelView !== 'undefined') {
+                    callback(msgContent.anchoredModelView, spatialObject.matrices.projection);
                 }
             };
         };
@@ -1807,6 +2560,38 @@
                 }
             };
         };
+
+        this.addMeasureAppCloseAppListener = function(callback) {
+            spatialObject.messageCallBacks.closeAppCall = function (msgContent) {
+                if (typeof msgContent.isAppClosed !== 'undefined') {
+                    callback();
+                }
+            };
+        };
+
+        this.addMeasureAppHeightMapChangeListener = function(callback) {
+            spatialObject.messageCallBacks.heightMapCall = function (msgContent) {
+                if (typeof msgContent.isHeightMapOn !== 'undefined' && typeof msgContent.isSteepnessMapOn !== 'undefined') {
+                    callback(msgContent.isHeightMapOn, msgContent.isSteepnessMapOn);
+                }
+            };
+        };
+
+        this.addMeasureAppFindPathListener = function(callback) {
+            spatialObject.messageCallBacks.findPathCall = function (msgContent) {
+                if (typeof msgContent.pathArr !== 'undefined' && typeof msgContent.pathLength !== 'undefined') {
+                    callback(msgContent.cellSize, msgContent.pathArr, msgContent.pathLength, msgContent.offset);
+                }
+            };
+        };
+
+        this.addMeasureAppClothInfoListener = function(callback) {
+            spatialObject.messageCallBacks.clothInfoCall = function (msgContent) {
+                if (typeof msgContent.uuid !== 'undefined' && typeof msgContent.clothMesh !== 'undefined' && typeof msgContent.volume !== 'undefined' && typeof msgContent.labelPos !== 'undefined' ) {
+                    callback(msgContent.uuid, msgContent.clothMesh, msgContent.volume, msgContent.labelPos);
+                }
+            };
+        };
     };
 
     SpatialInterface.prototype.injectSetterGetterAPI = function() {
@@ -1851,6 +2636,12 @@
         this.getGroundPlaneMatrix = function () {
             if (typeof spatialObject.matrices.groundPlane !== 'undefined') {
                 return spatialObject.matrices.groundPlane;
+            } else return undefined;
+        };
+
+        this.getAnchoredModelView = function () {
+            if (typeof spatialObject.matrices.anchoredModelView !== 'undefined') {
+                return spatialObject.matrices.anchoredModelView;
             } else return undefined;
         };
 
@@ -1912,7 +2703,7 @@
         // by default, register a touch decider that ignores touches if they hit a transparent body background
         this.registerTouchDecider(function(eventData) {
             var elt = document.elementFromPoint(eventData.x, eventData.y);
-            return elt !== document.body;
+            return !(elt === document.body || elt === document.body.parentElement);
         });
 
         this.unregisterTouchDecider = function() {
@@ -1947,7 +2738,6 @@
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
-                console.log('ios socket connected.');
                 this.iosObject = io.connect(iOSHost);
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();
@@ -1957,7 +2747,13 @@
     };
 
     function isDesktop() {
-        return window.navigator.userAgent.indexOf('Mobile') === -1 || window.navigator.userAgent.indexOf('Macintosh') > -1;
+        const userAgent = window.navigator.userAgent;
+        const isWebView = userAgent.includes('Mobile') && !userAgent.includes('Safari');
+        const isIpad = /Macintosh/i.test(navigator.userAgent) &&
+            navigator.maxTouchPoints &&
+            navigator.maxTouchPoints > 1;
+
+        return !isWebView && !isIpad;
     }
 
     exports.spatialObject = spatialObject;

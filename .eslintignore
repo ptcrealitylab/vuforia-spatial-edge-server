@@ -5,4 +5,10 @@ dropzone.js
 /hardwareInterfaces/robot
 *.min.js
 /libraries/logicInterfaces.js
+/libraries/objectDefaultFiles/three
+/libraries/objectDefaultFiles/toolsocket.js
 /addons
+
+# Various paths added by test runner
+/vuforia-spatial-toolbox-userinterface
+/spatialToolbox

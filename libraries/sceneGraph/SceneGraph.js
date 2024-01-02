@@ -2,7 +2,7 @@ let SceneNode = require('./SceneNode');
 let utils = require('./utils');
 const actionSender = require('../utilities').actionSender;
 const { SceneGraphEvent, SceneGraphEventOpEnum, SceneGraphNetworkManager } = require('./SceneGraphNetworking');
-const { getIP } = require('../../server');
+const { getIP, resetObjectTimeout } = require('../../server');
 
 const EVENT_UPDATE_INTERVAL = 3000; // 3 seconds
 const FULL_UPDATE_INTERVAL = 60000; // 1 minute
@@ -73,8 +73,6 @@ class SceneGraph {
             this.addRotateX(sceneNode);
         }
 
-        console.log('added object ' + objectId + ' to scene graph (to parent: ' + this.NAMES.ROOT + ')');
-
         this.triggerUpdateCallbacks();
     }
 
@@ -107,8 +105,6 @@ class SceneGraph {
             sceneNode.setLocalMatrix(initialLocalMatrix);
         }
 
-        console.log('added frame ' + frameId + ' to scene graph (to parent: ' + objectId + ')');
-
         this.triggerUpdateCallbacks();
     }
 
@@ -137,8 +133,6 @@ class SceneGraph {
             sceneNode.setLocalMatrix(initialLocalMatrix);
         }
 
-        console.log('added node ' + nodeId + ' to scene graph (to parent: ' + frameId + ')');
-
         this.triggerUpdateCallbacks();
     }
 
@@ -158,7 +152,7 @@ class SceneGraph {
 
         // image target objects require one coordinate system rotation. ground plane requires another.
         if (groundPlaneVariation) {
-            sceneNode.setLocalMatrix(utils.makeGroundPlaneRotationX(-(Math.PI/2)));
+            sceneNode.setLocalMatrix(utils.makeGroundPlaneRotationX(-(Math.PI / 2)));
         } else {
             sceneNode.setLocalMatrix([ // transform coordinate system by rotateX
                 1,  0, 0, 0,
@@ -230,11 +224,12 @@ class SceneGraph {
         if (sceneNode) {
             if (typeof x === 'undefined' && typeof y === 'undefined' && typeof scale === 'undefined' &&
                 localMatrix && (localMatrix.toString() === sceneNode.localMatrix.toString())) {
-                // console.log('skip update.. no changes');
+                // skip update, no changes
                 return;
             }
             sceneNode.updateVehicleXYScale(x, y, scale);
             sceneNode.setLocalMatrix(localMatrix);
+            resetObjectTimeout(objectId);
             this.triggerUpdateCallbacks();
             if (this.shouldBroadcastChanges && sceneNode.broadcastRulesSatisfied()) {
                 const updatePositionEvent = SceneGraphEvent.UpdatePosition(id, localMatrix, x, y, scale);
@@ -307,7 +302,7 @@ class SceneGraph {
         let nodesToUpdate = [];
 
         // Add a placeholder element for each data entry in the serializable copy of the graph
-        for (var key in data) {
+        for (let key in data) {
             // // TODO: how to resolve conflicts? currently ignores nodes that already exist
             if (typeof this.graph[key] !== 'undefined' && !shouldUpdateConflicts) { continue; }
 
@@ -334,65 +329,65 @@ class SceneGraph {
     }
 
     handleMessage(message) {
-        const timestamp = message.timestamp;
         message.events.forEach(messageEvent => {
-            console.log(`SceneGraph.handleMessage: Received operation ${messageEvent.op}.`);
-            if (messageEvent.op != SceneGraphEventOpEnum.FULL_UPDATE) {
-                console.log(messageEvent.data);
-            }
             switch (messageEvent.op) {
-                case SceneGraphEventOpEnum.ADD_OBJECT: {
-                    var { objectId, initialLocalMatrix, needsRotateX } = messageEvent.data;
-                    this.addObject(objectId, initialLocalMatrix, needsRotateX);
-                    break;
-                }
-                case SceneGraphEventOpEnum.ADD_FRAME: {
-                    var { objectId, frameId, linkedFrame, initialLocalMatrix } = messageEvent.data;
-                    this.addFrame(objectId, frameId, linkedFrame, initialLocalMatrix);
-                    break;
-                }
-                case SceneGraphEventOpEnum.ADD_NODE: {
-                    var { objectId, frameId, nodeId, linkedNode, initialLocalMatrix } = messageEvent.data;
-                    this.addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix);
-                    break;
-                }
-                case SceneGraphEventOpEnum.REMOVE_ELEMENT: {
-                    var { id } = messageEvent.data;
-                    this.removeElementAndChildren(id);
-                    break;
-                }
-                case SceneGraphEventOpEnum.UPDATE_POSITION: {
-                    console.warn('SceneGraph.handleMessage: Need to implement timestamp-dependent position updates');
-                    var { id, localMatrix, x, y, scale } = messageEvent.data;
-                    this.updateWithPositionData(id, id, id, localMatrix, x, y, scale);
-                    break;
-                }
-                case SceneGraphEventOpEnum.UPDATE_OBJECT_WORLD_ID: {
-                    var { objectId, worldId } = messageEvent.data;
-                    this.updateObjectWorldId(objectId, worldId);
-                    break;
-                }
-                case SceneGraphEventOpEnum.DEACTIVATE_ELEMENT: {
-                    var { id } = messageEvent.data;
-                    this.deactivateElement(id);
-                    break;
-                }
-                case SceneGraphEventOpEnum.ACTIVATE_ELEMENT: {
-                    var { id } = messageEvent.data;
-                    this.activateElement(id);
-                    break;
-                }
-                case SceneGraphEventOpEnum.FULL_UPDATE: {
-                    var { serializedGraph } = messageEvent.data;
-                    this.addDataFromSerializableGraph(serializedGraph, true);
-                    break;
-                }
-                default: {
-                    console.error(`SceneGraph.handleMessage: Operation '${messageEvent.op}' is not yet implemented.`);
-                    break;
-                }
+            case SceneGraphEventOpEnum.ADD_OBJECT: {
+                const { objectId, initialLocalMatrix, needsRotateX } = messageEvent.data;
+                this.addObject(objectId, initialLocalMatrix, needsRotateX);
+                break;
+            }
+            case SceneGraphEventOpEnum.ADD_FRAME: {
+                const { objectId, frameId, linkedFrame, initialLocalMatrix } = messageEvent.data;
+                this.addFrame(objectId, frameId, linkedFrame, initialLocalMatrix);
+                break;
+            }
+            case SceneGraphEventOpEnum.ADD_NODE: {
+                const { objectId, frameId, nodeId, linkedNode, initialLocalMatrix } = messageEvent.data;
+                this.addNode(objectId, frameId, nodeId, linkedNode, initialLocalMatrix);
+                break;
+            }
+            case SceneGraphEventOpEnum.REMOVE_ELEMENT: {
+                const { id } = messageEvent.data;
+                this.removeElementAndChildren(id);
+                break;
+            }
+            case SceneGraphEventOpEnum.UPDATE_POSITION: {
+                console.warn('SceneGraph.handleMessage: Need to implement timestamp-dependent position updates');
+                const  { id, localMatrix, x, y, scale } = messageEvent.data;
+                this.updateWithPositionData(id, id, id, localMatrix, x, y, scale);
+                break;
+            }
+            case SceneGraphEventOpEnum.UPDATE_OBJECT_WORLD_ID: {
+                const { objectId, worldId } = messageEvent.data;
+                this.updateObjectWorldId(objectId, worldId);
+                break;
+            }
+            case SceneGraphEventOpEnum.DEACTIVATE_ELEMENT: {
+                const { id } = messageEvent.data;
+                this.deactivateElement(id);
+                break;
+            }
+            case SceneGraphEventOpEnum.ACTIVATE_ELEMENT: {
+                const { id } = messageEvent.data;
+                this.activateElement(id);
+                break;
+            }
+            case SceneGraphEventOpEnum.FULL_UPDATE: {
+                const { serializedGraph } = messageEvent.data;
+                this.addDataFromSerializableGraph(serializedGraph, true);
+                break;
+            }
+            default: {
+                console.error(`SceneGraph.handleMessage: Operation '${messageEvent.op}' is not yet implemented.`);
+                break;
+            }
             }
         });
+    }
+
+    clearIntervals() {
+        clearInterval(this.eventUpdateInterval);
+        clearInterval(this.fullUpdateInterval);
     }
 }
 
