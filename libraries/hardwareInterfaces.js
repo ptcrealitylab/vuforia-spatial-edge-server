@@ -17,13 +17,15 @@
  * You should take a look at /hardwareInterfaces/emptyExample/index.js to get started.
  */
 
-var path = require('path');
-var fs = require('fs');
-var utilities = require('./utilities');
+const path = require('path');
+const fsProm = require('fs/promises');
+const utilities = require('./utilities');
 const Node = require('../models/Node.js');
 const Frame = require('../models/Frame.js');
 const ObjectModel = require('../models/ObjectModel.js');
 const objectController = require('../controllers/object.js');
+const availableModules = require('./availableModules.js');
+const {identityFolderName, protocol, version} = require('../constants.js');
 
 //global variables, passed through from server.js
 var objects = {};
@@ -32,15 +34,13 @@ var knownObjects; // needed to check if sockets are still used when we delete li
 var socketArray; // needed to delete sockets when links are removed
 var globalVariables;
 var dirnameO;
-var objectsPath;
+const {objectsPath} = require('../config.js');
 var nodeTypeModules;
 // eslint-disable-next-line no-unused-vars
 var blockModules;
 var services;
-var version;
-var protocol;
 var serverPort;
-var callback;
+let dataCallback;
 var actionCallback;
 var publicDataCallBack;
 var writeObjectCallback;
@@ -115,7 +115,7 @@ exports.write = function (object, tool, node, value, mode, unit, unitMin, unitMa
                 thisData.unitMin = unitMin;
                 thisData.unitMax = unitMax;
                 //callback is objectEngine in server.js. Notify data has changed.
-                callback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
+                dataCallback(objectKey, frameUuid, nodeUuid, thisData, objects, nodeTypeModules);
             }
         }
     }
@@ -143,11 +143,12 @@ exports.writePublicData = function (object, tool, node, dataObject, data) {
  * @param {string} type The name of your hardware interface (i.e. what you put in the type parameter of addIO())
  **/
 exports.clearObject = function (objectUuid, toolUuid) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(objectUuid, objectsPath);
-    if (objectID) {
+    const objectID = utilities.readObject(objectLookup, objectUuid);
+    if (objectID && objects[objectID] && objects[objectID].frames &&
+        objects[objectID].frames[objectID] &&
+        objects[objectID].frames[objectID].nodes) {
         for (var key in objects[objectID].frames[objectID].nodes) {
             if (!hardwareObjects[objectUuid].nodes.hasOwnProperty(key)) {
-                console.log('Deleting: ' + objectID + '   ' + objectID + '   ' + key);
                 try {
                     objects[objectID].frames[toolUuid].nodes[key].deconstruct();
                 } catch (e) {
@@ -158,11 +159,10 @@ exports.clearObject = function (objectUuid, toolUuid) {
         }
     }
     //TODO: clear links too
-    console.log('object is all cleared');
 };
 
 exports.removeAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
@@ -229,7 +229,7 @@ var deleteLinksToAndFromNode = function (objectUuid, toolUuid, nodeUuid) {
 };
 
 exports.reloadNodeUI = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     actionCallback({reloadObject: {object: objectID}});
     writeObjectCallback(objectID);
 };
@@ -266,7 +266,6 @@ exports.getDistanceOneToMany = function (id1, ids) {
     distances[id1] = {};
     ids.forEach(function (id2) {
         let computedDistance = compiledGraph.getDistanceBetween(id1, id2);
-        // console.log(computedDistance);
         distances[id1][id2] = computedDistance;
     });
     return distances;
@@ -298,7 +297,7 @@ exports.getAllTools = getAllTools_;
 exports.getAllFrames = getAllTools_;
 
 exports.getAllNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -317,7 +316,7 @@ exports.getAllNodes = function (object, tool) {
 };
 
 exports.getAllLinksToNodes = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
 
     // lookup object properties using name
@@ -404,9 +403,13 @@ exports.triggerUDPCallbacks = function (msgContent) {
     });
 };
 
+exports.actionSender = function (action, timeToLive, beatport) {
+    utilities.actionSender(action, timeToLive, beatport);
+};
+
+
 exports.clearTool = function (object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    console.log('remove set tool');
+    const objectID = utilities.readObject(objectLookup, object);
 
     var frameUuid = objectID + tool;
 
@@ -422,9 +425,7 @@ exports.clearTool = function (object, tool) {
 };
 
 exports.setTool = function (object, tool, newTool, dirName) {
-
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    console.log('set new tool: ', newTool);
+    const objectID = utilities.readObject(objectLookup, object);
 
     var frameUuid = objectID + tool;
 
@@ -473,18 +474,14 @@ exports.setTool = function (object, tool, newTool, dirName) {
  **/
 
 exports.addNode = function (object, tool, node, type, position) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    console.log('hardwareInterfaces.addNode objectID: ', objectID, object, objectsPath);
-
+    let objectID = utilities.readObject(objectLookup, object);
     if (!objectID) {
-        console.log('Creating new object for hardware node', object);
-
         var folder = path.join(objectsPath, object);
         var identityPath = path.join(folder, '.identity');
         var jsonFilePath = path.join(identityPath, 'object.json');
         objectID = object + utilities.uuidTime();
 
-        utilities.createFolder(object, objectsPath, globalVariables.debug);
+        utilities.createFolder(object); // todo may need to `await` this
 
         // create a new anchor object
         objects[objectID] = new ObjectModel(services.ip, version, protocol, objectID);
@@ -503,15 +500,11 @@ exports.addNode = function (object, tool, node, type, position) {
         utilities.writeObject(objectLookup, object, objectID);
 
         if (globalVariables.saveToDisk) {
-            fs.writeFileSync(jsonFilePath, JSON.stringify(objects[objectID], null, 4), function (err) {
-                if (err) {
-                    console.log('anchor object save error', err);
-                } else {
-                    // console.log('JSON saved to ' + jsonFilePath);
-                }
+            fsProm.writeFile(jsonFilePath, JSON.stringify(objects[objectID], null, 4)).catch(err => {
+                console.error('anchor object save error', err);
             });
         } else {
-            console.log('I am not allowed to save');
+            console.warn('Server is not allowed to save to disk');
         }
     }
 
@@ -525,9 +518,9 @@ exports.addNode = function (object, tool, node, type, position) {
 
             if (!objects[objectID].frames.hasOwnProperty(frameUuid)) {
                 objects[objectID].frames[frameUuid] = new Frame(objectID, frameUuid);
-                utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, 'local');
+                utilities.createFrameFolder(object, tool, dirnameO, 'local'); // todo maybe await
             } else {
-                utilities.createFrameFolder(object, tool, dirnameO, objectsPath, globalVariables.debug, objects[objectID].frames[frameUuid].location);
+                utilities.createFrameFolder(object, tool, dirnameO, objects[objectID].frames[frameUuid].location); // todo maybe await
             }
             if (!objects[objectID].frames[frameUuid].hasOwnProperty('nodes')) {
                 objects[objectID].frames[frameUuid].nodes = {};
@@ -573,7 +566,7 @@ exports.addNode = function (object, tool, node, type, position) {
 };
 
 exports.renameNode = function (object, tool, oldNode, newNode) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             var frameUUID = objectID + tool;
@@ -593,7 +586,6 @@ exports.renameNode = function (object, tool, oldNode, newNode) {
         }
     }
     actionCallback({reloadObject: {object: objectID, frame: frameUUID}});
-    objectID = undefined;
 };
 
 exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
@@ -605,7 +597,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
     if (loyalty !== undefined) thisLoyalty = 'object';
 
 
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -632,7 +624,7 @@ exports.moveNode = function (object, tool, node, x, y, scale, matrix, loyalty) {
 };
 
 exports.removeNode = function (object, tool, node) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
     if (objectID) {
@@ -654,7 +646,7 @@ exports.removeNode = function (object, tool, node) {
 };
 
 exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGroundPlane) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
@@ -662,9 +654,7 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
                 if (objects[objectID].frames[frameID].nodes.hasOwnProperty(nodeID)) {
-
                     objects[objectID].frames[frameID].nodes[nodeID].attachToGroundPlane = shouldAttachToGroundPlane;
-                    console.log('Attached node ' + node + ' to ground plane');
                 }
             }
         }
@@ -672,12 +662,50 @@ exports.attachNodeToGroundPlane = function (object, tool, node, shouldAttachToGr
 };
 
 exports.pushUpdatesToDevices = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     actionCallback({reloadObject: {object: objectID}});
 };
 
+exports.generateFrame = function (objectName, frameType, relativeMatrix) {
+    const objectID = utilities.readObject(objectLookup, objectName);
+
+    if (!objectID || !objects.hasOwnProperty(objectID)) {
+        console.warn('The object ' + objectName + ' doesn\'t exist.. cannot generateFrame');
+        return;
+    }
+
+    let object = utilities.getObject(objects, objectID);
+
+    if (!object.frames) {
+        object.frames = {};
+    }
+
+    let frameKey = objectID + frameType + utilities.uuidTime();
+    let newFrame = new Frame(objectID, frameKey);
+    newFrame.name = frameType;
+    newFrame.location = 'global';
+    newFrame.src = frameType;
+
+    if (typeof relativeMatrix !== 'undefined' && Array.isArray(relativeMatrix) && relativeMatrix.length === 16 && typeof relativeMatrix[0] === 'number') {
+        newFrame.ar.matrix = relativeMatrix;
+    }
+
+    object.frames[frameKey] = newFrame;
+
+    utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk); // async not awaited
+
+    // sceneGraph.addFrame(objectKey, frameKey, newFrame, newFrame.ar.matrix);
+
+    // notifies any open screens that a new frame was added
+    // hardwareAPI.runFrameAddedCallbacks(objectKey, newFrame);
+
+    this.pushUpdatesToDevices(objectName);
+
+    return newFrame;
+};
+
 exports.activate = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = false;
@@ -686,18 +714,16 @@ exports.activate = function (object) {
 };
 
 exports.deactivate = function (object) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
-    console.log('hardwareInterfaces.deactivate');
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             objects[objectID].deactivated = true;
-
         }
     }
 };
 
 exports.hasTool = function(object, tool) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objectID) {
         if (objects.hasOwnProperty(objectID)) {
             let toolId = objectID + tool;
@@ -707,8 +733,8 @@ exports.hasTool = function(object, tool) {
     return false;
 };
 
-exports.getObjectIdFromObjectName = function (object) {
-    return utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+exports.getObjectIdFromObjectName = async function (object) {
+    return await utilities.getObjectIdFromTargetOrObjectFile(object);
 };
 
 exports.getObjectNameFromObjectId = function (objectId) {
@@ -723,9 +749,28 @@ exports.getNodeNameFromNodeId = function (objectId, toolId, nodeId) {
     return objects[objectId].frames[toolId].nodes[nodeId].name;
 };
 
+exports.getWorldObjects = function () {
+    let worldObjects = [];
+    Object.keys(objects).forEach(function(objectId) {
+        let object = objects[objectId];
+        if (object.isWorldObject || object.type === 'world') {
+            worldObjects.push(object);
+        }
+    });
+    return worldObjects;
+};
+
+exports.getWorldObjectForObject = function (objectId) {
+    let thisObject = objects[objectId];
+    if (thisObject.worldId) {
+        return objects[thisObject.worldId];
+    }
+    return null;
+};
+
 exports.getMarkerSize = function (object) {
     try {
-        var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+        const objectID = utilities.readObject(objectLookup, object);
         return objects[objectID].targetSize;
     } catch (e) {
         console.warn('Cannot get markerSize for ' + object + ', returning (0,0)');
@@ -739,15 +784,11 @@ exports.getMarkerSize = function (object) {
  * @param {number} height - target size height in mm
  */
 exports.setMarkerSize = function (object, width, height) {
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     if (objects.hasOwnProperty(objectID)) {
-        console.log('old size = ' + objects[objectID].targetSize);
-
         objectController.generateXml(objectID, {name: object, width: width, height: height}, function (statusCode, _responseContents) {
-            if (statusCode === 200) {
-                console.log('wrote size for ' + object + ' to XML from hardware interface. size = ' + width + ', ' + height);
-            } else {
-                console.log('error writing new target size to XML from hardware interface');
+            if (statusCode !== 200) {
+                console.error('error writing new target size to XML from hardware interface');
             }
         });
     }
@@ -756,12 +797,10 @@ exports.setMarkerSize = function (object, width, height) {
 exports.setObjectVisualization = function (object, visualization) {
     if (visualization !== 'screen' && visualization !== 'ar') { return; } // only supported types
 
-    var objectID = utilities.getObjectIdFromTargetOrObjectFile(object, objectsPath);
+    const objectID = utilities.readObject(objectLookup, object);
     objectController.setVisualization(objectID, visualization, function (statusCode, _responseContents) {
-        if (statusCode === 200) {
-            console.log('set visualization for ' + object + ' to ' + visualization + ' from hardware interface');
-        } else {
-            console.log('error setting visualization from hardware interface');
+        if (statusCode !== 200) {
+            console.error('error setting visualization from hardware interface');
         }
     });
 };
@@ -784,32 +823,121 @@ exports.getDebug = function () {
     return globalVariables.debug;
 };
 
-let setHardwareInterfaceSettingsImpl = null;
+/**
+ * @callback successCallback
+ * @param {boolean} success
+ * @param {string?} error message
+ */
+
 /**
  * Updates the settings.json for a particular hardware interface, based on
- * changes from the webFrontend.  Uses setHardwareInterfaceSettingsImpl to cut
- * through a bunch of abstraction into the heart of the server
+ * changes from the webFrontend.
  *
  * @param {string} interfaceName - the folder name of the hardwareInterface
  * @param {JSON} settings - JSON structure of the new settings to be written to settings.json
  * @param {Array.<string>} limitToKeys - if provided, only affects the properties of settings whose keys are included in this array
  * @param {successCallback} callback
  */
-exports.setHardwareInterfaceSettings = function (interfaceName, settings, limitToKeys, callback) {
-    return setHardwareInterfaceSettingsImpl(interfaceName, settings, limitToKeys, callback);
-};
+async function setHardwareInterfaceSettings(interfaceName, settings, limitToKeys, callback) {
+    var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+
+    try {
+        const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
+        let existingSettings = {};
+        try {
+            existingSettings = JSON.parse(rawSettings);
+        } catch (e) {
+            console.error('Unable to parse settings', e, rawSettings);
+        }
+
+        for (let key in settings) {
+            if (!settings.hasOwnProperty(key)) {
+                continue;
+            }
+            if (limitToKeys && !limitToKeys.includes(key)) {
+                continue;
+            }
+
+            // update value that will get written to disk
+            if (typeof settings[key].value !== 'undefined') {
+                existingSettings[key] = settings[key].value;
+            } else {
+                existingSettings[key] = settings[key];
+            }
+
+            const hardwareInterfaceModules = availableModules.getHardwareInterfaces();
+            // update hardwareInterfaceModules so that refreshing the page preserves the in-memory changes
+            if (typeof hardwareInterfaceModules[interfaceName].settings !== 'undefined') {
+                hardwareInterfaceModules[interfaceName].settings[key] = settings[key];
+            }
+        }
+
+        if (globalVariables.saveToDisk) {
+            try {
+                await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(existingSettings, null, 4));
+                callback(true);
+                pushSettingsToGui(interfaceName, existingSettings);
+            } catch (err) {
+                console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
+                callback(false, 'error writing to file');
+            }
+        } else {
+            console.error('Save to disk is disabled for this server');
+            callback(false, 'saveToDisk globally disabled for this server');
+        }
+    } catch (e) {
+        console.error('Error saving hardware interface settings to disk for ' + interfaceName, e);
+        callback(false, 'error writing to file');
+    }
+}
+exports.setHardwareInterfaceSettings = setHardwareInterfaceSettings;
+
+/**
+ * Overwrites the 'enabled' property in the spatialToolbox/.identity/hardwareInterfaceName/settings.json
+ * If the file is new (empty), write a default json blob into it with the new enabled value
+ * @param {string} interfaceName
+ * @param {boolean} shouldBeEnabled
+ * @param {successCallback} callback
+ */
+async function setHardwareInterfaceEnabled(interfaceName, shouldBeEnabled, callback) {
+    var interfaceSettingsPath = path.join(objectsPath, identityFolderName, interfaceName, 'settings.json');
+
+    try {
+        const rawSettings = await fsProm.readFile(interfaceSettingsPath, 'utf8') || '{}';
+        var settings = JSON.parse(rawSettings);
+        settings.enabled = shouldBeEnabled;
+
+        if (globalVariables.saveToDisk) {
+            try {
+                await fsProm.writeFile(interfaceSettingsPath, JSON.stringify(settings, null, 4));
+                callback(true);
+            } catch (err) {
+                console.error('Error saving hardware interface settings to disk for ' + interfaceName, err);
+                callback(false, 'error writing to file');
+            }
+        } else {
+            console.error('Save to disk is disabled for this server');
+            callback(false, 'saveToDisk globally disabled for this server');
+        }
+    } catch (e) {
+        // Trying default settings
+        var defaultSettings = {
+            enabled: shouldBeEnabled
+        };
+        try {
+            fsProm.writeFile(interfaceSettingsPath, JSON.stringify(defaultSettings, null, 4));
+            callback(true);
+        } catch (err) {
+            console.error('Error saving hardware interface settings to disk for ' + interfaceName + '', e);
+            callback(false, 'error writing to file');
+        }
+    }
+}
+exports.setHardwareInterfaceEnabled = setHardwareInterfaceEnabled;
 
 /*
  ********** END API FUNCTIONS *********
  */
-
-/**
- * Complement to setup() which is necessary due to the unique positioning of
- * the setHardwareInterfaceSettings function
- */
-exports.setHardwareInterfaceSettingsImpl = function (setHardwareInterfaceSettings) {
-    setHardwareInterfaceSettingsImpl = setHardwareInterfaceSettings;
-};
 
 /**
  * @desc setup() DO NOT call this in your hardware interface. setup() is only called from server.js to pass through some global variables.
@@ -817,7 +945,7 @@ exports.setHardwareInterfaceSettingsImpl = function (setHardwareInterfaceSetting
 exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray_, globalVariables_, dirnameO_,
     objectsPath_, nodeTypeModules_, blockModules_,
-    services_, version_, protocol_, serverPort_,
+    services_, serverPort_,
     hardwareAPICallbacks, sceneGraphReference_, worldGraphReference_) {
     objects = objects_;
     objectLookup = objectLookup_;
@@ -825,16 +953,13 @@ exports.setup = function setup(objects_, objectLookup_, knownObjects_,
     socketArray = socketArray_;
     globalVariables = globalVariables_;
     dirnameO = dirnameO_;
-    objectsPath = objectsPath_;
     nodeTypeModules = nodeTypeModules_;
     blockModules = blockModules_;
     services = services_;
-    version = version_;
-    protocol = protocol_;
     serverPort = serverPort_;
     publicDataCallBack = hardwareAPICallbacks.publicData;
     actionCallback = hardwareAPICallbacks.actions;
-    callback = hardwareAPICallbacks.data;
+    dataCallback = hardwareAPICallbacks.data;
     writeObjectCallback = hardwareAPICallbacks.write;
     sceneGraphReference = sceneGraphReference_;
     worldGraphReference = worldGraphReference_;
@@ -856,7 +981,6 @@ exports.reset = function () {
         }
     }
 
-    console.log('hardwareInterfaces.reset calling reset callbacks');
     for (var i = 0; i < callBacks.resetCallBacks.length; i++) {
         callBacks.resetCallBacks[i]();
     }
@@ -938,13 +1062,9 @@ exports.addReadListener = function (object, tool, node, callBack) {
     var nodeID = objectID + tool + node;
     var frameID = objectID + tool;
 
-    console.log('Add read listener for objectID: ', objectID);
-
     if (objectID) {
-
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
-
                 if (!callBacks.hasOwnProperty(objectID)) {
                     callBacks[objectID] = new EmptyObject(objectID);
                 }
@@ -957,9 +1077,7 @@ exports.addReadListener = function (object, tool, node, callBack) {
                     callBacks[objectID].frames[frameID].nodes[nodeID] = new EmptyNode(node);
                 }
 
-                console.log('Add read listener: ', callBack);
                 callBacks[objectID].frames[frameID].nodes[nodeID].callBack = callBack;
-
             }
         }
     }
@@ -971,10 +1089,7 @@ exports.addPublicDataListener = function (object, tool, node, dataObject, callBa
     var nodeID = objectID + tool + node;
     var frameID = objectID + tool;
 
-    console.log('Add publicData listener for objectID: ', objectID);
-
     if (objectID) {
-
         if (objects.hasOwnProperty(objectID)) {
             if (objects[objectID].frames.hasOwnProperty(frameID)) {
 
@@ -1004,16 +1119,11 @@ exports.addPublicDataListener = function (object, tool, node, dataObject, callBa
 };
 
 exports.connectCall = function (objectUuid, frameUuid, nodeUuid, data) {
-    console.log('connectCall');
-
     if (callBacks.hasOwnProperty(objectUuid)) {
         if (callBacks[objectUuid].frames.hasOwnProperty(frameUuid)) {
             if (callBacks[objectUuid].frames[frameUuid].nodes.hasOwnProperty(nodeUuid)) {
                 if (typeof callBacks[objectUuid].frames[frameUuid].nodes[nodeUuid].connectionCallBack === 'function') {
                     callBacks[objectUuid].frames[frameUuid].nodes[nodeUuid].connectionCallBack(data);
-                    console.log('Connection callback called');
-                } else {
-                    console.log('No connection callback');
                 }
             }
         }
@@ -1025,12 +1135,8 @@ exports.addConnectionListener = function (object, tool, node, callBack) {
     var frameID = objectID + tool;
     var nodeID = objectID + tool + node;
 
-    console.log('Add connection listener for objectID: ', objectID, frameID, node);
-
     if (objectID) {
-
         if (objects.hasOwnProperty(objectID)) {
-
             if (!callBacks.hasOwnProperty(objectID)) {
                 callBacks[objectID] = new EmptyObject(objectID);
             }
@@ -1046,7 +1152,6 @@ exports.addConnectionListener = function (object, tool, node, callBack) {
             }
 
             callbackObject.frames[frameID].nodes[nodeID].connectionCallBack = callBack;
-
         }
     }
 };
@@ -1067,19 +1172,14 @@ exports.map = function (x, in_min, in_max, out_min, out_max) {
 
 exports.addEventListener = function (option, callBack) {
     if (option === 'reset') {
-        console.log('Add reset listener');
         callBacks.resetCallBacks.push(callBack);
     }
     if (option === 'shutdown') {
-        console.log('Add reset listener');
         callBacks.shutdownCallBacks.push(callBack);
     }
     if (option === 'initialize') {
-        console.log('Add initialize listener');
         callBacks.initializeCallBacks.push(callBack);
     }
-
-
 };
 
 exports.advertiseConnection = function (object, tool, node, logic) {
@@ -1107,11 +1207,11 @@ exports.advertiseConnection = function (object, tool, node, logic) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {function} callback
  */
-exports.addSettingsCallback = function (interface, callback) {
-    if (typeof interfaceSettingsCallbacks[interface] === 'undefined') {
-        interfaceSettingsCallbacks[interface] = [];
+exports.addSettingsCallback = function (interfaceName, callback) {
+    if (typeof interfaceSettingsCallbacks[interfaceName] === 'undefined') {
+        interfaceSettingsCallbacks[interfaceName] = [];
     }
-    interfaceSettingsCallbacks[interface].push(callback);
+    interfaceSettingsCallbacks[interfaceName].push(callback);
 };
 
 /**
@@ -1119,18 +1219,24 @@ exports.addSettingsCallback = function (interface, callback) {
  * @param {string} interfaceName - exact name of the hardware interface
  * @param {JSON} currentSettings - should be the exports.settings
  */
-exports.pushSettingsToGui = function (interface, currentSettings) {
-    console.log('pushSettingsToGui for ' + interface);
-    if (typeof interfaceSettingsCallbacks[interface] !== 'undefined') {
-        interfaceSettingsCallbacks[interface].forEach(function (callback) {
-            callback(interface, currentSettings);
+function pushSettingsToGui(interfaceName, currentSettings) {
+    if (typeof interfaceSettingsCallbacks[interfaceName] !== 'undefined') {
+        interfaceSettingsCallbacks[interfaceName].forEach(function (callback) {
+            callback(interfaceName, currentSettings);
         });
     }
+}
+exports.pushSettingsToGui = pushSettingsToGui;
+
+/**
+ * Returns the filepath to the spatialToolbox objects directory, wherever that may be on this system
+ * @returns {string}
+ */
+exports.getObjectsPath = function() {
+    return objectsPath;
 };
 
 exports.shutdown = function () {
-
-    console.log('hardwareInterfaces.shutdown');
     for (var i = 0; i < callBacks.shutdownCallBacks.length; i++) {
         callBacks.shutdownCallBacks[i]();
     }
@@ -1138,8 +1244,6 @@ exports.shutdown = function () {
 
 
 exports.initialize = function () {
-
-    console.log('server initialized. Every initialization from now on should come from interface addons only');
     for (var i = 0; i < callBacks.initializeCallBacks.length; i++) {
         callBacks.initializeCallBacks[i]();
     }

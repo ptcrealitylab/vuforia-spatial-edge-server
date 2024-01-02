@@ -103,7 +103,6 @@
 
                 let envelopeMessage = message.msgContent.envelopeMessage;
 
-                // console.warn('contents received envelope message', msgContent, sourceFrame, destinationFrame);
                 this.triggerCallbacks('onMessageFromEnvelope', envelopeMessage);
             }
         }.bind(this));
@@ -132,8 +131,6 @@
 
             // respond to position subscriptions
             if (typeof envelopeMessage.subscribeToPosition !== 'undefined') {
-                // console.log('contained frame received position subscription');
-
                 if (envelopeMessage.subscribeToPosition === '3d') {
                     if (!screenPositionListenerHandle) {
 
@@ -156,7 +153,6 @@
                             let x = mapRange(semiNormalizedX, -1, 1, 0, screenWidth);
                             let y = mapRange(semiNormalizedY, 1, -1, 0, screenHeight);
 
-                            // console.log('x,y,z = ' + x.toFixed(2) + ',' + y.toFixed(2) + ',' + z.toFixed(2));
                             // var zDistance = Math.abs(modelView[14]);
 
                             if (mostRecentScreenPosition &&
@@ -219,7 +215,6 @@
                                 return; // don't send duplicate values
                             }
                             mostRecentScreenPosition = screenPosition;
-                            // console.log('contained frame learned its own position');
 
                             this.sendMessageToEnvelope({
                                 screenPosition: mostRecentScreenPosition

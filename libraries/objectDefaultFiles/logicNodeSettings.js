@@ -85,7 +85,7 @@ function loadScriptSync(url, requestObject, scriptObject) {
         scriptObject.text = requestObject.responseText;
         document.getElementsByTagName('head')[0].appendChild(scriptObject);
     } else {
-        console.log('Error XMLHttpRequest HTTP status: ' + requestObject.status);
+        console.error('Error XMLHttpRequest HTTP status: ' + requestObject.status);
     }
 }
 
@@ -103,10 +103,6 @@ window.addEventListener('message', function (MSG) {
 }, false);
 
 spatialObject.messageCallBacks.mainCall = function (msgContent) {
-
-    // console.log("------------------------------");
-    // console.log(msgContent);
-
     if (typeof msgContent.node !== 'undefined') {
 
         if (spatialObject.sendFullScreen === false) {
@@ -320,12 +316,8 @@ function SpatialLogic() { // eslint-disable-line no-unused-vars
                 privateData: thisItem
             }));
         };
-
-        console.log('socket.io is loaded');
     } else {
-
         this.addReadPublicDataListener = function (valueName, callback) {
-
             spatialObject.messageCallBacks.updateLogicGUI = function (msgContent) {
                 if (typeof msgContent.publicData !== 'undefined') {
                     if (typeof msgContent.publicData[valueName] !== 'undefined') {
@@ -354,8 +346,7 @@ function SpatialLogic() { // eslint-disable-line no-unused-vars
          */
         this.writePublicData = function (_valueName, _value) {
         };
-
-        console.log('socket.io is not working. This is normal when you work offline.');
+        console.warn('socket.io is not working. This is normal when you work offline.');
     }
 
 }

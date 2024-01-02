@@ -2,6 +2,7 @@ const cors = require('cors');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const proxyRequestHandler = require('./serverHelpers/proxyRequestHandler.js');
 
 const contentScriptDir = 'content_scripts';
 const contentStyleDir = 'content_styles';
@@ -46,23 +47,28 @@ class LocalUIApp {
             const addonName = req.params.addonName;
             const file = req.params.file;
             const scriptsInfo = this.scripts[addonName];
-            if (scriptsInfo.files.includes(file)) {
+            if (scriptsInfo && scriptsInfo.files.includes(file)) {
                 res.sendFile(path.join(scriptsInfo.folder, file));
                 return;
             }
             const stylesInfo = this.styles[addonName];
-            if (stylesInfo.files.includes(file)) {
+            if (stylesInfo && stylesInfo.files.includes(file)) {
                 res.sendFile(path.join(stylesInfo.folder, file));
                 return;
             }
             const resourcesInfo = this.resources[addonName];
-            if (resourcesInfo.files.includes(file)) {
+            if (resourcesInfo && resourcesInfo.files.includes(file)) {
                 res.sendFile(path.join(resourcesInfo.folder, file));
                 return;
             }
             res.status(403).send('access prohibited to non-script non-style file');
         });
-        this.app.use(express.static(this.userinterfacePath));
+        this.app.get('/proxy/*', proxyRequestHandler);
+        if (this.userinterfacePath && fs.existsSync(this.userinterfacePath)) {
+            this.app.use(express.static(this.userinterfacePath));
+        } else {
+            console.error(`${this.userinterfacePath} does not exist, unable to serve LocalUIApp UI`);
+        }
     }
 
     /**
@@ -129,7 +135,9 @@ class LocalUIApp {
             }
             const fileList = fs.readdirSync(uiPath).filter(function (filename) {
                 // this list can be extended in future to support more resource types
-                return filename.endsWith('.svg') || filename.endsWith('.png');
+                return filename.endsWith('.svg') || filename.endsWith('.png') ||
+                    filename.endsWith('.fbx') || filename.endsWith('.gltf') ||
+                    filename.endsWith('.glb') || filename.endsWith('.3dt');
             });
             if (fileList.length === 0) {
                 continue;

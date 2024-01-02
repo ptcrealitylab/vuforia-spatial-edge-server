@@ -3,7 +3,6 @@ const utilities = require('../libraries/utilities');
 // Variables populated from server.js with setup()
 var objects = {};
 var globalVariables;
-var objectsPath;
 
 /**
  * Adds a new link with the provided linkID to the specified node.
@@ -38,9 +37,8 @@ const addLogicLink = function (objectID, frameID, nodeID, linkID, body) {
             });
             // check if there are new connections associated with the new link.
             // write the object state to the permanent storage.
-            utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+            utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-            console.log('added link: ' + linkID);
             updateStatus = 'added';
         } else {
             updateStatus = 'found endless Loop';
@@ -60,18 +58,16 @@ const deleteLogicLink = function (objectID, frameID, nodeID, linkID, lastEditor)
             reloadNode: {object: objectID, frame: frameID, node: nodeID},
             lastEditor: lastEditor
         });
-        utilities.writeObjectToFile(objects, objectID, objectsPath, globalVariables.saveToDisk);
+        utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
 
-        console.log('deleted link: ' + linkID);
         updateStatus = 'deleted: ' + linkID + ' in logic ' + nodeID + ' in frame: ' + frameID + ' from object: ' + objectID;
     }
     return updateStatus;
 };
 
-const setup = function (objects_, globalVariables_, objectsPath_) {
+const setup = function (objects_, globalVariables_) {
     objects = objects_;
     globalVariables = globalVariables_;
-    objectsPath = objectsPath_;
 };
 
 module.exports = {

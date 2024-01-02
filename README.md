@@ -19,7 +19,7 @@ Join the conversations in our [discourse forum](https://forum.spatialtoolbox.vuf
 ## Installation
 
 First, install [Node.js](https://nodejs.org/en/). We currently test our
-software on Node 10, 12, and 14 with 12 being our recommended platform.
+software on Node 12, 14, 16, and 18 with 16 being our recommended platform.
 
 Second, clone this repository into your desired directory:
 
@@ -46,7 +46,7 @@ cd ../.. # return to the main vuforia-toolbox-server directory
 You can now run the server using the following command:
 
 ```bash
-node index.js
+npm start
 ```
 
 ## Contributing
@@ -100,4 +100,43 @@ following in PowerShell:
 ```
 $env:LOG_MODULES="interfaces"
 node index.js
+```
+
+## Specifying Services
+
+*This is an advanced option, not meant for general use at this point in time.*
+
+To specify a list of services that will be included in the heartbeats sent from
+this server, run the command like so:
+
+```bash
+node server.js --services world service2 service3
+```
+
+The `world` service in particular is used to request that scans for new World
+Objects get sent to this server rather than other servers on the local
+network that do not specify this service (by default, all servers have the same
+priority and the user must choose among them).
+
+## Additional Server Addons
+There are several useful server addons that we do not include in the base
+server. For example, installing the include the [edge
+agent](https://github.com/ptcrealitylab/vuforia-spatial-edge-agent-addon) and
+[remote
+operator](https://github.com/ptcrealitylab/vuforia-spatial-remote-operator-addon/)
+addons will enable your server to act as a standalone remote operator host
+behind our cloud proxy. Note that the edge agent addon is currently private but
+will be open-sourced soon.
+
+For each addon you want to install follow these steps, substituting the github
+url as necessary:
+```bash
+cd addons
+git clone https://github.com/ptcrealitylab/vuforia-spatial-remote-operator-addon
+git clone git@github.com:ptcrealitylab/vuforia-spatial-edge-agent-addon
+cd vuforia-spatial-remote-operator-addon
+npm install
+cd .. # return to the addons directory
+cd vuforia-spatial-edge-agent-addon
+npm install
 ```

@@ -43,13 +43,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-var utilities = require('./utilities');
+const utilities = require('./utilities');
+const {fileExists} = utilities;
 var fs = require('fs');
 var debug = false;
 var path = require('path');
 var hardwareAPI = require('./hardwareInterfaces');
 
-var identityFolderName = '.identity'; // TODO: get this from server.js
+const {identityFolderName} = require('../constants.js');
 var worldObjectPrefix = '_WORLD_'; // TODO: get this from server.js
 
 // Constructor with subset of object information necessary for the web frontend
@@ -82,8 +83,6 @@ function Frame() {
  * @return {string} - returns the page's HTML as a string
  */
 exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort, configHtmlPath) {
-    console.log(hardwareInterfaceName, ipAddress, serverPort, hardwareInterfaceModules);
-
     let html = '';
     try {
         html = fs.readFileSync(configHtmlPath, 'utf8');
@@ -109,24 +108,24 @@ exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardw
     return html;
 };
 
-exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
+exports.printFolder = async function printFolder(objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
 
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
 
-    var tempFiles = fs.readdirSync(objectsPath).filter(function (file) {
-        return fs.statSync(path.join(objectsPath, file)).isDirectory();
-    });
-    // remove hidden directories
-    while (tempFiles.length > 0 && tempFiles[0][0] === '.') {
-        tempFiles.splice(0, 1);
-    }
+    const objectFolderList = await utilities.getObjectFolderList();
 
     // populate the data for each object template on the frontend, using data from each directory found in the spatialToolbox directory
-    tempFiles.forEach(function(objectKey) {
+    for (const objectKey of objectFolderList) {
+        let thisObjectKey = objectKey;
+        let tempKey;
+        try {
+            // gets the object id from the xml target file
+            tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
+        } catch (e) {
+            console.warn('printFolder getObjectId failed', e);
+        }
 
-        var thisObjectKey = objectKey;
-        var tempKey = utilities.getObjectIdFromTargetOrObjectFile(objectKey, objectsPath); // gets the object id from the xml target file
         if (tempKey) {
             thisObjectKey = tempKey;
         }
@@ -148,12 +147,11 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         }
 
         // check if the object is correctly initialized with tracking targets
-        var datExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
-        var xmlExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
-        var jpgExists = fs.existsSync(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
+        var datExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.dat'));
+        var xmlExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.xml'));
+        var jpgExists = await fileExists(path.join(objectsPath, objectKey, identityFolderName, '/target/target.jpg'));
 
         if ((xmlExists && datExists && jpgExists) || (xmlExists && jpgExists)) {
-            console.log('object files exist: ' + objectKey);
             newObject[thisObjectKey].initialized = true;
             newObject[thisObjectKey].targetName = thisObjectKey; // obtained earlier from the xml file
         } else {
@@ -198,7 +196,7 @@ exports.printFolder = function (objects, objectsPath, debug, objectInterfaceName
         }
 
         newObject[thisObjectKey].name = objectKey;
-    });
+    }
 
     // loads the index.html content
     var html = fs.readFileSync(path.join(__dirname, 'webInterface', 'gui', 'index.html'), 'utf8');
@@ -248,9 +246,7 @@ exports.uploadInfoText = function (parm) {
 
         '/*var myVar = setInterval(loadInfoContent, 100);*/' +
         'loadInfoContent();' +
-        'function loadInfoContent () {console.log("newtick");' +
-
-   'var con = document.getElementById("changeContent")' +
+        'function loadInfoContent () {var con = document.getElementById("changeContent")' +
     '    ,   xhr = new XMLHttpRequest();' +
 
     'xhr.onreadystatechange = function (e) {' +
@@ -631,27 +627,34 @@ exports.uploadTargetText = function (parm, objectLookup, objects) {
 
 };
 
-
-
+/**
+ * List all files in a directory in Node.js recursively in a
+ * synchronous fashion
+ * @param {string} dir - path to start at
+ * @return {Array<string>} file paths within dir
+ */
+function walk(dir) {
+    var results = [];
+    var list = fs.readdirSync(dir);
+    list.forEach(function (file) {
+        file = path.join(dir, file);
+        var stat;
+        try {
+            stat = fs.statSync(file);
+        } catch (_e) {
+            console.warn('walk stat failed', file);
+        }
+        if (stat && stat.isDirectory()) results = results.concat(walk(file));
+        else results.push(file);
+    });
+    return results;
+}
 
 exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) {
     if (debug) console.log('interface content');
     var text = '';
 
     var objectPath2 = path.join(objectPath2, parm);
-
-    // List all files in a directory in Node.js recursively in a synchronous fashion
-    var walk = function (dir) {
-        var results = [];
-        var list = fs.readdirSync(dir);
-        list.forEach(function (file) {
-            file = path.join(dir, file);
-            var stat = fs.statSync(file);
-            if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file);
-        });
-        return results;
-    };
 
     var listeliste = walk(objectPath2);
 
@@ -696,9 +699,6 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
-
-                // console.log("---" + content[0]);
-
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 let dateiTobeRemoved = parm + '/' + content[0];
@@ -709,8 +709,6 @@ exports.uploadTargetContent = function (parm, objectsPath, objectInterfaceName) 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
 
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
@@ -894,23 +892,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
     var framePath2 = path.join(framePath, frame);
 
-    // Import the module
-
-
-
-    // List all files in a directory in Node.js recursively in a synchronous fashion
-    var walk = function (dir) {
-        var results = [];
-        var list = fs.readdirSync(dir);
-        list.forEach(function (file) {
-            file = path.join(dir, file);
-            var stat = fs.statSync(file);
-            if (stat && stat.isDirectory()) results = results.concat(walk(file));
-            else results.push(file);
-        });
-        return results;
-    };
-
     var listeliste = walk(framePath2);
 
     var nameOld = '';
@@ -954,9 +935,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 
         if (content[1] !== undefined) {
             if (content[0] !== nameOld) {
-
-                // console.log("---" + content[0]);
-
                 text += '<tr><td><font size="2"><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>&nbsp;&nbsp;' + content[0] + '</font></td><td>';
 
                 let dateiTobeRemoved = parm + '/' + content[0];
@@ -965,10 +943,7 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
                     '<input type=\'hidden\' name=\'action\' value=\'delete\'>';
 
                 text += '<a href="#" onclick="parentNode.submit();"><span class="badge" style="background-color: #d43f3a;">delete</span></a></form></td></tr>';
-
             }
-            // console.log("-"+content[0]);
-            //  console.log(content[0]+" / "+content[1]);
 
             if (content[1][0] !== '.' && content[1][0] !== '_') {
                 if (debug)console.log(content[1]);
@@ -1143,7 +1118,6 @@ exports.uploadTargetContentFrame = function (parm, frame, objectsPath, objectInt
 };
 
 exports.editContent = function(req, res) {
-    console.log(req.params);
     var thisPath = req.params[0];
     // TODO sanitize thisPath for security
     var file = path.basename(thisPath);

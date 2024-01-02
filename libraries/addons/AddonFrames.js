@@ -11,10 +11,9 @@ class AddonFrames {
     /**
      * Add a new source of frames
      * @param {string} framePath - absolute path to frame source directory
-     * @param {string} identityName - name of identity folder, e.g. '.identity'
      */
-    addFramesSource(framePath, identityName) {
-        const source = new AddonFramesSource(framePath, identityName);
+    addFramesSource(framePath) {
+        const source = new AddonFramesSource(framePath);
         source.setupDirectories();
         source.loadFramesJsonData();
         this.framesSources.push(source);

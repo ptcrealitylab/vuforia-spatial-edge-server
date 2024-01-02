@@ -46,5 +46,8 @@ libraries/objectLogs/*
 .node-persist
 
 /addons/*
+/out/*
 
-/docs
+/screenshots
+/spatialToolbox
+/vuforia-spatial-toolbox-userinterface

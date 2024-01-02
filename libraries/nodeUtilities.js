@@ -4,31 +4,25 @@ var linkController;
 // Pointers populated from server.js with setup()
 var objects = {};
 var sceneGraph = {};
-var knownObjects = {};
-var socketArray = {};
-var globalVariables = {};
-var hardwareAPI = {};
-var objectsPath = {};
 
-exports.setup = function (_objects, _sceneGraph, _knownObjects, _socketArray, _globalVariables, _hardwareAPI, _objectsPath, _linkController) {
+exports.setup = function (_objects, _sceneGraph, _knownObjects, _socketArray, _globalVariables, _hardwareAPI, objectsPath, _linkController) {
     objects = _objects;
     sceneGraph = _sceneGraph;
-    knownObjects = _knownObjects;
-    socketArray = _socketArray;
-    globalVariables = _globalVariables;
-    hardwareAPI = _hardwareAPI;
-    objectsPath = _objectsPath;
     linkController = _linkController;
 };
 
 exports.deepCopy = utilities.deepCopy;
 
-exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
-    let thisObjectKey = _object;
-    if (!(_object in objects)) {
-        thisObjectKey = utilities.getObjectIdFromTargetOrObjectFile(_object, objectsPath);
+exports.searchNodeByType = async function (nodeType, objectKey, tool, node, callback) {
+    let thisObjectKey = objectKey;
+    if (!(objectKey in objects)) {
+        thisObjectKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
+    if (!thisObject) {
+        console.error('searchNodeByType object not found');
+        return;
+    }
     if (!tool && !node) {
         utilities.forEachFrameInObject(thisObject, function (thisTool, toolKey) {
             utilities.forEachNodeInFrame(thisTool, function (thisNode, nodeKey) {
@@ -47,7 +41,7 @@ exports.searchNodeByType = function (nodeType, _object, tool, node, callback) {
         });
 
     } else if (!tool) {
-        utilities.forEachFrameInObject(thisObject, function (tool, toolKey) {
+        utilities.forEachFrameInObject(thisObject, function (_tool, toolKey) {
             let thisNode = utilities.getFrame(objects, thisObjectKey, toolKey, node);
             if (!thisNode) {
                 if (thisNode.type === nodeType) callback(thisObjectKey, toolKey, node);

@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const {identityFolderName} = require('../../constants.js');
+const {getFolderList} = require('./utilities.js');
 
 /**
  * A source of frames from one add-on's tools directory
@@ -7,11 +9,9 @@ const path = require('path');
 class AddonFramesSource {
     /**
      * @param {string} framePath - absolute path to realityframes directory
-     * @param {string} identityName - name of identity folder, e.g. '.identity'
      */
-    constructor(framePath, identityName) {
+    constructor(framePath) {
         this.frameLibPath = framePath;
-        this.identityFolderName = identityName;
 
         // Will hold all available frame interfaces
         this.frameTypeModules = {};
@@ -24,9 +24,8 @@ class AddonFramesSource {
      * Creates the .identity directory if needed
      */
     setupDirectories() {
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         if (!fs.existsSync(frameIdentityPath)) {
-            console.log('created frames identity directory at ' + frameIdentityPath);
             fs.mkdirSync(frameIdentityPath);
         }
     }
@@ -38,29 +37,33 @@ class AddonFramesSource {
      */
     loadFramesJsonData() {
         // get a list with the names for all frame types, based on the folder names in the libraries/frames/active folder.
-        let frameFolderList = fs.readdirSync(this.frameLibPath).filter((filename) => {
-            let isHidden = filename[0] === '.';
-            return fs.statSync(path.join(this.frameLibPath, filename)).isDirectory() &&
-                !isHidden;
+        let frameFolderList = getFolderList(this.frameLibPath);
+
+        // filter out folders that don't have an index.html file (empty folders, etc)
+        frameFolderList = frameFolderList.filter(folderName => {
+            let fileList = fs.readdirSync(path.join(this.frameLibPath, folderName));
+            return fileList.includes('index.html');
         });
+
+        // frameLibPath looks like x/y/z/addons/addonName/tools
+        let addonName = path.basename(path.dirname(this.frameLibPath));
 
         // Load the config.js properties of each frame into an object that we can provide to clients upon request.
         for (let i = 0; i < frameFolderList.length; i++) {
             let frameName = frameFolderList[i];
             this.frameTypeModules[frameName] = {
                 properties: {
-                    name: frameName,
+                    name: frameName
                 }
             };
         }
 
         // see if there is an identity folder for each frame (generate if not), and add the json contents to the frameTypeModule
-        let frameIdentityPath = path.join(this.frameLibPath, this.identityFolderName);
+        let frameIdentityPath = path.join(this.frameLibPath, identityFolderName);
         for (let i = 0; i < frameFolderList.length; i++) {
             let frameName = frameFolderList[i];
             let thisIdentityPath = path.join(frameIdentityPath, frameName);
             if (!fs.existsSync(thisIdentityPath)) {
-                console.log('creating frames directory at', thisIdentityPath);
                 try {
                     fs.mkdirSync(thisIdentityPath);
                 } catch (e) {
@@ -71,13 +74,10 @@ class AddonFramesSource {
             }
             let settingsPath = path.join(thisIdentityPath, 'settings.json');
             if (!fs.existsSync(settingsPath)) {
-                console.log('created settings at ' + settingsPath);
                 let defaultSettings = this.generateDefaultFrameSettings(true);
                 fs.writeFile(settingsPath, JSON.stringify(defaultSettings, null, '\t'), (err) => {
                     if (err) {
-                        console.log('default frame saving failed', err);
-                    } else {
-                        console.log('default frame JSON saved to', settingsPath);
+                        console.error('error saving default frame settings', err);
                     }
                 });
             }
@@ -85,9 +85,12 @@ class AddonFramesSource {
             try {
                 this.frameTypeModules[frameName].metadata = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
             } catch (e) {
-                console.log('no saved frame settings for', frameName);
+                // No saved frame settings for this frame
                 this.frameTypeModules[frameName].metadata = {};
             }
+
+            // add the addonName to the metadata
+            this.frameTypeModules[frameName].metadata.addon = addonName;
         }
     }
 
@@ -116,9 +119,8 @@ class AddonFramesSource {
      */
     setFrameEnabled(frameName, shouldBeEnabled, callback) {
         let frameSettingsPath = path.join(
-            this.frameLibPath, this.identityFolderName, frameName,
+            this.frameLibPath, identityFolderName, frameName,
             'settings.json');
-        console.log('setFrameEnabled', frameSettingsPath);
 
         try {
             let settings = JSON.parse(fs.readFileSync(frameSettingsPath, 'utf8'));
@@ -130,21 +132,19 @@ class AddonFramesSource {
                     console.error('setFrameEnabled error', err);
                     callback(false, 'error writing to file');
                 } else {
-                    console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' frame: ' + frameName);
                     // update the local copy of the data too if successful
                     this.frameTypeModules[frameName].metadata.enabled = shouldBeEnabled;
                     callback(true);
                 }
             });
         } catch (e) {
-            console.log('error reading settings.json for ' + frameName + '. attempting to revert to default settings', e);
+            console.error('error reading settings.json for ' + frameName + '. attempting to revert to default settings', e);
             let defaultSettings = this.generateDefaultFrameSettings(shouldBeEnabled);
             fs.writeFile(frameSettingsPath, JSON.stringify(defaultSettings, null, '\t'), (err) => {
                 if (err) {
                     console.error('setFrameEnabled error in catch', err);
                     callback(false, 'error writing to file');
                 } else {
-                    console.log('successfully ' + (shouldBeEnabled ? 'enabled' : 'disabled') + ' hardwareInterface: ' + frameName);
                     // update the local copy of the data too if successful
                     this.frameTypeModules[frameName].metadata.enabled = shouldBeEnabled;
                     callback(true);

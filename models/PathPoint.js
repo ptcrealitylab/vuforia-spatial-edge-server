@@ -1,5 +1,3 @@
-const Point = require('./Point.js');
-
 /**
  * @constructor
  */

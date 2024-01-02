@@ -10,6 +10,14 @@ const logicNodeController = require('../controllers/logicNode.js');
 const nodeController = require('../controllers/node.js');
 const objectController = require('../controllers/object.js');
 
+router.delete('/:object', async (req, res) => {
+    if (!utilities.isValidId(req.params.object)) {
+        res.status(400).send('Invalid object id. Must be alphanumeric.');
+        return;
+    }
+    res.send(await objectController.deleteObject(req.params.object));
+});
+
 // logic links
 router.post('/:objectName/frame/:frameName/node/:nodeName/link/:linkName/addBlockLink/', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName) || !utilities.isValidId(req.params.nodeName) || !utilities.isValidId(req.params.linkName)) {
@@ -124,7 +132,6 @@ router.post('/:objectName/frame/:frameName/link/:linkName/addLink/', function (r
         res.status(400).send('Invalid object, frame, or link name. Must be alphanumeric.');
         return;
     }
-    console.log('routed by 2');
     res.status(200).send(linkController.newLink(req.params.objectName, req.params.frameName, req.params.linkName, req.body));
 });
 router.post('/:objectName/link/:linkName/', function (req, res) {
@@ -132,7 +139,6 @@ router.post('/:objectName/link/:linkName/', function (req, res) {
         res.status(400).send('Invalid object or link name. Must be alphanumeric.');
         return;
     }
-    console.log('routed by 1');
     res.status(200).send(linkController.newLink(req.params.objectName, req.params.objectName, req.params.linkName, req.body));
 });
 router.post('/:objectName/linkLock/:linkName/', function (req, res) {
@@ -317,6 +323,17 @@ router.post('/:objectName/addFrame/', function (req, res) {
         res.status(statusCode).json(responseContents).end();
     });
 });
+router.post('/:objectName/generateFrame', function(req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+
+    frameController.generateFrameOnObject(req.params.objectName, req.body.frameType, req.body.relativeMatrix, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
 // Update the publicData of a frame when it gets moved from one object to another
 router.delete('/:objectName/frame/:frameName/publicData', function (req, res) {
     if (!utilities.isValidId(req.params.objectName) || !utilities.isValidId(req.params.frameName)) {
