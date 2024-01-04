@@ -3072,43 +3072,6 @@ function objectWebServer() {
                                                             }
                                                         });
                                                     }
-                                                    
-                                                    // if (innerFolderFile === 'target.dat') {
-                                                    //     // deferred = true;
-                                                    //     // unzip the .dat file and read the unique targetId from the config.info file
-                                                    //     let unzipperDat = new DecompressZip(path.join(targetFolderPath, 'target.dat'));
-                                                    //
-                                                    //     unzipperDat.on('error', function (err) {
-                                                    //         console.error('.dat Unzipper Error', err);
-                                                    //     });
-                                                    //
-                                                    //     unzipperDat.on('extract', async function () {
-                                                    //         // finish();
-                                                    //         console.log('.dat Unzipper finished');
-                                                    //        
-                                                    //         let configFilePath = path.join(targetFolderPath, 'config.info');
-                                                    //         if (await fileExists(configFilePath)) {
-                                                    //             // try to read the config.info file as text
-                                                    //             var targetUniqueId = await utilities.getTargetIdFromFile(configFilePath);
-                                                    //             console.log('targetUniqueId = ', targetUniqueId);
-                                                    //         } else {
-                                                    //             console.log('config.info not found at ', configFilePath);
-                                                    //         }
-                                                    //     });
-                                                    //
-                                                    //     unzipperDat.on('progress', function (_fileIndex, _fileCount) {
-                                                    //         // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
-                                                    //     });
-                                                    //
-                                                    //     unzipperDat.extract({
-                                                    //         path: targetFolderPath,
-                                                    //         filter: function (file) {
-                                                    //             // skipping over frame_%d.jpg, images.json, and tileset.json
-                                                    //             // return file.type !== 'SymbolicLink' && file.filename.endsWith('glb');
-                                                    //             return file.type !== 'SymbolicLink' && file.filename.endsWith('info');
-                                                    //         }
-                                                    //     });
-                                                    // }
                                                 }
                                                 if (!deferred) {
                                                     finish();
