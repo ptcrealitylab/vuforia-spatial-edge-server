@@ -15,6 +15,8 @@ function ObjectModel(ip, version, protocol, objectId) {
     this.objectId = objectId;
     // The name for the object used for interfaces.
     this.name = '';
+    // The UUID used internally by Vuforia for tracking
+    this.targetId = null;
 
     this.matrix = [];
     this.worldId = null; // matrix is relative to this world
