@@ -734,7 +734,7 @@ exports.hasTool = function(object, tool) {
 };
 
 exports.getObjectIdFromObjectName = async function (object) {
-    return await utilities.getObjectIdFromTargetOrObjectFile(object);
+    return await utilities.getObjectIdFromObjectFile(object);
 };
 
 exports.getObjectNameFromObjectId = function (objectId) {

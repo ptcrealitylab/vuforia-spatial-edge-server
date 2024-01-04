@@ -730,7 +730,7 @@ async function loadObjects() {
 
     for (var i = 0; i < objectFolderList.length; i++) {
         const objectFolder = objectFolderList[i];
-        const tempFolderName = await utilities.getObjectIdFromTargetOrObjectFile(objectFolder);
+        const tempFolderName = await utilities.getObjectIdFromObjectFile(objectFolder);
 
         if (tempFolderName !== null) {
             // fill objects with objects named by the folders in objects
@@ -752,6 +752,9 @@ async function loadObjects() {
                 objects[tempFolderName] = JSON.parse(objectJsonText);
                 const obj = objects[tempFolderName];
                 obj.ip = services.ip; // ip.address();
+
+                // update the targetId if needed
+                obj.targetId = await utilities.getTargetIdFromTargetDat(path.join(objectsPath, objectFolderList[i], identityFolderName, 'target'));
 
                 migrateObjectValuesToFrames(obj, tempFolderName);
 
@@ -952,7 +955,7 @@ async function setAnchors() {
         if (objectKey.indexOf('_WORLD_') === -1) {
 
             let thisObjectKey = null;
-            let tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey); // gets the object id from the xml target file
+            let tempKey = await utilities.getObjectIdFromObjectFile(objectKey); // gets the object id from the xml target file
             if (tempKey) {
                 thisObjectKey = tempKey;
             } else {
@@ -3269,50 +3272,37 @@ async function createObjectFromTarget(folderVar) {
         return;
     }
 
-    var objectIDXML = await utilities.getObjectIdFromTargetOrObjectFile(folderVar);
-    var objectSizeXML = await utilities.getTargetSizeFromTarget(folderVar);
-    if (!objectIDXML || objectIDXML.length <= 13) {
-        return;
-    }
+    // This isn't retrieved from the XML file anymore - we use the name the object was created with
+    let objectId = utilities.readObject(objectLookup, folderVar);
+    let objectSizeXML = await utilities.getTargetSizeFromTarget(folderVar);
 
     let targetUniqueId = await utilities.getTargetIdFromTargetDat(path.join(objectsPath, folderVar, identityFolderName, 'target'));
 
-    objects[objectIDXML] = new ObjectModel(services.ip, version, protocol, objectIDXML);
-    objects[objectIDXML].port = serverPort;
-    objects[objectIDXML].name = folderVar;
-    objects[objectIDXML].targetSize = objectSizeXML;
-    objects[objectIDXML].targetId = targetUniqueId;
-
-    if (objectIDXML.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
-        objects[objectIDXML].isWorldObject = true;
-        objects[objectIDXML].type = 'world';
-        objects[objectIDXML].timestamp = Date.now();
-    }
+    objects[objectId] = new ObjectModel(services.ip, version, protocol, objectId);
+    objects[objectId].port = serverPort;
+    objects[objectId].name = folderVar;
+    objects[objectId].targetSize = objectSizeXML;
 
     try {
         const contents = await fsProm.readFile(objectsPath + '/' + folderVar + '/' + identityFolderName + '/object.json', 'utf8');
-        objects[objectIDXML] = JSON.parse(contents);
-        objects[objectIDXML].objectId = objectIDXML;
-        objects[objectIDXML].ip = services.ip; //ip.address();
+        objects[objectId] = JSON.parse(contents);
+        // objects[objectId].objectId = objectId;
+        objects[objectId].ip = services.ip; //ip.address();
     } catch (e) {
-        objects[objectIDXML].ip = services.ip; //ip.address();
-        console.warn('No saved data for: ' + objectIDXML, e);
+        objects[objectId].ip = services.ip; //ip.address();
+        console.warn('No saved data for: ' + objectId, e);
     }
 
-    if (utilities.readObject(objectLookup, folderVar) !== objectIDXML) {
-        let oldObjectId = utilities.readObject(objectLookup, folderVar);
-        try {
-            objects[oldObjectId].deconstruct();
-        } catch (e) {
-            console.warn('Object exists without proper prototype: ' + oldObjectId, e);
-        }
-        delete objects[oldObjectId];
-        delete knownObjects[oldObjectId];
-        delete objectLookup[oldObjectId];
-        sceneGraph.removeElementAndChildren(oldObjectId);
+    if (objectId.indexOf(worldObjectName) > -1) { // TODO: implement a more robust way to tell if it's a world object
+        objects[objectId].isWorldObject = true;
+        objects[objectId].type = 'world';
+        objects[objectId].timestamp = Date.now();
     }
-    utilities.writeObject(objectLookup, folderVar, objectIDXML);
-    // entering the obejct in to the lookup table
+
+    objects[objectId].targetId = targetUniqueId;
+
+    // entering the object in to the lookup table
+    utilities.writeObject(objectLookup, folderVar, objectId);
 
     // ask the object to reinitialize
     //serialPort.write("ok\n");
@@ -3320,16 +3310,16 @@ async function createObjectFromTarget(folderVar) {
 
     hardwareAPI.reset();
 
-    await utilities.writeObjectToFile(objects, objectIDXML, globalVariables.saveToDisk);
+    await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
 
-    if (!objects[objectIDXML]) {
-        console.error('Object deleted during createObjectFromTarget', objectIDXML);
+    if (!objects[objectId]) {
+        console.error('Object deleted during createObjectFromTarget', objectId);
         return;
     }
 
-    sceneGraph.addObjectAndChildren(objectIDXML, objects[objectIDXML]);
+    sceneGraph.addObjectAndChildren(objectId, objects[objectId]);
 
-    await objectBeatSender(beatPort, objectIDXML, objects[objectIDXML].ip);
+    await objectBeatSender(beatPort, objectId, objects[objectId].ip);
 }
 
 
