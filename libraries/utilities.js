@@ -234,7 +234,6 @@ exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
 exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targetFolderPath) {
     return new Promise((resolve, reject) => {
-        // deferred = true;
         // unzip the .dat file and read the unique targetId from the config.info file
         let unzipperDat = new DecompressZip(path.join(targetFolderPath, 'target.dat'));
 
@@ -244,14 +243,10 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
         });
 
         unzipperDat.on('extract', async function () {
-            // finish();
-            console.log('.dat Unzipper finished');
-
             let configFilePath = path.join(targetFolderPath, 'config.info');
             if (await fileExists(configFilePath)) {
-                // try to read the config.info file as text
-                let targetUniqueId = await getTargetIdFromFile(configFilePath);
-                console.log('targetUniqueId = ', targetUniqueId);
+                // read the id stored within the config.info file (it's actually structured as XML)
+                let targetUniqueId = await getTargetIdFromConfigFile(configFilePath);
                 console.log('TODO: cleanup config.info file instead of leaving it in the folder');
                 resolve(targetUniqueId);
             } else {
@@ -275,7 +270,7 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
     });
 }
 
-async function getTargetIdFromFile(filePath) {
+async function getTargetIdFromConfigFile(filePath) {
     if (!await fileExists(filePath)) {
         return null;
     }
@@ -295,28 +290,11 @@ async function getTargetIdFromFile(filePath) {
             if (parseErr) {
                 throw parseErr;
             }
-
-            console.log(result);
-            // this gets the "AreaTarget" or "ImageTarget" tag contents of the XML file
+            // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
+            // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
             let targetEntry = Object.entries(result.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$');
             // this extracts the properties associated with that tag in the file, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
-            let targetMetadata = targetEntry[1][0].$;
-            resultId = targetMetadata.targetId;
-
-            // let first = Object.keys(result)[0];
-            // let secondFirst = Object.keys(result[first].Tracking[0])[0];
-            // var sizeString = result[first].Tracking[0][secondFirst][0].$.size;
-            // if (!sizeString) {
-            //     return;
-            // }
-            // var sizeFloatArray = sizeString.split(' ').map(function (elt) {
-            //     // TODO: this assumption makes it backwards compatible but might cause problems in the future
-            //     return (parseFloat(elt) < 10) ? parseFloat(elt) : 0.001 * parseFloat(elt); // detect meter or mm scale
-            // });
-            // resultXML = {
-            //     width: sizeFloatArray[0],
-            //     height: sizeFloatArray[1]
-            // };
+            resultId = targetEntry[1][0].$.targetId;
         } catch (err) {
             console.error('error parsing xml', err);
         }
