@@ -16,7 +16,7 @@ exports.deepCopy = utilities.deepCopy;
 exports.searchNodeByType = async function (nodeType, objectKey, tool, node, callback) {
     let thisObjectKey = objectKey;
     if (!(objectKey in objects)) {
-        thisObjectKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
+        thisObjectKey = await utilities.getObjectIdFromObjectFile(objectKey);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
     if (!thisObject) {

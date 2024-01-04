@@ -186,38 +186,15 @@ exports.uuidTime = function () {
     return '_' + stampUuidTime;
 };
 
-async function getObjectIdFromTargetOrObjectFile(folderName) {
+async function getObjectIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
     }
 
-    var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
-    var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
+    let jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
-    if (await fileExists(xmlFile)) {
-        try {
-            let resultXML = '';
-            xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
-                function (err, result) {
-                    for (var first in result) {
-                        for (var secondFirst in result[first].Tracking[0]) {
-                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                            if (typeof resultXML === 'string' && resultXML.length === 0) {
-                                console.warn('Target file for ' + folderName + ' has empty name, ' +
-                                    'and may not function correctly. Delete and re-upload target for best results.');
-                                resultXML = null;
-                            }
-                            break;
-                        }
-                        break;
-                    }
-                });
-            return resultXML;
-        } catch (e) {
-            console.error('error reading xml file', e);
-        }
-    } else if (await fileExists(jsonFile)) {
+    if (await fileExists(jsonFile)) {
         try {
             let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
             if (thisObject.hasOwnProperty('objectId')) {
@@ -231,7 +208,7 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
     }
     return null;
 }
-exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
+exports.getObjectIdFromObjectFile = getObjectIdFromObjectFile;
 
 async function getAnchorIdFromObjectFile(folderName) {
 
@@ -275,6 +252,7 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
                 // try to read the config.info file as text
                 let targetUniqueId = await getTargetIdFromFile(configFilePath);
                 console.log('targetUniqueId = ', targetUniqueId);
+                console.log('TODO: cleanup config.info file instead of leaving it in the folder');
                 resolve(targetUniqueId);
             } else {
                 // console.log('config.info not found at ', configFilePath);
@@ -624,7 +602,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
     var objectFolderList = await getObjectFolderList();
 
     for (const objectFolder of objectFolderList) {
-        const tempFolderName = await getObjectIdFromTargetOrObjectFile(objectFolder);
+        const tempFolderName = await getObjectIdFromObjectFile(objectFolder);
 
         if (!tempFolderName) {
             console.warn(' object ' + objectFolder + ' has no marker yet');
