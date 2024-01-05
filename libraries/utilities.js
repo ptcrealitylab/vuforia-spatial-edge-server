@@ -250,8 +250,7 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
                 console.log('TODO: cleanup config.info file instead of leaving it in the folder');
                 resolve(targetUniqueId);
             } else {
-                // console.log('config.info not found at ', configFilePath);
-                reject('config.info not found at ' + configFilePath)
+                reject('config.info not found at ' + configFilePath);
             }
         });
 
@@ -268,7 +267,7 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
             }
         });
     });
-}
+};
 
 async function getTargetIdFromConfigFile(filePath) {
     if (!await fileExists(filePath)) {
