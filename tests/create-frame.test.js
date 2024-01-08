@@ -87,18 +87,18 @@ async function addFrame() {
     return await res.text();
 }
 
-async function getObject() {
-    const res = await fetch('http://localhost:8080/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c');
+async function getObject(objectId) {
+    const res = await fetch(`http://localhost:8080/object/${objectId}`);
     return await res.json();
 }
 
-async function getFrame() {
-    const res = await fetch('http://localhost:8080/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c/frame/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a');
+async function getFrame(objectId) {
+    const res = await fetch(`http://localhost:8080/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a`);
     return await res.json();
 }
 
-async function moveFrame() {
-    const res = await fetch('http://localhost:8080/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c/frame/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a/node/null/size/', {
+async function moveFrame(objectId) {
+    const res = await fetch(`http://localhost:8080/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a/node/null/size/`, {
         headers: {
             'content-type': 'application/json'
         },
@@ -119,60 +119,87 @@ async function moveFrame() {
     return await res.text();
 }
 
-const frameAddedRef = {
-    objectId: '_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c',
-    uuid: '_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a',
-    name: 'spatialDraw1mJx458y5jn9a',
-    visualization: 'ar',
-    ar: {
-        x: 0,
-        y: 0,
-        scale: 1,
-        matrix: [
-            0.966, 0.015, 0.257, 0,
-            -0.256, -0.0676, 0.964, 0,
-            -0.0319, 0.997, 0.0614, 0,
-            -50.227, -193.471, -239.032, 1
-        ]
-    },
-    screen: { x: 0, y: 0, scale: 0.5 },
-    visible: false,
-    visibleText: false,
-    visibleEditing: false,
-    developer: true,
-    links: {},
-    nodes: {},
-    location: 'global',
-    src: 'spatialDraw',
-    privateData: {},
-    publicData: {},
-    staticCopy: false,
-    distanceScale: 1,
-    groupID: null,
-    pinned: true
-};
+const getFrameAddedRef = (objectId) => {
+    return {
+        objectId,
+        uuid: `${objectId}spatialDraw1mJx458y5jn9a`,
+        name: 'spatialDraw1mJx458y5jn9a',
+        visualization: 'ar',
+        ar: {
+            x: 0,
+            y: 0,
+            scale: 1,
+            matrix: [
+                0.966, 0.015, 0.257, 0,
+                -0.256, -0.0676, 0.964, 0,
+                -0.0319, 0.997, 0.0614, 0,
+                -50.227, -193.471, -239.032, 1
+            ]
+        },
+        screen: { x: 0, y: 0, scale: 0.5 },
+        visible: false,
+        visibleText: false,
+        visibleEditing: false,
+        developer: true,
+        links: {},
+        nodes: {},
+        location: 'global',
+        src: 'spatialDraw',
+        privateData: {},
+        publicData: {},
+        staticCopy: false,
+        distanceScale: 1,
+        groupID: null,
+        pinned: true
+    };
+}
 
-const frameMovedRef = JSON.parse(JSON.stringify(frameAddedRef));
-frameMovedRef.ar.matrix = [
-    0.966, 0.015, 0.257, 0,
-    -0.256, -0.0675, 0.964, 0,
-    -0.031, 0.997, 0.061, 0,
-    -150, -293, -555, 1
-];
+const getFrameMovedRef = (objectId) => {
+    const frameMovedRef = JSON.parse(JSON.stringify(getFrameAddedRef(objectId)));
+    frameMovedRef.ar.matrix = [
+        0.966, 0.015, 0.257, 0,
+        -0.256, -0.0675, 0.964, 0,
+        -0.031, 0.997, 0.061, 0,
+        -150, -293, -555, 1
+    ];
+    return frameMovedRef;
+}
 
 test('new object creation', async () => {
     let objectsPath = require('../config.js').objectsPath;
 
-    await addFrame();
+    const worldName = '_WORLD_instantScanPJ1cgyrm';
+    // const snapshotPre = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
 
-    const worldAdded = await getObject();
-    expect(worldAdded.frames).toEqual({
-        _WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a: frameAddedRef,
+    const snapshotPre = filterSnapshot(snapshotDirectory(objectsPath), (filePath) => {
+        return filterToObjects(filePath) && filePath.includes(worldName);
     });
-    const frameAdded = await getFrame();
+    let objFsPre = null;
+    for (let key of Object.keys(snapshotPre)) {
+        if (key.endsWith('.identity/object.json')) {
+            objFsPre = snapshotPre[key];
+            break;
+        }
+    }
+    const objectId = objFsPre.objectId;
+    expect(typeof objectId).toBe('string');
+    expect(objectId).toMatch(new RegExp(`^${worldName}`));
+
+    const frameAddedRef = getFrameAddedRef(objectId);
+    await addFrame(objectId);
+
+    const worldAdded = await getObject(objectId);
+    let expectedFrames = {};
+    expectedFrames[`${objectId}spatialDraw1mJx458y5jn9a`] = frameAddedRef;
+    expect(worldAdded.frames).toEqual(expectedFrames);
+
+    const frameAdded = await getFrame(objectId);
     expect(frameAdded).toEqual(frameAddedRef);
 
-    const snapshot = filterSnapshot(snapshotDirectory(objectsPath), filterToObjects);
+    // const snapshot = filterSnapshot(snapshotDirectory(objectsPath), filterToObjects);
+    const snapshot = filterSnapshot(snapshotDirectory(objectsPath),(filePath) => {
+        return filterToObjects(filePath) && filePath.includes(worldName);
+    });
     let objFs = null;
     for (let key of Object.keys(snapshot)) {
         if (key.endsWith('.identity/object.json')) {
@@ -180,20 +207,21 @@ test('new object creation', async () => {
             break;
         }
     }
-    expect(objFs.frames).toEqual({
-        _WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a: frameAddedRef,
-    });
+    expect(objFs.frames).toEqual(expectedFrames);
 
-    await moveFrame();
+    const frameMovedRef = getFrameMovedRef(objectId);
+    await moveFrame(objectId);
 
-    const worldMoved = await getObject();
-    expect(worldMoved.frames).toEqual({
-        _WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a: frameMovedRef,
-    });
-    const frameMoved = await getFrame();
+    const worldMoved = await getObject(objectId);
+    let expectedFramesMoved = {};
+    expectedFramesMoved[`${objectId}spatialDraw1mJx458y5jn9a`] = frameMovedRef;
+    expect(worldMoved.frames).toEqual(expectedFramesMoved);
+    const frameMoved = await getFrame(objectId);
     expect(frameMoved).toEqual(frameMovedRef);
 
-    const snapshotMoved = filterSnapshot(snapshotDirectory(objectsPath), filterToObjects);
+    const snapshotMoved = filterSnapshot(snapshotDirectory(objectsPath),(filePath) => {
+        return filterToObjects(filePath) && filePath.includes(worldName);
+    });
     objFs = null;
     for (let key of Object.keys(snapshotMoved)) {
         if (key.endsWith('.identity/object.json')) {
@@ -201,7 +229,5 @@ test('new object creation', async () => {
             break;
         }
     }
-    expect(objFs.frames).toEqual({
-        _WORLD_instantScanPJ1cgyrm_T6ijgnpsk1cspatialDraw1mJx458y5jn9a: frameMovedRef,
-    });
+    expect(objFs.frames).toEqual(expectedFramesMoved);
 });
