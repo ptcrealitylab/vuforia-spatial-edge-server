@@ -15,6 +15,8 @@ const {
 
 const fetch = require('node-fetch');
 
+const worldName = '_WORLD_instantScanPJ1cgyrm';
+
 let server;
 beforeAll(async () => {
     server = require('../server.js');
@@ -167,9 +169,6 @@ const getFrameMovedRef = (objectId) => {
 
 test('new object creation', async () => {
     let objectsPath = require('../config.js').objectsPath;
-
-    const worldName = '_WORLD_instantScanPJ1cgyrm';
-    // const snapshotPre = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
 
     const snapshotPre = filterSnapshot(snapshotDirectory(objectsPath), (filePath) => {
         return filterToObjects(filePath) && filePath.includes(worldName);
