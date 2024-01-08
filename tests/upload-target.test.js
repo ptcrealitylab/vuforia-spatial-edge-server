@@ -52,7 +52,7 @@ test('target upload to /content/:objectName', async () => {
 
     const preUploadSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
     const preUploadObjJson = getValueWithKeySuffixed(preUploadSnapshot, '.identity/object.json');
-    
+
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
     const res = await fetch(`http://localhost:8080/content/${worldName}`, {
