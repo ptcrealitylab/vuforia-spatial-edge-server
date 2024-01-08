@@ -152,7 +152,7 @@ const getFrameAddedRef = (objectId) => {
         groupID: null,
         pinned: true
     };
-}
+};
 
 const getFrameMovedRef = (objectId) => {
     const frameMovedRef = JSON.parse(JSON.stringify(getFrameAddedRef(objectId)));
@@ -163,7 +163,7 @@ const getFrameMovedRef = (objectId) => {
         -150, -293, -555, 1
     ];
     return frameMovedRef;
-}
+};
 
 test('new object creation', async () => {
     let objectsPath = require('../config.js').objectsPath;
@@ -196,8 +196,7 @@ test('new object creation', async () => {
     const frameAdded = await getFrame(objectId);
     expect(frameAdded).toEqual(frameAddedRef);
 
-    // const snapshot = filterSnapshot(snapshotDirectory(objectsPath), filterToObjects);
-    const snapshot = filterSnapshot(snapshotDirectory(objectsPath),(filePath) => {
+    const snapshot = filterSnapshot(snapshotDirectory(objectsPath), (filePath) => {
         return filterToObjects(filePath) && filePath.includes(worldName);
     });
     let objFs = null;
@@ -219,7 +218,7 @@ test('new object creation', async () => {
     const frameMoved = await getFrame(objectId);
     expect(frameMoved).toEqual(frameMovedRef);
 
-    const snapshotMoved = filterSnapshot(snapshotDirectory(objectsPath),(filePath) => {
+    const snapshotMoved = filterSnapshot(snapshotDirectory(objectsPath), (filePath) => {
         return filterToObjects(filePath) && filePath.includes(worldName);
     });
     objFs = null;
