@@ -1312,7 +1312,7 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
                     tcs: objects[thisId].tcs,
                     zone: zone
                 };
-                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
+                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar' || objects[thisId].type === 'world';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
