@@ -403,6 +403,20 @@ router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
     });
 });
 
+router.get('/:objectName/checkFileExists/*', (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    // Extract the file path from the URL
+    const filePath = req.params[0];
+    objectController.checkFileExists(req.params.objectName, filePath).then(exists => {
+        res.json({ exists: exists });
+    }).catch(e => {
+        res.status(404).json({ error: e, exists: false });
+    });
+});
+
 const setupDeveloperRoutes = function() {
     // normal nodes
     router.post('/:objectName/frame/:frameName/node/:nodeName/size/', function (req, res) {
