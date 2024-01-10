@@ -255,14 +255,12 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
         });
 
         unzipperDat.on('progress', function (_fileIndex, _fileCount) {
-            // console.log('Extracted 3dt file ' + (fileIndex + 1) + ' of ' + fileCount);
+            // console.log('Extracted dat file ' + (fileIndex + 1) + ' of ' + fileCount);
         });
 
         unzipperDat.extract({
             path: targetFolderPath,
             filter: function (file) {
-                // skipping over frame_%d.jpg, images.json, and tileset.json
-                // return file.type !== 'SymbolicLink' && file.filename.endsWith('glb');
                 return file.type !== 'SymbolicLink' && file.filename.endsWith('info');
             }
         });
