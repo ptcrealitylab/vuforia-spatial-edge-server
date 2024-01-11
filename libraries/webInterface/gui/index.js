@@ -543,11 +543,15 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 } else { // if not initializes with target files...
 
-                    thisObject.dom.querySelector('.name').classList.add('inactive');
                     thisObject.dom.querySelector('.zone').classList.add('inactive');
                     thisObject.dom.querySelector('.sharing').classList.add('inactive');
                     thisObject.dom.querySelector('.download').classList.add('inactive');
                     thisObject.dom.querySelector('.active').classList.add('inactive');
+
+                    // world object names are always clickable to get to remote operator
+                    if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
+                        realityServer.changeActiveState(thisObject.dom, true, objectKey);
+                    }
 
                     // make on/off button yellow always if not properly initialized
                     realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
