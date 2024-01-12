@@ -50,6 +50,9 @@ test('target upload to /content/:objectName', async () => {
     });
     await resNew.text();
 
+    const preUploadSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
+    const preUploadObjJson = getValueWithKeySuffixed(preUploadSnapshot, '.identity/object.json');
+
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
     const res = await fetch(`http://localhost:8080/content/${worldName}`, {
@@ -62,7 +65,7 @@ test('target upload to /content/:objectName', async () => {
     });
     const content = await res.json();
     expect(content).toEqual({
-        id: '_WORLD_instantScan6bK1sn5d_wdb4wue6bdm',
+        id: preUploadObjJson.objectId,
         name: worldName,
         initialized: false,
         jpgExists: false,
@@ -78,9 +81,11 @@ test('target upload to /content/:objectName', async () => {
     delete objJson.ip;
     delete objJson.port;
     delete objJson.tcs;
+    delete objJson.timestamp;
     expect(objJson).toEqual({
-        objectId: '_WORLD_instantScan6bK1sn5d_wdb4wue6bdm',
+        objectId: preUploadObjJson.objectId,
         name: '_WORLD_instantScan6bK1sn5d',
+        targetId: 'e3169799f314480da133849f0feb1676',
         matrix: [],
         worldId: null,
         isAnchor: false,
@@ -100,7 +105,6 @@ test('target upload to /content/:objectName', async () => {
         targetSize: { width: 0.3, height: 0.3 },
         isWorldObject: true,
         type: 'world',
-        timestamp: null,
     });
 
     const tdt = getValueWithKeySuffixed(snapshot, 'target.3dt');
