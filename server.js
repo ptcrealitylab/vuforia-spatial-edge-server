@@ -3003,7 +3003,7 @@ function objectWebServer() {
                                     unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
                                         const folderFiles = await fsProm.readdir(targetFolderPath);
-                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
+                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt', 'jpg'];
 
                                         let anyTargetsUploaded = false;
 
@@ -3022,19 +3022,36 @@ function objectWebServer() {
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return async function() {
+                                                        let nestedTargetDirPath = path.join(folderD, identityFolderName, 'target', folderName);
+
                                                         try {
-                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        } catch (e) {
-                                                            console.warn('target zip already cleaned up', folderName);
+                                                            // Attempt to delete .DS_Store if it exists
+                                                            await fsProm.unlink(path.join(nestedTargetDirPath, '.DS_Store'));
+                                                        } catch (error) {
+                                                            // Ignore if .DS_Store doesn't exist; display other warnings
+                                                            if (error.code !== 'ENOENT') console.warn(error);
                                                         }
-                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
+
+                                                        try {
+                                                            await fsProm.rmdir(nestedTargetDirPath);
+                                                        } catch (e) {
+                                                            console.warn('target zip already cleaned up', folderName, e);
+                                                        }
+
                                                         try {
                                                             await fsProm.rename(
                                                                 path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
                                                                 path.join(folderD, identityFolderName, 'target', 'target.glb')
                                                             );
                                                         } catch (e) {
-                                                            console.warn('no authoringMesh.glb to rename to target.glb', e);
+                                                            console.log('no authoringMesh.glb to rename to target.glb', e);
+                                                        }
+
+                                                        try {
+                                                            // Attempt to delete __MACOSX zip artifact, if it exists
+                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', '__MACOSX'), { recursive: true });
+                                                        } catch (error) {
+                                                            if (error.code !== 'ENOENT') console.warn(error);
                                                         }
                                                     };
                                                 }
