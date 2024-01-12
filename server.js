@@ -3028,10 +3028,14 @@ function objectWebServer() {
                                                             console.warn('target zip already cleaned up', folderName);
                                                         }
                                                         // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        await fsProm.rename(
-                                                            path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
-                                                            path.join(folderD, identityFolderName, 'target', 'target.glb')
-                                                        );
+                                                        try {
+                                                            await fsProm.rename(
+                                                                path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
+                                                                path.join(folderD, identityFolderName, 'target', 'target.glb')
+                                                            );
+                                                        } catch (e) {
+                                                            console.warn('no authoringMesh.glb to rename to target.glb', e);
+                                                        }
                                                     };
                                                 }
                                                 const finish = finishFn(folderFile);
