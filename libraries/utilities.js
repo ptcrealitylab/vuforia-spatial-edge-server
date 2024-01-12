@@ -232,6 +232,11 @@ async function getAnchorIdFromObjectFile(folderName) {
 }
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
 
+/**
+ * Given a target folder, unzips the target.dat file within it and retrieves the targetId from config.info
+ * @param {string} targetFolderPath
+ * @returns {Promise<string|null>}
+ */
 exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targetFolderPath) {
     return new Promise((resolve, reject) => {
         // unzip the .dat file and read the unique targetId from the config.info file
@@ -267,6 +272,11 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
     });
 };
 
+/**
+ * Parses the file as XML and pulls out the targetId string
+ * @param {string} filePath
+ * @returns {Promise<string|null>}
+ */
 async function getTargetIdFromConfigFile(filePath) {
     if (!await fileExists(filePath)) {
         return null;
@@ -280,24 +290,34 @@ async function getTargetIdFromConfigFile(filePath) {
         return null;
     }
 
-    let resultId = null;
-
-    xml2js.Parser().parseString(contents, function (parseErr, result) {
-        try {
-            if (parseErr) {
-                throw parseErr;
-            }
-            // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
-            // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
-            let targetEntry = Object.entries(result.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$');
-            // this extracts the properties associated with that tag in the file, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
-            resultId = targetEntry[1][0].$.targetId;
-        } catch (err) {
-            console.error('error parsing xml', err);
-        }
+    return await getTargetIdFromXML(contents, (xml) => {
+        // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
+        // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
+        // and extracts the tag's properties, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
+        return Object.entries(xml.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$')[1][0].$.targetId;
     });
+}
 
-    return resultId;
+/**
+ * Parses the string as XML and searches the structured contents using the provided xmlQuery function
+ * @param {string} xmlContentsString
+ * @param {function} xmlQuery
+ * @returns {Promise<string>}
+ */
+async function getTargetIdFromXML(xmlContentsString, xmlQuery) {
+    return new Promise(function (resolve, reject) {
+        xml2js.Parser().parseString(xmlContentsString, function (parseErr, result) {
+            try {
+                if (parseErr) {
+                    throw parseErr;
+                }
+                resolve(xmlQuery(result));
+            } catch (err) {
+                console.error('error parsing xml', err);
+                reject(err);
+            }
+        });
+    });
 }
 
 /**
