@@ -252,7 +252,7 @@ exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targe
             if (await fileExists(configFilePath)) {
                 // read the id stored within the config.info file (it's actually structured as XML)
                 let targetUniqueId = await getTargetIdFromConfigFile(configFilePath);
-                console.log('TODO: cleanup config.info file instead of leaving it in the folder');
+                // TODO: cleanup config.info file instead of leaving it in the folder
                 resolve(targetUniqueId);
             } else {
                 reject('config.info not found at ' + configFilePath);
@@ -290,12 +290,17 @@ async function getTargetIdFromConfigFile(filePath) {
         return null;
     }
 
-    return await queryXMLContents(contents, (xml) => {
-        // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
-        // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
-        // and extracts the tag's properties, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
-        return Object.entries(xml.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$')[1][0].$.targetId;
-    });
+    try {
+        return await queryXMLContents(contents, (xml) => {
+            // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
+            // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
+            // and extracts the tag's properties, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
+            return Object.entries(xml.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$')[1][0].$.targetId;
+        });
+    } catch (err) {
+        console.error('Error parsing/querying XML contents', err);
+        return null;
+    }
 }
 
 /**
