@@ -16,6 +16,8 @@ const fsProm = require('fs/promises');
 const path = require('path');
 
 const fetch = require('node-fetch');
+const https = require('https');
+let httpsAgent = new https.Agent({rejectUnauthorized: false});
 const FormData = require('form-data');
 
 const objectsPath = require('../config.js').objectsPath;
@@ -41,12 +43,13 @@ afterAll(async () => {
 test('target upload to /content/:objectName', async () => {
     await waitForObjects();
 
-    const resNew = await fetch('http://localhost:8080/', {
+    const resNew = await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=new&name=${worldName}&isWorld=true`,
-        'method': 'POST'
+        'method': 'POST',
+        agent: httpsAgent
     });
     await resNew.text();
 
@@ -55,13 +58,14 @@ test('target upload to /content/:objectName', async () => {
 
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
-    const res = await fetch(`http://localhost:8080/content/${worldName}`, {
+    const res = await fetch(`https://localhost:8080/content/${worldName}`, {
         method: 'POST',
         headers: {
             ...form.getHeaders(),
             type: 'targetUpload',
         },
         body: form,
+        agent: httpsAgent
     });
     const content = await res.json();
     expect(content).toEqual({
@@ -120,12 +124,13 @@ test('target upload to /content/:objectName', async () => {
     // Let the upload cleanup process finish before we delete
     await sleep(1000);
 
-    const resDelete = await fetch('http://localhost:8080/', {
+    const resDelete = await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=delete&name=${worldName}&frame=`,
-        'method': 'POST'
+        'method': 'POST',
+        agent: httpsAgent
     });
     await resDelete.text();
 
