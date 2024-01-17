@@ -153,7 +153,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
-// The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
+// The web service level on which objects are accessable. https://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
 /**********************************************************************************************************************
@@ -313,7 +313,13 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-const http = webServer.listen(serverPort, function () {
+
+let options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+const httpServer = require('https').createServer(options, webServer);
+const http = httpServer.listen(serverPort, function () {
     console.info('Server (http and websockets) is listening on port', serverPort);
     checkInit('web');
 });
@@ -1494,7 +1500,7 @@ async function getKnownSceneGraph(ip, port) {
     } // TODO: implement placeholder
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
-    const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
+    const url = 'https://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
     let response = null;
     try {
         response = await utilities.httpGet(url);
