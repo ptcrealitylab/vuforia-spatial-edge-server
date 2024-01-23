@@ -1,3 +1,6 @@
 [submodule "addons/vuforia-spatial-core-addon"]
 	path = addons/vuforia-spatial-core-addon
 	url = https://github.com/ptcrealitylab/vuforia-spatial-core-addon.git
+[submodule "addons/vuforia-spatial-edge-agent-addon"]
+	path = addons/vuforia-spatial-edge-agent-addon
+	url = git@github.com:ptcrealitylab/vuforia-spatial-edge-agent-addon
