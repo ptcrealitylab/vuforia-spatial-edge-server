@@ -16,9 +16,13 @@ exports.deepCopy = utilities.deepCopy;
 exports.searchNodeByType = async function (nodeType, objectKey, tool, node, callback) {
     let thisObjectKey = objectKey;
     if (!(objectKey in objects)) {
-        thisObjectKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
+        thisObjectKey = await utilities.getObjectIdFromObjectFile(objectKey);
     }
     let thisObject = utilities.getObject(objects, thisObjectKey);
+    if (!thisObject) {
+        console.error('searchNodeByType object not found');
+        return;
+    }
     if (!tool && !node) {
         utilities.forEachFrameInObject(thisObject, function (thisTool, toolKey) {
             utilities.forEachNodeInFrame(thisTool, function (thisNode, nodeKey) {
