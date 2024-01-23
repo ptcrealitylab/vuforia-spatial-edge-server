@@ -67,9 +67,11 @@ router.post('/:objectName/:nodeName/nodeSize/', function (req, res) {
     });
 });
 
-// APIs for programmatically connecting nodes of the system to external data streams, at runtime
-// This enables functionality like: searching a ThingWorx server for sensor values, and adding new tools to visualize those values
-// Much of the heavy-lifting of these APIs must be taken care of in the corresponding hardwareInterface implementation
+/**
+ * APIs for programmatically connecting nodes of the system to external data streams, at runtime. This enables
+ * functionality like: searching a ThingWorx server for sensor values, and adding new tools to visualize those values.
+ * Much of the heavy-lifting of these APIs must be taken care of in the corresponding hardwareInterface implementation
+ */
 
 // gets the list of dataSources (from hardware interfaces) which are URL endpoints containing many dataStreams, e.g. a ThingWorx Thing REST API
 router.get('/availableDataSources/', function (req, res) {
@@ -89,21 +91,18 @@ router.get('/availableDataStreams/', function(req, res) {
 
 // tells the specified hardwareInterface to stream values from the specified dataStream to the specified node
 router.post('/bindNodeToDataStream/', function(req, res) {
-    console.log('bindNodeToDataStream', req.body);
     dataStreamAPI.bindNodeToDataStream(req.body);
     res.status(200).json({ success: true, error: null });
 });
 
 // adds and stores the provided URL + authentication as a dataSource on the specified hardwareInterface
 router.post('/addDataSourceToInterface/', function(req, res) {
-    console.log('addDataSourceToInterface', req.body);
     dataStreamAPI.addDataSourceToInterface(req.body.interfaceName, req.body.dataSource);
     res.status(200).json({ success: true, error: null });
 });
 
 // removes the specified dataSource from the specified hardwareInterface
 router.delete('/deleteDataSourceFromInterface/', function(req, res) {
-    console.log('deleteDataSourceFromInterface', req.body);
     dataStreamAPI.deleteDataSourceFromInterface(req.body.interfaceName, req.body.dataSource);
     res.status(200).json({ success: true, error: null });
 });
