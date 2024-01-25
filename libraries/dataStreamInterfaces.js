@@ -2,37 +2,80 @@
  * @fileOverview
  * Provides additional methods for hardwareInterfaces to use to bind nodes to data streams
  * General structure:
- * Hardware interfaces use the DataStreamHardwareInterfaceAPI to opt in to providing their data sources/streams.
+ * Hardware interfaces use the DataStreamServerAPI to opt in to providing their data sources/streams.
  * Clients can call the DataStreamClientAPI functions to perform tasks like getting the list of available data streams,
  * and to "bind" a specific node to a data stream (meaning that stream will write data to the node from now on).
  */
 
 /**
+ * @classdesc
+ * An individual stream of updating data that can be "bound" to one or more nodes,
+ * to write data into those nodes at a certain interval in perpetuity
+ * @example A data stream might point to a specific property of a Thing on ThingWorx:
+ * https://pp-2302201433iy.portal.ptc.io/Thingworx/Things/SE.CXC.HarpakUlma.Asset.Monitoring.TFS500.PTC01/Properties/EnergyConsumption_Watt
+ * This URL isn't directly stored in the DataStream, but the combination of its id and its DataSource can yield this url
+ */
+class DataStream {
+    /**
+     * @param {string} id - unique identifier
+     * @param {string} displayName - human-readable name to show up in potential UIs
+     * @param {string} nodeType - which type of node this data stream should expect to write to
+     * @param {number} currentValue - the value which gets written into the node
+     * @param {number?} minValue - optional minimum value for the range
+     * @param {number?} maxValue - optional maximum value for the range
+     * @param {string} interfaceName - the name of the hardware interface providing this data stream
+     */
+    constructor(id, displayName, nodeType = 'node', currentValue = 0, minValue, maxValue, interfaceName) {
+        this.id = id;
+        this.displayName = displayName;
+        this.nodeType = nodeType;
+        this.currentValue = currentValue;
+        this.minValue = minValue;
+        this.maxValue = maxValue;
+        this.interfaceName = interfaceName;
+    }
+}
+
+/**
+ * @classdesc
  * A Data Source is an endpoint that can be queried at a specified frequency to get a list of data streams
- * @typedef {Object} DataSource
- * @property {string} id - unique identifier
- * @property {string} displayName - human-readable name of this source
- * @property {DataSourceDetails} source
+ * @example A data source might point to the properties list of a Thing on ThingWorx:
+ * https://pp-2302201433iy.portal.ptc.io/Thingworx/Things/SE.CXC.HarpakUlma.Asset.Monitoring.TFS500.PTC01/Properties/
+ * This URL is stored in its DataSourceDetails
  */
+class DataSource {
+    /**
+     * @param {string} id - unique identifier
+     * @param {string} displayName - human-readable name of this source
+     * @param {DataSourceDetails} source
+     */
+    constructor(id, displayName, source) {
+        this.id = id;
+        this.displayName = displayName;
+        this.source = source;
+    }
+}
 
 /**
- * @typedef {Object} DataSourceDetails
- * @property {string} url - the endpoint to make the request to, e.g. ptc.io/Thingworx/Things/xyz/Properties
- * @property {string} type - type of request to perform or protocol to use, e.g. 'REST/GET'
- * @property {Object} headers - any headers to add to the request, e.g. { Accept: 'application/json', appKey: 'xyz' }
- * @property {number} pollingFrequency - how many milliseconds between each fetch
- * @property {string} dataFormat - a label identifying the data format of the data streams, e.g. 'thingworxProperty'
+ * @classdesc
+ * Struct containing the specific location of where and how to fetch data for a DataSource
  */
-
-/**
- * A Data Stream is an individual stream of updating data that can be bound to one or more nodes
- * @typedef {Object} DataStream
- * @property {string} id - unique identifier
- * @property {string} displayName - human-readable name to show up in potential UIs
- * @property {string} nodeType - most likely 'node' - which type of node this data stream should expect to write to
- * @property {number} currentValue - the value which gets written into the node
- * @property {string} interfaceName - the name of the hardware interface providing this data stream
- */
+class DataSourceDetails {
+    /**
+     * @param {string} url - the endpoint to make the request to, e.g. ptc.io/Thingworx/Things/xyz/Properties
+     * @param {string} type - type of request to perform or protocol to use, e.g. 'REST/GET'
+     * @param {Object} headers - any headers to add to the request, e.g. { Accept: 'application/json', appKey: 'xyz' }
+     * @param {number} pollingFrequency - how many milliseconds between each fetch
+     * @param {string} dataFormat - a label identifying the data format of the data streams, e.g. 'thingworxProperty'
+     */
+    constructor(url, type, headers, pollingFrequency, dataFormat) {
+        this.url = url;
+        this.type = type;
+        this.headers = headers;
+        this.pollingFrequency = pollingFrequency;
+        this.dataFormat = dataFormat;
+    }
+}
 
 /**
  * @type {function[]}
@@ -62,7 +105,7 @@ let deleteDataSourceCallbacks = {};
  * Hardware interfaces can use these functions to register hooks/callbacks to notify the system of data streams/sources,
  * and to respond to requests from the client in a modular way behind a level of indirection
  */
-const DataStreamHardwareInterfaceAPI = {
+const DataStreamServerAPI = {
     /**
      * Hardware interfaces can register a hook that they can use to inform the system of which DataStreams they know about
      * @param {function} callback
@@ -198,6 +241,7 @@ const DataStreamClientAPI = {
 }
 
 module.exports = {
-    DataStreamHardwareInterfaceAPI,
-    DataStreamClientAPI
+    DataStreamClientAPI,
+    DataStreamServerAPI,
+    DataStream
 }
