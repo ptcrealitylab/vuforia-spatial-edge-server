@@ -253,12 +253,13 @@ const DataStreamClientAPI = {
             callback(dataSource);
         });
     }
-}
+};
 
 module.exports = {
     DataStreamClientAPI, // intended to be used in response to clients using the server's REST APIs
     DataStreamServerAPI, // intended to be used by the DataStreamInterface class, not by individual hardware interfaces
     DataStream,
     DataSource,
+    DataSourceDetails,
     NodeBinding
-}
+};

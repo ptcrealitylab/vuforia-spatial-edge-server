@@ -568,7 +568,7 @@
             this.rootElementWhenClosed.style.display = 'none';
             this.rootElementWhenOpen.style.display = '';
             // change the iframe and touch overlay size (including visual feedback corners) when the frame changes size
-            if (!this.disableAutomaticResizing){
+            if (!this.disableAutomaticResizing) {
                 this.realityInterface.changeFrameSize(parseInt(this.rootElementWhenOpen.clientWidth), parseInt(this.rootElementWhenOpen.clientHeight));
             }
             this.moveDelayBeforeOpen = this.realityInterface.getMoveDelay() || 400;
