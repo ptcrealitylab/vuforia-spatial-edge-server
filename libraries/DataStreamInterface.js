@@ -1,4 +1,4 @@
-const { DataStreamServerAPI, NodeBinding } = require('@libraries/dataStreamInterfaces');
+const { DataStreamServerAPI, NodeBinding, DataSource, DataSourceDetails } = require('./dataStreamInterfaces');
 const server = require('./hardwareInterfaces');
 
 /**
@@ -17,8 +17,9 @@ class DataStreamInterface {
     constructor(interfaceName, initialDataSources, initialNodeBindings, fetchDataStreamsImplementation) {
         this.interfaceName = interfaceName; // this must be the exact string of the hardware interface directory name, e.g. 'thingworx' or 'kepware'
         this.fetchDataStreamsFromSource = fetchDataStreamsImplementation;
-        this.dataSources = initialDataSources; // read these from settings
-        this.nodeBindings = initialNodeBindings; // read these from settings
+
+        // read DataSources and NodeBindings from settings
+        this.loadInitialData(initialDataSources, initialNodeBindings);
         this.dataStreams = []; // starts empty, populates when updateData is called
 
         if ((typeof interfaceName !== 'string') || !initialDataSources ||
@@ -35,39 +36,135 @@ class DataStreamInterface {
         DataStreamServerAPI.registerBindNodeEndpoint(this.interfaceName, this.bindNodeToDataStream.bind(this));
         DataStreamServerAPI.registerAddDataSourceEndpoint(this.interfaceName, this.addDataSource.bind(this));
         DataStreamServerAPI.registerDeleteDataSourceEndpoint(this.interfaceName, this.deleteDataSource.bind(this));
-
-        console.log('>>> initialized DataStreamInterface on server');
     }
 
+    /**
+     * Loads saved data and discards any items that can't properly be constructed into the class definition
+     * @param {DataSource[]} initialDataSources
+     * @param {NodeBinding[]} initialNodeBindings
+     */
+    loadInitialData(initialDataSources, initialNodeBindings) {
+        this.dataSources = [];
+        this.nodeBindings = [];
+
+        initialDataSources.forEach(dataSource => {
+            let castSource = null;
+            try {
+                castSource = this.castToDataSource(dataSource);
+            } catch (e) {
+                console.warn(`error parsing source while loading DataStreamInterface for ${this.interfaceName}`, e);
+            }
+            if (castSource) {
+                this.dataSources.push(castSource);
+            }
+        });
+
+        initialNodeBindings.forEach(nodeBinding => {
+            let castBinding = null;
+            try {
+                castBinding = this.castToNodeBinding(nodeBinding);
+            } catch (e) {
+                console.warn(`error parsing binding while loading DataStreamInterface for ${this.interfaceName}`, e);
+            }
+            if (castBinding) {
+                this.nodeBindings.push(castBinding);
+            }
+        });
+    }
+
+    /**
+     * @param {Object} data
+     * @returns {boolean}
+     */
+    isValidDataSource(data) {
+        if (!data || !data.id || !data.displayName || !data.source) return false;
+        return (data.source.url && data.source.type && data.source.headers &&
+            data.source.pollingFrequency && data.source.dataFormat);
+    }
+
+    /**
+     * @param {Object} data
+     * @returns {boolean}
+     */
+    isValidNodeBinding(data) {
+        if (!data) return false;
+        return (data.objectId && data.objectName && data.frameId &&
+            data.frameName && data.nodeId && data.nodeName && data.streamId);
+    }
+
+    /**
+     * @param {Object} dataSource
+     * @returns {DataSource}
+     * @throws {Error} if input is not a valid data source
+     */
+    castToDataSource(dataSource) {
+        if (this.isValidDataSource(dataSource)) {
+            let sourceDetails = new DataSourceDetails(dataSource.source.url, dataSource.source.type, dataSource.source.headers,
+                dataSource.source.pollingFrequency, dataSource.source.dataFormat);
+            return new DataSource(dataSource.id, dataSource.displayName, sourceDetails);
+        } else {
+            throw new Error(`Invalid DataSource structure ${dataSource}`);
+        }
+    }
+
+    /**
+     * @param {Object} nodeBinding
+     * @returns {NodeBinding}
+     * @throws {Error} if input is not a valid node binding
+     */
+    castToNodeBinding(nodeBinding) {
+        if (this.isValidNodeBinding(nodeBinding)) {
+            return new NodeBinding(nodeBinding.objectId, nodeBinding.objectName, nodeBinding.frameId,
+                nodeBinding.frameName, nodeBinding.nodeId, nodeBinding.nodeName, nodeBinding.streamId);
+        } else {
+            throw new Error(`Invalid NodeBinding structure ${nodeBinding}`);
+        }
+    }
+
+    /**
+     * @returns {{ interfaceName: string, dataStreams: DataStream[] }}
+     */
     getAvailableDataStreams() {
         return {
             interfaceName: this.interfaceName,
             dataStreams: this.dataStreams
         };
-
-        console.log('>>> getAvailableDataStreams');
     }
 
+    /**
+     * @returns {{ interfaceName: string, dataStreams: DataSource[] }}
+     */
     getAvailableDataSources() {
         return {
             interfaceName: this.interfaceName,
             dataSources: this.dataSources
         };
-
-        console.log('>>> getAvailableDataSources');
     }
 
+    /**
+     * Creates and saves a NodeBinding between the specified node and the specified streamId.
+     * If the node doesn't exist, it will create it on the specified tool, first.
+     * @param {string} objectId
+     * @param {string} frameId
+     * @param {string} nodeName
+     * @param {string} nodeType
+     * @param {string} streamId
+     */
     bindNodeToDataStream(objectId, frameId, nodeName, nodeType, streamId) {
+        if (!objectId || !frameId || !nodeName || !nodeType || !streamId) {
+            console.warn('improper arguments for bindNodeToStream -> skipping');
+            return;
+        }
+
         // search for a node of type on the frame, or create the node of that type if it needs one
         let objectName = server.getObjectNameFromObjectId(objectId);
         let frameName = server.getToolNameFromToolId(objectId, frameId);
         let existingNodes = server.getAllNodes(objectName, frameName);
 
-        // TODO: how to make sure the name matches the name that the tool will use for its primary node? for now the client just guesses it's named "value"
-        let matchingNode = Object.values(existingNodes).find(node => { return node.type === nodeType && node.name === nodeName });
+        let matchingNode = Object.values(existingNodes).find(node => { return node.type === nodeType && node.name === nodeName; });
         if (!matchingNode) {
             server.addNode(objectName, frameName, nodeName, nodeType);
-            matchingNode = Object.values(existingNodes).find(node => { return node.type === nodeType && node.name === nodeName });
+            matchingNode = Object.values(existingNodes).find(node => { return node.type === nodeType && node.name === nodeName; });
         }
 
         // TODO: skip if a duplicate record is already in nodeBindings
@@ -80,18 +177,31 @@ class DataStreamInterface {
 
         this.writeNodeBindingsToSettings(this.nodeBindings); // write this to the json settings file, so it can be restored upon restarting the server
         this.update(); // update one time immediately so the node gets a value without waiting for the interval
-
-        console.log('>>> bindNodeToDataStream');
     }
 
+    /**
+     * Adds a data source to the interface, saves it persistently, and fetches new data from it immediately
+     * @param {DataSource} dataSource
+     */
     addDataSource(dataSource) {
-        this.dataSources.push(dataSource);
+        // verify that it is a correctly structured DataSource
+        let dataSourceInstance;
+        try {
+            dataSourceInstance = this.castToDataSource(dataSource);
+        } catch (e) {
+            console.warn('trying to add improper data as a dataSource', dataSource);
+        }
+        if (!dataSourceInstance) return;
+
+        this.dataSources.push(dataSourceInstance);
         this.writeDataSourcesToSettings(this.dataSources);
         this.update();
-
-        console.log('>>> addDataSource');
     }
 
+    /**
+     * Deletes the specified data source from the interface (if it exists), removes from persistent data, and refreshes
+     * @param {DataSource} dataSourceToDelete
+     */
     deleteDataSource(dataSourceToDelete) {
         if (!dataSourceToDelete.id || !dataSourceToDelete.url || !dataSourceToDelete.displayName) return;
 
@@ -104,14 +214,16 @@ class DataStreamInterface {
         if (matchingDataSource) {
             let index = this.dataSources.indexOf(matchingDataSource);
             this.dataSources.splice(index, 1);
+            this.writeDataSourcesToSettings(this.dataSources);
+            this.update();
         }
-
-        this.writeDataSourcesToSettings(this.dataSources);
-        this.update();
-
-        console.log('>>> deleteDataSource');
     }
 
+    /**
+     * When update is called, we refresh our list of all data streams from all data sources.
+     * In the current implementation, this should also update the `currentValue` of each dataStream.
+     * We then look at the nodeBindings, and push the `currentValue` from any data streams into nodes bound to them.
+     */
     update() {
         this.queryAllDataSources(this.dataSources).then((dataStreamsArray) => {
             this.dataStreams = dataStreamsArray.flat();
@@ -123,11 +235,14 @@ class DataStreamInterface {
         }).catch(err => {
             console.warn('error in queryAllDataSources', err);
         });
-
-        console.log('>>> update');
     }
 
     /**
+     * Iterates over all data sources, and outsources the task of fetching the list of data streams and updating the
+     * `currentValue` of each data stream -> this task is outsourced via the fetchDataStreamsFromSource function, which
+     * must be implemented by the hardware interface that instantiates this DataStreamInterface – since the
+     * DataStreamInterface itself has no way to know how to interpret JSON structure of the fetch results.
+     * The hardware interface can optionally add a `minValue` and `maxValue` to the data stream to help map it to (0,1)
      * @param {DataSource[]} dataSources
      * @returns {Promise<Awaited<DataStream[]>[]>}
      */
@@ -143,21 +258,27 @@ class DataStreamInterface {
         return Promise.all(fetchPromises);
     }
 
+    /**
+     * Finds the data stream identified in this nodeBinding, and writes the `currentValue` to the specified node.
+     * Attempts to map the `currentValue` to the range of (0,1), using the `minValue` and `maxValue` of the data stream,
+     * but if there is no range specified then it defaults to mapping it to 0.5. It can be remapped to true value by
+     * tools that look at the unitMin and unitMax in addition to the value.
+     * @param {NodeBinding} nodeBinding
+     */
     processNodeBinding(nodeBinding) {
-        let dataStream = this.dataStreams.find(stream => { return stream.id === nodeBinding.streamId});
+        let dataStream = this.dataStreams.find(stream => { return stream.id === nodeBinding.streamId; });
         if (!dataStream) return;
         // TODO: optionally add [mode, unit, unitMin, unitMax] to server.write arguments
         let mode = 'f';
         let unit = undefined; //UNIT_DEGREES_C; // TODO: allow dataStream to provide this, e.g. 'degrees C'
-        let unitMin = typeof dataStream.minValue === 'number' ? dataStream.minValue : dataStream.currentValue - 0.5;// TODO: allow dataStream to fetch or calculate min/max based on observed values
+        let unitMin = typeof dataStream.minValue === 'number' ? dataStream.minValue : dataStream.currentValue - 0.5;
         let unitMax = typeof dataStream.maxValue === 'number' ? dataStream.maxValue : dataStream.currentValue + 0.5;
         let valueMapped = (dataStream.currentValue - unitMin) / (unitMax - unitMin);
         server.write(nodeBinding.objectName, nodeBinding.frameName, nodeBinding.nodeName, valueMapped, mode, unit, unitMin, unitMax);
-
-        // console.log('>>> processNodeBinding');
     }
 
     /**
+     * Persists the list of Data Sources to persistent storage.
      * @param {DataSource[]} dataSources
      */
     writeDataSourcesToSettings(dataSources) {
@@ -169,11 +290,10 @@ class DataStreamInterface {
                 console.log(`${this.interfaceName}: success persisting dataSources to settings`, successful);
             }
         });
-
-        console.log('>>> writeDataSourcesToSettings');
     }
 
     /**
+     * Persists the list of Node Bindings to persistent storage.
      * @param {NodeBinding[]} nodeBindings
      */
     writeNodeBindingsToSettings(nodeBindings) {
@@ -185,8 +305,6 @@ class DataStreamInterface {
                 console.log(`${this.interfaceName}: success persisting nodeBindings to settings`, successful);
             }
         });
-
-        console.log('>>> writeNodeBindingsToSettings');
     }
 }
 

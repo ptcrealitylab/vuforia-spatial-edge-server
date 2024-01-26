@@ -303,7 +303,7 @@
      */
     spatialObject.getURL = function (path) {
         return `${spatialObject.socketIoUrl}${path}`;
-    }
+    };
 
     /**
      * receives POST messages from parent to change spatialObject state
