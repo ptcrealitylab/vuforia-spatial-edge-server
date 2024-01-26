@@ -1,4 +1,4 @@
-const { DataStreamServerAPI } = require('@libraries/dataStreamInterfaces');
+const { DataStreamServerAPI, NodeBinding } = require('@libraries/dataStreamInterfaces');
 const server = require('./hardwareInterfaces');
 
 /**
@@ -10,26 +10,25 @@ const server = require('./hardwareInterfaces');
 class DataStreamInterface {
     /**
      * @param {string} interfaceName
-     * @param {function} queryDataSourcesCallback
-     * @param {function} processStreamsFromDataSourceResultsCallback
      * @param {DataSource[]} initialDataSources
      * @param {NodeBinding[]} initialNodeBindings
+     * @param {function} fetchDataStreamsImplementation
      */
-    constructor(interfaceName, queryDataSourcesCallback, processStreamsFromDataSourceResultsCallback, initialDataSources, initialNodeBindings) {
+    constructor(interfaceName, initialDataSources, initialNodeBindings, fetchDataStreamsImplementation) {
         this.interfaceName = interfaceName; // this must be the exact string of the hardware interface directory name, e.g. 'thingworx' or 'kepware'
-        this.queryDataSources = queryDataSourcesCallback;
-        this.processStreamsFromDataSourceResults = processStreamsFromDataSourceResultsCallback;
+        this.fetchDataStreamsFromSource = fetchDataStreamsImplementation;
         this.dataSources = initialDataSources; // read these from settings
         this.nodeBindings = initialNodeBindings; // read these from settings
         this.dataStreams = []; // starts empty, populates when updateData is called
 
-        if ((typeof interfaceName !== 'string') || !initialDataSources || !initialNodeBindings ||
-            !queryDataSourcesCallback || !processStreamsFromDataSourceResultsCallback) {
+        if ((typeof interfaceName !== 'string') || !initialDataSources ||
+            !initialNodeBindings || !fetchDataStreamsImplementation) {
             console.warn('Constructed a DataStreamInterface with invalid parameters');
         }
 
-        setTimeout(this.update.bind(this), 3000); // if you do it immediately it may interfere with server start-up process, so wait a few seconds
-        setInterval(this.update.bind(this), 6000 /* * 10 */); // fetch all data streams from data sources every 60 seconds
+        setTimeout(this.update.bind(this), 1000 * 5); // if you do it immediately it may interfere with server start-up process, so wait a few seconds
+        setInterval(this.update.bind(this), 1000 * 60); // fetch all data streams from data sources every 60 seconds
+        // TODO: in future use the pollingFrequency of each data stream. currently just fetches all data updates 1 time per minute.
 
         DataStreamServerAPI.registerAvailableDataStreams(this.getAvailableDataStreams.bind(this));
         DataStreamServerAPI.registerAvailableDataSources(this.getAvailableDataSources.bind(this));
@@ -58,7 +57,7 @@ class DataStreamInterface {
         console.log('>>> getAvailableDataSources');
     }
 
-    bindNodeToDataStream(objectId, frameId, nodeName, nodeType, frameType, streamId) {
+    bindNodeToDataStream(objectId, frameId, nodeName, nodeType, streamId) {
         // search for a node of type on the frame, or create the node of that type if it needs one
         let objectName = server.getObjectNameFromObjectId(objectId);
         let frameName = server.getToolNameFromToolId(objectId, frameId);
@@ -114,19 +113,34 @@ class DataStreamInterface {
     }
 
     update() {
-        this.queryDataSources(this.dataSources).then((resultsArray) => {
-            this.dataStreams = this.processStreamsFromDataSourceResults(resultsArray);
+        this.queryAllDataSources(this.dataSources).then((dataStreamsArray) => {
+            this.dataStreams = dataStreamsArray.flat();
 
             // process each of the node bindings and write it to the node
             this.nodeBindings.forEach(nodeBinding => {
                 this.processNodeBinding(nodeBinding);
             });
-
         }).catch(err => {
             console.warn('error in queryAllDataSources', err);
         });
 
         console.log('>>> update');
+    }
+
+    /**
+     * @param {DataSource[]} dataSources
+     * @returns {Promise<Awaited<DataStream[]>[]>}
+     */
+    queryAllDataSources(dataSources) {
+        const fetchPromises = dataSources.map(dataSource => {
+            return this.fetchDataStreamsFromSource(dataSource)
+                .catch(error => {
+                    console.warn(`Error fetching data from source ${error.message}`, dataSource);
+                    return [];
+                });
+        });
+
+        return Promise.all(fetchPromises);
     }
 
     processNodeBinding(nodeBinding) {
@@ -173,23 +187,6 @@ class DataStreamInterface {
         });
 
         console.log('>>> writeNodeBindingsToSettings');
-    }
-}
-
-/**
- * @classdesc NodeBinding
- * Maps a streamId to the address of a node (objectId, frameId, nodeId) to imply that
- * this data stream should write to that node whenever the data stream updates
- */
-class NodeBinding {
-    constructor(objectId, objectName, frameId, frameName, nodeId, nodeName, streamId) {
-        this.objectId = objectId;
-        this.objectName = objectName;
-        this.frameId = frameId;
-        this.frameName = frameName;
-        this.nodeId = nodeId;
-        this.nodeName = nodeName;
-        this.streamId = streamId;
     }
 }
 

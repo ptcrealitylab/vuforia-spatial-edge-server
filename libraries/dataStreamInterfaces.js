@@ -1,9 +1,9 @@
 /**
  * @fileOverview
- * Provides additional methods for hardwareInterfaces to use to bind nodes to data streams
- * General structure:
- * Hardware interfaces use the DataStreamServerAPI to opt in to providing their data sources/streams.
- * Clients can call the DataStreamClientAPI functions to perform tasks like getting the list of available data streams,
+ * Provides methods to bind nodes to data streams.
+ * Hardware interfaces can instantiate a DataStreamInterface to opt in to providing their data sources/streams.
+ * Hardware interface developers should interact with the DataStreamInterface class, rather than this file's functions.
+ * REST APIs can call the DataStreamClientAPI functions to perform tasks like getting the list of available data streams,
  * and to "bind" a specific node to a data stream (meaning that stream will write data to the node from now on).
  */
 
@@ -58,7 +58,7 @@ class DataSource {
 
 /**
  * @classdesc
- * Struct containing the specific location of where and how to fetch data for a DataSource
+ * Simple class containing the specific location of where and how to fetch data for a DataSource
  */
 class DataSourceDetails {
     /**
@@ -72,8 +72,25 @@ class DataSourceDetails {
         this.url = url;
         this.type = type;
         this.headers = headers;
-        this.pollingFrequency = pollingFrequency;
+        this.pollingFrequency = pollingFrequency; // TODO: use this in future for more control
         this.dataFormat = dataFormat;
+    }
+}
+
+/**
+ * @classdesc
+ * Maps a streamId to the address of a node (objectId, frameId, nodeId) to mark that
+ * this data stream should write to that node whenever the data stream updates
+ */
+class NodeBinding {
+    constructor(objectId, objectName, frameId, frameName, nodeId, nodeName, streamId) {
+        this.objectId = objectId;
+        this.objectName = objectName;
+        this.frameId = frameId;
+        this.frameName = frameName;
+        this.nodeId = nodeId;
+        this.nodeName = nodeName;
+        this.streamId = streamId;
     }
 }
 
@@ -102,30 +119,29 @@ let addDataSourceCallbacks = {};
 let deleteDataSourceCallbacks = {};
 
 /**
- * Hardware interfaces can use these functions to register hooks/callbacks to notify the system of data streams/sources,
- * and to respond to requests from the client in a modular way behind a level of indirection
+ * The DataStreamInterface class uses these functions to register callbacks to notify the system of data streams/sources,
+ * and to respond to requests from the client in a modular way behind a level of indirection.
  */
 const DataStreamServerAPI = {
     /**
-     * Hardware interfaces can register a hook that they can use to inform the system of which DataStreams they know about
+     * Register a hook that the DataStreamInterface can use to inform the system of which DataStreams it knows about
      * @param {function} callback
      */
     registerAvailableDataStreams(callback) {
         availableDataStreamGetters.push(callback);
     },
     /**
-     * Hardware interfaces can register a hook that they can use to inform the system of which DataSources they know about
-     * @param callback
+     * Register a hook that the DataStreamInterface can use to inform the system of which DataSources it knows about
+     * @param {function} callback
      */
     registerAvailableDataSources(callback) {
         availableDataSourceGetters.push(callback);
     },
     /**
-     * Hardware interfaces can register a callback, categorized by interfaceName, that will be triggered if a REST API
-     * client calls bindNodeToDataStream with the same interfaceName. The hardware interface can assume that the node
-     * already exists, and just implement this in a way that it will write any incoming data to that node from the
-     * DataStream with the provided streamId. The hardware interface should also persist the mapping, so it can be restored
-     * if the server is restarted.
+     * Register a callback, categorized by interfaceName, that will be triggered if a REST API client calls
+     * bindNodeToDataStream with the same interfaceName. Assumes that the node already exists, and sets it up to write
+     * any incoming data from the DataStream with the provided streamId to write to that node. This mapping will be
+     * persisted, so it can be restored if the server is restarted.
      * @param {string} interfaceName
      * @param {function(string, string, string, string, string, string)} callback
      */
@@ -136,10 +152,10 @@ const DataStreamServerAPI = {
         bindNodeToDataStreamCallbacks[interfaceName].push(callback);
     },
     /**
-     * Hardware interfaces can register a callback, categorized by interfaceName, that will be triggered if a client
-     * attempts to reconfigure the hardware interface by adding a new Data Source endpoint to it at runtime.
-     * For example, in the ThingWorx tool you can use a UI to add a new REST endpoint to the interface.
-     * The hardware interface should persist which Data Sources it has, and use those to fetch its Data Streams.
+     * Register a callback, categorized by interfaceName, that will be triggered if a client attempts to reconfigure
+     * the hardware interface by adding a new Data Source endpoint to it at runtime. For example, in the ThingWorx tool
+     * you can use a UI to add a new REST endpoint to the interface. The hardware interface will persist which Data
+     * Sources it has, and use those to fetch its Data Streams, which can then be bound to nodes.
      * @param {string} interfaceName
      * @param {function(DataSource)} callback
      */
@@ -150,11 +166,10 @@ const DataStreamServerAPI = {
         addDataSourceCallbacks[interfaceName].push(callback);
     },
     /**
-     * Hardware interfaces can register a callback, categorized by interfaceName, that will trigger if a client attempts
-     * to reconfigure the hardware interface by deleting one of its existing Data Sources. The hardware interface should
-     * remove the Data Source from its persistent storage, and remove any Data Streams provided by that Data Source.
+     * Removes a DataSource that was added to a particular hardware interface using registerAddDataSourceEndpoint.
+     * Removes the DataSource from its persistent storage, and removes any Data Streams provided by that Data Source.
      * @param {string} interfaceName
-     * @param callback
+     * @param {function} callback
      */
     registerDeleteDataSourceEndpoint(interfaceName, callback) {
         if (typeof deleteDataSourceCallbacks[interfaceName] === 'undefined') {
@@ -194,20 +209,20 @@ const DataStreamClientAPI = {
         return results;
     },
     /**
-     * Triggers any callback function that hardware interfaces registered using registerBindNodeEndpoint, filtered down to
-     * those whose hardwareInterface name matches the provided hardwareInterface parameter
+     * Triggers any callback functions that DataStreamInterfaces registered using registerBindNodeEndpoint, filtered
+     * down to those whose hardwareInterface name matches the provided hardwareInterface parameter
+     * Rather than using nodeId, we use a combination of nodeName and nodeType to help identify the node
      * @param {string} interfaceName
      * @param {string} objectId
      * @param {string} frameId
      * @param {string} nodeName
      * @param {string} nodeType
-     * @param {string} frameType
      * @param {string} streamId
      */
-    bindNodeToDataStream(interfaceName, { objectId, frameId, nodeName, nodeType, frameType, streamId}) {
+    bindNodeToDataStream(interfaceName, { objectId, frameId, nodeName, nodeType, streamId}) {
         let callbacks = bindNodeToDataStreamCallbacks[interfaceName];
         callbacks.forEach(callback => {
-            callback(objectId, frameId, nodeName, nodeType, frameType, streamId);
+            callback(objectId, frameId, nodeName, nodeType, streamId);
         });
     },
     /**
@@ -241,7 +256,9 @@ const DataStreamClientAPI = {
 }
 
 module.exports = {
-    DataStreamClientAPI,
-    DataStreamServerAPI,
-    DataStream
+    DataStreamClientAPI, // intended to be used in response to clients using the server's REST APIs
+    DataStreamServerAPI, // intended to be used by the DataStreamInterface class, not by individual hardware interfaces
+    DataStream,
+    DataSource,
+    NodeBinding
 }
