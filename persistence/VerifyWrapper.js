@@ -1,4 +1,3 @@
-// const cloud = require('./MongoDBWrapper.js');
 const fs = require('./FileSystemWrapper.js');
 const cloud = require('./CloudProxyWrapper.js');
 

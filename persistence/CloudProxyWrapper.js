@@ -2,12 +2,8 @@ const fetch = require('node-fetch');
 const FormData = require('form-data');
 
 /**
- * {
- *   path: string,
- *   contents: Buffer? (hopefully it works),
- *   isDirectory: haaah,
- * }
- * Should have user id which is somehow a scope for mongo
+ * Implements a slice of the fs/promises API required to synchronize local
+ * files with a cloud backup
  */
 class CloudProxyWrapper {
     connect() {
