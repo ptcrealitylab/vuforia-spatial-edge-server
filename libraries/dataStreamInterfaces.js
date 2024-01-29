@@ -221,6 +221,7 @@ const DataStreamClientAPI = {
      */
     bindNodeToDataStream(interfaceName, { objectId, frameId, nodeName, nodeType, streamId}) {
         let callbacks = bindNodeToDataStreamCallbacks[interfaceName];
+        if (!callbacks) return;
         callbacks.forEach(callback => {
             callback(objectId, frameId, nodeName, nodeType, streamId);
         });
@@ -235,6 +236,7 @@ const DataStreamClientAPI = {
     addDataSourceToInterface(interfaceName, dataSource = {}) {
         if (!interfaceName) return; // TODO: the API response should change status if error adding
         let callbacks = addDataSourceCallbacks[interfaceName];
+        if (!callbacks) return;
         callbacks.forEach(callback => {
             callback(dataSource);
         });
@@ -249,6 +251,7 @@ const DataStreamClientAPI = {
     deleteDataSourceFromInterface(interfaceName, dataSource) {
         if (!interfaceName || !dataSource) return; // TODO: the API response should change status if error adding
         let callbacks = deleteDataSourceCallbacks[interfaceName];
+        if (!callbacks) return;
         callbacks.forEach(callback => {
             callback(dataSource);
         });
