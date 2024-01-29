@@ -1,6 +1,6 @@
 // const cloud = require('./MongoDBWrapper.js');
 const fs = require('./FileSystemWrapper.js');
-const mdb = require('./CloudProxyWrapper.js');
+const cloud = require('./CloudProxyWrapper.js');
 
 const {synchronize} = require('./synchronize.js');
 
@@ -20,6 +20,12 @@ async function sync() {
     }
 }
 
+/**
+ * Intercept all access to fs API, returning a proxied function which calls
+ * both fs and the cloud synchronization layer to attempt to keep both in sync
+ * with minimal data transfer. If there is a mismatch, it calls the heavier
+ * `synchronize` function to walk the entire tree and resolve all differences.
+ */
 const proxy = new Proxy({}, {
     get(target, prop) {
         return async function() {
@@ -31,11 +37,11 @@ const proxy = new Proxy({}, {
                 debug = false;
             }
 
-            let mdbRes, mdbThrown;
+            let cloudRes, _cloudThrown;
             try {
-                mdbRes = await mdb[prop].apply(mdb, arguments);
+                cloudRes = await cloud[prop].apply(cloud, arguments);
             } catch (e) {
-                mdbThrown = e;
+                _cloudThrown = e;
             }
             let fsRes, fsThrown;
             try {
@@ -43,38 +49,20 @@ const proxy = new Proxy({}, {
             } catch (e) {
                 fsThrown = e;
             }
+
+            // Currently don't care about cloud's errors
             if (fsThrown) {
                 if (debug) {
                     console.log(prop, Array.from(arguments), fsThrown);
                 }
-                // Currently don't care about mdb's errors
                 throw fsThrown;
             }
-            if (mdbThrown && fsThrown) {
-                throw fsThrown;
-            }
-            // if ((!!mdbThrown) !== (!!fsThrown)) {
-            //     console.error('could not verify persistence', {mdbRes, fsRes, mdbThrown, fsThrown});
-            //     // process.exit(-1);
-            //     throw mdbThrown || fsThrown;
-            // }
 
-            let isBadStat = true;
-            // if (prop === 'stat') {
-            //     if (mdbRes.isFile() === fsRes.isFile()) {
-            //         isBadStat = false;
-            //     }
-            // }
-            if (isBadStat && mdbRes !== fsRes) {
+            if (cloudRes !== fsRes) {
                 if (debug) {
-                    console.error(prop, Array.from(arguments), 'could not verify persistence', {mdbRes, fsRes});
+                    console.error(prop, Array.from(arguments), 'could not verify persistence', {cloudRes, fsRes});
                 }
                 sync();
-                // process.exit(-1);
-            } else {
-                if (debug) {
-                    // console.log(prop, Array.from(arguments), fsRes);
-                }
             }
             return fsRes;
         };
