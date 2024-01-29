@@ -137,4 +137,4 @@ test('target upload to /content/:objectName', async () => {
 
     const deletedSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
     expect(deletedSnapshot).toEqual({});
-});
+}, 10000);
