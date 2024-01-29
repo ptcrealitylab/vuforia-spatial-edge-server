@@ -23,7 +23,7 @@ async function sync() {
 const proxy = new Proxy({}, {
     get(target, prop) {
         return async function() {
-            let debug = true;
+            let debug = false;
             if (prop === 'access') {
                 debug = false;
             }
