@@ -15,7 +15,7 @@ class CloudProxyWrapper {
         if (!edgeAgent || !edgeAgent.networkUUID || !edgeAgent.networkSecret) {
             throw new Error('bad edge-agent settings: ' + JSON.stringify(edgeAgent));
         }
-        const serverUrl = 'alpha.toolboxedge.net' || edgeAgent.serverUrl;
+        const serverUrl = edgeAgent.serverUrl || 'alpha.toolboxedge.net';
         const networkUUID = edgeAgent.networkUUID;
         const networkSecret = edgeAgent.networkSecret;
         return `https://${serverUrl}/n/${networkUUID}/s/${networkSecret}/files/`;
