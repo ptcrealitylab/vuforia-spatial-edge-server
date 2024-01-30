@@ -51,3 +51,6 @@ module.exports.objectsPath = objectsPath;
 
 // this is the port for UDP broadcasting so that the objects find each other
 module.exports.beatPort = argv.udpPort || 52316;
+
+// Whether to enable the offline clone functionality
+module.exports.persistToCloud = false;
