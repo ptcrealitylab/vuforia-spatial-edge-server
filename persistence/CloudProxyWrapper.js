@@ -236,7 +236,7 @@ class CloudProxyWrapper {
             body: form,
         });
         if (!res.ok) {
-            throw new Error('fs api error');
+            throw new Error(`fs api error: writeFile(${path}): ${res.statusText}`);
         }
         const arrayBuffer = await res.arrayBuffer();
         return Buffer.from(arrayBuffer);
