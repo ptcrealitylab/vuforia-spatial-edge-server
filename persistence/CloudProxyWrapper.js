@@ -1,5 +1,8 @@
 const fetch = require('node-fetch');
 const FormData = require('form-data');
+const pathOps = require('path');
+
+const {objectsPath} = require('../config.js');
 
 /**
  * Implements a slice of the fs/promises API required to synchronize local
@@ -7,6 +10,24 @@ const FormData = require('form-data');
  */
 class CloudProxyWrapper {
     connect() {
+    }
+
+    localToRemote(path) {
+        if (path.startsWith(objectsPath)) {
+            let relPath = pathOps.relative(objectsPath, path);
+            if (!relPath.startsWith('..')) {
+                return relPath;
+            }
+        }
+        return path;
+    }
+
+    remoteToLocal(path) {
+        if (path.startsWith('/') || path.startsWith('..')) {
+            console.warn('persistence: Unexpected remote path', path);
+            return path;
+        }
+        return pathOps.join(objectsPath, path);
     }
 
     apiBase() {
@@ -63,7 +84,7 @@ class CloudProxyWrapper {
         const res = await fetch(this.apiBase() + 'mkdir', Object.assign(
             this.fetchOptionsWrite(), {
                 body: JSON.stringify({
-                    path,
+                    path: this.localToRemote(path),
                 }),
             }
         ));
@@ -74,7 +95,7 @@ class CloudProxyWrapper {
 
     async readFile(path, options) {
         const res = await fetch(this.apiBase() + 'read_file', this.fetchOptionsRead({
-            path,
+            path: this.localToRemote(path),
         }));
         if (!res.ok) {
             throw new Error('fs api error');
@@ -93,7 +114,7 @@ class CloudProxyWrapper {
 
     async readdir(path, options) {
         const res = await fetch(this.apiBase() + 'readdir', this.fetchOptionsRead({
-            path,
+            path: this.localToRemote(path),
         }));
         if (!res.ok) {
             throw new Error('fs api error');
@@ -112,7 +133,7 @@ class CloudProxyWrapper {
 
             dirEnts.push({
                 name,
-                path: dirEntJson.path,
+                path: this.remoteToLocal(dirEntJson.path),
                 isDirectory: function() {
                     return isDirectory;
                 },
@@ -133,8 +154,8 @@ class CloudProxyWrapper {
         const res = await fetch(this.apiBase() + 'rename', Object.assign(
             this.fetchOptionsWrite(), {
                 body: JSON.stringify({
-                    path,
-                    destPath,
+                    path: this.localToRemote(path),
+                    destPath: this.localToRemote(destPath),
                 }),
             }
         ));
@@ -152,7 +173,7 @@ class CloudProxyWrapper {
         const res = await fetch(this.apiBase() + 'rmdir', Object.assign(
             this.fetchOptionsWrite(), {
                 body: JSON.stringify({
-                    path,
+                    path: this.localToRemote(path),
                 }),
             }
         ));
@@ -166,7 +187,7 @@ class CloudProxyWrapper {
      */
     async stat(path) {
         const res = await fetch(this.apiBase() + 'stat', this.fetchOptionsRead({
-            path,
+            path: this.localToRemote(path),
         }));
         if (!res.ok) {
             throw new Error('stat failed');
@@ -186,7 +207,7 @@ class CloudProxyWrapper {
         const res = await fetch(this.apiBase() + 'unlink', Object.assign(
             this.fetchOptionsWrite(), {
                 body: JSON.stringify({
-                    path,
+                    path: this.localToRemote(path),
                 }),
             }
         ));
@@ -209,7 +230,7 @@ class CloudProxyWrapper {
         const res = await fetch(this.apiBase() + 'write_file', {
             method: 'POST',
             headers: Object.assign(
-                this.apiHeaders({path}),
+                this.apiHeaders({path: this.localToRemote(path)}),
                 form.getHeaders()
             ),
             body: form,
