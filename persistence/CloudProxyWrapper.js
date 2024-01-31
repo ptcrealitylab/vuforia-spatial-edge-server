@@ -13,9 +13,9 @@ class CloudProxyWrapper {
     }
 
     /**
-     * Transform from local (absolute or relative to spatialToolbox) path
-     * within the spatialToolbox directory (at objectsPath) to remote (relative
-     * to spatialToolbox) path
+     * Transform from local (absolute or relative to `objectsPath`) path within
+     * the spatialToolbox directory (at objectsPath) to remote (relative to
+     * spatialToolbox) path
      *
      * For example:
      * /Users/james/Documents/spatialToolbox/.identity/settings.json -> .identity/settings.json
@@ -46,8 +46,8 @@ class CloudProxyWrapper {
     }
 
     /**
-     * Performs opposite of localToRemote, returning a local absolute path
-     * within the spatialToolbox directory
+     * Performs opposite of localToRemote, returning a local path prefixed with
+     * objectsPath (i.e. guaranteed to be within the spatialToolbox directory)
      *
      * Throws if the local path would be outside the spatialToolbox directory
      *
