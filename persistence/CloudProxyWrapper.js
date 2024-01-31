@@ -12,22 +12,58 @@ class CloudProxyWrapper {
     connect() {
     }
 
+    /**
+     * Transform from local (absolute or relative to spatialToolbox) path
+     * within the spatialToolbox directory (at objectsPath) to remote (relative
+     * to spatialToolbox) path
+     *
+     * For example:
+     * /Users/james/Documents/spatialToolbox/.identity/settings.json -> .identity/settings.json
+     *
+     * Throws if a path isn't within the spatialToolbox directory
+     *
+     * @param {string} path
+     * @return {string}
+     */
     localToRemote(path) {
-        if (path.startsWith(objectsPath)) {
-            let relPath = pathOps.relative(objectsPath, path);
-            if (!relPath.startsWith('..')) {
-                return relPath;
+        path = pathOps.normalize(path);
+        if (pathOps.isAbsolute(path)) {
+            if (!path.startsWith(objectsPath)) {
+                throw new Error('persistence: Unexpected local path outside of objectsPath: ' + path);
             }
+
+            let relPath = pathOps.relative(objectsPath, path);
+            if (pathOps.isAbsolute(relPath) || relPath.startsWith('..')) {
+                throw new Error('persistence: Unexpected local path: ' + path);
+            }
+            return relPath;
         }
+        if (path.startsWith('..')) {
+            throw new Error('persistence: local path outside of objectsPath: ' + path);
+        }
+        // Just a normal path relative to spatialToolbox
         return path;
     }
 
+    /**
+     * Performs opposite of localToRemote, returning a local absolute path
+     * within the spatialToolbox directory
+     *
+     * Throws if the local path would be outside the spatialToolbox directory
+     *
+     * @param {string} path
+     * @return {string}
+     */
     remoteToLocal(path) {
-        if (path.startsWith('/') || path.startsWith('..')) {
-            console.warn('persistence: Unexpected remote path', path);
-            return path;
+        let localPath = pathOps.normalize(pathOps.join(objectsPath, path));
+
+        let relPath = pathOps.relative(objectsPath, localPath);
+
+        if (pathOps.isAbsolute(relPath) || relPath.startsWith('..')) {
+            throw new Error('persistence: Unexpected remote path: ' + path);
         }
-        return pathOps.join(objectsPath, path);
+
+        return localPath;
     }
 
     apiBase() {
