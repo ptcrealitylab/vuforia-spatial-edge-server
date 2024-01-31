@@ -23,6 +23,9 @@ async function makeChecksumList(base, dirPath) {
     const csList = {};
     let dirEnts = await fs.readdir(path.join(base, dirPath), {withFileTypes: true});
     for (let dirEnt of dirEnts) {
+        if (dirEnt.name === '.DS_Store') {
+            continue;
+        }
         const entRelPath = path.join(dirPath, dirEnt.name);
         const entAbsPath = path.join(base, entRelPath);
         if (dirEnt.isDirectory()) {
