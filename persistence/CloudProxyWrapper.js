@@ -225,7 +225,7 @@ class CloudProxyWrapper {
     async writeFile(path, contentsAny) {
         const form = new FormData();
         const contents = Buffer.from(contentsAny);
-        const name = path.split('/').at(-1);
+        const name = pathOps.basename(path);
         form.append('file', contents, {filename: name, name});
         const res = await fetch(this.apiBase() + 'write_file', {
             method: 'POST',
