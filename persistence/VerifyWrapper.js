@@ -19,6 +19,8 @@ async function sync() {
     }
 }
 
+const debug = false;
+
 /**
  * Intercept all access to fs API, returning a proxied function which calls
  * both fs and the cloud synchronization layer to attempt to keep both in sync
@@ -28,13 +30,6 @@ async function sync() {
 const proxy = new Proxy({}, {
     get(target, prop) {
         return async function() {
-            let debug = false;
-            if (prop === 'access') {
-                debug = false;
-            }
-            if (!arguments[0].includes('spatialToolbox')) {
-                debug = false;
-            }
 
             let cloudRes, _cloudThrown;
             try {
