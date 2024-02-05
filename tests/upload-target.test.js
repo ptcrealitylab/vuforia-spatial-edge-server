@@ -16,6 +16,8 @@ const fsProm = require('fs/promises');
 const path = require('path');
 
 const fetch = require('node-fetch');
+const https = require('https');
+let httpsAgent = new https.Agent({rejectUnauthorized: false});
 const FormData = require('form-data');
 
 const objectsPath = require('../config.js').objectsPath;
@@ -41,28 +43,33 @@ afterAll(async () => {
 test('target upload to /content/:objectName', async () => {
     await waitForObjects();
 
-    const resNew = await fetch('http://localhost:8080/', {
+    const resNew = await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=new&name=${worldName}&isWorld=true`,
-        'method': 'POST'
+        'method': 'POST',
+        agent: httpsAgent
     });
     await resNew.text();
 
+    const preUploadSnapshot = filterSnapshot(snapshotDirectory(objectsPath), (name) => name.includes(worldName));
+    const preUploadObjJson = getValueWithKeySuffixed(preUploadSnapshot, '.identity/object.json');
+
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
-    const res = await fetch(`http://localhost:8080/content/${worldName}`, {
+    const res = await fetch(`https://localhost:8080/content/${worldName}`, {
         method: 'POST',
         headers: {
             ...form.getHeaders(),
             type: 'targetUpload',
         },
         body: form,
+        agent: httpsAgent
     });
     const content = await res.json();
     expect(content).toEqual({
-        id: '_WORLD_instantScan6bK1sn5d_wdb4wue6bdm',
+        id: preUploadObjJson.objectId,
         name: worldName,
         initialized: false,
         jpgExists: false,
@@ -78,9 +85,11 @@ test('target upload to /content/:objectName', async () => {
     delete objJson.ip;
     delete objJson.port;
     delete objJson.tcs;
+    delete objJson.timestamp;
     expect(objJson).toEqual({
-        objectId: '_WORLD_instantScan6bK1sn5d_wdb4wue6bdm',
+        objectId: preUploadObjJson.objectId,
         name: '_WORLD_instantScan6bK1sn5d',
+        targetId: 'e3169799f314480da133849f0feb1676',
         matrix: [],
         worldId: null,
         isAnchor: false,
@@ -100,7 +109,6 @@ test('target upload to /content/:objectName', async () => {
         targetSize: { width: 0.3, height: 0.3 },
         isWorldObject: true,
         type: 'world',
-        timestamp: null,
     });
 
     const tdt = getValueWithKeySuffixed(snapshot, 'target.3dt');
@@ -116,12 +124,13 @@ test('target upload to /content/:objectName', async () => {
     // Let the upload cleanup process finish before we delete
     await sleep(1000);
 
-    const resDelete = await fetch('http://localhost:8080/', {
+    const resDelete = await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=delete&name=${worldName}&frame=`,
-        'method': 'POST'
+        'method': 'POST',
+        agent: httpsAgent
     });
     await resDelete.text();
 

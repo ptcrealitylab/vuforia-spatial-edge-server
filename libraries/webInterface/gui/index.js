@@ -61,7 +61,7 @@ realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
-let remoteOperatorUrl = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
+let remoteOperatorUrl = 'https://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
 let isRemoteOperatorSupported = false;
 
 realityServer.initialize = function () {
@@ -462,7 +462,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.active').classList.add('clickAble');
                     thisObject.dom.querySelector('.download').classList.add('clickAble');
 
-                    // let targetUrl = 'http://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // let targetUrl = 'https://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
                     // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
@@ -512,7 +512,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                         // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                            thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                            thisObject.dom.querySelector('.objectTargetIcon').src = 'https://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
@@ -619,14 +619,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
 
-                    // let targetUrl = 'http://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // let targetUrl = 'https://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
                     // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
                     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                     // add Image for Target
                     if (thisObject.targetsExist.jpgExists) {
-                        thisObject.dom.querySelector('.objectTargetIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                        thisObject.dom.querySelector('.objectTargetIcon').src = 'https://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                     } else if (thisObject.isAnchor) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
                     }
@@ -727,7 +727,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
                         'Open the screen HMI configured by the vuforia-spatial-screens-addon.' +
-                        ' (For this object: http://' + ipAddress + ': ' + thisObject.screenPort + ')');
+                        ' (For this object: https://' + ipAddress + ': ' + thisObject.screenPort + ')');
 
                     if (!thisObject.screenPort) {
                         thisFullScreen.querySelector('.fullscreen').classList.remove('purple');
@@ -763,7 +763,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
                     buttonDiv.addEventListener('click', function () { // put in a closure so it references don't mutate
                         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
+                        window.open('https://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
 
@@ -869,8 +869,8 @@ realityServer.updateManageFrames = function () {
         function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
             buttonDiv.addEventListener('click', function () {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                // window.location.href = 'http://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
-                window.open('http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
+                // window.location.href = 'https://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
+                window.open('https://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
             });
         }
 
@@ -878,7 +878,7 @@ realityServer.updateManageFrames = function () {
         addLinkToContent(contentButton, frameKey);
 
         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-        frameInfo.dom.querySelector('.frameIcon').src = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameKey + '/icon.gif';
+        frameInfo.dom.querySelector('.frameIcon').src = 'https://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameKey + '/icon.gif';
 
         addZipDownload(frameInfo.dom.querySelector('.download'), frameKey);
 
@@ -922,7 +922,7 @@ realityServer.updateManageFrames = function () {
 
 realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-    let pathToConfig = 'http://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
+    let pathToConfig = 'https://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
 
@@ -2244,7 +2244,7 @@ realityServer.toggleFullScreen = function (item) {
         // if we have set up a screen port, open up that hardware interface application
 
         if (thisScreenPort) {
-            thisIframe.src = 'http://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
+            thisIframe.src = 'https://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
         } else {
             // otherwise just view the target image in fullscreen
             thisIframe.src = 'about:blank'; // Clear iframe before loading

@@ -121,7 +121,7 @@ exports.printFolder = async function printFolder(objects, objectsPath, _debug, o
         let tempKey;
         try {
             // gets the object id from the xml target file
-            tempKey = await utilities.getObjectIdFromTargetOrObjectFile(objectKey);
+            tempKey = await utilities.getObjectIdFromObjectFile(objectKey);
         } catch (e) {
             console.warn('printFolder getObjectId failed', e);
         }
