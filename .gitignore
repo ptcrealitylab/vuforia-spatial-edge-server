@@ -57,4 +57,5 @@ libraries/objectLogs/*
 /screenshots
 /spatialToolbox
 /vuforia-spatial-toolbox-userinterface
+/.vscode
 /*.pem

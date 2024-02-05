@@ -40,7 +40,15 @@ const colorizedFormat = format.combine(
 
 const logger = createLogger({
     level: process.env.LOG_LEVEL || 'debug',
-    format: isMobile ? monochromeFormat : colorizedFormat,
+    format: winston.format.combine(
+        isMobile ? monochromeFormat : colorizedFormat,
+        winston.format(info => {
+            if (info.message.includes('Possibly unsupported ZIP platform type')) {
+                return false; // Ignore logs from decompress-zip structures.js when decompressing target.dat
+            }
+            return info;
+        })()
+    ),
     transports: [new transports.Console()]
 });
 

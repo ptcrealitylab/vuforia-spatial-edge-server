@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const fetch = require('node-fetch');
+
+let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 function sleep(ms) {
     return new Promise((res) => {
@@ -60,7 +63,7 @@ exports.filterToTestObject = function filterToTestObject(key) {
 };
 
 async function getAllObjects() {
-    const resAllObjects = await fetch(`http://localhost:8080/allObjects`);
+    const resAllObjects = await fetch(`https://localhost:8080/allObjects`, {agent: httpsAgent});
     const allObjects = await resAllObjects.json();
     return allObjects;
 }
@@ -82,7 +85,8 @@ async function waitForObjects(lengthMin = 1) {
             if (Object.keys(allObjects).length >= lengthMin) {
                 break;
             }
-        } catch (_) {
+        } catch (e) {
+            console.log(e);
             // way way too early as opposed to normal too early
         }
         await sleep(100);

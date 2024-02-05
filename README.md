@@ -56,10 +56,17 @@ on GitHub. Fork this repository using the button on the top right, make and
 commit your changes, then GitHub will prompt you to make a pull request.
 
 ### Automated Tests
+
 Note that we do run some automated testing to ensure that our code remains
 consistently styled and functional. If you want to see the results of this
-testing locally, run the following command in your vuforia-toolbox-server
-folder:
+testing locally, you can follow
+[this Github Actions workflow](https://github.com/ptcrealitylab/vuforia-spatial-edge-server/blob/master/.github/workflows/nodejs.yml).
+
+The most important parts of the workflow are running the commands of
+[scripts/ci.sh](https://github.com/ptcrealitylab/vuforia-spatial-edge-server/blob/master/scripts/ci.sh)
+to setup (note that some repos may not be available, causing test failures
+locally). After this, you can run tests using the following command in your
+vuforia-toolbox-server folder:
 
 ```bash
 npm run test

@@ -63,6 +63,7 @@ const dgram = require('dgram'); // UDP Broadcasting library
 const path = require('path');
 const request = require('request');
 const fetch = require('node-fetch');
+const DecompressZip = require('decompress-zip');
 const ObjectModel = require('../models/ObjectModel.js');
 const {objectsPath, beatPort} = require('../config.js');
 const {isLightweightMobile} = require('../isMobile.js');
@@ -185,38 +186,15 @@ exports.uuidTime = function () {
     return '_' + stampUuidTime;
 };
 
-async function getObjectIdFromTargetOrObjectFile(folderName) {
+async function getObjectIdFromObjectFile(folderName) {
 
     if (folderName === 'allTargetsPlaceholder') {
         return 'allTargetsPlaceholder000000000000';
     }
 
-    var xmlFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/target/target.xml';
-    var jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
+    let jsonFile = objectsPath + '/' + folderName + '/' + identityFolderName + '/object.json';
 
-    if (await fileExists(xmlFile)) {
-        try {
-            let resultXML = '';
-            xml2js.Parser().parseString(await fsProm.readFile(xmlFile, 'utf8'),
-                function (err, result) {
-                    for (var first in result) {
-                        for (var secondFirst in result[first].Tracking[0]) {
-                            resultXML = result[first].Tracking[0][secondFirst][0].$.name;
-                            if (typeof resultXML === 'string' && resultXML.length === 0) {
-                                console.warn('Target file for ' + folderName + ' has empty name, ' +
-                                    'and may not function correctly. Delete and re-upload target for best results.');
-                                resultXML = null;
-                            }
-                            break;
-                        }
-                        break;
-                    }
-                });
-            return resultXML;
-        } catch (e) {
-            console.error('error reading xml file', e);
-        }
-    } else if (await fileExists(jsonFile)) {
+    if (await fileExists(jsonFile)) {
         try {
             let thisObject = JSON.parse(await fsProm.readFile(jsonFile, 'utf8'));
             if (thisObject.hasOwnProperty('objectId')) {
@@ -230,7 +208,7 @@ async function getObjectIdFromTargetOrObjectFile(folderName) {
     }
     return null;
 }
-exports.getObjectIdFromTargetOrObjectFile = getObjectIdFromTargetOrObjectFile;
+exports.getObjectIdFromObjectFile = getObjectIdFromObjectFile;
 
 async function getAnchorIdFromObjectFile(folderName) {
 
@@ -253,6 +231,99 @@ async function getAnchorIdFromObjectFile(folderName) {
     return null;
 }
 exports.getAnchorIdFromObjectFile = getAnchorIdFromObjectFile;
+
+/**
+ * Given a target folder, unzips the target.dat file within it and retrieves the targetId from config.info
+ * @param {string} targetFolderPath
+ * @returns {Promise<string|null>}
+ */
+exports.getTargetIdFromTargetDat = async function getTargetIdFromTargetDat(targetFolderPath) {
+    return new Promise((resolve, reject) => {
+        // unzip the .dat file and read the unique targetId from the config.info file
+        let unzipperDat = new DecompressZip(path.join(targetFolderPath, 'target.dat'));
+
+        unzipperDat.on('error', function (err) {
+            console.error('.dat Unzipper Error', err);
+            reject(err);
+        });
+
+        unzipperDat.on('extract', async function () {
+            let configFilePath = path.join(targetFolderPath, 'config.info');
+            if (await fileExists(configFilePath)) {
+                // read the id stored within the config.info file (it's actually structured as XML)
+                let targetUniqueId = await getTargetIdFromConfigFile(configFilePath);
+                // TODO: cleanup config.info file instead of leaving it in the folder
+                resolve(targetUniqueId);
+            } else {
+                reject('config.info not found at ' + configFilePath);
+            }
+        });
+
+        unzipperDat.on('progress', function (_fileIndex, _fileCount) {
+            // console.log('Extracted dat file ' + (fileIndex + 1) + ' of ' + fileCount);
+        });
+
+        unzipperDat.extract({
+            path: targetFolderPath,
+            filter: function (file) {
+                return file.type !== 'SymbolicLink' && file.filename.endsWith('info');
+            }
+        });
+    });
+};
+
+/**
+ * Parses the file as XML and pulls out the targetId string
+ * @param {string} filePath
+ * @returns {Promise<string|null>}
+ */
+async function getTargetIdFromConfigFile(filePath) {
+    if (!await fileExists(filePath)) {
+        return null;
+    }
+
+    let contents;
+    try {
+        contents = await fsProm.readFile(filePath, 'utf8');
+    } catch (err) {
+        console.error('Unable to read xml file for target ID', err);
+        return null;
+    }
+
+    try {
+        return await queryXMLContents(contents, (xml) => {
+            // the file is structured like <QCARInfo><TargetSet><AreaTarget targetId="58a594ef7e324cf590d09480a77a157e" />...
+            // this gets the "AreaTarget"/"ImageTarget"/"ModelTarget" tag contents of the XML file
+            // and extracts the tag's properties, e.g. { version: "5.1", bbox: "...", targetId: "xzy": name: "_WORLD_test_xyz" }
+            return Object.entries(xml.QCARInfo.TargetSet[0]).find(entry => entry[0] !== '$')[1][0].$.targetId;
+        });
+    } catch (err) {
+        console.error('Error parsing/querying XML contents', err);
+        return null;
+    }
+}
+
+/**
+ * Parses the string as XML and searches the structured contents using the provided xmlQuery function
+ * @param {string} xmlContentsString - file contents
+ * @param {function} xmlQuery - the function that will be applied to the parsed contents to retrieve certain data
+ * @returns {Promise<string>}
+ */
+async function queryXMLContents(xmlContentsString, xmlQuery) {
+    return new Promise(function (resolve, reject) {
+        xml2js.Parser().parseString(xmlContentsString, function (parseErr, result) {
+            try {
+                if (parseErr) {
+                    throw parseErr;
+                }
+                resolve(xmlQuery(result));
+            } catch (err) {
+                console.error('error parsing xml', err);
+                reject(err);
+            }
+        });
+    });
+}
 
 /**
  *
@@ -531,7 +602,7 @@ exports.updateObject = async function updateObject(objectName, objects) {
     var objectFolderList = await getObjectFolderList();
 
     for (const objectFolder of objectFolderList) {
-        const tempFolderName = await getObjectIdFromTargetOrObjectFile(objectFolder);
+        const tempFolderName = await getObjectIdFromObjectFile(objectFolder);
 
         if (!tempFolderName) {
             console.warn(' object ' + objectFolder + ' has no marker yet');
