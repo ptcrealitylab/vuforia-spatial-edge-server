@@ -315,8 +315,8 @@ if (!isLightweightMobile) {
 
 
 let options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
+    key: fs.readFileSync(__dirname + '/key.pem'),
+    cert: fs.readFileSync(__dirname + '/cert.pem')
 };
 const httpServer = require('https').createServer(options, webServer);
 const http = httpServer.listen(serverPort, function () {
