@@ -127,7 +127,7 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 
 const fs = require('fs');       // Filesystem library
-const fsProm = require('fs/promises');
+const fsProm = require('./persistence/fsProm.js');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');

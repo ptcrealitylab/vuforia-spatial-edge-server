@@ -43,7 +43,9 @@ const logger = createLogger({
     format: winston.format.combine(
         isMobile ? monochromeFormat : colorizedFormat,
         winston.format(info => {
-            if (info.message.includes('Possibly unsupported ZIP platform type')) {
+            if (info.message &&
+                typeof info.message === 'string' &&
+                info.message.includes('Possibly unsupported ZIP platform type')) {
                 return false; // Ignore logs from decompress-zip structures.js when decompressing target.dat
             }
             return info;
