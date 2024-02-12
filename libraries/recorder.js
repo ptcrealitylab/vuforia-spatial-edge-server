@@ -12,6 +12,7 @@
  */
 
 const fs = require('fs');
+const fsProm = require('../persistence/fsProm.js');
 const path = require('path');
 const zlib = require('zlib');
 
@@ -119,20 +120,20 @@ recorder.persistToFile = function () {
             return;
         }
 
-        zlib.gzip(timeObjectStr, function(err, buffer) {
+        zlib.gzip(timeObjectStr, async function(err, buffer) {
             if (err) {
                 console.error('Log compress failed', err);
                 reject(err);
                 return;
             }
-            fs.writeFile(outputFilename, buffer, function(writeErr) {
-                if (writeErr) {
-                    console.error('Log persist failed', writeErr);
-                    reject(writeErr);
-                    return;
-                }
-                resolve(logName);
-            });
+            try {
+                await fsProm.writeFile(outputFilename, buffer);
+            } catch (writeErr) {
+                console.error('Log persist failed', writeErr);
+                reject(writeErr);
+                return;
+            }
+            resolve(logName);
         });
     });
 };
