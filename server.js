@@ -379,6 +379,7 @@ const linkController = require('./controllers/link.js');
 const logicNodeController = require('./controllers/logicNode.js');
 const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
+const {splatTasks} = require('./controllers/object/SplatTask.js');
 const spatialController = require('./controllers/spatial');
 
 const signallingController = require('./controllers/signalling.js');
@@ -1155,6 +1156,9 @@ async function exit() {
     clearInterval(socketUpdaterInterval);
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
+    for (const splatTask of Object.values(splatTasks)) {
+        splatTask.stop();
+    }
     console.info('Server exited successfully');
     if (process.env.NODE_ENV !== 'test') {
         process.exit(0);

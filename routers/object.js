@@ -403,6 +403,22 @@ router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
     });
 });
 
+router.post('/:objectName/requestGaussianSplatting/', async function (req, res) {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    // splat status (commonly referred to as "splattus") is
+    // {done: boolean, progress: number}
+    try {
+        const splatStatus = await objectController.requestGaussianSplatting(req.params.objectName);
+        res.json(splatStatus);
+    } catch (e) {
+        console.error(e);
+        res.sendStatus(500);
+    }
+});
+
 const setupDeveloperRoutes = function() {
     // normal nodes
     router.post('/:objectName/frame/:frameName/node/:nodeName/size/', function (req, res) {
