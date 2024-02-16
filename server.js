@@ -974,7 +974,7 @@ async function setAnchors() {
         if (!objects[key]) {
             continue;
         }
-        if (objects[key].isWorldObject || objects[key].type === 'world') {
+        if (objects[key].isWorldObject || objects[key].type === 'world') { // TODO: is this still necessary? world objects are considered initialized by default, now
             // check if the object is correctly initialized with tracking targets
             let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
             let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
@@ -1268,7 +1268,8 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
         let xmlPath = path.join(targetDir, 'target.xml');
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
-        var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
+        let splatPath = path.join(targetDir, 'target.splat');
+        var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
         const tcs = await utilities.generateChecksums(objects, fileList);
         if (objects[thisId]) {
             // if no target files exist, checksum will be undefined, so mark
@@ -1731,6 +1732,7 @@ function objectWebServer() {
             'target.glb',
             'target.unitypackage',
             'target.3dt',
+            'target.splat',
         ];
 
         if (targetFiles.includes(filename) && urlArray[urlArray.length - 2] === 'target') {
@@ -2826,7 +2828,7 @@ function objectWebServer() {
                                 fileExtension = 'jpg';
                             }
 
-                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
+                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb' || fileExtension === '3dt'  || fileExtension === 'splat') {
                                 if (!await fileExists(folderD + '/' + identityFolderName + '/target/')) {
                                     try {
                                         await fsProm.mkdir(folderD + '/' + identityFolderName + '/target/', '0766');
@@ -2938,8 +2940,9 @@ function objectWebServer() {
                                     let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
                                     let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
                                     let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
+                                    let splatPath = path.join(folderD, identityFolderName, '/target/target.splat');
 
-                                    var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
+                                    var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
@@ -2947,6 +2950,8 @@ function objectWebServer() {
                                         var dat = await fileExists(datPath);
                                         var xml = await fileExists(xmlPath);
                                         var glb = await fileExists(glbPath);
+                                        var tdt = await fileExists(tdtPath);
+                                        var splat = await fileExists(splatPath);
 
                                         var sendObject = {
                                             id: thisObjectId,
@@ -2955,7 +2960,9 @@ function objectWebServer() {
                                             jpgExists: jpg,
                                             xmlExists: xml,
                                             datExists: dat,
-                                            glbExists: glb
+                                            glbExists: glb,
+                                            tdtExists: tdt,
+                                            splatExists: splat
                                         };
 
                                         thisObject.tcs = await utilities.generateChecksums(objects, fileList);
