@@ -2811,6 +2811,7 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
+                    let autoGenerateXml = typeof req.headers.autogeneratexml !== 'undefined' ? JSON.parse(req.headers.autogeneratexml) : true;
                     fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
                     fileInfoList.forEach(async fileInfo => {
                         if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
@@ -2883,13 +2884,17 @@ function objectWebServer() {
                                     }
 
                                 } else {
-                                    continueProcessingUpload();
+                                    continueProcessingUpload(folderD, fileExtension);
                                 }
 
                                 // Step 2) - Generate a default XML file if needed
                                 async function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
-                                    var objectName = req.params.id + utilities.uuidTime();
+                                    if (!autoGenerateXml) {
+                                        await onXmlVerified();
+                                        return;
+                                    }
 
+                                    var objectName = req.params.id + utilities.uuidTime();
                                     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                                        '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                                        '   <Tracking>\n' +
