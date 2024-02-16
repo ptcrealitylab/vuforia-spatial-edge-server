@@ -1969,10 +1969,10 @@ realityServer.gotClick = function (event) {
                 // this is how world objects get instantly initialized
                 try {
                     let msgContent = JSON.parse(state);
-                    // generate a placeholder xml file for this object
-                    let defaultSize = 0.3;
-                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
-                        if (stateGen === 'ok') {
+                    // // generate a placeholder xml file for this object
+                    // let defaultSize = 0.3;
+                    // realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
+                    //     if (stateGen === 'ok') {
                             realityServer.objects[msgContent.id] = new Objects();
                             realityServer.objects[msgContent.id].name = msgContent.name;
                             realityServer.objects[msgContent.id].isWorldObject = true;
@@ -1987,8 +1987,8 @@ realityServer.gotClick = function (event) {
                                     realityServer.update();
                                 });
                             }, 100);
-                        }
-                    }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+                        // }
+                    // }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
 
                 } catch (e) {
                     console.error('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
