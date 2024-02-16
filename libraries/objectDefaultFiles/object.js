@@ -208,6 +208,9 @@
 
         spatialObject.serverPort = defaultPort;
 
+        const pathParts = window.location.pathname.split('/');
+        const sourcePathname = pathParts.includes('frames') ? pathParts.slice(0, pathParts.indexOf('frames')).join('/') : window.location.pathname;
+        url = window.location.origin + sourcePathname;
         spatialObject.socketIoUrl = url;
         script.src = url + '/objectDefaultFiles/toolsocket.js';
 
