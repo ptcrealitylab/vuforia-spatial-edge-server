@@ -111,6 +111,7 @@ test('target upload to /content/:objectName', async () => {
         targetSize: { width: 0.3, height: 0.3 },
         isWorldObject: true,
         type: 'world',
+        gaussianSplatRequestId: null,
     });
 
     const tdt = getValueWithKeySuffixed(snapshot, 'target.3dt');

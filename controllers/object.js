@@ -3,6 +3,7 @@ const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
+const {startSplatTask} = require('./object/SplatTask.js');
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -364,6 +365,22 @@ const generateXml = async function(objectID, body, callback) {
 };
 
 /**
+ * @param {string} objectId
+ * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} result
+ */
+async function requestGaussianSplatting(objectId) {
+    const object = utilities.getObject(objects, objectId);
+    if (!object) {
+        throw new Error('Object not found');
+    }
+
+    let splatTask = await startSplatTask(object);
+    // Starting splat task can modify object
+    await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
+    return splatTask.getStatus();
+}
+
+/**
  * Enable sharing of Spatial Tools from this server to objects on other servers
  * @todo: see github issue #23 - function is currently unimplemented
  * @param {string} objectKey
@@ -437,5 +454,6 @@ module.exports = {
     setFrameSharingEnabled: setFrameSharingEnabled,
     checkFileExists: checkFileExists,
     getObject: getObject,
-    setup: setup
+    setup: setup,
+    requestGaussianSplatting,
 };
