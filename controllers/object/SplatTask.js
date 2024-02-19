@@ -101,6 +101,9 @@ class SplatTask {
         }
     }
 
+    /**
+     * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} splat status
+     */
     getStatus() {
         return {
             done: this.done,
