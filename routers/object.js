@@ -409,7 +409,7 @@ router.post('/:objectName/requestGaussianSplatting/', async function (req, res) 
         return;
     }
     // splat status (commonly referred to as "splattus") is
-    // {done: boolean, progress: number}
+    // {done: boolean, gaussianSplatRequestId: string|undefined}
     try {
         const splatStatus = await objectController.requestGaussianSplatting(req.params.objectName);
         res.json(splatStatus);
