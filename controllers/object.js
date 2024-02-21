@@ -402,6 +402,28 @@ const checkFileExists = async (objectId, filePath) => {
     return fileExists(absoluteFilePath);
 };
 
+const checkTargetFiles = async (objectId) => {
+    let [
+        glbExists, xmlExists, datExists,
+        jpgExists, _3dtExists, splatExists
+    ] = await Promise.all([
+        checkFileExists(objectId, '/target/target.glb'),
+        checkFileExists(objectId, '/target/target.xml'),
+        checkFileExists(objectId, '/target/target.dat'),
+        checkFileExists(objectId, '/target/target.jpg'),
+        checkFileExists(objectId, '/target/target.3dt'),
+        checkFileExists(objectId, '/target/target.splat'),
+    ]);
+    return {
+        glbExists,
+        xmlExists,
+        datExists,
+        jpgExists,
+        _3dtExists,
+        splatExists
+    }
+};
+
 const getObject = function (objectID, excludeUnpinned) {
     let fullObject = utilities.getObject(objects, objectID);
     if (!fullObject) { return null; }
@@ -453,6 +475,7 @@ module.exports = {
     generateXml: generateXml,
     setFrameSharingEnabled: setFrameSharingEnabled,
     checkFileExists: checkFileExists,
+    checkTargetFiles: checkTargetFiles,
     getObject: getObject,
     setup: setup,
     requestGaussianSplatting,
