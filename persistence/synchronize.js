@@ -64,3 +64,21 @@ async function synchronize() {
 }
 
 exports.synchronize = synchronize;
+
+let syncInProgress = false;
+
+async function startSyncIfNotSyncing() {
+    if (syncInProgress) {
+        return;
+    }
+    syncInProgress = true;
+    try {
+        await synchronize();
+    } catch (e) {
+        console.error('synchronize failed', e);
+    } finally {
+        syncInProgress = false;
+    }
+}
+
+exports.startSyncIfNotSyncing = startSyncIfNotSyncing;

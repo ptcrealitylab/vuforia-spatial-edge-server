@@ -132,6 +132,8 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 
 const fs = require('fs');       // Filesystem library
 const fsProm = require('./persistence/fsProm.js');
+const SyncInterval = require('./persistence/syncInterval.js');
+const syncInterval = new SyncInterval();
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');
@@ -300,6 +302,8 @@ for (const frameLibPath of frameLibPaths) {
         addonFrames.addFramesSource(frameLibPath);
     }
 }
+
+syncInterval.start();
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
@@ -1158,6 +1162,7 @@ function closeServer(server) {
 }
 
 async function exit() {
+    syncInterval.stop();
     hardwareAPI.shutdown();
     await closeServer(http);
     await closeServer(io.server.server);
