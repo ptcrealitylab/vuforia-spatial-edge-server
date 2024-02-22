@@ -5,6 +5,11 @@ const path = require('path');
 const {objectsPath} = require('../config.js');
 const makeChecksumList = require('./makeChecksumList.js');
 
+// Experimental feature to allow the remote (cloud proxy) to determine a merge
+// between our state and theirs and send back this merge for us to overwrite
+// our local file with
+const allowRemoteOverwriteLocal = false;
+
 async function synchronize() {
     const cslRemote = await remote.getChecksumList();
     const cslLocal = await makeChecksumList(objectsPath, '');
@@ -35,7 +40,7 @@ async function synchronize() {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await local.readFile(localAbsPath);
         const newContents = await remote.writeFile(relPath, contents);
-        if (newContents) {
+        if (newContents && allowRemoteOverwriteLocal) {
             await local.writeFile(localAbsPath, newContents);
         }
     }
