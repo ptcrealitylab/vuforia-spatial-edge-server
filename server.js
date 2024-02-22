@@ -134,7 +134,6 @@ const fsProm = require('fs/promises');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');
-const url = require('url');
 
 const addonPaths = [
     path.join(__dirname, 'addons'),
@@ -320,8 +319,8 @@ if (!isLightweightMobile) {
 let httpServer = null;
 if (globalVariables.useHTTPS) {
     let options = {
-        key: fs.readFileSync(dirname(url.fileURLToPath(__filename)) + '/key.pem'),
-        cert: fs.readFileSync(dirname(url.fileURLToPath(__filename)) + '/cert.pem')
+        key: fs.readFileSync(path.dirname(__filename) + '/key.pem'),
+        cert: fs.readFileSync(path.dirname(__filename) + '/cert.pem')
     };
     httpServer = require('https').createServer(options, webServer);
 } else {

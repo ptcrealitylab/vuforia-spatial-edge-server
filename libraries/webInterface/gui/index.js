@@ -61,7 +61,7 @@ realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
-let remoteOperatorUrl = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
+let remoteOperatorUrl = location.protocol + '//' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
 let isRemoteOperatorSupported = false;
 
 realityServer.initialize = function () {
@@ -512,7 +512,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                         // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                            thisObject.dom.querySelector('.objectTargetIcon').src = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                            thisObject.dom.querySelector('.objectTargetIcon').src = location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
@@ -869,8 +869,8 @@ realityServer.updateManageFrames = function () {
         function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
             buttonDiv.addEventListener('click', function () {
                 let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                // window.location.href = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
-                window.open((realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
+                // window.location.href = location.protocol + '//' + ipAddress + ':8080/frames/active/' + frameType + '/index.html';
+                window.open(location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank');
             });
         }
 
@@ -922,7 +922,7 @@ realityServer.updateManageFrames = function () {
 
 realityServer.selectHardwareInterfaceSettings = function (interfaceName) {
     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-    let pathToConfig = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
+    let pathToConfig = location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/hardwareInterface/' + interfaceName + '/config.html';
     let configFrame = document.querySelector('.configFrame');
     configFrame.src = pathToConfig;
 
