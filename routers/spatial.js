@@ -34,7 +34,7 @@ router.get('/searchObjects', function (req, res) {
  * regardless of whether they are pinned or unpinned.
  *
  * Example usage:
- * https://localhost:8080/spatial/searchFrames?maxDistance=2000&src=communication&publicData.title.includes=Machine&publicData.mentions.includes=@Ben
+ * http(s)://localhost:8080/spatial/searchFrames?maxDistance=2000&src=communication&publicData.title.includes=Machine&publicData.mentions.includes=@Ben
  *
  * queryParams:
  *  { maxDistance: '2000',

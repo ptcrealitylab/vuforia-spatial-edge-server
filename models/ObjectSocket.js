@@ -10,7 +10,7 @@ function ObjectSocket(socket, socketPort, ip) {
     // keeps the own IP of an object
     this.ip = ip;
     // defines where to connect to
-    this.io = socket.connect('https://' + ip + ':' + socketPort, {
+    this.io = socket.connect((realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ip + ':' + socketPort, {
         // defines the timeout for a connection between objects and the reality editor.
         'connect timeout': 5000,
         // try to reconnect
