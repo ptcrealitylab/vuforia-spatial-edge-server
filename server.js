@@ -303,7 +303,9 @@ for (const frameLibPath of frameLibPaths) {
     }
 }
 
-syncInterval.start();
+if (process.env.NODE_ENV !== 'test') {
+    syncInterval.start();
+}
 
 // constrution for the werbserver using express combined with socket.io
 var webServer = express();
