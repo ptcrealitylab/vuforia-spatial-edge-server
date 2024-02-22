@@ -319,8 +319,8 @@ if (!isLightweightMobile) {
 let httpServer = null;
 if (globalVariables.useHTTPS) {
     let options = {
-        key: fs.readFileSync(path.dirname(__filename) + '/key.pem'),
-        cert: fs.readFileSync(path.dirname(__filename) + '/cert.pem')
+        key: fs.readFileSync('key.pem'),
+        cert: fs.readFileSync('cert.pem')
     };
     httpServer = require('https').createServer(options, webServer);
 } else {
