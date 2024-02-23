@@ -95,7 +95,7 @@ class SplatTask {
             return;
         }
 
-        if (message.checkpointComplete) {
+        if (message.step === 'Complete') {
             this.stop();
             this.download();
         }
