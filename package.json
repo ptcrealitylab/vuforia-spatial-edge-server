@@ -13,7 +13,7 @@
     "express-handlebars": "^5.3.5",
     "formidable": "^2.1.1",
     "ip": "^2.0.1",
-    "jimp": "^0.22.10",
+    "jimp": "^0.22.12",
     "ml-matrix": "^6.11.0",
     "module-alias": "^2.2.3",
     "monaco-editor": "^0.46.0",
