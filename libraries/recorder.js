@@ -53,7 +53,6 @@ recorder.logsPath = logsPath;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
-    //recorder.objectOld = JSON.parse(JSON.stringify(object));
     recorder.start();
 };
 
@@ -153,7 +152,7 @@ recorder.persistToFileSync = function() {
 recorder.saveState = function () {
     let timeString = Date.now();
     let timeObject = recorder.timeObject[timeString] = {};
-    recorder.recurse(recorder.object, timeObject);
+    recorder.recurse(recorder.object, recorder.objectOld, timeObject);
     if (Object.keys(timeObject).length === 0) delete recorder.timeObject[timeString];
 };
 
@@ -208,62 +207,63 @@ recorder.applyDiff = function(objects, diff) {
 };
 
 /**
- * @param {object} obj - view into recorder.object
- * @param {object} objectInTime - object to store any values that change
+ * @param {object} cursorObj - view into recorder.object
+ * @param {object} cursorObj - view into recorder.objectOld
+ * @param {object} cursorTime - view into the time object
  *                 between recorder.object and recorder.objectOld
- * @param {string} keyString - path to the view `obj`
+ * @return {boolean} whether the recursion detected a change
  */
-recorder.recurse = function (obj, objectInTime, keyString) {
-    if (!keyString) keyString = '';
-    for (const key in obj) { // works for objects and arrays
-        if (!obj.hasOwnProperty(key)) {
+recorder.recurse = function (cursorObj, cursorOld, cursorTime) {
+    let altered = false;
+    for (const key in cursorObj) { // works for objects and arrays
+        if (!cursorObj.hasOwnProperty(key)) {
             // Ignore inherited enumerable properties
             continue;
         }
         // Ignore the special whole_pose property which duplicates changes to
         // individual joint frame matrices
-        if (key === 'whole_pose' && keyString.includes('_HUMAN_')) {
+        if (key === 'whole_pose') {
             continue;
         }
-        if (keyString.includes('_AVATAR_')) {
+        if (key.includes('_AVATAR_')) {
             continue;
         }
-        const item = obj[key];
+
+        const item = cursorObj[key];
+
         if (typeof item === 'object') {
+            let potentialItemTime;
 
             if (Array.isArray(item)) {
-                recorder.recurse(item, objectInTime, keyString + '#' + key + '/');
+                potentialItemTime = [];
+                if (!cursorOld.hasOwnProperty(key)) {
+                    cursorOld[key] = [];
+                }
             } else {
-                recorder.recurse(item, objectInTime, keyString + key + '/');
+                potentialItemTime = {};
+                if (!cursorOld.hasOwnProperty(key)) {
+                    cursorOld[key] = {};
+                }
+            }
+            let alteredChild = recorder.recurse(cursorObj[key], cursorOld[key], potentialItemTime);
+            if (alteredChild) {
+                cursorTime[key] = potentialItemTime;
+                altered = true;
             }
         } else {
             if (item === undefined) {
                 continue;
             }
-            const string = keyString + key + '/';
-            const thisItem = recorder.getItemFromArray(recorder.object, string.split('/'));
-            const oldItem = recorder.getItemFromArray(recorder.objectOld, string.split('/'));
-            let thisValue = thisItem[key];
-            let oldValue = oldItem[key];
 
-            if (doCompressFloat) {
-                if (typeof thisValue === 'number') {
-                    thisValue = compressFloat(thisValue);
-                }
-                if (typeof oldValue === 'number') {
-                    oldValue = compressFloat(oldValue);
-                }
+            if (item !== cursorOld[key]) {
+                cursorTime[key] = item;
+                altered = true;
             }
 
-            if (thisValue !== oldValue) {
-                const timeItem = recorder.getItemFromArray(objectInTime, string.split('/'));
-                // Persists value before any modifications
-                timeItem[key] = thisItem[key];
-            }
-
-            oldItem[key] = thisValue;
+            cursorOld[key] = item;
         }
     }
+    return altered;
 };
 
 /**
