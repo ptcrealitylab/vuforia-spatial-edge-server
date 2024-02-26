@@ -52,3 +52,7 @@ libraries/objectLogs/*
 /spatialToolbox
 /vuforia-spatial-toolbox-userinterface
 /.vscode
+
+/config-private.js
+
+/coverage

@@ -11,7 +11,7 @@ const options = {
 
 let child = null;
 
-function startNewChild() {
+async function startNewChild() {
     child = fork(program, argv, options);
     child.on('message', onChildMessage);
     child.on('exit', onChildCrash);

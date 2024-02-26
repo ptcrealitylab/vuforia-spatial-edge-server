@@ -12,11 +12,11 @@
     "express": "^4.18.2",
     "express-handlebars": "^5.3.5",
     "formidable": "^2.1.1",
-    "ip": "^2.0.0",
-    "jimp": "^0.22.10",
+    "ip": "^2.0.1",
+    "jimp": "^0.22.12",
     "ml-matrix": "^6.11.0",
     "module-alias": "^2.2.3",
-    "monaco-editor": "^0.45.0",
+    "monaco-editor": "^0.46.0",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.7.0",
     "node-persist": "^2.1.0",
@@ -39,7 +39,7 @@
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
     "mock-fs": "^5.2.0",
-    "puppeteer": "^21.7.0"
+    "puppeteer": "^22.2.0"
   },
   "scripts": {
     "test": "npm run lint && jest --forceExit --runInBand",
