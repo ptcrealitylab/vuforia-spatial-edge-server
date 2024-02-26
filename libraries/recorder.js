@@ -167,19 +167,28 @@ recorder.update = function() {
     }, 0);
 };
 
+/**
+ * @param {object} timeObject - object with keys
+ * representing sorted-increasing timestamps
+ * @param {number} targetTime
+ * @param {object|undefined} checkpoint
+ */
 recorder.replay = function(timeObject, targetTime, checkpoint) {
-    let objects = {};
-    let currentTime = 0;
-    if (checkpoint) {
+    let times = Object.keys(timeObject).map(t => parseInt(t));
+
+    let objects = JSON.parse(JSON.stringify(timeObject[times[0]]));
+    let currentTime = times[0];
+    if (checkpoint && checkpoint.time <= targetTime) {
         objects = checkpoint.objects;
         currentTime = checkpoint.time;
     }
 
-    let times = Object.keys(timeObject).map(t => parseInt(t));
-
     for (let time of times) {
         if (currentTime >= time) {
             continue;
+        }
+        if (time > targetTime) {
+            break;
         }
 
         recorder.applyDiff(objects, timeObject[time]);
@@ -194,7 +203,15 @@ function applyDiffRecur(objects, diff) {
         if (diff[key] === null) {
             continue; // JSON encodes undefined as null so just skip (problem if we try to encode null)
         }
-        if (typeof diff[key] === 'object' && objects.hasOwnProperty(key)) {
+        if (typeof diff[key] === 'object') {
+            // Fill in missing properties with objects of the correct type
+            if (!objects.hasOwnProperty(key)) {
+                if (Array.isArray(diff[key])) {
+                    objects[key] = [];
+                } else {
+                    objects[key] = {};
+                }
+            }
             applyDiffRecur(objects[key], diff[key]);
             continue;
         }
