@@ -57,7 +57,7 @@ const DEBUG = false;
 
 const xml2js = require('xml2js');
 const fs = require('fs');
-const fsProm = require('fs/promises');
+const fsProm = require('../persistence/fsProm.js');
 const ip = require('ip');       // get the device IP address library
 const dgram = require('dgram'); // UDP Broadcasting library
 const path = require('path');
@@ -777,6 +777,14 @@ exports.loadHardwareInterfaceAsync = async function loadHardwareInterfaceAsync(h
         return hardwareInterfaces[hardwareInterfaceName][settingsName];
     };
     return this.read;
+};
+
+/**
+ * @param {string} hardwareInterfaceName
+ * @return {any} raw loaded settings of hardware interface
+ */
+exports.getLoadedHardwareInterface = function getLoadedHardwareInterface(hardwareInterfaceName) {
+    return hardwareInterfaces[hardwareInterfaceName];
 };
 
 function restActionSender(action) {

@@ -155,6 +155,14 @@
          */
         this.moveDelayBeforeOpen = 400;
 
+        /**
+         * By default, the touch area for the tool changes every time you open or close the envelope.
+         * When you open it, it expands to fill the screen. When you close it, it shrinks to the icon.
+         * If you disable this, you should handle the spatialInterface.changeFrameSize in your onOpen and onClose events.
+         * @type {boolean}
+         */
+        this.disableAutomaticResizing = false;
+
         // finish setting up the envelope by adding default callbacks and listeners for certain events
 
         // listen to post messages from the editor to trigger certain envelope events
@@ -560,7 +568,9 @@
             this.rootElementWhenClosed.style.display = 'none';
             this.rootElementWhenOpen.style.display = '';
             // change the iframe and touch overlay size (including visual feedback corners) when the frame changes size
-            this.realityInterface.changeFrameSize(parseInt(this.rootElementWhenOpen.clientWidth), parseInt(this.rootElementWhenOpen.clientHeight));
+            if (!this.disableAutomaticResizing) {
+                this.realityInterface.changeFrameSize(parseInt(this.rootElementWhenOpen.clientWidth), parseInt(this.rootElementWhenOpen.clientHeight));
+            }
             this.moveDelayBeforeOpen = this.realityInterface.getMoveDelay() || 400;
             this.realityInterface.setMoveDelay(-1); // can't move it while fullscreen
         };
@@ -572,7 +582,9 @@
             this.rootElementWhenClosed.style.display = '';
             this.rootElementWhenOpen.style.display = 'none';
             // change the iframe and touch overlay size (including visual feedback corners) when the frame changes size
-            this.realityInterface.changeFrameSize(parseInt(this.rootElementWhenClosed.clientWidth), parseInt(this.rootElementWhenClosed.clientHeight));
+            if (!this.disableAutomaticResizing) {
+                this.realityInterface.changeFrameSize(parseInt(this.rootElementWhenClosed.clientWidth), parseInt(this.rootElementWhenClosed.clientHeight));
+            }
             this.realityInterface.setMoveDelay(this.moveDelayBeforeOpen); // restore to previous value
         };
 

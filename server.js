@@ -130,7 +130,7 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 // basically all your local devices can see the object, however the internet is unable to reach the object.
 
 const fs = require('fs');       // Filesystem library
-const fsProm = require('fs/promises');
+const fsProm = require('./persistence/fsProm.js');
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');
@@ -394,6 +394,7 @@ const linkController = require('./controllers/link.js');
 const logicNodeController = require('./controllers/logicNode.js');
 const nodeController = require('./controllers/node.js');
 const objectController = require('./controllers/object.js');
+const {splatTasks} = require('./controllers/object/SplatTask.js');
 const spatialController = require('./controllers/spatial');
 
 const signallingController = require('./controllers/signalling.js');
@@ -1170,6 +1171,9 @@ async function exit() {
     clearInterval(socketUpdaterInterval);
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
+    for (const splatTask of Object.values(splatTasks)) {
+        splatTask.stop();
+    }
     console.info('Server exited successfully');
     if (process.env.NODE_ENV !== 'test') {
         process.exit(0);

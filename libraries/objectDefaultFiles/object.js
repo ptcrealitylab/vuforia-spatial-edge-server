@@ -208,6 +208,9 @@
 
         spatialObject.serverPort = defaultPort;
 
+        const pathParts = window.location.pathname.split('/');
+        const sourcePathname = pathParts.includes('frames') ? pathParts.slice(0, pathParts.indexOf('frames')).join('/') : window.location.pathname;
+        url = window.location.origin + sourcePathname;
         spatialObject.socketIoUrl = url;
         script.src = url + '/objectDefaultFiles/toolsocket.js';
 
@@ -292,6 +295,18 @@
             parent.postMessage(JSON.stringify(dataToSend), '*');
         }
     }
+
+    /**
+     * Helper function that tools can use to convert a path on the server to the correct server's URL,
+     * @example input: '/object/test/uploadMediaFile'
+     *          output: 'https://toolboxedge.net/n/id/s/id/object/test/uploadMediaFile' on cloud server
+     *          output: 'http://192.168.0.25:8080/object/test/uploadMediaFile' on local server
+     * @param {string} path
+     * @returns {string}
+     */
+    spatialObject.getURL = function (path) {
+        return `${spatialObject.socketIoUrl}${path}`;
+    };
 
     /**
      * receives POST messages from parent to change spatialObject state
@@ -1461,10 +1476,12 @@
         /**
          * Removes or adds the touch overlay div from the tool, without affecting fullscreen status
          * @param {boolean} enabled
+         * @param {*} options
          */
-        this.setFull2D = function (enabled) {
+        this.setFull2D = function (enabled, options = {showWindowTitleBar: false }) {
             postDataToParent({
-                full2D: enabled
+                full2D: enabled,
+                showWindowTitleBar: options.showWindowTitleBar
             });
         };
 
