@@ -149,11 +149,16 @@ recorder.persistToFileSync = function() {
     fs.writeFileSync(outputFilename, buffer);
 };
 
-recorder.saveState = function () {
-    let timeString = Date.now();
-    let timeObject = recorder.timeObject[timeString] = {};
+/**
+ * @param {number|undefined} time - optional time at which this state was observed
+ */
+recorder.saveState = function (time) {
+    if (typeof time === 'undefined') {
+        time = Date.now();
+    }
+    let timeObject = recorder.timeObject[time] = {};
     recorder.recurse(recorder.object, recorder.objectOld, timeObject);
-    if (Object.keys(timeObject).length === 0) delete recorder.timeObject[timeString];
+    if (Object.keys(timeObject).length === 0) delete recorder.timeObject[time];
 };
 
 let pendingUpdate = null;
