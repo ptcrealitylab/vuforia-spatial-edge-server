@@ -85,8 +85,7 @@ async function waitForObjects(lengthMin = 1) {
             if (Object.keys(allObjects).length >= lengthMin) {
                 break;
             }
-        } catch (e) {
-            console.log(e);
+        } catch (_) {
             // way way too early as opposed to normal too early
         }
         await sleep(100);
