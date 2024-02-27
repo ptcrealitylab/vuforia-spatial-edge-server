@@ -61,7 +61,7 @@ realityServer.getCommonContents = function () {
     return this.domObjects.querySelector('#commonContents');
 };
 
-let remoteOperatorUrl = location.protocol + '//' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
+let remoteOperatorUrl = (realityServer.states.useHTTPS ? 'https' : 'http') + '://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':8081';
 let isRemoteOperatorSupported = false;
 
 realityServer.initialize = function () {
@@ -462,7 +462,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.active').classList.add('clickAble');
                     thisObject.dom.querySelector('.download').classList.add('clickAble');
 
-                    // let targetUrl = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // let targetUrl = (realityServer.states.useHTTPS ? 'https' : 'http') + '://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
                     // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
@@ -512,7 +512,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                         // only add the icon if it exists
                         if (thisObject.targetsExist.jpgExists) {
                             let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                            thisObject.dom.querySelector('.objectTargetIcon').src = location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                            thisObject.dom.querySelector('.objectTargetIcon').src = (realityServer.states.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                         }
 
                     } else {
@@ -619,14 +619,14 @@ realityServer.updateManageObjects = function (thisItem2) {
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'yellow', 'green');
                     realityServer.switchClass(thisObject.dom.querySelector('.target'), 'targetWidthMedium', 'one');
 
-                    // let targetUrl = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
+                    // let targetUrl = (realityServer.states.useHTTPS ? 'https' : 'http') + '://localhost:8080/obj/' + thisObject.name + '/target/target.jpg';
                     // thisObject.dom.querySelector(".target").style.backgroundImage = 'url("' + targetUrl + '")';
                     // thisObject.dom.querySelector(".target").style.backgroundSize = 'cover';
 
                     let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
                     // add Image for Target
                     if (thisObject.targetsExist.jpgExists) {
-                        thisObject.dom.querySelector('.objectTargetIcon').src = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
+                        thisObject.dom.querySelector('.objectTargetIcon').src = (realityServer.states.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/obj/' + thisObject.name + '/target/target.jpg';
                     } else if (thisObject.isAnchor) {
                         thisObject.dom.querySelector('.objectTargetIcon').src = '../libraries/gui/resources/anchor.svg';
                     }
@@ -727,7 +727,7 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                     setTooltipTextForElement(thisFullScreen.querySelector('.fullscreen'),
                         'Open the screen HMI configured by the vuforia-spatial-screens-addon.' +
-                        ' (For this object: ' + (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ': ' + thisObject.screenPort + ')');
+                        ' (For this object: ' + (realityServer.states.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ': ' + thisObject.screenPort + ')');
 
                     if (!thisObject.screenPort) {
                         thisFullScreen.querySelector('.fullscreen').classList.remove('purple');

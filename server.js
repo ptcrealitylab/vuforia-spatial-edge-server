@@ -2107,7 +2107,7 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder, async function (req, res) {
             let framePathList = frameLibPaths.join(' ');
             await setAnchors();
-            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
+            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, globalVariables.useHTTPS, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
@@ -2118,7 +2118,7 @@ function objectWebServer() {
 
             let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
-            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, globalVariables.useHTTPS, configHtmlPath));
         });
 
         // Proxies requests to toolboxedge.net, for CORS video playback

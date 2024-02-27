@@ -82,7 +82,7 @@ function Frame() {
  * @param {string} configHtmlPath - absolute path to the config.html file in whatever addon it may belong to
  * @return {string} - returns the page's HTML as a string
  */
-exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort, configHtmlPath) {
+exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardwareInterfaceModules, version, ipAddress, serverPort, useHTTPS, configHtmlPath) {
     let html = '';
     try {
         html = fs.readFileSync(configHtmlPath, 'utf8');
@@ -101,14 +101,15 @@ exports.generateHtmlForHardwareInterface = function(hardwareInterfaceName, hardw
     var states = {
         version: version,
         ipAdress: ipAddress,
-        serverPort: serverPort
+        serverPort: serverPort,
+        useHTTPS: useHTTPS
     };
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
 
     return html;
 };
 
-exports.printFolder = async function printFolder(objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
+exports.printFolder = async function printFolder(objects, objectsPath, _debug, objectInterfaceName, objectLookup, version, ipAddress, serverPort, useHTTPS, frameTypeModules, hardwareInterfaceModules, globalFramesPath) {
 
     // overall data structure that contains everything that will be passed into the HTML template
     var newObject = {};
@@ -219,7 +220,8 @@ exports.printFolder = async function printFolder(objects, objectsPath, _debug, o
         version: version,
         ipAdress: ipAddress,
         serverPort: serverPort,
-        globalFramesPath: globalFramesPath
+        globalFramesPath: globalFramesPath,
+        useHTTPS: useHTTPS
     };
     html = html.replace('{/*replace States*/}', JSON.stringify(states, null, 4));
 
