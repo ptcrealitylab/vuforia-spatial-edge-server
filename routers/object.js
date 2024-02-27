@@ -605,6 +605,13 @@ const setupDeveloperRoutes = function() {
         let excludeUnpinned = (req.query.excludeUnpinned === 'true');
         res.json(objectController.getObject(req.params.objectName, excludeUnpinned)).end();
     });
+    router.post('/:objectName/uploadTarget/', (req, res) => {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.uploadTarget(req.params.objectName, req, res);
+    });
 };
 
 const setup = function(globalVariables) {
