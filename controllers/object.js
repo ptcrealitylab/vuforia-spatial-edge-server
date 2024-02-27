@@ -4,6 +4,8 @@ const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 const {startSplatTask} = require('./object/SplatTask.js');
+const server = require('../server');
+const {/*objectsPath,*/ beatPort} = require('../config.js');
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -424,6 +426,149 @@ const checkTargetFiles = async (objectId) => {
     }
 };
 
+const uploadTarget = async (objectName, req, res) => {
+    let thisObjectId = utilities.readObject(objectLookup, objectName);
+    let object = utilities.getObject(objects, thisObjectId);
+    if (!object) {
+        res.status(404).send('object ' + thisObjectId + ' not found');
+        return;
+    }
+
+    // first upload to a temporary directory before moving it to the target directory
+    let uploadDir = path.join(objectsPath, objectName, identityFolderName, 'tmp');
+    await mkdirIfNotExists(uploadDir);
+
+    let targetDir = path.join(objectsPath, objectName,  identityFolderName, 'target');
+    await mkdirIfNotExists(targetDir);
+
+    let form = new formidable.IncomingForm({
+        uploadDir: uploadDir,
+        keepExtensions: true
+        // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
+    });
+
+    form.on('error', function (err) {
+        res.status(500).send(err);
+    });
+
+    let fileInfoList = [];
+
+    form.on('fileBegin', (name, file) => {
+        if (!file.name) {
+            file.name = file.newFilename;
+        }
+        fileInfoList.push({
+            name: file.name,
+            completed: false
+        });
+        file.path = path.join(form.uploadDir, file.name);
+    });
+
+    form.parse(req);
+
+    /**
+     * Returns the file extension (portion after the last dot) of the given filename.
+     * If a file name starts with a dot, returns an empty string.
+     *
+     * @author VisioN @ StackOverflow
+     * @param {string} fileName - The name of the file, such as foo.zip
+     * @return {string} The lowercase extension of the file, such has "zip"
+     */
+    function getFileExtension(fileName) {
+        return fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2).toLowerCase();
+    }
+
+    function makeFileProcessPromise(fileInfo) {
+        return new Promise(async (resolve, reject) => {
+            if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                reject(`File doesn't exist at ${path.join(form.uploadDir, fileInfo.name)}`);
+                return;
+            }
+            fileInfo.completed = true; // File has downloaded
+            let fileExtension = getFileExtension(fileInfo.name);
+
+            // only accept these predetermined file types
+            if (!(fileExtension === 'jpg' || fileExtension === 'dat' ||
+                fileExtension === 'xml' || fileExtension === 'glb' ||
+                fileExtension === '3dt'  || fileExtension === 'splat')) {
+                reject(`File extension not acceptable for targetUpload (${fileExtension})`);
+                return;
+            }
+
+            let originalFilepath = path.join(uploadDir, fileInfo.name);
+            let newFilepath = path.join(targetDir, `target.${fileExtension}`);
+
+            try {
+                await fsProm.rename(originalFilepath, newFilepath);
+                resolve();
+            } catch (e) {
+                reject(`error renaming ${originalFilepath} to ${newFilepath}`);
+            }
+        });
+    }
+
+    form.on('end', async () => {
+        fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
+
+        let filePromises = [];
+        fileInfoList.forEach(fileInfo => {
+            filePromises.push(makeFileProcessPromise(fileInfo));
+        });
+
+        try {
+            await Promise.all(filePromises);
+            // Code continues when all promises are resolved
+        } catch (error) {
+            console.warn(error);
+            // res.status(500).send('error')
+        }
+
+        let jpgPath = path.join(targetDir, 'target.jpg');
+        let datPath = path.join(targetDir, 'target.dat');
+        let xmlPath = path.join(targetDir, 'target.xml');
+        let glbPath = path.join(targetDir, 'target.glb');
+        let tdtPath = path.join(targetDir, 'target.3dt');
+        let splatPath = path.join(targetDir, 'target.splat');
+        let fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
+
+        let jpg = await fileExists(jpgPath);
+        let dat = await fileExists(datPath);
+        let xml = await fileExists(xmlPath);
+        let glb = await fileExists(glbPath);
+        let tdt = await fileExists(tdtPath);
+        let splat = await fileExists(splatPath);
+
+        let sendObject = {
+            id: thisObjectId,
+            name: objectName,
+            // initialized: (jpg && xml),
+            jpgExists: jpg,
+            xmlExists: xml,
+            datExists: dat,
+            glbExists: glb,
+            tdtExists: tdt,
+            splatExists: splat
+        };
+
+        object.tcs = utilities.generateChecksums(objects, fileList);
+        await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+        await setAnchors();
+
+        // await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+        await server.objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+
+        // delete the tmp folder and any files within it
+        await utilities.rmdirIfExists(uploadDir);
+
+        // res.status(200).send('ok');
+        try {
+            res.status(200).json(sendObject);
+        } catch (e) {
+            console.error('unable to send res', e);
+        }
+    });
+};
+
 const getObject = function (objectID, excludeUnpinned) {
     let fullObject = utilities.getObject(objects, objectID);
     if (!fullObject) { return null; }
@@ -476,6 +621,7 @@ module.exports = {
     setFrameSharingEnabled: setFrameSharingEnabled,
     checkFileExists: checkFileExists,
     checkTargetFiles: checkTargetFiles,
+    uploadTarget: uploadTarget,
     getObject: getObject,
     setup: setup,
     requestGaussianSplatting,
