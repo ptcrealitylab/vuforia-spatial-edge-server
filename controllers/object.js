@@ -401,7 +401,7 @@ const checkFileExists = async (objectId, filePath) => {
     }
     let objectIdentityDir = path.join(objectsPath, obj.name, identityFolderName);
     let absoluteFilePath = path.join(objectIdentityDir, filePath);
-    return fileExists(absoluteFilePath);
+    return await fileExists(absoluteFilePath);
 };
 
 const checkTargetFiles = async (objectId) => {
