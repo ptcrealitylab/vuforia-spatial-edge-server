@@ -22,26 +22,6 @@ const logsPath = path.join(objectsPath, '.objectLogs');
 
 const PERSIST_DELAY_MS = 10 * 60 * 1000;
 
-// Flag to compress floating point numbers for ~20% average gains at a loss of precision
-const doCompressFloat = false;
-const prec = Math.pow(10, 8);
-/**
- * @param {number} val
- * @return {number} `val` limited to a resolution of at most `1 / prec` and to
- * `Math.log10(prec)` significant digits
- */
-function compressFloat(val) {
-    if (Math.abs(val - Math.round(val)) < 1 / prec) {
-        return Math.round(val);
-    }
-    let sign = Math.sign(val);
-    val = Math.abs(val);
-    let scale = Math.pow(10, Math.floor(Math.log10(val)));
-    let significand = val / scale;
-    significand = Math.round(significand * prec) / prec;
-    return sign * significand * scale;
-}
-
 let recorder = {};
 recorder.frameRate = 10;
 recorder.object = {};
@@ -286,35 +266,6 @@ recorder.recurse = function (cursorObj, cursorObjOld, cursorTime) {
         }
     }
     return altered;
-};
-
-/**
- * @param {object} object
- * @param {Array<String>} array - keyString split at '/'
- * @return {any} value of `object` from keyString parts `array`
- */
-recorder.getItemFromArray = function (object, array) {
-    let item = object;
-    if (!item) return item;
-    let returnItem = {};
-    array.forEach(function (data) {
-        if (data !== '') {
-            if (data.charAt(0) === '#') {
-                data = data.substr(1);
-                if (!item.hasOwnProperty(data))
-                    item[data] = [];
-            } else {
-                if (!item.hasOwnProperty(data))
-                    item[data] = {};
-            }
-            // let newItem = item[data];
-            returnItem = item;
-            if (item[data])
-                item = item[data];
-        }
-    });
-
-    return returnItem;
 };
 
 module.exports = recorder;
