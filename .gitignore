@@ -58,3 +58,6 @@ libraries/objectLogs/*
 /coverage
 
 /scripts/cert.conf
+
+/cert.pem
+/key.pem
