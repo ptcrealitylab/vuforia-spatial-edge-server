@@ -230,12 +230,12 @@ recorder.applyDiff = function(objects, diff) {
 
 /**
  * @param {object} cursorObj - view into recorder.object
- * @param {object} cursorObj - view into recorder.objectOld
+ * @param {object} cursorObjOld - view into recorder.objectOld
  * @param {object} cursorTime - view into the time object
  *                 between recorder.object and recorder.objectOld
  * @return {boolean} whether the recursion detected a change
  */
-recorder.recurse = function (cursorObj, cursorOld, cursorTime) {
+recorder.recurse = function (cursorObj, cursorObjOld, cursorTime) {
     let altered = false;
     for (const key in cursorObj) { // works for objects and arrays
         if (!cursorObj.hasOwnProperty(key)) {
@@ -258,16 +258,16 @@ recorder.recurse = function (cursorObj, cursorOld, cursorTime) {
 
             if (Array.isArray(item)) {
                 potentialItemTime = [];
-                if (!cursorOld.hasOwnProperty(key)) {
-                    cursorOld[key] = [];
+                if (!cursorObjOld.hasOwnProperty(key)) {
+                    cursorObjOld[key] = [];
                 }
             } else {
                 potentialItemTime = {};
-                if (!cursorOld.hasOwnProperty(key)) {
-                    cursorOld[key] = {};
+                if (!cursorObjOld.hasOwnProperty(key)) {
+                    cursorObjOld[key] = {};
                 }
             }
-            let alteredChild = recorder.recurse(cursorObj[key], cursorOld[key], potentialItemTime);
+            let alteredChild = recorder.recurse(cursorObj[key], cursorObjOld[key], potentialItemTime);
             if (alteredChild) {
                 cursorTime[key] = potentialItemTime;
                 altered = true;
@@ -277,12 +277,12 @@ recorder.recurse = function (cursorObj, cursorOld, cursorTime) {
                 continue;
             }
 
-            if (item !== cursorOld[key]) {
+            if (item !== cursorObjOld[key]) {
                 cursorTime[key] = item;
                 altered = true;
             }
 
-            cursorOld[key] = item;
+            cursorObjOld[key] = item;
         }
     }
     return altered;
