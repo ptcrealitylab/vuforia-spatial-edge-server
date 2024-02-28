@@ -56,3 +56,5 @@ libraries/objectLogs/*
 /config-private.js
 
 /coverage
+
+/scripts/cert.conf
