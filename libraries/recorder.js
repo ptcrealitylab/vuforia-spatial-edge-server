@@ -166,6 +166,10 @@ recorder.saveState = function (time) {
     if (typeof time === 'undefined') {
         time = Date.now();
     }
+    if (recorder.timeObject[time]) {
+        console.warn('duplicate saveState at time', time);
+        return;
+    }
     let timeObject = recorder.timeObject[time] = {};
     recorder.recurse(recorder.object, recorder.objectOld, timeObject);
     if (Object.keys(timeObject).length === 0) delete recorder.timeObject[time];
