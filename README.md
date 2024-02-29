@@ -43,6 +43,19 @@ npm install
 cd ../.. # return to the main vuforia-toolbox-server directory
 ```
 
+Finally, configure and generate a local self-signed certificate.
+
+```bash
+cp scripts/cert.conf.template scripts/cert.conf
+# edit scripts/cert.conf to include your local ip address if desired
+vim scripts/cert.conf
+./scripts/generate_certificate.sh
+```
+
+If desired, you can now add this certificate (cert.pem) to your local trusted
+certificate store (e.g. Keychain on macOS) to not have to manually add it to
+each browser's cert store.
+
 You can now run the server using the following command:
 
 ```bash
