@@ -6,11 +6,11 @@
  * @param {number} socketPort
  * @param {string} ip - own ip of object
  */
-function ObjectSocket(socket, socketPort, ip) {
+function ObjectSocket(protocol, socket, socketPort, ip) {
     // keeps the own IP of an object
     this.ip = ip;
     // defines where to connect to
-    this.io = socket.connect('http://' + ip + ':' + socketPort, {
+    this.io = socket.connect(protocol + '//' + ip + ':' + socketPort, {
         // defines the timeout for a connection between objects and the reality editor.
         'connect timeout': 5000,
         // try to reconnect

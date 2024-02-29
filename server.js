@@ -100,8 +100,11 @@ const globalVariables = {
         udp: false,
         web: false,
         system: false
-    }
+    },
+    useHTTPS: !(isLightweightMobile || isStandaloneMobile) // on mobile devices node.js doesn't fully support HTTPS
 };
+
+exports.useHTTPS = globalVariables.useHTTPS;
 
 // ports used to define the server behaviour
 /*
@@ -153,7 +156,7 @@ const nodePaths = addonFolders.map(folder => path.join(folder, 'nodes'));
 const blockPaths = addonFolders.map(folder => path.join(folder, 'blocks'));
 // All interfaces for different hardware such as Arduino Yun, PI, Philips Hue are stored in this folder.
 const hardwareInterfacePaths = addonFolders.map(folder => path.join(folder, 'interfaces'));
-// The web service level on which objects are accessable. http://<IP>:8080 <objectInterfaceFolder> <object>
+// The web service level on which objects are accessable. http(s)://<IP>:8080 <objectInterfaceFolder> <object>
 const objectInterfaceFolder = '/';
 
 /**********************************************************************************************************************
@@ -313,8 +316,20 @@ if (!isLightweightMobile) {
     webServer.set('view engine', 'handlebars');
 }
 
-const http = webServer.listen(serverPort, function () {
-    console.info('Server (http and websockets) is listening on port', serverPort);
+let httpServer = null;
+if (globalVariables.useHTTPS) {
+    let options = {
+        key: fs.readFileSync('key.pem'),
+        cert: fs.readFileSync('cert.pem')
+    };
+    httpServer = require('https').createServer(options, webServer);
+} else {
+    httpServer = require('http').createServer(webServer);
+}
+
+
+const http = httpServer.listen(serverPort, function () {
+    console.info('Server (http' + (globalVariables.useHTTPS ? 's' : '') + ' and websockets) is listening on port', serverPort);
     checkInit('web');
 });
 
@@ -1498,7 +1513,7 @@ async function getKnownSceneGraph(ip, port) {
     } // TODO: implement placeholder
 
     // 2. if not, make an HTTP GET request to the other server's /spatial/sceneGraph endpoint to get it
-    const url = 'http://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
+    const url = (globalVariables.useHTTPS ? 'https' : 'http') + '://' + ip + ':' + (port || 8080) + '/spatial/sceneGraph';
     let response = null;
     try {
         response = await utilities.httpGet(url);
@@ -2092,7 +2107,7 @@ function objectWebServer() {
         webServer.get(objectInterfaceFolder, async function (req, res) {
             let framePathList = frameLibPaths.join(' ');
             await setAnchors();
-            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
+            res.send(await webFrontend.printFolder(objects, objectsPath, globalVariables.debug, objectInterfaceFolder, objectLookup, version, services.ips /*ip.address()*/, serverPort, globalVariables.useHTTPS, addonFrames.getFrameList(), hardwareInterfaceModules, framePathList));
         });
 
         webServer.get(objectInterfaceFolder + 'hardwareInterface/:interfaceName/config.html', function (req, res) {
@@ -2103,7 +2118,7 @@ function objectWebServer() {
 
             let interfacePath = hardwareInterfaceLoader.resolvePath(req.params.interfaceName);
             let configHtmlPath = path.join(interfacePath, req.params.interfaceName, 'config.html');
-            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, configHtmlPath));
+            res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, globalVariables.useHTTPS, configHtmlPath));
         });
 
         // Proxies requests to toolboxedge.net, for CORS video playback
