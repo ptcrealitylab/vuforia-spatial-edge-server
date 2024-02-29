@@ -909,20 +909,22 @@
          * Subscribes this socket to data values being written to nodes on this frame
          */
         this.sendRealityEditorSubscribe = function () {
-            var timeoutFunction = function() {
-                if (spatialObject.object) {
-                    self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
-                        object: spatialObject.object,
-                        frame: spatialObject.frame,
-                        protocol: spatialObject.protocol
-                    }));
+            let timeout = 10;
+            function subscribe() {
+                if (self.ioObject.socket.readyState !== self.ioObject.socket.OPEN) {
+                    if (timeout < 1000) {
+                        timeout *= 10;
+                    }
+                    setTimeout(subscribe, timeout);
+                    return;
                 }
-            };
-            // Call it a few times to help ensure it succeeds
-            setTimeout(timeoutFunction, 10);
-            setTimeout(timeoutFunction, 50);
-            setTimeout(timeoutFunction, 100);
-            setTimeout(timeoutFunction, 1000);
+                self.ioObject.emit(getIoTitle('/subscribe/realityEditor'), JSON.stringify({
+                    object: spatialObject.object,
+                    frame: spatialObject.frame,
+                    protocol: spatialObject.protocol
+                }));
+            }
+            subscribe();
         };
         this.sendRealityEditorSubscribe();
 
