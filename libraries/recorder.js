@@ -25,11 +25,15 @@ const PERSIST_DELAY_MS = 10 * 60 * 1000;
 let recorder = {};
 recorder.frameRate = 10;
 recorder.object = {};
+// TODO: could read objectOld from last-saved log file
 recorder.objectOld = {};
+// Map from time to difference between object and objectOld
 recorder.timeObject = {};
 recorder.intervalSave = null;
 recorder.intervalPersist = null;
 recorder.logsPath = logsPath;
+
+let hasPersistedToFile = false;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
@@ -83,11 +87,26 @@ recorder.getAndGuaranteeOutputFilename = function(logName) {
     return outputFilename;
 };
 
+/**
+ * Persist current state to file, skipping if no differences recorded since last persist
+ * @return {Promise<string|null>} log file name
+ */
 recorder.persistToFile = function () {
+    // recorder.objectOld is the latest state persisted in timeObject
+    // Because we're using objectOld as the basis for each log file, having
+    // only one entry in timeObject means `object` never had a difference from
+    // `objectOld` and we can skip writing to the file.
+    if (Object.keys(recorder.timeObject).length <= 1 && hasPersistedToFile) {
+        return Promise.resolve(null);
+    }
+
+    hasPersistedToFile = true;
+
     let logName = recorder.getCurrentLogName();
     let timeObjectStr = JSON.stringify(recorder.timeObject);
-    recorder.objectOld = {};
-    recorder.timeObject = {};
+    recorder.timeObject = {
+        [Date.now()]: JSON.parse(JSON.stringify(recorder.objectOld)),
+    };
 
     return new Promise((resolve, reject) => {
         let outputFilename;
@@ -117,16 +136,27 @@ recorder.persistToFile = function () {
     });
 };
 
+/**
+ * @return {string|null} log file name
+ */
 recorder.persistToFileSync = function() {
+    if (Object.keys(recorder.timeObject).length <= 1 && hasPersistedToFile) {
+        return null;
+    }
+
+    hasPersistedToFile = true;
+
     let logName = recorder.getCurrentLogName();
     let timeObjectStr = JSON.stringify(recorder.timeObject);
-    recorder.objectOld = {};
-    recorder.timeObject = {};
+    recorder.timeObject = {
+        [Date.now()]: JSON.parse(JSON.stringify(recorder.objectOld)),
+    };
 
     let outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
 
     const buffer = zlib.gzipSync(timeObjectStr);
     fs.writeFileSync(outputFilename, buffer);
+    return logName;
 };
 
 /**
