@@ -2813,7 +2813,13 @@ function objectWebServer() {
                     }
                 });
 
-                form.parse(req);
+                try {
+                    form.parse(req);
+                } catch (e) {
+                    console.warn('error parsing formidable', e);
+                    res.status(500).send(`error parsing formidable: ${e}`);
+                    return;
+                }
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
