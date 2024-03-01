@@ -106,25 +106,57 @@ recorder.getAndGuaranteeOutputFilename = function(logName) {
 };
 
 /**
- * Persist current state to file, skipping if no differences recorded since last persist
- * @return {Promise<string|null>} log file name
+ * Get all log data that needs to be persisted and how to identify it. Mark all
+ * of this claimed log data as persisted, removing it from the timeObject
+ * @return {{logName: string, timeObjectStr: string}|null}
  */
-recorder.persistToFile = function () {
+recorder.getAndMarkPersistedCurrentLog = function() {
     // recorder.objectOld is the latest state persisted in timeObject
     // Because we're using objectOld as the basis for each log file, having
     // only one entry in timeObject means `object` never had a difference from
     // `objectOld` and we can skip writing to the file.
-    if (Object.keys(recorder.timeObject).length <= 1 && hasPersistedToFile) {
-        return Promise.resolve(null);
+    let recordedTimes = Object.keys(recorder.timeObject);
+
+    // Nothing recorded
+    if (recordedTimes.length === 0) {
+        return null;
     }
 
+    // Only one update, can ignore if we've already persisted (since the one
+    // update is the last persisted state)
+    if (recordedTimes.length <= 1 && hasPersistedToFile) {
+        return null;
+    }
+
+    // Disregard future persistToFile calls if they have no updates
     hasPersistedToFile = true;
 
     let logName = recorder.getCurrentLogName();
     let timeObjectStr = JSON.stringify(recorder.timeObject);
+
+    // Use the lastRecordedTime for a seamless view of history
+    // Last log file was |start-----lastRecordedTime| we now start
+    // |lastRecordedTime----
+    const lastRecordedTime = recordedTimes.at(-1);
     recorder.timeObject = {
-        [Date.now()]: JSON.parse(JSON.stringify(recorder.objectOld)),
+        [lastRecordedTime]: JSON.parse(JSON.stringify(recorder.objectOld)),
     };
+
+    return {logName, timeObjectStr};
+};
+
+/**
+ * Persist current state to file, skipping if no differences recorded since last persist
+ * @return {Promise<string|null>} log file name
+ */
+recorder.persistToFile = function () {
+    const currentLog = recorder.getAndMarkPersistedCurrentLog();
+
+    if (!currentLog) {
+        return Promise.resolve(null);
+    }
+
+    const {logName, timeObjectStr} = currentLog;
 
     return new Promise((resolve, reject) => {
         let outputFilename;
@@ -159,17 +191,12 @@ recorder.persistToFile = function () {
  * @return {string|null} log file name
  */
 recorder.persistToFileSync = function() {
-    if (Object.keys(recorder.timeObject).length <= 1 && hasPersistedToFile) {
+    const currentLog = recorder.getAndMarkPersistedCurrentLog();
+    if (!currentLog) {
         return null;
     }
 
-    hasPersistedToFile = true;
-
-    let logName = recorder.getCurrentLogName();
-    let timeObjectStr = JSON.stringify(recorder.timeObject);
-    recorder.timeObject = {
-        [Date.now()]: JSON.parse(JSON.stringify(recorder.objectOld)),
-    };
+    const {logName, timeObjectStr} = currentLog;
 
     let outputFilename = recorder.getAndGuaranteeOutputFilename(logName);
 
