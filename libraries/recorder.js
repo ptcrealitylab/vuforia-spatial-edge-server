@@ -35,11 +35,18 @@ recorder.logsPath = logsPath;
 
 let hasPersistedToFile = false;
 
+/**
+ * Initialize recorder to track changes to `object`
+ * @param {object} object
+ */
 recorder.initRecorder = function (object) {
     recorder.object = object;
     recorder.start();
 };
 
+/**
+ * Clear all intervals from the recorder
+ */
 recorder.clearIntervals = function() {
     if (recorder.intervalSave) {
         clearInterval(recorder.intervalSave);
@@ -51,6 +58,10 @@ recorder.clearIntervals = function() {
     }
 };
 
+/**
+ * Start the recorder, periodically saving and persisting state of
+ * `recorder.object`
+ */
 recorder.start = function () {
     recorder.objectOld = {};
     recorder.clearIntervals();
@@ -58,6 +69,9 @@ recorder.start = function () {
     recorder.intervalPersist = setInterval(recorder.persistToFile, PERSIST_DELAY_MS);
 };
 
+/**
+ * Halt and persist recorder state
+ */
 recorder.stop = async function () {
     recorder.clearIntervals();
 
@@ -77,6 +91,10 @@ recorder.getCurrentLogName = function() {
     return 'objects_' + timeString + '.json';
 };
 
+/**
+ * Determines the full filename for `logName` and ensures it can be written to
+ * @return {string} output filename
+ */
 recorder.getAndGuaranteeOutputFilename = function(logName) {
     const outputFilename = path.join(logsPath, logName + '.gz');
 
@@ -137,6 +155,7 @@ recorder.persistToFile = function () {
 };
 
 /**
+ * Synchronous version of persistToFile
  * @return {string|null} log file name
  */
 recorder.persistToFileSync = function() {
@@ -175,6 +194,11 @@ recorder.saveState = function (time) {
     if (Object.keys(timeObject).length === 0) delete recorder.timeObject[time];
 };
 
+/**
+ * saveState unless a saveState has already been requested. Notably will
+ * debounce and only saveState once if update() is called multiple times in a
+ * microtask queue
+ */
 let pendingUpdate = null;
 recorder.update = function() {
     if (pendingUpdate) {
@@ -238,6 +262,11 @@ function applyDiffRecur(objects, diff) {
     }
 }
 
+/**
+ * Apply diff to objects, modifying objects in place
+ * @param {object} objects
+ * @param {object} diff
+ */
 recorder.applyDiff = function(objects, diff) {
     applyDiffRecur(objects, diff);
 };
