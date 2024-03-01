@@ -1969,26 +1969,36 @@ realityServer.gotClick = function (event) {
                 // this is how world objects get instantly initialized
                 try {
                     let msgContent = JSON.parse(state);
-                    // // generate a placeholder xml file for this object
-                    // let defaultSize = 0.3;
-                    // realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
-                    //     if (stateGen === 'ok') {
-                            realityServer.objects[msgContent.id] = new Objects();
-                            realityServer.objects[msgContent.id].name = msgContent.name;
-                            realityServer.objects[msgContent.id].isWorldObject = true;
-                            //    realityServer.objects[msgContent.id].initialized = true;
 
-                            // make them automatically activate after a slight delay
-                            setTimeout(function () {
-                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
-                                    if (stateActivate === 'ok') {
-                                        //   realityServer.objects[msgContent.id].active = true;
-                                    }
-                                    realityServer.update();
-                                });
-                            }, 100);
-                        // }
-                    // }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+                    const finishSettingUpObject = () => {
+                        realityServer.objects[msgContent.id] = new Objects();
+                        realityServer.objects[msgContent.id].name = msgContent.name;
+                        realityServer.objects[msgContent.id].isWorldObject = true;
+                        //    realityServer.objects[msgContent.id].initialized = true;
+
+                        // make them automatically activate after a slight delay
+                        setTimeout(function () {
+                            realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
+                                if (stateActivate === 'ok') {
+                                    //   realityServer.objects[msgContent.id].active = true;
+                                }
+                                realityServer.update();
+                            });
+                        }, 100);
+                    };
+
+                    const AUTO_GENERATE_XML = false;
+                    if (AUTO_GENERATE_XML) {
+                        // generate a placeholder xml file for this object
+                        let defaultSize = 0.3;
+                        realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
+                            if (stateGen === 'ok') {
+                                finishSettingUpObject();
+                            }
+                        }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+                    } else {
+                        finishSettingUpObject();
+                    }
 
                 } catch (e) {
                     console.error('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);
