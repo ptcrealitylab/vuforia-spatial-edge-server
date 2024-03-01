@@ -219,7 +219,7 @@ function saveState(time) {
     }
     timeObject[time] = {};
     recurse(object, objectOld, timeObject[time]);
-    if (Object.keys(timeObject).length === 0) delete timeObject[time];
+    if (Object.keys(timeObject[time]).length === 0) delete timeObject[time];
 }
 
 /**
