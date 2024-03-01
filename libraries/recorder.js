@@ -22,26 +22,6 @@ const logsPath = path.join(objectsPath, '.objectLogs');
 
 const PERSIST_DELAY_MS = 10 * 60 * 1000;
 
-// Flag to compress floating point numbers for ~20% average gains at a loss of precision
-const doCompressFloat = false;
-const prec = Math.pow(10, 8);
-/**
- * @param {number} val
- * @return {number} `val` limited to a resolution of at most `1 / prec` and to
- * `Math.log10(prec)` significant digits
- */
-function compressFloat(val) {
-    if (Math.abs(val - Math.round(val)) < 1 / prec) {
-        return Math.round(val);
-    }
-    let sign = Math.sign(val);
-    val = Math.abs(val);
-    let scale = Math.pow(10, Math.floor(Math.log10(val)));
-    let significand = val / scale;
-    significand = Math.round(significand * prec) / prec;
-    return sign * significand * scale;
-}
-
 let recorder = {};
 recorder.frameRate = 10;
 recorder.object = {};
@@ -53,7 +33,6 @@ recorder.logsPath = logsPath;
 
 recorder.initRecorder = function (object) {
     recorder.object = object;
-    //recorder.objectOld = JSON.parse(JSON.stringify(object));
     recorder.start();
 };
 
@@ -150,11 +129,16 @@ recorder.persistToFileSync = function() {
     fs.writeFileSync(outputFilename, buffer);
 };
 
-recorder.saveState = function () {
-    let timeString = Date.now();
-    let timeObject = recorder.timeObject[timeString] = {};
-    recorder.recurse(recorder.object, timeObject);
-    if (Object.keys(timeObject).length === 0) delete recorder.timeObject[timeString];
+/**
+ * @param {number|undefined} time - optional time at which this state was observed
+ */
+recorder.saveState = function (time) {
+    if (typeof time === 'undefined') {
+        time = Date.now();
+    }
+    let timeObject = recorder.timeObject[time] = {};
+    recorder.recurse(recorder.object, recorder.objectOld, timeObject);
+    if (Object.keys(timeObject).length === 0) delete recorder.timeObject[time];
 };
 
 let pendingUpdate = null;
@@ -168,19 +152,28 @@ recorder.update = function() {
     }, 0);
 };
 
+/**
+ * @param {object} timeObject - object with keys
+ * representing sorted-increasing timestamps
+ * @param {number} targetTime
+ * @param {object|undefined} checkpoint
+ */
 recorder.replay = function(timeObject, targetTime, checkpoint) {
-    let objects = {};
-    let currentTime = 0;
-    if (checkpoint) {
+    let times = Object.keys(timeObject).map(t => parseInt(t));
+
+    let objects = JSON.parse(JSON.stringify(timeObject[times[0]]));
+    let currentTime = times[0];
+    if (checkpoint && checkpoint.time <= targetTime) {
         objects = checkpoint.objects;
         currentTime = checkpoint.time;
     }
 
-    let times = Object.keys(timeObject).map(t => parseInt(t));
-
     for (let time of times) {
         if (currentTime >= time) {
             continue;
+        }
+        if (time > targetTime) {
+            break;
         }
 
         recorder.applyDiff(objects, timeObject[time]);
@@ -195,7 +188,15 @@ function applyDiffRecur(objects, diff) {
         if (diff[key] === null) {
             continue; // JSON encodes undefined as null so just skip (problem if we try to encode null)
         }
-        if (typeof diff[key] === 'object' && objects.hasOwnProperty(key)) {
+        if (typeof diff[key] === 'object') {
+            // Fill in missing properties with objects of the correct type
+            if (!objects.hasOwnProperty(key)) {
+                if (Array.isArray(diff[key])) {
+                    objects[key] = [];
+                } else {
+                    objects[key] = {};
+                }
+            }
             applyDiffRecur(objects[key], diff[key]);
             continue;
         }
@@ -208,91 +209,63 @@ recorder.applyDiff = function(objects, diff) {
 };
 
 /**
- * @param {object} obj - view into recorder.object
- * @param {object} objectInTime - object to store any values that change
+ * @param {object} cursorObj - view into recorder.object
+ * @param {object} cursorObjOld - view into recorder.objectOld
+ * @param {object} cursorTime - view into the time object
  *                 between recorder.object and recorder.objectOld
- * @param {string} keyString - path to the view `obj`
+ * @return {boolean} whether the recursion detected a change
  */
-recorder.recurse = function (obj, objectInTime, keyString) {
-    if (!keyString) keyString = '';
-    for (const key in obj) { // works for objects and arrays
-        if (!obj.hasOwnProperty(key)) {
+recorder.recurse = function (cursorObj, cursorObjOld, cursorTime) {
+    let altered = false;
+    for (const key in cursorObj) { // works for objects and arrays
+        if (!cursorObj.hasOwnProperty(key)) {
             // Ignore inherited enumerable properties
             continue;
         }
         // Ignore the special whole_pose property which duplicates changes to
         // individual joint frame matrices
-        if (key === 'whole_pose' && keyString.includes('_HUMAN_')) {
+        if (key === 'whole_pose') {
             continue;
         }
-        if (keyString.includes('_AVATAR_')) {
+        if (key.includes('_AVATAR_')) {
             continue;
         }
-        const item = obj[key];
+
+        const item = cursorObj[key];
+
         if (typeof item === 'object') {
+            let potentialItemTime;
 
             if (Array.isArray(item)) {
-                recorder.recurse(item, objectInTime, keyString + '#' + key + '/');
+                potentialItemTime = [];
+                if (!cursorObjOld.hasOwnProperty(key)) {
+                    cursorObjOld[key] = [];
+                }
             } else {
-                recorder.recurse(item, objectInTime, keyString + key + '/');
+                potentialItemTime = {};
+                if (!cursorObjOld.hasOwnProperty(key)) {
+                    cursorObjOld[key] = {};
+                }
+            }
+            let alteredChild = recorder.recurse(cursorObj[key], cursorObjOld[key], potentialItemTime);
+            if (alteredChild) {
+                cursorTime[key] = potentialItemTime;
+                altered = true;
             }
         } else {
             if (item === undefined) {
                 continue;
             }
-            const string = keyString + key + '/';
-            const thisItem = recorder.getItemFromArray(recorder.object, string.split('/'));
-            const oldItem = recorder.getItemFromArray(recorder.objectOld, string.split('/'));
-            let thisValue = thisItem[key];
-            let oldValue = oldItem[key];
 
-            if (doCompressFloat) {
-                if (typeof thisValue === 'number') {
-                    thisValue = compressFloat(thisValue);
-                }
-                if (typeof oldValue === 'number') {
-                    oldValue = compressFloat(oldValue);
-                }
+            if (item !== cursorObjOld[key]) {
+                cursorTime[key] = item;
+                altered = true;
             }
 
-            if (thisValue !== oldValue) {
-                const timeItem = recorder.getItemFromArray(objectInTime, string.split('/'));
-                // Persists value before any modifications
-                timeItem[key] = thisItem[key];
-            }
-
-            oldItem[key] = thisValue;
+            cursorObjOld[key] = item;
         }
     }
-};
-
-/**
- * @param {object} object
- * @param {Array<String>} array - keyString split at '/'
- * @return {any} value of `object` from keyString parts `array`
- */
-recorder.getItemFromArray = function (object, array) {
-    let item = object;
-    if (!item) return item;
-    let returnItem = {};
-    array.forEach(function (data) {
-        if (data !== '') {
-            if (data.charAt(0) === '#') {
-                data = data.substr(1);
-                if (!item.hasOwnProperty(data))
-                    item[data] = [];
-            } else {
-                if (!item.hasOwnProperty(data))
-                    item[data] = {};
-            }
-            // let newItem = item[data];
-            returnItem = item;
-            if (item[data])
-                item = item[data];
-        }
-    });
-
-    return returnItem;
+    return altered;
 };
 
 module.exports = recorder;

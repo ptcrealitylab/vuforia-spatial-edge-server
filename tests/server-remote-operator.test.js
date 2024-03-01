@@ -8,6 +8,9 @@
 
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
+const https = require('https');
+
+let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const {sleep, waitForObjects} = require('./helpers.js');
 
@@ -23,8 +26,9 @@ afterAll(async () => {
 
 test('server provides remote operator functionality', async () => {
     const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--ignore-certificate-errors'],
         headless: 'new',
+        ignoreHTTPSErrors: true
     });
 
     const page = await browser.newPage();
@@ -41,7 +45,7 @@ test('server provides remote operator functionality', async () => {
     await waitForObjects();
 
     await page.goto(
-        'http://localhost:8080/',
+        'https://localhost:8080/',
         {
             timeout: 60 * 1000,
         },
@@ -60,7 +64,7 @@ test('server provides remote operator functionality', async () => {
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
-        'http://localhost:8081/',
+        'https://localhost:8081/',
         {
             timeout: 60 * 1000,
         },
@@ -80,7 +84,7 @@ test('server provides remote operator functionality', async () => {
     });
 
     try {
-        const res = await fetch(`http://localhost:8080/hardwareInterface/edgeAgent/settings`);
+        const res = await fetch(`https://localhost:8080/hardwareInterface/edgeAgent/settings`, {agent: httpsAgent});
         const localSettings = await res.json();
 
         await page.goto(

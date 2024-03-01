@@ -6,6 +6,9 @@
 
 /* global test, beforeAll, afterAll, expect */
 const fetch = require('node-fetch');
+const https = require('https');
+
+let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const {
     filterSnapshot,
@@ -33,13 +36,14 @@ test('new object creation', async () => {
 
     const allObjectsPre = await getTestObjects();
     expect(allObjectsPre).toEqual([]);
-    const resNew = await fetch('http://localhost:8080/', {
+    const resNew = await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': 'action=new&name=fdsa&isWorld=null',
         'method': 'POST',
-        'mode': 'cors'
+        'mode': 'cors',
+        agent: httpsAgent
     });
     await resNew.text();
     const allObjectsCreated = await getTestObjects();
@@ -86,12 +90,13 @@ test('new object creation', async () => {
     expect(fdsaFs.timestamp).toBe(null);
     expect(fdsaFs.port).toBe(8080);
 
-    await fetch('http://localhost:8080/', {
+    await fetch('https://localhost:8080/', {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         body: 'action=delete&name=fdsa&frame=',
         method: 'POST',
+        agent: httpsAgent
     });
 
     const allObjectsDeleted = await getTestObjects();
