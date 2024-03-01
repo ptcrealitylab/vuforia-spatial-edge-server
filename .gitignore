@@ -51,7 +51,13 @@ libraries/objectLogs/*
 /screenshots
 /spatialToolbox
 /vuforia-spatial-toolbox-userinterface
+/.vscode
 
 /config-private.js
 
 /coverage
+
+/scripts/cert.conf
+
+/cert.pem
+/key.pem

@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+./scripts/ci_generate_certificate.sh
+
 mkdir screenshots
 
 npm ci
