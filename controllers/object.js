@@ -423,7 +423,7 @@ const checkTargetFiles = async (objectId) => {
         jpgExists,
         _3dtExists,
         splatExists
-    }
+    };
 };
 
 const uploadTarget = async (objectName, req, res) => {
@@ -479,31 +479,33 @@ const uploadTarget = async (objectName, req, res) => {
     }
 
     function makeFileProcessPromise(fileInfo) {
-        return new Promise(async (resolve, reject) => {
-            if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
-                reject(`File doesn't exist at ${path.join(form.uploadDir, fileInfo.name)}`);
-                return;
-            }
-            fileInfo.completed = true; // File has downloaded
-            let fileExtension = getFileExtension(fileInfo.name);
+        return new Promise((resolve, reject) => {
+            (async () => {
+                if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                    reject(`File doesn't exist at ${path.join(form.uploadDir, fileInfo.name)}`);
+                    return;
+                }
+                fileInfo.completed = true; // File has downloaded
+                let fileExtension = getFileExtension(fileInfo.name);
 
-            // only accept these predetermined file types
-            if (!(fileExtension === 'jpg' || fileExtension === 'dat' ||
-                fileExtension === 'xml' || fileExtension === 'glb' ||
-                fileExtension === '3dt'  || fileExtension === 'splat')) {
-                reject(`File extension not acceptable for targetUpload (${fileExtension})`);
-                return;
-            }
+                // only accept these predetermined file types
+                if (!(fileExtension === 'jpg' || fileExtension === 'dat' ||
+                    fileExtension === 'xml' || fileExtension === 'glb' ||
+                    fileExtension === '3dt'  || fileExtension === 'splat')) {
+                    reject(`File extension not acceptable for targetUpload (${fileExtension})`);
+                    return;
+                }
 
-            let originalFilepath = path.join(uploadDir, fileInfo.name);
-            let newFilepath = path.join(targetDir, `target.${fileExtension}`);
+                let originalFilepath = path.join(uploadDir, fileInfo.name);
+                let newFilepath = path.join(targetDir, `target.${fileExtension}`);
 
-            try {
-                await fsProm.rename(originalFilepath, newFilepath);
-                resolve();
-            } catch (e) {
-                reject(`error renaming ${originalFilepath} to ${newFilepath}`);
-            }
+                try {
+                    await fsProm.rename(originalFilepath, newFilepath);
+                    resolve();
+                } catch (e) {
+                    reject(`error renaming ${originalFilepath} to ${newFilepath}`);
+                }
+            })();
         });
     }
 
