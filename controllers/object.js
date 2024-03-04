@@ -5,7 +5,7 @@ const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 const {startSplatTask} = require('./object/SplatTask.js');
 const server = require('../server');
-const {/*objectsPath,*/ beatPort} = require('../config.js');
+const { beatPort } = require('../config.js');
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -394,6 +394,12 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 };
 
+/**
+ * Check whether a specific file within the object's .identity folder exists
+ * @param {string} objectId
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
 const checkFileExists = async (objectId, filePath) => {
     let obj = utilities.getObject(objects, objectId);
     if (!obj) {
@@ -404,6 +410,11 @@ const checkFileExists = async (objectId, filePath) => {
     return await fileExists(absoluteFilePath);
 };
 
+/**
+ * Check the status of all the possible target files that an object might have
+ * @param {string} objectId
+ * @returns {Promise<{glbExists: boolean, xmlExists: boolean, datExists: boolean, jpgExists: boolean, _3dtExists: boolean, splatExists: boolean}>}
+ */
 const checkTargetFiles = async (objectId) => {
     let [
         glbExists, xmlExists, datExists,
@@ -426,6 +437,15 @@ const checkTargetFiles = async (objectId) => {
     };
 };
 
+/**
+ * Uploads a target file to an object.
+ * Imitates much of the logic of the content/:id route in a simpler way.
+ * Note: not supported by Cloud Proxy as of 3-4-2024, use content/:id instead.
+ * @param {string} objectName
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<void>}
+ */
 const uploadTarget = async (objectName, req, res) => {
     let thisObjectId = utilities.readObject(objectLookup, objectName);
     let object = utilities.getObject(objects, thisObjectId);
@@ -434,17 +454,15 @@ const uploadTarget = async (objectName, req, res) => {
         return;
     }
 
-    // first upload to a temporary directory before moving it to the target directory
+    // first upload to a temporary directory (tmp/) before moving it to the target directory (target/)
     let uploadDir = path.join(objectsPath, objectName, identityFolderName, 'tmp');
     await mkdirIfNotExists(uploadDir);
-
     let targetDir = path.join(objectsPath, objectName,  identityFolderName, 'target');
     await mkdirIfNotExists(targetDir);
 
     let form = new formidable.IncomingForm({
         uploadDir: uploadDir,
         keepExtensions: true
-        // accept: 'image/jpeg' // we don't include this anymore, because any filetype can be uploaded
     });
 
     form.on('error', function (err) {
@@ -455,7 +473,7 @@ const uploadTarget = async (objectName, req, res) => {
 
     form.on('fileBegin', (name, file) => {
         if (!file.name) {
-            file.name = file.newFilename;
+            file.name = file.newFilename; // some versions of formidable use .name, others use .newFilename
         }
         fileInfoList.push({
             name: file.name,
@@ -478,6 +496,11 @@ const uploadTarget = async (objectName, req, res) => {
         return fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2).toLowerCase();
     }
 
+    /**
+     * Returns a promise that can be executed later to move the uploaded file from the tmp dir to the target dir
+     * @param {{name: string, completed: boolean}} fileInfo
+     * @returns {Promise<unknown>}
+     */
     function makeFileProcessPromise(fileInfo) {
         return new Promise((resolve, reject) => {
             (async () => {
@@ -519,7 +542,7 @@ const uploadTarget = async (objectName, req, res) => {
 
         try {
             await Promise.all(filePromises);
-            // Code continues when all promises are resolved
+            // Code continues when all promises are resolved (when all files have been moved from tmp/ to target/)
         } catch (error) {
             console.warn(error);
             // res.status(500).send('error')
@@ -533,23 +556,16 @@ const uploadTarget = async (objectName, req, res) => {
         let splatPath = path.join(targetDir, 'target.splat');
         let fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
 
-        let jpg = await fileExists(jpgPath);
-        let dat = await fileExists(datPath);
-        let xml = await fileExists(xmlPath);
-        let glb = await fileExists(glbPath);
-        let tdt = await fileExists(tdtPath);
-        let splat = await fileExists(splatPath);
-
         let sendObject = {
             id: thisObjectId,
             name: objectName,
             // initialized: (jpg && xml),
-            jpgExists: jpg,
-            xmlExists: xml,
-            datExists: dat,
-            glbExists: glb,
-            tdtExists: tdt,
-            splatExists: splat
+            jpgExists: await fileExists(jpgPath),
+            xmlExists: await fileExists(xmlPath),
+            datExists: await fileExists(datPath),
+            glbExists: await fileExists(glbPath),
+            tdtExists: await fileExists(tdtPath),
+            splatExists: await fileExists(splatPath)
         };
 
         object.tcs = utilities.generateChecksums(objects, fileList);
@@ -562,7 +578,6 @@ const uploadTarget = async (objectName, req, res) => {
         // delete the tmp folder and any files within it
         await utilities.rmdirIfExists(uploadDir);
 
-        // res.status(200).send('ok');
         try {
             res.status(200).json(sendObject);
         } catch (e) {
