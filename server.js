@@ -990,7 +990,8 @@ async function setAnchors() {
         if (!objects[key]) {
             continue;
         }
-        if (objects[key].isWorldObject || objects[key].type === 'world') { // TODO: is this still necessary? world objects are considered initialized by default, now
+        // TODO: world objects are now considered initialized by default... update how anchor objects work (do they still require that the world has target data?)
+        if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
             let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
             let xmlExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.xml'));
@@ -1332,7 +1333,13 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
                     tcs: objects[thisId].tcs,
                     zone: zone
                 };
-                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar' || objects[thisId].type === 'world';
+                // we enumerate the object types that can be sent without target files.
+                // currently, only regular objects (type='object') require target files to send heartbeats.
+                let sendWithoutTargetFiles = objects[thisId].isAnchor ||
+                    objects[thisId].type === 'anchor' ||
+                    objects[thisId].type === 'human' ||
+                    objects[thisId].type === 'avatar' ||
+                    objects[thisId].type === 'world';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
@@ -2838,6 +2845,8 @@ function objectWebServer() {
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
+                    // by default, uploading any other target file will auto-generate a target.xml file
+                    //   specify `autogeneratexml: false` in the headers to prevent this behavior
                     let autoGenerateXml = typeof req.headers.autogeneratexml !== 'undefined' ? JSON.parse(req.headers.autogeneratexml) : true;
                     fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
                     fileInfoList.forEach(async fileInfo => {
@@ -2853,7 +2862,8 @@ function objectWebServer() {
                                 fileExtension = 'jpg';
                             }
 
-                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb' || fileExtension === '3dt'  || fileExtension === 'splat') {
+                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' ||
+                                fileExtension === 'glb' || fileExtension === '3dt'  || fileExtension === 'splat') {
                                 if (!await fileExists(folderD + '/' + identityFolderName + '/target/')) {
                                     try {
                                         await fsProm.mkdir(folderD + '/' + identityFolderName + '/target/', '0766');
@@ -3040,7 +3050,7 @@ function objectWebServer() {
                                     unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
                                         const folderFiles = await fsProm.readdir(targetFolderPath);
-                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt', 'jpg'];
+                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt', 'jpg', 'splat'];
 
                                         let anyTargetsUploaded = false;
 
