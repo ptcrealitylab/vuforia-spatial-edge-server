@@ -54,7 +54,8 @@ vim scripts/cert.conf
 
 If desired, you can now add this certificate (cert.pem) to your local trusted
 certificate store (e.g. Keychain on macOS) to not have to manually add it to
-each browser's cert store.
+each browser's cert store. For more information on trusting on iOS, see [this
+guide](./docs/ios-cert-install.md)
 
 You can now run the server using the following command:
 
