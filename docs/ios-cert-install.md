@@ -11,7 +11,7 @@ provides in the phone's settings.
 ### Download cert.pem onto phone
 We need to get the file `cert.pem` onto the phone. One such tool is python's built-in http server:
 
-![terminal window showing results of running python3's http server module]()
+![terminal window showing results of running python3's http server module](./assets/python3-http-server.png)
 
 Next, navigate to http://your-edge-server-ip-address:8000/ to see a listing of
 all files in this directory and download cert.pem from the list.
