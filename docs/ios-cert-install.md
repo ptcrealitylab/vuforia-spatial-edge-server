@@ -20,7 +20,7 @@ all files in this directory and download cert.pem from the list.
 
 The page will prompt you if you trust this configuration profile. Accept this prompt and open the Settings app to finish trusting the profile.
 
-![a popup from Safar asking whether you trust the configuration profile](./assets/downloading-certpem-clicked.png)
+![a popup from Safari asking whether you trust the configuration profile](./assets/downloading-certpem-clicked.png)
 
 ### Trust configuration profile in Settings
 
