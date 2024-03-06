@@ -2,9 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
+const {forceInsecureMode} = require('../config.js');
+
 const fetch = require('node-fetch');
 
 let httpsAgent = new https.Agent({rejectUnauthorized: false});
+
+const localProto = forceInsecureMode ? 'http' : 'https';
+const localServer = `${localProto}://localhost:8080`;
+const localRemoteOperator = `${localProto}://localhost:8081`;
+
+exports.localServer = localServer;
+exports.localRemoteOperator = localRemoteOperator;
 
 function sleep(ms) {
     return new Promise((res) => {
@@ -63,7 +72,7 @@ exports.filterToTestObject = function filterToTestObject(key) {
 };
 
 async function getAllObjects() {
-    const resAllObjects = await fetch(`https://localhost:8080/allObjects`, {agent: httpsAgent});
+    const resAllObjects = await fetch(`${localServer}/allObjects`, {agent: httpsAgent});
     const allObjects = await resAllObjects.json();
     return allObjects;
 }

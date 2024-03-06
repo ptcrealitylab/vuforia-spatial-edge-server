@@ -11,6 +11,7 @@ const {
     sleep,
     snapshotDirectory,
     waitForObjects,
+    localServer,
 } = require('./helpers.js');
 const fsProm = require('fs/promises');
 const path = require('path');
@@ -43,7 +44,7 @@ afterAll(async () => {
 test('target upload to /content/:objectName', async () => {
     await waitForObjects();
 
-    const resNew = await fetch('https://localhost:8080/', {
+    const resNew = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
@@ -58,7 +59,7 @@ test('target upload to /content/:objectName', async () => {
 
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
-    const res = await fetch(`https://localhost:8080/content/${worldName}`, {
+    const res = await fetch(`${localServer}/content/${worldName}`, {
         method: 'POST',
         headers: {
             ...form.getHeaders(),
@@ -131,7 +132,7 @@ test('target upload to /content/:objectName', async () => {
     // Let the upload cleanup process finish before we delete
     await sleep(1000);
 
-    const resDelete = await fetch('https://localhost:8080/', {
+    const resDelete = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
