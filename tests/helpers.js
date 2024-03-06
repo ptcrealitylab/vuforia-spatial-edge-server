@@ -6,7 +6,10 @@ const {forceInsecureMode} = require('../config.js');
 
 const fetch = require('node-fetch');
 
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
+const fetchAgent = forceInsecureMode ?
+    null : // No special agent required for http
+    new https.Agent({rejectUnauthorized: false});
+exports.fetchAgent = fetchAgent;
 
 const localProto = forceInsecureMode ? 'http' : 'https';
 const localServer = `${localProto}://localhost:8080`;
@@ -72,7 +75,7 @@ exports.filterToTestObject = function filterToTestObject(key) {
 };
 
 async function getAllObjects() {
-    const resAllObjects = await fetch(`${localServer}/allObjects`, {agent: httpsAgent});
+    const resAllObjects = await fetch(`${localServer}/allObjects`, {agent: fetchAgent});
     const allObjects = await resAllObjects.json();
     return allObjects;
 }
