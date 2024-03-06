@@ -8,15 +8,13 @@
 
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const {
     sleep,
     waitForObjects,
     localServer,
     localRemoteOperator,
+    fetchAgent,
 } = require('./helpers.js');
 
 let server;
@@ -89,7 +87,7 @@ test('server provides remote operator functionality', async () => {
     });
 
     try {
-        const res = await fetch(`${localServer}/hardwareInterface/edgeAgent/settings`, {agent: httpsAgent});
+        const res = await fetch(`${localServer}/hardwareInterface/edgeAgent/settings`, {agent: fetchAgent});
         const localSettings = await res.json();
 
         await page.goto(

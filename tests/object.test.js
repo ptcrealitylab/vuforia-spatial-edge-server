@@ -6,9 +6,6 @@
 
 /* global test, beforeAll, afterAll, expect */
 const fetch = require('node-fetch');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const {
     filterSnapshot,
@@ -19,6 +16,7 @@ const {
     snapshotDirectory,
     waitForObjects,
     localServer,
+    fetchAgent,
 } = require('./helpers.js');
 
 let server;
@@ -44,7 +42,7 @@ test('new object creation', async () => {
         'body': 'action=new&name=fdsa&isWorld=null',
         'method': 'POST',
         'mode': 'cors',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resNew.text();
     const allObjectsCreated = await getTestObjects();
@@ -97,7 +95,7 @@ test('new object creation', async () => {
         },
         body: 'action=delete&name=fdsa&frame=',
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     const allObjectsDeleted = await getTestObjects();
