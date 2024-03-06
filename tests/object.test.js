@@ -18,6 +18,7 @@ const {
     sleep,
     snapshotDirectory,
     waitForObjects,
+    localServer,
 } = require('./helpers.js');
 
 let server;
@@ -36,7 +37,7 @@ test('new object creation', async () => {
 
     const allObjectsPre = await getTestObjects();
     expect(allObjectsPre).toEqual([]);
-    const resNew = await fetch('https://localhost:8080/', {
+    const resNew = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
@@ -90,7 +91,7 @@ test('new object creation', async () => {
     expect(fdsaFs.timestamp).toBe(null);
     expect(fdsaFs.port).toBe(8080);
 
-    await fetch('https://localhost:8080/', {
+    await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },

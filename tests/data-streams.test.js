@@ -10,7 +10,7 @@ const { DataStream } = require('../libraries/dataStreamInterfaces');
 const DataStreamInterface = require('../libraries/DataStreamInterface');
 const { objectsPath } = require('../config');
 const { fileExists, mkdirIfNotExists } = require('../libraries/utilities');
-const { sleep } = require('./helpers.js');
+const { sleep, localServer } = require('./helpers.js');
 const path = require('path');
 const fsProm = require('fs/promises');
 const https = require('https');
@@ -81,7 +81,7 @@ test('add data source and node binding', async () => {
         }
     };
 
-    await fetch('https://localhost:8080/logic/addDataSourceToInterface', {
+    await fetch(`${localServer}/logic/addDataSourceToInterface`, {
         headers: {
             'Content-Type': 'application/json',
         },
@@ -108,7 +108,7 @@ test('add data source and node binding', async () => {
         }
     };
 
-    await fetch('https://localhost:8080/logic/bindNodeToDataStream', {
+    await fetch(`${localServer}/logic/bindNodeToDataStream`, {
         headers: {
             'Content-Type': 'application/json',
         },
