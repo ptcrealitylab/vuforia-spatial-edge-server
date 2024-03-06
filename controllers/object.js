@@ -221,6 +221,21 @@ const setMatrix = function(objectID, body, callback) {
     callback(200, {success: true});
 };
 
+const setRenderMode = async (objectID, body, callback) => {
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
+        return;
+    }
+
+    object.renderMode = body.renderMode;
+    console.log(`server set renderMode of ${objectID} to ${body.renderMode}`);
+
+    await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    utilities.actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+    callback(200, {success: true});
+};
+
 /**
  * Upload an image file to the object's metadata folder.
  * The image is stored in a form, which can be parsed and written to the filesystem.
@@ -629,6 +644,7 @@ module.exports = {
     saveCommit: saveCommit,
     resetToLastCommit: resetToLastCommit,
     setMatrix: setMatrix,
+    setRenderMode: setRenderMode,
     memoryUpload: memoryUpload,
     deactivate: deactivate,
     activate: activate,

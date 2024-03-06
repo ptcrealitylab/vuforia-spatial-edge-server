@@ -287,6 +287,17 @@ router.post('/:objectName/matrix', function (req, res) {
         res.status(statusCode).json(responseContents).end();
     });
 });
+
+router.post('/:objectName/renderMode', (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.setRenderMode(req.params.objectName, req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
 router.post('/:objectName/memory', function (req, res) {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
