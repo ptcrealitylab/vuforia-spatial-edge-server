@@ -59,4 +59,4 @@ module.exports.beatPort = argv.udpPort || 52316;
 // Whether to enable the offline clone functionality
 module.exports.persistToCloud = false;
 
-module.exports.forceInsecureMode = !!argv.insecure;
+module.exports.forceInsecureMode = argv.insecure || process.env.FORCE_INSECURE_MODE === 'true';
