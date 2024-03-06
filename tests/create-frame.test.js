@@ -12,12 +12,10 @@ const {
     filterToObjects,
     waitForObjects,
     localServer,
+    fetchAgent,
 } = require('./helpers.js');
 
 const fetch = require('node-fetch');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const worldName = '_WORLD_instantScanPJ1cgyrm';
 
@@ -89,18 +87,18 @@ async function addFrame() {
             lastEditor: 'cKzswlhy',
         }),
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     return await res.text();
 }
 
 async function getObject(objectId) {
-    const res = await fetch(`${localServer}/object/${objectId}`, {agent: httpsAgent});
+    const res = await fetch(`${localServer}/object/${objectId}`, {agent: fetchAgent});
     return await res.json();
 }
 
 async function getFrame(objectId) {
-    const res = await fetch(`${localServer}/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a`, {agent: httpsAgent});
+    const res = await fetch(`${localServer}/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a`, {agent: fetchAgent});
     return await res.json();
 }
 
@@ -122,7 +120,7 @@ async function moveFrame(objectId) {
             lastEditor: 'cKzswlhy'
         }),
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     return await res.text();
 }

@@ -12,13 +12,12 @@ const {
     snapshotDirectory,
     waitForObjects,
     localServer,
+    fetchAgent,
 } = require('./helpers.js');
 const fsProm = require('fs/promises');
 const path = require('path');
 
 const fetch = require('node-fetch');
-const https = require('https');
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 const FormData = require('form-data');
 
 const objectsPath = require('../config.js').objectsPath;
@@ -50,7 +49,7 @@ test('target upload to /content/:objectName', async () => {
         },
         'body': `action=new&name=${worldName}&isWorld=true`,
         'method': 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resNew.text();
 
@@ -66,7 +65,7 @@ test('target upload to /content/:objectName', async () => {
             type: 'targetUpload',
         },
         body: form,
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     const content = await res.json();
@@ -138,7 +137,7 @@ test('target upload to /content/:objectName', async () => {
         },
         'body': `action=delete&name=${worldName}&frame=`,
         'method': 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resDelete.text();
 
