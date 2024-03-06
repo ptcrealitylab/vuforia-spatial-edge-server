@@ -612,6 +612,7 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
+const {ChatCompletionsJsonResponseFormat} = require("@azure/openai");
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -1891,6 +1892,155 @@ function objectWebServer() {
     webServer.get('/status', function(req, res) {
         res.sendStatus(200); // OK
     });
+
+    const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
+    const endpoint = 'https://stevekxazureopenainorthcentralus.openai.azure.com/';
+    const azureApiKey = '7f0c8495da934c719d0d31d57a3d2892';
+    const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
+    const deploymentId = "gpt-35-turbo-16k";
+    
+    function parseCategory_old(result) {
+        let category = parseInt(result);
+        if (!isNaN(category) && typeof category === 'number') return category;
+        
+        let match = result.match(/\d+/); // \d+ matches a sequence of digits
+        if (match) {
+            let result = parseInt(match[0], 10); // Convert the string to an integer, using base-10
+            if (result < 1 || result > 6) {
+                console.error('Error in AI classifying category: no such category.');
+                return 6;
+            } else {
+                return result;
+            }
+        } else {
+            return 6; // default return the 6th category --- other
+        }
+    }
+
+    function parseCategory(result) {
+        console.log('result in parseCategory(): ' + result);
+        if (result.includes('summary')) {
+            return 1;
+        } else if (result.includes('debug')) {
+            return 2;
+        } else if (result.includes('tools')) {
+            return 3;
+        } else if (result.includes('pdf')) {
+            return 4;
+        } else if (result.includes('tool content')) {
+            return 5;
+        } else if (result.includes('other')) {
+            return 6;
+        } else {
+            return 6;
+        }
+    }
+    
+    webServer.post('/ai', async function(req, res) {
+        let conversation = req.body.conversation;
+        let conversation_length = Object.keys(conversation).length;
+        let last_dialogue = Object.values(conversation)[conversation_length - 1];
+        let last_dialogue_original_content = last_dialogue.content;
+        last_dialogue.content += '\n' + last_dialogue.extra;
+        delete last_dialogue.extra;
+        // console.log(last_dialogue);
+        // console.log(conversation);
+
+        const category_messages = [
+            { role: "system", content: "You are a helpful assistant." },
+            // { role: "user", content: "Give me a summary of the space." },
+            // { role: "assistant", content: "1" },
+            // { role: "user", content: "Show me all the chat tools" },
+            // { role: "assistant", content: "3" },
+            ...Object.values(conversation)
+        ];
+
+        const messages = [
+            { role: "system", content: "You are a helpful assistant." },
+            ...Object.values(conversation)
+        ];
+        // console.log(messages);
+        
+        
+        let result = await client.getChatCompletions(deploymentId, category_messages);
+        // let result = await client.getChatCompletions(deploymentId, category_messages, {responseFormat: ChatCompletionsJsonResponseFormat});
+        // console.log(result);
+        // return;
+        
+        let actualResult = result.choices[0].message.content;
+        let actualCategory = parseCategory(actualResult);
+        let json = null;
+        
+        // console.log(actualResult);
+        console.log('actual category of the question: ' + actualCategory);
+        
+        // if (typeof actualCategory !== 'number') {
+        //     json = JSON.stringify({error: `Answer not the right type.`});
+        //     res.status(500).send(json);
+        //     return;
+        // }
+        
+        switch (actualCategory) {
+            case 1:
+            case 6:
+                last_dialogue.content = last_dialogue_original_content;
+                
+                result = await client.getChatCompletions(deploymentId, messages);
+                actualResult = result.choices[0].message.content;
+                json = JSON.stringify({category: `${actualCategory}`, answer: `${actualResult}`});
+                res.status(200).send(json);
+                break;
+            case 2:
+            case 4:
+                last_dialogue.content = last_dialogue_original_content;
+                
+                result = await client.getChatCompletions(deploymentId, messages);
+                actualResult = result.choices[0].message.content;
+                json = JSON.stringify({category: `${actualCategory}`, answer: `${actualResult}. Need to further refer to files in the database.`});
+                res.status(200).send(json);
+                break;
+            case 3:
+            case 5:
+                last_dialogue.content = last_dialogue_original_content + 'What tools are mentioned? You answer can only include the following words, separated by newline character: "spatialDraw", "communication", "spatialVideo", "spatialAnalytics", "spatialMeasure", "onshapeTool". ';
+
+                result = await client.getChatCompletions(deploymentId, messages);
+                actualResult = result.choices[0].message.content;
+                // console.log(actualResult);
+                let toolList = ["spatialDraw", "communication", "spatialVideo", "spatialAnalytics", "spatialMeasure", "onshapeTool"]; // todo Steve: to make it more generalized, add support to ignore upper/lower letters & correct spelling
+                let resultList = [];
+                for (let toolName of toolList) {
+                    if (actualResult.includes(toolName)) resultList.push(toolName);
+                }
+                let resultTools = '';
+                for (let i = 0; i < resultList.length; i++) {
+                    if (i === resultList.length - 1) {
+                        resultTools += `${resultList[i]}`;
+                        continue;
+                    }
+                    resultTools += `${resultList[i]}\n`;
+                }
+                // console.log(resultTools);
+                json = JSON.stringify({category: `${actualCategory}`, tools: `${resultTools}`});
+                res.status(200).send(json);
+                break;
+            default:
+                break;
+        }
+        
+        // let json = JSON.stringify({answer: `${actualCategory}`})
+        // res.status(200).send(json);
+
+        // console.log(result.choices[0].message.content);
+        // for (const choice of result.choices) {
+            // console.log(choice.message);
+        // }
+
+        // // res.status(200).send('edge server ai path got the message');
+        // // res.status(200).send(`${result.choices[0].message.content}`);
+        // let json = JSON.stringify({answer: `${result.choices[0].message.content}`})
+        // res.status(200).send(json);
+        // // res.status(200).json('');
+    })
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
     // abbreviated POST syntax, searches over all objects and frames to find the block with that ID
