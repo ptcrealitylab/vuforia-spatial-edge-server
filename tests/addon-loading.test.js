@@ -8,6 +8,7 @@
 const {
     sleep,
     waitForObjects,
+    localServer,
 } = require('./helpers.js');
 
 const fetch = require('node-fetch');
@@ -27,7 +28,7 @@ afterAll(async () => {
 
 test('GET /availableFrames', async () => {
     await waitForObjects();
-    const res = await fetch('https://localhost:8080/availableFrames', {agent: httpsAgent});
+    const res = await fetch(`${localServer}/availableFrames`, {agent: httpsAgent});
     const frames = await res.json();
     // spot check one core frame
     expect(frames['switch']).toEqual({
@@ -44,7 +45,7 @@ test('GET /availableFrames', async () => {
 
 test('GET /availableLogicBlocks', async () => {
     await waitForObjects();
-    const res = await fetch('https://localhost:8080/availableLogicBlocks', {agent: httpsAgent});
+    const res = await fetch(`${localServer}/availableLogicBlocks`, {agent: httpsAgent});
     const blocks = await res.json();
     // spot check one core block
     expect(blocks.add).toBeTruthy();

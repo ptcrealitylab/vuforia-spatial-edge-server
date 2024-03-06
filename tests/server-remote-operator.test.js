@@ -12,7 +12,12 @@ const https = require('https');
 
 let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
-const {sleep, waitForObjects} = require('./helpers.js');
+const {
+    sleep,
+    waitForObjects,
+    localServer,
+    localRemoteOperator,
+} = require('./helpers.js');
 
 let server;
 beforeAll(() => {
@@ -45,7 +50,7 @@ test('server provides remote operator functionality', async () => {
     await waitForObjects();
 
     await page.goto(
-        'https://localhost:8080/',
+        localServer,
         {
             timeout: 60 * 1000,
         },
@@ -64,7 +69,7 @@ test('server provides remote operator functionality', async () => {
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
-        'https://localhost:8081/',
+        localRemoteOperator,
         {
             timeout: 60 * 1000,
         },
@@ -84,7 +89,7 @@ test('server provides remote operator functionality', async () => {
     });
 
     try {
-        const res = await fetch(`https://localhost:8080/hardwareInterface/edgeAgent/settings`, {agent: httpsAgent});
+        const res = await fetch(`${localServer}/hardwareInterface/edgeAgent/settings`, {agent: httpsAgent});
         const localSettings = await res.json();
 
         await page.goto(
