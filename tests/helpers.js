@@ -2,16 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const {forceInsecureMode} = require('../config.js');
+const {allowSecureMode} = require('../config.js');
 
 const fetch = require('node-fetch');
 
-const fetchAgent = forceInsecureMode ?
-    null : // No special agent required for http
-    new https.Agent({rejectUnauthorized: false});
+const fetchAgent = allowSecureMode ?
+    new https.Agent({rejectUnauthorized: false}) :
+    null; // No special agent required for http
 exports.fetchAgent = fetchAgent;
 
-const localProto = forceInsecureMode ? 'http' : 'https';
+const localProto = allowSecureMode ? 'https' : 'http';
 const localServer = `${localProto}://localhost:8080`;
 const localRemoteOperator = `${localProto}://localhost:8081`;
 
