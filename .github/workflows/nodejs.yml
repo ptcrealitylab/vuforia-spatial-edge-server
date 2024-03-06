@@ -33,6 +33,7 @@ jobs:
       run: npm test
       env:
         CI: true
+        ALLOW_SECURE_MODE: true
 
     - uses: actions/upload-artifact@v3
       if: always()
@@ -70,7 +71,6 @@ jobs:
       run: npm test
       env:
         CI: true
-        FORCE_INSECURE_MODE: true
 
     - uses: actions/upload-artifact@v3
       if: always()
