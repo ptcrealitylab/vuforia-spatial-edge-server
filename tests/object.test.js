@@ -6,9 +6,6 @@
 
 /* global test, beforeAll, afterAll, expect */
 const fetch = require('node-fetch');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const {
     filterSnapshot,
@@ -18,6 +15,8 @@ const {
     sleep,
     snapshotDirectory,
     waitForObjects,
+    localServer,
+    fetchAgent,
 } = require('./helpers.js');
 
 let server;
@@ -36,14 +35,14 @@ test('new object creation', async () => {
 
     const allObjectsPre = await getTestObjects();
     expect(allObjectsPre).toEqual([]);
-    const resNew = await fetch('https://localhost:8080/', {
+    const resNew = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': 'action=new&name=fdsa&isWorld=null',
         'method': 'POST',
         'mode': 'cors',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resNew.text();
     const allObjectsCreated = await getTestObjects();
@@ -90,13 +89,13 @@ test('new object creation', async () => {
     expect(fdsaFs.timestamp).toBe(null);
     expect(fdsaFs.port).toBe(8080);
 
-    await fetch('https://localhost:8080/', {
+    await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         body: 'action=delete&name=fdsa&frame=',
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     const allObjectsDeleted = await getTestObjects();

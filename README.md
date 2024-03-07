@@ -49,12 +49,13 @@ Finally, configure and generate a local self-signed certificate.
 cp scripts/cert.conf.template scripts/cert.conf
 # edit scripts/cert.conf to include your local ip address if desired
 vim scripts/cert.conf
-./scripts/generate_certificate.sh
+./scripts/generate_cert.sh or ./scripts/generate_cert.ps1 (for windows)
 ```
 
 If desired, you can now add this certificate (cert.pem) to your local trusted
 certificate store (e.g. Keychain on macOS) to not have to manually add it to
-each browser's cert store.
+each browser's cert store. For more information on trusting on iOS, see [this
+guide](./docs/ios-cert-install.md)
 
 You can now run the server using the following command:
 
