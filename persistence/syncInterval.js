@@ -1,4 +1,4 @@
-const startSyncIfNotSyncing = require('./synchronize.js');
+const {startSyncIfNotSyncing} = require('./synchronize.js');
 
 module.exports = class SyncInterval {
     constructor(delayMs = 10000) {
