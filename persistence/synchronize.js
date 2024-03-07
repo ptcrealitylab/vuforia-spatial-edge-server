@@ -5,6 +5,8 @@ const path = require('path');
 const {objectsPath} = require('../config.js');
 const makeChecksumList = require('./makeChecksumList.js');
 
+const DEBUG = false;
+
 // Experimental feature to allow the remote (cloud proxy) to determine a merge
 // between our state and theirs and send back this merge for us to overwrite
 // our local file with
@@ -35,7 +37,9 @@ async function synchronize() {
         }
     }
 
-    console.log('sync diffs', diffs);
+    if (DEBUG) {
+        console.log('sync diffs', diffs);
+    }
     for (const relPath of diffs) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await local.readFile(localAbsPath);
@@ -45,7 +49,9 @@ async function synchronize() {
         }
     }
 
-    console.log('sync newRemote', newRemote);
+    if (DEBUG) {
+        console.log('sync newRemote', newRemote);
+    }
     for (const relPath of newRemote) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await remote.readFile(relPath);
@@ -58,7 +64,9 @@ async function synchronize() {
         await local.writeFile(localAbsPath, contents);
     }
 
-    console.log('sync newLocal', newLocal);
+    if (DEBUG) {
+        console.log('sync newLocal', newLocal);
+    }
     for (const relPath of newLocal) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await local.readFile(localAbsPath);
