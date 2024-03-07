@@ -285,7 +285,7 @@ class CloudProxyWrapper {
     async getChecksumList() {
         const res = await fetch(this.apiBase() + 'checksums', this.fetchOptionsRead());
         if (!res.ok) {
-            throw new Error('fs api error: ' + res.status);
+            throw new Error(`fs api error: ${res.status} ${res.url}`);
         }
         return await res.json();
     }
