@@ -20,6 +20,10 @@ const argv = yargs
         description: 'The port on which udp discovery broadcasts occur (default 52316)',
         type: 'number',
     })
+    .option('secure', {
+        description: 'Enable the server\'s secure (https) mode',
+        type: 'boolean',
+    })
     .help()
     .argv;
 
@@ -54,3 +58,5 @@ module.exports.beatPort = argv.udpPort || 52316;
 
 // Whether to enable the offline clone functionality
 module.exports.persistToCloud = false;
+
+module.exports.allowSecureMode = argv.secure || process.env.ALLOW_SECURE_MODE === 'true';

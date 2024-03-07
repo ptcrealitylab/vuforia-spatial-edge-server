@@ -11,13 +11,13 @@ const {
     sleep,
     snapshotDirectory,
     waitForObjects,
+    localServer,
+    fetchAgent,
 } = require('./helpers.js');
 const fsProm = require('fs/promises');
 const path = require('path');
 
 const fetch = require('node-fetch');
-const https = require('https');
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 const FormData = require('form-data');
 
 const objectsPath = require('../config.js').objectsPath;
@@ -43,13 +43,13 @@ afterAll(async () => {
 test('target upload to /content/:objectName', async () => {
     await waitForObjects();
 
-    const resNew = await fetch('https://localhost:8080/', {
+    const resNew = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=new&name=${worldName}&isWorld=true`,
         'method': 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resNew.text();
 
@@ -58,14 +58,14 @@ test('target upload to /content/:objectName', async () => {
 
     const form = new FormData();
     form.append('target.zip', targetZipBuf, {filename: 'target.zip', name: 'target.zip', contentType: 'application/zip'});
-    const res = await fetch(`https://localhost:8080/content/${worldName}`, {
+    const res = await fetch(`${localServer}/content/${worldName}`, {
         method: 'POST',
         headers: {
             ...form.getHeaders(),
             type: 'targetUpload',
         },
         body: form,
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     const content = await res.json();
@@ -131,13 +131,13 @@ test('target upload to /content/:objectName', async () => {
     // Let the upload cleanup process finish before we delete
     await sleep(1000);
 
-    const resDelete = await fetch('https://localhost:8080/', {
+    const resDelete = await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
         },
         'body': `action=delete&name=${worldName}&frame=`,
         'method': 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     await resDelete.text();
 

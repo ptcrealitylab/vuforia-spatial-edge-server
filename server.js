@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, beatPort} = require('./config');
+const {objectsPath, beatPort, allowSecureMode} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -101,7 +101,8 @@ const globalVariables = {
         web: false,
         system: false
     },
-    useHTTPS: !(isLightweightMobile || isStandaloneMobile) // on mobile devices node.js doesn't fully support HTTPS
+    useHTTPS: allowSecureMode &&
+        !(isLightweightMobile || isStandaloneMobile) // on mobile devices node.js doesn't fully support HTTPS
 };
 
 exports.useHTTPS = globalVariables.useHTTPS;
