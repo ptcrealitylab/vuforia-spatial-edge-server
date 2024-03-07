@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, beatPort, allowSecureMode} = require('./config');
+const {objectsPath, beatPort, allowSecureMode, persistToCloud} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -303,7 +303,7 @@ for (const frameLibPath of frameLibPaths) {
     }
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && persistToCloud) {
     syncInterval.start();
 }
 
