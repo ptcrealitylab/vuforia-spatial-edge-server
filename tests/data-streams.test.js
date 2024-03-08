@@ -10,12 +10,9 @@ const { DataStream } = require('../libraries/dataStreamInterfaces');
 const DataStreamInterface = require('../libraries/DataStreamInterface');
 const { objectsPath } = require('../config');
 const { fileExists, mkdirIfNotExists } = require('../libraries/utilities');
-const { sleep } = require('./helpers.js');
+const { sleep, localServer, fetchAgent } = require('./helpers.js');
 const path = require('path');
 const fsProm = require('fs/promises');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 let server;
 beforeAll(async () => {
@@ -81,14 +78,14 @@ test('add data source and node binding', async () => {
         }
     };
 
-    await fetch('https://localhost:8080/logic/addDataSourceToInterface', {
+    await fetch(`${localServer}/logic/addDataSourceToInterface`, {
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(addDataSourceBody),
         method: 'POST',
         mode: 'cors',
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     // after posting to /addDataSourceToInterface, the interface will have one dataSource and two dataStreams
@@ -108,14 +105,14 @@ test('add data source and node binding', async () => {
         }
     };
 
-    await fetch('https://localhost:8080/logic/bindNodeToDataStream', {
+    await fetch(`${localServer}/logic/bindNodeToDataStream`, {
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(bindNodeBody),
         method: 'POST',
         mode: 'cors',
-        agent: httpsAgent
+        agent: fetchAgent
     });
 
     // after posting to /bindNodeToDataStream, the interface will have one node binding with a nodeId and streamId
