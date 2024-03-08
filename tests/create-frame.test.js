@@ -11,12 +11,11 @@ const {
     filterSnapshot,
     filterToObjects,
     waitForObjects,
+    localServer,
+    fetchAgent,
 } = require('./helpers.js');
 
 const fetch = require('node-fetch');
-const https = require('https');
-
-let httpsAgent = new https.Agent({rejectUnauthorized: false});
 
 const worldName = '_WORLD_instantScanPJ1cgyrm';
 
@@ -32,7 +31,7 @@ afterAll(async () => {
 
 async function addFrame() {
     await waitForObjects();
-    const res = await fetch('https://localhost:8080/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c/addFrame/', {
+    const res = await fetch(`${localServer}/object/_WORLD_instantScanPJ1cgyrm_T6ijgnpsk1c/addFrame/`, {
         headers: {
             'content-type': 'application/json'
         },
@@ -88,23 +87,23 @@ async function addFrame() {
             lastEditor: 'cKzswlhy',
         }),
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     return await res.text();
 }
 
 async function getObject(objectId) {
-    const res = await fetch(`https://localhost:8080/object/${objectId}`, {agent: httpsAgent});
+    const res = await fetch(`${localServer}/object/${objectId}`, {agent: fetchAgent});
     return await res.json();
 }
 
 async function getFrame(objectId) {
-    const res = await fetch(`https://localhost:8080/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a`, {agent: httpsAgent});
+    const res = await fetch(`${localServer}/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a`, {agent: fetchAgent});
     return await res.json();
 }
 
 async function moveFrame(objectId) {
-    const res = await fetch(`https://localhost:8080/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a/node/null/size/`, {
+    const res = await fetch(`${localServer}/object/${objectId}/frame/${objectId}spatialDraw1mJx458y5jn9a/node/null/size/`, {
         headers: {
             'content-type': 'application/json'
         },
@@ -121,7 +120,7 @@ async function moveFrame(objectId) {
             lastEditor: 'cKzswlhy'
         }),
         method: 'POST',
-        agent: httpsAgent
+        agent: fetchAgent
     });
     return await res.text();
 }

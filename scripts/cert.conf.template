@@ -27,7 +27,7 @@ localityName            = Locality Name (eg, city)
 localityName_default        = Boston
 
 organizationName         = Organization Name (eg, company)
-organizationName_default    = PTC
+organizationName_default    = Reality Lab Test
 
 # Use a friendly name here because it's presented to the user. The server's DNS
 #   names are placed in Subject Alternate Names. Plus, DNS names here is deprecated
@@ -38,7 +38,7 @@ commonName          = Common Name (e.g. server FQDN or YOUR name)
 commonName_default      = Reality Lab Test
 
 emailAddress            = Email Address
-emailAddress_default        = test@ptc.com
+emailAddress_default        = ptc-test@example.com
 
 # Section x509_ext is used when generating a self-signed certificate. I.e., openssl req -x509 ...
 [ x509_ext ]
