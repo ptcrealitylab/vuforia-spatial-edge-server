@@ -16,7 +16,7 @@
     "jimp": "^0.22.12",
     "ml-matrix": "^6.11.0",
     "module-alias": "^2.2.3",
-    "monaco-editor": "^0.46.0",
+    "monaco-editor": "^0.47.0",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.7.0",
     "node-persist": "^2.1.0",
