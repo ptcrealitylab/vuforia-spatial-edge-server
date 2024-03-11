@@ -4,7 +4,7 @@
   "description": "Vuforia Spatial Edge Server",
   "main": "server.js",
   "dependencies": {
-    "archiver": "^6.0.1",
+    "archiver": "^7.0.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
