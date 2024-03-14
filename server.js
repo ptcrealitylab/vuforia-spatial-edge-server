@@ -2922,7 +2922,7 @@ function objectWebServer() {
                                     }
 
                                 } else {
-                                    continueProcessingUpload(folderD, fileExtension);
+                                    continueProcessingUpload();
                                 }
 
                                 // Step 2) - Generate a default XML file if needed
@@ -3070,6 +3070,7 @@ function objectWebServer() {
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return async function() {
+                                                        // cleanup the target directory after uploading files
                                                         let nestedTargetDirPath = path.join(folderD, identityFolderName, 'target', folderName);
 
                                                         try {
