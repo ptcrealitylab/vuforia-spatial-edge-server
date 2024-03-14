@@ -548,8 +548,8 @@ realityServer.updateManageObjects = function (thisItem2) {
                     thisObject.dom.querySelector('.download').classList.add('inactive');
                     thisObject.dom.querySelector('.active').classList.add('inactive');
 
-                    // world object names are always clickable to get to remote operator
-                    if (isRemoteOperatorSupported) { // world object button only needs to be clickable in this case
+                    // world object names are always clickable to get to remote operator (assuming remote operator addon exists)
+                    if (isRemoteOperatorSupported) {
                         realityServer.changeActiveState(thisObject.dom, true, objectKey);
                     }
 
@@ -1987,7 +1987,8 @@ realityServer.gotClick = function (event) {
                         }, 100);
                     };
 
-                    const AUTO_GENERATE_XML = false;
+                    // World objects can be totally empty, regular objects generate an XML file when you drop another target file e.g. jpg
+                    const AUTO_GENERATE_XML = !shouldAddWorldObject;
                     if (AUTO_GENERATE_XML) {
                         // generate a placeholder xml file for this object
                         let defaultSize = 0.3;

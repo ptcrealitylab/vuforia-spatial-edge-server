@@ -221,15 +221,23 @@ const setMatrix = function(objectID, body, callback) {
     callback(200, {success: true});
 };
 
+/**
+ * Sets the renderMode of an object (e.g. 'mesh' or 'ai') and sends the new state to all clients via action message
+ * @param {string} objectID
+ * @param {Request.body} body
+ * @param {function} callback
+ */
 const setRenderMode = async (objectID, body, callback) => {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
         return;
     }
+    if (typeof body.renderMode === 'undefined') {
+        callback(400, {failure: true, error: `Bad request: no renderMode specified in body`});
+    }
 
     object.renderMode = body.renderMode;
-    console.log(`server set renderMode of ${objectID} to ${body.renderMode}`);
 
     await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
     utilities.actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
@@ -241,7 +249,7 @@ const setRenderMode = async (objectID, body, callback) => {
  * The image is stored in a form, which can be parsed and written to the filesystem.
  * @param {string} objectID
  * @param {express.Request} req
- * @param {express.Response} res
+ * @param {function} callback
  */
 const memoryUpload = async function(objectID, req, callback) {
     if (!objects.hasOwnProperty(objectID)) {
