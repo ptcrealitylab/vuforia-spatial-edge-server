@@ -428,6 +428,13 @@ const checkFileExists = async (objectId, filePath) => {
     if (!obj) {
         return false;
     }
+
+    // prevent upward traversal so this can't be used maliciously. Only allow certain characters, and prevent ../
+    let isSafePath = /^[a-zA-Z0-9_.\-\/]+$/.test(filePath) && !/\.\.\//.test(filePath);
+    if (!isSafePath) {
+        return false;
+    }
+
     let objectIdentityDir = path.join(objectsPath, obj.name, identityFolderName);
     let absoluteFilePath = path.join(objectIdentityDir, filePath);
     return await fileExists(absoluteFilePath);

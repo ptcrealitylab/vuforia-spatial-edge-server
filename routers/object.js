@@ -288,6 +288,7 @@ router.post('/:objectName/matrix', function (req, res) {
     });
 });
 
+// Set an object's renderMode, and send the new state to all clients
 router.post('/:objectName/renderMode', (req, res) => {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
@@ -414,7 +415,8 @@ router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
     });
 });
 
-router.get('/:objectName/checkFileExists/*', (req, res) => {
+// Check the existence of a file at a filepath within the .identity directory of the specified object
+router.get('/:objectName/checkFileExists/*', async (req, res) => {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
         return;
@@ -428,6 +430,7 @@ router.get('/:objectName/checkFileExists/*', (req, res) => {
     });
 });
 
+// Check the existence of all the target files for the specified object
 router.get('/:objectName/checkTargetFiles/', (req, res) => {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
