@@ -1966,8 +1966,8 @@ realityServer.gotClick = function (event) {
                     realityServer.objects[objectName].isWorldObject = true;
                 }
             } else {
-                // this is how world objects get instantly initialized
                 try {
+                    // check if we need to generate an XML file, then setup and activate the object...
                     let msgContent = JSON.parse(state);
 
                     const finishSettingUpObject = () => {
@@ -1987,7 +1987,7 @@ realityServer.gotClick = function (event) {
                         }, 100);
                     };
 
-                    // World objects can be totally empty, regular objects generate an XML file when you drop another target file e.g. jpg
+                    // World objects can be totally empty, regular objects generate a default XML target file on creation
                     const AUTO_GENERATE_XML = !shouldAddWorldObject;
                     if (AUTO_GENERATE_XML) {
                         // generate a placeholder xml file for this object
