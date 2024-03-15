@@ -102,6 +102,7 @@ test('target upload to /content/:objectName', async () => {
         version: '3.2.2',
         deactivated: false,
         protocol: 'R2',
+        renderMode: null,
         visible: false,
         visibleText: false,
         visibleEditing: false,

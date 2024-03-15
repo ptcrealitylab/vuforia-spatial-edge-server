@@ -62,6 +62,7 @@ function ObjectModel(ip, version, protocol, objectId) {
     this.type = 'object'; // or: 'world' or 'human' or 'avatar' etc...
     this.timestamp = null; // timestamp optionally stores when the object was first created
     this.gaussianSplatRequestId = null; // Optional id for in-progress request to GS server
+    this.renderMode = null; // Can be set to 'mesh' or 'ai' to synchronize render mode across clients
 }
 
 /**
