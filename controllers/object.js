@@ -430,6 +430,7 @@ const checkFileExists = async (objectId, filePath) => {
     }
 
     // prevent upward traversal so this can't be used maliciously. Only allow certain characters, and prevent ../
+    // eslint-disable-next-line no-useless-escape
     let isSafePath = /^[a-zA-Z0-9_.\-\/]+$/.test(filePath) && !/\.\.\//.test(filePath);
     if (!isSafePath) {
         return false;
