@@ -2880,9 +2880,19 @@ function objectWebServer() {
                                     console.error(`error renaming ${filename} to target.${fileExtension}`, e);
                                 }
 
-                                // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
-                                // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
-                                if (fileExtension === 'jpg') {
+                                // extract the targetId from the dat file when the dat file is uploaded
+                                if (fileExtension === 'dat') {
+                                    try {
+                                        let targetUniqueId = await utilities.getTargetIdFromTargetDat(path.join(folderD, identityFolderName, 'target'));
+                                        let thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                        objects[thisObjectId].targetId = targetUniqueId;
+                                        console.log(`set targetId for ${thisObjectId} to ${targetUniqueId}`);
+                                    } catch (e) {
+                                        console.log('unable to extract targetId from dat file');
+                                    }
+                                    // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
+                                    // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
+                                } else if (fileExtension === 'jpg') {
 
                                     var rawFilepath = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
                                     var tempFilepath = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
