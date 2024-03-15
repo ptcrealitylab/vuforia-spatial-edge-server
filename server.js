@@ -4632,7 +4632,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors, objectBeatSender);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 
