@@ -4,7 +4,6 @@ const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 const {startSplatTask} = require('./object/SplatTask.js');
-const server = require('../server');
 const { beatPort } = require('../config.js');
 
 // Variables populated from server.js with setup()
@@ -28,6 +27,7 @@ let objectLookup;
 let activeHeartbeats;
 let knownObjects;
 let setAnchors;
+let objectBeatSender;
 
 const deleteObject = async function(objectID) {
     let object = utilities.getObject(objects, objectID);
@@ -603,8 +603,7 @@ const uploadTarget = async (objectName, req, res) => {
         await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
         await setAnchors();
 
-        // await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
-        await server.objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+        await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
 
         // delete the tmp folder and any files within it
         await utilities.rmdirIfExists(uploadDir);
@@ -641,7 +640,7 @@ const getObject = function (objectID, excludeUnpinned) {
 };
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, sceneGraph_,
-    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
+    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_, objectBeatSender_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -651,6 +650,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     activeHeartbeats = activeHeartbeats_;
     knownObjects = knownObjects_;
     setAnchors = setAnchors_;
+    objectBeatSender = objectBeatSender_;
 };
 
 module.exports = {
