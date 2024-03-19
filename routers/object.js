@@ -287,6 +287,18 @@ router.post('/:objectName/matrix', function (req, res) {
         res.status(statusCode).json(responseContents).end();
     });
 });
+
+// Set an object's renderMode, and send the new state to all clients
+router.post('/:objectName/renderMode', (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.setRenderMode(req.params.objectName, req.body, function(statusCode, responseContents) {
+        res.status(statusCode).json(responseContents).end();
+    });
+});
+
 router.post('/:objectName/memory', function (req, res) {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
@@ -400,6 +412,35 @@ router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
     }
     frameController.setPinned(req.params.objectName, req.params.frameName, req.body, function(statusCode, responseContents) {
         res.status(statusCode).json(responseContents).end();
+    });
+});
+
+// Check the existence of a file at a filepath within the .identity directory of the specified object
+router.get('/:objectName/checkFileExists/*', async (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    // Extract the file path from the URL
+    const filePath = req.params[0];
+    objectController.checkFileExists(req.params.objectName, filePath).then(exists => {
+        res.json({ exists: exists });
+    }).catch(e => {
+        res.status(404).json({ error: e, exists: false });
+    });
+});
+
+// Check the existence of all the target files for the specified object
+router.get('/:objectName/checkTargetFiles/', (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    // Extract the file path from the URL
+    objectController.checkTargetFiles(req.params.objectName).then(existsJson => {
+        res.json(existsJson);
+    }).catch(e => {
+        res.status(404).json({ error: e, exists: false });
     });
 });
 
@@ -577,6 +618,13 @@ const setupDeveloperRoutes = function() {
         }
         let excludeUnpinned = (req.query.excludeUnpinned === 'true');
         res.json(objectController.getObject(req.params.objectName, excludeUnpinned)).end();
+    });
+    router.post('/:objectName/uploadTarget/', (req, res) => {
+        if (!utilities.isValidId(req.params.objectName)) {
+            res.status(400).send('Invalid object name. Must be alphanumeric.');
+            return;
+        }
+        objectController.uploadTarget(req.params.objectName, req, res);
     });
 };
 
