@@ -1,23 +1,7 @@
 const fs = require('./FileSystemWrapper.js');
 const cloud = require('./CloudProxyWrapper.js');
 
-const {synchronize} = require('./synchronize.js');
-
-let syncInProgress = false;
-
-async function sync() {
-    if (syncInProgress) {
-        return;
-    }
-    syncInProgress = true;
-    try {
-        await synchronize();
-    } catch (e) {
-        console.error('synchronize failed', e);
-    } finally {
-        syncInProgress = false;
-    }
-}
+const {startSyncIfNotSyncing} = require('./synchronize.js');
 
 const debug = false;
 
@@ -56,7 +40,7 @@ const proxy = new Proxy({}, {
                 if (debug) {
                     console.error(prop, Array.from(arguments), 'could not verify persistence', {cloudRes, fsRes});
                 }
-                sync();
+                startSyncIfNotSyncing();
             }
             return fsRes;
         };

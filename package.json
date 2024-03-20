@@ -5,7 +5,7 @@
   "main": "server.js",
   "dependencies": {
     "@azure/openai": "^1.0.0-beta.8",
-    "archiver": "^6.0.1",
+    "archiver": "^7.0.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
@@ -17,12 +17,12 @@
     "jimp": "^0.22.12",
     "ml-matrix": "^6.11.0",
     "module-alias": "^2.2.3",
-    "monaco-editor": "^0.46.0",
+    "monaco-editor": "^0.47.0",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.7.0",
     "node-persist": "^2.1.0",
     "request": "^2.*",
-    "simple-git": "^3.22.0",
+    "simple-git": "^3.23.0",
     "toolsocket": "github:ptcrealitylab/toolsocket",
     "winston": "^3.12.0",
     "ws": "^8.15.1",
@@ -40,7 +40,7 @@
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
     "mock-fs": "^5.2.0",
-    "puppeteer": "^22.4.0"
+    "puppeteer": "^22.5.0"
   },
   "scripts": {
     "test": "npm run lint && jest --forceExit --runInBand",

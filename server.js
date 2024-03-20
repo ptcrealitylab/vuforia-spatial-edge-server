@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, beatPort, allowSecureMode} = require('./config');
+const {objectsPath, beatPort, allowSecureMode, persistToCloud} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -132,6 +132,8 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 
 const fs = require('fs');       // Filesystem library
 const fsProm = require('./persistence/fsProm.js');
+const SyncInterval = require('./persistence/syncInterval.js');
+const syncInterval = new SyncInterval();
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');
@@ -299,6 +301,10 @@ for (const frameLibPath of frameLibPaths) {
     if (fs.existsSync(frameLibPath)) {
         addonFrames.addFramesSource(frameLibPath);
     }
+}
+
+if (process.env.NODE_ENV !== 'test' && persistToCloud) {
+    syncInterval.start();
 }
 
 // constrution for the werbserver using express combined with socket.io
@@ -1160,6 +1166,7 @@ function closeServer(server) {
 }
 
 async function exit() {
+    syncInterval.stop();
     hardwareAPI.shutdown();
     await closeServer(http);
     await closeServer(io.server.server);
