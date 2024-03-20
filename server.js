@@ -1926,8 +1926,7 @@ function objectWebServer() {
     });
 
     const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
-    const endpoint = 'https://stevekxazureopenainorthcentralus.openai.azure.com/';
-    const azureApiKey = '7f0c8495da934c719d0d31d57a3d2892';
+    const {endpoint, azureApiKey} = require("./config.js");
     const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
     const deploymentId = "gpt-35-turbo-16k";
     
