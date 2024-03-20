@@ -60,3 +60,9 @@ module.exports.beatPort = argv.udpPort || 52316;
 module.exports.persistToCloud = false;
 
 module.exports.allowSecureMode = argv.secure || process.env.ALLOW_SECURE_MODE === 'true';
+
+// Azure OpenAI API configs
+const endpoint = 'https://stevekxazureopenainorthcentralus.openai.azure.com/';
+const azureApiKey = '7f0c8495da934c719d0d31d57a3d2892';
+module.exports.endpoint = endpoint;
+module.exports.azureApiKey = azureApiKey;
