@@ -5,6 +5,13 @@ const path = require('path');
 const {objectsPath} = require('../config.js');
 const makeChecksumList = require('./makeChecksumList.js');
 
+const DEBUG = false;
+
+// Experimental feature to allow the remote (cloud proxy) to determine a merge
+// between our state and theirs and send back this merge for us to overwrite
+// our local file with
+const allowRemoteOverwriteLocal = false;
+
 async function synchronize() {
     const cslRemote = await remote.getChecksumList();
     const cslLocal = await makeChecksumList(objectsPath, '');
@@ -30,17 +37,21 @@ async function synchronize() {
         }
     }
 
-    console.log('sync diffs', diffs);
+    if (DEBUG) {
+        console.log('sync diffs', diffs);
+    }
     for (const relPath of diffs) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await local.readFile(localAbsPath);
         const newContents = await remote.writeFile(relPath, contents);
-        if (newContents) {
+        if (newContents && allowRemoteOverwriteLocal) {
             await local.writeFile(localAbsPath, newContents);
         }
     }
 
-    console.log('sync newRemote', newRemote);
+    if (DEBUG) {
+        console.log('sync newRemote', newRemote);
+    }
     for (const relPath of newRemote) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await remote.readFile(relPath);
@@ -53,7 +64,9 @@ async function synchronize() {
         await local.writeFile(localAbsPath, contents);
     }
 
-    console.log('sync newLocal', newLocal);
+    if (DEBUG) {
+        console.log('sync newLocal', newLocal);
+    }
     for (const relPath of newLocal) {
         const localAbsPath = path.join(objectsPath, relPath);
         const contents = await local.readFile(localAbsPath);
@@ -64,3 +77,21 @@ async function synchronize() {
 }
 
 exports.synchronize = synchronize;
+
+let syncInProgress = false;
+
+async function startSyncIfNotSyncing() {
+    if (syncInProgress) {
+        return;
+    }
+    syncInProgress = true;
+    try {
+        await synchronize();
+    } catch (e) {
+        console.error('synchronize failed', e);
+    } finally {
+        syncInProgress = false;
+    }
+}
+
+exports.startSyncIfNotSyncing = startSyncIfNotSyncing;
