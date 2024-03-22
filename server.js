@@ -1981,8 +1981,9 @@ function objectWebServer() {
         let last_dialogue_original_content = last_dialogue.content;
         last_dialogue.content += '\n' + last_dialogue.extra;
         delete last_dialogue.extra;
-        // console.log(last_dialogue);
-        // console.log(conversation);
+        let authorAll = last_dialogue.communicationToolInfo.authorAll;
+        let chatAll = last_dialogue.communicationToolInfo.chatAll;
+        delete last_dialogue.communicationToolInfo;
 
         const category_messages = [
             { role: "system", content: "You are a helpful assistant." },
@@ -2019,12 +2020,47 @@ function objectWebServer() {
         // }
         
         switch (actualCategory) {
-            case 1:
             case 6:
                 last_dialogue.content = last_dialogue_original_content;
                 
                 result = await client.getChatCompletions(deploymentId, messages);
                 actualResult = result.choices[0].message.content;
+                json = JSON.stringify({category: `${actualCategory}`, answer: `${actualResult}`});
+                res.status(200).send(json);
+                break;
+            case 1:
+                last_dialogue.content = last_dialogue_original_content;
+                
+                let enhancedPrompt = [
+                    ...messages,
+                    { role: "user", content: "Here's a log of events. Give me a concise summary. Use at most 6 sentences." },
+                ]
+                result = await client.getChatCompletions(deploymentId, enhancedPrompt);
+                actualResult = result.choices[0].message.content;
+                
+                // todo Steve: if there is communication info, then let ai make a summary of the chat history, and populate it to the actualResult
+                actualResult += '\n\n';
+                for (let i = 1; i <= authorAll.length; i++) {
+                    let chatQuestion = [
+                        { role: "system", content: "You are a helpful assistant." },
+                        { role: "user", content: `${chatAll[i - 1]} Give me a summary of this conversation. Use at most 3 sentences.` },
+                    ];
+                    let chatSummaryResult = await client.getChatCompletions(deploymentId, chatQuestion);
+                    let chatSummary = chatSummaryResult.choices[0].message.content;
+                    let idx = '';
+                    if (i === 1) {
+                        idx = '1st';
+                    } else if (i === 2) {
+                        idx = '2nd';
+                    } else if (i === 3) {
+                        idx = '3rd';
+                    } else {
+                        idx = `${i}th`;
+                    }
+                    actualResult += `In the ${idx} communication tool chat history, ${authorAll[i - 1]} discussed about: ${chatSummary}`;
+                    actualResult += '\n\n';
+                }
+                
                 json = JSON.stringify({category: `${actualCategory}`, answer: `${actualResult}`});
                 res.status(200).send(json);
                 break;
