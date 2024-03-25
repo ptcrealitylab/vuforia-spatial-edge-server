@@ -2033,7 +2033,7 @@ function objectWebServer() {
                 
                 let enhancedPrompt = [
                     ...messages,
-                    { role: "user", content: "Here's a log of events. Give me a concise summary. Use at most 6 sentences." },
+                    // { role: "user", content: "Here's a log of events. Give me a concise summary. Use at most 6 sentences." },
                 ]
                 result = await client.getChatCompletions(deploymentId, enhancedPrompt);
                 actualResult = result.choices[0].message.content;
