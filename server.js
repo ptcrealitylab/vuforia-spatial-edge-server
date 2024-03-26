@@ -335,7 +335,7 @@ const http = httpServer.listen(serverPort, function () {
 });
 
 const ToolSocket = require('toolsocket');
-var io = new ToolSocket.Io.Server({server: http}); // Websocket library
+const io = new ToolSocket.Server({server: http}); // Websocket library
 io.addEventListener('listening', () => {
     console.info(`ToolSocket server started`);
 });
@@ -1164,7 +1164,7 @@ function closeServer(server) {
 async function exit() {
     hardwareAPI.shutdown();
     await closeServer(http);
-    await closeServer(io.server.server);
+    await closeServer(io.server);
     sceneGraph.clearIntervals();
     await recorder.stop();
     clearActiveHeartbeats();
@@ -3320,8 +3320,8 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
     const node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
         realityEditorSocketSubscriptions.forEach(subscriptions => {
-            subscriptions.forEach((thisObj) => {
-                if (objectKey === thisObj.object && frameKey === thisObj.frame) {
+            subscriptions.forEach(subscription => {
+                if (objectKey === subscription.object && frameKey === subscription.frame) {
                     subscriptions.socket.emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,

@@ -243,10 +243,10 @@ function SpatialLogic() { // eslint-disable-line no-unused-vars
         }
     };
 
-    if (typeof io !== 'undefined') {
+    if (typeof ToolSocket !== 'undefined') {
         var _this = this;
 
-        this.ioObject = io.connect();
+        this.ioObject = new ToolSocket();
         this.oldValueList = {};
 
         this.addReadPublicDataListener = function (valueName, callback) {
