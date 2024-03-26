@@ -45,7 +45,7 @@ function InterfaceConfig(interfaceName) { // eslint-disable-line no-unused-vars
 InterfaceConfig.prototype.injectSocketIoAPI = function() {
     let self = this;
 
-    this.ioObject = io.connect();
+    this.ioObject = new ToolSocket();
 
     this.addSettingsUpdateListener = function (callback) {
         self.ioObject.emit('/subscribe/interfaceSettings', JSON.stringify({
@@ -53,13 +53,12 @@ InterfaceConfig.prototype.injectSocketIoAPI = function() {
         }));
 
         self.ioObject.on('interfaceSettings', function (msg) {
-            var thisMsg = JSON.parse(msg);
-            callback(thisMsg);
+            callback(JSON.parse(msg));
         });
     };
 
     for (var i = 0; i < this.pendingIos.length; i++) {
-        var pendingIo = this.pendingIos[i];
+        const pendingIo = this.pendingIos[i];
         this[pendingIo.name].apply(this, pendingIo.args);
     }
     this.pendingIos = [];
