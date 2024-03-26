@@ -3,7 +3,21 @@ const WebSocketWrapper = isBrowser ? WebSocket : require('ws');
 
 const MAX_MESSAGE_SIZE = 300 * 1024 * 1024;
 const VALID_FILETYPES = ['css', 'csv', 'dat', 'fbx', 'gif', 'glb', 'htm', 'html', 'jpg', 'jpeg', 'js', 'json', 'map', 'mp4', 'obj', 'otf', 'pdf', 'ply', 'png', 'splat', 'svg', 'ttf', 'wasm', 'webm', 'webp', 'woff', 'xml', 'zip', '3dt'];
+/**
+ * @typedef {'action' | 'beat' | 'delete' | 'get' | 'io' | 'keys' | 'message' | 'new' | 'patch' | 'ping' | 'post' | 'pub' | 'put' | 'res' | 'sub' | 'unsub'} MethodString
+ */
+/** @type MethodString[] */
 const VALID_METHODS = ['action', 'beat', 'delete', 'get', 'io', 'keys', 'message', 'new', 'patch', 'ping', 'post', 'pub', 'put', 'res', 'sub', 'unsub'];
+const REGEXES = {
+    n: /^[A-Za-z0-9_]*$/,
+    i: /^[A-Za-z0-9_]*$/,
+    s: /^[A-Za-z0-9_]*$/,
+    r: /^[A-Za-z0-9_/?:&+.%=-]*$/,
+    query: /^[A-Za-z0-9~!@$%^&*()\-_=+{}|;:,./?]*$/,
+    route: /^[A-Za-z0-9/~!@$%^&*()\-_=+|;:,.]*$/,
+    server: /^[A-Za-z0-9~!@$%^&*()\-_=+|;:,.]*$/
+};
+
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
@@ -611,7 +625,7 @@ const URL_SCHEMA = new Schema([
     new StringValidator('n', {
         minLength: 1,
         maxLength: 25,
-        pattern: /^[A-Za-z0-9_]*$/,
+        pattern: REGEXES.n,
         required: true,
         expected: true
     }),
@@ -626,17 +640,17 @@ const URL_SCHEMA = new Schema([
     new StringValidator('query', {
         minLength: 0,
         maxLength: 2000,
-        pattern: /^[A-Za-z0-9~!@$%^&*()-_=+{}|;:,./?]*$/
+        pattern: REGEXES.query
     }),
     new StringValidator('route', {
         minLength: 0,
         maxLength: 2000,
-        pattern: /^[A-Za-z0-9/~!@$%^&*()-_=+|;:,.]*$/
+        pattern: REGEXES.route
     }),
     new StringValidator('server', {
         minLength: 0,
         maxLength: 2000,
-        pattern: /^[A-Za-z0-9~!@$%^&*()-_=+|;:,.]*$/
+        pattern: REGEXES.server
     }),
     new NumberValidator('port', {
         minValue: 0,
@@ -650,7 +664,7 @@ const MESSAGE_BUNDLE_SCHEMA = new Schema([
         new StringValidator('i', {
             minLength: 1,
             maxLength: 22,
-            pattern: /^[A-Za-z0-9_]*$/
+            pattern: REGEXES.i
         }),
         new NullValidator('i'),
         new UndefinedValidator('i')
@@ -664,7 +678,7 @@ const MESSAGE_BUNDLE_SCHEMA = new Schema([
     new StringValidator('n', {
         minLength: 1,
         maxLength: 25,
-        pattern: /^[A-Za-z0-9_]*$/,
+        pattern: REGEXES.n,
         required: true
     }),
     // method
@@ -676,7 +690,7 @@ const MESSAGE_BUNDLE_SCHEMA = new Schema([
     new StringValidator('r', {
         minLength: 0,
         maxLength: 2000,
-        pattern: /^[A-Za-z0-9_/?:&+.%=-]*$/,
+        pattern: REGEXES.r,
         required: true
     }),
     // body
@@ -698,7 +712,7 @@ const MESSAGE_BUNDLE_SCHEMA = new Schema([
         new StringValidator('s', {
             minLength: 0,
             maxLength: 45,
-            pattern: /^[A-Za-z0-9_]*$/
+            pattern: REGEXES.s
         }),
         new NullValidator('s'),
         new UndefinedValidator('s')
@@ -1326,7 +1340,7 @@ class ToolSocket {
 
     /**
      * Sends a message using the given HTTP-like method
-     * @param {string} method - The method to use
+     * @param {MethodString} method - The method to use
      * @param {string} route - The route
      * @param {any} body - The message body
      * @param {function} [callback] - A callback function that is called if a response is required
