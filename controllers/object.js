@@ -344,11 +344,7 @@ const zipBackup = async function(objectId, req, res) {
         return;
     }
 
-    res.writeHead(200, {
-        'Content-Type': 'application/zip',
-        'Content-disposition': 'attachment; filename=' + objectId + '.zip'
-    });
-
+    res.attachment(objectId + '.zip').type('zip');
     // this require needs to be placed here for mobile compatibility
     var archiver = require('archiver');
     var zip = archiver('zip');
