@@ -1191,6 +1191,7 @@ async function exit() {
 exports.exit = exit;
 
 process.on('SIGINT', exit);
+process.on('SIGTERM', exit);
 
 process.on('exit', function() {
     // Always, even when crashing, try to persist the recorder log
