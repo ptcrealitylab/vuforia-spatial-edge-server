@@ -543,11 +543,15 @@ realityServer.updateManageObjects = function (thisItem2) {
 
                 } else { // if not initializes with target files...
 
-                    thisObject.dom.querySelector('.name').classList.add('inactive');
                     thisObject.dom.querySelector('.zone').classList.add('inactive');
                     thisObject.dom.querySelector('.sharing').classList.add('inactive');
                     thisObject.dom.querySelector('.download').classList.add('inactive');
                     thisObject.dom.querySelector('.active').classList.add('inactive');
+
+                    // world object names are always clickable to get to remote operator (assuming remote operator addon exists)
+                    if (isRemoteOperatorSupported) {
+                        realityServer.changeActiveState(thisObject.dom, true, objectKey);
+                    }
 
                     // make on/off button yellow always if not properly initialized
                     realityServer.switchClass(thisObject.dom.querySelector('.active'), 'green', 'yellow');
@@ -1962,29 +1966,40 @@ realityServer.gotClick = function (event) {
                     realityServer.objects[objectName].isWorldObject = true;
                 }
             } else {
-                // this is how world objects get instantly initialized
                 try {
+                    // check if we need to generate an XML file, then setup and activate the object...
                     let msgContent = JSON.parse(state);
-                    // generate a placeholder xml file for this object
-                    let defaultSize = 0.3;
-                    realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
-                        if (stateGen === 'ok') {
-                            realityServer.objects[msgContent.id] = new Objects();
-                            realityServer.objects[msgContent.id].name = msgContent.name;
-                            realityServer.objects[msgContent.id].isWorldObject = true;
-                            //    realityServer.objects[msgContent.id].initialized = true;
 
-                            // make them automatically activate after a slight delay
-                            setTimeout(function () {
-                                realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
-                                    if (stateActivate === 'ok') {
-                                        //   realityServer.objects[msgContent.id].active = true;
-                                    }
-                                    realityServer.update();
-                                });
-                            }, 100);
-                        }
-                    }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+                    const finishSettingUpObject = () => {
+                        realityServer.objects[msgContent.id] = new Objects();
+                        realityServer.objects[msgContent.id].name = msgContent.name;
+                        realityServer.objects[msgContent.id].isWorldObject = true;
+                        //    realityServer.objects[msgContent.id].initialized = true;
+
+                        // make them automatically activate after a slight delay
+                        setTimeout(function () {
+                            realityServer.sendRequest('/object/' + msgContent.id + '/activate/', 'GET', function (stateActivate) {
+                                if (stateActivate === 'ok') {
+                                    //   realityServer.objects[msgContent.id].active = true;
+                                }
+                                realityServer.update();
+                            });
+                        }, 100);
+                    };
+
+                    // World objects can be totally empty, regular objects generate a default XML target file on creation
+                    const AUTO_GENERATE_XML = !shouldAddWorldObject;
+                    if (AUTO_GENERATE_XML) {
+                        // generate a placeholder xml file for this object
+                        let defaultSize = 0.3;
+                        realityServer.sendRequest('/object/' + msgContent.id + '/generateXml/', 'POST', function (stateGen) {
+                            if (stateGen === 'ok') {
+                                finishSettingUpObject();
+                            }
+                        }, 'name=' + msgContent.name + '&width=' + defaultSize + '&height=' + defaultSize);
+                    } else {
+                        finishSettingUpObject();
+                    }
 
                 } catch (e) {
                     console.error('json parse error for (action=new&name=\'' + objectName + '\') response: ' + state);

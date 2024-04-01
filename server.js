@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, beatPort, allowSecureMode} = require('./config');
+const {objectsPath, beatPort, allowSecureMode, persistToCloud} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -132,6 +132,8 @@ const netmask = '255.255.0.0'; // define the network scope from which this serve
 
 const fs = require('fs');       // Filesystem library
 const fsProm = require('./persistence/fsProm.js');
+const SyncInterval = require('./persistence/syncInterval.js');
+const syncInterval = new SyncInterval();
 const path = require('path');
 const DecompressZip = require('decompress-zip');
 const dirTree = require('directory-tree');
@@ -299,6 +301,10 @@ for (const frameLibPath of frameLibPaths) {
     if (fs.existsSync(frameLibPath)) {
         addonFrames.addFramesSource(frameLibPath);
     }
+}
+
+if (process.env.NODE_ENV !== 'test' && persistToCloud) {
+    syncInterval.start();
 }
 
 // constrution for the werbserver using express combined with socket.io
@@ -995,6 +1001,7 @@ async function setAnchors() {
         if (!objects[key]) {
             continue;
         }
+        // TODO: world objects are now considered initialized by default... update how anchor objects work (do they still require that the world has target data?)
         if (objects[key].isWorldObject || objects[key].type === 'world') {
             // check if the object is correctly initialized with tracking targets
             let datExists = await fileExists(path.join(objectsPath, objects[key].name, identityFolderName, '/target/target.dat'));
@@ -1162,6 +1169,7 @@ function closeServer(server) {
 }
 
 async function exit() {
+    syncInterval.stop();
     hardwareAPI.shutdown();
     await closeServer(http);
     await closeServer(io.server);
@@ -1187,6 +1195,7 @@ async function exit() {
 exports.exit = exit;
 
 process.on('SIGINT', exit);
+process.on('SIGTERM', exit);
 
 process.on('exit', function() {
     // Always, even when crashing, try to persist the recorder log
@@ -1292,7 +1301,8 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
         let xmlPath = path.join(targetDir, 'target.xml');
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
-        var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
+        let splatPath = path.join(targetDir, 'target.splat');
+        var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
         const tcs = await utilities.generateChecksums(objects, fileList);
         if (objects[thisId]) {
             // if no target files exist, checksum will be undefined, so mark
@@ -1336,7 +1346,13 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
                     tcs: objects[thisId].tcs,
                     zone: zone
                 };
-                let sendWithoutTargetFiles = objects[thisId].isAnchor || objects[thisId].type === 'anchor' || objects[thisId].type === 'human' || objects[thisId].type === 'avatar';
+                // we enumerate the object types that can be sent without target files.
+                // currently, only regular objects (type='object') require target files to send heartbeats.
+                let sendWithoutTargetFiles = objects[thisId].isAnchor ||
+                    objects[thisId].type === 'anchor' ||
+                    objects[thisId].type === 'human' ||
+                    objects[thisId].type === 'avatar' ||
+                    objects[thisId].type === 'world';
                 if (objects[thisId].tcs || sendWithoutTargetFiles) {
                     utilities.sendWithFallback(client, PORT, HOST, messageObj, {
                         closeAfterSending: false,
@@ -1755,6 +1771,7 @@ function objectWebServer() {
             'target.glb',
             'target.unitypackage',
             'target.3dt',
+            'target.splat',
         ];
 
         if (targetFiles.includes(filename) && urlArray[urlArray.length - 2] === 'target') {
@@ -2831,10 +2848,19 @@ function objectWebServer() {
                     }
                 });
 
-                form.parse(req);
+                try {
+                    form.parse(req);
+                } catch (e) {
+                    console.warn('error parsing formidable', e);
+                    res.status(500).send(`error parsing formidable: ${e}`);
+                    return;
+                }
 
                 form.on('end', function () {
                     var folderD = form.uploadDir;
+                    // by default, uploading any other target file will auto-generate a target.xml file
+                    //   specify `autogeneratexml: false` in the headers to prevent this behavior
+                    let autoGenerateXml = typeof req.headers.autogeneratexml !== 'undefined' ? JSON.parse(req.headers.autogeneratexml) : true;
                     fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
                     fileInfoList.forEach(async fileInfo => {
                         if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
@@ -2849,7 +2875,8 @@ function objectWebServer() {
                                 fileExtension = 'jpg';
                             }
 
-                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' || fileExtension === 'glb') {
+                            if (fileExtension === 'jpg' || fileExtension === 'dat' || fileExtension === 'xml' ||
+                                fileExtension === 'glb' || fileExtension === '3dt'  || fileExtension === 'splat') {
                                 if (!await fileExists(folderD + '/' + identityFolderName + '/target/')) {
                                     try {
                                         await fsProm.mkdir(folderD + '/' + identityFolderName + '/target/', '0766');
@@ -2865,9 +2892,19 @@ function objectWebServer() {
                                     console.error(`error renaming ${filename} to target.${fileExtension}`, e);
                                 }
 
-                                // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
-                                // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
-                                if (fileExtension === 'jpg') {
+                                // extract the targetId from the dat file when the dat file is uploaded
+                                if (fileExtension === 'dat') {
+                                    try {
+                                        let targetUniqueId = await utilities.getTargetIdFromTargetDat(path.join(folderD, identityFolderName, 'target'));
+                                        let thisObjectId = utilities.readObject(objectLookup, req.params.id);
+                                        objects[thisObjectId].targetId = targetUniqueId;
+                                        console.log(`set targetId for ${thisObjectId} to ${targetUniqueId}`);
+                                    } catch (e) {
+                                        console.log('unable to extract targetId from dat file');
+                                    }
+                                    // Step 1) - resize image if necessary. Vuforia can make targets from jpgs of up to 2048px
+                                    // but we scale down to 1024px for a larger margin of error and (even) smaller filesize
+                                } else if (fileExtension === 'jpg') {
 
                                     var rawFilepath = folderD + '/' + identityFolderName + '/target/target.' + fileExtension;
                                     var tempFilepath = folderD + '/' + identityFolderName + '/target/target-temp.' + fileExtension;
@@ -2912,8 +2949,12 @@ function objectWebServer() {
 
                                 // Step 2) - Generate a default XML file if needed
                                 async function continueProcessingUpload() { // eslint-disable-line no-inner-declarations
-                                    var objectName = req.params.id + utilities.uuidTime();
+                                    if (!autoGenerateXml) {
+                                        await onXmlVerified();
+                                        return;
+                                    }
 
+                                    var objectName = req.params.id + utilities.uuidTime();
                                     var documentcreate = '<?xml version="1.0" encoding="UTF-8"?>\n' +
                                        '<ARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n' +
                                        '   <Tracking>\n' +
@@ -2957,8 +2998,9 @@ function objectWebServer() {
                                     let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
                                     let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
                                     let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
+                                    let splatPath = path.join(folderD, identityFolderName, '/target/target.splat');
 
-                                    var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath];
+                                    var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
 
                                     if (typeof objects[thisObjectId] !== 'undefined') {
                                         var thisObject = objects[thisObjectId];
@@ -2966,6 +3008,8 @@ function objectWebServer() {
                                         var dat = await fileExists(datPath);
                                         var xml = await fileExists(xmlPath);
                                         var glb = await fileExists(glbPath);
+                                        var tdt = await fileExists(tdtPath);
+                                        var splat = await fileExists(splatPath);
 
                                         var sendObject = {
                                             id: thisObjectId,
@@ -2974,7 +3018,9 @@ function objectWebServer() {
                                             jpgExists: jpg,
                                             xmlExists: xml,
                                             datExists: dat,
-                                            glbExists: glb
+                                            glbExists: glb,
+                                            tdtExists: tdt,
+                                            splatExists: splat
                                         };
 
                                         thisObject.tcs = await utilities.generateChecksums(objects, fileList);
@@ -3027,7 +3073,7 @@ function objectWebServer() {
                                     unzipper.on('extract', async function (_log) {
                                         const targetFolderPath = path.join(folderD, identityFolderName, 'target');
                                         const folderFiles = await fsProm.readdir(targetFolderPath);
-                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt'];
+                                        const targetTypes = ['xml', 'dat', 'glb', 'unitypackage', '3dt', 'jpg', 'splat'];
 
                                         let anyTargetsUploaded = false;
 
@@ -3046,16 +3092,38 @@ function objectWebServer() {
                                                 let deferred = false;
                                                 function finishFn(folderName) {
                                                     return async function() {
+                                                        // cleanup the target directory after uploading files
+                                                        let nestedTargetDirPath = path.join(folderD, identityFolderName, 'target', folderName);
+
                                                         try {
-                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', folderName));
-                                                        } catch (e) {
-                                                            console.warn('target zip already cleaned up', folderName);
+                                                            // Attempt to delete .DS_Store if it exists
+                                                            await fsProm.unlink(path.join(nestedTargetDirPath, '.DS_Store'));
+                                                        } catch (error) {
+                                                            // Ignore if .DS_Store doesn't exist; display other warnings
+                                                            if (error.code !== 'ENOENT') console.warn(error);
                                                         }
-                                                        // let newFolderFiles = fs.readdirSync(path.join(folderD, identityFolderName, 'target'));
-                                                        await fsProm.rename(
-                                                            path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
-                                                            path.join(folderD, identityFolderName, 'target', 'target.glb')
-                                                        );
+
+                                                        try {
+                                                            await fsProm.rmdir(nestedTargetDirPath);
+                                                        } catch (e) {
+                                                            console.warn('target zip already cleaned up', folderName, e);
+                                                        }
+
+                                                        try {
+                                                            await fsProm.rename(
+                                                                path.join(folderD, identityFolderName, 'target', 'authoringMesh.glb'),
+                                                                path.join(folderD, identityFolderName, 'target', 'target.glb')
+                                                            );
+                                                        } catch (e) {
+                                                            console.log('no authoringMesh.glb to rename to target.glb', e);
+                                                        }
+
+                                                        try {
+                                                            // Attempt to delete __MACOSX zip artifact, if it exists
+                                                            await fsProm.rmdir(path.join(folderD, identityFolderName, 'target', '__MACOSX'), { recursive: true });
+                                                        } catch (error) {
+                                                            if (error.code !== 'ENOENT') console.warn(error);
+                                                        }
                                                     };
                                                 }
                                                 const finish = finishFn(folderFile);
@@ -4605,7 +4673,7 @@ function setupControllers() {
     linkController.setup(objects, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, socketUpdater, engine);
     logicNodeController.setup(objects, globalVariables, objectsPath);
     nodeController.setup(objects, globalVariables, objectsPath, sceneGraph);
-    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors);
+    objectController.setup(objects, globalVariables, hardwareAPI, objectsPath, sceneGraph, objectLookup, activeHeartbeats, knownObjects, setAnchors, objectBeatSender);
     spatialController.setup(objects, globalVariables, hardwareAPI, sceneGraph);
 }
 

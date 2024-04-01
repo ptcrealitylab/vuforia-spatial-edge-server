@@ -4,6 +4,7 @@ const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 const {startSplatTask} = require('./object/SplatTask.js');
+const { beatPort } = require('../config.js');
 
 // Variables populated from server.js with setup()
 var objects = {};
@@ -26,6 +27,7 @@ let objectLookup;
 let activeHeartbeats;
 let knownObjects;
 let setAnchors;
+let objectBeatSender;
 
 const deleteObject = async function(objectID) {
     let object = utilities.getObject(objects, objectID);
@@ -220,11 +222,34 @@ const setMatrix = function(objectID, body, callback) {
 };
 
 /**
+ * Sets the renderMode of an object (e.g. 'mesh' or 'ai') and sends the new state to all clients via action message
+ * @param {string} objectID
+ * @param {Request.body} body
+ * @param {function} callback
+ */
+const setRenderMode = async (objectID, body, callback) => {
+    let object = utilities.getObject(objects, objectID);
+    if (!object) {
+        callback(404, {failure: true, error: 'Object ' + objectID + ' not found'});
+        return;
+    }
+    if (typeof body.renderMode === 'undefined') {
+        callback(400, {failure: true, error: `Bad request: no renderMode specified in body`});
+    }
+
+    object.renderMode = body.renderMode;
+
+    await utilities.writeObjectToFile(objects, objectID, globalVariables.saveToDisk);
+    utilities.actionSender({reloadObject: {object: objectID}, lastEditor: body.lastEditor});
+    callback(200, {success: true});
+};
+
+/**
  * Upload an image file to the object's metadata folder.
  * The image is stored in a form, which can be parsed and written to the filesystem.
  * @param {string} objectID
  * @param {express.Request} req
- * @param {express.Response} res
+ * @param {function} callback
  */
 const memoryUpload = async function(objectID, req, callback) {
     if (!objects.hasOwnProperty(objectID)) {
@@ -319,11 +344,7 @@ const zipBackup = async function(objectId, req, res) {
         return;
     }
 
-    res.writeHead(200, {
-        'Content-Type': 'application/zip',
-        'Content-disposition': 'attachment; filename=' + objectId + '.zip'
-    });
-
+    res.attachment(objectId + '.zip').type('zip');
     // this require needs to be placed here for mobile compatibility
     var archiver = require('archiver');
     var zip = archiver('zip');
@@ -392,6 +413,205 @@ const setFrameSharingEnabled = function (objectKey, shouldBeEnabled, callback) {
     console.warn('TODO: implement frame sharing... need to set property and implement all side-effects / consequences');
 };
 
+/**
+ * Check whether a specific file within the object's .identity folder exists
+ * @param {string} objectId
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
+const checkFileExists = async (objectId, filePath) => {
+    let obj = utilities.getObject(objects, objectId);
+    if (!obj) {
+        return false;
+    }
+
+    // prevent upward traversal so this can't be used maliciously. Only allow certain characters, and prevent ../
+    // eslint-disable-next-line no-useless-escape
+    let isSafePath = /^[a-zA-Z0-9_.\-\/]+$/.test(filePath) && !/\.\.\//.test(filePath);
+    if (!isSafePath) {
+        return false;
+    }
+
+    let objectIdentityDir = path.join(objectsPath, obj.name, identityFolderName);
+    let absoluteFilePath = path.join(objectIdentityDir, filePath);
+    return await fileExists(absoluteFilePath);
+};
+
+/**
+ * Check the status of all the possible target files that an object might have
+ * @param {string} objectId
+ * @returns {Promise<{glbExists: boolean, xmlExists: boolean, datExists: boolean, jpgExists: boolean, _3dtExists: boolean, splatExists: boolean}>}
+ */
+const checkTargetFiles = async (objectId) => {
+    let [
+        glbExists, xmlExists, datExists,
+        jpgExists, _3dtExists, splatExists
+    ] = await Promise.all([
+        checkFileExists(objectId, '/target/target.glb'),
+        checkFileExists(objectId, '/target/target.xml'),
+        checkFileExists(objectId, '/target/target.dat'),
+        checkFileExists(objectId, '/target/target.jpg'),
+        checkFileExists(objectId, '/target/target.3dt'),
+        checkFileExists(objectId, '/target/target.splat'),
+    ]);
+    return {
+        glbExists,
+        xmlExists,
+        datExists,
+        jpgExists,
+        _3dtExists,
+        splatExists
+    };
+};
+
+/**
+ * Uploads a target file to an object.
+ * Imitates much of the logic of the content/:id route in a simpler way.
+ * Note: not supported by Cloud Proxy as of 3-4-2024, use content/:id instead.
+ * @param {string} objectName
+ * @param {Request} req
+ * @param {Response} res
+ * @returns {Promise<void>}
+ */
+const uploadTarget = async (objectName, req, res) => {
+    let thisObjectId = utilities.readObject(objectLookup, objectName);
+    let object = utilities.getObject(objects, thisObjectId);
+    if (!object) {
+        res.status(404).send('object ' + thisObjectId + ' not found');
+        return;
+    }
+
+    // first upload to a temporary directory (tmp/) before moving it to the target directory (target/)
+    let uploadDir = path.join(objectsPath, objectName, identityFolderName, 'tmp');
+    await mkdirIfNotExists(uploadDir);
+    let targetDir = path.join(objectsPath, objectName,  identityFolderName, 'target');
+    await mkdirIfNotExists(targetDir);
+
+    let form = new formidable.IncomingForm({
+        uploadDir: uploadDir,
+        keepExtensions: true
+    });
+
+    form.on('error', function (err) {
+        res.status(500).send(err);
+    });
+
+    let fileInfoList = [];
+
+    form.on('fileBegin', (name, file) => {
+        if (!file.name) {
+            file.name = file.newFilename; // some versions of formidable use .name, others use .newFilename
+        }
+        fileInfoList.push({
+            name: file.name,
+            completed: false
+        });
+        file.path = path.join(form.uploadDir, file.name);
+    });
+
+    form.parse(req);
+
+    /**
+     * Returns the file extension (portion after the last dot) of the given filename.
+     * If a file name starts with a dot, returns an empty string.
+     *
+     * @author VisioN @ StackOverflow
+     * @param {string} fileName - The name of the file, such as foo.zip
+     * @return {string} The lowercase extension of the file, such has "zip"
+     */
+    function getFileExtension(fileName) {
+        return fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2).toLowerCase();
+    }
+
+    /**
+     * Returns a promise that can be executed later to move the uploaded file from the tmp dir to the target dir
+     * @param {{name: string, completed: boolean}} fileInfo
+     * @returns {Promise<unknown>}
+     */
+    function makeFileProcessPromise(fileInfo) {
+        return new Promise((resolve, reject) => {
+            (async () => {
+                if (!await fileExists(path.join(form.uploadDir, fileInfo.name))) { // Ignore files that haven't finished uploading
+                    reject(`File doesn't exist at ${path.join(form.uploadDir, fileInfo.name)}`);
+                    return;
+                }
+                fileInfo.completed = true; // File has downloaded
+                let fileExtension = getFileExtension(fileInfo.name);
+
+                // only accept these predetermined file types
+                if (!(fileExtension === 'jpg' || fileExtension === 'dat' ||
+                    fileExtension === 'xml' || fileExtension === 'glb' ||
+                    fileExtension === '3dt'  || fileExtension === 'splat')) {
+                    reject(`File extension not acceptable for targetUpload (${fileExtension})`);
+                    return;
+                }
+
+                let originalFilepath = path.join(uploadDir, fileInfo.name);
+                let newFilepath = path.join(targetDir, `target.${fileExtension}`);
+
+                try {
+                    await fsProm.rename(originalFilepath, newFilepath);
+                    resolve();
+                } catch (e) {
+                    reject(`error renaming ${originalFilepath} to ${newFilepath}`);
+                }
+            })();
+        });
+    }
+
+    form.on('end', async () => {
+        fileInfoList = fileInfoList.filter(fileInfo => !fileInfo.completed); // Don't repeat processing for completed files
+
+        let filePromises = [];
+        fileInfoList.forEach(fileInfo => {
+            filePromises.push(makeFileProcessPromise(fileInfo));
+        });
+
+        try {
+            await Promise.all(filePromises);
+            // Code continues when all promises are resolved (when all files have been moved from tmp/ to target/)
+        } catch (error) {
+            console.warn(error);
+            // res.status(500).send('error')
+        }
+
+        let jpgPath = path.join(targetDir, 'target.jpg');
+        let datPath = path.join(targetDir, 'target.dat');
+        let xmlPath = path.join(targetDir, 'target.xml');
+        let glbPath = path.join(targetDir, 'target.glb');
+        let tdtPath = path.join(targetDir, 'target.3dt');
+        let splatPath = path.join(targetDir, 'target.splat');
+        let fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
+
+        let sendObject = {
+            id: thisObjectId,
+            name: objectName,
+            // initialized: (jpg && xml),
+            jpgExists: await fileExists(jpgPath),
+            xmlExists: await fileExists(xmlPath),
+            datExists: await fileExists(datPath),
+            glbExists: await fileExists(glbPath),
+            tdtExists: await fileExists(tdtPath),
+            splatExists: await fileExists(splatPath)
+        };
+
+        object.tcs = utilities.generateChecksums(objects, fileList);
+        await utilities.writeObjectToFile(objects, thisObjectId, globalVariables.saveToDisk);
+        await setAnchors();
+
+        await objectBeatSender(beatPort, thisObjectId, objects[thisObjectId].ip, true);
+
+        // delete the tmp folder and any files within it
+        await utilities.rmdirIfExists(uploadDir);
+
+        try {
+            res.status(200).json(sendObject);
+        } catch (e) {
+            console.error('unable to send res', e);
+        }
+    });
+};
+
 const getObject = function (objectID, excludeUnpinned) {
     let fullObject = utilities.getObject(objects, objectID);
     if (!fullObject) { return null; }
@@ -416,7 +636,7 @@ const getObject = function (objectID, excludeUnpinned) {
 };
 
 const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, sceneGraph_,
-    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_) {
+    objectLookup_, activeHeartbeats_, knownObjects_, setAnchors_, objectBeatSender_) {
     objects = objects_;
     globalVariables = globalVariables_;
     hardwareAPI = hardwareAPI_;
@@ -426,6 +646,7 @@ const setup = function (objects_, globalVariables_, hardwareAPI_, objectsPath_, 
     activeHeartbeats = activeHeartbeats_;
     knownObjects = knownObjects_;
     setAnchors = setAnchors_;
+    objectBeatSender = objectBeatSender_;
 };
 
 module.exports = {
@@ -435,6 +656,7 @@ module.exports = {
     saveCommit: saveCommit,
     resetToLastCommit: resetToLastCommit,
     setMatrix: setMatrix,
+    setRenderMode: setRenderMode,
     memoryUpload: memoryUpload,
     deactivate: deactivate,
     activate: activate,
@@ -442,6 +664,9 @@ module.exports = {
     zipBackup: zipBackup,
     generateXml: generateXml,
     setFrameSharingEnabled: setFrameSharingEnabled,
+    checkFileExists: checkFileExists,
+    checkTargetFiles: checkTargetFiles,
+    uploadTarget: uploadTarget,
     getObject: getObject,
     setup: setup,
     requestGaussianSplatting,
