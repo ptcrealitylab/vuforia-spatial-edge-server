@@ -10,7 +10,7 @@
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
     "directory-tree": "^3.5.1",
-    "express": "^4.18.3",
+    "express": "^4.19.2",
     "express-handlebars": "^5.3.5",
     "formidable": "^2.1.1",
     "ip": "^2.0.1",
@@ -22,9 +22,9 @@
     "node-fetch": "^2.7.0",
     "node-persist": "^2.1.0",
     "request": "^2.*",
-    "simple-git": "^3.23.0",
+    "simple-git": "^3.24.0",
     "toolsocket": "github:ptcrealitylab/toolsocket",
-    "winston": "^3.12.0",
+    "winston": "^3.13.0",
     "ws": "^8.15.1",
     "xml2js": "^0.6.2",
     "yargs": "^17.7.2"
@@ -40,7 +40,7 @@
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
     "mock-fs": "^5.2.0",
-    "puppeteer": "^22.6.0"
+    "puppeteer": "^22.6.1"
   },
   "scripts": {
     "test": "npm run lint && jest --forceExit --runInBand",
