@@ -28,9 +28,11 @@ function onChildMessage(message) {
     }
 }
 
-function onChildCrash() {
-    console.info('server.js has exited unexpectedly, restarting');
-    child = fork(program, argv, options);
+function onChildCrash(exitCode) {
+    if (exitCode !== 0) {
+        console.info('server.js has exited unexpectedly, restarting', exitCode);
+        child = fork(program, argv, options);
+    }
 }
 
 startNewChild();

@@ -569,13 +569,17 @@ const setupDeveloperRoutes = function() {
             res.status(statusCode).send(responseContents);
         });
     });
-    router.get('/:objectName/zipBackup/', function (req, res) {
+
+    function zipBackup(req, res) {
         if (!utilities.isValidId(req.params.objectName)) {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
             return;
         }
         objectController.zipBackup(req.params.objectName, req, res);
-    });
+    }
+    router.get('/:objectName/zipBackup.zip', zipBackup);
+    router.get('/:objectName/zipBackup/', zipBackup);
+
     router.post('/:objectName/generateXml/', function (req, res) {
         if (!utilities.isValidId(req.params.objectName)) {
             res.status(400).send('Invalid object name. Must be alphanumeric.');
