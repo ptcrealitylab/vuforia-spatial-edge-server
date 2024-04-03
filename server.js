@@ -2155,7 +2155,7 @@ function objectWebServer() {
             res.send(webFrontend.generateHtmlForHardwareInterface(req.params.interfaceName, hardwareInterfaceModules, version, services.ips, serverPort, globalVariables.useHTTPS, configHtmlPath));
         });
 
-        // Proxies requests to toolboxedge.net, for CORS video playback
+        // Proxies requests to spatial.ptc.io, for CORS video playback
         const proxyRequestHandler = require('./libraries/serverHelpers/proxyRequestHandler.js');
         webServer.get('/proxy/*', proxyRequestHandler);
 
