@@ -107,6 +107,19 @@ const globalVariables = {
 
 exports.useHTTPS = globalVariables.useHTTPS;
 
+let forceGCInterval = null;
+if (global.gc) {
+    setInterval(() => {
+        const usage = process.memoryUsage();
+        // Total memory usage less than 100 MB
+        if (!usage || usage.rss < 100 * 1024 * 1024) {
+            return;
+        }
+
+        global.gc();
+    }, 7919); // arbitrary prime number delay to distribute around the gc hitches
+}
+
 // ports used to define the server behaviour
 /*
  The server uses port 8080 to communicate with other servers and with the Reality Editor.
@@ -1178,6 +1191,9 @@ async function exit() {
         console.warn('unable to close udpServer', e);
     }
     clearInterval(socketUpdaterInterval);
+    if (forceGCInterval) {
+        clearInterval(forceGCInterval);
+    }
     staleObjectCleaner.clearCleanupIntervals();
     humanPoseFuser.stop();
     for (const splatTask of Object.values(splatTasks)) {
