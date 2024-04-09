@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-/* global workerId */
+/* global workerId, ToolSocket */
 
 /**
  * @fileOverview

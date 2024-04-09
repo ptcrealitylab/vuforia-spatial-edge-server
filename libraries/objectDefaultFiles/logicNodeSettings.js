@@ -1,3 +1,5 @@
+/* global ToolSocket */
+
 /**
  * This is a much-simplified version of object.js intended to be included by the settings index.html
  * of each logic block, so that the html can communicate with the server backend without importing all of object.js
