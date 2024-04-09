@@ -1,3 +1,5 @@
+/* global ToolSocket */
+
 /**
  * @fileOverview
  * This is a library that should be included in hardware interface's config.html pages in order

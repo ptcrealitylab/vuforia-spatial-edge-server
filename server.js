@@ -3401,7 +3401,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
             });
         });
     }
-}
+};
 
 /**
  * Helper function to trigger the addReadListeners for the data of a particular node (data value, not publicData)
@@ -3427,7 +3427,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
             }));
         });
     });
-}
+};
 
 /**
  * Send updates of objects/frames/nodes to all editors/clients subscribed to 'subscribe/realityEditorUpdates'
@@ -3481,7 +3481,7 @@ function socketServer() {
                     subscriptions.socket = socket;
                     realityEditorSocketSubscriptions.push(subscriptions);
                 }
-                
+
                 const subscriptions = realityEditorSocketSubscriptions.find(s => s.socket === socket);
 
                 let isNew = true;
@@ -3601,7 +3601,7 @@ function socketServer() {
                 }
 
                 const subscriptions = realityEditorBlockSocketSubscriptions.find(s => s.socket === socket);
-                
+
                 let isNew = true;
                 subscriptions.forEach(subscription => {
                     if (msgContent.object === subscription.object) {
@@ -3917,7 +3917,7 @@ function socketServer() {
         socket.on('/subscribe/cameraMatrix', function (msg) {
             const msgContent = JSON.parse(msg);
             const subscription = {editorId: msgContent.editorId, socket: socket};
-            realityEditorCameraMatrixSocketSubscriptions.push(subscription)
+            realityEditorCameraMatrixSocketSubscriptions.push(subscription);
         });
 
         // remote operators can broadcast their camera position to all others using this method
