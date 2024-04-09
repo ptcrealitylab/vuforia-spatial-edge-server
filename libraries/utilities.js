@@ -78,15 +78,12 @@ let socketReferences = {
     realityEditorUpdateSocketSubscriptions: null
 };
 
-let ioReference = null;
-
 let callbacks = {
     triggerUDPCallbacks: null
 };
 
-exports.setup = function(_socketReferences, _ioReference, _callbacks) {
+exports.setup = function(_socketReferences, _callbacks) {
     socketReferences = _socketReferences;
-    ioReference = _ioReference;
     callbacks = _callbacks;
 };
 
