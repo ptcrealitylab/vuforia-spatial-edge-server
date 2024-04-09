@@ -3387,10 +3387,10 @@ const socketHandler = {};
 socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid) {
     const node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
-        realityEditorSocketSubscriptions.forEach(subscriptions => {
-            subscriptions.forEach(subscription => {
+        realityEditorSocketSubscriptions.forEach(entry => {
+            entry.subscriptions.forEach(subscription => {
                 if (objectKey === subscription.object && frameKey === subscription.frame) {
-                    subscriptions.socket.emit('object/publicData', JSON.stringify({
+                    entry.socket.emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,
                         node: nodeKey,
@@ -3414,11 +3414,11 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
     let node = getNode(objectKey, frameKey, nodeKey);
     if (!node) return;
 
-    realityEditorSocketSubscriptions.forEach(subscriptions => {
-        subscriptions.filter(subscription => {
+    realityEditorSocketSubscriptions.forEach(entry => {
+        entry.subscriptions.filter(subscription => {
             return subscription.object === objectKey && subscription.frame === frameKey;
         }).forEach(_info => {
-            subscriptions.socket.emit('object', JSON.stringify({
+            entry.socket.emit('object', JSON.stringify({
                 object: objectKey,
                 frame: frameKey,
                 node: nodeKey,
@@ -3441,15 +3441,15 @@ socketHandler.sendUpdateToAllSubscribers = function (batchedUpdates) {
     let msgContent = {};
     msgContent.batchedUpdates = batchedUpdates;
 
-    for (const subscriptions of realityEditorUpdateSocketSubscriptions) {
-        subscriptions.forEach(subscription => {
+    for (const entry of realityEditorUpdateSocketSubscriptions) {
+        entry.subscriptions.forEach(subscription => {
             if (senderId === subscription.editorId) {
                 // Don't send updates to the editor that triggered it
                 return;
             }
 
-            if (subscriptions.socket.connected) {
-                subscriptions.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
+            if (entry.socket.connected) {
+                entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
             }
         });
     }
@@ -3476,23 +3476,25 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorSocketSubscriptions.some(s => s.socket === socket)) {
-                    const subscriptions = [];
-                    subscriptions.socket = socket;
-                    realityEditorSocketSubscriptions.push(subscriptions);
+                if (!realityEditorSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    }
+                    realityEditorSocketSubscriptions.push(newEntry);
                 }
 
-                const subscriptions = realityEditorSocketSubscriptions.find(s => s.socket === socket);
+                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
 
                 let isNew = true;
-                subscriptions.forEach(subscription => {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    subscriptions.push({
+                    entry.subscriptions.push({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         protocol: thisProtocol
@@ -3544,23 +3546,25 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorSocketSubscriptions.some(s => s.socket === socket)) {
-                    const subscriptions = [];
-                    subscriptions.socket = socket;
-                    realityEditorSocketSubscriptions.push(subscriptions);
+                if (!realityEditorSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    };
+                    realityEditorSocketSubscriptions.push(newEntry);
                 }
 
-                const subscriptions = realityEditorSocketSubscriptions.find(s => s.socket === socket);
+                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
 
                 let isNew = true;
-                subscriptions.forEach(subscription => {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    subscriptions.push({
+                    entry.subscriptions.push({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         protocol: thisProtocol
@@ -3594,23 +3598,25 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorBlockSocketSubscriptions.some(s => s.socket === socket)) {
-                    const subscriptions = [];
-                    subscriptions.socket = socket;
-                    realityEditorBlockSocketSubscriptions.push(subscriptions);
+                if (!realityEditorBlockSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    }
+                    realityEditorBlockSocketSubscriptions.push(newEntry);
                 }
 
-                const subscriptions = realityEditorBlockSocketSubscriptions.find(s => s.socket === socket);
+                const entry = realityEditorBlockSocketSubscriptions.find(entry => entry.socket === socket);
 
                 let isNew = true;
-                subscriptions.forEach(subscription => {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.object === subscription.object) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    subscriptions.push({object: msgContent.object});
+                    entry.subscriptions.push({object: msgContent.object});
                 }
             }
 
@@ -3773,22 +3779,24 @@ function socketServer() {
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
             const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            if (!realityEditorUpdateSocketSubscriptions.some(s => s.socket === socket)) {
-                const subscriptions = [];
-                subscriptions.socket = socket;
-                realityEditorUpdateSocketSubscriptions.push(subscriptions);
+            if (!realityEditorUpdateSocketSubscriptions.some(entry => entry.socket === socket)) {
+                const newEntry = {
+                    subscriptions: [],
+                    socket: socket
+                }
+                realityEditorUpdateSocketSubscriptions.push(newEntry);
             }
 
-            const subscriptions = realityEditorUpdateSocketSubscriptions.find(s => s.socket === socket);
+            const entry = realityEditorUpdateSocketSubscriptions.find(entry => entry.socket === socket);
 
             let isNew = true;
-            subscriptions.forEach(subscription => {
+            entry.subscriptions.forEach(subscription => {
                 if (msgContent.editorId === subscription.editorId) {
                     isNew = false;
                 }
             });
             if (isNew) {
-                subscriptions.push({editorId: msgContent.editorId});
+                entry.subscriptions.push({editorId: msgContent.editorId});
             }
         });
 
@@ -3862,17 +3870,17 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             applyUpdate(msgContent);
 
-            for (const subscriptions of realityEditorUpdateSocketSubscriptions) {
-                if (!subscriptions) {
+            for (const entry of realityEditorUpdateSocketSubscriptions) {
+                if (!entry) {
                     continue;
                 }
-                subscriptions.forEach(subscription => {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
                     // Don't send updates to the editor that triggered it
                         return;
                     }
-                    if (subscriptions.socket.connected) {
-                        subscriptions.socket.emit('/update', JSON.stringify(msgContent));
+                    if (entry.socket.connected) {
+                        entry.socket.emit('/update', JSON.stringify(msgContent));
                     }
                 });
             }
@@ -3891,12 +3899,12 @@ function socketServer() {
                 applyUpdate(update);
             }
 
-            for (const subscriptions of realityEditorUpdateSocketSubscriptions) {
-                if (!subscriptions) {
+            for (const entry of realityEditorUpdateSocketSubscriptions) {
+                if (!entry) {
                     continue;
                 }
 
-                subscriptions.forEach((subscription) => {
+                entry.subscriptions.forEach((subscription) => {
                     if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
                         // Don't send updates to the editor that triggered it
                         return;
@@ -3905,8 +3913,8 @@ function socketServer() {
                         return; // properly retrieve the editorId from one of the batchedUpdates in case the overall message doesn't have it
                     }
 
-                    if (subscriptions.socket.connected) {
-                        subscriptions.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                    if (entry.socket.connected) {
+                        entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
                     }
                 });
             }
@@ -3925,13 +3933,13 @@ function socketServer() {
         socket.on('/cameraMatrix', function (msg) {
             const msgContent = JSON.parse(msg);
 
-            for (const subscription of realityEditorCameraMatrixSocketSubscriptions) {
-                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
+            for (const entry of realityEditorCameraMatrixSocketSubscriptions) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === entry.editorId) {
                     continue; // dont send updates to the editor that triggered it
                 }
 
-                if (subscription.socket.connected) {
-                    subscription.socket.emit('/cameraMatrix', JSON.stringify(msgContent));
+                if (entry.socket.connected) {
+                    entry.socket.emit('/cameraMatrix', JSON.stringify(msgContent));
                 }
             }
         });
@@ -3948,23 +3956,25 @@ function socketServer() {
         socket.on('/subscribe/objectUpdates', function (msg) {
             const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            if (!realityEditorObjectMatrixSocketSubscriptions.some(s => s.socket === socket)) {
-                const subscriptions = [];
-                subscriptions.socket = socket;
-                realityEditorObjectMatrixSocketSubscriptions.push(subscriptions);
+            if (!realityEditorObjectMatrixSocketSubscriptions.some(entry => entry.socket === socket)) {
+                const newEntry = {
+                    subscriptions: [],
+                    socket: socket
+                }
+                realityEditorObjectMatrixSocketSubscriptions.push(newEntry);
             }
 
-            const subscriptions = realityEditorObjectMatrixSocketSubscriptions.find(s => s.socket === socket);
+            const entry = realityEditorObjectMatrixSocketSubscriptions.find(s => s.socket === socket);
 
             let isNew = true;
-            subscriptions.forEach(subscription => {
+            entry.subscriptions.forEach(subscription => {
                 if (msgContent.editorId === subscription.editorId) {
                     isNew = false;
                 }
             });
 
             if (isNew) {
-                subscriptions.push({editorId: msgContent.editorId});
+                entry.subscriptions.push({editorId: msgContent.editorId});
             }
         });
 
@@ -3986,14 +3996,14 @@ function socketServer() {
                 sceneGraph.updateObjectWorldId(msgContent.objectKey, object.worldId);
             }
 
-            for (const subscriptions of realityEditorObjectMatrixSocketSubscriptions) {
-                subscriptions.forEach(subscription => {
+            for (const entry of realityEditorObjectMatrixSocketSubscriptions) {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.hasOwnProperty('editorId') && subscription && msgContent.editorId === subscription.editorId) {
                         // don't send updates to the editor that triggered it
                         return;
                     }
 
-                    if (subscriptions.socket.connected) {
+                    if (entry.socket.connected) {
                         const updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
@@ -4003,7 +4013,7 @@ function socketServer() {
                             updateResponse.editorId = msgContent.editorId;
                         }
 
-                        subscriptions.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        entry.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -4036,14 +4046,14 @@ function socketServer() {
 
             object.matrix = matrix;
 
-            for (const subscriptions of realityEditorObjectMatrixSocketSubscriptions) {
-                subscriptions.forEach(subscription => {
+            for (const entry of realityEditorObjectMatrixSocketSubscriptions) {
+                entry.subscriptions.forEach(subscription => {
                     if (msgContent.hasOwnProperty('editorId') && subscription && msgContent.editorId === subscription.editorId) {
                         // Don't send updates to the editor that triggered it
                         return;
                     }
 
-                    if (subscriptions.socket.connected) {
+                    if (entry.socket.connected) {
                         const updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
@@ -4053,7 +4063,7 @@ function socketServer() {
                             updateResponse.editorId = msgContent.editorId;
                         }
 
-                        subscriptions.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        entry.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -4135,29 +4145,29 @@ function socketServer() {
         });
 
         socket.on('disconnect', async function () {
-            const socketSubscriptions = realityEditorSocketSubscriptions.find(s => s.socket === socket);
-            if (socketSubscriptions) {
-                realityEditorSocketSubscriptions.splice(realityEditorSocketSubscriptions.indexOf(socketSubscriptions), 1);
+            const socketEntry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
+            if (socketEntry) {
+                realityEditorSocketSubscriptions.splice(realityEditorSocketSubscriptions.indexOf(socketEntry), 1);
             }
 
-            const blockSocketSubscriptions = realityEditorBlockSocketSubscriptions.find(s => s.socket === socket);
-            if (blockSocketSubscriptions) {
-                for (const subscription of blockSocketSubscriptions) {
+            const blockSocketEntry = realityEditorBlockSocketSubscriptions.find(entry => entry.socket === socket);
+            if (blockSocketEntry) {
+                for (const subscription of blockSocketEntry.subscriptions) {
                     await utilities.writeObjectToFile(objects, subscription.object, globalVariables.saveToDisk);
                     utilities.actionSender({reloadObject: {object: subscription.object}});
                 }
-                realityEditorBlockSocketSubscriptions.splice(realityEditorBlockSocketSubscriptions.indexOf(blockSocketSubscriptions), 1);
+                realityEditorBlockSocketSubscriptions.splice(realityEditorBlockSocketSubscriptions.indexOf(blockSocketEntry), 1);
             }
 
-            const objectMatrixSocketSubscriptions = realityEditorObjectMatrixSocketSubscriptions.find(s => s.socket === socket);
-            if (objectMatrixSocketSubscriptions) {
-                realityEditorObjectMatrixSocketSubscriptions.splice(realityEditorObjectMatrixSocketSubscriptions.indexOf(objectMatrixSocketSubscriptions), 1);
+            const objectMatrixSocketEntry = realityEditorObjectMatrixSocketSubscriptions.find(entry => entry.socket === socket);
+            if (objectMatrixSocketEntry) {
+                realityEditorObjectMatrixSocketSubscriptions.splice(realityEditorObjectMatrixSocketSubscriptions.indexOf(objectMatrixSocketEntry), 1);
             }
 
-            const updateSocketSubscriptions = realityEditorUpdateSocketSubscriptions.find(s => s.socket === socket);
-            if (updateSocketSubscriptions) {
+            const updateSocketEntry = realityEditorUpdateSocketSubscriptions.find(entry => entry.socket === socket);
+            if (updateSocketEntry) {
                 let keysToDelete = [];
-                updateSocketSubscriptions.forEach(subscription => {
+                updateSocketEntry.subscriptions.forEach(subscription => {
                     let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(subscription.editorId));
                     let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(subscription.editorId));
                     keysToDelete.push(avatarKeys);
@@ -4166,12 +4176,12 @@ function socketServer() {
 
                 await deleteObjects(keysToDelete.flat());
 
-                realityEditorUpdateSocketSubscriptions.splice(realityEditorUpdateSocketSubscriptions.indexOf(updateSocketSubscriptions), 1);
+                realityEditorUpdateSocketSubscriptions.splice(realityEditorUpdateSocketSubscriptions.indexOf(updateSocketEntry), 1);
             }
 
-            const cameraMatrixSocketSubscription = realityEditorCameraMatrixSocketSubscriptions.find(s => s.socket === socket);
-            if (cameraMatrixSocketSubscription) {
-                realityEditorCameraMatrixSocketSubscriptions.splice(realityEditorCameraMatrixSocketSubscriptions.indexOf(cameraMatrixSocketSubscription), 1);
+            const cameraMatrixSocketEntry = realityEditorCameraMatrixSocketSubscriptions.find(entry => entry.socket === socket);
+            if (cameraMatrixSocketEntry) {
+                realityEditorCameraMatrixSocketSubscriptions.splice(realityEditorCameraMatrixSocketSubscriptions.indexOf(cameraMatrixSocketEntry), 1);
             }
         });
     });
@@ -4204,14 +4214,14 @@ async function deleteObject(objectKey) {
 }
 
 function sendMessageToEditors(msgContent, sourceSocket) {
-    realityEditorSocketSubscriptions.forEach(subscriptions => {
-        subscriptions.forEach(subscription => {
-            if (sourceSocket && subscriptions.socket === sourceSocket && msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
+    realityEditorSocketSubscriptions.forEach(entry => {
+        entry.subscriptions.forEach(subscription => {
+            if (sourceSocket && entry.socket === sourceSocket && msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                 return; // don't trigger the read listener of the socket that originally wrote the data
             }
 
             if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
-                messageToSend(msgContent, subscriptions.socket);
+                messageToSend(msgContent, entry.socket);
             }
         });
     });
@@ -4307,8 +4317,8 @@ function messageToSend(msgContent, socket) {
 
 
 hardwareAPI.screenObjectServerCallBack(function (object, frame, node, touchOffsetX, touchOffsetY) {
-    for (const subscriptions of realityEditorSocketSubscriptions) {
-        subscriptions.socket.emit('/object/screenObject', JSON.stringify({
+    for (const entry of realityEditorSocketSubscriptions) {
+        entry.socket.emit('/object/screenObject', JSON.stringify({
             object: object,
             frame: frame,
             node: node,
