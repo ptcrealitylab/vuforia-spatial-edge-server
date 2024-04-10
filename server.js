@@ -648,7 +648,6 @@ const worldGraph = new WorldGraph(sceneGraph);
 const tempUuid = utilities.uuidTime().slice(1);   // UUID of current run of the server  (removed initial underscore)
 
 const HumanPoseFuser = require('./libraries/HumanPoseFuser');
-const {ChatCompletionsJsonResponseFormat} = require("@azure/openai");
 const humanPoseFuser = new HumanPoseFuser(objects, sceneGraph, objectLookup, services.ip, beatPort, tempUuid);
 
 /**********************************************************************************************************************
@@ -1948,11 +1947,6 @@ function objectWebServer() {
     webServer.get('/status', function(req, res) {
         res.sendStatus(200); // OK
     });
-
-    const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
-    const {endpoint, azureApiKey} = require("./config.js");
-    const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
-    const deploymentId = "gpt-35-turbo-16k";
     
     function parseCategory_old(result) {
         let category = parseInt(result);
@@ -1990,6 +1984,26 @@ function objectWebServer() {
             return 6;
         }
     }
+
+    const { ChatCompletionsJsonResponseFormat, OpenAIClient, AzureKeyCredential } = require("@azure/openai");
+    // const { endpoint, azureApiKey } = require("./config.js");
+    // const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
+    let client = null;
+    const deploymentId = "gpt-35-turbo-16k";
+    
+    webServer.post('/ai-start', async function(req, res) {
+        if (client !== null) {
+            let json = JSON.stringify({answer: 'success'})
+            res.status(200).send(json);
+            return;
+        }
+        let endpoint = req.body.endpoint;
+        let azureApiKey = req.body.azureApiKey;
+        client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
+        
+        let json = JSON.stringify({answer: 'success'})
+        res.status(200).send(json);
+    })
     
     webServer.post('/ai', async function(req, res) {
         let conversation = req.body.conversation;
@@ -2002,39 +2016,22 @@ function objectWebServer() {
         let chatAll = last_dialogue.communicationToolInfo.chatAll;
         delete last_dialogue.communicationToolInfo;
 
+        
         const category_messages = [
             { role: "system", content: "You are a helpful assistant." },
-            // { role: "user", content: "Give me a summary of the space." },
-            // { role: "assistant", content: "1" },
-            // { role: "user", content: "Show me all the chat tools" },
-            // { role: "assistant", content: "3" },
             ...Object.values(conversation)
         ];
-
         const messages = [
             { role: "system", content: "You are a helpful assistant." },
             ...Object.values(conversation)
         ];
-        // console.log(messages);
         
         
         let result = await client.getChatCompletions(deploymentId, category_messages);
-        // let result = await client.getChatCompletions(deploymentId, category_messages, {responseFormat: ChatCompletionsJsonResponseFormat});
-        // console.log(result);
-        // return;
-        
         let actualResult = result.choices[0].message.content;
         let actualCategory = parseCategory(actualResult);
         let json = null;
         
-        // console.log(actualResult);
-        console.log('actual category of the question: ' + actualCategory);
-        
-        // if (typeof actualCategory !== 'number') {
-        //     json = JSON.stringify({error: `Answer not the right type.`});
-        //     res.status(500).send(json);
-        //     return;
-        // }
         
         switch (actualCategory) {
             case 6:
@@ -2048,9 +2045,16 @@ function objectWebServer() {
             case 1:
                 last_dialogue.content = last_dialogue_original_content;
                 
+                let toolRegex = new RegExp("\\b[a-zA-Z0-9]{6}\\b", 'g');
+                let avatarRegex = new RegExp("\\b[a-zA-Z0-9]{6}\\b", 'g');
+                // todo Steve: use regex to regulate the prompt
+                //  Don't change the names starting with '_WORLD_' or '_AVATAR_' in your response
+                //  Don't change the names with the regular expression ${}, ${}
+                
                 let enhancedPrompt = [
                     ...messages,
-                    { role: "user", content: "Here's a log of events. Give me a concise summary. Use at most 6 sentences." },
+                    { role: "user", content: `Here's a log of events. In your response, give me a detailed report in three paragraphs at most. In the report, don't change the IDs satisfying the regular expressions ${toolRegex} and ${avatarRegex}. These IDs are linked to real objects and therefore you must keep these UUIDs unchanged.` },
+                    // { role: "user", content: `Here's a log of events. In your response, give me a detailed report in three paragraphs at most. In the report, don't change the IDs satisfying the regular expressions ${toolRegex} and ${avatarRegex}. Always respond with the Name and ID pair in the format Name:ID. It is paramount that you do not change the ID's as they are needed to identify the names.` },
                 ]
                 result = await client.getChatCompletions(deploymentId, enhancedPrompt);
                 actualResult = result.choices[0].message.content;
@@ -2096,7 +2100,6 @@ function objectWebServer() {
 
                 result = await client.getChatCompletions(deploymentId, messages);
                 actualResult = result.choices[0].message.content;
-                // console.log(actualResult);
                 let toolList = ["spatialDraw", "communication", "spatialVideo", "spatialAnalytics", "spatialMeasure", "onshapeTool"]; // todo Steve: to make it more generalized, add support to ignore upper/lower letters & correct spelling
                 let resultList = [];
                 for (let toolName of toolList) {
@@ -2110,27 +2113,12 @@ function objectWebServer() {
                     }
                     resultTools += `${resultList[i]}\n`;
                 }
-                // console.log(resultTools);
                 json = JSON.stringify({category: `${actualCategory}`, tools: `${resultTools}`});
                 res.status(200).send(json);
                 break;
             default:
                 break;
         }
-        
-        // let json = JSON.stringify({answer: `${actualCategory}`})
-        // res.status(200).send(json);
-
-        // console.log(result.choices[0].message.content);
-        // for (const choice of result.choices) {
-            // console.log(choice.message);
-        // }
-
-        // // res.status(200).send('edge server ai path got the message');
-        // // res.status(200).send(`${result.choices[0].message.content}`);
-        // let json = JSON.stringify({answer: `${result.choices[0].message.content}`})
-        // res.status(200).send(json);
-        // // res.status(200).json('');
     })
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
