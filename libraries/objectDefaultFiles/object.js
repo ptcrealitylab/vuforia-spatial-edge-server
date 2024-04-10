@@ -299,7 +299,7 @@
     /**
      * Helper function that tools can use to convert a path on the server to the correct server's URL,
      * @example input: '/object/test/uploadMediaFile'
-     *          output: 'https://toolboxedge.net/n/id/s/id/object/test/uploadMediaFile' on cloud server
+     *          output: 'https://spatial.ptc.io/n/id/s/id/object/test/uploadMediaFile' on cloud server
      *          output: 'http://192.168.0.25:8080/object/test/uploadMediaFile' on local server
      * @param {string} path
      * @returns {string}

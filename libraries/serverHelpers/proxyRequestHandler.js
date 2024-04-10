@@ -3,9 +3,9 @@ const https = require('https');
 const proxyRequestHandler = (req, res) => {
     const input = req.params[0];
     if (!input.includes('://')) {
-        const proxyURL = `https://toolboxedge.net/${req.params[0]}`;
+        const proxyURL = `https://spatial.ptc.io/${req.params[0]}`;
         const headers = req.headers;
-        headers.Host = "toolboxedge.net";
+        headers.Host = 'spatial.ptc.io';
         https.get(proxyURL, {headers}, proxyRes => {
             res.status(proxyRes.statusCode);
             for (let header in proxyRes.headers) {
