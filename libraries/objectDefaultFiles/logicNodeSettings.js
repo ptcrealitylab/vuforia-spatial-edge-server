@@ -1,3 +1,5 @@
+/* global ToolSocket */
+
 /**
  * This is a much-simplified version of object.js intended to be included by the settings index.html
  * of each logic block, so that the html can communicate with the server backend without importing all of object.js
@@ -243,10 +245,10 @@ function SpatialLogic() { // eslint-disable-line no-unused-vars
         }
     };
 
-    if (typeof io !== 'undefined') {
+    if (typeof ToolSocket !== 'undefined') {
         var _this = this;
 
-        this.ioObject = io.connect();
+        this.ioObject = new ToolSocket();
         this.oldValueList = {};
 
         this.addReadPublicDataListener = function (valueName, callback) {
