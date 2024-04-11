@@ -354,8 +354,12 @@ const http = httpServer.listen(serverPort, function () {
 });
 
 const ToolSocket = require('toolsocket');
-var io = new ToolSocket.Io.Server({server: http}); // Websocket library
+const io = new ToolSocket.Server({server: http}); // Websocket library
+io.addEventListener('listening', () => {
+    console.info(`ToolSocket server started`);
+});
 exports.io = io;
+
 var cors = require('cors');             // Library for HTTP Cross-Origin-Resource-Sharing
 var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
@@ -607,11 +611,11 @@ var objectLookup = {};
 // associated with this object. Once there is no more link the socket connection is deleted.
 var socketArray = {};     // all socket connections that are kept alive
 
-var realityEditorSocketArray = {};     // all socket connections that are kept alive
-var realityEditorBlockSocketArray = {};     // all socket connections that are kept alive
-var realityEditorUpdateSocketArray = {};    // all socket connections to keep UIs in sync (frame position, etc)
-var realityEditorCameraMatrixSocketArray = {};    // all socket connections to notify clients of each other's position
-var realityEditorObjectMatrixSocketArray = {};    // all socket connections to keep object world positions in sync
+var realityEditorSocketSubscriptions = [];     // all socket connections that are kept alive
+var realityEditorBlockSocketSubscriptions = [];     // all socket connections that are kept alive
+var realityEditorUpdateSocketSubscriptions = [];    // all socket connections to keep UIs in sync (frame position, etc)
+var realityEditorCameraMatrixSocketSubscriptions = [];    // all socket connections to notify clients of each other's position
+var realityEditorObjectMatrixSocketSubscriptions = [];    // all socket connections to keep object world positions in sync
 
 var activeHeartbeats = {}; // Prevents multiple recurring beats for the same object
 
@@ -665,7 +669,7 @@ const hardwareAPICallbacks = {
     data: function (objectKey, frameKey, nodeKey, data) {
         //these are the calls that come from the objects before they get processed by the object engine.
         // send the saved value before it is processed
-        sendMessagetoEditors({
+        sendMessageToEditors({
             object: objectKey,
             frame: frameKey,
             node: nodeKey,
@@ -685,7 +689,7 @@ hardwareAPI.setup(objects, objectLookup, knownObjects, socketArray, globalVariab
 const utilitiesCallbacks = {
     triggerUDPCallbacks: hardwareAPI.triggerUDPCallbacks
 };
-utilities.setup({realityEditorUpdateSocketArray}, io, utilitiesCallbacks);
+utilities.setup({realityEditorUpdateSocketSubscriptions}, utilitiesCallbacks);
 
 nodeUtilities.setup(objects, sceneGraph, knownObjects, socketArray, globalVariables, hardwareAPI, objectsPath, linkController);
 
@@ -1181,7 +1185,7 @@ async function exit() {
     syncInterval.stop();
     hardwareAPI.shutdown();
     await closeServer(http);
-    await closeServer(io.server.server);
+    await closeServer(io.server);
     sceneGraph.clearIntervals();
     await recorder.stop();
     clearActiveHeartbeats();
@@ -3567,15 +3571,15 @@ async function createObjectFromTarget(folderVar) {
  * @desc Check for incoming MSG from other objects or the User. Make changes to the objectValues if changes occur.
  **/
 
-var socketHandler = {};
+const socketHandler = {};
 
 socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, nodeKey, sessionUuid) {
-    var node = getNode(objectKey, frameKey, nodeKey);
+    const node = getNode(objectKey, frameKey, nodeKey);
     if (node) {
-        for (var thisEditor in realityEditorSocketArray) {
-            realityEditorSocketArray[thisEditor].forEach((thisObj) => {
-                if (objectKey === thisObj.object && frameKey === thisObj.frame) {
-                    io.sockets.connected[thisEditor].emit('object/publicData', JSON.stringify({
+        realityEditorSocketSubscriptions.forEach(entry => {
+            entry.subscriptions.forEach(subscription => {
+                if (objectKey === subscription.object && frameKey === subscription.frame) {
+                    entry.socket.emit('object/publicData', JSON.stringify({
                         object: objectKey,
                         frame: frameKey,
                         node: nodeKey,
@@ -3584,7 +3588,7 @@ socketHandler.sendPublicDataToAllSubscribers = function (objectKey, frameKey, no
                     }));
                 }
             });
-        }
+        });
     }
 };
 
@@ -3599,12 +3603,11 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
     let node = getNode(objectKey, frameKey, nodeKey);
     if (!node) return;
 
-    for (let socketId in realityEditorSocketArray) {
-        let subscriptionInfo = realityEditorSocketArray[socketId];
-        subscriptionInfo.filter(info => {
-            return info.object === objectKey && info.frame === frameKey;
+    realityEditorSocketSubscriptions.forEach(entry => {
+        entry.subscriptions.filter(subscription => {
+            return subscription.object === objectKey && subscription.frame === frameKey;
         }).forEach(_info => {
-            io.sockets.connected[socketId].emit('object', JSON.stringify({
+            entry.socket.emit('object', JSON.stringify({
                 object: objectKey,
                 frame: frameKey,
                 node: nodeKey,
@@ -3612,7 +3615,7 @@ socketHandler.sendDataToAllSubscribers = function (objectKey, frameKey, nodeKey,
                 sessionUuid: sessionUuid
             }));
         });
-    }
+    });
 };
 
 /**
@@ -3627,16 +3630,15 @@ socketHandler.sendUpdateToAllSubscribers = function (batchedUpdates) {
     let msgContent = {};
     msgContent.batchedUpdates = batchedUpdates;
 
-    for (const socketId in realityEditorUpdateSocketArray) {
-        realityEditorUpdateSocketArray[socketId].forEach((sub) => {
-            if (senderId === sub.editorId) {
+    for (const entry of realityEditorUpdateSocketSubscriptions) {
+        entry.subscriptions.forEach(subscription => {
+            if (senderId === subscription.editorId) {
                 // Don't send updates to the editor that triggered it
                 return;
             }
 
-            let thisSocket = io.sockets.connected[socketId];
-            if (thisSocket) {
-                thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+            if (entry.socket.connected) {
+                entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
             }
         });
     }
@@ -3663,17 +3665,25 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
+                if (!realityEditorSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    }
+                    realityEditorSocketSubscriptions.push(newEntry);
+                }
+
+                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
 
                 let isNew = true;
-                realityEditorSocketArray[socket.id].forEach((thisObj) => {
-                    if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    realityEditorSocketArray[socket.id].push({
+                    entry.subscriptions.push({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         protocol: thisProtocol
@@ -3696,14 +3706,14 @@ function socketServer() {
                     var nodeName = frame.nodes[key].name;
                     publicData[nodeName] = frame.nodes[key].publicData;
 
-                    io.sockets.connected[socket.id].emit('object', JSON.stringify({
+                    socket.emit('object', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
                         data: frame.nodes[key].data
                     }));
 
-                    io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                    socket.emit('object/publicData', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
@@ -3725,17 +3735,25 @@ function socketServer() {
             }
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorSocketArray[socket.id]) realityEditorSocketArray[socket.id] = [];
+                if (!realityEditorSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    };
+                    realityEditorSocketSubscriptions.push(newEntry);
+                }
+
+                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
 
                 let isNew = true;
-                realityEditorSocketArray[socket.id].forEach((thisObj) => {
-                    if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    realityEditorSocketArray[socket.id].push({
+                    entry.subscriptions.push({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         protocol: thisProtocol
@@ -3753,7 +3771,7 @@ function socketServer() {
                     // it is more efficiant to call individual public data per node.
                     //publicData[frame.nodes[key].name] = frame.nodes[key].publicData;
 
-                    io.sockets.connected[socket.id].emit('object/publicData', JSON.stringify({
+                    socket.emit('object/publicData', JSON.stringify({
                         object: msgContent.object,
                         frame: msgContent.frame,
                         node: key,
@@ -3769,16 +3787,25 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (doesObjectExist(msgContent.object)) {
-                if (!realityEditorBlockSocketArray[socket.id])  realityEditorBlockSocketArray[socket.id] = [];
+                if (!realityEditorBlockSocketSubscriptions.some(entry => entry.socket === socket)) {
+                    const newEntry = {
+                        subscriptions: [],
+                        socket: socket
+                    }
+                    realityEditorBlockSocketSubscriptions.push(newEntry);
+                }
+
+                const entry = realityEditorBlockSocketSubscriptions.find(entry => entry.socket === socket);
+
                 let isNew = true;
-                realityEditorBlockSocketArray[socket.id].forEach((thisObj) => {
-                    if (msgContent.object === thisObj.object) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.object === subscription.object) {
                         isNew = false;
                     }
                 });
 
                 if (isNew) {
-                    realityEditorBlockSocketArray[socket.id].push({object: msgContent.object});
+                    entry.subscriptions.push({object: msgContent.object});
                 }
             }
 
@@ -3793,7 +3820,7 @@ function socketServer() {
             }
 
             // todo for each
-            io.sockets.connected[socket.id].emit('block', JSON.stringify({
+            socket.emit('block', JSON.stringify({
                 object: msgContent.object,
                 frame: msgContent.frame,
                 node: msgContent.node,
@@ -3810,8 +3837,8 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (msgContent.interfaceName) {
                 hardwareAPI.addSettingsCallback(msgContent.interfaceName, function (interfaceName, currentSettings) {
-                    if (io.sockets.connected[socket.id]) {
-                        io.sockets.connected[socket.id].emit('interfaceSettings', JSON.stringify({
+                    if (socket.connected) {
+                        socket.emit('interfaceSettings', JSON.stringify({
                             interfaceName: interfaceName,
                             currentSettings: currentSettings
                         }));
@@ -3829,12 +3856,12 @@ function socketServer() {
             if (msgContent !== null) {
                 hardwareAPI.readCall(msgContent.object, msgContent.frame, msgContent.node, msgContent.data);
 
-                sendMessagetoEditors({
+                sendMessageToEditors({
                     object: msgContent.object,
                     frame: msgContent.frame,
                     node: msgContent.node,
                     data: msgContent.data
-                }, socket.id);
+                }, socket);
             }
         });
 
@@ -3930,7 +3957,7 @@ function socketServer() {
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            messagetoSend(msgContent, socket.id);
+            messageToSend(msgContent, socket);
         });
 
         socket.on('/object/screenObject', function (_msg) {
@@ -3939,17 +3966,26 @@ function socketServer() {
         });
 
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
-            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
-            if (!realityEditorUpdateSocketArray[socket.id]) realityEditorUpdateSocketArray[socket.id] = [];
+            if (!realityEditorUpdateSocketSubscriptions.some(entry => entry.socket === socket)) {
+                const newEntry = {
+                    subscriptions: [],
+                    socket: socket
+                }
+                realityEditorUpdateSocketSubscriptions.push(newEntry);
+            }
+
+            const entry = realityEditorUpdateSocketSubscriptions.find(entry => entry.socket === socket);
+
             let isNew = true;
-            realityEditorUpdateSocketArray[socket.id].forEach((thisObj) => {
-                if (msgContent.editorId === thisObj.editorId) {
+            entry.subscriptions.forEach(subscription => {
+                if (msgContent.editorId === subscription.editorId) {
                     isNew = false;
                 }
             });
             if (isNew) {
-                realityEditorUpdateSocketArray[socket.id].push({editorId: msgContent.editorId});
+                entry.subscriptions.push({editorId: msgContent.editorId});
             }
         });
 
@@ -4023,19 +4059,17 @@ function socketServer() {
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             applyUpdate(msgContent);
 
-            for (const socketId in realityEditorUpdateSocketArray) {
-                const subList = realityEditorUpdateSocketArray[socketId];
-                if (!subList) {
+            for (const entry of realityEditorUpdateSocketSubscriptions) {
+                if (!entry) {
                     continue;
                 }
-                subList.forEach((thisObj) => {
-                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === thisObj.editorId) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
                     // Don't send updates to the editor that triggered it
                         return;
                     }
-                    var thisSocket = io.sockets.connected[socketId];
-                    if (thisSocket) {
-                        thisSocket.emit('/update', JSON.stringify(msgContent));
+                    if (entry.socket.connected) {
+                        entry.socket.emit('/update', JSON.stringify(msgContent));
                     }
                 });
             }
@@ -4054,24 +4088,22 @@ function socketServer() {
                 applyUpdate(update);
             }
 
-            for (const socketId in realityEditorUpdateSocketArray) {
-                const subList = realityEditorUpdateSocketArray[socketId];
-                if (!subList) {
+            for (const entry of realityEditorUpdateSocketSubscriptions) {
+                if (!entry) {
                     continue;
                 }
 
-                subList.forEach((sub) => {
-                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === sub.editorId) {
+                entry.subscriptions.forEach((subscription) => {
+                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
                         // Don't send updates to the editor that triggered it
                         return;
                     }
-                    if (senderId && senderId === sub.editorId) {
+                    if (senderId && senderId === subscription.editorId) {
                         return; // properly retrieve the editorId from one of the batchedUpdates in case the overall message doesn't have it
                     }
 
-                    var thisSocket = io.sockets.connected[socketId];
-                    if (thisSocket) {
-                        thisSocket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                    if (entry.socket.connected) {
+                        entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
                     }
                 });
             }
@@ -4080,23 +4112,23 @@ function socketServer() {
         // remote operators can subscribe to all other remote operator's camera positions using this method
         // body should contain a unique "editorId" string identifying the client
         socket.on('/subscribe/cameraMatrix', function (msg) {
-            var msgContent = JSON.parse(msg);
-            realityEditorCameraMatrixSocketArray[socket.id] = {editorId: msgContent.editorId};
+            const msgContent = JSON.parse(msg);
+            const subscription = {editorId: msgContent.editorId, socket: socket};
+            realityEditorCameraMatrixSocketSubscriptions.push(subscription);
         });
 
         // remote operators can broadcast their camera position to all others using this method
         // body should contain the unique "editorId" of the client as well as its "cameraMatrix" (length 16 array)
         socket.on('/cameraMatrix', function (msg) {
-            var msgContent = JSON.parse(msg);
+            const msgContent = JSON.parse(msg);
 
-            for (const socketId in realityEditorCameraMatrixSocketArray) {
-                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === realityEditorCameraMatrixSocketArray[socketId].editorId) {
+            for (const entry of realityEditorCameraMatrixSocketSubscriptions) {
+                if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === entry.editorId) {
                     continue; // dont send updates to the editor that triggered it
                 }
 
-                var thisSocket = io.sockets.connected[socketId];
-                if (thisSocket) {
-                    thisSocket.emit('/cameraMatrix', JSON.stringify(msgContent));
+                if (entry.socket.connected) {
+                    entry.socket.emit('/cameraMatrix', JSON.stringify(msgContent));
                 }
             }
         });
@@ -4111,18 +4143,27 @@ function socketServer() {
         });
 
         socket.on('/subscribe/objectUpdates', function (msg) {
-            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            if (!realityEditorObjectMatrixSocketArray[socket.id]) realityEditorObjectMatrixSocketArray[socket.id] = [];
+            const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+
+            if (!realityEditorObjectMatrixSocketSubscriptions.some(entry => entry.socket === socket)) {
+                const newEntry = {
+                    subscriptions: [],
+                    socket: socket
+                }
+                realityEditorObjectMatrixSocketSubscriptions.push(newEntry);
+            }
+
+            const entry = realityEditorObjectMatrixSocketSubscriptions.find(s => s.socket === socket);
 
             let isNew = true;
-            realityEditorObjectMatrixSocketArray[socket.id].forEach((thisObj) => {
-                if (msgContent.editorId === thisObj.editorId) {
+            entry.subscriptions.forEach(subscription => {
+                if (msgContent.editorId === subscription.editorId) {
                     isNew = false;
                 }
             });
 
             if (isNew) {
-                realityEditorObjectMatrixSocketArray[socket.id].push({editorId: msgContent.editorId});
+                entry.subscriptions.push({editorId: msgContent.editorId});
             }
         });
 
@@ -4144,16 +4185,15 @@ function socketServer() {
                 sceneGraph.updateObjectWorldId(msgContent.objectKey, object.worldId);
             }
 
-            for (var socketId in realityEditorObjectMatrixSocketArray) {
-                realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
-                    if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
+            for (const entry of realityEditorObjectMatrixSocketSubscriptions) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.hasOwnProperty('editorId') && subscription && msgContent.editorId === subscription.editorId) {
                         // don't send updates to the editor that triggered it
                         return;
                     }
 
-                    var thisSocket = io.sockets.connected[socketId];
-                    if (thisSocket) {
-                        var updateResponse = {
+                    if (entry.socket.connected) {
+                        const updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
                             newValue: msgContent.matrix,
@@ -4162,7 +4202,7 @@ function socketServer() {
                             updateResponse.editorId = msgContent.editorId;
                         }
 
-                        thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        entry.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -4195,16 +4235,15 @@ function socketServer() {
 
             object.matrix = matrix;
 
-            for (var socketId in realityEditorObjectMatrixSocketArray) {
-                realityEditorObjectMatrixSocketArray[socketId].forEach((thisObj) => {
-                    if (msgContent.hasOwnProperty('editorId') && thisObj && msgContent.editorId === thisObj.editorId) {
+            for (const entry of realityEditorObjectMatrixSocketSubscriptions) {
+                entry.subscriptions.forEach(subscription => {
+                    if (msgContent.hasOwnProperty('editorId') && subscription && msgContent.editorId === subscription.editorId) {
                         // Don't send updates to the editor that triggered it
                         return;
                     }
 
-                    var thisSocket = io.sockets.connected[socketId];
-                    if (thisSocket) {
-                        var updateResponse = {
+                    if (entry.socket.connected) {
+                        const updateResponse = {
                             objectKey: msgContent.objectKey,
                             propertyPath: 'matrix',
                             newValue: object.matrix,
@@ -4213,7 +4252,7 @@ function socketServer() {
                             updateResponse.editorId = msgContent.editorId;
                         }
 
-                        thisSocket.emit('/update/object/matrix', JSON.stringify(updateResponse));
+                        entry.socket.emit('/update/object/matrix', JSON.stringify(updateResponse));
                     }
                 });
             }
@@ -4295,39 +4334,43 @@ function socketServer() {
         });
 
         socket.on('disconnect', async function () {
-            if (socket.id in realityEditorSocketArray) {
-                delete realityEditorSocketArray[socket.id];
+            const socketEntry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
+            if (socketEntry) {
+                realityEditorSocketSubscriptions.splice(realityEditorSocketSubscriptions.indexOf(socketEntry), 1);
             }
 
-            if (socket.id in realityEditorBlockSocketArray) {
-                for (const thisObj of realityEditorBlockSocketArray[socket.id]) {
-                    await utilities.writeObjectToFile(objects, thisObj.object, globalVariables.saveToDisk);
-                    utilities.actionSender({reloadObject: {object: thisObj.object}});
+            const blockSocketEntry = realityEditorBlockSocketSubscriptions.find(entry => entry.socket === socket);
+            if (blockSocketEntry) {
+                for (const subscription of blockSocketEntry.subscriptions) {
+                    await utilities.writeObjectToFile(objects, subscription.object, globalVariables.saveToDisk);
+                    utilities.actionSender({reloadObject: {object: subscription.object}});
                 }
-                delete realityEditorBlockSocketArray[socket.id];
+                realityEditorBlockSocketSubscriptions.splice(realityEditorBlockSocketSubscriptions.indexOf(blockSocketEntry), 1);
             }
 
-            if (socket.id in realityEditorObjectMatrixSocketArray) {
-                delete realityEditorObjectMatrixSocketArray[socket.id];
+            const objectMatrixSocketEntry = realityEditorObjectMatrixSocketSubscriptions.find(entry => entry.socket === socket);
+            if (objectMatrixSocketEntry) {
+                realityEditorObjectMatrixSocketSubscriptions.splice(realityEditorObjectMatrixSocketSubscriptions.indexOf(objectMatrixSocketEntry), 1);
             }
 
-            if (socket.id in realityEditorUpdateSocketArray) {
-
+            const updateSocketEntry = realityEditorUpdateSocketSubscriptions.find(entry => entry.socket === socket);
+            if (updateSocketEntry) {
                 let keysToDelete = [];
-                realityEditorUpdateSocketArray[socket.id].forEach(entry => {
-                    let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(entry.editorId));
-                    let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(entry.editorId));
+                updateSocketEntry.subscriptions.forEach(subscription => {
+                    let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(subscription.editorId));
+                    let humanPoseKeys = Object.keys(objects).filter(key => key.includes('_HUMAN_') && key.includes(subscription.editorId));
                     keysToDelete.push(avatarKeys);
                     keysToDelete.push(humanPoseKeys);
                 });
 
                 await deleteObjects(keysToDelete.flat());
 
-                delete realityEditorUpdateSocketArray[socket.id];
+                realityEditorUpdateSocketSubscriptions.splice(realityEditorUpdateSocketSubscriptions.indexOf(updateSocketEntry), 1);
             }
 
-            if (socket.id in realityEditorCameraMatrixSocketArray) {
-                delete realityEditorCameraMatrixSocketArray[socket.id];
+            const cameraMatrixSocketEntry = realityEditorCameraMatrixSocketSubscriptions.find(entry => entry.socket === socket);
+            if (cameraMatrixSocketEntry) {
+                realityEditorCameraMatrixSocketSubscriptions.splice(realityEditorCameraMatrixSocketSubscriptions.indexOf(cameraMatrixSocketEntry), 1);
             }
         });
     });
@@ -4359,18 +4402,18 @@ async function deleteObject(objectKey) {
     sceneGraph.removeElementAndChildren(objectKey);
 }
 
-function sendMessagetoEditors(msgContent, sourceSocketID) {
-    for (var thisEditor in realityEditorSocketArray) {
-        realityEditorSocketArray[thisEditor].forEach((thisObj) => {
-            if (typeof sourceSocketID !== 'undefined' && thisEditor === sourceSocketID && msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
+function sendMessageToEditors(msgContent, sourceSocket) {
+    realityEditorSocketSubscriptions.forEach(entry => {
+        entry.subscriptions.forEach(subscription => {
+            if (sourceSocket && entry.socket === sourceSocket && msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
                 return; // don't trigger the read listener of the socket that originally wrote the data
             }
 
-            if (msgContent.object === thisObj.object && msgContent.frame === thisObj.frame) {
-                messagetoSend(msgContent, thisEditor);
+            if (msgContent.object === subscription.object && msgContent.frame === subscription.frame) {
+                messageToSend(msgContent, entry.socket);
             }
         });
-    }
+    });
 }
 
 /////////
@@ -4445,15 +4488,15 @@ function getNode(objectKey, frameKey, nodeKey) {
 
 /**
  * @param {any} msgContent
- * @param {string} socketID
+ * @param {ToolSocket} socket
  */
-function messagetoSend(msgContent, socketID) {
+function messageToSend(msgContent, socket) {
     const node = getNode(msgContent.object, msgContent.frame, msgContent.node);
     if (!node) {
         console.warn('messageToSend unable to find node', msgContent);
     }
 
-    io.sockets.connected[socketID].emit('object', JSON.stringify({
+    socket.emit('object', JSON.stringify({
         object: msgContent.object,
         frame: msgContent.frame,
         node: msgContent.node,
@@ -4463,8 +4506,8 @@ function messagetoSend(msgContent, socketID) {
 
 
 hardwareAPI.screenObjectServerCallBack(function (object, frame, node, touchOffsetX, touchOffsetY) {
-    for (var thisEditor in realityEditorSocketArray) {
-        io.sockets.connected[thisEditor].emit('/object/screenObject', JSON.stringify({
+    for (const entry of realityEditorSocketSubscriptions) {
+        entry.socket.emit('/object/screenObject', JSON.stringify({
             object: object,
             frame: frame,
             node: node,
@@ -4585,7 +4628,7 @@ var engine = {
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);
 
         // push the data to the editor;
-        sendMessagetoEditors({
+        sendMessageToEditors({
             object: thisLink.objectB,
             frame: thisLink.frameB,
             node: thisLink.nodeB,
@@ -4679,7 +4722,7 @@ var engine = {
         this.hardwareAPI.readCall(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination.data);
 
         // push the data to the editor;
-        sendMessagetoEditors({
+        sendMessageToEditors({
             object: thisLink.objectB,
             frame: thisLink.frameB,
             node: thisLink.nodeB,
