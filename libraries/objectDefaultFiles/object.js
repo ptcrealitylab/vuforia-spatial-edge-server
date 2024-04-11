@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-/* global workerId */
+/* global workerId, ToolSocket */
 
 /**
  * @fileOverview
@@ -877,9 +877,11 @@
     };
 
     SpatialInterface.prototype.injectSocketIoAPI = function() {
-        var self = this;
+        const self = this;
 
-        this.ioObject = io.connect(spatialObject.socketIoUrl);
+        const url = new URL(spatialObject.socketIoUrl);
+        url.protocol = url.protocol.replace('http', 'ws');
+        this.ioObject = new ToolSocket(url);
 
         // Adds the custom API functions that allow a frame to connect to the Internet of Screens application
         this.injectInternetOfScreensAPI();
@@ -911,7 +913,7 @@
         this.sendRealityEditorSubscribe = function () {
             let timeout = 10;
             function subscribe() {
-                if (self.ioObject.socket.readyState !== self.ioObject.socket.OPEN) {
+                if (!self.ioObject.connected) {
                     if (timeout < 1000) {
                         timeout *= 10;
                     }
@@ -2757,7 +2759,7 @@
             // TODO: this should only happen if an API call was made to turn it on
             // Connect this frame to the internet of screens.
             if (!this.iosObject) {
-                this.iosObject = io.connect(iOSHost);
+                this.iosObject = new ToolSocket(new URL(iOSHost));
                 if (this.ioCallback !== undefined) {
                     this.ioCallback();
                 }

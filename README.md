@@ -76,6 +76,12 @@ consistently styled and functional. If you want to see the results of this
 testing locally, you can follow
 [this Github Actions workflow](https://github.com/ptcrealitylab/vuforia-spatial-edge-server/blob/master/.github/workflows/nodejs.yml).
 
+```bash
+git clone --recurse-submodules https://github.com/ptcrealitylab/vuforia-spatial-edge-server.git
+cd vuforia-spatial-edge-server
+./scripts/ci.sh
+```
+
 The most important parts of the workflow are running the commands of
 [scripts/ci.sh](https://github.com/ptcrealitylab/vuforia-spatial-edge-server/blob/master/scripts/ci.sh)
 to setup (note that some repos may not be available, causing test failures
@@ -84,6 +90,11 @@ vuforia-toolbox-server folder:
 
 ```bash
 npm run test
+```
+
+The changes and untracked files in the `spatialToolbox` data folder added by `scripts/ci.sh` must be reset in between tests. To do so, run the following:
+```bash
+cd spatialToolbox && git reset --hard HEAD && git clean -fd && cd ..
 ```
 
 ## Debugging
