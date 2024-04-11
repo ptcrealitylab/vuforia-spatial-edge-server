@@ -75,18 +75,15 @@ const {identityFolderName} = require('../constants.js');
 var hardwareIdentity = path.join(objectsPath, identityFolderName);
 
 let socketReferences = {
-    realityEditorUpdateSocketArray: null
+    realityEditorUpdateSocketSubscriptions: null
 };
-
-let ioReference = null;
 
 let callbacks = {
     triggerUDPCallbacks: null
 };
 
-exports.setup = function(_socketReferences, _ioReference, _callbacks) {
+exports.setup = function(_socketReferences, _callbacks) {
     socketReferences = _socketReferences;
-    ioReference = _ioReference;
     callbacks = _callbacks;
 };
 
@@ -860,9 +857,9 @@ function sendWithFallback(client, PORT, HOST, messageObject, options = {closeAft
         if (isActionMessage || isBeatMessage) {
 
             // send the message to clients on the local Wi-Fi network
-            for (let thisEditor in socketReferences.realityEditorUpdateSocketArray) {
+            for (let subscriptions of socketReferences.realityEditorUpdateSocketSubscriptions) {
                 let messageName = isActionMessage ? '/udp/action' : '/udp/beat';
-                ioReference.sockets.connected[thisEditor].emit(messageName, JSON.stringify(messageObject));
+                subscriptions.socket.emit(messageName, JSON.stringify(messageObject));
             }
 
             // send to cloud-proxied clients and other subscribing modules
