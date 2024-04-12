@@ -40,7 +40,7 @@
     "jsdoc": "^4.0.2",
     "minami": "^1.2.3",
     "mock-fs": "^5.2.0",
-    "puppeteer": "^22.6.3"
+    "puppeteer": "^22.6.4"
   },
   "scripts": {
     "test": "npm run lint && jest --forceExit --runInBand",
