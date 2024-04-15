@@ -4,6 +4,7 @@
   "description": "Vuforia Spatial Edge Server",
   "main": "server.js",
   "dependencies": {
+    "@azure/openai": "^1.0.0-beta.8",
     "archiver": "^7.0.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
