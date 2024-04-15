@@ -2839,8 +2839,8 @@ function objectWebServer() {
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath + '/' + req.params.id,  // don't forget the __dirname here
                     keepExtensions: true,
-                    maxFieldsSize: 300 * 1024 * 1024,
-                    maxFileSize: 300 * 1024 * 1024,
+                    maxFieldsSize: 1024 * 1024 * 1024, // 1 GB
+                    maxFileSize: 1024 * 1024 * 1024,
                 });
 
                 let fileInfoList = [];
