@@ -489,7 +489,9 @@ const uploadTarget = async (objectName, req, res) => {
 
     let form = new formidable.IncomingForm({
         uploadDir: uploadDir,
-        keepExtensions: true
+        keepExtensions: true,
+        maxFieldsSize: 300 * 1024 * 1024,
+        maxFileSize: 300 * 1024 * 1024,
     });
 
     form.on('error', function (err) {
