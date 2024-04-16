@@ -1944,13 +1944,16 @@ function objectWebServer() {
     const logicRouter = require('./routers/logic');
     const spatialRouter = require('./routers/spatial');
     const historyRouter = require('./routers/history');
+    const aiRouter = require('./routers/ai');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
     spatialRouter.setup(globalVariables);
+    aiRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
     webServer.use('/spatial', spatialRouter.router);
     webServer.use('/history', historyRouter.router);
+    webServer.use('/ai', aiRouter.router);
 
     webServer.get('/status', function(req, res) {
         res.sendStatus(200); // OK
@@ -2843,6 +2846,8 @@ function objectWebServer() {
                 var form = new formidable.IncomingForm({
                     uploadDir: objectsPath + '/' + req.params.id,  // don't forget the __dirname here
                     keepExtensions: true,
+                    maxFieldsSize: 1024 * 1024 * 1024, // 1 GB
+                    maxFileSize: 1024 * 1024 * 1024,
                 });
 
                 let fileInfoList = [];
