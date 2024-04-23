@@ -354,7 +354,7 @@ const http = httpServer.listen(serverPort, function () {
 });
 
 const ToolSocket = require('toolsocket');
-const io = new ToolSocket.Server({server: http}); // Websocket library
+const io = new ToolSocket.Server({server: http, maxPayload: 1024 * 1024 * 1024}); // Websocket library
 io.addEventListener('listening', () => {
     console.info(`ToolSocket server started`);
 });
