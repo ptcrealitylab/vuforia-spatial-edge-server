@@ -18,10 +18,13 @@ const SPLAT_HOST = 'change me:3000';
 class SplatTask {
     /**
      * @param {ObjectModel} object
+     * @param {string} userJWT
      */
-    constructor(object) {
+    constructor(object, userJWT) {
         this.object = object;
+        this.userJWT = userJWT;
         this.gaussianSplatRequestId = null;
+        this.error = null;
         if (this.object.gaussianSplatRequestId) {
             this.gaussianSplatRequestId = this.object.gaussianSplatRequestId;
         }
@@ -62,13 +65,23 @@ class SplatTask {
                 method: 'POST',
                 headers: {
                     ...form.getHeaders(),
+                    Authorization: `Bearer ${this.userJWT}`,
                 },
                 body: form,
             });
 
-            const gaussianSplatRequestId = await res.text();
-            this.object.gaussianSplatRequestId = gaussianSplatRequestId;
-            this.gaussianSplatRequestId = gaussianSplatRequestId;
+            let responseText = await res.text();
+            try {
+                // response is a string if successful, a JSON {error: 'reason'} if not
+                let errorJSON = JSON.parse(responseText);
+                this.error = errorJSON.error;
+                return null;
+            } catch (e) {
+                const gaussianSplatRequestId = responseText;
+                this.object.gaussianSplatRequestId = gaussianSplatRequestId;
+                this.gaussianSplatRequestId = gaussianSplatRequestId;
+            }
+
         }
 
         this.openSocket();
@@ -102,12 +115,13 @@ class SplatTask {
     }
 
     /**
-     * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} splat status
+     * @return {{done: boolean, gaussianSplatRequestId: string|null, error: string|null}} splat status
      */
     getStatus() {
         return {
             done: this.done,
             gaussianSplatRequestId: this.gaussianSplatRequestId,
+            error: this.error,
         };
     }
 
@@ -129,7 +143,12 @@ class SplatTask {
     async download() {
         const splatPath = path.join(objectsPath, this.object.name, identityFolderName, 'target', 'target.splat');
         try {
-            let res = await fetch(`http://${SPLAT_HOST}/downloads/${this.gaussianSplatRequestId}`);
+            let res = await fetch(`http://${SPLAT_HOST}/downloads/${this.gaussianSplatRequestId}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${this.userJWT}`
+                }
+            });
             if (!res.ok) {
                 throw new Error(`Unexpected response: ${res.statusText}`);
             }
@@ -149,15 +168,16 @@ module.exports.splatTasks = splatTasks;
 
 /**
  * @param {ObjectModel} object
+ * @param {string} userJWT
  */
-module.exports.startSplatTask = async function startSplatTask(object) {
+module.exports.startSplatTask = async function startSplatTask(object, userJWT) {
     const objectId = object.objectId;
     const oldTask = splatTasks[object.objectId];
     if (oldTask) {
         return oldTask;
     }
 
-    splatTasks[objectId] = new SplatTask(object);
+    splatTasks[objectId] = new SplatTask(object, userJWT);
     // Kick off the splatting to the point where we get a request id
     await splatTasks[objectId].start();
     return splatTasks[objectId];
