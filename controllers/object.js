@@ -3,7 +3,7 @@ const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
 const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
-const {startSplatTask} = require('./object/SplatTask.js');
+const {startSplatTask, splatTasks} = require('./object/SplatTask.js');
 const { beatPort } = require('../config.js');
 
 // Variables populated from server.js with setup()
@@ -387,18 +387,23 @@ const generateXml = async function(objectID, body, callback) {
 
 /**
  * @param {string} objectId
+ * @param {string|undefined} credentials - Bearer <JWT>
  * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} result
  */
-async function requestGaussianSplatting(objectId) {
+async function requestGaussianSplatting(objectId, credentials) {
     const object = utilities.getObject(objects, objectId);
     if (!object) {
         throw new Error('Object not found');
     }
 
-    let splatTask = await startSplatTask(object);
+    let splatTask = await startSplatTask(object, credentials);
+    let status = splatTask.getStatus();
+    if (status.error && !status.gaussianSplatRequestId) {
+        delete splatTasks[object.objectId]; // tasks resulting in error shouldn't be saved as oldTasks that can be resumed
+    }
     // Starting splat task can modify object
     await utilities.writeObjectToFile(objects, objectId, globalVariables.saveToDisk);
-    return splatTask.getStatus();
+    return status;
 }
 
 /**

@@ -11,6 +11,10 @@ const {fileExists} = utilities;
 
 const SPLAT_HOST = 'change me:3000';
 
+if (SPLAT_HOST.includes('change me')) {
+    console.warn('Edit the SPLAT_HOST if you want to enable Gaussian Splat training');
+}
+
 /**
  * A class for starting and monitoring the progress of an area target to splat
  * conversion problem, persisting the resulting file if successful
@@ -18,10 +22,13 @@ const SPLAT_HOST = 'change me:3000';
 class SplatTask {
     /**
      * @param {ObjectModel} object
+     * @param {string|null} credentials - Bearer <JWT>
      */
-    constructor(object) {
+    constructor(object, credentials) {
         this.object = object;
+        this.credentials = credentials;
         this.gaussianSplatRequestId = null;
+        this.error = null;
         if (this.object.gaussianSplatRequestId) {
             this.gaussianSplatRequestId = this.object.gaussianSplatRequestId;
         }
@@ -62,13 +69,34 @@ class SplatTask {
                 method: 'POST',
                 headers: {
                     ...form.getHeaders(),
+                    Authorization: this.credentials,
                 },
                 body: form,
             });
 
-            const gaussianSplatRequestId = await res.text();
-            this.object.gaussianSplatRequestId = gaussianSplatRequestId;
-            this.gaussianSplatRequestId = gaussianSplatRequestId;
+            let responseText = null;
+            try {
+                responseText = await res.text();
+            } catch (e) {
+                console.warn(`error parsing SplatTask /upload response (status ${res.status})`);
+                this.error = 'Unable to process the training server\'s response.';
+                return;
+            }
+
+            if (res.status === 200) {
+                const gaussianSplatRequestId = responseText;
+                this.object.gaussianSplatRequestId = gaussianSplatRequestId;
+                this.gaussianSplatRequestId = gaussianSplatRequestId;
+            } else {
+                // response is a string if successful, a JSON {error: 'reason'} if not
+                try {
+                    this.error = JSON.parse(responseText).error;
+                } catch (e) {
+                    console.warn(`error parsing SplatTask /upload response (status ${res.status})`);
+                    this.error = 'Unable to process the training server\'s response.';
+                }
+                return null;
+            }
         }
 
         this.openSocket();
@@ -102,12 +130,13 @@ class SplatTask {
     }
 
     /**
-     * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} splat status
+     * @return {{done: boolean, gaussianSplatRequestId: string|null, error: string|null}} splat status
      */
     getStatus() {
         return {
             done: this.done,
             gaussianSplatRequestId: this.gaussianSplatRequestId,
+            error: this.error,
         };
     }
 
@@ -149,15 +178,16 @@ module.exports.splatTasks = splatTasks;
 
 /**
  * @param {ObjectModel} object
+ * @param {string|null} credentials
  */
-module.exports.startSplatTask = async function startSplatTask(object) {
+module.exports.startSplatTask = async function startSplatTask(object, credentials) {
     const objectId = object.objectId;
     const oldTask = splatTasks[object.objectId];
     if (oldTask) {
         return oldTask;
     }
 
-    splatTasks[objectId] = new SplatTask(object);
+    splatTasks[objectId] = new SplatTask(object, credentials);
     // Kick off the splatting to the point where we get a request id
     await splatTasks[objectId].start();
     return splatTasks[objectId];
