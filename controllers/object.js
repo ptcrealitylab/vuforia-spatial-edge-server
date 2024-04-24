@@ -387,16 +387,16 @@ const generateXml = async function(objectID, body, callback) {
 
 /**
  * @param {string} objectId
- * @param {string|undefined} userJWT
+ * @param {string|undefined} credentials - Bearer <JWT>
  * @return {{done: boolean, gaussianSplatRequestId: string|undefined}} result
  */
-async function requestGaussianSplatting(objectId, userJWT) {
+async function requestGaussianSplatting(objectId, credentials) {
     const object = utilities.getObject(objects, objectId);
     if (!object) {
         throw new Error('Object not found');
     }
 
-    let splatTask = await startSplatTask(object, userJWT);
+    let splatTask = await startSplatTask(object, credentials);
     let status = splatTask.getStatus();
     if (status.error && !status.gaussianSplatRequestId) {
         delete splatTasks[object.objectId]; // tasks resulting in error shouldn't be saved as oldTasks that can be resumed
