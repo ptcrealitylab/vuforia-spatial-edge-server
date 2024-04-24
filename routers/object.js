@@ -450,15 +450,10 @@ router.post('/:objectName/requestGaussianSplatting/', async function (req, res) 
         return;
     }
     // splat status (commonly referred to as "splattus") is
-    // {done: boolean, gaussianSplatRequestId: string|undefined}
+    // {done: boolean, gaussianSplatRequestId: string|undefined, error: string|null}
     try {
-        let userJWT = null;
-        const credentials = req.headers.authorization;
-        if (credentials && credentials.includes(' ')) {
-            // The credentials will be in the format "Bearer <JWT>", can be split to extract the JWT
-            userJWT = credentials.split(' ')[1];
-        }
-        const splatStatus = await objectController.requestGaussianSplatting(req.params.objectName, userJWT);
+        // req.headers.authorization is expected to be `Bearer ${JWT}`
+        const splatStatus = await objectController.requestGaussianSplatting(req.params.objectName, req.headers.authorization);
         res.json(splatStatus);
     } catch (e) {
         console.error(e);
