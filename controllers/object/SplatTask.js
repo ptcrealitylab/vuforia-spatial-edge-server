@@ -65,7 +65,7 @@ class SplatTask {
 
             const form = new FormData();
             form.append('3dt', targetTdtBuf, {filename: 'target.3dt', name: '3dt', contentType: 'application/octet-stream'});
-            const res = await fetch(`http://${SPLAT_HOST}/upload`, {
+            const res = await fetch(`https://${SPLAT_HOST}/upload`, {
                 method: 'POST',
                 headers: {
                     ...form.getHeaders(),
@@ -105,7 +105,7 @@ class SplatTask {
     }
 
     openSocket() {
-        this.ws = new WebSocket('ws://' + SPLAT_HOST);
+        this.ws = new WebSocket('wss://' + SPLAT_HOST);
         this.ws.addEventListener('open', this.onOpen);
         this.ws.addEventListener('message', this.onMessage);
     }
@@ -158,7 +158,7 @@ class SplatTask {
     async download() {
         const splatPath = path.join(objectsPath, this.object.name, identityFolderName, 'target', 'target.splat');
         try {
-            let res = await fetch(`http://${SPLAT_HOST}/downloads/${this.gaussianSplatRequestId}`);
+            let res = await fetch(`https://${SPLAT_HOST}/downloads/${this.gaussianSplatRequestId}`);
             if (!res.ok) {
                 throw new Error(`Unexpected response: ${res.statusText}`);
             }
