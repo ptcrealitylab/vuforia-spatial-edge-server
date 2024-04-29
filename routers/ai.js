@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
+// const { AssistantsClient } = require("@azure/openai-assistants");
 let client = null;
+// let assistantsClient = null; // can do function calling
+// let assistant = null;
 const deploymentId = "gpt-35-turbo-16k";
 
 function parseCategory(result) {
@@ -34,9 +37,84 @@ router.post('/init', async function(req, res) {
     let azureApiKey = req.body.azureApiKey;
     client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
 
+    // createAssistant(endpoint, azureApiKey);
+    
+    // assistantsClient = new AssistantsClient(endpoint, new AzureKeyCredential(azureApiKey));
+    //
+    // // assistant = await client.beta.assistants.create(
+    // //     instructions="You are a 3D software assistant. Use the provided functions to answer questions or perform actions on the user's behalf.",
+    // //     model=""
+    // // )
+    //
+    // assistant = await assistantsClient.createAssistant({
+    //     model: "gpt-4-1106-preview",
+    //     name: "JS Math Tutor",
+    //     instructions: "You are a personal math tutor. Write and run code to answer math questions.",
+    //     tools: [{ type: "code_interpreter" }]
+    // });
+
     let json = JSON.stringify({answer: 'success'});
     res.status(200).send(json);
 });
+
+// async function createAssistant(endpoint, azureApiKey) {
+//     try {
+//         const assistantsClient = new AssistantsClient(endpoint, new AzureKeyCredential(azureApiKey));
+//
+//         const assistant = await assistantsClient.createAssistant({
+//             model: deploymentId, //"gpt-4-1106-preview", "gpt-4-turbo"
+//             name: "JS Math Tutor",
+//             instructions: "You are a personal math tutor. Write and run code to answer math questions.",
+//             tools: [{ type: "code_interpreter" }]
+//         });
+//
+//         console.log("Assistant created successfully:", assistant);
+//     } catch (error) {
+//         console.error("Failed to create assistant:", error);
+//     }
+// }
+
+// router.post('/assistant', async function(req, res) {
+//     const assistantThread = await assistantsClient.createThread();
+//    
+//     // const question = "I need to solve the equation '3x + 11 = 14'. Can you help me?";
+//     const question = req.body.mostRecentMessage || "I need to solve the equation '3x + 11 = 14'. Can you help me?";
+//
+//     const messageResponse = await assistantsClient.createMessage(assistantThread.id, "user", question);
+//
+//     let json = JSON.stringify({ answer: messageResponse });
+//     res.status(200).send(json);
+//    
+//     return;
+//
+//     let runResponse = await assistantsClient.createRun(assistantThread.id, {
+//         assistantId: assistant.id,
+//         instructions: "Please address the user as Jane Doe. The user has a premium account."
+//     });
+//
+//     do {
+//         await new Promise((resolve) => setTimeout(resolve, 800));
+//         runResponse = await assistantsClient.getRun(assistantThread.id, runResponse.id);
+//     } while (runResponse.status === "queued" || runResponse.status === "in_progress")
+//
+//     const runMessages = await assistantsClient.listMessages(assistantThread.id);
+//    
+//     let responseMessages = [];
+//     for (const runMessageDatum of runMessages.data) {
+//         for (const item of runMessageDatum.content) {
+//             if (item.type === "text") {
+//                 console.log(item.text.value);
+//                 responseMessages.push(item.text.value);
+//             }
+//             // else if (item.type === "image_file") {
+//             //     console.log(item.imageFile.fileId);
+//             // }
+//         }
+//     }
+//
+//     let json2 = JSON.stringify({ answer: `${responseMessages.join('.\n')}`});
+//     res.status(200).send(json2);
+// });
 
 router.post('/questionComplex', async function(req, res) {
 
@@ -64,11 +142,14 @@ router.post('/questionComplex', async function(req, res) {
     application can be added to the space and coexist at the same time. A user's "focus" changes when they click on
     another spatial application icon, allowing them to view and edit the contents of that tool. The term "avatar" in
     this system is synonymous with a "connected user", and the list of connected users will be provided to you.`;
+    
+    // TODO: provide the spatial cursor position as an additional piece of information
 
     let connectedUsersMessage = `Here is a list of the names of the users who are currently connected to the
-    session. This may change over time. Users who haven't set their username or logged in will appear as a
-    "Anonymous User". It is possible that multiple users have the same name, or that multiple "Anonymous Users" are
-    connected at once, so please consider each entry in this list to be a unique person.
+    session, as well as their current cursor position in 3D space. The list of users may change over time, and their
+    cursor positions will move to where they are currently looking at. Users who haven't set their username or logged in
+    will appear as a "Anonymous User". It is possible that multiple users have the same name, or that multiple
+    "Anonymous Users" are connected at once, so please consider each entry in this list to be a unique person.
     \n
     ${JSON.stringify(connectedUsers)}`;
 
@@ -80,10 +161,22 @@ router.post('/questionComplex', async function(req, res) {
     \n
     ${interactionLog}`;
 
-    let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
-    only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
-    that tool's ID is removed from the registry.
-    \n
+    // let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
+    // only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
+    // that tool's ID is removed from the registry.
+    // \n
+    // If you determine that one of these APIs should be called to fulfill the user's request, please format your response
+    // to include the application ID and the API name surrounded by double square brackets. For example: [[spatialDraw123][clearCanvas]] or
+    // [[spatialDraw123][addLine(startPoint, endPoint, usePathfinding)]].
+    // ${JSON.stringify(toolAPIs)}`;
+
+    let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. You are working together with
+    another AI assistant, whose job is to actually invoke the appropriate APIs (if any) to fulfill the user's response).
+    However, that AI assistant has no way to display messages to the end user. If you are asked to perform any APIs,
+    please respond to the user as if you have the power to actually call these functions, as there is another agent
+    working behind the scenes to make this possible, despite the fact that you are just a chat bot. Therefore, if there is a
+    relevant API, and the user asks you to perform an action, don't apologize saying "as a text-based AI assistant,
+    I don't have the capability to do [requested action]" – just respond that you will do it with the API.
     ${JSON.stringify(toolAPIs)}`;
 
     const messages = [
@@ -105,8 +198,89 @@ router.post('/questionComplex', async function(req, res) {
     console.log(result);
     let actualResult = result.choices[0].message.content;
     console.log(actualResult);
+    
+    const apiSystemPrompt = `You are an AI assistant used to determine which, if any, APIs from an API registry
+    should be called to fulfill the user's request. You are working in the context of an interactive 3D software, which
+    contains a variety of "spatial tools" (aka "spatial applications") that one or more users can add to a 3D scene, to
+    annotate, record, analyze, document, mark-up, and otherwise collaborate in a 3D scan of a physical environment.
+    You are paired up with a helpful AI assistant who will receive the same user input as you. The helpful assistant
+    will respond with messages that will be displayed to the user. You, however, are not speaking to the user; the user
+    will never see your responses. Instead, your responses will be parsed by a regex to determine which APIs to call.
+    
+    Note that sometimes users refer to tools by an imprecise name. For example, a "spatialDraw" tool might just be
+    referred to as a "drawing", and a "communication" tool might be called a "chat". When in doubt, try to find a name
+    in the available tool APIs that might possibly match what the user is referring to.
+    
+    You should format your response in a JSON format similar to this template:
+     [{
+        applicationId: 'testApplication123',
+        apiName: 'drawLine',
+        arguments: [
+            startPoint: (1, 2, 3),
+            endPoint: (4, 5, 6),
+            color: 'blue'
+        ]
+     }]
+     
+     Your response should be an empty array if no APIs are needed to fulfill the request. If multiple are needed, include
+     multiple entries in the array. Please ensure that the applicationId and apiName exactly matches the ones defined in
+     the list of available APIs, which are provided to you. You will also be provided with the list of users connected
+     to the session, and a log of interactions taken in the space, in case these help you resolve which APIs to respond with.`;
+    
+    const spatialLogicMessage = `Some interactions that you will be asked about might deal with 3D space and coordinates.
+    If a location is asked about, for example "the position of the spatial cursor of User A", you should attempt to resolve that
+    from a semantic location into [X,Y,Z] coordinates. Use any information use as the connected users and the interaction log
+    to attempt to convert abstract spatial references into numerical coordinates. The coordinate system of this space uses millimeters for
+    units, has its [0,0,0] origin at the center of the floor of the scene, and uses a right-handed coordinate system. So, for example,
+    if a user asks you about "1 meter above the origin" they would be referring to location [0,1000,0].`;
 
-    let json = JSON.stringify({ answer: `${actualResult}`});
+    const enhancedToolApiRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
+    only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
+    that tool's ID is removed from the registry.
+    \n
+    If you determine that one of these APIs should be called to fulfill the user's request, please format your response
+    according to the JSON format specified by the above system message, as a regex needs it in that format to parse it.
+    
+    I repeat, please only respond with a JSON format similar to this array of { applicationId, apiName, arguments } values:
+     [{
+        applicationId: '',
+        apiName: '',
+        arguments: [
+            {"parameterName": "argumentValue"}
+        ]
+     }]
+     
+     The response should be valid JSON. The "arguments" field should be an array with one object in it per parameter
+     defined in the registry. The key should be the name of the parameter, and the value should be the value of the parameter.
+     
+    ${JSON.stringify(toolAPIs)}`;
+
+    const apiMessages = [
+        // first give it the "instruction manual" for what to do and how the system works
+        { role: "system", content: apiSystemPrompt },
+        // then give it the JSON-structured API registry with instructions on how to use it
+        { role: "system", content: enhancedToolApiRegistryMessage },
+        // then give it the list of users connected to the session
+        { role: "system", content: connectedUsersMessage },
+        // then give it the log of actions taken by users (adding/removing/using tools)
+        { role: "system", content: interactionLogMessage },
+        // then give it a message telling it how to think about space and coordinates
+        { role: "system", content: spatialLogicMessage },
+
+        // then give it the log of past messages (limited to some maximum history length number of messages)
+        // ...Object.values(pastMessages),
+        // finally, give it the message that the user just typed in
+        mostRecentMessage
+    ];
+    let apiResult = await client.getChatCompletions(deploymentId, apiMessages);
+    console.log(apiResult);
+    let actualApiResult = apiResult.choices[0].message.content;
+    console.log(actualApiResult);
+
+    let json = JSON.stringify({
+        answer: `${actualResult}`,
+        apiAnswer: actualApiResult,
+    });
     res.status(200).send(json);
 });
 
