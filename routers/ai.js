@@ -38,6 +38,78 @@ router.post('/init', async function(req, res) {
     res.status(200).send(json);
 });
 
+router.post('/questionComplex', async function(req, res) {
+
+    console.log('ben ai question route triggered');
+
+    let mostRecentMessage = req.body.mostRecentMessage;
+    let pastMessages = req.body.pastMessages;
+    let interactionLog = req.body.interactionLog;
+    let toolAPIs = req.body.toolAPIs;
+    let connectedUsers = req.body.connectedUsers;
+    let extra = req.body.extra; // contains the worldId
+
+    let systemPrompt = `You are a helpful assistant whose job is to understand an log of interactions that one or
+    more users has performed within a 3D digital-twin software. Within the software, the users can add various spatial
+    applications into a scanned environment, to annotate, record, analyze, document, mark-up, and otherwise collaborate
+    in the space, synchronously or asynchronously. Some of these spatial applications also have functions that you can
+    activate, which will be provided to you in the form of an API registry. You are a helpful assistant who will answer
+    questions that the user has about the current and historical state of the space and the interactions that have taken
+    place within it, and sometimes make use of the API registry to perform actions within the software to fulfill the
+    user's requests. Here are some key things to know about the system: A "spatial tool" or a "spatial application"
+    represents a component that users can add to the space. Generally, spatial applications are represented by an icon
+    in 3D space, and when the user clicks on it the application is opened and can be interacted with. It can then be
+    closed with an X button or "minimized" (un-focused) with a minimize button. For example, the spatialDraw tool is a
+    spatial application that, when opened, displays UI that allows the user to annotate the 3D scene. Any number of each
+    application can be added to the space and coexist at the same time. A user's "focus" changes when they click on
+    another spatial application icon, allowing them to view and edit the contents of that tool. The term "avatar" in
+    this system is synonymous with a "connected user", and the list of connected users will be provided to you.`;
+
+    let connectedUsersMessage = `Here is a list of the names of the users who are currently connected to the
+    session. This may change over time. Users who haven't set their username or logged in will appear as a
+    "Anonymous User". It is possible that multiple users have the same name, or that multiple "Anonymous Users" are
+    connected at once, so please consider each entry in this list to be a unique person.
+    \n
+    ${JSON.stringify(connectedUsers)}`;
+
+    let interactionLogMessage = `Here is the interaction log of what has happened in the space so far during the
+    current session. Please note that this is only a log of changes performed in the space, and they are cumulative. So,
+    for example, if you see two messages that a user added a certain tool to the space, that means that there are now two
+    tools in the space. If tools are deleted, their functions are removed from the API registry. When new tools are added,
+    their functions are added to the API registry.
+    \n
+    ${interactionLog}`;
+
+    let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
+    only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
+    that tool's ID is removed from the registry.
+    \n
+    ${JSON.stringify(toolAPIs)}`;
+
+    const messages = [
+        // first give it the "instruction manual" for what to do and how the system works
+        { role: "system", content: systemPrompt },
+        // then give it the list of users connected to the session
+        { role: "system", content: connectedUsersMessage },
+        // then give it the log of actions taken by users (adding/removing/using tools)
+        { role: "system", content: interactionLogMessage },
+        // then give it the JSON-structured API registry with instructions on how to use it
+        { role: "system", content: toolAPIRegistryMessage },
+        // then give it the log of past messages (limited to some maximum history length number of messages)
+        ...Object.values(pastMessages),
+        // finally, give it the message that the user just typed in
+        mostRecentMessage
+    ];
+
+    let result = await client.getChatCompletions(deploymentId, messages);
+    console.log(result);
+    let actualResult = result.choices[0].message.content;
+    console.log(actualResult);
+
+    let json = JSON.stringify({ answer: `${actualResult}`});
+    res.status(200).send(json);
+});
+
 router.post('/question', async function(req, res) {
     console.log('ai question route triggered');
     let conversation = req.body.conversation;
