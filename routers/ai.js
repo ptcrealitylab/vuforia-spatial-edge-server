@@ -35,26 +35,31 @@ router.post('/init', async function(req, res) {
     }
     let endpoint = req.body.endpoint;
     let azureApiKey = req.body.azureApiKey;
-    client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
+    if (endpoint !== '' && azureApiKey !== '') {
+        client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
 
-    // createAssistant(endpoint, azureApiKey);
-    
-    // assistantsClient = new AssistantsClient(endpoint, new AzureKeyCredential(azureApiKey));
-    //
-    // // assistant = await client.beta.assistants.create(
-    // //     instructions="You are a 3D software assistant. Use the provided functions to answer questions or perform actions on the user's behalf.",
-    // //     model=""
-    // // )
-    //
-    // assistant = await assistantsClient.createAssistant({
-    //     model: "gpt-4-1106-preview",
-    //     name: "JS Math Tutor",
-    //     instructions: "You are a personal math tutor. Write and run code to answer math questions.",
-    //     tools: [{ type: "code_interpreter" }]
-    // });
+        // createAssistant(endpoint, azureApiKey);
 
-    let json = JSON.stringify({answer: 'success'});
-    res.status(200).send(json);
+        // assistantsClient = new AssistantsClient(endpoint, new AzureKeyCredential(azureApiKey));
+        //
+        // // assistant = await client.beta.assistants.create(
+        // //     instructions="You are a 3D software assistant. Use the provided functions to answer questions or perform actions on the user's behalf.",
+        // //     model=""
+        // // )
+        //
+        // assistant = await assistantsClient.createAssistant({
+        //     model: "gpt-4-1106-preview",
+        //     name: "JS Math Tutor",
+        //     instructions: "You are a personal math tutor. Write and run code to answer math questions.",
+        //     tools: [{ type: "code_interpreter" }]
+        // });
+
+        let json = JSON.stringify({answer: 'success'});
+        res.status(200).send(json);
+    } else {
+        let json = JSON.stringify({answer: 'error, invalid endpoint or api key'});
+        res.status(400).send(json);
+    }
 });
 
 // async function createAssistant(endpoint, azureApiKey) {
