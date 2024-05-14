@@ -1726,7 +1726,13 @@
             });
         };
 
-        this.startVirtualizerRecording = function() {
+        this.startVirtualizerRecording = function(callback) {
+            spatialObject.messageCallBacks.startVirtualizerRecording = function (msgContent) {
+                if (callback && typeof msgContent.virtualizerRecordingError !== 'undefined') {
+                    callback(msgContent.virtualizerRecordingError);
+                }
+            };
+
             postDataToParent({
                 virtualizerRecording: true
             });
@@ -1735,7 +1741,14 @@
         this.stopVirtualizerRecording = function(callback) {
             spatialObject.messageCallBacks.stopVirtualizerRecording = function (msgContent) {
                 if (typeof msgContent.virtualizerRecordingData !== 'undefined') {
-                    callback(msgContent.virtualizerRecordingData.baseUrl, msgContent.virtualizerRecordingData.recordingId, msgContent.virtualizerRecordingData.deviceId);
+                    const {
+                        error,
+                        baseUrl,
+                        recordingId,
+                        deviceId,
+                        orientation,
+                    } = msgContent.virtualizerRecordingData;
+                    callback(error, baseUrl, recordingId, deviceId, orientation);
                 }
             };
 
