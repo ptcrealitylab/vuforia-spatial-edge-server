@@ -430,47 +430,55 @@ router.post('/query', async function(req, res) {
     const functions = convertToolAPIRegistryToFunctions(toolAPIs);
     // console.log(functions);
 
-    let systemPrompt = `You are a helpful assistant whose job is to understand an log of interactions that one or
-    more users has performed within a 3D digital-twin software, answer their questions, and call any available functions
-    needed to fulfill their request. Within the software, the users can add various spatial
-    applications into a scanned environment, to annotate, record, analyze, document, mark-up, and otherwise collaborate
-    in the space, synchronously or asynchronously. Some of these spatial applications also have functions that you can
-    activate, which will be provided to you in the form of an API registry. You are a helpful assistant who will answer
-    questions that the user has about the current and historical state of the space and the interactions that have taken
-    place within it, and sometimes make use of the API registry to perform actions within the software to fulfill the
-    user's requests. Here are some key things to know about the system: A "spatial tool" or a "spatial application"
-    represents a component that users can add to the space. Generally, spatial applications are represented by an icon
-    in 3D space, and when the user clicks on it the application is opened and can be interacted with. It can then be
-    closed with an X button or "minimized" (un-focused) with a minimize button. For example, the spatialDraw tool is a
-    spatial application that, when opened, displays UI that allows the user to annotate the 3D scene. Any number of each
-    application can be added to the space and coexist at the same time. A user's "focus" changes when they click on
-    another spatial application icon, allowing them to view and edit the contents of that tool. The term "avatar" in
-    this system is synonymous with a "connected user", and the list of connected users will be provided to you.`;
+    // let systemPrompt = `You are a helpful assistant whose job is to understand an log of interactions that one or
+    // more users has performed within a 3D digital-twin software, answer their questions, and call any available functions
+    // needed to fulfill their request. Within the software, the users can add various spatial
+    // applications into a scanned environment, to annotate, record, analyze, document, mark-up, and otherwise collaborate
+    // in the space, synchronously or asynchronously. Some of these spatial applications also have functions that you can
+    // activate, which will be provided to you in the form of an API registry. You are a helpful assistant who will answer
+    // questions that the user has about the current and historical state of the space and the interactions that have taken
+    // place within it, and sometimes make use of the API registry to perform actions within the software to fulfill the
+    // user's requests. Here are some key things to know about the system: A "spatial tool" or a "spatial application"
+    // represents a component that users can add to the space. Generally, spatial applications are represented by an icon
+    // in 3D space, and when the user clicks on it the application is opened and can be interacted with. It can then be
+    // closed with an X button or "minimized" (un-focused) with a minimize button. For example, the spatialDraw tool is a
+    // spatial application that, when opened, displays UI that allows the user to annotate the 3D scene. Any number of each
+    // application can be added to the space and coexist at the same time. A user's "focus" changes when they click on
+    // another spatial application icon, allowing them to view and edit the contents of that tool. The term "avatar" in
+    // this system is synonymous with a "connected user", and the list of connected users will be provided to you.`;
+
+    let systemPrompt = `As an AI assistant, your role is to support users interacting within a 3D digital-twin platform. Users can add, interact with, and manage spatial applications in a scanned environment for various tasks like annotation and collaboration. You'll answer questions about both current and historical interactions, and you can use the API registry to call functions within these spatial applications. Remember, spatial tools can be opened, interacted with, and closed or minimized in the 3D space, and each user's interaction shifts their focus among these tools.`;
 
     // TODO: provide the spatial cursor position as an additional piece of information
 
-    let connectedUsersMessage = `Here is a list of the names of the users who are currently connected to the
-    session, as well as their current cursor position in 3D space. The list of users may change over time, and their
-    cursor positions will move to where they are currently looking at. Users who haven't set their username or logged in
-    will appear as a "Anonymous User". It is possible that multiple users have the same name, or that multiple
-    "Anonymous Users" are connected at once, so please consider each entry in this list to be a unique person.
-    \n
-    ${JSON.stringify(connectedUsers)}`;
+    // let connectedUsersMessage = `Here is a list of the names of the users who are currently connected to the
+    // session, as well as their current cursor position in 3D space. The list of users may change over time, and their
+    // cursor positions will move to where they are currently looking at. Users who haven't set their username or logged in
+    // will appear as a "Anonymous User". It is possible that multiple users have the same name, or that multiple
+    // "Anonymous Users" are connected at once, so please consider each entry in this list to be a unique person.
+    // \n
+    // ${JSON.stringify(connectedUsers)}`;
 
-    let interactionLogMessage = `Here is the interaction log of what has happened in the space so far during the
-    current session. Please note that this is only a log of changes performed in the space, and they are cumulative. So,
-    for example, if you see two messages that a user added a certain tool to the space, that means that there are now two
-    tools in the space. If tools are deleted, their functions are removed from the API registry. When new tools are added,
-    their functions are added to the API registry.
-    \n
-    ${interactionLog}`;
+    let connectedUsersMessage = `Here is the current list of connected users with their cursor positions in 3D space. Users are uniquely identified, even if they have the same name or are listed as "Anonymous User".\n${JSON.stringify(connectedUsers)}`;
 
-    const spatialLogicMessage = `Some interactions that you will be asked about might deal with 3D space and coordinates.
-    If a location is asked about, for example "the position of the spatial cursor of User A", you should attempt to resolve that
-    from a semantic location into [X,Y,Z] coordinates. Use any information use as the connected users and the interaction log
-    to attempt to convert abstract spatial references into numerical coordinates. The coordinate system of this space uses millimeters for
-    units, has its [0,0,0] origin at the center of the floor of the scene, and uses a right-handed coordinate system. So, for example,
-    if a user asks you about "1 meter above the origin" they would be referring to location [0,1000,0].`;
+    // let interactionLogMessage = `Here is the interaction log of what has happened in the space so far during the
+    // current session. Please note that this is only a log of changes performed in the space, and they are cumulative. So,
+    // for example, if you see two messages that a user added a certain tool to the space, that means that there are now two
+    // tools in the space. If tools are deleted, their functions are removed from the API registry. When new tools are added,
+    // their functions are added to the API registry.
+    // \n
+    // ${interactionLog}`;
+
+    let interactionLogMessage = `Below is the cumulative log of interactions within the space for the current session, detailing tool additions and removals. Remember, each logged addition indicates the presence of that tool in the space.\n${interactionLog}`;
+
+    // const spatialLogicMessage = `Some interactions that you will be asked about might deal with 3D space and coordinates.
+    // If a location is asked about, for example "the position of the spatial cursor of User A", you should attempt to resolve that
+    // from a semantic location into [X,Y,Z] coordinates. Use any information use as the connected users and the interaction log
+    // to attempt to convert abstract spatial references into numerical coordinates. The coordinate system of this space uses millimeters for
+    // units, has its [0,0,0] origin at the center of the floor of the scene, and uses a right-handed coordinate system. So, for example,
+    // if a user asks you about "1 meter above the origin" they would be referring to location [0,1000,0].`;
+
+    let spatialLogicMessage = `When resolving questions about spatial locations, such as "the position of the spatial cursor of User A", convert semantic descriptions into [X,Y,Z] coordinates based on a right-handed millimeter coordinate system originating at the center of the floor scene.`;
 
     // let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
     // only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
@@ -490,6 +498,10 @@ router.post('/query', async function(req, res) {
     // I don't have the capability to do [requested action]" – just respond that you will do it with the API.
     // ${JSON.stringify(toolAPIs)}`;
 
+    // let functionGuidelinesMessage = `Note: Function calls should only be triggered by explicit user requests. If a user's message includes direct command phrases, evaluate if these correspond to specific functions in the API registry. In cases of ambiguity, prioritize responding with information or asking for clarification. Don't say that you've performed a function unless you have done so after the user's most recent message.`;
+
+    let functionGuidelinesMessage = `Note: Function calls should be triggered by explicit user requests or when a single command clearly implies a series of related actions. When a user's message describes a complex action that involves multiple steps (like "draw a blue square of size 1000"), interpret this as a directive to perform all necessary sub-actions in sequence to complete the described task. Evaluate user commands for specific or implied functions in the API registry, and execute them sequentially if they collectively fulfill the user's request. In cases of ambiguity about the user's intent or how to proceed with multiple function calls, prioritize asking for clarification before proceeding.`;
+
     let messages = [
         // first give it the "instruction manual" for what to do and how the system works
         { role: "system", content: systemPrompt },
@@ -501,6 +513,7 @@ router.post('/query', async function(req, res) {
         // { role: "system", content: toolAPIRegistryMessage },
         // then give it information on how to think about space in the system
         { role: "system", content: spatialLogicMessage },
+        { role: "system", content: functionGuidelinesMessage },
         // then give it the log of past messages (limited to some maximum history length number of messages)
         ...Object.values(pastMessages),
         // finally, give it the message that the user just typed in
