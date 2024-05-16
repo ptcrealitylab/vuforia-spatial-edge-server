@@ -416,7 +416,7 @@ router.get('/query-status', (req, res) => {
     }
 });
 
-router.post('/questionFunctionCalling', async function(req, res) {
+router.post('/query', async function(req, res) {
 
     console.log('ben ai question route triggered');
 
@@ -431,7 +431,8 @@ router.post('/questionFunctionCalling', async function(req, res) {
     // console.log(functions);
 
     let systemPrompt = `You are a helpful assistant whose job is to understand an log of interactions that one or
-    more users has performed within a 3D digital-twin software. Within the software, the users can add various spatial
+    more users has performed within a 3D digital-twin software, answer their questions, and call any available functions
+    needed to fulfill their request. Within the software, the users can add various spatial
     applications into a scanned environment, to annotate, record, analyze, document, mark-up, and otherwise collaborate
     in the space, synchronously or asynchronously. Some of these spatial applications also have functions that you can
     activate, which will be provided to you in the form of an API registry. You are a helpful assistant who will answer
@@ -464,6 +465,13 @@ router.post('/questionFunctionCalling', async function(req, res) {
     \n
     ${interactionLog}`;
 
+    const spatialLogicMessage = `Some interactions that you will be asked about might deal with 3D space and coordinates.
+    If a location is asked about, for example "the position of the spatial cursor of User A", you should attempt to resolve that
+    from a semantic location into [X,Y,Z] coordinates. Use any information use as the connected users and the interaction log
+    to attempt to convert abstract spatial references into numerical coordinates. The coordinate system of this space uses millimeters for
+    units, has its [0,0,0] origin at the center of the floor of the scene, and uses a right-handed coordinate system. So, for example,
+    if a user asks you about "1 meter above the origin" they would be referring to location [0,1000,0].`;
+
     // let toolAPIRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
     // only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
     // that tool's ID is removed from the registry.
@@ -491,6 +499,8 @@ router.post('/questionFunctionCalling', async function(req, res) {
         { role: "system", content: interactionLogMessage },
         // then give it the JSON-structured API registry with instructions on how to use it
         // { role: "system", content: toolAPIRegistryMessage },
+        // then give it information on how to think about space in the system
+        { role: "system", content: spatialLogicMessage },
         // then give it the log of past messages (limited to some maximum history length number of messages)
         ...Object.values(pastMessages),
         // finally, give it the message that the user just typed in
@@ -498,18 +508,12 @@ router.post('/questionFunctionCalling', async function(req, res) {
     ];
 
     try {
-        // let result = await client.getChatCompletions(deploymentId, {
-        //     messages: messages,
-        //     functions: functions,
-        //     function_call: 'auto'
-        // });
         let result = await client.getChatCompletions(deploymentId, messages, {
             functions: functions,
             function_call: 'auto'
         });
         let choice = result.choices[0];
-        let numResponses = 0;
-        while (choice.finishReason === 'function_call' && numResponses < 10) {
+        if (choice.finishReason === 'function_call') {
             let functionCall = choice.message.functionCall;
             let fnArgs = JSON.parse(functionCall.arguments);
             let fnName = functionCall.name;
@@ -517,125 +521,67 @@ router.post('/questionFunctionCalling', async function(req, res) {
 
             // Send the function call to the client
             const functionCallId = `${Date.now()}-${Math.random()}`;
-            pendingFunctionCalls[functionCallId] = { fnName, fnArgs };
+            pendingFunctionCalls[functionCallId] = { messages, functions, fnName, fnArgs };
 
             res.status(200).send({ functionCallId, fnName, fnArgs });
+            return;
+        }
+        
+        let actualResult = choice.message.content;
+        res.status(200).send({ answer: actualResult });
 
-            const functionResult = await waitForFunctionResult(functionCallId);
+    } catch (e) {
+        console.warn(e);
+        res.status(500).send({ error: e.message || 'An error occurred' });
+    }
+});
 
-            // let functionResult = await getFunctionResult(fnName, fnArgs);
-            
-            // Create a new message with the function result
-            messages = [
-                ...messages,
-                { role: 'function', name: fnName, content: JSON.stringify(fnArgs) },
-                { role: 'assistant', content: JSON.stringify(functionResult) }
-            ];
+router.post('/continue-query', async (req, res) => {
+    const { functionCallId, result } = req.body;
+    const pendingCall = pendingFunctionCalls[functionCallId];
 
-            // Get the final response incorporating the function result
-            result = await client.getChatCompletions(deploymentId, messages, {
+    if (pendingCall) {
+        let { messages, functions, fnName, fnArgs } = pendingCall;
+        let functionResult = result;
+
+        // Create a new message with the function result
+        messages = [
+            ...messages,
+            { role: 'function', name: fnName, content: JSON.stringify(fnArgs) },
+            { role: 'assistant', content: JSON.stringify(functionResult) }
+        ];
+
+        try {
+            let result = await client.getChatCompletions(deploymentId, messages, {
                 functions: functions,
                 function_call: 'auto'
             });
-            choice = result.choices[0];
-            numResponses++;
+
+            let choice = result.choices[0];
+
+            if (choice.finishReason === 'function_call') {
+                let functionCall = choice.message.functionCall;
+                let fnArgs = JSON.parse(functionCall.arguments);
+                let fnName = functionCall.name;
+
+                // Send the function call to the client
+                const newFunctionCallId = `${Date.now()}-${Math.random()}`;
+                pendingFunctionCalls[newFunctionCallId] = { messages, fnName, fnArgs };
+
+                res.status(200).send({ functionCallId: newFunctionCallId, fnName, fnArgs });
+            } else {
+                let actualResult = choice.message.content;
+                res.status(200).send({ answer: actualResult });
+            }
+        } catch (e) {
+            console.warn(e);
+            res.status(500).send({ error: e.message || 'An error occurred' });
         }
-        
-        // console.log(result);
-        let actualResult = result.choices[0].message.content;
-        console.log(actualResult);
 
-        let json = JSON.stringify({
-            answer: `${actualResult}`,
-            apiAnswer: '', //actualApiResult,
-        });
-        res.status(200).send(json);
-    } catch (e) {
-        console.warn(e);
-
-        res.status(500).send({
-            error: e
-        });
+        delete pendingFunctionCalls[functionCallId];
+    } else {
+        res.status(400).send({ error: 'Invalid function call ID' });
     }
-
-    // const apiSystemPrompt = `You are an AI assistant used to determine which, if any, APIs from an API registry
-    // should be called to fulfill the user's request. You are working in the context of an interactive 3D software, which
-    // contains a variety of "spatial tools" (aka "spatial applications") that one or more users can add to a 3D scene, to
-    // annotate, record, analyze, document, mark-up, and otherwise collaborate in a 3D scan of a physical environment.
-    // You are paired up with a helpful AI assistant who will receive the same user input as you. The helpful assistant
-    // will respond with messages that will be displayed to the user. You, however, are not speaking to the user; the user
-    // will never see your responses. Instead, your responses will be parsed by a regex to determine which APIs to call.
-    //
-    // Note that sometimes users refer to tools by an imprecise name. For example, a "spatialDraw" tool might just be
-    // referred to as a "drawing", and a "communication" tool might be called a "chat". When in doubt, try to find a name
-    // in the available tool APIs that might possibly match what the user is referring to.
-    //
-    // You should format your response in a JSON format similar to this template:
-    //  [{
-    //     applicationId: 'testApplication123',
-    //     apiName: 'drawLine',
-    //     arguments: [
-    //         startPoint: (1, 2, 3),
-    //         endPoint: (4, 5, 6),
-    //         color: 'blue'
-    //     ]
-    //  }]
-    // 
-    //  Your response should be an empty array if no APIs are needed to fulfill the request. If multiple are needed, include
-    //  multiple entries in the array. Please ensure that the applicationId and apiName exactly matches the ones defined in
-    //  the list of available APIs, which are provided to you. You will also be provided with the list of users connected
-    //  to the session, and a log of interactions taken in the space, in case these help you resolve which APIs to respond with.`;
-    //
-    // const spatialLogicMessage = `Some interactions that you will be asked about might deal with 3D space and coordinates.
-    // If a location is asked about, for example "the position of the spatial cursor of User A", you should attempt to resolve that
-    // from a semantic location into [X,Y,Z] coordinates. Use any information use as the connected users and the interaction log
-    // to attempt to convert abstract spatial references into numerical coordinates. The coordinate system of this space uses millimeters for
-    // units, has its [0,0,0] origin at the center of the floor of the scene, and uses a right-handed coordinate system. So, for example,
-    // if a user asks you about "1 meter above the origin" they would be referring to location [0,1000,0].`;
-    //
-    // const enhancedToolApiRegistryMessage = `Here are the available tool APIs, in JSON format. Please remember that you can
-    // only use APIs that belong to spatial applications that are still currently in the space. If an application is deleted,
-    // that tool's ID is removed from the registry.
-    // \n
-    // If you determine that one of these APIs should be called to fulfill the user's request, please format your response
-    // according to the JSON format specified by the above system message, as a regex needs it in that format to parse it.
-    //
-    // I repeat, please only respond with a JSON format similar to this array of { applicationId, apiName, arguments } values:
-    //  [{
-    //     applicationId: '',
-    //     apiName: '',
-    //     arguments: [
-    //         {"parameterName": "argumentValue"}
-    //     ]
-    //  }]
-    // 
-    //  The response should be valid JSON. The "arguments" field should be an array with one object in it per parameter
-    //  defined in the registry. The key should be the name of the parameter, and the value should be the value of the parameter.
-    // 
-    // ${JSON.stringify(toolAPIs)}`;
-    //
-    // const apiMessages = [
-    //     // first give it the "instruction manual" for what to do and how the system works
-    //     { role: "system", content: apiSystemPrompt },
-    //     // then give it the JSON-structured API registry with instructions on how to use it
-    //     { role: "system", content: enhancedToolApiRegistryMessage },
-    //     // then give it the list of users connected to the session
-    //     { role: "system", content: connectedUsersMessage },
-    //     // then give it the log of actions taken by users (adding/removing/using tools)
-    //     { role: "system", content: interactionLogMessage },
-    //     // then give it a message telling it how to think about space and coordinates
-    //     { role: "system", content: spatialLogicMessage },
-    //
-    //     // then give it the log of past messages (limited to some maximum history length number of messages)
-    //     // ...Object.values(pastMessages),
-    //     // finally, give it the message that the user just typed in
-    //     mostRecentMessage
-    // ];
-    // let apiResult = await client.getChatCompletions(deploymentId, apiMessages);
-    // console.log(apiResult);
-    // let actualApiResult = apiResult.choices[0].message.content;
-    // console.log(actualApiResult);
-
 });
 
 router.post('/questionComplex', async function(req, res) {
