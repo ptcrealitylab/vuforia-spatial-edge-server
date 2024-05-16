@@ -464,7 +464,7 @@
             // eventData looks like {type: "pointerdown", pointerId: 29887780, pointerType: "touch", x: 334, y: 213}
             var eventData = msgContent.event;
 
-            var event = new PointerEvent(eventData.type, {
+            const eventInitDict = {
                 view: window,
                 bubbles: true,
                 cancelable: true,
@@ -479,7 +479,8 @@
                 screenX: eventData.x,
                 screenY: eventData.y,
                 button: eventData.button,
-            });
+            };
+            var event = new PointerEvent(eventData.type, eventInitDict);
 
             if (typeof eventData.projectedZ !== 'undefined') {
                 event.projectedZ = eventData.projectedZ;
@@ -571,13 +572,28 @@
                     }
 
 
-
                 } else {
-                    if (elt) elt.dispatchEvent(event);
+                    if (elt) {
+                        elt.dispatchEvent(event);
+                        const mouseEvent = new MouseEvent('mousedown', eventInitDict);
+                        mouseEvent.projectedZ = event.projectedZ;
+                        mouseEvent.worldIntersectPoint = event.worldIntersectPoint;
+                        mouseEvent.threejsIntersectPoint = event.threejsIntersectPoint;
+                        elt.dispatchEvent(mouseEvent);
+                    }
                 }
 
             } else {
-                if (elt) elt.dispatchEvent(event);
+                if (elt) {
+                    elt.dispatchEvent(event);
+                    if (eventData.type.includes('pointer')) {
+                        const mouseEvent = new MouseEvent(eventData.type.replace('pointer', 'mouse'), eventInitDict);
+                        mouseEvent.projectedZ = event.projectedZ;
+                        mouseEvent.worldIntersectPoint = event.worldIntersectPoint;
+                        mouseEvent.threejsIntersectPoint = event.threejsIntersectPoint;
+                        elt.dispatchEvent(mouseEvent);
+                    }
+                }
             }
 
 
