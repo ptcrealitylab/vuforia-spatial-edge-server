@@ -764,6 +764,7 @@
                 this.subscribeToObjectsOfType = makeSendStub('subscribeToObjectsOfType');
                 this.errorNotification = makeSendStub('errorNotification');
                 this.useWebGlWorker = makeSendStub('useWebGlWorker');
+                this.useToolRenderer = makeSendStub('useToolRenderer');
                 this.wasToolJustCreated = makeSendStub('wasToolJustCreated');
                 this.setPinned = makeSendStub('setPinned');
                 this.promptForArea = makeSendStub('promptForArea');
@@ -2128,9 +2129,17 @@
 
         };
 
+        // both render engines are mutual exclusive
+
         this.useWebGlWorker = function() {
             postDataToParent({
                 useWebGlWorker: true
+            });
+        };
+
+        this.useToolRenderer = function() {
+            postDataToParent({
+                useToolRenderer: true
             });
         };
 

@@ -43,7 +43,9 @@
     "puppeteer": "^22.6.5"
   },
   "scripts": {
-    "test": "npm run lint && jest --forceExit --runInBand",
+    "test": "npm run lint && node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand",
+    "jest-only": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand",
+    "jest-graphics": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand --coverage Node DeleteNode ValueStore ValueNode VersionedNode ObjectStore ObjectNode DictionaryStore DictionaryNode, WorldStore, WorldNode",
     "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
