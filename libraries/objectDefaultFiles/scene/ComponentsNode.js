@@ -14,6 +14,21 @@ class ComponentsNode extends DictionaryNode {
     constructor(listener) {
         super(listener, ComponentsNode.TYPE);
     }
+
+    set(key, value) {
+        value.setEntityNode(this.getParent());
+        const entity = this.getParent().getEntity();
+        if (entity) {
+            entity.setComponent(key, value.getComponent());
+        }
+        super.set(key, value);
+    }
+
+    setEntityNode(node) {
+        for (const component of this.values()) {
+            component.setEntityNode(node);
+        }
+    }
 }
 
 export default ComponentsNode;

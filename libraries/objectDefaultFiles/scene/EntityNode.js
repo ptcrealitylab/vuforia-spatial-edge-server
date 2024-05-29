@@ -1,6 +1,4 @@
 import ObjectNode from "./ObjectNode.js";
-import TransformComponentNode from "./TransformComponentNode.js";
-import TransformComponentStore from "./TransformComponentStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
@@ -20,8 +18,11 @@ class EntityNode extends ObjectNode {
      */
     constructor(listener, type = EntityNode.TYPE) {
         super(listener, type);
-        const transform = {"properties": {"components": {"properties": {"0": new TransformComponentNode(new TransformComponentStore()).getState()}}}};
-        this.setChanges(transform);
+        this.get("components").setEntityNode(this);
+        if (!this.get("components").has("0")) {
+            this.addComponent("0", listener.createTransform());
+            this.getChanges();
+        }
     }
 
     /**

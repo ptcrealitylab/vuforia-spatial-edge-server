@@ -17,10 +17,7 @@ module.exports = {
             'warn',
             4
         ],
-        'linebreak-style': [
-            'error',
-            'unix'
-        ],
+        'linebreak-style': 0,
         'quotes': 'off',
         'semi': [
             'warn',

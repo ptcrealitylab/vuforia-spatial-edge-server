@@ -42,6 +42,10 @@ class VersionedNode extends ValueNode {
         this.setDirty();
     }
 
+    getVersion() {
+        return this.#version;
+    }
+
     /**
      * @override
      * @returns {VersionedNodeState}

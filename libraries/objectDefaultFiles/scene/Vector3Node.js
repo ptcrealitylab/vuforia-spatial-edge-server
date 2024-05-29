@@ -34,9 +34,9 @@ class Vector3Node extends ObjectNode {
      */
     getValue() {
         return {
-            "x": this.get("x"),
-            "y": this.get("y"),
-            "z": this.get("z")
+            "x": this.get("x").get(),
+            "y": this.get("y").get(),
+            "z": this.get("z").get()
         };
     }
 }

@@ -14,6 +14,14 @@ class GLTFLoaderComponentNode extends BaseComponentNode {
     setUrl(url) {
         this.get("url").set(url);
     }
+
+    setEntityNode(node) {
+        this.getListener().setEntityNode(node);
+    }
+
+    getComponent() {
+        return this.getListener().getComponent();
+    }
 }
 
 export default GLTFLoaderComponentNode;

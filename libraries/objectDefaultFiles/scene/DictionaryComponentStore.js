@@ -15,6 +15,10 @@ class DictionaryComponentStore extends DictionaryStore {
     setEntityNode(_node) {
 
     }
+
+    getComponent() {
+        return {update: () => {}};
+    }
 }
 
 export default DictionaryComponentStore;

@@ -40,6 +40,14 @@ class TransformComponentNode extends BaseComponentNode {
         const scale = this.get("scale");
         scale.setValue(x, y, z);
     }
+
+    setEntityNode(node) {
+        this.getListener().setEntityNode(node);
+    }
+
+    getComponent() {
+        return this.getListener().getComponent();
+    }
 }
 
 export default TransformComponentNode;

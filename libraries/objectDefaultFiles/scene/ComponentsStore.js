@@ -27,13 +27,15 @@ class ComponentsStore extends DictionaryStore {
      */
     create(_key, state) {
         if (state.hasOwnProperty("type") && state.type.startsWith("Object.Component")) {
+            let ret = null;
             if (state.type === GLTFLoaderComponentNode.TYPE) {
-                return new GLTFLoaderComponentNode(new GLTFLoaderComponentStore());
+                ret = new GLTFLoaderComponentNode(new GLTFLoaderComponentStore());
             } else if (state.type === TransformComponentNode.TYPE) {
-                return new TransformComponentNode(new TransformComponentStore());
+                ret = new TransformComponentNode(new TransformComponentStore());
             } else {
-                return new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
+                ret = new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
             }
+            return ret;
         } else {
             throw Error("Not a component");
         }

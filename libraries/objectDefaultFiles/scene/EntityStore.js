@@ -3,6 +3,8 @@ import EntitiesNode from "./EntitiesNode.js";
 import EntitiesStore from "./EntitiesStore.js";
 import ComponentsNode from "./ComponentsNode.js";
 import ComponentsStore from "./ComponentsStore.js";
+import TransformComponentNode from "./TransformComponentNode.js";
+import TransformComponentStore from "./TransformComponentStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -35,6 +37,10 @@ class EntityStore extends ObjectStore {
      */
     getEntity() {
         return null;
+    }
+
+    createTransform() {
+        return new TransformComponentNode(new TransformComponentStore());
     }
 }
 
