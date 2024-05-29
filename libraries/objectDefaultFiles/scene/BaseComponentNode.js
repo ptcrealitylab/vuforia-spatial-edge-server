@@ -7,9 +7,8 @@ class BaseComponentNode extends ObjectNode {
         super(listener, type);
     }
 
-    setParent(parent) {
-        super.setParent(parent);
-        this.getListener().setEntityNode(parent.getParent());
+    setEntityNode(_node) {
+
     }
 }
 

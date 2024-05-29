@@ -27,7 +27,7 @@ class TransformComponentStore extends ObjectStore {
         return {
             "position": new Vector3Node(new Vector3Store()),
             "rotation": new QuaternionNode(new QuaternionStore()),
-            "scale": new Vector3Node(new Vector3Store(1, 1, 1))
+            "scale": new Vector3Node(new Vector3Store({x: 1, y: 1, z: 1}))
         };
     }
 
@@ -37,6 +37,10 @@ class TransformComponentStore extends ObjectStore {
      */
     setEntityNode(_node) {
 
+    }
+
+    getComponent() {
+        return {update: () => {}};
     }
 }
 

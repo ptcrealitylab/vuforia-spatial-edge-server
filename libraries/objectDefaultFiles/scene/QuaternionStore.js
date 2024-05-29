@@ -13,11 +13,11 @@ class QuaternionStore extends ObjectStore {
     #initValues;
 
     /**
-     *
+     * @param {QuaternionValue} value
      */
-    constructor(x = 0, y = 0, z = 0, w = 1) {
+    constructor(value = {x: 0, y: 0, z: 0, w: 1}) {
         super();
-        this.#initValues = {x, y, z, w};
+        this.#initValues = value;
     }
 
     /**

@@ -22,7 +22,7 @@ class EntitiesStore extends DictionaryStore {
      * @returns {BaseNode|undefined}
      */
     create(_key, state) {
-        if (state.hasOwnProperty("type") && state.type.startssWith(EntityNode.TYPE)) {
+        if (state.hasOwnProperty("type") && state.type.startsWith(EntityNode.TYPE)) {
             return new EntityNode(new EntityStore());
         } else {
             throw Error("Not an Entity");

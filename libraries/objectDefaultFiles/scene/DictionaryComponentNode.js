@@ -17,13 +17,12 @@ class DictionaryComponentNode extends DictionaryNode {
         super(listener, type);
     }
 
-    /**
-     *
-     * @param {EntityNode} parent
-     */
-    setParent(parent) {
-        super.setParent(parent);
-        this.getListener().setEntityNode(parent.getParent());
+    setEntityNode(node) {
+        this.getListener().setEntityNode(node);
+    }
+
+    getComponent() {
+        return this.listener.getComponent();
     }
 }
 

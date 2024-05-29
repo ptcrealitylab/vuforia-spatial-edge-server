@@ -14,13 +14,11 @@ class Vector3Store extends ObjectStore {
 
     /**
      *
-     * @param {number} x
-     * @param {number} y
-     * @param {number} z
+     * @param {Vector3Value} value
      */
-    constructor(x = 0, y = 0, z = 0) {
+    constructor(value = {x: 0, y: 0, z: 0}) {
         super();
-        this.#initValues = {x, y, z};
+        this.#initValues = value;
     }
 
     /**

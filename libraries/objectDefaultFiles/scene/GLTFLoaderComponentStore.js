@@ -33,6 +33,10 @@ class GLTFLoaderComponentStore extends ObjectStore {
     setEntityNode(_node) {
 
     }
+
+    getComponent() {
+        return {update: () => {}};
+    }
 }
 
 export default GLTFLoaderComponentStore;
