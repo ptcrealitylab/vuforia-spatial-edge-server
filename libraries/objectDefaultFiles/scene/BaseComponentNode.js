@@ -7,8 +7,25 @@ class BaseComponentNode extends ObjectNode {
         super(listener, type);
     }
 
+    /**
+     *
+     * @param {EntityNode} _node
+     */
     setEntityNode(_node) {
+    }
 
+    /**
+     *
+     * @returns {ComponentInterface}
+     */
+    getComponent() {
+        return this;
+    }
+
+    /**
+     *
+     */
+    update() {
     }
 }
 

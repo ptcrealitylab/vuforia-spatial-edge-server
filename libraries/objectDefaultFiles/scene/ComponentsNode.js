@@ -15,13 +15,13 @@ class ComponentsNode extends DictionaryNode {
         super(listener, ComponentsNode.TYPE);
     }
 
-    set(key, value) {
+    set(key, value, makeDirty = true) {
         value.setEntityNode(this.getParent());
         const entity = this.getParent().getEntity();
         if (entity) {
             entity.setComponent(key, value.getComponent());
         }
-        super.set(key, value);
+        super.set(key, value, makeDirty);
     }
 
     setEntityNode(node) {

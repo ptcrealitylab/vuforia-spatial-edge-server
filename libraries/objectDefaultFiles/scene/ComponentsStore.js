@@ -12,28 +12,38 @@ import GLTFLoaderComponentStore from "./GLTFLOaderComponentStore.js";
  */
 
 class ComponentsStore extends DictionaryStore {
+    #entityNode;
+
     /**
-     *
+     * @param {EntityNode} entityNode
      */
-    constructor() {
+    constructor(entityNode) {
         super();
+        this.#entityNode = entityNode;
     }
 
     /**
      * @override
-     * @param {string} _key
+     * @param {string} key
      * @param {BaseNodeState} state
      * @returns {ComponentNode|undefined}
      */
-    create(_key, state) {
+    create(key, state) {
         if (state.hasOwnProperty("type") && state.type.startsWith("Object.Component")) {
-            let ret = null;
-            if (state.type === GLTFLoaderComponentNode.TYPE) {
-                ret = new GLTFLoaderComponentNode(new GLTFLoaderComponentStore());
-            } else if (state.type === TransformComponentNode.TYPE) {
-                ret = new TransformComponentNode(new TransformComponentStore());
-            } else {
-                ret = new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
+            let ret = this.#entityNode.getEntity().createComponent(state);
+            if (!ret && state.type.startsWith("Object.Component")) {
+                if (state.type === TransformComponentNode.TYPE) {
+                    ret = new TransformComponentNode(new TransformComponentStore());
+                } else {
+                    ret = new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
+                }
+            }
+            if (ret) {
+                ret.setEntityNode(this.#entityNode);
+                const entity = this.#entityNode.getEntity();
+                if (entity) {
+                    entity.setComponent(key, ret.getComponent());
+                }
             }
             return ret;
         } else {
