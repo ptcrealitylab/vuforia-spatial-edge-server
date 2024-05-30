@@ -12,35 +12,39 @@ import TransformComponentStore from "./TransformComponentStore.js";
  */
 
 class EntityStore extends ObjectStore {
+    /** @type {EntityInterface} */
+    #entity;
+
     /**
      *
      */
-    constructor() {
+    constructor(entity) {
         super();
+        this.#entity = entity;
     }
 
     /**
      * @override
-     * @param {EntityNode} _thisNode
+     * @param {EntityNode} thisNode
      * @returns {NodeDict}
      */
-    getProperties(_thisNode) {
+    getProperties(thisNode) {
         const ret = {
-            "children": new EntitiesNode(new EntitiesStore(_thisNode)),
-            "components": new ComponentsNode(new ComponentsStore(_thisNode))
+            "children": new EntitiesNode(new EntitiesStore(thisNode)),
+            "components": new ComponentsNode(new ComponentsStore(thisNode))
         };
         return ret;
     }
 
     /**
-     * @returns {EntityInterface|null}
+     * @returns {EntityInterface}
      */
     getEntity() {
-        return null;
+        return this.#entity;
     }
 
     createTransform() {
-        return new TransformComponentNode(new TransformComponentStore());
+        return new TransformComponentNode(new TransformComponentStore(this.#entity.getPosition(), this.#entity.getRotation(), this.#entity.getScale()));
     }
 }
 

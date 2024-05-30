@@ -8,22 +8,27 @@ import EntityStore from "./EntityStore.js";
  */
 
 class EntitiesStore extends DictionaryStore {
+    #entity;
+
     /**
      *
      */
-    constructor() {
+    constructor(entityNode) {
         super();
+        this.#entity = entityNode.getEntity();
     }
 
     /**
      * @override
-     * @param {string} _key
+     * @param {string} key
      * @param {BaseNodeState} state
      * @returns {BaseNode|undefined}
      */
-    create(_key, state) {
+    create(key, state) {
         if (state.hasOwnProperty("type") && state.type.startsWith(EntityNode.TYPE)) {
-            return new EntityNode(new EntityStore());
+            const newEntity = this.#entity.createEntity(key);
+            this.#entity.setChild(key, newEntity);
+            return new EntityNode(new EntityStore(newEntity));
         } else {
             throw Error("Not an Entity");
         }

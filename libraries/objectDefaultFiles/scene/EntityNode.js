@@ -20,8 +20,7 @@ class EntityNode extends ObjectNode {
         super(listener, type);
         this.get("components").setEntityNode(this);
         if (!this.get("components").has("0")) {
-            this.addComponent("0", listener.createTransform());
-            this.getChanges();
+            this.get("components").set("0", listener.createTransform(), false);
         }
     }
 

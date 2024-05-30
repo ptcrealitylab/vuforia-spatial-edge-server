@@ -127,12 +127,14 @@ class DictionaryNode extends BaseNode {
      * @param {string} key
      * @param {ToolRenderNode} value
      */
-    set(key, value) {
+    set(key, value, makeDirty = true) {
         this.#properties[key] = value;
         value.setParent(this);
-        value.setTypeDirty();
-        value.setDirty();
-        ObjectNode.setChildrenDirty(value);
+        if (makeDirty) {
+            value.setTypeDirty();
+            value.setDirty();
+            ObjectNode.setChildrenDirty(value);
+        }
     }
 
     /**
