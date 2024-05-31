@@ -1,8 +1,12 @@
+/**
+ * @typedef {{setComponent: (order: number, component: ComponentInterface) => void, removeComponent: (order: number) => void, updateComponents: () => void, setChild: (key: string, child: EntityInterface) => void, getChild: (key: string) => EntityInterface|undefined, removeChild: (key: string) => void, createEntity: (name: string) => EntityInterface}} EntityInterface
+ */
+
 class BaseEntity {
     /** @type {{oreder: number, component: ComponentInterface}[]} */
     #components;
 
-    /** @type {BaseEntity} */
+    /** @type {EntityInterface} */
     #children;
 
     constructor() {
@@ -13,8 +17,7 @@ class BaseEntity {
     /**
      *
      * @param {number} order
-     * @param {ThreejsComponent} component
-     * @returns
+     * @param {ComponentInterface} component
      */
     setComponent(order, component) {
         for (let i = 0; i < this.#components.length; i++) {
@@ -53,7 +56,7 @@ class BaseEntity {
     /**
      *
      * @param {string} key
-     * @param {ThreejsEntity} child
+     * @param {EntityInterface} child
      */
     setChild(key, child) {
         this.#children[key] = child;

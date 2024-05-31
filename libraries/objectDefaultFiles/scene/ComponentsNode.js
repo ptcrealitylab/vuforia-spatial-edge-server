@@ -1,6 +1,12 @@
 import DictionaryNode from "./DictionaryNode.js";
 
 /**
+ * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
+ * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
+ * @typedef {import("./BaseComponentNode.js").BaseComponentNodeState} BaseComponentNodeState
+ * @typedef {import("./BaseComponentNode.js").BaseComponentNodeDelta} BaseComponentNodeDelta
+ * @typedef {{properties: {[key: string]: BaseComponentNodeState}} & BaseNodeState} ComponentsNodeState
+ * @typedef {{properties?: {[key: string]: BaseComponentNodeDelta}} & BaseNodeDelta} ComponentsNodeDelta
  * @typedef {import("./DictionaryNode.js").DictionaryInterface} DictionaryInterface
  */
 

@@ -48,6 +48,10 @@ class IFrameMessageInterface extends MessageInterface {
          * @type {string}
          */
         this.targetOrigin = targetOrigin;
+        /**
+         * @type {onMessageFunc|null}
+         */
+        this.func = null;
     }
 
     /**
@@ -66,10 +70,17 @@ class IFrameMessageInterface extends MessageInterface {
      * @param {onMessageFunc} func
      */
     setOnMessage(func) {
+        this.func = func;
         if (self) {
             self.addEventListener("message", func);
         } else {
             throw new Error("IFrameMessageInterface no contentWindow");
+        }
+    }
+
+    onDelete() {
+        if (this.func) {
+            self.removeEventListener("message", this.func);
         }
     }
 }

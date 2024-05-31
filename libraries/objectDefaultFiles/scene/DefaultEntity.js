@@ -80,8 +80,8 @@ class DefaultEntity extends BaseEntity {
     }
 
     /**
-     * 
-     * @param {ValueDict} state 
+     *
+     * @param {ValueDict} state
      * @returns {ComponentInterface}
      */
     createComponent(state) {
@@ -91,6 +91,9 @@ class DefaultEntity extends BaseEntity {
             }
         }
         return null;
+    }
+
+    onDelete() {
     }
 }
 

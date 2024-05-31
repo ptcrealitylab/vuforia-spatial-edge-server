@@ -319,6 +319,22 @@ describe("DictionaryNode", () => {
 
         expect(child1.isDirty()).toBe(true);
     });
+    test("set new property (makeDirty false) doesn't set node dirty", () => {
+        const child1 = new BaseNode("test");
+        const node = new DictionaryNode(new MockDictionaryStore());
+
+        node.set("test1", child1, false);
+
+        expect(node.isDirty()).toBe(false);
+    });
+    test("set new property (makeDirty false) deosn't set child dirty", () => {
+        const child1 = new BaseNode("test");
+        const node = new DictionaryNode(new MockDictionaryStore());
+
+        node.set("test1", child1, false);
+
+        expect(child1.isDirty()).toBe(false);
+    });
     test("set existing property", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");

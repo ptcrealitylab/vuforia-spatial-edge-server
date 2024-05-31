@@ -220,10 +220,17 @@ class DictionaryNode extends BaseNode {
         if (this.#isPropertiesDirty) {
             ret.properties = {};
             this.#isPropertiesDirty = false;
+            const deleteMarkers = [];
             for (const entry of Object.entries(this.#properties)) {
                 if (entry[1].isDirty()) {
                     ret.properties[entry[0]] = entry[1].getChanges();
+                    if (entry[1] instanceof DeleteNode) {
+                        deleteMarkers.push(entry[0]);
+                    }
                 }
+            }
+            for (const entry of deleteMarkers) {
+                delete this.#properties[entry];
             }
         }
         return ret;

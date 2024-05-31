@@ -1,6 +1,12 @@
 import ObjectNode from "./ObjectNode.js";
 
 /**
+ * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
+ * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
+ * @typedef {import("./ToolsRootNode.js").ToolsRootNodeState} ToolsRootNodeState
+ * @typedef {import("./ToolsRootNode.js").ToolsRootNodeDelta} ToolsRootNodeDelta
+ * @typedef {{properties: {tools: ToolsRootNodeState}} & BaseNodeState} AnchoredGroupNodeState
+ * @typedef {{properties?: {tools?: ToolsRootNodeDelta}} & BaseNodeDelta} AnchoredGroupNodeDelta
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
  */
 

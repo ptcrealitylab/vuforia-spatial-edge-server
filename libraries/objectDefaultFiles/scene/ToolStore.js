@@ -1,13 +1,16 @@
 import EntityStore from "./EntityStore.js";
-import DefaultEntity from "./DefaultEntity.js";
+
+/**
+ * @typedef {import("./BaseEntity.js").EntityInterface} EntityInterface
+ */
 
 class ToolStore extends EntityStore {
 
     /**
-     *
+     * @param {EntityInterface} entity
      */
-    constructor() {
-        super(new DefaultEntity());
+    constructor(entity) {
+        super(entity);
     }
 }
 

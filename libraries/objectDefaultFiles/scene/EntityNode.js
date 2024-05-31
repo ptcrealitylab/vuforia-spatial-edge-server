@@ -1,6 +1,14 @@
 import ObjectNode from "./ObjectNode.js";
 
 /**
+ * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
+ * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
+ * @typedef {import("./EntitiesNode.js").EntitiesNodeState} EntitiesNodeState
+ * @typedef {import("./EntitiesNode.js").EntitiesNodeDelta} EntitiesNodeDelta
+ * @typedef {import("./ComponentsNode.js").ComponentsNodeState} ComponentsNodeState
+ * @typedef {import("./ComponentsNode.js").ComponentsNodeDelta} ComponentsNodeDelta
+ * @typedef {{properties: {children: EntitiesNodeState, components: ComponentsNodeState}} & BaseNodeState} EntityNodeState
+ * @typedef {{properties?: {children?: EntitiesNodeDelta, components?: ComponentsNodeDelta}} & BaseNodeDelta} EntityNodeDelta
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
  * @typedef {import("./DictionaryComponentNode.js").default} ComponentNode
  * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
@@ -72,6 +80,10 @@ class EntityNode extends ObjectNode {
     setScale(x, y, z) {
         const transform = this.get("components").get(0);
         transform.setScale({x, y, z});
+    }
+
+    onDelete() {
+        this.getEntity().onDelete();
     }
 }
 
