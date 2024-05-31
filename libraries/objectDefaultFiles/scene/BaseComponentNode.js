@@ -1,5 +1,12 @@
 import ObjectNode from "./ObjectNode.js";
 
+/**
+ * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
+ * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
+ * @typedef {{properties: {[key: string]: BaseNodeState}} & BaseNodeState} BaseComponentNodeState
+ * @typedef {{properties?: {[key: string]: BaseNodeDelta}} & BaseNodeDelta} BaseComponentNodeDelta
+ */
+
 class BaseComponentNode extends ObjectNode {
     static TYPE = "Object.Component";
 

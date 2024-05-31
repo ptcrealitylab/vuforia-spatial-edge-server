@@ -44,6 +44,11 @@ class EntitiesStore extends DictionaryStore {
     cast (_key, _oldNode, _state) {
         throw Error("Can't cast");
     }
+
+    delete(_key, _oldNode) {
+        _oldNode.onDelete();
+        return true;
+    }
 }
 
 export default EntitiesStore;

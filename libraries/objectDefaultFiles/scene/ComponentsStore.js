@@ -3,8 +3,6 @@ import DictionaryComponentNode from "./DictionaryComponentNode.js";
 import DictionaryComponentStore from "./DictionaryComponentStore.js";
 import TransformComponentNode from "./TransformComponentNode.js";
 import TransformComponentStore from "./TransformComponentStore.js";
-import GLTFLoaderComponentNode from "./GLTFLoaderComponentNode.js";
-import GLTFLoaderComponentStore from "./GLTFLOaderComponentStore.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState

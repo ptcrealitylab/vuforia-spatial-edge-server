@@ -35,7 +35,9 @@ class ToolRenderSocket {
     }
 
     sendUpdate(delta) {
-        this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_UPDATE, delta: delta});
+        if (Object.keys(delta).length > 0) {
+            this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_UPDATE, delta: delta});
+        }
     }
 
     onMessage(msg) {
@@ -52,6 +54,10 @@ class ToolRenderSocket {
 
     setListener(listener) {
         this.#listener = listener;
+    }
+
+    onDelete() {
+        this.#messageInterface.onDelete();
     }
 }
 
