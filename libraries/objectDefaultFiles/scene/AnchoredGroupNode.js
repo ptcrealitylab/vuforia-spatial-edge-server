@@ -21,6 +21,11 @@ class AnchoredGroupNode extends ObjectNode {
         super(listener, AnchoredGroupNode.TYPE);
     }
 
+    /**
+     *
+     * @param {string} toolId
+     * @returns {AnchoredGroupNodeState}
+     */
     getStateForTool(toolId) {
         const ret = super.getState();
         ret.properties = {};

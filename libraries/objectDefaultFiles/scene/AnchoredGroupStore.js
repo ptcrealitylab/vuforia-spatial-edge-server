@@ -20,7 +20,7 @@ class AnchoredGroupStore extends ObjectStore {
      * @returns {NodeDict}
      */
     getProperties(_thisNode) {
-        return {tools: new ToolsRootNode(new ToolsRootStore())};
+        return {"tools": new ToolsRootNode(new ToolsRootStore())};
     }
 }
 
