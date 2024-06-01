@@ -19,8 +19,12 @@ class GLTFLoaderComponentNode extends BaseComponentNode {
         this.getListener().setEntityNode(node);
     }
 
+    update() {
+        this.getListener().update();
+    }
+
     getComponent() {
-        return this.getListener().getComponent();
+        return this;
     }
 }
 

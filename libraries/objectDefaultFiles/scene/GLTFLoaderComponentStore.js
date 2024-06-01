@@ -34,8 +34,7 @@ class GLTFLoaderComponentStore extends ObjectStore {
 
     }
 
-    getComponent() {
-        return {update: () => {}};
+    update() {
     }
 }
 

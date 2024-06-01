@@ -3,7 +3,7 @@
  */
 
 class BaseEntity {
-    /** @type {{oreder: number, component: ComponentInterface}[]} */
+    /** @type {{order: number, component: ComponentInterface}[]} */
     #components;
 
     /** @type {EntityInterface} */
@@ -37,8 +37,37 @@ class BaseEntity {
         for (let i = 0; i < this.#components.length; i++) {
             if (this.#components[i].order == order) {
                 delete this.#components[i];
+                return;
             }
         }
+    }
+
+    /**
+     *
+     * @param {number} order
+     * @returns {ComponentInterface}
+     */
+    getComponentByOrder(order) {
+        for (let i = 0; i < this.#components.length; i++) {
+            if (this.#components[i].order == order) {
+                return this.#components[i].component;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     *
+     * @param {string} type
+     * @returns {ComponentInterface}
+     */
+    getComponentByType(type) {
+        for (let i = 0; i < this.#components.length; i++) {
+            if (this.#components[i].component.getType() == type) {
+                return this.#components[i].component;
+            }
+        }
+        return undefined;
     }
 
     /**

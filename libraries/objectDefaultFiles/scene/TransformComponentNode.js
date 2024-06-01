@@ -1,5 +1,10 @@
 import BaseComponentNode from "./BaseComponentNode.js";
 
+/**
+ * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
+ * @typedef {import("./QuaternionNode.js").QuaternionValue} QuaternionValue
+ */
+
 class TransformComponentNode extends BaseComponentNode {
     static TYPE = BaseComponentNode.TYPE + ".Transform";
 
@@ -11,42 +16,79 @@ class TransformComponentNode extends BaseComponentNode {
         super(listener, TransformComponentNode.TYPE);
     }
 
+    /**
+     *
+     * @returns {Vector3Value}
+     */
     getPosition() {
-        const position = this.get("position");
-        return position.getValue();
+        return this.get("position").getValue();
     }
 
-    setPosition(x, y, z) {
-        const position = this.get("position");
-        position.setValue(x, y, z);
+    /**
+     *
+     * @param {Vector3Value} position
+     */
+    setPosition(position) {
+        this.get("position").setValue(position);
     }
 
+    /**
+     *
+     * @returns {QuaternionValue}
+     */
     getRotation() {
-        const rotation = this.get("rotation");
-        return rotation.getValue();
+        return this.get("rotation").getValue();
     }
 
-    setRotation(x, y, z, w) {
-        const rotation = this.get("rotation");
-        rotation.setValue(x, y, z, w);
+    /**
+     * 
+     * @param {QuaternionValue} rotation
+     */
+    setRotation(rotation) {
+        this.get("rotation").setValue(rotation);
     }
 
+    /**
+     *
+     * @returns {Vector3Value}
+     */
     getScale() {
-        const scale = this.get("scale");
-        return scale.getValue();
+        return this.get("scale").getValue();
     }
 
-    setScale(x, y, z) {
-        const scale = this.get("scale");
-        scale.setValue(x, y, z);
+    /**
+     *
+     * @param {Vector3Value} scale
+     */
+    setScale(scale) {
+        this.get("scale").setValue(scale);
     }
 
+    fromMatrix(matrix) {
+        this.getListener().fromMatrix(matrix);
+    }
+
+    /**
+     *
+     * @param {EntityNode} node
+     */
     setEntityNode(node) {
         this.getListener().setEntityNode(node);
     }
 
+    /**
+     *
+     */
+    update() {
+        this.getListener().update();
+    }
+
+    /**
+     *
+     * @returns {ComponentInterface}
+     */
     getComponent() {
-        return this.getListener().getComponent();
+        return this;
     }
 }
 

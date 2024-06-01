@@ -36,6 +36,7 @@ class TransformComponentStore extends ObjectStore {
         this.#position = new Vector3Node(new TriggerVector3Store(() => {this.#entityNeedsUpdate = true;}, position));
         this.#rotation = new QuaternionNode(new TriggerQuaternionStore(() => {this.#entityNeedsUpdate = true;}, rotation));
         this.#scale = new Vector3Node(new TriggerVector3Store(() => {this.#entityNeedsUpdate = true;}, scale));
+        this.#entityNeedsUpdate = true;
     }
 
     /**
@@ -65,11 +66,6 @@ class TransformComponentStore extends ObjectStore {
             this.#entity.setRotation(this.#rotation.getValue());
             this.#entity.setScale(this.#scale.getValue());
         }
-    }
-
-
-    getComponent() {
-        return this;
     }
 }
 
