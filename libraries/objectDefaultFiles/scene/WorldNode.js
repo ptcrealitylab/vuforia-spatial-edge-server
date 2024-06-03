@@ -5,8 +5,8 @@ import ObjectNode from "./ObjectNode.js";
  * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
  * @typedef {import("./AnchoredGroupNode.js").AnchoredGroupNodeState} AnchoredGroupNodeState
  * @typedef {import("./AnchoredGroupNode.js").AnchoredGroupNodeDelta} AnchoredGroupNodeDelta
- * @typedef {{properties: {threejsContainer: AnchoredGroupNodeState}} & BaseNodeState} WorldNodeState
- * @typedef {{properties?: {threejsContainer?: AnchoredGroupNodeDelta}} & BaseNodeDelta} WorldNodeDelta
+ * @typedef {{properties: {threejsContainer: AnchoredGroupNodeState, tools: ToolsRootNodeState}} & BaseNodeState} WorldNodeState
+ * @typedef {{properties?: {threejsContainer?: AnchoredGroupNodeDelta tools?: ToolsRootNodeDelta}} & BaseNodeDelta} WorldNodeDelta
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
  */
 

@@ -5,8 +5,8 @@ import ObjectNode from "./ObjectNode.js";
  * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
  * @typedef {import("./ToolsRootNode.js").ToolsRootNodeState} ToolsRootNodeState
  * @typedef {import("./ToolsRootNode.js").ToolsRootNodeDelta} ToolsRootNodeDelta
- * @typedef {{properties: {tools: ToolsRootNodeState}} & BaseNodeState} AnchoredGroupNodeState
- * @typedef {{properties?: {tools?: ToolsRootNodeDelta}} & BaseNodeDelta} AnchoredGroupNodeDelta
+ * @typedef {{properties: {}} & BaseNodeState} AnchoredGroupNodeState
+ * @typedef {{properties?: {}} & BaseNodeDelta} AnchoredGroupNodeDelta
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
  */
 
@@ -27,12 +27,7 @@ class AnchoredGroupNode extends ObjectNode {
      * @returns {AnchoredGroupNodeState}
      */
     getStateForTool(toolId) {
-        const ret = super.getState();
-        ret.properties = {};
-        for (const entry of this.entries()) {
-            ret.properties[entry[0]] = entry[1].getStateForTool(toolId);
-        }
-        return ret;
+        return {};
     }
 }
 

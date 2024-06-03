@@ -15,11 +15,15 @@ class DefaultEntity extends BaseEntity {
     /** @type {Vector3Value} */
     #scale;
 
+    /** @type {boolean} */
+    #isVisible
+
     constructor() {
         super();
         this.#position = {x: 0, y: 0, z: 0};
         this.#rotation = {x: 0, y: 0, z: 0, w: 1};
-        this.#scale = {x: 0, y: 0, z: 0};
+        this.#scale = {x: 1, y: 1, z: 1};
+        this.#isVisible = true;
     }
 
     /**
@@ -68,6 +72,22 @@ class DefaultEntity extends BaseEntity {
      */
     setScale(scale) {
         this.#scale = scale;
+    }
+
+    /**
+     *
+     * @param {boolean} isVisible
+     */
+    setVisible(isVisible) {
+        this.#isVisible = isVisible;
+    }
+
+    /**
+     *
+     * @returns {boolean}
+     */
+    isVisible() {
+        return this.#isVisible;
     }
 
     /**

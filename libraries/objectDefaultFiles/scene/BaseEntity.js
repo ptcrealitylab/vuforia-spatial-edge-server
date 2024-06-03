@@ -72,6 +72,15 @@ class BaseEntity {
 
     /**
      *
+     * @param {string} type
+     * @returns {boolean}
+     */
+    hasComponentWithType(type) {
+        return this.getComponentByType(type) !== undefined;
+    }
+
+    /**
+     *
      */
     updateComponents() {
         for (let entry of this.#components) {

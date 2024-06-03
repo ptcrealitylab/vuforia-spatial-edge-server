@@ -9,6 +9,7 @@ import EntitiesStore from "./EntitiesStore.js";
 import ComponentsNode from "./ComponentsNode.js";
 import ComponentsStore from "./ComponentsStore.js";
 import DefaultEntity from "./DefaultEntity.js";
+import VisibilityComponentNode from "./VisibilityComponentNode.js";
 
 /**
  * @typedef {import('../object.js').SpatialInterface} SpatialInterface
@@ -84,8 +85,8 @@ class Base3DEntity extends DefaultEntity {
     #listener;
 
     /**
-     * 
-     * @param {Base3DEntityListener} listener 
+     *
+     * @param {Base3DEntityListener} listener
      */
     constructor(listener) {
         super();
@@ -159,7 +160,7 @@ class Base3DTool {
     }
 
     /**
-     * 
+     *
      * @returns {ToolNode|null}
      */
     getTool() {
@@ -178,14 +179,18 @@ class Base3DTool {
      * @param {WorldNodeState} state
      */
     onReceivedSet(state) {
-        this.#toolId = Object.keys(state.properties.threejsContainer.properties.tools.properties)[0];
+        this.#toolId = Object.keys(state.properties.tools.properties)[0];
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
             this.#world = new WorldNode(new WorldStore());
             this.#tool = new ToolNode(new Base3DToolStore(new Base3DEntity(this.#listener), this.#listener));
-            this.#world.get("threejsContainer").get("tools").set(this.#toolId, this.#tool, false);
+            this.#world.get("tools").set(this.#toolId, this.#tool, false);
 
             this.#world.setState(state);
+
+            if (!this.#tool.hasComponentWithType(VisibilityComponentNode.TYPE)) {
+                this.#tool.addComponent("1", new VisibilityComponentNode());
+            }
 
             this.#listener.onStart();
 
@@ -211,6 +216,13 @@ class Base3DTool {
     onUpdate() {
         this.#tool.getEntity().updateComponents();
         this.#socket.sendUpdate(this.#world.getChanges());
+    }
+
+    setVisible(isVisible) {
+        const component = this.#tool.getComponentByType(VisibilityComponentNode.TYPE);
+        if (component) {
+            component.set(isVisible);
+        }
     }
 }
 

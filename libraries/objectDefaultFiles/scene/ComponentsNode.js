@@ -30,6 +30,19 @@ class ComponentsNode extends DictionaryNode {
         super.set(key, value, makeDirty);
     }
 
+    /**
+     *
+     * @param {string} type
+     */
+    getWithType(type) {
+        for (const node of this.values()) {
+            if (node.getType() === type) {
+                return node;
+            }
+        }
+        return undefined;
+    }
+
     setEntityNode(node) {
         for (const component of this.values()) {
             component.setEntityNode(node);
