@@ -67,6 +67,22 @@ class EntityNode extends ObjectNode {
         this.get("components").set(order, component);
     }
 
+    /**
+     *
+     * @param {string} type
+     */
+    getComponentByType(type) {
+        return this.get("components").getWithType(type);
+    }
+
+    /**
+     *
+     * @param {string} type
+     */
+    hasComponentWithType(type) {
+        return this.getComponentByType(type) !== undefined;
+    }
+
     setPosition(x, y, z) {
         const transform = this.get("components").get(0);
         transform.setPosition({x, y, z});

@@ -3,6 +3,8 @@ import DictionaryComponentNode from "./DictionaryComponentNode.js";
 import DictionaryComponentStore from "./DictionaryComponentStore.js";
 import TransformComponentNode from "./TransformComponentNode.js";
 import TransformComponentStore from "./TransformComponentStore.js";
+import VisibilityComponentNode from "./VisibilityComponentNode.js";
+import ValueComponentNode from "./ValueComponentNode.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
@@ -27,13 +29,17 @@ class ComponentsStore extends DictionaryStore {
      * @returns {ComponentNode|undefined}
      */
     create(key, state) {
-        if (state.hasOwnProperty("type") && state.type.startsWith("Object.Component")) {
+        if (state.hasOwnProperty("type") && (state.type.startsWith("Object.Component") || state.type.startsWith("Value.Component"))) {
             let ret = this.#entityNode.getEntity().createComponent(state);
-            if (!ret && state.type.startsWith("Object.Component")) {
+            if (!ret) {
                 if (state.type === TransformComponentNode.TYPE) {
                     ret = new TransformComponentNode(new TransformComponentStore());
-                } else {
+                } else if (state.type === VisibilityComponentNode.TYPE) {
+                    ret = new VisibilityComponentNode();
+                } else if (state.type.startsWith("Object.Component")) {
                     ret = new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
+                } else {
+                    ret = new ValueComponentNode(state.type);
                 }
             }
             if (ret) {

@@ -1,6 +1,8 @@
 import ObjectStore from "./ObjectStore.js";
 import AnchoredGroupNode from "./AnchoredGroupNode.js";
 import AnchoredGroupStore from "./AnchoredGroupStore.js";
+import ToolsRootStore from "./ToolsRootStore.js";
+import ToolsRootNode from "./ToolsRootNode.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -21,7 +23,10 @@ class WorldStore extends ObjectStore {
      * @returns {NodeDict}
      */
     getProperties(_node) {
-        return {"threejsContainer": new AnchoredGroupNode(new AnchoredGroupStore())};
+        return {
+            "threejsContainer": new AnchoredGroupNode(new AnchoredGroupStore()),
+            "tools": new ToolsRootNode(new ToolsRootStore())
+        };
     }
 }
 
