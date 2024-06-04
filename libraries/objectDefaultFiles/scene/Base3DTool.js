@@ -1,3 +1,4 @@
+import DateTimer from "./DateTimer.js";
 import {ToolRenderSocket} from "./ToolRenderStream.js";
 import {ParentMessageInterface} from "./MessageInterface.js";
 import WorldNode from "./WorldNode.js";
@@ -23,6 +24,8 @@ import VisibilityComponentNode from "./VisibilityComponentNode.js";
  * @typedef {{onInitializeEntity: (key: string, node: Base3DEntity) => void}} Base3DEntitiesListener
  * @typedef {{onStart: () => void} & Base3DEntityListener & Base3DEntitiesListener} Base3DToolListener
  */
+
+
 
 class Base3DEntitiesStore extends EntitiesStore {
     /** @type {Base3DEntitiesListener} */
@@ -135,6 +138,9 @@ class Base3DTool {
     /**@type {Base3DToolInterface} */
     #listener;
 
+    /** @type {Timer} */
+    #timer;
+
     /**
      *
      * @param {SpatialInterface} spatialInterface
@@ -142,6 +148,7 @@ class Base3DTool {
      */
     constructor(spatialInterface, listener, bindOnSpatialInterfaceLoaded = true) {
         this.#listener = listener;
+        this.#timer = new DateTimer();
 
         const messageInterface = new ParentMessageInterface("*");
         this.#socket = new ToolRenderSocket(messageInterface);
@@ -179,12 +186,16 @@ class Base3DTool {
      * @param {WorldNodeState} state
      */
     onReceivedSet(state) {
-        this.#toolId = Object.keys(state.properties.tools.properties)[0];
+        this.#toolId = state.toolId;
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
-            this.#world = new WorldNode(new WorldStore());
+            this.#world = new WorldNode(new WorldStore(this.#timer));
             this.#tool = new ToolNode(new Base3DToolStore(new Base3DEntity(this.#listener), this.#listener));
-            this.#world.get("tools").set(this.#toolId, this.#tool, false);
+            let toolsRoot = this.#world;
+            for (const key of state.toolsRoot) {
+                toolsRoot = toolsRoot.get(key);
+            }
+            toolsRoot.set(this.#toolId, this.#tool, false);
 
             this.#world.setState(state);
 
@@ -214,6 +225,7 @@ class Base3DTool {
      *
      */
     onUpdate() {
+        this.#timer.update();
         this.#tool.getEntity().updateComponents();
         this.#socket.sendUpdate(this.#world.getChanges());
     }

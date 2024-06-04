@@ -21,12 +21,18 @@ class WorldNode extends ObjectNode {
         super(listener, WorldNode.TYPE);
     }
 
+    getTimer() {
+        return this.getListener().getTimer();
+    }
+
     getStateForTool(toolId) {
         const ret = super.getState();
         ret.properties = {};
         for (const entry of this.entries()) {
             ret.properties[entry[0]] = entry[1].getStateForTool(toolId);
         }
+        ret.toolId = toolId;
+        ret.toolsRoot = ["tools"];
         return ret;
     }
 }

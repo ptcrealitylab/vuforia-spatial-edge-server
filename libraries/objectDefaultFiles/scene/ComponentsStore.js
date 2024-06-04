@@ -4,6 +4,7 @@ import DictionaryComponentStore from "./DictionaryComponentStore.js";
 import TransformComponentNode from "./TransformComponentNode.js";
 import TransformComponentStore from "./TransformComponentStore.js";
 import VisibilityComponentNode from "./VisibilityComponentNode.js";
+import SimpleAnimationComponentNode from "./SimpleAnimationComponentNode.js";
 import ValueComponentNode from "./ValueComponentNode.js";
 
 /**
@@ -36,6 +37,8 @@ class ComponentsStore extends DictionaryStore {
                     ret = new TransformComponentNode(new TransformComponentStore());
                 } else if (state.type === VisibilityComponentNode.TYPE) {
                     ret = new VisibilityComponentNode();
+                } else if (state.type === SimpleAnimationComponentNode.TYPE) {
+                    ret = new SimpleAnimationComponentNode();
                 } else if (state.type.startsWith("Object.Component")) {
                     ret = new DictionaryComponentNode(new DictionaryComponentStore(), state.type);
                 } else {

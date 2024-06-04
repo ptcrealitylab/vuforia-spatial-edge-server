@@ -10,11 +10,19 @@ import ToolsRootNode from "./ToolsRootNode.js";
  */
 
 class WorldStore extends ObjectStore {
+    /** @type {Timer} */
+    #timer;
+
     /**
      *
      */
-    constructor() {
+    constructor(timer) {
         super();
+        this.#timer = timer;
+    }
+
+    getTimer() {
+        return this.#timer;
     }
 
     /**

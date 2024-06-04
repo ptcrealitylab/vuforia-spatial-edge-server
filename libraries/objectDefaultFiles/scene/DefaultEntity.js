@@ -16,7 +16,7 @@ class DefaultEntity extends BaseEntity {
     #scale;
 
     /** @type {boolean} */
-    #isVisible
+    #isVisible;
 
     constructor() {
         super();
