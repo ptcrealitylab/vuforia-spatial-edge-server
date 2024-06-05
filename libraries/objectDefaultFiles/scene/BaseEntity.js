@@ -125,6 +125,33 @@ class BaseEntity {
     createEntity(_name) {
         throw Error("Can't instantiate abstract class");
     }
+
+    /**
+     *
+     */
+    internalRelease() {
+    }
+
+    /**
+     *
+     */
+    release() {
+        BaseEntity.entityReleaser(this);
+    }
+
+    /**
+     *
+     * @param {baseEntity} entity
+     */
+    static entityReleaser(entity) {
+        entity.internalRelease();
+        for (let entry of entity.#components) {
+            entry.component.release();
+        }
+        for (let child of Object.values(entity.#children)) {
+            BaseEntity.entityReleaser(child);
+        }
+    }
 }
 
 export default BaseEntity;

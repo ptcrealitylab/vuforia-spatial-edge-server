@@ -36,6 +36,9 @@ class GLTFLoaderComponentStore extends ObjectStore {
 
     update() {
     }
+
+    release() {
+    }
 }
 
 export default GLTFLoaderComponentStore;

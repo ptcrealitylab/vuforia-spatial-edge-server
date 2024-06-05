@@ -31,7 +31,6 @@ class WorldNode extends ObjectNode {
         for (const entry of this.entries()) {
             ret.properties[entry[0]] = entry[1].getStateForTool(toolId);
         }
-        ret.toolId = toolId;
         ret.toolsRoot = ["tools"];
         return ret;
     }

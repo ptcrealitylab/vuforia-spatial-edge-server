@@ -17,7 +17,7 @@ class DictionaryComponentStore extends DictionaryStore {
     }
 
     getComponent() {
-        return {update: () => {}};
+        return {update: () => {}, release: () => {}};
     }
 }
 

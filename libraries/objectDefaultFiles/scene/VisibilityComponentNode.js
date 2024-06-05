@@ -24,6 +24,9 @@ class VisibilityComponentNode extends ValueNode {
     getComponent() {
         return this;
     }
+
+    release() {
+    }
 }
 
 export default VisibilityComponentNode;

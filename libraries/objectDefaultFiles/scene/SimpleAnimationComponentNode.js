@@ -103,6 +103,9 @@ class SimpleAnimationComponentNode extends ObjectNode {
         }
         this.#entityNode.getEntity().setPosition(sample);
     }
+
+    release() {
+    }
 }
 
 export default SimpleAnimationComponentNode;
