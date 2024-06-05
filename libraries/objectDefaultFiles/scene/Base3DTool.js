@@ -23,6 +23,7 @@ import VisibilityComponentNode from "./VisibilityComponentNode.js";
  * @typedef {{createEntity: (name: string) => BaseEntity, createComponent: (state: BaseComponentNodeState) => BaseComponentNode}} Base3DEntityListener
  * @typedef {{onInitializeEntity: (key: string, node: Base3DEntity) => void}} Base3DEntitiesListener
  * @typedef {{onStart: () => void} & Base3DEntityListener & Base3DEntitiesListener} Base3DToolListener
+ * @typedef {number} milliseconds
  */
 
 
@@ -141,6 +142,9 @@ class Base3DTool {
     /** @type {Timer} */
     #timer;
 
+    /** @type {boolean} */
+    #isToolVisible;
+
     /**
      *
      * @param {SpatialInterface} spatialInterface
@@ -150,15 +154,13 @@ class Base3DTool {
         this.#listener = listener;
         this.#timer = new DateTimer();
 
-        const messageInterface = new ParentMessageInterface("*");
-        this.#socket = new ToolRenderSocket(messageInterface);
-        this.#socket.setListener(this);
-
         this.#world = null;
         this.#tool = null;
         this.#toolId = "<n/a>";
 
         this.#updateTimer = null;
+
+        this.#isToolVisible = false;
 
         spatialInterface.useToolRenderer();
         if (bindOnSpatialInterfaceLoaded) {
@@ -178,6 +180,11 @@ class Base3DTool {
      *
      */
     onSpatialInterfaceLoaded() {
+        this.#toolId = spatialObject.frame;
+        const messageInterface = new ParentMessageInterface("*");
+        this.#socket = new ToolRenderSocket(messageInterface, spatialObject.frame);
+        this.#socket.setListener(this);
+
         this.#socket.sendGet();
     }
 
@@ -186,7 +193,6 @@ class Base3DTool {
      * @param {WorldNodeState} state
      */
     onReceivedSet(state) {
-        this.#toolId = state.toolId;
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
             this.#world = new WorldNode(new WorldStore(this.#timer));
@@ -203,6 +209,8 @@ class Base3DTool {
                 this.#tool.addComponent("1", new VisibilityComponentNode());
             }
 
+            this.setVisible(this.#isToolVisible);
+
             this.#listener.onStart();
 
             this.#updateTimer = new Worker("/objectDefaultFiles/scene/WebWorkerTimer.js");
@@ -210,6 +218,14 @@ class Base3DTool {
         } else {
             this.#world.setState(state);
         }
+    }
+
+    /**
+     *
+     * @param {milliseconds} period
+     */
+    setUpdatePeriod(period) {
+        this.#updateTimer.postMessage({period: period});
     }
 
     /**
@@ -231,9 +247,12 @@ class Base3DTool {
     }
 
     setVisible(isVisible) {
-        const component = this.#tool.getComponentByType(VisibilityComponentNode.TYPE);
-        if (component) {
-            component.set(isVisible);
+        this.#isToolVisible = isVisible;
+        if (this.#tool) {
+            const component = this.#tool.getComponentByType(VisibilityComponentNode.TYPE);
+            if (component) {
+                component.set(isVisible);
+            }
         }
     }
 }

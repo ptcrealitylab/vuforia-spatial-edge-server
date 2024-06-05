@@ -15,11 +15,15 @@ class ToolRenderSocket {
     /** @type {ToolRenderInterface | null} */
     #listener;
 
+    /** @type {string} */
+    #toolId;
+
     /**
      *
      * @param {import('./MessageInterface').MessageInterface} messageInterface
      */
-    constructor(messageInterface) {
+    constructor(messageInterface, toolId) {
+        this.#toolId = toolId;
         this.#messageInterface = messageInterface;
         this.#messageInterface.setOnMessage((event) => {
             this.onMessage(event.data);
@@ -27,21 +31,21 @@ class ToolRenderSocket {
     }
 
     sendGet() {
-        this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_GET});
+        this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_GET, toolId: this.#toolId});
     }
 
     sendSet(delta) {
-        this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_SET, delta: delta});
+        this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_SET, delta: delta, toolId: this.#toolId});
     }
 
     sendUpdate(delta) {
         if (Object.keys(delta).length > 0) {
-            this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_UPDATE, delta: delta});
+            this.#messageInterface.postMessage({protocol: ToolRenderSocket.V1, command: ToolRenderSocket.CMD_UPDATE, delta: delta, toolId: this.#toolId});
         }
     }
 
     onMessage(msg) {
-        if (this.#listener && msg.protocol === ToolRenderSocket.V1) {
+        if (this.#listener && msg.protocol === ToolRenderSocket.V1 && msg.toolId === this.#toolId) {
             if (msg.command === ToolRenderSocket.CMD_UPDATE) {
                 this.#listener.onReceivedUpdate(msg.delta);
             } else if (msg.command === ToolRenderSocket.CMD_SET) {

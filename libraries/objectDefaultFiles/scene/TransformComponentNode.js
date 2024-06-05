@@ -90,6 +90,9 @@ class TransformComponentNode extends BaseComponentNode {
     getComponent() {
         return this;
     }
+
+    release() {
+    }
 }
 
 export default TransformComponentNode;

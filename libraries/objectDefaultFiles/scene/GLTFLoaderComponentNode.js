@@ -26,6 +26,10 @@ class GLTFLoaderComponentNode extends BaseComponentNode {
     getComponent() {
         return this;
     }
+
+    release() {
+        this.getListener().release();
+    }
 }
 
 export default GLTFLoaderComponentNode;

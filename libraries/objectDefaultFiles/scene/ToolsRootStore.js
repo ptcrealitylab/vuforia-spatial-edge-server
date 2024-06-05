@@ -1,3 +1,4 @@
+import DefaultEntity from "./DefaultEntity.js";
 import DictionaryStore from "./DictionaryStore.js";
 import ToolNode from "./ToolNode.js";
 import ToolStore from "./ToolStore.js";
@@ -20,7 +21,7 @@ class ToolsRootStore extends DictionaryStore {
      */
     create(_key, state) {
         if (state.hasOwnProperty("type") && state.type === ToolNode.TYPE) {
-            const ret = new ToolNode(new ToolStore());
+            const ret = new ToolNode(new ToolStore(new DefaultEntity()));
             ret.setState(state);
             return ret;
         }
