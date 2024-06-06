@@ -1713,6 +1713,7 @@ function objectWebServer() {
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
         html = html.replace('objectDefaultFiles/SpatialApplicationAPI.js', level + 'objectDefaultFiles/SpatialApplicationAPI.js');
+        html = html.replace('objectDefaultFiles/LanguageInterface.js', level + 'objectDefaultFiles/LanguageInterface.js');
 
         html = html.replace('objectDefaultFiles/styles/', level + 'objectDefaultFiles/styles/');
 
@@ -1883,6 +1884,7 @@ function objectWebServer() {
             html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
             html = html.replace('objectDefaultFiles/SpatialApplicationAPI.js', level + 'objectDefaultFiles/SpatialApplicationAPI.js');
+            html = html.replace('objectDefaultFiles/LanguageInterface.js', level + 'objectDefaultFiles/LanguageInterface.js');
 
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
