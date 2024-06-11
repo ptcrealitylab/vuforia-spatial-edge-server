@@ -22,10 +22,8 @@ class EntitiesNode extends DictionaryNode {
     }
 
     set(key, value) {
-        const entity = this.getParent().getListener().getEntity();
-        if (entity) {
-            entity.setChild(key, value.getEntity());
-        }
+        const entity = this.getListener().getEntity();
+        entity.setChild(key, value.getEntity());
         super.set(key, value);
     }
 }

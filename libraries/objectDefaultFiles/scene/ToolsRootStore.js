@@ -20,8 +20,8 @@ class ToolsRootStore extends DictionaryStore {
      * @returns {BaseNode}
      */
     create(_key, state) {
-        if (state.hasOwnProperty("type") && state.type === ToolNode.TYPE) {
-            const ret = new ToolNode(new ToolStore(new DefaultEntity()));
+        if (state.hasOwnProperty("type") && state.type.startsWith(ToolNode.TYPE)) {
+            const ret = new ToolNode(new ToolStore(new DefaultEntity(), state.type));
             ret.setState(state);
             return ret;
         }

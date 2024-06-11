@@ -283,9 +283,8 @@ class DictionaryNode extends BaseNode {
                     if (!(entry[1].hasOwnProperty("type") && entry[1].type === DeleteNode.TYPE)) {
                         const newProp = this.#listener.create(entry[0], entry[1]);
                         if (newProp) {
-                            newProp.setParent(this);
+                            this.set(entry[0], newProp, false);
                             newProp.setState(entry[1]);
-                            this.#properties[entry[0]] = newProp;
                         }
                     }
                 }

@@ -26,65 +26,6 @@ import VisibilityComponentNode from "./VisibilityComponentNode.js";
  * @typedef {number} milliseconds
  */
 
-
-
-class Base3DEntitiesStore extends EntitiesStore {
-    /** @type {Base3DEntitiesListener} */
-    #listener;
-
-    /**
-     *
-     * @param {ToolNode} entity
-     * @param {Base3DEntitiesListener} listener
-     */
-    constructor(entity, listener) {
-        super(entity);
-        this.#listener = listener;
-    }
-
-    /**
-     *
-     * @param {string} key
-     * @param {BaseNodeState} state
-     * @returns {BaseNode|undefined}
-     */
-    create(key, state) {
-        const node = super.create(key, state);
-        if (node) {
-            this.#listener.onInitializeEntity(key, node);
-        }
-        return node;
-    }
-}
-
-class Base3DToolStore extends ToolStore {
-    /** @type {Base3DEntitiesListener} */
-    #entitiesListener;
-
-    /**
-     *
-     * @param {EntityInterface} entity
-     * @param {Base3DEntitiesListener} entitiesListener
-     */
-    constructor(entity, entitiesListener) {
-        super(entity);
-        this.#entitiesListener = entitiesListener;
-    }
-
-    /**
-     * @override
-     * @param {ToolNode} thisNode
-     * @returns {NodeDict}
-     */
-    getProperties(thisNode) {
-        const ret = {
-            "children": new EntitiesNode(new Base3DEntitiesStore(thisNode, this.#entitiesListener)),
-            "components": new ComponentsNode(new ComponentsStore(thisNode))
-        };
-        return ret;
-    }
-}
-
 class Base3DEntity extends DefaultEntity {
     #listener;
 
@@ -100,21 +41,21 @@ class Base3DEntity extends DefaultEntity {
     /**
      * @override
      * @param {string} name
-     * @returns {Base3DEntity}
+     * @returns {EntityNode}
      */
     createEntity(name) {
         return this.#listener.createEntity(name);
     }
 
     /**
-     *
+     * @param {number} index
      * @param {ValueDict} state
      * @returns {ComponentInterface}
      */
-    createComponent(state) {
-        let ret = super.createComponent(state);
+    createComponent(index, state) {
+        let ret = this.#listener.createComponent(index, state);
         if (ret == null) {
-            ret = this.#listener.createComponent(state);
+            ret = super.createComponent(index, state);
         }
         return ret;
     }
@@ -145,13 +86,17 @@ class Base3DTool {
     /** @type {boolean} */
     #isToolVisible;
 
+    /** @type {string} */
+    #type;
+
     /**
      *
      * @param {SpatialInterface} spatialInterface
      * @param {boolean} bindOnSpatialInterfaceLoaded
      */
-    constructor(spatialInterface, listener, bindOnSpatialInterfaceLoaded = true) {
+    constructor(spatialInterface, listener, type, bindOnSpatialInterfaceLoaded = true) {
         this.#listener = listener;
+        this.#type = type;
         this.#timer = new DateTimer();
 
         this.#world = null;
@@ -196,7 +141,7 @@ class Base3DTool {
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
             this.#world = new WorldNode(new WorldStore(this.#timer));
-            this.#tool = new ToolNode(new Base3DToolStore(new Base3DEntity(this.#listener), this.#listener));
+            this.#tool = new ToolNode(new ToolStore(new Base3DEntity(this.#listener), this.#listener), `${ToolNode.TYPE}.${this.#type}`);
             let toolsRoot = this.#world;
             for (const key of state.toolsRoot) {
                 toolsRoot = toolsRoot.get(key);

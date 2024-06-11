@@ -1,4 +1,9 @@
 import BaseEntity from "./BaseEntity.js";
+import GLTFLoaderComponentNode from "./GLTFLoaderComponentNode.js";
+import GLTFLoaderComponentStore from "./GLTFLoaderComponentStore.js";
+import MaterialComponentNode from "./MaterialComponentNode.js";
+import EntityNode from "./EntityNode.js";
+import EntityStore from "./EntityStore.js";
 
 /**
  * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
@@ -95,8 +100,8 @@ class DefaultEntity extends BaseEntity {
      * @param {string} _name
      * @returns {DefaultEntity}
      */
-    createEntity(_name) {
-        return new DefaultEntity();
+    createEntity(_name, _state) {
+        return new EntityNode(new EntityStore(new DefaultEntity()));
     }
 
     /**
@@ -108,12 +113,14 @@ class DefaultEntity extends BaseEntity {
         if (state.hasOwnProperty("type")) {
             if (state.type === GLTFLoaderComponentNode.TYPE) {
                 return new GLTFLoaderComponentNode(new GLTFLoaderComponentStore());
+            } else if (state.type === MaterialComponentNode.TYPE) {
+                return new MaterialComponentNode(new MaterialComponentStore());
             }
         }
         return null;
     }
 
-    onDelete() {
+    dispose() {
     }
 }
 
