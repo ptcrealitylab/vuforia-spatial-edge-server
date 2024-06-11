@@ -790,6 +790,7 @@
                 this.analyticsBlur = makeSendStub('analyticsBlur');
                 this.analyticsSetDisplayRegion = makeSendStub('analyticsSetDisplayRegion');
                 this.analyticsHydrate = makeSendStub('analyticsHydrate');
+                this.analyticsSetSensor = makeSendStub('analyticsSetSensor');
 
                 this.getOAuthToken = makeSendStub('getOAuthToken');
 
@@ -1809,6 +1810,19 @@
                 analyticsHydrate: {
                     frame: spatialObject.frame,
                     analyticsData,
+                },
+            });
+        };
+
+        /**
+         * @type {SensorPosition} {x: number, y: number, z: number}
+         * @param {SensorPosition} position
+         */
+        this.analyticsSetSensor = function analyticsSetSensor(position) {
+            postDataToParent({
+                analyticsSetSensor: {
+                    frame: spatialObject.frame,
+                    position,
                 },
             });
         };
