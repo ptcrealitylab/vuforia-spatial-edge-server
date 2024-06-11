@@ -49,6 +49,10 @@ class EntityNode extends ObjectNode {
         return this.get("children").has(name);
     }
 
+    getChild(name) {
+        return this.get("children").get(name);
+    }
+
     /**
      *
      * @param {string} name
@@ -98,8 +102,8 @@ class EntityNode extends ObjectNode {
         transform.setScale({x, y, z});
     }
 
-    onDelete() {
-        this.getEntity().onDelete();
+    dispose() {
+        this.getEntity().dispose();
     }
 }
 

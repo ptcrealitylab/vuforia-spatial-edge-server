@@ -22,7 +22,7 @@ class DictionaryComponentNode extends DictionaryNode {
     }
 
     getComponent() {
-        return this.listener.getComponent();
+        return this.getListener().getComponent();
     }
 }
 

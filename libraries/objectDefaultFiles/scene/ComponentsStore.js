@@ -30,8 +30,9 @@ class ComponentsStore extends DictionaryStore {
      * @returns {ComponentNode|undefined}
      */
     create(key, state) {
+        const index = Number(key);
         if (state.hasOwnProperty("type") && (state.type.startsWith("Object.Component") || state.type.startsWith("Value.Component"))) {
-            let ret = this.#entityNode.getEntity().createComponent(state);
+            let ret = this.#entityNode.getEntity().createComponent(index, state);
             if (!ret) {
                 if (state.type === TransformComponentNode.TYPE) {
                     ret = new TransformComponentNode(new TransformComponentStore());
@@ -49,7 +50,7 @@ class ComponentsStore extends DictionaryStore {
                 ret.setEntityNode(this.#entityNode);
                 const entity = this.#entityNode.getEntity();
                 if (entity) {
-                    entity.setComponent(key, ret.getComponent());
+                    entity.setComponent(index, ret.getComponent());
                 }
             }
             return ret;

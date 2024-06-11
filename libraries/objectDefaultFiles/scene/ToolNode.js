@@ -19,8 +19,8 @@ class ToolNode extends EntityNode {
      *
      * @param {ObjectInterface} listener
      */
-    constructor(listener) {
-        super(listener, ToolNode.TYPE);
+    constructor(listener, type = ToolNode.TYPE) {
+        super(listener, type);
     }
 }
 

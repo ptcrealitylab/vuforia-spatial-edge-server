@@ -1,6 +1,5 @@
 import DictionaryStore from "./DictionaryStore.js";
 import EntityNode from "./EntityNode.js";
-import EntityStore from "./EntityStore.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
@@ -18,6 +17,10 @@ class EntitiesStore extends DictionaryStore {
         this.#entity = entityNode.getEntity();
     }
 
+    getEntity() {
+        return this.#entity;
+    }
+
     /**
      * @override
      * @param {string} key
@@ -26,9 +29,7 @@ class EntitiesStore extends DictionaryStore {
      */
     create(key, state) {
         if (state.hasOwnProperty("type") && state.type.startsWith(EntityNode.TYPE)) {
-            const newEntity = this.#entity.createEntity(key);
-            this.#entity.setChild(key, newEntity);
-            return new EntityNode(new EntityStore(newEntity));
+            return this.#entity.createEntity(key, state);
         } else {
             throw Error("Not an Entity");
         }
