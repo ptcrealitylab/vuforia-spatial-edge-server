@@ -1854,13 +1854,13 @@
 
         /**
          * @type {SensorPosition} {x: number, y: number, z: number}
-         * @param {SensorPosition} position
+         * @param {{position: SensorPosition, points: Array}} sensor - description of sensor
          */
-        this.analyticsSetSensor = function analyticsSetSensor(position) {
+        this.analyticsSetSensor = function analyticsSetSensor(sensor) {
             postDataToParent({
                 analyticsSetSensor: {
                     frame: spatialObject.frame,
-                    position,
+                    sensor,
                 },
             });
         };
