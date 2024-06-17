@@ -58,8 +58,16 @@ class EntityNode extends ObjectNode {
      * @param {string} name
      * @param {EntityNode} entity
      */
-    setChild(name, entity) {
-        this.get("children").set(name, entity);
+    setChild(name, entity, makeDirty = true) {
+        this.get("children").set(name, entity, makeDirty);
+    }
+
+    createEntity(key, state) {
+        return this.getListener().createEntity(key, state);
+    }
+
+    createComponent(order, state) {
+        return this.getListener().createComponent(order, state);
     }
 
     /**
@@ -67,8 +75,8 @@ class EntityNode extends ObjectNode {
      * @param {number} order
      * @param {ComponentNode} component
      */
-    addComponent(order, component) {
-        this.get("components").set(order, component);
+    addComponent(order, component, makeDirty = true) {
+        this.get("components").set(order, component, makeDirty);
     }
 
     /**

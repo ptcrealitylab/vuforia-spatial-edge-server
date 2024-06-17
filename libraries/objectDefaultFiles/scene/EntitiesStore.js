@@ -7,18 +7,22 @@ import EntityNode from "./EntityNode.js";
  */
 
 class EntitiesStore extends DictionaryStore {
-    #entity;
+    #entityNode;
 
     /**
      *
      */
     constructor(entityNode) {
         super();
-        this.#entity = entityNode.getEntity();
+        this.#entityNode = entityNode;
     }
 
+    /**
+     *
+     * @returns {EntityInterface}
+     */
     getEntity() {
-        return this.#entity;
+        return this.#entityNode.getEntity();
     }
 
     /**
@@ -29,7 +33,7 @@ class EntitiesStore extends DictionaryStore {
      */
     create(key, state) {
         if (state.hasOwnProperty("type") && state.type.startsWith(EntityNode.TYPE)) {
-            return this.#entity.createEntity(key, state);
+            return this.#entityNode.createEntity(key, state);
         } else {
             throw Error("Not an Entity");
         }
