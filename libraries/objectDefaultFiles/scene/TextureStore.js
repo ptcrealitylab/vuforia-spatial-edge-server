@@ -1,12 +1,12 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 import {UVMapping, ClampToEdgeWrapping, LinearFilter} from "../../thirdPartyCode/three/three.module.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
  * @typedef {import("./TextureNode.js").default} TextureNode
  * @typedef {import("./TextureNode.js").TextureValue} TextureValue
+ * @typedef {string} resourceId
  */
 
 class TextureStore extends ObjectStore {
@@ -25,17 +25,17 @@ class TextureStore extends ObjectStore {
     /**
      * @override
      * @param {TextureNode} _thisNode
-     * @returns {{id: ValueNode}}
+     * @returns {{id: ValueNode<resourceId>, mapping: ValueNode<number>, wrapS: ValueNode<number>, wrapT: ValueNode<number>, magFilter: ValueNode<number>, minFilter: ValueNode<number>, anisotropy: ValueNode<number>}}
      */
     getProperties(_thisNode) {
         return {
-            "id": new ValueNode(new ValueStore(this.#initValues.id)),
-            "mapping": new ValueNode(new ValueStore(this.#initValues.mapping)),
-            "wrapS": new ValueNode(new ValueStore(this.#initValues.wrapS)),
-            "wrapT": new ValueNode(new ValueStore(this.#initValues.wrapT)),
-            "magFilter": new ValueNode(new ValueStore(this.#initValues.magFilter)),
-            "minFilter": new ValueNode(new ValueStore(this.#initValues.minFilter)),
-            "anisotropy": new ValueNode(new ValueStore(this.#initValues.anisotropy))
+            "id": new ValueNode(this.#initValues.id),
+            "mapping": new ValueNode(this.#initValues.mapping),
+            "wrapS": new ValueNode(this.#initValues.wrapS),
+            "wrapT": new ValueNode(this.#initValues.wrapT),
+            "magFilter": new ValueNode(this.#initValues.magFilter),
+            "minFilter": new ValueNode(this.#initValues.minFilter),
+            "anisotropy": new ValueNode(this.#initValues.anisotropy)
         };
     }
 }

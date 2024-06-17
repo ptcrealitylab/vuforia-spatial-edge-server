@@ -5,49 +5,80 @@ import BaseNode from "./BaseNode.js";
  * @typedef {import("./BaseNode.js").BaseNodeDelta} BaseNodeDelta
  * @typedef {string|number|ValueDict|string[]|number[]|ValueDict[]} Value
  * @typedef {{[key: string]: Value}} ValueDict
- * @typedef {{get: () => Value, set: (value: Value) => void}} ValueInterface
- * @typedef {{value: Value} & BaseNodeState} ValueNodeState
- * @typedef {{value?: Value} & BaseNodeDelta} ValueNodeDelta
+ * @template {Value} T
+ * @typedef {{value: T} & BaseNodeState} ValueNodeState
+ * @template {Value} T
+ * @typedef {{value?: T} & BaseNodeDelta} ValueNodeDelta
+ * @template {Value} T
+ * @typedef {(value: ValueNode<T>) => void} onChangedFunc
  */
 
 /**
  * Leaf node in the graph, for simple values or objects that need no further subdivision
+ * @template {Value} T
  */
 class ValueNode extends BaseNode {
     static TYPE = "Value";
 
-    /** @type {ValueInterface} */
+    /** @type {T} */
     #value;
 
     /** @type {boolean}*/
     #isValueDirty;
 
+    /** @type {onChangedFunc<T>} */
+    #onChanged;
+
     /**
      *
-     * @param {ValueInterface} value
+     * @param {T} value
      * @param {string} type
      */
     constructor(value, type = ValueNode.TYPE) {
         super(type);
         this.#value = value;
         this.#isValueDirty = false;
+        this.#onChanged = null;
     }
 
     /**
-     *
-     * @returns {Value}
+     * @returns {T}
      */
-    get() {
-        return this.#value.get();
+    get value() {
+        return this.#value;
     }
 
     /**
-     *
-     * @param {Value} value
+     * @param {T} value
      */
-    set(value) {
-        this.#value.set(value);
+    set value(value) {
+        this.#setValue(value);
         this.setDirty();
+    }
+
+    /**
+     * @param {onChangedFunc<T>} onChangedFunc
+     */
+    set onChanged(onChangedFunc) {
+        this.#onChanged = onChangedFunc;
+    }
+
+    /**
+     * @returns {onChangedFunc<T>}
+     */
+    get onChanged() {
+        return this.#onChanged;
+    }
+
+    /**
+     * 
+     * @param {T} value 
+     */
+    #setValue(value) {
+        this.#value = value;
+        if (this.#onChanged) {
+            this.#onChanged(this);
+        }
     }
 
     /**
@@ -83,30 +114,30 @@ class ValueNode extends BaseNode {
 
     /**
      * @override
-     * @returns {ValueNodeState}
+     * @returns {ValueNodeState<T>}
      */
     getState() {
         const ret = super.getState();
-        ret.value = this.#value.get();
+        ret.value = this.#value;
         return ret;
     }
 
     /**
      * @override
-     * @param {ValueNodeState} state
+     * @param {ValueNodeState<T>} state
      */
     setState(state) {
-        this.#value.set(state.value);
+        this.#setValue(state.value);
     }
 
     /**
      * @override
-     * @returns {ValueNodeDelta}
+     * @returns {ValueNodeDelta<T>}
      */
     getChanges() {
         const ret = super.getChanges();
         if (this.#isValueDirty) {
-            ret.value = this.#value.get();
+            ret.value = this.#value;
             this.#isValueDirty = false;
         }
         return ret;
@@ -114,11 +145,11 @@ class ValueNode extends BaseNode {
 
     /**
      * @override
-     * @param {ValueNodeDelta} delta
+     * @param {ValueNodeDelta<T>} delta
      */
     setChanges(delta) {
         if (delta.hasOwnProperty("value")) {
-            this.#value.set(delta.value);
+            this.#setValue(delta.value);
         }
     }
 }

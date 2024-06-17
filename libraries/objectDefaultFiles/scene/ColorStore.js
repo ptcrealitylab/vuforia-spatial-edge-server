@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -28,9 +27,9 @@ class ColorStore extends ObjectStore {
      */
     getProperties(_thisNode) {
         return {
-            "r": new ValueNode(new ValueStore(this.#initValues.r)),
-            "g": new ValueNode(new ValueStore(this.#initValues.g)),
-            "b": new ValueNode(new ValueStore(this.#initValues.b))
+            "r": new ValueNode(this.#initValues.r),
+            "g": new ValueNode(this.#initValues.g),
+            "b": new ValueNode(this.#initValues.b)
         };
     }
 }

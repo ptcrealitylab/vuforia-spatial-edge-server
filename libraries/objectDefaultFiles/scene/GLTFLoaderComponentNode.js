@@ -12,7 +12,7 @@ class GLTFLoaderComponentNode extends BaseComponentNode {
     }
 
     setUrl(url) {
-        this.get("url").set(url);
+        this.get("url").value = url;
     }
 
     setEntityNode(node) {

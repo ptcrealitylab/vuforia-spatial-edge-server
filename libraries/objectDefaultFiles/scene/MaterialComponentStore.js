@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 import DictionaryNode from "./DictionaryNode.js";
 import DictionaryStore from "./DictionaryStore.js";
 
@@ -11,7 +10,7 @@ class MaterialComponentStore extends ObjectStore {
 
     getProperties() {
         return {
-            "material": new ValueNode(new ValueStore()),
+            "material": new ValueNode(""),
             "properties": new DictionaryNode(new DictionaryStore())
         };
     }

@@ -1,9 +1,8 @@
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 class ValueComponentNode extends ValueNode {
     constructor(value, type) {
-        super(new ValueStore(value), type);
+        super(value, type);
     }
 
     /**

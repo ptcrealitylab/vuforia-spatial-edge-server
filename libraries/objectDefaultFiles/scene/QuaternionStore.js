@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -27,10 +26,10 @@ class QuaternionStore extends ObjectStore {
      */
     getProperties(_node) {
         return {
-            "x": new ValueNode(new ValueStore(this.#initValues.x)),
-            "y": new ValueNode(new ValueStore(this.#initValues.y)),
-            "z": new ValueNode(new ValueStore(this.#initValues.z)),
-            "w": new ValueNode(new ValueStore(this.#initValues.w))
+            "x": new ValueNode(this.#initValues.x),
+            "y": new ValueNode(this.#initValues.y),
+            "z": new ValueNode(this.#initValues.z),
+            "w": new ValueNode(this.#initValues.w)
         };
     }
 }

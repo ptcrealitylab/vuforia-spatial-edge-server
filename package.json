@@ -45,7 +45,7 @@
   "scripts": {
     "test": "npm run lint && node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand",
     "jest-only": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand",
-    "jest-graphics": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand --coverage Node DeleteNode ValueStore ValueNode VersionedNode ObjectStore ObjectNode DictionaryStore DictionaryNode, WorldStore, WorldNode",
+    "jest-graphics": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit --runInBand --coverage Node DeleteNode ValueStore ValueNode VersionedNode ObjectStore ObjectNode DictionaryStore DictionaryNode, WorldStore, WorldNode, BaseValueNode",
     "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",

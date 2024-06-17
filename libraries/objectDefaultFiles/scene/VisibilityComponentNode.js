@@ -1,5 +1,4 @@
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 class VisibilityComponentNode extends ValueNode {
     static TYPE = "Value.Component.Visibility";
@@ -7,7 +6,7 @@ class VisibilityComponentNode extends ValueNode {
     #entity;
 
     constructor(isVisible = true) {
-        super(new ValueStore(isVisible), VisibilityComponentNode.TYPE);
+        super(isVisible, VisibilityComponentNode.TYPE);
         this.#entity = null;
     }
 
@@ -16,8 +15,8 @@ class VisibilityComponentNode extends ValueNode {
     }
 
     update() {
-        if (this.#entity.isVisible() !== this.get()) {
-            this.#entity.setVisible(this.get());
+        if (this.#entity.isVisible() !== this.value) {
+            this.#entity.setVisible(this.value);
         }
     }
 

@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -28,10 +27,10 @@ class EulerAnglesStore extends ObjectStore {
      */
     getProperties(_thisNode) {
         return {
-            "x": new ValueNode(new ValueStore(this.#initValues.x)),
-            "y": new ValueNode(new ValueStore(this.#initValues.y)),
-            "z": new ValueNode(new ValueStore(this.#initValues.z)),
-            "order": new ValueNode(new ValueStore(this.#initValues.order))
+            "x": new ValueNode(this.#initValues.x),
+            "y": new ValueNode(this.#initValues.y),
+            "z": new ValueNode(this.#initValues.z),
+            "order": new ValueNode(this.#initValues.order)
         };
     }
 }

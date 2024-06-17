@@ -24,10 +24,10 @@ class QuaternionNode extends ObjectNode {
      * @param {QuaternionValue} value
      */
     setValue(value) {
-        this.get("x").set(value.x);
-        this.get("y").set(value.y);
-        this.get("z").set(value.z);
-        this.get("w").set(value.w);
+        this.get("x").value = value.x;
+        this.get("y").value = value.y;
+        this.get("z").value = value.z;
+        this.get("w").value = value.w;
     }
 
 
@@ -37,10 +37,10 @@ class QuaternionNode extends ObjectNode {
      */
     getValue() {
         return {
-            "x": this.get("x").get(),
-            "y": this.get("y").get(),
-            "z": this.get("z").get(),
-            "w": this.get("w").get()
+            "x": this.get("x").value,
+            "y": this.get("y").value,
+            "z": this.get("z").value,
+            "w": this.get("w").value
         };
     }
 }

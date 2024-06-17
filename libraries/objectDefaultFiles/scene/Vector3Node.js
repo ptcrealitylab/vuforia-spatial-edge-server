@@ -23,9 +23,9 @@ class Vector3Node extends ObjectNode {
      * @param {Vector3Value} value
      */
     setValue(value) {
-        this.get("x").set(value.x);
-        this.get("y").set(value.y);
-        this.get("z").set(value.z);
+        this.get("x").value = value.x;
+        this.get("y").value = value.y;
+        this.get("z").value = value.z;
     }
 
     /**
@@ -34,9 +34,9 @@ class Vector3Node extends ObjectNode {
      */
     getValue() {
         return {
-            "x": this.get("x").get(),
-            "y": this.get("y").get(),
-            "z": this.get("z").get()
+            "x": this.get("x").value,
+            "y": this.get("y").value,
+            "z": this.get("z").value
         };
     }
 }

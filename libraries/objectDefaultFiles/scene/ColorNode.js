@@ -23,9 +23,9 @@ class ColorNode extends ObjectNode {
      * @param {ColorValue} value
      */
     setValue(value) {
-        this.get("r").set(value.r);
-        this.get("g").set(value.g);
-        this.get("b").set(value.b);
+        this.get("r").value = value.r;
+        this.get("g").value = value.g;
+        this.get("b").value = value.b;
     }
 
     /**
@@ -34,9 +34,9 @@ class ColorNode extends ObjectNode {
      */
     getValue() {
         return {
-            "r": this.get("r").get(),
-            "g": this.get("g").get(),
-            "b": this.get("b").get()
+            "r": this.get("r").value,
+            "g": this.get("g").value,
+            "b": this.get("b").value
         };
     }
 }

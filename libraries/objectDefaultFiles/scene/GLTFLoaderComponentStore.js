@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import VersionedNode from "./VersionedNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -23,7 +22,7 @@ class GLTFLoaderComponentStore extends ObjectStore {
      */
     getProperties(_thisNode) {
         return {
-            "url": new VersionedNode(new ValueStore(""))
+            "url": new VersionedNode("")
         };
     }
 
