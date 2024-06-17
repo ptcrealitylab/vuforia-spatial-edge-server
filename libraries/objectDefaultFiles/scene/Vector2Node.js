@@ -23,8 +23,8 @@ class Vector2Node extends ObjectNode {
      * @param {Vector2Value} value
      */
     setValue(value) {
-        this.get("x").set(value.x);
-        this.get("y").set(value.y);
+        this.get("x").value = value.x;
+        this.get("y").value = value.y;
     }
 
     /**
@@ -33,8 +33,8 @@ class Vector2Node extends ObjectNode {
      */
     getValue() {
         return {
-            "x": this.get("x").get(),
-            "y": this.get("y").get()
+            "x": this.get("x").value,
+            "y": this.get("y").value
         };
     }
 }

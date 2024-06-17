@@ -2,7 +2,7 @@ import ObjectNode from "./ObjectNode.js";
 import SimpleAnimationComponentStore from "./SimpleAnimationComponentStore.js";
 
 /**
- * @typedef {import("../three/addons/Timer.js").Timer} Timer
+ * @typedef {import("../three/addons/DateTimer.js").Timer} Timer
  * @typedef {import("./Vector3Node").Vector3Value} Vector3Value;
  * @typedef {number} Seconds
  * @typedef {(timestamp: Seconds) => Vector3Value} animationFunc
@@ -82,19 +82,19 @@ class SimpleAnimationComponentNode extends ObjectNode {
             sample = this.#animation(timestamp);
             if (this.#isInitialized) {
                 this.get("oldSample").setValue(this.get("newSample").getValue());
-                this.get("oldTimestamp").set(this.get("newTimestamp").get());
+                this.get("oldTimestamp").value = this.get("newTimestamp").value;
             } else {
                 this.get("oldSample").setValue(sample);
-                this.get("oldTimestamp").set(timestamp - 1);
+                this.get("oldTimestamp").value = timestamp - 1;
                 this.#isInitialized = true;
             }
             this.get("newSample").setValue(sample);
-            this.get("newTimestamp").set(timestamp);
+            this.get("newTimestamp").value = timestamp;
         } else {
             const oldSample = this.get("oldSample").getValue();
-            const oldTimestamp = this.get("oldTimestamp").get();
+            const oldTimestamp = this.get("oldTimestamp").value;
             const newSample = this.get("newSample").getValue();
-            const newTimestamp = this.get("newTimestamp").get();
+            const newTimestamp = this.get("newTimestamp").value;
             const interp = (timestamp - oldTimestamp) / (newTimestamp - oldTimestamp);
             sample.x = oldSample.x + (interp * (newSample.x - oldSample.x));
             sample.y = oldSample.y + (interp * (newSample.y - oldSample.y));

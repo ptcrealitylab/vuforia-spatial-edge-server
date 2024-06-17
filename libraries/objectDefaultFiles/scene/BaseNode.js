@@ -17,7 +17,7 @@ class BaseNode {
      *
      * @param {string} type
      */
-    constructor(type, name = "") {
+    constructor(type) {
         this.#type = type;
         this.#isTypeDirty = false;
         this.#parent = null;

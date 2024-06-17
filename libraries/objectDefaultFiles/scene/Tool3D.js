@@ -145,7 +145,7 @@ class Tool3D {
         if (this.#toolNode) {
             const component = this.#toolNode.getComponentByType(VisibilityComponentNode.TYPE);
             if (component) {
-                component.set(isVisible);
+                component.value = isVisible;
             }
         }
     }

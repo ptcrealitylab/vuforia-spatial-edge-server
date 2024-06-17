@@ -5,10 +5,16 @@ import ValueNode from "./ValueNode.js";
  * @typedef {import("./ValueNode.js").ValueNodeDelta} ValueNodeDelta
  * @typedef {import("./ValueNode.js").ValueInterface} ValueInterface
  * @typedef {import("./BaseNode.js").BaseNode} BaseNode
- * @typedef {{version: number} & ValueNodeState} VersionedNodeState
- * @typedef {{version?: number} & ValueNodeDelta} VersionedNodeDelta
+ * @template {Value} T
+ * @typedef {{version: number} & ValueNodeState<T>} VersionedNodeState
+ * @template {Value} T
+ * @typedef {{version?: number} & ValueNodeDelta<T>} VersionedNodeDelta
  */
 
+/**
+ * @template {Value} T
+ * @extends {ValueNode<T>}
+ */
 class VersionedNode extends ValueNode {
     static TYPE = "Versioned";
 
@@ -17,7 +23,7 @@ class VersionedNode extends ValueNode {
 
     /**
      *
-     * @param {ValueInterface} value
+     * @param {T} value
      * @param {number} version
      */
     constructor(value, type = VersionedNode.TYPE, version = -1) {
@@ -27,11 +33,19 @@ class VersionedNode extends ValueNode {
 
     /**
      * @override
-     * @param {Value} value
+     * @returns {T}
      */
-    set(value) {
-        super.set(value);
+    get value() {
+        return super.value;
+    }
+
+    /**
+     * @override
+     * @param {T} value
+     */
+    set value(value) {
         this.incrementVersion();
+        super.value = value;
     }
 
     /**
@@ -44,7 +58,7 @@ class VersionedNode extends ValueNode {
 
     /**
      * @override
-     * @returns {VersionedNodeState}
+     * @returns {VersionedNodeState<T>}
      */
     getState() {
         const ret = super.getState();
@@ -54,7 +68,7 @@ class VersionedNode extends ValueNode {
 
     /**
      * @override
-     * @param {VersionedNodeState} state
+     * @param {VersionedNodeState<T>} state
      */
     setState(state) {
         this.#version = state.version;
@@ -63,7 +77,7 @@ class VersionedNode extends ValueNode {
 
     /**
      * @override
-     * @returns {VersionedNodeDelta}
+     * @returns {VersionedNodeDelta<T>}
      */
     getChanges() {
         if (this.isDirty()) {
@@ -76,7 +90,7 @@ class VersionedNode extends ValueNode {
 
     /**
      * @override
-     * @param {VersionedNodeDelta} delta
+     * @param {VersionedNodeDelta<T>} delta
      */
     setChanges(delta) {
         if (delta.hasOwnProperty("version")) {

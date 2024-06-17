@@ -23,10 +23,10 @@ class EulerAnglesNode extends ObjectNode {
      * @param {EulerAnglesValue} value
      */
     setValue(value) {
-        this.get("x").set(value.x);
-        this.get("y").set(value.y);
-        this.get("z").set(value.z);
-        this.get("order").set(value.order);
+        this.get("x").value = value.x;
+        this.get("y").value = value.y;
+        this.get("z").value = value.z;
+        this.get("order").value = value.order;
     }
 
     /**
@@ -35,10 +35,10 @@ class EulerAnglesNode extends ObjectNode {
      */
     getValue() {
         return {
-            "x": this.get("x").get(),
-            "y": this.get("y").get(),
-            "z": this.get("z").get(),
-            "order": this.get("order").get()
+            "x": this.get("x").value,
+            "y": this.get("y").value,
+            "z": this.get("z").value,
+            "order": this.get("order").value
         };
     }
 }

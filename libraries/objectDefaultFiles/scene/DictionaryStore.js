@@ -1,7 +1,6 @@
 import DictionaryNode from "./DictionaryNode.js";
 import ValueNode from "./ValueNode.js";
 import VersionedNode from "./VersionedNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode").ObjectNodeState} ObjectNodeState
@@ -35,7 +34,7 @@ class DictionaryStore {
                 if (!state.hasOwnProperty("value")) {
                     throw Error("Can't create ValueNode without initial value");
                 }
-                return new ValueNode(new ValueStore(state.value), state.type);
+                return new ValueNode(state.value, state.type);
             } else if (state.type.startsWith("Versioned")) {
                 if (!state.hasOwnProperty("value")) {
                     throw Error("Can't create VaersionedNode without initial value");
@@ -43,7 +42,7 @@ class DictionaryStore {
                 if (!state.hasOwnProperty("version")) {
                     throw Error("Can't create VersionedNode without initial version");
                 }
-                return new VersionedNode(new ValueStore(state.value), state.type, null, state.version);
+                return new VersionedNode(state.value, state.type, state.version);
             } else {
                 throw Error("Can't create property with type: " + state.type);
             }

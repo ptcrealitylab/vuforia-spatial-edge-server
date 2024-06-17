@@ -1,6 +1,5 @@
 import ObjectStore from "./ObjectStore.js";
 import ValueNode from "./ValueNode.js";
-import ValueStore from "./ValueStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
@@ -24,12 +23,12 @@ class Vector2Store extends ObjectStore {
     /**
      * @override
      * @param {Vector2Node} _thisNode
-     * @returns {{x: ValueNode, y: ValueNode}}
+     * @returns {{x: ValueNode<number>, y: ValueNode<number>}}
      */
     getProperties(_thisNode) {
         return {
-            "x": new ValueNode(new ValueStore(this.#initValues.x)),
-            "y": new ValueNode(new ValueStore(this.#initValues.y))
+            "x": new ValueNode(this.#initValues.x),
+            "y": new ValueNode(this.#initValues.y)
         };
     }
 }

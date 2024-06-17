@@ -2,7 +2,6 @@ import {expect, jest, test, describe} from "@jest/globals";
 import DictionaryNode from "../../libraries/objectDefaultFiles/scene/DictionaryNode.js";
 import DictionaryStore from "../../libraries/objectDefaultFiles/scene/DictionaryStore.js";
 import ValueNode from "../../libraries/objectDefaultFiles/scene/ValueNode.js";
-import ValueStore from "../../libraries/objectDefaultFiles/scene/ValueStore.js";
 import VersionedNode from "../../libraries/objectDefaultFiles/scene/VersionedNode.js";
 
 describe("DictionaryStore", () => {
@@ -28,7 +27,7 @@ describe("DictionaryStore", () => {
     // test with properties
     test("Create Value", () => {
         const store = new DictionaryStore();
-        const correctNode = new ValueNode(new ValueStore(0), "Value.test");
+        const correctNode = new ValueNode(0, "Value.test");
 
         const node = store.create("test", {type: "Value.test", value: 0});
 
@@ -41,7 +40,7 @@ describe("DictionaryStore", () => {
     });
     test("Create Versioned", () => {
         const store = new DictionaryStore();
-        const correctNode = new VersionedNode(new ValueStore(0), "Versioned.test");
+        const correctNode = new VersionedNode(0, "Versioned.test");
         correctNode.incrementVersion();
 
         const node = store.create("test", {type: "Versioned.test", value: 0, version: 0});
@@ -60,17 +59,17 @@ describe("DictionaryStore", () => {
     });
     test("Cast value to versioned node", () => {
         const store = new DictionaryStore();
-        const correctNode = new VersionedNode(new ValueStore(0), "Versioned.test");
+        const correctNode = new VersionedNode(0, "Versioned.test");
         correctNode.incrementVersion();
 
-        const node = store.cast("test", new ValueNode(new ValueStore(0), "Value.test"), {type: "Versioned.test", value: 0, version: 0});
+        const node = store.cast("test", new ValueNode(0, "Value.test"), {type: "Versioned.test", value: 0, version: 0});
 
         expect(node).toStrictEqual(correctNode);
     });
     test("Delete doesn't throw", () => {
         const store = new DictionaryStore();
 
-        expect(() => {store.delete("test", new ValueNode(new ValueStore(0), "Value.test"));}).not.toThrow();
+        expect(() => {store.delete("test", new ValueNode(0, "Value.test"));}).not.toThrow();
     });
     test("applyChanges event calls default handler", () => {
         const store = new DictionaryStore();
