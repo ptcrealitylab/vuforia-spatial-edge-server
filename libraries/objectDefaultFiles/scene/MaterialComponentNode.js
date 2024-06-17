@@ -1,7 +1,7 @@
 import ObjectNode from "./ObjectNode.js";
 
 class MaterialComponentNode extends ObjectNode {
-    static TYPE = "Object.Material";
+    static TYPE = "Object.Component.Material";
 
     /**
      *

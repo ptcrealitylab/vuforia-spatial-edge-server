@@ -21,10 +21,10 @@ class EntitiesNode extends DictionaryNode {
         super(listener, EntitiesNode.TYPE);
     }
 
-    set(key, value) {
+    set(key, value, makeDirty = true) {
         const entity = this.getListener().getEntity();
         entity.setChild(key, value.getEntity());
-        super.set(key, value);
+        super.set(key, value, makeDirty);
     }
 }
 

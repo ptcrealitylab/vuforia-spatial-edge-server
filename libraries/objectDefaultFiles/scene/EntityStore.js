@@ -1,50 +1,47 @@
-import ObjectStore from "./ObjectStore.js";
-import EntitiesNode from "./EntitiesNode.js";
-import EntitiesStore from "./EntitiesStore.js";
-import ComponentsNode from "./ComponentsNode.js";
-import ComponentsStore from "./ComponentsStore.js";
-import TransformComponentNode from "./TransformComponentNode.js";
-import TransformComponentStore from "./TransformComponentStore.js";
+import GLTFLoaderComponentNode from "./GLTFLoaderComponentNode.js";
+import GLTFLoaderComponentStore from "./GLTFLoaderComponentStore.js";
+import MaterialComponentNode from "./MaterialComponentNode.js";
+import MaterialComponentStore from "./MaterialComponentStore.js";
+import EntityNode from "./EntityNode.js";
+import DefaultEntity from "./DefaultEntity.js";
+import BaseEntityStore from "./BaseEntityStore.js";
 
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
  * @typedef {import("./EntityNode.js").default} EntityNode
  */
 
-class EntityStore extends ObjectStore {
-    /** @type {EntityInterface} */
-    #entity;
-
+class EntityStore extends BaseEntityStore {
     /**
      *
      */
     constructor(entity) {
-        super();
-        this.#entity = entity;
+        super(entity);
     }
 
     /**
-     * @override
-     * @param {EntityNode} thisNode
-     * @returns {NodeDict}
+     *
+     * @param {string} _name
+     * @returns {DefaultEntity}
      */
-    getProperties(thisNode) {
-        const ret = {
-            "children": new EntitiesNode(new EntitiesStore(thisNode)),
-            "components": new ComponentsNode(new ComponentsStore(thisNode))
-        };
-        return ret;
+    createEntity(_name, _state) {
+        return new EntityNode(new EntityStore(new DefaultEntity()));
     }
 
     /**
-     * @returns {EntityInterface}
+     *
+     * @param {ValueDict} state
+     * @returns {ComponentInterface}
      */
-    getEntity() {
-        return this.#entity;
-    }
-
-    createTransform() {
-        return new TransformComponentNode(new TransformComponentStore(this.#entity.getPosition(), this.#entity.getRotation(), this.#entity.getScale()));
+    createComponent(_order, state) {
+        if (state.hasOwnProperty("type")) {
+            if (state.type === GLTFLoaderComponentNode.TYPE) {
+                return new GLTFLoaderComponentNode(new GLTFLoaderComponentStore());
+            } else if (state.type === MaterialComponentNode.TYPE) {
+                return new MaterialComponentNode(new MaterialComponentStore());
+            }
+        }
+        return null;
     }
 }
 

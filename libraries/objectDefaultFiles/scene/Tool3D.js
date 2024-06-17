@@ -3,14 +3,8 @@ import {ToolRenderSocket} from "./ToolRenderStream.js";
 import {ParentMessageInterface} from "./MessageInterface.js";
 import WorldNode from "./WorldNode.js";
 import WorldStore from "./WorldStore.js";
-import ToolNode from "./ToolNode.js";
-import ToolStore from "./ToolStore.js";
-import EntitiesNode from "./EntitiesNode.js";
-import EntitiesStore from "./EntitiesStore.js";
-import ComponentsNode from "./ComponentsNode.js";
-import ComponentsStore from "./ComponentsStore.js";
-import DefaultEntity from "./DefaultEntity.js";
 import VisibilityComponentNode from "./VisibilityComponentNode.js";
+import ToolNode from "./ToolNode.js";
 
 /**
  * @typedef {import('../object.js').SpatialInterface} SpatialInterface
@@ -26,42 +20,7 @@ import VisibilityComponentNode from "./VisibilityComponentNode.js";
  * @typedef {number} milliseconds
  */
 
-class Base3DEntity extends DefaultEntity {
-    #listener;
-
-    /**
-     *
-     * @param {Base3DEntityListener} listener
-     */
-    constructor(listener) {
-        super();
-        this.#listener = listener;
-    }
-
-    /**
-     * @override
-     * @param {string} name
-     * @returns {EntityNode}
-     */
-    createEntity(name) {
-        return this.#listener.createEntity(name);
-    }
-
-    /**
-     * @param {number} index
-     * @param {ValueDict} state
-     * @returns {ComponentInterface}
-     */
-    createComponent(index, state) {
-        let ret = this.#listener.createComponent(index, state);
-        if (ret == null) {
-            ret = super.createComponent(index, state);
-        }
-        return ret;
-    }
-}
-
-class Base3DTool {
+class Tool3D {
     /** @type {ToolRenderSocket} */
     #socket;
 
@@ -69,7 +28,7 @@ class Base3DTool {
     #world;
 
     /** @type {ToolNode|null} */
-    #tool;
+    #toolNode;
 
     /** @type {string} */
     #toolId;
@@ -86,39 +45,29 @@ class Base3DTool {
     /** @type {boolean} */
     #isToolVisible;
 
-    /** @type {string} */
-    #type;
-
     /**
      *
      * @param {SpatialInterface} spatialInterface
      * @param {boolean} bindOnSpatialInterfaceLoaded
      */
-    constructor(spatialInterface, listener, type, bindOnSpatialInterfaceLoaded = true) {
+    constructor(listener, bindOnSpatialInterfaceLoaded = true) {
         this.#listener = listener;
-        this.#type = type;
         this.#timer = new DateTimer();
 
         this.#world = null;
-        this.#tool = null;
+        this.#toolNode = null;
         this.#toolId = "<n/a>";
 
         this.#updateTimer = null;
 
         this.#isToolVisible = false;
 
+        const spatialInterface = this.#listener.getSpatialInterface();
+
         spatialInterface.useToolRenderer();
         if (bindOnSpatialInterfaceLoaded) {
             spatialInterface.onSpatialInterfaceLoaded(() => this.onSpatialInterfaceLoaded());
         }
-    }
-
-    /**
-     *
-     * @returns {ToolNode|null}
-     */
-    getTool() {
-        return this.#tool;
     }
 
     /**
@@ -141,17 +90,17 @@ class Base3DTool {
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
             this.#world = new WorldNode(new WorldStore(this.#timer));
-            this.#tool = new ToolNode(new ToolStore(new Base3DEntity(this.#listener), this.#listener), `${ToolNode.TYPE}.${this.#type}`);
             let toolsRoot = this.#world;
             for (const key of state.toolsRoot) {
                 toolsRoot = toolsRoot.get(key);
             }
-            toolsRoot.set(this.#toolId, this.#tool, false);
+            this.#toolNode = this.#listener.createToolNode();
+            toolsRoot.set(this.#toolId, this.#toolNode, false);
 
             this.#world.setState(state);
 
-            if (!this.#tool.hasComponentWithType(VisibilityComponentNode.TYPE)) {
-                this.#tool.addComponent("1", new VisibilityComponentNode());
+            if (!this.#toolNode.hasComponentWithType(VisibilityComponentNode.TYPE)) {
+                this.#toolNode.addComponent("1", new VisibilityComponentNode());
             }
 
             this.setVisible(this.#isToolVisible);
@@ -187,19 +136,23 @@ class Base3DTool {
      */
     onUpdate() {
         this.#timer.update();
-        this.#tool.getEntity().updateComponents();
+        this.#toolNode.getEntity().updateComponents();
         this.#socket.sendUpdate(this.#world.getChanges());
     }
 
     setVisible(isVisible) {
         this.#isToolVisible = isVisible;
-        if (this.#tool) {
-            const component = this.#tool.getComponentByType(VisibilityComponentNode.TYPE);
+        if (this.#toolNode) {
+            const component = this.#toolNode.getComponentByType(VisibilityComponentNode.TYPE);
             if (component) {
                 component.set(isVisible);
             }
         }
     }
+
+    getToolNode() {
+        return this.#toolNode;
+    }
 }
 
-export default Base3DTool;
+export default Tool3D;

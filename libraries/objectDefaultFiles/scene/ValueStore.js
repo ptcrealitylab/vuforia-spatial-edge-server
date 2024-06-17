@@ -13,7 +13,7 @@ class ValueStore {
      * @param {Value} value
      */
     constructor(value) {
-        this.set(value);
+        this.#value = value;
     }
 
     /**

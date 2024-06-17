@@ -5,7 +5,7 @@ import ValueStore from "./ValueStore.js";
 /**
  * @typedef {import("./ObjectNode.js").NodeDict} NodeDict
  * @typedef {import("./Vector3Node.js").default} Vector3Node
- * * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
+ * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
  */
 
 class Vector3Store extends ObjectStore {
@@ -24,7 +24,7 @@ class Vector3Store extends ObjectStore {
     /**
      * @override
      * @param {Vector3Node} _thisNode
-     * @returns {{x, ValueNode, y, ValueNode, z: ValueNode}}
+     * @returns {{x: ValueNode, y: ValueNode, z: ValueNode}}
      */
     getProperties(_thisNode) {
         return {
