@@ -105,10 +105,6 @@
         touchDeciderRegistered: false,
         raycast: null,
         raycastRegistered: false,
-        lastRaycastInfo: {
-            position: null,
-            timestamp: 0
-        },
         unacceptedTouchInProgress: false,
         ignoreAllTouches: false,
         // onFullScreenEjected: null,
@@ -468,22 +464,12 @@
             const coords = msgContent.raycastRequest.coords;
             const index = msgContent.raycastRequest.index;
             if (spatialObject.raycastRegistered) {
-                const rInfo = spatialObject.lastRaycastInfo;
-                if (Date.now() - rInfo.timestamp < 300) { // Do not trigger more frequently
+                spatialObject.raycast(coords.x, coords.y).then(position => {
                     postDataToParent({
-                        raycastResult: rInfo.position,
+                        raycastResult: position,
                         index: index
                     });
-                } else {
-                    spatialObject.raycast(coords.x, coords.y).then(position => {
-                        spatialObject.lastRaycastInfo.position = position;
-                        spatialObject.lastRaycastInfo.timestamp = Date.now();
-                        postDataToParent({
-                            raycastResult: position,
-                            index: index
-                        });
-                    })
-                }
+                })
             } else {
                 postDataToParent({
                     raycastResult: null,
