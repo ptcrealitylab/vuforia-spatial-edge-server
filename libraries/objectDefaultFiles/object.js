@@ -103,6 +103,8 @@
             type: null},
         touchDecider: null,
         touchDeciderRegistered: false,
+        raycast: null,
+        raycastRegistered: false,
         unacceptedTouchInProgress: false,
         ignoreAllTouches: false,
         // onFullScreenEjected: null,
@@ -456,6 +458,24 @@
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.reloadPublicData !== 'undefined') {
             realityInterface.reloadPublicData();
+        }
+
+        if (typeof msgContent.raycastRequest !== 'undefined' && typeof msgContent.raycastRequest.coords !== 'undefined') {
+            const coords = msgContent.raycastRequest.coords;
+            const index = msgContent.raycastRequest.index;
+            if (spatialObject.raycastRegistered) {
+                spatialObject.raycast(coords.x, coords.y).then(position => {
+                    postDataToParent({
+                        raycastResult: position,
+                        index: index
+                    });
+                });
+            } else {
+                postDataToParent({
+                    raycastResult: null,
+                    index: index
+                });
+            }
         }
 
         // handle synthetic touch events and pass them into the page contents
@@ -868,6 +888,8 @@
                 // Setters
                 this.registerTouchDecider = makeSendStub('registerTouchDecider');
                 this.unregisterTouchDecider = makeSendStub('unregisterTouchDecider');
+                this.registerRaycast = makeSendStub('registerRaycast');
+                this.unregisterRaycast = makeSendStub('unregisterRaycast');
             }
 
         }
@@ -2759,6 +2781,23 @@
         this.unregisterTouchDecider = function() {
             // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
             spatialObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
+        };
+
+        /**
+         * Registers a raycast function for use with tools that raycast into the scene (e.g. the draw tool)
+         * @param {function} callback - The raycast function should take the parameters (x, y), which are window coordinates for the iframe, and return {x,y,z} in global coordinates if a hit was registered, null otherwise
+         */
+        this.registerRaycast = function(callback) {
+            spatialObject.raycast = callback;
+            spatialObject.raycastRegistered = true;
+        };
+
+        this.registerRaycast(function(_x, _y) {
+            return Promise.resolve(null);
+        });
+
+        this.unregisterRaycast = function() {
+            spatialObject.raycastRegistered = false;
         };
 
         this.getMoveDelay = function() {
