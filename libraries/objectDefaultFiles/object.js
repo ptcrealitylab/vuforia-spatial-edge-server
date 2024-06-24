@@ -459,7 +459,7 @@
         if (typeof msgContent.reloadPublicData !== 'undefined') {
             realityInterface.reloadPublicData();
         }
-        
+
         if (typeof msgContent.raycastRequest !== 'undefined' && typeof msgContent.raycastRequest.coords !== 'undefined') {
             const coords = msgContent.raycastRequest.coords;
             const index = msgContent.raycastRequest.index;
@@ -469,7 +469,7 @@
                         raycastResult: position,
                         index: index
                     });
-                })
+                });
             } else {
                 postDataToParent({
                     raycastResult: null,
@@ -2790,15 +2790,15 @@
         this.registerRaycast = function(callback) {
             spatialObject.raycast = callback;
             spatialObject.raycastRegistered = true;
-        }
-        
-        this.registerRaycast(function(eventData) {
+        };
+
+        this.registerRaycast(function(_x, _y) {
             return Promise.resolve(null);
         });
-        
+
         this.unregisterRaycast = function() {
             spatialObject.raycastRegistered = false;
-        }
+        };
 
         this.getMoveDelay = function() {
             return spatialObject.moveDelay;
