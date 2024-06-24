@@ -2796,7 +2796,11 @@
             // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
             spatialObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
         };
-        
+
+        /**
+         * Registers a raycast function for use with tools that raycast into the scene (e.g. the draw tool)
+         * @param {function} callback - The raycast function should take the parameters (x, y), which are window coordinates for the iframe, and return {x,y,z} in global coordinates if a hit was registered, null otherwise
+         */
         this.registerRaycast = function(callback) {
             spatialObject.raycast = callback;
             spatialObject.raycastRegistered = true;
