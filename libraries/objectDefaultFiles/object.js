@@ -103,6 +103,12 @@
             type: null},
         touchDecider: null,
         touchDeciderRegistered: false,
+        raycast: null,
+        raycastRegistered: false,
+        lastRaycastInfo: {
+            position: null,
+            timestamp: 0
+        },
         unacceptedTouchInProgress: false,
         ignoreAllTouches: false,
         // onFullScreenEjected: null,
@@ -456,6 +462,34 @@
         // can be triggered by real-time system to refresh public data when editor received a message from another client
         if (typeof msgContent.reloadPublicData !== 'undefined') {
             realityInterface.reloadPublicData();
+        }
+        
+        if (typeof msgContent.raycastRequest !== 'undefined' && typeof msgContent.raycastRequest.coords !== 'undefined') {
+            const coords = msgContent.raycastRequest.coords;
+            const index = msgContent.raycastRequest.index;
+            if (spatialObject.raycastRegistered) {
+                const rInfo = spatialObject.lastRaycastInfo;
+                if (Date.now() - rInfo.timestamp < 300) { // Do not trigger more frequently
+                    postDataToParent({
+                        raycastResult: rInfo.position,
+                        index: index
+                    });
+                } else {
+                    spatialObject.raycast(coords.x, coords.y).then(position => {
+                        spatialObject.lastRaycastInfo.position = position;
+                        spatialObject.lastRaycastInfo.timestamp = Date.now();
+                        postDataToParent({
+                            raycastResult: position,
+                            index: index
+                        });
+                    })
+                }
+            } else {
+                postDataToParent({
+                    raycastResult: null,
+                    index: index
+                });
+            }
         }
 
         // handle synthetic touch events and pass them into the page contents
@@ -868,6 +902,8 @@
                 // Setters
                 this.registerTouchDecider = makeSendStub('registerTouchDecider');
                 this.unregisterTouchDecider = makeSendStub('unregisterTouchDecider');
+                this.registerRaycast = makeSendStub('registerRaycast');
+                this.unregisterRaycast = makeSendStub('unregisterRaycast');
             }
 
         }
@@ -2760,6 +2796,19 @@
             // touchDecider is passed by reference, so setting touchDecider to null would alter the function definition
             spatialObject.touchDeciderRegistered = false; // instead just set a flag to not use the callback anymore
         };
+        
+        this.registerRaycast = function(callback) {
+            spatialObject.raycast = callback;
+            spatialObject.raycastRegistered = true;
+        }
+        
+        this.registerRaycast(function(eventData) {
+            return Promise.resolve(null);
+        });
+        
+        this.unregisterRaycast = function() {
+            spatialObject.raycastRegistered = false;
+        }
 
         this.getMoveDelay = function() {
             return spatialObject.moveDelay;
