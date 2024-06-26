@@ -1721,6 +1721,9 @@ function objectWebServer() {
 
         html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
+        html = html.replace('objectDefaultFiles/SpatialApplicationAPI.js', level + 'objectDefaultFiles/SpatialApplicationAPI.js');
+        html = html.replace('objectDefaultFiles/LanguageInterface.js', level + 'objectDefaultFiles/LanguageInterface.js');
+
         html = html.replace('objectDefaultFiles/styles/', level + 'objectDefaultFiles/styles/');
 
         var loadedHtml = cheerio.load(html);
@@ -1889,6 +1892,9 @@ function objectWebServer() {
 
             html = html.replace('objectDefaultFiles/gl-worker.js', level + 'objectDefaultFiles/gl-worker.js');
 
+            html = html.replace('objectDefaultFiles/SpatialApplicationAPI.js', level + 'objectDefaultFiles/SpatialApplicationAPI.js');
+            html = html.replace('objectDefaultFiles/LanguageInterface.js', level + 'objectDefaultFiles/LanguageInterface.js');
+
             var loadedHtml = cheerio.load(html);
             var scriptNode = '<script src="' + level + 'objectDefaultFiles/object.js"></script>';
             scriptNode += '<script src="' + level + 'objectDefaultFiles/pep.min.js"></script>';
@@ -1949,16 +1955,13 @@ function objectWebServer() {
     const logicRouter = require('./routers/logic');
     const spatialRouter = require('./routers/spatial');
     const historyRouter = require('./routers/history');
-    const aiRouter = require('./routers/ai');
     objectRouter.setup(globalVariables);
     logicRouter.setup(globalVariables);
     spatialRouter.setup(globalVariables);
-    aiRouter.setup(globalVariables);
     webServer.use('/object', objectRouter.router);
     webServer.use('/logic', logicRouter.router);
     webServer.use('/spatial', spatialRouter.router);
     webServer.use('/history', historyRouter.router);
-    webServer.use('/ai', aiRouter.router);
 
     webServer.get('/status', function(req, res) {
         res.sendStatus(200); // OK
