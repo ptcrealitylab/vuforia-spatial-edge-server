@@ -794,7 +794,11 @@ async function loadObjects() {
                 obj.ip = services.ip; // ip.address();
 
                 // update the targetId if needed
-                obj.targetId = await utilities.getTargetIdFromTargetDat(path.join(objectsPath, objectFolderList[i], identityFolderName, 'target'));
+                try {
+                    obj.targetId = await utilities.getTargetIdFromTargetDat(path.join(objectsPath, objectFolderList[i], identityFolderName, 'target'));
+                } catch (e) {
+                    console.warn(`object ${tempFolderName} has no targetId in .dat file, or no .dat file`);
+                }
 
                 migrateObjectValuesToFrames(obj, tempFolderName);
 
@@ -806,6 +810,11 @@ async function loadObjects() {
                             obj.frames[tempFolderName].nodes[nodeKey].data = utilities.deepCopy(tempItem[0]);
                         }
                     }
+                }
+
+                // fix corrupted state of world objects whose worldId isn't their own id
+                if ((obj.isWorldObject || obj.type === 'world') && obj.objectId && obj.worldId !== obj.objectId) {
+                    obj.worldId = obj.objectId;
                 }
 
                 // cast everything from JSON to Object, Frame, and Node classes
