@@ -28,9 +28,8 @@ class BaseNode {
      * @returns {string|null}
      */
     getName() {
-        const parent = this.getParent();
-        if (parent) {
-            for (const entry of parent.entries()) {
+        if (this.parent) {
+            for (const entry of this.parent.entries()) {
                 if (entry[1] === this) {
                     return entry[0];
                 }
@@ -43,7 +42,7 @@ class BaseNode {
      *
      * @returns {BaseNode|null}
      */
-    getParent() {
+    get parent() {
         const parent = this.#parent ? this.#parent.deref() : null;
         return parent ? parent : null;
     }
@@ -52,7 +51,7 @@ class BaseNode {
      * internal use only, doesn't propogate isDirty
      * @param {BaseNode|null} parent
      */
-    setParent(parent) {
+    set parent(parent) {
         this.#parent = parent ? new WeakRef(parent) : null;
     }
 
@@ -139,7 +138,7 @@ class BaseNode {
      * @param {BaseNode} node
      */
     static setParentDirty(node) {
-        const parent = node.getParent();
+        const parent = node.parent;
         if (parent && (!parent.isInternalDirty())) {
             parent.setInternalDirty();
             BaseNode.setParentDirty(parent);

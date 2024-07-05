@@ -2,7 +2,6 @@ import DateTimer from "./DateTimer.js";
 import {ToolRenderSocket} from "./ToolRenderStream.js";
 import {ParentMessageInterface} from "./MessageInterface.js";
 import WorldNode from "./WorldNode.js";
-import WorldStore from "./WorldStore.js";
 import VisibilityComponentNode from "./VisibilityComponentNode.js";
 import ToolNode from "./ToolNode.js";
 
@@ -89,27 +88,43 @@ class Tool3D {
     onReceivedSet(state) {
         console.log(`compositon layer -> ${this.#toolId} (set): `, state);
         if (!this.#world) {
-            this.#world = new WorldNode(new WorldStore(this.#timer));
+            // if there is no world then this is the first a set command is received and we might want to run additional logic
+
+            // create world with toolsRoot
+            this.#world = new WorldNode(this.#timer);
             let toolsRoot = this.#world;
             for (const key of state.toolsRoot) {
                 toolsRoot = toolsRoot.get(key);
             }
-            this.#toolNode = this.#listener.createToolNode();
-            toolsRoot.set(this.#toolId, this.#toolNode, false);
 
+            // make sure the toolsroot knows about the custom tool
+            toolsRoot.registerType(this.#listener.getToolNodeType(), () => {return this.#listener.createToolNode();});
+
+            // apply all saved information
             this.#world.setState(state);
 
-            if (!this.#toolNode.hasComponentWithType(VisibilityComponentNode.TYPE)) {
-                this.#toolNode.addComponent("1", new VisibilityComponentNode());
+            // verify that the tool node is there
+            if (!toolsRoot.has(this.#toolId)) {
+                this.#toolNode = this.#listener.createToolNode();
+                toolsRoot.set(this.#toolId, this.#toolNode, false);
+            } else {
+                this.#toolNode = toolsRoot.get(this.#toolId);
             }
 
+            // add visibility to the tool root
+            if (!this.#toolNode.hasComponentWithType(VisibilityComponentNode.TYPE)) {
+                this.#toolNode.setComponent("1", new VisibilityComponentNode());
+            }
             this.setVisible(this.#isToolVisible);
 
+            // callback to the user after the basic scene graph has been created
             this.#listener.onStart();
 
+            // start websorker which will call us back every so often to run the update loop
             this.#updateTimer = new Worker("/objectDefaultFiles/scene/WebWorkerTimer.js");
             this.#updateTimer.onmessage = () => this.onUpdate();
         } else {
+            // if it is not the first run we can just merge all given information
             this.#world.setState(state);
         }
     }
@@ -136,7 +151,7 @@ class Tool3D {
      */
     onUpdate() {
         this.#timer.update();
-        this.#toolNode.getEntity().updateComponents();
+        this.#toolNode.entity.updateComponents();
         this.#socket.sendUpdate(this.#world.getChanges());
     }
 

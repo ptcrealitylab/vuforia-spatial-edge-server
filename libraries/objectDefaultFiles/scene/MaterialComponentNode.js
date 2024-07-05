@@ -1,30 +1,30 @@
 import ObjectNode from "./ObjectNode.js";
+import ValueNode from "./ValueNode.js";
+import DictionaryNode from "./DictionaryNode.js";
 
 class MaterialComponentNode extends ObjectNode {
     static TYPE = "Object.Component.Material";
 
     /**
      *
-     * @param {ObjectInterface} listener
      */
-    constructor(listener) {
-        super(listener, MaterialComponentNode.TYPE);
+    constructor() {
+        super(MaterialComponentNode.TYPE);
+        this._set("material", new ValueNode(""));
+        this._set("properties", new DictionaryNode());
     }
 
     setEntityNode(node) {
-        this.getListener().setEntityNode(node);
     }
 
     update() {
-        this.getListener().update();
     }
 
-    getComponent() {
+    get component() {
         return this;
     }
 
     release() {
-        this.getListener().release();
     }
 }
 

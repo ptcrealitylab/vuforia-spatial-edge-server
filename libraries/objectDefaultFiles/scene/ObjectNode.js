@@ -19,30 +19,14 @@ class ObjectNode extends BaseNode {
     /** @type {boolean} */
     #isPropertiesDirty;
 
-    /** @type {ObjectInterface} */
-    #listener;
-
     /**
      *
-     * @param {ObjectInterface} listener
      * @param {string} type
      */
-    constructor(listener, type) {
+    constructor(type) {
         super(type);
-        this.#listener = listener;
-        this.#properties = this.#listener.getProperties(this);
-        for (const value of Object.values(this.#properties)) {
-            value.setParent(this);
-        }
+        this.#properties = {};
         this.#isPropertiesDirty = false;
-    }
-
-    /**
-     *
-     * @returns {ObjectInterface}
-     */
-    getListener() {
-        return this.#listener;
     }
 
     /**
@@ -90,6 +74,16 @@ class ObjectNode extends BaseNode {
      */
     keys() {
         return Object.keys(this.#properties);
+    }
+
+    /**
+     *
+     * @param {string} key
+     * @param {BaseNode} node
+     */
+    _set(key, node) {
+        this.#properties[key] = node;
+        node.parent = this;
     }
 
     /**
@@ -182,15 +176,6 @@ class ObjectNode extends BaseNode {
      * @param {boolean} useSetState
      */
     setChanges(delta, useSetState = false) {
-        this.#listener.applyChanges(delta, (modifiedDelta) => this.applyChanges(modifiedDelta, useSetState));
-    }
-
-    /**
-     *
-     * @param {ObjectToolRenderNode} delta
-     * @param {boolean} useSetState
-     */
-    applyChanges(delta, useSetState) {
         if (delta.hasOwnProperty("properties")) {
             for (const entry of Object.entries(delta.properties)) {
                 if (this.#properties.hasOwnProperty(entry[0])) {

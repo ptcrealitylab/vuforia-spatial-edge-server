@@ -2,22 +2,19 @@ import {expect, jest, test, describe} from "@jest/globals";
 import BaseNode from "../../libraries/objectDefaultFiles/scene/BaseNode.js";
 import ObjectNode from "../../libraries/objectDefaultFiles/scene/ObjectNode.js";
 
-class MockObjectStore {
-    mockGetProperties = jest.fn((_thisNode) => {return this.#properties;});
-    mockApplyChanges = jest.fn((delta, defaultApplyChanges) => {defaultApplyChanges(delta);});
+class MockObjectNode extends ObjectNode {
+    mockSetChanges = jest.fn((_delta, _useSetState) => {});
 
-    #properties;
-
-    constructor(properties) {
-        this.#properties = properties;
+    constructor(properties = {}, type = "Object.Mock") {
+        super(type);
+        for (const entry of Object.entries(properties)) {
+            this._set(entry[0], entry[1]);
+        }
     }
 
-    getProperties(thisNode) {
-        return this.mockGetProperties(thisNode);
-    }
-
-    applyChanges(delta, defaultApplyChanges) {
-        this.mockApplyChanges(delta, defaultApplyChanges);
+    setChanges(delta, useSetState = false) {
+        this.mockSetChanges(delta, useSetState);
+        super.setChanges(delta, useSetState);
     }
 }
 
@@ -29,52 +26,38 @@ describe("ObjectNode", () => {
     const objectState1of2Delta = {properties: {test1: {type: "test"}}};
     const objectState2ChangedTypeDelta = {properties: {test1: {type: "test1"}, test2: {type: "test1"}}};
     test("constructor", () => {
-        expect(() => {new ObjectNode(new MockObjectStore({}), "test");}).not.toThrow();
-    });
-    test("constructor calls getproperties with correct thisNode", () => {
-        const listener = new MockObjectStore({});
-
-        const node = new ObjectNode(listener, "test");
-
-        expect(listener.mockGetProperties).toBeCalled();
-        expect(listener.mockGetProperties.mock.calls[0][0]).toBe(node);
+        expect(() => {new MockObjectNode({}, "test");}).not.toThrow();
     });
     test("constructor sets properties", () => {
         const child = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test: child}), "test");
+        const node = new MockObjectNode({test: child}, "test");
 
         expect(node.get("test")).toBe(child);
     });
     test("constructor sets property's parent", () => {
         const child = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test: child}), "test");
+        const node = new MockObjectNode({test: child}, "test");
 
-        expect(node.get("test").getParent()).toBe(node);
-    });
-    test("constructor sets listener", () => {
-        const listener = new MockObjectStore({});
-        const node = new ObjectNode(listener, "test");
-
-        expect(node.getListener()).toBe(listener);
+        expect(node.get("test").parent).toBe(node);
     });
     test("constructor sets correct custom type", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new ObjectNode("test");
 
         expect(node.getType()).toBe("test");
     });
     test("entries with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         expect(node.entries()).toHaveLength(0);
     });
     test("entries with properties", () => {
         const child = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test: child}), "test");
+        const node = new MockObjectNode({test: child}, "test");
 
         expect(node.entries()).toStrictEqual([["test", child]]);
     });
     test("forEach with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
         const mockCallback = jest.fn((_value, _key, _map) => {});
 
         node.forEach(mockCallback);
@@ -84,7 +67,7 @@ describe("ObjectNode", () => {
     test("forEach with properties", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
         const mockCallback = jest.fn((_value, _key, _map) => {});
 
         node.forEach(mockCallback);
@@ -100,7 +83,7 @@ describe("ObjectNode", () => {
     test("forEach with properties with custom this", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
         const obj = {func: jest.fn((_value, _key, _map) => {})};
 
         node.forEach(obj.func, obj);
@@ -114,57 +97,57 @@ describe("ObjectNode", () => {
         expect(obj.func.mock.calls[1][2]).toBe(node);
     });
     test("has with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         expect(node.has("test2")).toBe(false);
     });
     test("has with properties but missing property", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         expect(node.has("test3")).toBe(false);
     });
     test("has with properties", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         expect(node.has("test2")).toBe(true);
     });
     test("keys with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         expect(node.keys()).toStrictEqual([]);
     });
     test("keys with properties", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         expect(node.keys()).toStrictEqual(["test1", "test2"]);
     });
     test("values with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         expect(node.values()).toStrictEqual([]);
     });
     test("values with properties", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         expect(node.values()).toStrictEqual([child1, child2]);
     });
     test("set dirty sets node dirty", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         node.setDirty();
 
         expect(node.isDirty()).toBe(true);
     });
     test("getState with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
         node.setDirty();
 
         const state = node.getState();
@@ -172,7 +155,7 @@ describe("ObjectNode", () => {
         expect(state).toStrictEqual(objectStateNoProp);
     });
     test("getState with properties", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test")}, "test");
         node.setDirty();
 
         const state = node.getState();
@@ -180,41 +163,39 @@ describe("ObjectNode", () => {
         expect(state).toStrictEqual(objectState2);
     });
     test("getState with properties while node not dirty", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test")}, "test");
 
         const state = node.getState();
 
         expect(state).toStrictEqual(objectState2);
     });
     test("setState can't add properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
 
         expect(() => {node.setState(objectState2);}).toThrow();
     });
     test("setState can't change property type", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test")}, "test");
 
         expect(() => {node.setState(objectState2ChangedTypeDelta);}).toThrow();
     });
     test("setState can't remove property", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test"), test3: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test"), test3: new BaseNode("test")}, "test");
 
         expect(() => {node.setState(objectState2Delta);}).toThrow();
     });
     test("setState changes properties", () => {
-        const mock1 = new MockObjectStore({});
-        const mock2 = new MockObjectStore({});
-        const child1 = new ObjectNode(mock1, "test");
-        const child2 = new ObjectNode(mock2, "test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const child1 = new MockObjectNode({}, "test");
+        const child2 = new MockObjectNode({}, "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         node.setState(objectState2);
 
-        expect(mock1.mockApplyChanges).toHaveBeenCalled();
-        expect(mock2.mockApplyChanges).toHaveBeenCalled();
+        expect(child1.mockSetChanges).toHaveBeenCalled();
+        expect(child2.mockSetChanges).toHaveBeenCalled();
     });
     test("getChanges with no properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new MockObjectNode({}, "test");
         node.setDirty();
 
         const delta = node.getChanges();
@@ -224,9 +205,9 @@ describe("ObjectNode", () => {
     test("getChanges with properties", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
-        child1.setParent(node);
-        child2.setParent(node);
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
+        child1.parent = node;
+        child2.parent = node;
         child1.setTypeDirty();
         child2.setTypeDirty();
 
@@ -237,9 +218,9 @@ describe("ObjectNode", () => {
     test("getChanges only returns changes", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
-        child1.setParent(node);
-        child2.setParent(node);
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
+        child1.parent = node;
+        child2.parent = node;
         child1.setTypeDirty();
 
         const delta = node.getChanges();
@@ -247,40 +228,36 @@ describe("ObjectNode", () => {
         expect(delta).toStrictEqual(objectState1of2Delta);
     });
     test("getChanges with properties while node not dirty", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test")}, "test");
 
         const delta = node.getChanges();
 
         expect(delta).toStrictEqual({});
     });
     test("setChanges can't add properties", () => {
-        const node = new ObjectNode(new MockObjectStore({}), "test");
+        const node = new ObjectNode("test");
 
         expect(() => {node.setChanges(objectState2);}).toThrow();
     });
     test("setChanges can't change property type", () => {
-        const node = new ObjectNode(new MockObjectStore({test1: new BaseNode("test"), test2: new BaseNode("test")}), "test");
+        const node = new MockObjectNode({test1: new BaseNode("test"), test2: new BaseNode("test")}, "test");
 
         expect(() => {node.setChanges(objectState2ChangedTypeDelta);}).toThrow();
     });
     test("setChanges changes properties", () => {
-        const mock1 = new MockObjectStore({});
-        const mock2 = new MockObjectStore({});
-        const child1 = new ObjectNode(mock1, "test");
-        const child2 = new ObjectNode(mock2, "test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const child1 = new MockObjectNode({}, "test");
+        const child2 = new MockObjectNode({}, "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         node.setChanges(objectState2);
 
-        expect(mock1.mockApplyChanges).toHaveBeenCalled();
-        expect(mock2.mockApplyChanges).toHaveBeenCalled();
+        expect(child1.mockSetChanges).toHaveBeenCalled();
+        expect(child2.mockSetChanges).toHaveBeenCalled();
     });
     test("setChildrenDirty sets children dirty", () => {
-        const mock1 = new MockObjectStore({});
-        const mock2 = new MockObjectStore({});
-        const child1 = new ObjectNode(mock1, "test");
-        const child2 = new ObjectNode(mock2, "test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const child1 = new MockObjectNode({}, "test");
+        const child2 = new MockObjectNode({}, "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         ObjectNode.setChildrenDirty(node);
 
@@ -290,7 +267,7 @@ describe("ObjectNode", () => {
     test("setChildrenDirty sets children without forEach dirty", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         ObjectNode.setChildrenDirty(node);
 
@@ -298,11 +275,9 @@ describe("ObjectNode", () => {
         expect(child2.isDirty()).toBe(true);
     });
     test("setChildrenDirty sets children's children dirty", () => {
-        const mock1 = new MockObjectStore({});
-        const child1 = new ObjectNode(mock1, "test");
-        const mock2 = new MockObjectStore({test1: child1});
-        const child2 = new ObjectNode(mock2, "test");
-        const node = new ObjectNode(new MockObjectStore({test2: child2}), "test");
+        const child1 = new MockObjectNode({}, "test");
+        const child2 = new MockObjectNode({test1: child1}, "test");
+        const node = new MockObjectNode({test2: child2}, "test");
 
         ObjectNode.setChildrenDirty(node);
 
@@ -312,7 +287,7 @@ describe("ObjectNode", () => {
     test("setChildrenDirty sets children type dirty", () => {
         const child1 = new BaseNode("test");
         const child2 = new BaseNode("test");
-        const node = new ObjectNode(new MockObjectStore({test1: child1, test2: child2}), "test");
+        const node = new MockObjectNode({test1: child1, test2: child2}, "test");
 
         node.setDirty();
         ObjectNode.setChildrenDirty(node);

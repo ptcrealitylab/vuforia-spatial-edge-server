@@ -5,7 +5,7 @@ import BaseEntity from "./BaseEntity.js";
  * @typedef {import("./QuaternionNode.js").QuaternionValue} QuaternionValue
  */
 
-class DefaultEntity extends BaseEntity {
+class MemoryEntity extends BaseEntity {
     /** @type {Vector3Value} */
     #position;
 
@@ -30,7 +30,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @returns {Vector3Value}
      */
-    getPosition() {
+    get position() {
         return this.#position;
     }
 
@@ -38,7 +38,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @param {Vector3Value} position
      */
-    setPosition(position) {
+    set position(position) {
         this.#position = position;
     }
 
@@ -46,7 +46,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @returns {QuaternionValue}
      */
-    getRotation() {
+    get rotation() {
         return this.#rotation;
     }
 
@@ -54,7 +54,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @param {QuaternionValue} rotation
      */
-    setRotation(rotation) {
+    set rotation(rotation) {
         this.#rotation = rotation;
     }
 
@@ -62,7 +62,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @returns {Vector3Value}
      */
-    getScale() {
+    get scale() {
         return this.#scale;
     }
 
@@ -70,7 +70,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @param {Vector3Value} scale
      */
-    setScale(scale) {
+    set scale(scale) {
         this.#scale = scale;
     }
 
@@ -78,7 +78,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @param {boolean} isVisible
      */
-    setVisible(isVisible) {
+    set isVisible(isVisible) {
         this.#isVisible = isVisible;
     }
 
@@ -86,7 +86,7 @@ class DefaultEntity extends BaseEntity {
      *
      * @returns {boolean}
      */
-    isVisible() {
+    get isVisible() {
         return this.#isVisible;
     }
 
@@ -94,4 +94,4 @@ class DefaultEntity extends BaseEntity {
     }
 }
 
-export default DefaultEntity;
+export default MemoryEntity;

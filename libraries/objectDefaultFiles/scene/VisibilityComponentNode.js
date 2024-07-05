@@ -11,16 +11,16 @@ class VisibilityComponentNode extends ValueNode {
     }
 
     setEntityNode(entityNode) {
-        this.#entity = entityNode.getEntity();
+        this.#entity = entityNode.entity;
     }
 
     update() {
-        if (this.#entity.isVisible() !== this.value) {
-            this.#entity.setVisible(this.value);
+        if (this.#entity.isVisible !== this.value) {
+            this.#entity.isVisible = this.value;
         }
     }
 
-    getComponent() {
+    get component() {
         return this;
     }
 

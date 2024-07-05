@@ -83,7 +83,7 @@ describe("ValueNode", () => {
     test("setValue sets parent node dirty", () => {
         const parent = new MockNode();
         const node = new ValueNode(0);
-        node.setParent(parent);
+        node.parent = parent;
 
         node.value = 1;
 

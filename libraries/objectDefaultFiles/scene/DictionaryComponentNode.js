@@ -10,19 +10,17 @@ class DictionaryComponentNode extends DictionaryNode {
 
     /**
      *
-     * @param {DictionaryInterface} listener
      * @param {string} type
      */
-    constructor(listener, type = DictionaryComponentNode.TYPE) {
-        super(listener, type);
+    constructor(type = DictionaryComponentNode.TYPE) {
+        super(type);
     }
 
     setEntityNode(node) {
-        this.getListener().setEntityNode(node);
     }
 
     getComponent() {
-        return this.getListener().getComponent();
+        return this;
     }
 }
 

@@ -84,7 +84,7 @@ describe("VersionedNode", () => {
     test("setValue sets parent node dirty", () => {
         const parent = new MockNode();
         const node = new VersionedNode(0, "test");
-        node.setParent(parent);
+        node.parent = parent;
 
         node.value = 1;
 

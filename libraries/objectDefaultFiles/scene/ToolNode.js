@@ -1,4 +1,4 @@
-import EntityNode from "./EntityNode.js";
+import MemoryEntityNode from "./MemoryEntityNode.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
@@ -12,15 +12,15 @@ import EntityNode from "./EntityNode.js";
  * @typedef {import("./ObjectNode.js").ObjectInterface} ObjectInterface
  */
 
-class ToolNode extends EntityNode {
+class ToolNode extends MemoryEntityNode {
     static TYPE = "Object.Tool";
 
     /**
      *
      * @param {ObjectInterface} listener
      */
-    constructor(listener, type = ToolNode.TYPE) {
-        super(listener, type);
+    constructor(entity, type = ToolNode.TYPE) {
+        super(entity, type);
     }
 }
 
