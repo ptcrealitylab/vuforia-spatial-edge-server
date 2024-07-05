@@ -10,7 +10,7 @@ import BaseNode from "./BaseNode.js";
  * @template {Value} T
  * @typedef {{value?: T} & BaseNodeDelta} ValueNodeDelta
  * @template {Value} T
- * @typedef {(value: ValueNode<T>) => void} onChangedFunc
+ * @typedef {(node: ValueNode<T>) => void} onChangedFunc
  */
 
 /**
@@ -26,7 +26,7 @@ class ValueNode extends BaseNode {
     /** @type {boolean}*/
     #isValueDirty;
 
-    /** @type {onChangedFunc<T>} */
+    /** @type {onChangedFunc<T>|null} */
     #onChanged;
 
     /**
@@ -59,8 +59,8 @@ class ValueNode extends BaseNode {
     /**
      * @param {onChangedFunc<T>} onChangedFunc
      */
-    set onChanged(onChangedFunc) {
-        this.#onChanged = onChangedFunc;
+    set onChanged(onChanged) {
+        this.#onChanged = onChanged;
     }
 
     /**

@@ -1,34 +1,32 @@
 import BaseComponentNode from "./BaseComponentNode.js";
+import VersionedNode from "./VersionedNode.js";
 
 class GLTFLoaderComponentNode extends BaseComponentNode {
     static TYPE = BaseComponentNode.TYPE + ".GLTFLoader";
 
     /**
      *
-     * @param {ObjectInterface} listener
      */
-    constructor(listener) {
-        super(listener, GLTFLoaderComponentNode.TYPE);
+    constructor() {
+        super(GLTFLoaderComponentNode.TYPE);
+        this._set("url", new VersionedNode(""));
     }
 
     setUrl(url) {
         this.get("url").value = url;
     }
 
-    setEntityNode(node) {
-        this.getListener().setEntityNode(node);
+    setEntityNode(_node) {
     }
 
     update() {
-        this.getListener().update();
     }
 
-    getComponent() {
+    get component() {
         return this;
     }
 
     release() {
-        this.getListener().release();
     }
 }
 

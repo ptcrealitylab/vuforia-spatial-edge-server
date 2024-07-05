@@ -1,4 +1,7 @@
+import ComponentsNode from "./ComponentsNode.js";
+import EntitiesNode from "./EntitiesNode.js";
 import ObjectNode from "./ObjectNode.js";
+import TransformComponentNode from "./TransformComponentNode.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
@@ -16,28 +19,26 @@ import ObjectNode from "./ObjectNode.js";
  * @typedef {{getPosition: () => Vector3Value, setPosition: (position: Vector3Value) => void, getRotation: () => QuaternionValue, setRotation: (rotation: QuaternionValue) => void, getScale: () => Vector3Value, setScale: (scale: Vector3Value) => void}} EntityInterface
  */
 
-class EntityNode extends ObjectNode {
+class BaseEntityNode extends ObjectNode {
     static TYPE = "Object.Entity";
 
+    /** @tpye {EntityInterface} */
+    #entity;
+    
     /**
-     *
-     * @param {DictionaryInterface} listener
+     * @param {EntityInterface} entity
      * @param {string} type
      */
-    constructor(listener, type = EntityNode.TYPE) {
-        super(listener, type);
-        this.get("components").setEntityNode(this);
-        if (!this.get("components").has("0")) {
-            this.get("components").set("0", listener.createTransform(), false);
-        }
+    constructor(entity, type = BaseEntityNode.TYPE) {
+        super(type);
+        this._set("children", new EntitiesNode(this));
+        this._set("components", new ComponentsNode(this));
+        this.#entity = entity
+        this.setComponent("0", new TransformComponentNode(this.#entity), false);
     }
 
-    /**
-     *
-     * @returns {EntityInterface|null}
-     */
-    getEntity() {
-        return this.getListener().getEntity();
+    get entity() {
+        return this.#entity;
     }
 
     /**
@@ -62,20 +63,12 @@ class EntityNode extends ObjectNode {
         this.get("children").set(name, entity, makeDirty);
     }
 
-    createEntity(key, state) {
-        return this.getListener().createEntity(key, state);
-    }
-
-    createComponent(order, state) {
-        return this.getListener().createComponent(order, state);
-    }
-
     /**
      *
      * @param {number} order
      * @param {ComponentNode} component
      */
-    addComponent(order, component, makeDirty = true) {
+    setComponent(order, component, makeDirty = true) {
         this.get("components").set(order, component, makeDirty);
     }
 
@@ -95,24 +88,29 @@ class EntityNode extends ObjectNode {
         return this.getComponentByType(type) !== undefined;
     }
 
-    setPosition(x, y, z) {
+    /**
+     * @param {Vector3Value} value
+     */
+    set position(value) {
         const transform = this.get("components").get(0);
-        transform.setPosition({x, y, z});
+        transform.position = value;
     }
 
-    setRotation(x, y, z, w) {
+    /**
+     * @param {QuaternionValue} value
+     */
+    set rotation(value) {
         const transform = this.get("components").get(0);
-        transform.setRotation({x, y, z, w});
+        transform.rotation = value;
     }
 
-    setScale(x, y, z) {
+    /**
+     * @param {Vector3Value} value
+     */
+    set scale(value) {
         const transform = this.get("components").get(0);
-        transform.setScale({x, y, z});
-    }
-
-    dispose() {
-        this.getEntity().dispose();
+        transform.scale = value;
     }
 }
 
-export default EntityNode;
+export default BaseEntityNode;

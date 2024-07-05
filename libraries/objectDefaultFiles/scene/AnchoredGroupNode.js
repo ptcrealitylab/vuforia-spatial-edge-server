@@ -17,17 +17,8 @@ class AnchoredGroupNode extends ObjectNode {
      *
      * @param {ObjectInterface} listener
      */
-    constructor(listener) {
-        super(listener, AnchoredGroupNode.TYPE);
-    }
-
-    /**
-     *
-     * @param {string} toolId
-     * @returns {AnchoredGroupNodeState}
-     */
-    getStateForTool(toolId) {
-        return {};
+    constructor() {
+        super(AnchoredGroupNode.TYPE);
     }
 }
 

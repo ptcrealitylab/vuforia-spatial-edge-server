@@ -1,5 +1,6 @@
 import ObjectNode from "./ObjectNode.js";
-import SimpleAnimationComponentStore from "./SimpleAnimationComponentStore.js";
+import Vector3Node from "./Vector3Node.js";
+import ValueNode from "./ValueNode.js";
 
 /**
  * @typedef {import("../three/addons/DateTimer.js").Timer} Timer
@@ -28,7 +29,11 @@ class SimpleAnimationComponentNode extends ObjectNode {
      * @param {animationFunc|null} animation
      */
     constructor(animation = null) {
-        super(new SimpleAnimationComponentStore(), SimpleAnimationComponentNode.TYPE);
+        super(SimpleAnimationComponentNode.TYPE);
+        this._set("oldSample", new Vector3Node());
+        this._set("oldTimestamp", new ValueNode(0));
+        this._set("newSample", new Vector3Node());
+        this._set("newTimestamp", new ValueNode(0));
         this.#animation = animation;
         this.#isInitialized = false;
         this.#timer = null;
@@ -41,7 +46,7 @@ class SimpleAnimationComponentNode extends ObjectNode {
      * @returns {WorldNode}
      */
     #findWorldNode(node) {
-        const parent = node.getParent();
+        const parent = node.parent;
         if (parent) {
             return this.#findWorldNode(parent);
         }
@@ -59,7 +64,7 @@ class SimpleAnimationComponentNode extends ObjectNode {
     /**
      * @returns {SimpleAnimationComponentNode}
      */
-    getComponent() {
+    get component() {
         return this;
     }
 
@@ -74,26 +79,26 @@ class SimpleAnimationComponentNode extends ObjectNode {
 
     update() {
         if (!this.#timer) {
-            this.#timer = this.#findWorldNode(this.#entityNode).getTimer();
+            this.#timer = this.#findWorldNode(this.#entityNode).timer;
         }
         const timestamp = this.#timer.getElapsed();
         let sample = {x: 0, y: 0, z: 0};
         if (this.#animation) {
             sample = this.#animation(timestamp);
             if (this.#isInitialized) {
-                this.get("oldSample").setValue(this.get("newSample").getValue());
+                this.get("oldSample").value = this.get("newSample").value;
                 this.get("oldTimestamp").value = this.get("newTimestamp").value;
             } else {
-                this.get("oldSample").setValue(sample);
+                this.get("oldSample").value = sample;
                 this.get("oldTimestamp").value = timestamp - 1;
                 this.#isInitialized = true;
             }
-            this.get("newSample").setValue(sample);
+            this.get("newSample").value = sample;
             this.get("newTimestamp").value = timestamp;
         } else {
-            const oldSample = this.get("oldSample").getValue();
+            const oldSample = this.get("oldSample").value;
             const oldTimestamp = this.get("oldTimestamp").value;
-            const newSample = this.get("newSample").getValue();
+            const newSample = this.get("newSample").value;
             const newTimestamp = this.get("newTimestamp").value;
             const interp = (timestamp - oldTimestamp) / (newTimestamp - oldTimestamp);
             sample.x = oldSample.x + (interp * (newSample.x - oldSample.x));
@@ -101,7 +106,7 @@ class SimpleAnimationComponentNode extends ObjectNode {
             sample.z = oldSample.z + (interp * (newSample.z - oldSample.z));
             sample = newSample;
         }
-        this.#entityNode.getEntity().setPosition(sample);
+        this.#entityNode.entity.position = sample;
     }
 
     release() {

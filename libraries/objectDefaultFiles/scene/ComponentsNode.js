@@ -1,4 +1,9 @@
 import DictionaryNode from "./DictionaryNode.js";
+import TransformComponentNode from "./TransformComponentNode.js";
+import VisibilityComponentNode from "./VisibilityComponentNode.js";
+import SimpleAnimationComponentNode from "./SimpleAnimationComponentNode.js";
+import ValueComponentNode from "./ValueComponentNode.js";
+import DictionaryComponentNode from "./DictionaryComponentNode.js";
 
 /**
  * @typedef {import("./BaseNode.js").BaseNodeState} BaseNodeState
@@ -13,19 +18,23 @@ import DictionaryNode from "./DictionaryNode.js";
 class ComponentsNode extends DictionaryNode {
     static TYPE = "Object.Components";
 
+    /** @type {EntityNodeInterface} */
+    #entityNode
+
     /**
      *
-     * @param {DictionaryInterface} listener
+     * @param {EntityNodeInterface} entityNode
      */
-    constructor(listener) {
-        super(listener, ComponentsNode.TYPE);
+    constructor(entityNode) {
+        super(ComponentsNode.TYPE);
+        this.#entityNode = entityNode
     }
 
     set(key, value, makeDirty = true) {
-        value.setEntityNode(this.getParent());
-        const entity = this.getParent().getEntity();
+        value.setEntityNode(this.parent);
+        const entity = this.parent.entity;
         if (entity) {
-            entity.setComponent(key, value.getComponent());
+            entity.setComponent(key, value.component);
         }
         super.set(key, value, makeDirty);
     }
@@ -47,6 +56,44 @@ class ComponentsNode extends DictionaryNode {
         for (const component of this.values()) {
             component.setEntityNode(node);
         }
+    }
+
+    /**
+     * @override
+     * @param {string} key
+     * @param {BaseNodeState} state
+     * @returns {ComponentNode|undefined}
+     */
+    _create(key, state) {
+        if (state.hasOwnProperty("type") && (state.type.startsWith("Object.Component") || state.type.startsWith("Value.Component"))) {
+            let ret = this.#entityNode.createComponent(key, state);
+            if (!ret) {
+                if (state.type === TransformComponentNode.TYPE) {
+                    ret = new TransformComponentNode();
+                } else if (state.type === VisibilityComponentNode.TYPE) {
+                    ret = new VisibilityComponentNode();
+                } else if (state.type === SimpleAnimationComponentNode.TYPE) {
+                    ret = new SimpleAnimationComponentNode();
+                } else if (state.type.startsWith("Object.Component")) {
+                    ret = new DictionaryComponentNode(state.type);
+                } else {
+                    ret = new ValueComponentNode(state.type);
+                }
+            }
+            return ret;
+        } else {
+            throw Error("Not a component");
+        }
+    }
+
+    /**
+     * @override
+     * @param {string} _key
+     * @param {BaseNode} _oldNode
+     * @param {BaseNodeState} _state
+     */
+    _cast(_key, _oldNode, _state) {
+        throw Error("Can't cast");
     }
 }
 

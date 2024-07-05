@@ -50,24 +50,24 @@ describe("BaseNode", () => {
     test("No parent set after constructor", () => {
         const node = new BaseNode("test");
 
-        expect(node.getParent()).toBeNull();
+        expect(node.parent).toBeNull();
     });
     test("No parent set after setParent null", () => {
         const parent = new BaseNode("test");
         const node = new BaseNode("test");
-        node.setParent(parent);
+        node.parent = parent;
 
-        node.setParent(null);
+        node.parent = null;
 
-        expect(node.getParent()).toBeNull();
+        expect(node.parent).toBeNull();
     });
     test("Parent set after setParent", () => {
         const parent = new BaseNode("test");
         const node = new BaseNode("test");
 
-        node.setParent(parent);
+        node.parent = parent;
 
-        expect(node.getParent()).toBe(parent);
+        expect(node.parent).toBe(parent);
     });
     test("Type set after constructor", () => {
         const node = new BaseNode("test");
@@ -148,7 +148,7 @@ describe("BaseNode", () => {
     test("setParentDirty walker sets parent dirty", () => {
         const mockNode = new MockNode();
         const node = new BaseNode("test");
-        node.setParent(mockNode);
+        node.parent = mockNode;
 
         BaseNode.setParentDirty(node);
 
@@ -158,9 +158,9 @@ describe("BaseNode", () => {
         const mockNode2 = new MockNode();
         const mockNode = new MockNode();
         const node = new BaseNode("test");
-        node.setParent(mockNode);
+        node.parent = mockNode;
         mockNode.setTypeDirty();
-        mockNode.setParent(mockNode2);
+        mockNode.parent = mockNode2;
 
         BaseNode.setParentDirty(node);
 
@@ -174,9 +174,9 @@ describe("BaseNode", () => {
     test("getName with parent", () => {
         const parent = new MockNode();
         const node = new BaseNode("test");
-        node.setParent(parent);
+        node.parent = parent;
         const test2 = new BaseNode("test");
-        test2.setParent(parent);
+        test2.parent = parent;
         parent.setProperties({test: node, test2: test2});
 
         expect(node.getName()).toBe("test");
@@ -184,11 +184,11 @@ describe("BaseNode", () => {
     test("getName with corrupt parent", () => {
         const parent = new MockNode();
         const node = new BaseNode("test");
-        node.setParent(parent);
+        node.parent = parent;
         const test1 = new BaseNode("test");
-        test1.setParent(parent);
+        test1.parent = parent;
         const test2 = new BaseNode("test");
-        test2.setParent(parent);
+        test2.parent = parent;
         parent.setProperties({test: test1, test2: test2});
 
         expect(node.getName()).toBeNull();

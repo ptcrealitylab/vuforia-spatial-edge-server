@@ -1,4 +1,6 @@
 import BaseComponentNode from "./BaseComponentNode.js";
+import Vector3Node from "./Vector3Node.js";
+import QuaternionNode from "./QuaternionNode.js";
 
 /**
  * @typedef {import("./Vector3Node.js").Vector3Value} Vector3Value
@@ -8,86 +10,104 @@ import BaseComponentNode from "./BaseComponentNode.js";
 class TransformComponentNode extends BaseComponentNode {
     static TYPE = BaseComponentNode.TYPE + ".Transform";
 
+    /** @type {boolean} */
+    #entityNeedsUpdate;
+
+    /** @type {EntityInterface} */
+    #entity;
+
     /**
-     *
-     * @param {ObjectInterface} listener
+     * @param {EntityInterface} entity
      */
-    constructor(listener) {
-        super(listener, TransformComponentNode.TYPE);
+    constructor(entity) {
+        super(TransformComponentNode.TYPE);
+        const position = new Vector3Node(entity.position);
+        position.onChanged = () => {this.#entityNeedsUpdate = true;};
+        this._set("position", position);
+        const rotation = new QuaternionNode(entity.rotation);
+        rotation.onChanged = () => {this.#entityNeedsUpdate = true;};
+        this._set("rotation", rotation);
+        const scale = new Vector3Node(entity.scale);
+        scale.onChanged = () => {this.#entityNeedsUpdate = true;};
+        this._set("scale", scale);
+        this.#entityNeedsUpdate = false;
+        this.#entity = entity;
+    }
+
+     /**
+     *
+     * @param {EntityNode} entityNode
+     */
+     setEntityNode(entityNode) {
+        this.#entity = entityNode.entity;
+        this.#entityNeedsUpdate = true;
     }
 
     /**
      *
      * @returns {Vector3Value}
      */
-    getPosition() {
-        return this.get("position").getValue();
+    get position() {
+        return this.get("position").value;
     }
 
     /**
      *
      * @param {Vector3Value} position
      */
-    setPosition(position) {
-        this.get("position").setValue(position);
+    set position(position) {
+        this.get("position").value = position;
     }
 
     /**
      *
      * @returns {QuaternionValue}
      */
-    getRotation() {
-        return this.get("rotation").getValue();
+    get rotation() {
+        return this.get("rotation").value;
     }
 
     /**
      * 
      * @param {QuaternionValue} rotation
      */
-    setRotation(rotation) {
-        this.get("rotation").setValue(rotation);
+    set rotation(rotation) {
+        this.get("rotation").value = rotation;
     }
 
     /**
      *
      * @returns {Vector3Value}
      */
-    getScale() {
-        return this.get("scale").getValue();
+    get scale() {
+        return this.get("scale").value;
     }
 
     /**
      *
      * @param {Vector3Value} scale
      */
-    setScale(scale) {
-        this.get("scale").setValue(scale);
-    }
-
-    fromMatrix(matrix) {
-        this.getListener().fromMatrix(matrix);
-    }
-
-    /**
-     *
-     * @param {EntityNode} node
-     */
-    setEntityNode(node) {
-        this.getListener().setEntityNode(node);
+    set scale(scale) {
+        this.get("scale").value = scale;
     }
 
     /**
      *
      */
     update() {
-        this.getListener().update();
+        if (this.#entityNeedsUpdate) {
+            this.#entity.position = this.get("position").value;
+            this.#entity.rotation = this.get("rotation").value;
+            this.#entity.scale = this.get("scale").value;
+            this.#entityNeedsUpdate = false;
+        }
     }
 
     /**
      *
      * @returns {ComponentInterface}
      */
-    getComponent() {
+    get component() {
         return this;
     }
 

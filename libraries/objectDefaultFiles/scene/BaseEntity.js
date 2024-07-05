@@ -6,7 +6,7 @@ class BaseEntity {
     /** @type {{order: number, component: ComponentInterface}[]} */
     #components;
 
-    /** @type {EntityInterface} */
+    /** @type {{[key: string]: BaseEntity}} */
     #children;
 
     constructor() {
@@ -84,6 +84,9 @@ class BaseEntity {
      */
     updateComponents() {
         for (let entry of this.#components) {
+            if (!entry || !entry.component || !entry.component.update) {
+                console.log("here");
+            }
             entry.component.update();
         }
         for (let child of Object.values(this.#children)) {
@@ -115,15 +118,6 @@ class BaseEntity {
      */
     removeChild(key) {
         delete this.#children[key];
-    }
-
-    /**
-     *
-     * @param {string} _name
-     * @returns {BaseEntity}
-     */
-    createEntity(_name) {
-        throw Error("Can't instantiate abstract class");
     }
 
     /**
