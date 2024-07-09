@@ -244,10 +244,19 @@ router.post('/:objectName/uploadMediaFile', function (req, res) {
         return;
     }
     objectController.uploadMediaFile(req.params.objectName, req, function (statusCode, responseContents) {
-        if (statusCode === 500) {
-            res.status(statusCode).send(responseContents);
+        if (statusCode !== 200) {
+            if (responseContents.httpCode && responseContents.code && responseContents.message) {
+                // ensure the Formidable errors get sent to front-end
+                res.status(responseContents.httpCode).json({
+                    httpCode: responseContents.httpCode,
+                    code: responseContents.code,
+                    message: responseContents.message
+                });
+            } else {
+                res.status(statusCode).send(responseContents);
+            }
         } else {
-            res.status(statusCode).json(responseContents).end();
+            res.status(statusCode).json(responseContents);
         }
     });
 });

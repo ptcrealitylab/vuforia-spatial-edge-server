@@ -134,6 +134,7 @@ async function uploadMediaFile(objectID, req, callback) {
 
     form.on('error', function (err) {
         callback(500, err);
+        callback = null;
     });
 
     let mediaUuid = utilities.uuidTime(); // deprecated
@@ -161,6 +162,8 @@ async function uploadMediaFile(objectID, req, callback) {
         if (err) {
             console.warn('object form parse error', err);
         }
+
+        if (!callback) return; // only trigger callback one time
 
         callback(200, {
             success: true,
