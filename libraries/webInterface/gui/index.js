@@ -767,7 +767,7 @@ realityServer.updateManageObjects = function (thisItem2) {
                 function addLinkToContent(buttonDiv, frameType) { // eslint-disable-line no-inner-declarations
                     buttonDiv.addEventListener('click', function () { // put in a closure so it references don't mutate
                         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-                        window.open((realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
+                        window.open(location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameType + '/index.html', '_blank'); // opens in new tab (instead of window.location.href = )
                     });
                 }
 
@@ -882,7 +882,7 @@ realityServer.updateManageFrames = function () {
         addLinkToContent(contentButton, frameKey);
 
         let ipAddress = realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface];
-        frameInfo.dom.querySelector('.frameIcon').src = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameKey + '/icon.gif';
+        frameInfo.dom.querySelector('.frameIcon').src = location.protocol + '//' + ipAddress + ':' + realityServer.states.serverPort + '/frames/' + frameKey + '/icon.gif';
 
         addZipDownload(frameInfo.dom.querySelector('.download'), frameKey);
 
@@ -2259,7 +2259,7 @@ realityServer.toggleFullScreen = function (item) {
         // if we have set up a screen port, open up that hardware interface application
 
         if (thisScreenPort) {
-            thisIframe.src = (realityEditor.network.useHTTPS ? 'https' : 'http') + '://' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
+            thisIframe.src = location.protocol + '//' + realityServer.states.ipAdress.interfaces[realityServer.states.ipAdress.activeInterface] + ':' + thisScreenPort;
         } else {
             // otherwise just view the target image in fullscreen
             thisIframe.src = 'about:blank'; // Clear iframe before loading
