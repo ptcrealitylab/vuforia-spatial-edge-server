@@ -39,7 +39,7 @@ test('server provides remote operator functionality', async () => {
     page.on('console', async e => {
         try {
             const args = await Promise.all(e.args().map(a => a.jsonValue() || a));
-            console[e.type() === 'warning' ? 'warn' : e.type()](...args);
+            console[e.type() === 'warning' ? 'warn' : e.type()](e.location(), ...args);
         } catch (_) {
             // don't care
         }
