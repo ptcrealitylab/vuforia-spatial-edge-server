@@ -9,7 +9,7 @@
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
-    "directory-tree": "^3.5.1",
+    "directory-tree": "^3.5.2",
     "express": "^4.19.2",
     "express-handlebars": "^5.3.5",
     "formidable": "^3",
