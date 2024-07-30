@@ -771,6 +771,9 @@
                 this.stopVirtualizerRecording = makeSendStub('stopVirtualizerRecording');
                 this.getScreenshotBase64 = makeSendStub('getScreenshotBase64');
                 this.captureSpatialSnapshot = makeSendStub('captureSpatialSnapshot');
+                this.requestCameraPerspective = makeSendStub('requestCameraPerspective');
+                this.requestSetCameraPerspective = makeSendStub('requestSetCameraPerspective');
+                this.requestTextInput = makeSendStub('requestTextInput');
                 this.openKeyboard = makeSendStub('openKeyboard');
                 this.closeKeyboard = makeSendStub('closeKeyboard');
                 this.onKeyboardClosed = makeSendStub('onKeyboardClosed');
@@ -1944,6 +1947,89 @@
                 };
             });
         };
+
+        /**
+         * Asks the client for the { position, direction } of the viewer in world coordinates
+         * @return {Promise<{position: number[], direction: number[]}>}
+         */
+        this.requestCameraPerspective = function() {
+            postDataToParent({
+                requestCameraPerspective: true
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.requestCameraPerspectiveResult = function (msgContent) {
+                    if (typeof msgContent.cameraPerspectiveData !== 'undefined') {
+                        resolve(msgContent.cameraPerspectiveData);
+                        delete spatialObject.messageCallBacks.requestCameraPerspectiveResult; // only trigger it once
+                    }
+                    if (typeof msgContent.cameraPerspectiveError !== 'undefined') {
+                        reject(msgContent.cameraPerspectiveError);
+                        delete spatialObject.messageCallBacks.requestCameraPerspectiveResult;
+                    }
+                };
+            });
+        }
+
+        /**
+         * Asks the parent client to move the virtual camera position/direction to the provided arrays.
+         * The client can choose to deny this request and provide an error, for example if multiple tools
+         * attempt to control the position, or the client is already following the position of another user.
+         * This is meant to pair with requestCameraPerspective, to save and restore camera perspectives.
+         * @param {number[]} position - in world coordinates
+         * @param {number[]} direction - in world coordinates
+         * @return {Promise<{success: boolean}>}
+         */
+        this.requestSetCameraPerspective = function(position, direction) {
+            postDataToParent({
+                requestSetCameraPerspective: {
+                    position: position,
+                    direction: direction
+                }
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.requestSetCameraPerspectiveResult = function (msgContent) {
+                    if (typeof msgContent.setCameraPerspectiveData !== 'undefined') {
+                        resolve(msgContent.setCameraPerspectiveData);
+                        delete spatialObject.messageCallBacks.requestSetCameraPerspectiveResult; // only trigger it once
+                    }
+                    if (typeof msgContent.setCameraPerspectiveError !== 'undefined') {
+                        reject(msgContent.setCameraPerspectiveError);
+                        delete spatialObject.messageCallBacks.requestSetCameraPerspectiveResult;
+                    }
+                };
+            });
+        }
+
+        /**
+         * Asks the parent client to present the user with a text input modal, and to resolve with the input text
+         * when the user clicks "confirm". Provides an error if they click "cancel" or if the client cannot present a
+         * text input modal for this tool right now (e.g. there is already another modal on the screen).
+         * This is useful to enable a native-like typing experience for necessary text inputs in a non-full2D iframe
+         * that is covered by the iframe cover div, without doing hacky focus/event manipulation within the tool iframe.
+         * @param {string} modalTitle - what text to display in the title of the input modal
+         * @param {string} modalDescription - what text to display in the input modal description/body
+         * @return {Promise<{string}>} - resolves directly with the text string
+         */
+        this.requestTextInput = function(modalTitle, modalDescription) {
+            postDataToParent({
+                requestTextInput: {
+                    modalTitle,
+                    modalDescription
+                }
+            });
+            return new Promise((resolve, reject) => {
+                spatialObject.messageCallBacks.requestTextInputResult = function (msgContent) {
+                    if (typeof msgContent.textInputData !== 'undefined') {
+                        resolve(msgContent.textInputData);
+                        delete spatialObject.messageCallBacks.requestTextInputResult; // only trigger it once
+                    }
+                    if (typeof msgContent.textInputError !== 'undefined') {
+                        reject(msgContent.textInputError);
+                        delete spatialObject.messageCallBacks.requestTextInputResult;
+                    }
+                };
+            });
+        }
 
         /**
          * Programmatically opens device keyboard.
