@@ -20,7 +20,7 @@
     "monaco-editor": "^0.50.0",
     "network-interfaces": "^1.1.0",
     "node-fetch": "^2.7.0",
-    "node-persist": "^2.1.0",
+    "node-persist": "^4.0.3",
     "request": "^2.*",
     "simple-git": "^3.25.0",
     "toolsocket": "github:ptcrealitylab/toolsocket",
