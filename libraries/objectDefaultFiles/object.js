@@ -499,6 +499,7 @@
                 screenX: eventData.x,
                 screenY: eventData.y,
                 button: eventData.button,
+                buttons: eventData.buttons,
             };
             var event = new PointerEvent(eventData.type, eventInitDict);
 
