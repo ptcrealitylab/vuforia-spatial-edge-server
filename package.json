@@ -11,7 +11,7 @@
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
     "directory-tree": "^3.5.2",
     "express": "^4.19.2",
-    "express-handlebars": "^5.3.5",
+    "express-handlebars": "^8.0.1",
     "formidable": "^3",
     "ip": "^2.0.1",
     "jimp": "^0.22.12",
