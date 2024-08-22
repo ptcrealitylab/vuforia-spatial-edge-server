@@ -648,8 +648,9 @@ if (ENABLE_BATCHED_UPDATE_LOGGING) {
 // For realtime updates, rather than sending N^2 messages when many clients are updating at once,
 //   aggregate them at send at most one aggregate message per small interval.
 const UpdateAggregator = require('./libraries/UpdateAggregator');
-const AGGREGATION_INTERVAL_MS = 300;
-const updateAggregator = new UpdateAggregator(AGGREGATION_INTERVAL_MS, broadcastAggregatedUpdates);
+// const AGGREGATION_INTERVAL_MS = 300;
+const BASE_AGGREGATION_INTERVAL_MS = 100;
+const updateAggregator = new UpdateAggregator(BASE_AGGREGATION_INTERVAL_MS, broadcastAggregatedUpdates);
 // Define the callback function to broadcast updates
 function broadcastAggregatedUpdates(aggregatedUpdates) {
     for (const entry of realityEditorUpdateSocketSubscriptions) {
@@ -3969,6 +3970,8 @@ function socketServer() {
 
             // Add the incoming update to the aggregator
             updateAggregator.addUpdate(msgContent);
+
+            // the rest of this function below this line can be deleted. it's just here for benchmarking performance.
 
             // var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             // let batchedUpdates = msgContent.batchedUpdates;
