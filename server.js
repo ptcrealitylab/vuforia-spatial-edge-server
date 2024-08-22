@@ -630,6 +630,45 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
+let batchedUpdatesReceived = 0;
+let batchedUpdatesSent = 0; // number that would have been sent using old system (scales N^2)
+let aggregateUpdatesSent = 0; // number sent using the new UpdateAggregator system (scales k * N)
+
+const ENABLE_BATCHED_UPDATE_LOGGING = true;
+
+if (ENABLE_BATCHED_UPDATE_LOGGING) {
+    setInterval(() => {
+        console.log(`Received: ${batchedUpdatesReceived}. Old sent: ${batchedUpdatesSent}. New sent: ${aggregateUpdatesSent}`);
+        batchedUpdatesReceived = 0;
+        batchedUpdatesSent = 0;
+        aggregateUpdatesSent = 0;
+    }, 1000);
+}
+
+// For realtime updates, rather than sending N^2 messages when many clients are updating at once,
+//   aggregate them at send at most one aggregate message per small interval.
+const UpdateAggregator = require('./libraries/UpdateAggregator');
+const AGGREGATION_INTERVAL_MS = 300;
+const updateAggregator = new UpdateAggregator(AGGREGATION_INTERVAL_MS, broadcastAggregatedUpdates);
+// Define the callback function to broadcast updates
+function broadcastAggregatedUpdates(aggregatedUpdates) {
+    for (const entry of realityEditorUpdateSocketSubscriptions) {
+        if (!entry) continue;
+
+        entry.subscriptions.forEach((subscription) => {
+            if (aggregatedUpdates.batchedUpdates.some(update => update.editorId === subscription.editorId)) {
+                // Don't send updates to the editor that triggered them
+                return;
+            }
+
+            if (entry.socket.connected) {
+                entry.socket.emit('/batchedUpdate', JSON.stringify(aggregatedUpdates));
+                aggregateUpdatesSent += 1;
+            }
+        });
+    }
+}
+
 const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
 const staleObjectCleaner = new StaleObjectCleaner(objects, deleteObject);
 function resetObjectTimeout(objectKey) {
@@ -3922,9 +3961,18 @@ function socketServer() {
         // relays realtime updates (to matrix, x, y, scale, etc) from one client to the rest of the clients
         // clients are responsible for batching and processing the batched updates at whatever frequency they prefer
         socket.on('/batchedUpdate', function (msg) {
-            var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            let msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
+
+            batchedUpdatesReceived += 1;
+
+            // Add the incoming update to the aggregator
+            updateAggregator.addUpdate(msgContent);
+
+            // var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            // let batchedUpdates = msgContent.batchedUpdates;
+            // if (!batchedUpdates) { return; }
             let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
 
             for (let update of batchedUpdates) {
@@ -3947,7 +3995,8 @@ function socketServer() {
                     }
 
                     if (entry.socket.connected) {
-                        entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                        // entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
+                        batchedUpdatesSent += 1;
                     }
                 });
             }
