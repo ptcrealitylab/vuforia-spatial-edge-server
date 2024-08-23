@@ -630,27 +630,10 @@ var sockets = {
     notConnectedOld: 0 // used internally to react only on updates
 };
 
-let batchedUpdatesReceived = 0;
-let batchedUpdatesSent = 0; // number that would have been sent using old system (scales N^2)
-let aggregateUpdatesSent = 0; // number sent using the new UpdateAggregator system (scales k * N)
-
-const ENABLE_BATCHED_UPDATE_LOGGING = true;
-
-if (ENABLE_BATCHED_UPDATE_LOGGING) {
-    setInterval(() => {
-        console.log(`Received: ${batchedUpdatesReceived}. Old sent: ${batchedUpdatesSent}. New sent: ${aggregateUpdatesSent}`);
-        batchedUpdatesReceived = 0;
-        batchedUpdatesSent = 0;
-        aggregateUpdatesSent = 0;
-    }, 1000);
-}
-
 // For realtime updates, rather than sending N^2 messages when many clients are updating at once,
 //   aggregate them at send at most one aggregate message per small interval.
-const UpdateAggregator = require('./libraries/UpdateAggregator');
-// const AGGREGATION_INTERVAL_MS = 300;
-const BASE_AGGREGATION_INTERVAL_MS = 100;
-const updateAggregator = new UpdateAggregator(BASE_AGGREGATION_INTERVAL_MS, broadcastAggregatedUpdates);
+const BatchedUpdateAggregator = require('./libraries/BatchedUpdateAggregator');
+const updateAggregator = new BatchedUpdateAggregator(broadcastAggregatedUpdates);
 // Define the callback function to broadcast updates
 function broadcastAggregatedUpdates(aggregatedUpdates) {
     for (const entry of realityEditorUpdateSocketSubscriptions) {
@@ -664,7 +647,6 @@ function broadcastAggregatedUpdates(aggregatedUpdates) {
 
             if (entry.socket.connected) {
                 entry.socket.emit('/batchedUpdate', JSON.stringify(aggregatedUpdates));
-                aggregateUpdatesSent += 1;
             }
         });
     }
@@ -3966,42 +3948,13 @@ function socketServer() {
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
 
-            batchedUpdatesReceived += 1;
-
-            // Add the incoming update to the aggregator
+            // Add the incoming update to the aggregator, which will relay the message to other clients after additional batching
             updateAggregator.addUpdate(msgContent);
 
-            // the rest of this function below this line can be deleted. it's just here for benchmarking performance.
-
-            // var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
-            // let batchedUpdates = msgContent.batchedUpdates;
-            // if (!batchedUpdates) { return; }
-            let senderId = batchedUpdates.length > 0 ? batchedUpdates[0].editorId : null;
-
+            // immediately apply the update to the data model on the server, rather than waiting for more batching
             for (let update of batchedUpdates) {
                 resetObjectTimeout(update.objectKey);
                 applyUpdate(update);
-            }
-
-            for (const entry of realityEditorUpdateSocketSubscriptions) {
-                if (!entry) {
-                    continue;
-                }
-
-                entry.subscriptions.forEach((subscription) => {
-                    if (msgContent.hasOwnProperty('editorId') && msgContent.editorId === subscription.editorId) {
-                        // Don't send updates to the editor that triggered it
-                        return;
-                    }
-                    if (senderId && senderId === subscription.editorId) {
-                        return; // properly retrieve the editorId from one of the batchedUpdates in case the overall message doesn't have it
-                    }
-
-                    if (entry.socket.connected) {
-                        // entry.socket.emit('/batchedUpdate', JSON.stringify(msgContent));
-                        batchedUpdatesSent += 1;
-                    }
-                });
             }
         });
 
