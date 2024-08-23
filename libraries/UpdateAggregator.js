@@ -5,18 +5,42 @@
  * all clients a single time per interval (rather than individually as soon as they are received).
  */
 class UpdateAggregator {
-    constructor(initialAggregationIntervalMs, broadcastCallback, rollingWindowSize = 10) {
-        this.baseAggregationIntervalMs = initialAggregationIntervalMs; // Base interval
-        this.aggregationIntervalMs = initialAggregationIntervalMs; // Current interval
+    /**
+     * @param {number} initialAggregationIntervalMs - the minimum interval window length, e.g. 100ms
+     * @param {function} broadcastCallback – the function to call with the aggregated updates every interval
+     * @param {number} rollingWindowSize - how many previous intervals, e.g. 10 or 30, to calculate the rolling average
+     *                                     of the number clients currently sending messages through the server
+     */
+    constructor(initialAggregationIntervalMs, broadcastCallback, rollingWindowSize = 30) {
+        if (typeof initialAggregationIntervalMs !== 'number' || initialAggregationIntervalMs <= 0) {
+            throw new Error('initialAggregationIntervalMs must be a positive number');
+        }
+        if (typeof rollingWindowSize !== 'number' || rollingWindowSize <= 0) {
+            throw new Error('rollingWindowSize must be a positive number');
+        }
+        if (typeof broadcastCallback !== 'function') {
+            throw new Error('broadcastCallback must be a function');
+        }
+
+        this.baseAggregationIntervalMs = initialAggregationIntervalMs;
+        this.aggregationIntervalMs = initialAggregationIntervalMs; // this updates based on number of connected clients
         this.broadcastCallback = broadcastCallback;
         this.updateBuffer = [];
         this.aggregationTimer = null;
-        this.activeClientsHistory = []; // Store client counts for the rolling average
-        this.rollingWindowSize = rollingWindowSize; // Number of updates to consider for rolling average
+        this.activeClients = new Set();
+        this.activeClientsHistory = [];
+        this.rollingWindowSize = rollingWindowSize;
+
+        this.ENABLE_LOGGING = false;
     }
 
     // Method to handle incoming updates
     addUpdate(update) {
+        if (!update || !update.batchedUpdates || !Array.isArray(update.batchedUpdates)) {
+            console.warn('Invalid update format received');
+            return;
+        }
+
         const senderId = update.batchedUpdates.length > 0 ? update.batchedUpdates[0].editorId : null;
         if (senderId) {
             this._trackActiveClient(senderId);
@@ -38,15 +62,7 @@ class UpdateAggregator {
 
     // Track active clients and maintain a rolling average
     _trackActiveClient(clientId) {
-        const currentClientCount = this.activeClientsHistory.length > 0
-            ? this.activeClientsHistory[this.activeClientsHistory.length - 1]
-            : 0;
-
-        // If the client is new, increment the count
-        if (!this.activeClientsHistory.includes(clientId)) {
-            const newClientCount = currentClientCount + 1;
-            this._updateClientHistory(newClientCount);
-        }
+        this.activeClients.add(clientId);
     }
 
     // Update the rolling average of active clients
@@ -57,25 +73,27 @@ class UpdateAggregator {
         this.activeClientsHistory.push(clientCount);
     }
 
-    // Method to calculate the rolling average of active clients
-    getRollingAverageClientCount() {
-        const total = this.activeClientsHistory.reduce((sum, count) => sum + count, 0);
-        return total / this.activeClientsHistory.length;
+    // rolling average doesn't work as well ask peak usage over the window. defaults to 1 user.
+    getPeakClientCount() {
+        return Math.max(...this.activeClientsHistory, 1);
     }
 
     // Method to adjust the aggregation interval based on the rolling average of active clients
     adjustAggregationInterval() {
-        const avgClientCount = this.getRollingAverageClientCount();
+        const peakClientCount = this.getPeakClientCount();
 
-        // Apply the linear formula: y = 23.33 * x - 166.6
-        // this results in 100ms for fewer clients, 300ms for 20 clients, 1000ms for 50 clients
-        let interval = 23.33 * avgClientCount - 166.6;
+        // This results in 100ms for <= 5 clients, 300ms for 15 clients, 1000ms for 50 clients
+        let interval = 20 * peakClientCount;
 
         // Clamp the interval to be within the min and max bounds
         this.aggregationIntervalMs = Math.max(
             this.baseAggregationIntervalMs,
             Math.min(1000, interval)
         );
+
+        if (this.ENABLE_LOGGING && this.aggregationIntervalMs !== this.baseAggregationIntervalMs) {
+            console.log(`Adjusted aggregation interval to ${this.aggregationIntervalMs}ms based on ${peakClientCount} active clients.`);
+        }
     }
 
     // Method to aggregate updates and broadcast them
@@ -85,7 +103,7 @@ class UpdateAggregator {
         }
 
         // Combine all updates into a single batched message
-        let aggregatedUpdates = {
+        const aggregatedUpdates = {
             batchedUpdates: [],
         };
 
@@ -94,6 +112,10 @@ class UpdateAggregator {
         }
 
         this.updateBuffer = [];
+
+        this._updateClientHistory(this.activeClients.size);
+        this.activeClients.clear();
+
         this.broadcastCallback(aggregatedUpdates);
     }
 }
