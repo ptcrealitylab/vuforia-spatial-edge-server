@@ -115,13 +115,15 @@ class BatchedUpdateAggregator {
     adjustAggregationInterval() {
         const peakClientCount = this.getPeakClientCount();
 
-        // Set your desired BandwidthCap (number of messages per time window) and TimeWindow (e.g., 5 seconds)
-        const BandwidthCap = 1000;  // Example value, adjust based on your capacity
-        const TimeWindow = 5000; // 5 seconds in milliseconds
+        // Set your desired BANDWIDTH_CAP (number of messages per time window) and TIME_WINDOW (e.g., 5 seconds)
+        const BANDWIDTH_CAP = 1000;  // Empirically/arbitrarily chosen – adjust based on your capacity
+        const TIME_WINDOW = 5000; // 5 seconds in milliseconds
 
-        // Calculate the interval needed to keep traffic under the BandwidthCap
+        // Calculate the interval needed to keep traffic under the BANDWIDTH_CAP
+        // This is based on the following formula, if every message broadcasts to every client:
+        // `bandwidth_used = (time_window / interval) * N * (N - 1)`
         // this increases quadratically: 30ms when 3 clients, 100ms when 5, 450ms when 10, caps at 1000 when 15+
-        let interval = (TimeWindow * peakClientCount * (peakClientCount - 1)) / BandwidthCap;
+        let interval = (TIME_WINDOW * peakClientCount * (peakClientCount - 1)) / BANDWIDTH_CAP;
 
         // Clamp the interval to be within the min and max bounds
         this.aggregationIntervalMs = Math.max(
