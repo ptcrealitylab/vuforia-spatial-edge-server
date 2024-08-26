@@ -3535,11 +3535,11 @@ function socketServer() {
                     const newEntry = {
                         subscriptions: [],
                         socket: socket
-                    }
+                    };
                     realityEditorSocketSubscriptions.push(newEntry);
                 }
 
-                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
+                const entry = realityEditorSocketSubscriptions.find(thisEntry => thisEntry.socket === socket);
 
                 let isNew = true;
                 entry.subscriptions.forEach(subscription => {
@@ -3609,7 +3609,7 @@ function socketServer() {
                     realityEditorSocketSubscriptions.push(newEntry);
                 }
 
-                const entry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
+                const entry = realityEditorSocketSubscriptions.find(thisEntry => thisEntry.socket === socket);
 
                 let isNew = true;
                 entry.subscriptions.forEach(subscription => {
@@ -3657,11 +3657,11 @@ function socketServer() {
                     const newEntry = {
                         subscriptions: [],
                         socket: socket
-                    }
+                    };
                     realityEditorBlockSocketSubscriptions.push(newEntry);
                 }
 
-                const entry = realityEditorBlockSocketSubscriptions.find(entry => entry.socket === socket);
+                const entry = realityEditorBlockSocketSubscriptions.find(thisEntry => thisEntry.socket === socket);
 
                 let isNew = true;
                 entry.subscriptions.forEach(subscription => {
@@ -3838,11 +3838,11 @@ function socketServer() {
                 const newEntry = {
                     subscriptions: [],
                     socket: socket
-                }
+                };
                 realityEditorUpdateSocketSubscriptions.push(newEntry);
             }
 
-            const entry = realityEditorUpdateSocketSubscriptions.find(entry => entry.socket === socket);
+            const entry = realityEditorUpdateSocketSubscriptions.find(thisEntry => thisEntry.socket === socket);
 
             let isNew = true;
             entry.subscriptions.forEach(subscription => {
@@ -3998,7 +3998,7 @@ function socketServer() {
                 const newEntry = {
                     subscriptions: [],
                     socket: socket
-                }
+                };
                 realityEditorObjectMatrixSocketSubscriptions.push(newEntry);
             }
 
