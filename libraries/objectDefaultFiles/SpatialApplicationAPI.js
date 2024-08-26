@@ -56,7 +56,7 @@
                             applicationId: this.applicationId,
                             callId: callId,
                             result: result
-                        }, '*')
+                        }, '*');
                     }
                 }
             });
