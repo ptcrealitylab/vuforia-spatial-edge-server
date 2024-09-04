@@ -38,6 +38,7 @@ class BatchedUpdateAggregator {
         this.activeClientsHistory = []; // this stores the *number* of active clients per time window, going into the past
         this.rollingWindowSize = options.rollingWindowSize;
         this.clientRTTs = new Map(); // Store round-trip times for each client
+        this.areClientsReportingRTTs = false; // backwards compatible if clients aren't using the new /status RTT tracker
 
         this.ENABLE_LOGGING = false;
 
@@ -55,6 +56,7 @@ class BatchedUpdateAggregator {
      */
     trackClientRTT(clientId, rtt) {
         const currentTime = Date.now();
+        this.areClientsReportingRTTs = true;
 
         if (!this.clientRTTs.has(clientId)) {
             this.clientRTTs.set(clientId, []);
@@ -217,8 +219,9 @@ class BatchedUpdateAggregator {
 
         // Dynamically increase the time interval to reduce traffic; it increases based on two factors:
 
-        // 1. Begin by calculating the number of user-to-user connections (assumes each message broadcasts to every client)
-        const MAX_MS_DELAY_DUE_TO_CLIENT_NUMBER = 150; // cap this factor at a threshold to prevent it from getting too slow purely due to number of clients
+        // 1. Begin by calculating the number of user-to-user connections (assumes each message broadcasts to every client).
+        //    Cap this factor at a threshold to prevent it from getting too slow purely due to number of clients
+        const MAX_MS_DELAY_DUE_TO_CLIENT_NUMBER = this.areClientsReportingRTTs ? 150 : 1000;
         let interval = Math.min(peakClientCount * (peakClientCount - 1), MAX_MS_DELAY_DUE_TO_CLIENT_NUMBER);
 
         // 2. Introduce a scaling factor that adds to the base interval based on higher round-trip-time values
@@ -226,7 +229,7 @@ class BatchedUpdateAggregator {
         interval += (averageRTT * RTT_SCALING_FACTOR);
 
         // a valid RTT will never be 0, so if we see 0 that means everyone is lagging so much that all of the RTTs expired
-        if (averageRTT === 0) {
+        if (averageRTT === 0 && this.areClientsReportingRTTs) {
             // in this case, max out the interval to try to decongest the server
             interval = this.maxAggregationIntervalMs;
         }
