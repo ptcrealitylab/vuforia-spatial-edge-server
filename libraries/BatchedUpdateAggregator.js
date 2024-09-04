@@ -225,6 +225,12 @@ class BatchedUpdateAggregator {
         const RTT_SCALING_FACTOR = 1.5; // Adjusts sensitivity to RTT; can be tuned to more aggressively dampen traffic
         interval += (averageRTT * RTT_SCALING_FACTOR);
 
+        // a valid RTT will never be 0, so if we see 0 that means everyone is lagging so much that all of the RTTs expired
+        if (averageRTT === 0) {
+            // in this case, max out the interval to try to decongest the server
+            interval = this.maxAggregationIntervalMs;
+        }
+
         // Clamp the interval to be within the min and max bounds, e.g. between 1fps and 30fps
         this.aggregationIntervalMs = Math.max(
             this.minAggregationIntervalMs,
@@ -232,7 +238,7 @@ class BatchedUpdateAggregator {
         );
 
         if (this.ENABLE_LOGGING && this.aggregationIntervalMs !== this.minAggregationIntervalMs) {
-            console.log(`Adjusted aggregation interval to ${this.aggregationIntervalMs}ms based on ${peakClientCount} peak active clients and ${averageRTT}ms average RTT.`);
+            console.log(`Adjusted aggregation interval to ${this.aggregationIntervalMs.toFixed(2)}ms based on ${peakClientCount} peak active clients and ${averageRTT.toFixed(2)}ms average RTT.`);
         }
     }
 
