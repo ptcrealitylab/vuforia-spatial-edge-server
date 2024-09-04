@@ -633,7 +633,11 @@ var sockets = {
 // For realtime updates, rather than sending N^2 messages when many clients are updating at once,
 //   aggregate them at send at most one aggregate message per small interval.
 const BatchedUpdateAggregator = require('./libraries/BatchedUpdateAggregator');
-const updateAggregator = new BatchedUpdateAggregator(broadcastAggregatedUpdates);
+const updateAggregator = new BatchedUpdateAggregator(broadcastAggregatedUpdates, {
+    minAggregationIntervalMs: 33,
+    maxAggregationIntervalMs: 1000,
+    rollingWindowSize: 10
+});
 // Define the callback function to broadcast updates
 function broadcastAggregatedUpdates(aggregatedUpdates) {
     for (const entry of realityEditorUpdateSocketSubscriptions) {
@@ -1985,8 +1989,22 @@ function objectWebServer() {
     webServer.use('/spatial', spatialRouter.router);
     webServer.use('/history', historyRouter.router);
 
+    /**
+     * Checks whether the server is online. Can be used by clients to also calculate the round-tip-time to the server.
+     * Clients can optionally include prevRTT and clientId in the query params, and the server will track the RTTs.
+     * This helps to deal with server congestion.
+     */
     webServer.get('/status', function(req, res) {
-        res.sendStatus(200); // OK
+        // Check if the RTT parameter exists in the query string
+        const clientRTT = parseFloat(req.query.prevRTT);
+        const clientId = req.query.clientId;
+
+        if (typeof clientRTT === 'number' && !isNaN(clientRTT) && clientId) {
+            // Track the client's RTT in the BatchedUpdateAggregator
+            updateAggregator.trackClientRTT(clientId, clientRTT);
+        }
+
+        res.sendStatus(200); // Respond OK
     });
 
     // receivePost blocks can be triggered with a post request. *1 is the object *2 is the logic *3 is the link id
