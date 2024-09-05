@@ -160,8 +160,9 @@ class BatchedUpdateAggregator {
      * so that old values and disconnected clients no longer influence the current traffic interval
      */
     _startPruningInactiveClients() {
+        this._stopPruningInactiveClients();
         // Prune inactive clients every 30 seconds
-        setInterval(() => {
+        this.pruneInactiveClientsInterval = setInterval(() => {
             const currentTime = Date.now();
             this.clientRTTs.forEach((rttHistory, clientId) => {
                 // If all RTT entries are expired, remove the client
@@ -178,6 +179,24 @@ class BatchedUpdateAggregator {
                 console.log('Pruned inactive clients from RTT tracking.');
             }
         }, this.RTT_EXPIRY_TIME); // Pruning interval
+    }
+
+    /**
+     * Stop the pruning interval
+     */
+    _stopPruningInactiveClients() {
+        if (!this.pruneInactiveClientsInterval) {
+            return;
+        }
+        clearInterval(this.pruneInactiveClientsInterval);
+        this.pruneInactiveClientsInterval = null;
+    }
+
+    /**
+     * Stop all intervals
+     */
+    stop() {
+        this._stopPruningInactiveClients();
     }
 
     /**

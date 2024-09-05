@@ -44,7 +44,7 @@
   },
   "scripts": {
     "test": "npm run lint && jest --forceExit --runInBand --coverage",
-    "test-older": "jest --forceExit server-simple.test.js",
+    "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
