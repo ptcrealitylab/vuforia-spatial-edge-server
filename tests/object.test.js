@@ -4,12 +4,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-/* global test, beforeAll, afterAll, expect */
+/* global test, beforeAll, afterAll, expect, beforeEach, afterEach, describe */
 const fetch = require('node-fetch');
 
 const {
     filterSnapshot,
     filterToTestObject,
+    getObject,
     getTestObjects,
     getValueWithKeySuffixed,
     sleep,
@@ -29,9 +30,9 @@ afterAll(async () => {
     await sleep(1000);
 });
 
-test('new object creation', async () => {
+async function testObjectCreation() {
     await waitForObjects(0);
-    let objectsPath = require('../config.js').objectsPath;
+    const objectsPath = require('../config.js').objectsPath;
 
     const allObjectsPre = await getTestObjects();
     expect(allObjectsPre).toEqual([]);
@@ -89,6 +90,14 @@ test('new object creation', async () => {
     expect(fdsaFs.timestamp).toBe(null);
     expect(fdsaFs.port).toBe(8080);
 
+    return fdsaApi;
+}
+
+test('object creation, old object deletion', async () => {
+    await testObjectCreation();
+
+    const objectsPath = require('../config.js').objectsPath;
+
     await fetch(`${localServer}/`, {
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
@@ -104,3 +113,135 @@ test('new object creation', async () => {
     expect(snapshotDeleted).toEqual({});
 });
 
+test('object creation, new object deletion', async () => {
+    const testObject = await testObjectCreation();
+
+    const objectsPath = require('../config.js').objectsPath;
+
+    await fetch(`${localServer}/object/${testObject.id}`, {
+        method: 'DELETE',
+        agent: fetchAgent
+    });
+
+    const allObjectsDeleted = await getTestObjects();
+    expect(allObjectsDeleted).toEqual([]);
+    const snapshotDeleted = filterSnapshot(snapshotDirectory(objectsPath), filterToTestObject);
+    expect(snapshotDeleted).toEqual({});
+});
+
+test('deletion of missing object', async () => {
+    let res = await fetch(`${localServer}/object/notarealobjectid`, {
+        method: 'DELETE',
+        agent: fetchAgent
+    });
+    expect(res.status).toEqual(404);
+});
+
+
+describe('object apis', () => {
+    let testObject;
+    beforeEach(async () => {
+        testObject = await testObjectCreation();
+    });
+
+    afterEach(async () => {
+        await fetch(`${localServer}/object/${testObject.id}`, {
+            method: 'DELETE',
+            agent: fetchAgent
+        });
+    });
+
+    test('scene graph activation', async () => {
+        expect(testObject.deactivated).toBeFalsy();
+
+        await fetch(`${localServer}/object/${testObject.id}/deactivate`, {
+            method: 'get',
+            agent: fetchAgent
+        });
+
+        {
+            // Not present in list due to deactivation
+            const allObjectsCreated = await getTestObjects();
+            expect(allObjectsCreated.length).toBe(0);
+
+            const testObjectUpdated = await getObject(testObject.id);
+            expect(testObjectUpdated.deactivated).toBeTruthy();
+        }
+
+        await fetch(`${localServer}/object/${testObject.id}/activate`, {
+            method: 'get',
+            agent: fetchAgent
+        });
+
+        {
+            const allObjectsCreated = await getTestObjects();
+            expect(allObjectsCreated.length).toBe(1);
+
+            const testObjectUpdated = allObjectsCreated[0];
+            expect(testObjectUpdated.deactivated).toBeFalsy();
+        }
+    });
+
+    test('set render mode', async () => {
+        await fetch(`${localServer}/object/${testObject.id}/renderMode`, {
+            method: 'post',
+            headers: {
+                'Content-type': 'application/json',
+            },
+            body: JSON.stringify({
+                renderMode: 'ai',
+            }),
+            agent: fetchAgent
+        });
+
+        const testObjectUpdated = await getObject(testObject.id);
+        expect(testObjectUpdated.renderMode).toBe('ai');
+    });
+
+    test('set render mode of missing object', async () => {
+        let res = await fetch(`${localServer}/object/notarealobjectid/renderMode`, {
+            method: 'post',
+            headers: {
+                'Content-type': 'application/json',
+            },
+            body: JSON.stringify({
+                renderMode: 'ai',
+            }),
+            agent: fetchAgent
+        });
+
+        expect(res.status).toBe(404);
+    });
+
+    test('set render mode missing render mode', async () => {
+        let res = await fetch(`${localServer}/object/${testObject.id}/renderMode`, {
+            method: 'post',
+            headers: {
+                'Content-type': 'application/json',
+            },
+            body: JSON.stringify({
+            }),
+            agent: fetchAgent
+        });
+
+        expect(res.ok).toBeFalsy();
+    });
+
+    test('set visualization screen', async () => {
+        await fetch(`${localServer}/object/${testObject.id}/screen`, {
+            agent: fetchAgent
+        });
+
+        const testObjectUpdated = await getObject(testObject.id);
+        expect(testObjectUpdated.visualization).toBe('screen');
+    });
+
+    test('set visualization ar of missing object', async () => {
+        let res = await fetch(`${localServer}/object/notarealobjectid/ar`, {
+            agent: fetchAgent
+        });
+
+        expect(res.status).toBe(404);
+    });
+
+});
