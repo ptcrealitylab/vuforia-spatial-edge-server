@@ -70,8 +70,8 @@ exports.filterToObjects = function filterToObjects(key) {
     return key.match(/spatialToolbox\/[^.]/);
 };
 
-exports.filterToTestObject = function filterToTestObject(key) {
-    return key.includes('fdsa');
+exports.filterToTestObject = function filterToTestObject(key, testPrefix = 'fdsa') {
+    return key.includes(testPrefix);
 };
 
 async function getAllObjects() {
@@ -81,9 +81,16 @@ async function getAllObjects() {
 }
 exports.getAllObjects = getAllObjects;
 
-exports.getTestObjects = async function getTestObjects() {
+exports.getTestObjects = async function getTestObjects(testPrefix = 'fdsa') {
     const allObjects = await getAllObjects();
-    return allObjects.filter(obj => obj.id.startsWith('fdsa'));
+    return allObjects.filter(obj => obj.id.startsWith(testPrefix));
+};
+
+exports.getObject = async function getObject(id) {
+    const res = await fetch(`${localServer}/object/${id}`, {
+        agent: fetchAgent
+    });
+    return await res.json();
 };
 
 /**
