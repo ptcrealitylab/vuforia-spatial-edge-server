@@ -10,12 +10,13 @@ const logicNodeController = require('../controllers/logicNode.js');
 const nodeController = require('../controllers/node.js');
 const objectController = require('../controllers/object.js');
 
-router.delete('/:object', async (req, res) => {
-    if (!utilities.isValidId(req.params.object)) {
+router.delete('/:objectId', async (req, res) => {
+    if (!utilities.isValidId(req.params.objectId)) {
         res.status(400).send('Invalid object id. Must be alphanumeric.');
         return;
     }
-    res.send(await objectController.deleteObject(req.params.object));
+    let deleteResult = await objectController.deleteObject(req.params.objectId);
+    res.status(deleteResult.status).send(deleteResult);
 });
 
 // logic links

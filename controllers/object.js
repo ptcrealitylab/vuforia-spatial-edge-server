@@ -238,6 +238,7 @@ const setRenderMode = async (objectID, body, callback) => {
     }
     if (typeof body.renderMode === 'undefined') {
         callback(400, {failure: true, error: `Bad request: no renderMode specified in body`});
+        return;
     }
 
     object.renderMode = body.renderMode;
@@ -329,6 +330,7 @@ const setVisualization = function(objectID, vis, callback) {
     let object = utilities.getObject(objects, objectID);
     if (!object) {
         callback(404, {success: false, error: 'cannot find object with ID' + objectID});
+        return;
     }
     try {
         object.visualization = vis;
