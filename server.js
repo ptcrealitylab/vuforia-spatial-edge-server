@@ -1238,6 +1238,7 @@ async function exit() {
     for (const splatTask of Object.values(splatTasks)) {
         splatTask.stop();
     }
+    updateAggregator.stop();
     console.info('Server exited successfully');
     if (process.env.NODE_ENV !== 'test') {
         process.exit(0);
