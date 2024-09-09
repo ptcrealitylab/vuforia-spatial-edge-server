@@ -656,10 +656,12 @@ function broadcastAggregatedUpdates(aggregatedUpdates) {
     }
 }
 
-const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
-const staleObjectCleaner = new StaleObjectCleaner(objects, deleteObject);
+// const StaleObjectCleaner = require('./libraries/StaleObjectCleaner');
+// const staleObjectCleaner = new StaleObjectCleaner(objects, deleteObject);
 function resetObjectTimeout(objectKey) {
-    staleObjectCleaner.resetObjectTimeout(objectKey);
+    if (typeof staleObjectCleaner !== 'undefined') {
+        staleObjectCleaner.resetObjectTimeout(objectKey);
+    }
 }
 exports.resetObjectTimeout = resetObjectTimeout;
 
@@ -1155,14 +1157,16 @@ async function startSystem() {
     // removes socket connections to objects that are no longer linked.
     setSocketUpdaterInterval();
 
-    // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
-    const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
-    const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
-    staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
+    if (typeof staleObjectCleaner !== 'undefined') {
+        // checks if any avatar or humanPose objects haven't been updated in awhile, and deletes them
+        const avatarCheckIntervalMs = 5000; // how often to check if avatar objects are inactive
+        const avatarDeletionAgeMs = 15000; // how long an avatar object can stale be before being deleted
+        staleObjectCleaner.createCleanupInterval(avatarCheckIntervalMs, avatarDeletionAgeMs, ['avatar']);
 
-    const humanCheckIntervalMs = 3000;
-    const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
-    staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
+        const humanCheckIntervalMs = 3000;
+        const humanDeletionAgeMs = 15000; // human objects are deleted more aggressively if they haven't been seen recently
+        staleObjectCleaner.createCleanupInterval(humanCheckIntervalMs, humanDeletionAgeMs, ['human']);
+    }
 
     recorder.initRecorder(objects);
 
@@ -1233,7 +1237,9 @@ async function exit() {
     if (forceGCInterval) {
         clearInterval(forceGCInterval);
     }
-    staleObjectCleaner.clearCleanupIntervals();
+    if (staleObjectCleaner) {
+        staleObjectCleaner.clearCleanupIntervals();
+    }
     humanPoseFuser.stop();
     for (const splatTask of Object.values(splatTasks)) {
         splatTask.stop();
@@ -1519,6 +1525,9 @@ function objectBeatServer() {
 
     udpServer.on('message', async function (msg) {
 
+        numUdpMessagesReceived++;
+        lastFiveSecondsUdpMessages++;
+
         var msgContent;
         // check if object ping
         msgContent = JSON.parse(msg);
@@ -1624,9 +1633,57 @@ var parseIpSpace = function (ip_string) {
     return thisresult;
 };
 
+let socketMessagesReceived = 0;
+let socketMessages = {};
+let numUdpMessagesReceived = 0;
+let lastFiveSecondsSocketMessages = 0;
+let lastFiveSocketMessages = {};
+let lastFiveSecondsUdpMessages = 0;
+
 function objectWebServer() {
     services.ip = services.getIP(); // ip.address();
     // security implemented
+
+    let totalRequests = 0;
+    let lastFiveSecondsRequests = 0;
+    let startTime = Date.now();
+
+    webServer.use((req, res, next) => {
+        // Increment counters
+        totalRequests++;
+        lastFiveSecondsRequests++;
+        next();
+    });
+
+    // Set up the 5-second interval to print stats
+    setInterval(() => {
+        const currentTime = Date.now();
+        const uptimeSeconds = Math.floor((currentTime - startTime) / 1000);
+
+        // Calculate average requests per second for the last 5 seconds
+        const avgRequestsLastFiveSeconds = (lastFiveSecondsRequests / 5).toFixed(2);
+        const avgSocketMessagesLastFiveSeconds = (lastFiveSecondsSocketMessages / 5).toFixed(2);
+        const avgUdpMessagesLastFiveSeconds = (lastFiveSecondsUdpMessages / 5).toFixed(2);
+
+        // Calculate cumulative average requests per second
+        const avgRequestsCumulative = (totalRequests / uptimeSeconds).toFixed(2);
+        const avgSocketMessagesCumulative = (socketMessagesReceived / uptimeSeconds).toFixed(2);
+        const avgUDPMessagesCumulative = (numUdpMessagesReceived / uptimeSeconds).toFixed(2);
+
+        console.log(`Uptime: ${uptimeSeconds} seconds`);
+        console.log(`Requests in last 5 seconds: ${lastFiveSecondsRequests}`);
+        console.log(`Cumulative requests: HTTP: ${totalRequests}, Socket: ${socketMessagesReceived}, UDP: ${numUdpMessagesReceived}`);
+        console.log(`Average requests per second in the last 5 seconds: HTTP: ${avgRequestsLastFiveSeconds}, Socket: ${lastFiveSecondsSocketMessages}, UDP: ${lastFiveSecondsUdpMessages}`);
+        console.log(`Cumulative average requests per second: HTTP: ${avgRequestsCumulative}, Socket: ${avgSocketMessagesCumulative}, UDP: ${avgUDPMessagesCumulative}`);
+        console.log(socketMessages);
+        
+        socketMessages = {};
+
+        // Reset the last 5 seconds counter
+        lastFiveSecondsRequests = 0;
+        lastFiveSecondsUdpMessages = 0;
+        lastFiveSecondsSocketMessages = 0;
+    }, 5000);
 
     // check all server requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
@@ -3540,6 +3597,13 @@ function socketServer() {
         const knownUnknownObjects = {};
 
         socket.on('/subscribe/realityEditor', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/realityEditor'] === 'undefined') {
+                socketMessages['/subscribe/realityEditor'] = 0;
+            }
+            socketMessages['/subscribe/realityEditor']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
 
@@ -3610,6 +3674,13 @@ function socketServer() {
         });
 
         socket.on('/subscribe/realityEditorPublicData', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/realityEditorPublicData'] === 'undefined') {
+                socketMessages['/subscribe/realityEditorPublicData'] = 0;
+            }
+            socketMessages['/subscribe/realityEditorPublicData']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             var thisProtocol = 'R1';
 
@@ -3668,6 +3739,13 @@ function socketServer() {
         });
 
         socket.on('/subscribe/realityEditorBlock', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/realityEditorBlock'] === 'undefined') {
+                socketMessages['/subscribe/realityEditorBlock'] = 0;
+            }
+            socketMessages['/subscribe/realityEditorBlock']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (doesObjectExist(msgContent.object)) {
@@ -3718,6 +3796,13 @@ function socketServer() {
          * realtime settings updates from the hardware interface's index.js
          */
         socket.on('/subscribe/interfaceSettings', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/interfaceSettings'] === 'undefined') {
+                socketMessages['/subscribe/interfaceSettings'] = 0;
+            }
+            socketMessages['/subscribe/interfaceSettings']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (msgContent.interfaceName) {
                 hardwareAPI.addSettingsCallback(msgContent.interfaceName, function (interfaceName, currentSettings) {
@@ -3732,6 +3817,13 @@ function socketServer() {
         });
 
         socket.on('object', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['object'] === 'undefined') {
+                socketMessages['object'] = 0;
+            }
+            socketMessages['object']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = protocols[protocol].receive(msg);
             if (msgContent === null) {
                 msgContent = protocols['R0'].receive(msg);
@@ -3750,6 +3842,13 @@ function socketServer() {
         });
 
         socket.on('object/publicData', async function (_msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['object/publicData'] === 'undefined') {
+                socketMessages['object/publicData'] = 0;
+            }
+            socketMessages['object/publicData']++;
+            lastFiveSecondsSocketMessages++;
+
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             var node = getNode(msg.object, msg.frame, msg.node);
@@ -3812,6 +3911,9 @@ function socketServer() {
         });
 
         socket.on('block/setup', function (_msg) {
+            socketMessagesReceived++;
+            lastFiveSecondsSocketMessages++;
+
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
 
             const node = getNode(msg.object, msg.frame, msg.node);
@@ -3826,6 +3928,9 @@ function socketServer() {
         });
 
         socket.on('block/publicData', function (_msg) {
+            socketMessagesReceived++;
+            lastFiveSecondsSocketMessages++;
+
             var msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
             var node = getNode(msg.object, msg.frame, msg.node);
             if (node) {
@@ -3840,16 +3945,33 @@ function socketServer() {
 
         // this is only for down compatibility for when the UI would request a readRequest
         socket.on('/object/readRequest', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['object/readRequest'] === 'undefined') {
+                socketMessages['object/readRequest'] = 0;
+            }
+            socketMessages['object/readRequest']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             messageToSend(msgContent, socket);
         });
 
         socket.on('/object/screenObject', function (_msg) {
+            socketMessagesReceived++;
+            lastFiveSecondsSocketMessages++;
+
             let msg = typeof _msg === 'string' ? JSON.parse(_msg) : _msg;
             hardwareAPI.screenObjectCall(msg);
         });
 
         socket.on('/subscribe/realityEditorUpdates', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/realityEditorUpdates'] === 'undefined') {
+                socketMessages['/subscribe/realityEditorUpdates'] = 0;
+            }
+            socketMessages['/subscribe/realityEditorUpdates']++;
+            lastFiveSecondsSocketMessages++;
+
             const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (!realityEditorUpdateSocketSubscriptions.some(entry => entry.socket === socket)) {
@@ -3940,6 +4062,13 @@ function socketServer() {
         }
 
         socket.on('/update', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/update'] === 'undefined') {
+                socketMessages['/update'] = 0;
+            }
+            socketMessages['/update']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             applyUpdate(msgContent);
 
@@ -3962,6 +4091,13 @@ function socketServer() {
         // relays realtime updates (to matrix, x, y, scale, etc) from one client to the rest of the clients
         // clients are responsible for batching and processing the batched updates at whatever frequency they prefer
         socket.on('/batchedUpdate', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/batchedUpdate'] === 'undefined') {
+                socketMessages['/batchedUpdate'] = 0;
+            }
+            socketMessages['/batchedUpdate']++;
+            lastFiveSecondsSocketMessages++;
+
             let msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             let batchedUpdates = msgContent.batchedUpdates;
             if (!batchedUpdates) { return; }
@@ -3979,6 +4115,13 @@ function socketServer() {
         // remote operators can subscribe to all other remote operator's camera positions using this method
         // body should contain a unique "editorId" string identifying the client
         socket.on('/subscribe/cameraMatrix', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/cameraMatrix'] === 'undefined') {
+                socketMessages['/subscribe/cameraMatrix'] = 0;
+            }
+            socketMessages['/subscribe/cameraMatrix']++;
+            lastFiveSecondsSocketMessages++;
+
             const msgContent = JSON.parse(msg);
             const subscription = {editorId: msgContent.editorId, socket: socket};
             realityEditorCameraMatrixSocketSubscriptions.push(subscription);
@@ -3987,6 +4130,13 @@ function socketServer() {
         // remote operators can broadcast their camera position to all others using this method
         // body should contain the unique "editorId" of the client as well as its "cameraMatrix" (length 16 array)
         socket.on('/cameraMatrix', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/cameraMatrix'] === 'undefined') {
+                socketMessages['/cameraMatrix'] = 0;
+            }
+            socketMessages['/cameraMatrix']++;
+            lastFiveSecondsSocketMessages++;
+
             const msgContent = JSON.parse(msg);
 
             for (const entry of realityEditorCameraMatrixSocketSubscriptions) {
@@ -4001,6 +4151,13 @@ function socketServer() {
         });
 
         socket.on('/signalling', function (msgRaw) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/signalling'] === 'undefined') {
+                socketMessages['/signalling'] = 0;
+            }
+            socketMessages['/signalling']++;
+            lastFiveSecondsSocketMessages++;
+
             try {
                 const msg = typeof msgRaw === 'string' ? JSON.parse(msgRaw) : msgRaw;
                 signallingController.onMessage(socket, msg);
@@ -4010,6 +4167,13 @@ function socketServer() {
         });
 
         socket.on('/subscribe/objectUpdates', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/subscribe/objectUpdates'] === 'undefined') {
+                socketMessages['/subscribe/objectUpdates'] = 0;
+            }
+            socketMessages['/subscribe/objectUpdates']++;
+            lastFiveSecondsSocketMessages++;
+
             const msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             if (!realityEditorObjectMatrixSocketSubscriptions.some(entry => entry.socket === socket)) {
@@ -4035,6 +4199,13 @@ function socketServer() {
         });
 
         socket.on('/update/object/matrix', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/update/object/matrix'] === 'undefined') {
+                socketMessages['/update/object/matrix'] = 0;
+            }
+            socketMessages['/update/object/matrix']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             var object = getObject(msgContent.objectKey);
@@ -4076,6 +4247,13 @@ function socketServer() {
         });
 
         socket.on('/update/object/position', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/update/object/position'] === 'undefined') {
+                socketMessages['/update/object/position'] = 0;
+            }
+            socketMessages['/update/object/position']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
 
             var object = getObject(msgContent.objectKey);
@@ -4126,6 +4304,13 @@ function socketServer() {
         });
 
         socket.on('node/setup', function (msg) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['node/setup'] === 'undefined') {
+                socketMessages['node/setup'] = 0;
+            }
+            socketMessages['node/setup']++;
+            lastFiveSecondsSocketMessages++;
+
             var msgContent = typeof msg === 'string' ? JSON.parse(msg) : msg;
             if (!msgContent) {
                 return;
@@ -4178,6 +4363,13 @@ function socketServer() {
          * to sending actions through the cloud proxy or native udp broadcast
          */
         socket.on('udp/action', async function(msgRaw) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['udp/action'] === 'undefined') {
+                socketMessages['udp/action'] = 0;
+            }
+            socketMessages['udp/action']++;
+            lastFiveSecondsSocketMessages++;
+
             let msg;
             try {
                 msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
@@ -4192,6 +4384,13 @@ function socketServer() {
         });
 
         socket.on('/disconnectEditor', async function(msgRaw) {
+            socketMessagesReceived++;
+            if (typeof socketMessages['/disconnectEditor'] === 'undefined') {
+                socketMessages['/disconnectEditor'] = 0;
+            }
+            socketMessages['/disconnectEditor']++;
+            lastFiveSecondsSocketMessages++;
+
             let msg = typeof msgRaw === 'object' ? msgRaw : JSON.parse(msgRaw);
             let avatarKeys = Object.keys(objects).filter(key => key.includes('_AVATAR_') && key.includes(msg.editorId));
             await deleteObjects(avatarKeys);
@@ -4201,6 +4400,13 @@ function socketServer() {
         });
 
         socket.on('disconnect', async function () {
+            socketMessagesReceived++;
+            if (typeof socketMessages['disconnect'] === 'undefined') {
+                socketMessages['disconnect'] = 0;
+            }
+            socketMessages['disconnect']++;
+            lastFiveSecondsSocketMessages++;
+
             const socketEntry = realityEditorSocketSubscriptions.find(entry => entry.socket === socket);
             if (socketEntry) {
                 realityEditorSocketSubscriptions.splice(realityEditorSocketSubscriptions.indexOf(socketEntry), 1);
