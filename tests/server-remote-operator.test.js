@@ -7,6 +7,7 @@
 /* global test, beforeAll, afterAll */
 
 const puppeteer = require('puppeteer');
+const puppeteerToIstanbul = require('puppeteer-to-istanbul');
 const fetch = require('node-fetch');
 
 const {
@@ -35,6 +36,10 @@ test('server provides remote operator functionality', async () => {
     });
 
     const page = await browser.newPage();
+    await Promise.all([
+        page.coverage.startJSCoverage(),
+        page.coverage.startCSSCoverage()
+    ]);
     // from https://stackoverflow.com/questions/58089425/how-do-print-the-console-output-of-the-page-in-puppeter-as-it-would-appear-in-th
     page.on('console', async e => {
         try {
@@ -112,6 +117,16 @@ test('server provides remote operator functionality', async () => {
     } catch (e) {
         console.warn('Failed proxy test', e);
     }
+
+    const [jsCoverage, cssCoverage] = await Promise.all([
+        page.coverage.stopJSCoverage(),
+        page.coverage.stopCSSCoverage()
+    ]);
+
+    puppeteerToIstanbul.write([...jsCoverage, ...cssCoverage], {
+        includeHostname: true,
+        storagePath: './.nyc_output',
+    });
 
     await page.close();
 
